@@ -148,7 +148,7 @@ static_assert(0 == (sizeof(LitMeshVertex) % 4), "unexpected size");
 //! Color table is appended to the end of this data.
 // @bsistruct                                                   Paul.Connelly   01/18
 //=======================================================================================
-struct VertexLUTParams
+struct VertexTable
 {
 private:
     static void AppendColor(uint8_t*& pData, uint32_t colorValue)
@@ -213,7 +213,7 @@ public:
             }
         }
 
-    explicit VertexLUTParams() { }
+    explicit VertexTable() { }
 };
 
 //=======================================================================================
@@ -280,17 +280,11 @@ private:
         m_lutParams.Init<VertexType>(args, uvParams);
         }
 public:
-    VertexLUTParams                 m_lutParams;
-    Render::MaterialCPtr            m_material;
+    VertexTable                     m_lutParams;
     AnimationLUTParamsPtr           m_animationLUTParams;
     QPoint3d::Params                m_vertexParams;
     QPoint2d::Params                m_uvParams;
-    uint32_t                        m_edgeWidth;
-    RefCountedPtr<Render::Texture>  m_texture;
     SurfaceType                     m_type;
-    FillFlags                       m_fillFlags;
-    LinePixels                      m_edgeLinePixels;
-    bool                            m_isPlanar;
 
     MeshParams(TriMeshArgsCR, bool isClassifier);
 };
@@ -301,11 +295,9 @@ public:
 struct SurfaceParams
 {
     Render::TexturePtr  m_texture;
-    Render::MaterialPtr m_material;
     ByteStream          m_vertexIndices;
-    uint32_t            m_vertexIndicesCount;
 
-    explicit SurfaceParams(TriMeshArgsCR args) : m_texture(args.m_texture), m_material(args.m_material), m_vertexIndices(args.m_numIndices * 3), m_vertexIndicesCount(args.m_numIndices)
+    explicit SurfaceParams(TriMeshArgsCR args) : m_texture(args.m_texture), m_vertexIndices(args.m_numIndices * 3)
         {
         // In shader we have less than 32 bits precision...
         BeAssert((uint32_t)((float)args.m_numPoints) == args.m_numPoints && "Max index range exceeded");
@@ -473,12 +465,9 @@ public:
 //=======================================================================================
 struct PolylineParams
 {
-    VertexLUTParams     m_lutParams;
+    VertexTable         m_lutParams;
     TesselatedPolyline  m_polyline;
     QPoint3d::Params    m_vertexParams;
-    uint32_t            m_lineWeight;
-    LinePixels          m_linePixels;
-    PolylineFlags       m_flags;
 private:
     PolylineParams(IndexedPolylineArgsCR args, TesselatedPolyline&& polyline);
 public:
@@ -490,12 +479,11 @@ public:
 //=======================================================================================
 struct PointStringParams
 {
-    VertexLUTParams     m_lutParams;
+    VertexTable         m_lutParams;
     ByteStream          m_vertexIndices;
     QPoint3d::Params    m_vertexParams;
-    uint32_t            m_weight;
 
-    explicit PointStringParams(IndexedPolylineArgsCR args) : m_vertexParams(args.m_pointParams), m_weight(args.m_width)
+    explicit PointStringParams(IndexedPolylineArgsCR args) : m_vertexParams(args.m_pointParams)
         {
         m_lutParams.Init<SimpleVertex>(args, 0);
         uint32_t nVertices = 0;
@@ -527,6 +515,18 @@ private:
 
     bool IsCanceled() const { return m_loader.IsCanceled(); }
 
+    void AddVertexTable(Json::Value& json, VertexTable const& table, QPoint3d::Params const& qparams, Utf8StringCR idStr);
+    void AddVertexIndices(Json::Value& json, ByteStreamCR indices, Utf8StringCR idStr, Utf8CP name="indices") { AddVertexIndices(json, indices.data(), indices.size(), idStr, name); }
+    void AddVertexIndices(Json::Value& json, uint8_t const* data, size_t nBytes, Utf8StringCR idStr, Utf8CP name);
+    template<typename T> void AddVertexIndices(Json::Value& json, bvector<T> const& values, Utf8StringCR idStr, Utf8CP name)
+        {
+        uint8_t const* data = reinterpret_cast<uint8_t const*>(values.data());
+        size_t nBytesPerEntry = sizeof(*values.data());
+        size_t nBytes = nBytesPerEntry * values.size();
+        AddVertexIndices(json, data, nBytes, idStr, name);
+        }
+
+    void AddPolyline(Json::Value& json, TesselatedPolyline const& polyline, Utf8StringCR idStr);
     BentleyStatus AddMaterialJson(Render::MaterialCR material);
     BentleyStatus AddTextureJson(TextureMappingCR mapping, Json::Value& matJson);
     BentleyStatus CreateDisplayParamJson(Json::Value& matJson, MeshCR mesh, Utf8StringCR suffix);
@@ -534,6 +534,7 @@ private:
     void AddMeshes(Render::Primitives::GeometryCollectionCR geometry);
     void AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index);
     BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr);
+    Json::Value CreateMeshEdges(TriMeshArgs::Edges const&, TriMeshArgs const&, Utf8StringCR idStr);
     BentleyStatus CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr);
     BentleyStatus CreatePolyline(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
     BentleyStatus CreatePointString(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
@@ -594,8 +595,7 @@ void LUTDimensions::Init(uint32_t nEntries, uint32_t nRgbaPerEntry, uint32_t nEx
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshParams::MeshParams(TriMeshArgsCR args, bool isClassifier) : m_vertexParams(args.m_pointParams), m_edgeWidth(args.m_edges.m_width), m_texture(args.m_texture), m_fillFlags(args.m_fillFlags),
-    m_edgeLinePixels(args.m_edges.m_linePixels), m_isPlanar(args.m_isPlanar)
+MeshParams::MeshParams(TriMeshArgsCR args, bool isClassifier) : m_vertexParams(args.m_pointParams)
     {
     if (isClassifier)
         {
@@ -629,15 +629,13 @@ MeshParams::MeshParams(TriMeshArgsCR args, bool isClassifier) : m_vertexParams(a
 +---------------+---------------+---------------+---------------+---------------+------*/
 QPoint2d::Params MeshParams::InitUVParams(TriMeshArgsCR args)
     {
-    // ###TODO: TriMeshArgs should quantize texture UV for us...
     DRange2d range = DRange2d::NullRange();
     auto fpts = args.m_textureUV;
     if (nullptr != fpts)
         for (uint32_t i = 0; i < args.m_numPoints; i++)
             range.Extend(DPoint2d::From(fpts[i].x, fpts[i].y));
 
-    QPoint2d::Params qparams(range);
-    return qparams;
+    return QPoint2d::Params(range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -919,7 +917,7 @@ PolylineEdgeParamsUPtr PolylineEdgeParams::Create(TriMeshArgsCR args)
 * @bsimethod                                                    Paul.Connelly   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolylineParams::PolylineParams(IndexedPolylineArgsCR args, TesselatedPolyline&& polyline) : m_polyline(std::move(polyline)),
-    m_vertexParams(args.m_pointParams), m_lineWeight(args.m_width), m_linePixels(args.m_linePixels), m_flags(args.m_flags)
+    m_vertexParams(args.m_pointParams)
     {
     m_lutParams.Init<SimpleVertex>(args, 0);
     }
@@ -979,7 +977,9 @@ AnimationLUTParams::AnimationLUTParams(TriMeshArgsCR args)
 BentleyStatus IModelTileWriter::CreatePointString(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr)
     {
     PointStringParams params(args);
-    return ERROR; // ###TODO
+    AddVertexTable(primitiveJson, params.m_lutParams, params.m_vertexParams, idStr);
+    AddVertexIndices(primitiveJson, params.m_vertexIndices, idStr);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -991,7 +991,10 @@ BentleyStatus IModelTileWriter::CreatePolyline(Json::Value& primitiveJson, Index
     if (nullptr == params || IsCanceled())
         return ERROR;
 
-    return ERROR; // ###TODO
+    AddVertexTable(primitiveJson, params->m_lutParams, params->m_vertexParams, idStr);
+    AddPolyline(primitiveJson, params->m_polyline, idStr);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1017,8 +1020,102 @@ BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR
     if (!args.Init(mesh))
         return ERROR;
 
-    MeshParams params(args, m_loader.GetTree().IsClassifier());
-    return ERROR; // ###TODO
+    MeshParams meshParams(args, m_loader.GetTree().IsClassifier());
+
+    AddVertexTable(primitiveJson, meshParams.m_lutParams, meshParams.m_vertexParams, idStr);
+
+    SurfaceParams surface(args);
+    AddVertexIndices(primitiveJson["surface"], surface.m_vertexIndices, idStr);
+    primitiveJson["surface"]["type"] = static_cast<uint32_t>(meshParams.m_type);
+
+    if (args.m_texture.IsValid())
+        {
+        DRange2d uvRange = meshParams.m_uvParams.GetRange();
+        primitiveJson["surface"]["uvParams"] = CreateDecodeQuantizeValues(&uvRange.low.x, &uvRange.high.x, 2);
+        }
+
+    if (args.m_edges.IsValid())
+        primitiveJson["edges"] = CreateMeshEdges(args.m_edges, args, idStr);
+
+    // ###TODO: aux data displacement/params go into LUT? Were previously dispatched as vertex attributes...
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value IModelTileWriter::CreateMeshEdges(TriMeshArgs::Edges const& edges, TriMeshArgs const& meshArgs, Utf8StringCR idStr)
+    {
+    Json::Value json(Json::objectValue);
+
+    if (edges.m_edges.IsValid())
+        {
+        EdgeParams edgeParams(edges.m_edges);
+        AddVertexIndices(json["segments"], edgeParams.m_vertexIndices, idStr);
+        AddVertexIndices(json["segments"], edgeParams.m_endPointAndQuadIndices, idStr, "endPointAndQuadIndices");
+        }
+
+    if (edges.m_silhouettes.IsValid())
+        {
+        SilhouetteParams silhouetteParams(edges.m_silhouettes);
+        AddVertexIndices(json["silhouettes"], silhouetteParams.m_vertexIndices, idStr);
+        AddVertexIndices(json["silhouettes"], silhouetteParams.m_endPointAndQuadIndices, idStr, "endPointAndQuadIndices");
+        AddVertexIndices(json["silhouettes"], silhouetteParams.m_normalPairs, idStr, "normalPairs");
+        }
+
+    if (edges.m_polylines.IsValid())
+        {
+        auto polylineParams = PolylineEdgeParams::Create(meshArgs);
+        if (nullptr != polylineParams)
+            AddPolyline(json["polylines"], polylineParams->m_polyline, idStr);
+        }
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void IModelTileWriter::AddPolyline(Json::Value& json, TesselatedPolyline const& polyline, Utf8StringCR idStr)
+    {
+    AddVertexIndices(json, polyline.m_vertIndex, idStr, "indices");
+    AddVertexIndices(json, polyline.m_prevIndex, idStr, "prevIndices");
+    AddVertexIndices(json, polyline.m_nextIndexAndParam, idStr, "nextIndicesAndParams");
+
+    Utf8String bvId("bvDistance");
+    bvId.append(idStr);
+    AddBufferView(bvId.c_str(), polyline.m_distance);
+    json["distances"] = bvId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void IModelTileWriter::AddVertexIndices(Json::Value& primitiveJson, uint8_t const* data, size_t nBytes, Utf8StringCR idStr, Utf8CP name)
+    {
+    Utf8String bufferViewId("bv");
+    bufferViewId.append(name);
+    bufferViewId.append(idStr);
+
+    AddBufferView(bufferViewId.c_str(), data, nBytes);
+    primitiveJson[name] = bufferViewId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void IModelTileWriter::AddVertexTable(Json::Value& primitiveJson, VertexTable const& table, QPoint3d::Params const& qparams, Utf8StringCR idStr)
+    {
+    Utf8String bufferViewId("bv");
+    bufferViewId.append("Vertex");
+    bufferViewId.append(idStr);
+
+    AddBufferView(bufferViewId.c_str(), table.m_data);
+    primitiveJson["vertices"] = bufferViewId;
+
+    DRange3d range = qparams.GetRange();
+    primitiveJson["vertexParams"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 3);
     }
 
 /*---------------------------------------------------------------------------------**//**
