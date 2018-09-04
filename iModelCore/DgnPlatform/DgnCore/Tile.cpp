@@ -22,12 +22,14 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
 // Obsolete versions of table storing tile data
 #define TABLE_NAME_TileTree3 "TileTree3"
+#define TABLE_NAME_TileTree4 "TileTree4"
 
-// 4th version of this table: modified for iModelJs (imodel02 branch):
+// 5th version of this table - modified for iModelJs (imodel02 mercurial branch):
 // Element tiles are now the only types of tiles produced and cached by the backend.
-//  - Remove ContentType and Expires columns
-//  - Add Metadata column, containing data formerly stored in the binary stream (geometry flags like 'is curved', zoom factor, etc)
-#define TABLE_NAME_TileTree "TileTree4"
+//  - Remove Metadata column added in TileTree4 iteration.
+//  - Change binary format to store geometry in a form ready for submission to WebGL - tesselated polylines, vertex data in lookup tables, etc.
+//  - Change magic number from 'dgnT' to 'iMdl' to reflect this change
+#define TABLE_NAME_TileTree "TileTree5"
 
 // Second version: Same primary key as tile data table.
 #define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime2"
@@ -919,13 +921,14 @@ BentleyStatus Cache::_Prepare() const
         
     // Drop leftover tables from previous versions
     m_db.DropTableIfExists(TABLE_NAME_TileTree3);
+    m_db.DropTableIfExists(TABLE_NAME_TileTree4);
 
     // Create the tables
     if (!m_db.TableExists(TABLE_NAME_TileTreeCreateTime) && BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "TileId CHAR PRIMARY KEY,Created BIGINT"))
         return ERROR;
 
     return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
-        "TileId CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,Metadata TEXT") ? SUCCESS : ERROR;
+        "TileId CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT TEXT") ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1021,7 +1024,6 @@ Utf8CP Cache::GetCurrentVersion()
     // Increment this when the binary tile format changes...
     // We changed the cache db schema shortly after creating imodel02 branch - so version history restarts at same time.
     // 0: Initial version following db schema change
-    // 1: Do not set 'is leaf' if have size multiplier ('zoom factor'); add flag and value for size multiplier
     return "0";
     }
 
