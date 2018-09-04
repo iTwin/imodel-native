@@ -2889,8 +2889,9 @@ struct  InstanceXmlReader
                         double d;
                         if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(ecValue.GetUtf8CP(), "%lg", &d))
                             {
-                            oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit());
-                            ecValue.SetDouble(convertedValue);
+                            oldUnit->Convert(convertedValue, d, koq->GetPersistenceUnit());
+                            Utf8PrintfString dStr("%lg", d);
+                            ecValue.SetUtf8CP(dStr.c_str());
                             }
                         }
                     }
