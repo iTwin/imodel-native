@@ -144,6 +144,26 @@ static_assert(0x10 == sizeof(LitMeshVertex), "unexpected size");
 static_assert(0 == (sizeof(LitMeshVertex) % 4), "unexpected size");
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/17
+//=======================================================================================
+struct FeaturesInfo
+{
+    uint32_t            m_uniform;
+    FeatureIndex::Type  m_type;
+
+    FeaturesInfo() : m_type(FeatureIndex::Type::Empty) { }
+    FeaturesInfo(FeatureIndex::Type type, uint32_t uniform) : m_uniform(uniform), m_type(type) { }
+    explicit FeaturesInfo(FeatureIndex const& src) : FeaturesInfo(src.m_type, src.m_featureID) { }
+
+    bool IsEmpty() const { return FeatureIndex::Type::Empty == m_type; }
+    bool IsUniform() const { return FeatureIndex::Type::Uniform == m_type; }
+    bool IsNonUniform() const { return FeatureIndex::Type::NonUniform == m_type; }
+
+    void SetUniform(uint32_t uniform) { m_type=FeatureIndex::Type::Uniform; m_uniform=uniform; }
+    void Clear() { m_type = FeatureIndex::Type::Empty; }
+};
+
+//=======================================================================================
 //! Holds vertex data (position, color index, normal, UV params, etc) in a texture.
 //! Color table is appended to the end of this data.
 // @bsistruct                                                   Paul.Connelly   01/18
@@ -181,13 +201,18 @@ public:
     ByteStream      m_data;
     LUTDimensions   m_dimensions;
     uint32_t        m_numVertices = 0;
+    uint32_t        m_numRgbaPerVertex = 0;
+    FeaturesInfo    m_features;
 
     template<typename T_Vertex, typename T_Args, typename T_ExtraData> void Init(T_Args const& args, T_ExtraData const& extraData)
         {
+        m_features = FeaturesInfo(args.m_features);
+
         uint32_t nVerts = args.m_numPoints;
         m_numVertices = nVerts;
         uint32_t nBytesPerVert = sizeof(T_Vertex);
         uint32_t nRgbaPerVert = nBytesPerVert / 4;
+        m_numRgbaPerVertex = nRgbaPerVert;
 
         ColorIndex const& colorIndex = args.m_colors;
         uint32_t nColors = colorIndex.IsUniform() ? 0 : colorIndex.m_numColors;
@@ -1112,10 +1137,19 @@ void IModelTileWriter::AddVertexTable(Json::Value& primitiveJson, VertexTable co
     bufferViewId.append(idStr);
 
     AddBufferView(bufferViewId.c_str(), table.m_data);
-    primitiveJson["vertices"] = bufferViewId;
+    primitiveJson["vertices"]["bufferView"] = bufferViewId;
 
     DRange3d range = qparams.GetRange();
-    primitiveJson["vertexParams"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 3);
+    primitiveJson["vertices"]["params"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 3);
+
+    primitiveJson["vertices"]["featureIndexType"] = static_cast<uint32_t>(table.m_features.m_type);
+    if (FeatureIndex::Type::NonUniform == table.m_features.m_type)
+        primitiveJson["vertices"]["featureID"] = table.m_features.m_uniform;
+
+    primitiveJson["vertices"]["count"] = table.m_numVertices;
+    primitiveJson["vertices"]["width"] = table.m_dimensions.GetWidth();
+    primitiveJson["vertices"]["height"] = table.m_dimensions.GetHeight();
+    primitiveJson["vertices"]["numRgbaPerVertex"] = table.m_numRgbaPerVertex;
     }
 
 /*---------------------------------------------------------------------------------**//**
