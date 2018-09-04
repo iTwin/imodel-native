@@ -486,6 +486,37 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/18
+//=======================================================================================
+struct PointStringParams
+{
+    VertexLUTParams     m_lutParams;
+    ByteStream          m_vertexIndices;
+    QPoint3d::Params    m_vertexParams;
+    uint32_t            m_weight;
+
+    explicit PointStringParams(IndexedPolylineArgsCR args) : m_vertexParams(args.m_pointParams), m_weight(args.m_width)
+        {
+        m_lutParams.Init<SimpleVertex>(args, 0);
+        uint32_t nVertices = 0;
+        for (uint32_t lineIdx = 0; lineIdx < args.m_numLines; lineIdx++)
+            nVertices += args.m_lines[lineIdx].m_numIndices;
+
+        m_vertexIndices.resize(nVertices*3);
+        uint8_t* pData = m_vertexIndices.GetDataP();
+        for (uint32_t lineIdx = 0; lineIdx < args.m_numLines; lineIdx++)
+            {
+            auto const& line = args.m_lines[lineIdx];
+            for (uint32_t i = 0; i < line.m_numIndices; i++)
+                {
+                memcpy(pData, line.m_vertIndex+i, 3);
+                pData += 3;
+                }
+            }
+        }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct IModelTileWriter : Tile::IO::Writer
@@ -495,8 +526,21 @@ private:
     Tile::LoaderCR  m_loader;
 
     bool IsCanceled() const { return m_loader.IsCanceled(); }
+
+    BentleyStatus AddMaterialJson(Render::MaterialCR material);
+    BentleyStatus AddTextureJson(TextureMappingCR mapping, Json::Value& matJson);
+    BentleyStatus CreateDisplayParamJson(Json::Value& matJson, MeshCR mesh, Utf8StringCR suffix);
+    void WriteFeatureTable(FeatureTableCR featureTable);
+    void AddMeshes(Render::Primitives::GeometryCollectionCR geometry);
+    void AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index);
+    BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr);
+    BentleyStatus CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr);
+    BentleyStatus CreatePolyline(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
+    BentleyStatus CreatePointString(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
 public:
     IModelTileWriter(StreamBufferR streamBuffer, Tile::LoaderCR loader) : T_Super(streamBuffer, *loader.GetTree().FetchModel()), m_loader(loader) { }
+
+    IModelTile::WriteStatus WriteTile(Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry);
 };
 
 END_UNNAMED_NAMESPACE
@@ -932,8 +976,344 @@ AnimationLUTParams::AnimationLUTParams(TriMeshArgsCR args)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelTileWriter::CreatePointString(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr)
+    {
+    PointStringParams params(args);
+    return ERROR; // ###TODO
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelTileWriter::CreatePolyline(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr)
+    {
+    auto params = PolylineParams::Create(args);
+    if (nullptr == params || IsCanceled())
+        return ERROR;
+
+    return ERROR; // ###TODO
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelTileWriter::CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr)
+    {
+    PolylineArgs args;
+    if (!args.Init(mesh))
+        return ERROR;
+    else if (args.m_flags.IsDisjoint())
+        return CreatePointString(primitiveJson, args, idStr);
+    else
+        return CreatePolyline(primitiveJson, args, idStr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr)
+    {
+    MeshArgs args;
+    if (!args.Init(mesh))
+        return ERROR;
+
+    MeshParams params(args, m_loader.GetTree().IsClassifier());
+    return ERROR; // ###TODO
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void IModelTileWriter::AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
+    {
+    Json::Value     primitives = Json::arrayValue;
+    size_t          primitiveIndex = 0;
+
+    for (auto& geomMesh : geometry.Meshes())
+        {
+        AddMesh(primitives, *geomMesh, primitiveIndex);
+        if (IsCanceled())
+            return;
+        }
+
+    AddPrimitivesJson(primitives);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void IModelTileWriter::AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
+    {
+    Utf8String idStr(std::to_string(index++).c_str());
+    Json::Value materialJson = Json::objectValue;
+    Json::Value primitiveJson = Json::objectValue;
+
+    if (SUCCESS != CreateDisplayParamJson(materialJson, mesh, idStr))
+        return;
+
+    primitiveJson["type"] = static_cast<uint32_t>(mesh.GetType());
+    primitiveJson["isPlanar"] = mesh.IsPlanar();
+
+    if ((!mesh.Triangles().Empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
+        (!mesh.Polylines().empty() && SUCCESS == CreatePolylines(primitiveJson, mesh, idStr)))
+        {
+        Utf8String  materialName = "Material" + idStr;
+        m_json["materials"][materialName] = materialJson;
+        primitiveJson["material"] = materialName;
+        primitivesNode.append(primitiveJson);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelTileWriter::CreateDisplayParamJson(Json::Value& matJson, MeshCR mesh, Utf8StringCR suffix) 
+    {
+    auto const& displayParams = mesh.GetDisplayParams();
+
+    matJson["type"] = (uint8_t) displayParams.GetType();
+	
+    // GeomParams...
+    if (displayParams.GetCategoryId().IsValid())
+        matJson["categoryId"] = displayParams.GetCategoryId().ToHexStr();
+    
+    if (displayParams.GetSubCategoryId().IsValid())
+        matJson["subCategoryId"] = displayParams.GetSubCategoryId().ToHexStr();
+
+    // ###TODO: Support non-persistent materials if/when necessary...
+    auto material = displayParams.GetMaterial();
+    if (nullptr != material && material->GetKey().IsPersistent())
+        {
+        matJson["materialId"] = material->GetKey().GetId().ToHexStr();
+        AddMaterialJson(*material);
+        }
+
+    matJson["class"] = (uint16_t) displayParams.GetClass();
+    matJson["ignoreLighting"] = displayParams.IgnoresLighting();
+
+    // GraphicsParams...
+    matJson["fillColor"] = displayParams.GetFillColor();
+    matJson["fillFlags"] = static_cast<uint32_t> (displayParams.GetFillFlags());
+
+    // Are these needed for meshes (Edges??)
+    matJson["lineColor"]  = displayParams.GetLineColor();     // Edges?
+    matJson["lineWidth"]  = displayParams.GetLineWidth();
+    matJson["linePixels"] = (uint32_t) displayParams.GetLinePixels();     // Edges?
+
+    if (nullptr != displayParams.GetGradient())
+        matJson["gradient"] = displayParams.GetGradient()->ToJson();
+
+    TextureCP texture = displayParams.GetTextureMapping().GetTexture();
+    if (nullptr != texture)
+        {
+        if (texture->GetKey().IsValid() && SUCCESS != AddTextureJson(displayParams.GetTextureMapping(), matJson))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Nate.Rex        06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelTileWriter::AddMaterialJson(Render::MaterialCR material)
+    {
+    BeAssert(material.GetKey().IsValid());	// Assume that each persistent material will contain an id
+    Utf8String id = material.GetKey().GetId().ToHexStr();
+
+    if (!m_json.isMember("renderMaterials") || !m_json["renderMaterials"].isMember(id))
+        {
+        Json::Value& materialJson = m_json["renderMaterials"][id];
+
+        // Add texture contained by material.
+        if (material.HasTextureMapping())
+            {
+            Json::Value materialTextureJson;
+            AddTextureJson(material.GetTextureMapping(), materialTextureJson);	// This will cause it to get added to "namedTextures" as well
+            materialJson["textureMapping"] = materialTextureJson;
+            }
+
+        RenderMaterialCPtr matElem = RenderMaterial::Get(m_model.GetDgnDb(), material.GetKey().GetId());
+        RenderingAssetCP asset = matElem.IsValid() ? &matElem->GetRenderingAsset() : nullptr;
+        BeAssert(asset != nullptr);
+        if (asset != nullptr)
+            {
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
+                {
+                RgbFactor rgb = asset->GetColor(RENDER_MATERIAL_Color);
+                materialJson["diffuseColor"][0] = rgb.red;
+                materialJson["diffuseColor"][1] = rgb.green;
+                materialJson["diffuseColor"][2] = rgb.blue;
+                }
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasSpecularColor, false))
+                {
+                RgbFactor rgb = asset->GetColor(RENDER_MATERIAL_SpecularColor);
+                materialJson["specularColor"][0] = rgb.red;
+                materialJson["specularColor"][1] = rgb.green;
+                materialJson["specularColor"][2] = rgb.blue;
+                }
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasFinish, false))
+                {
+                materialJson["specularExponent"] = asset->GetDouble(RENDER_MATERIAL_Finish, Material::Defaults::SpecularExponent());
+                }
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasTransmit, false))
+                materialJson["transparency"] = asset->GetDouble(RENDER_MATERIAL_Transmit, 0.0);
+
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasDiffuse, false))
+                materialJson["diffuse"] = asset->GetDouble(RENDER_MATERIAL_Diffuse, Material::Defaults::Diffuse());
+
+            double specular;
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasSpecular, false))
+                specular = asset->GetDouble(RENDER_MATERIAL_Specular, Material::Defaults::Specular());
+            else
+                specular = 0.0;     // Lack of specular means 0.0 -- not default (painting overspecular in PhotoRealistic Rendering
+            materialJson["specular"] = specular;
+
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasReflect, false))
+                {
+                // Reflectance stored as fraction of specular in V8 material settings.
+                materialJson["reflect"] = specular * asset->GetDouble(RENDER_MATERIAL_Reflect, Material::Defaults::Reflect());
+                }
+
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasReflectColor, false))
+                {
+                RgbFactor rgb = asset->GetColor(RENDER_MATERIAL_ReflectColor);
+                materialJson["reflectColor"][0] = rgb.red;
+                materialJson["reflectColor"][1] = rgb.green;
+                materialJson["reflectColor"][2] = rgb.blue;
+                }
+
+
+            if (asset->GetBool(RENDER_MATERIAL_FlagHasRefract, false))
+                materialJson["refract"] = asset->GetDouble(RENDER_MATERIAL_Refract, RenderingAsset::Default::Refract());
+            materialJson["shadows"] = !(asset->GetBool(RENDER_MATERIAL_FlagNoShadows, false));
+            materialJson["ambient"] = asset->GetDouble(RENDER_MATERIAL_Ambient, RenderingAsset::Default::Ambient());
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                                    Paul.Connelly   01/18
+ +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelTileWriter::AddTextureJson(TextureMappingCR mapping, Json::Value& matJson)
+    {
+    // NB: I am specifically not using the same representation we use for textures in Cesium tiles because
+    // it includes much extra data and indirection which we don't need; and doesn't include some of
+    // the mapping params we need.
+    BeAssert(mapping.IsValid());
+    TextureCR texture = *mapping.GetTexture();
+
+    // Identifier will be name for named textures, and hex id string for persistent textures (if we are supposed to embed persistents)
+    Utf8String name = "";
+    if (texture.GetKey().IsNamed())
+        {
+        name = texture.GetKey().GetName();
+        }
+    else
+        {
+        name = texture.GetKey().GetId().ToHexStr();
+        }
+
+    if (!m_json.isMember("namedTextures") || !m_json["namedTextures"].isMember(name))
+        {
+        ImageSource img = texture.GetImageSource();
+        if (!img.IsValid())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        AddBufferView(name.c_str(), img.GetByteStream());
+
+        Json::Value& json = m_json["namedTextures"][name];
+        json["format"] = static_cast<uint32_t>(img.GetFormat());
+        json["bufferView"] = name;
+        json["isGlyph"] = texture.IsGlyph();
+
+        auto dimensions = texture.GetDimensions();
+        json["width"] = dimensions.width;
+        json["height"] = dimensions.height;
+        }
+
+    auto const& params = mapping.GetParams();
+    Json::Value& paramsJson = matJson["texture"]["params"];
+    paramsJson["mode"] = static_cast<uint32_t>(params.m_mapMode);
+    paramsJson["weight"] = params.m_textureWeight;
+    paramsJson["worldMapping"] = params.m_worldMapping;
+    for (uint32_t i = 0; i < 2; i++)
+        for (uint32_t j = 0; j < 3; j++)
+            paramsJson["transform"][i][j] = params.m_textureMat2x3.m_val[i][j];
+
+    matJson["texture"]["name"] = name;
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void IModelTileWriter::WriteFeatureTable(FeatureTableCR featureTable)
+    {
+    uint32_t      startPosition = m_buffer.GetSize();
+    m_buffer.Append((uint32_t) 0);              // Filled in below.
+
+    m_buffer.Append(featureTable.GetMaxFeatures());
+    m_buffer.Append((uint32_t) featureTable.size());
+    for (auto& feature : featureTable)
+        {
+        m_buffer.Append(feature.first.GetElementId().GetValue());
+        m_buffer.Append(feature.first.GetSubCategoryId().GetValue());
+        m_buffer.Append(static_cast<uint32_t> (feature.first.GetClass()));
+        m_buffer.Append(feature.second);
+        }
+    WriteLength(startPosition, startPosition);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+IModelTile::WriteStatus IModelTileWriter::WriteTile(Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry)
+    {
+    uint32_t startPosition = m_buffer.GetSize();
+    m_buffer.Append(Format::IModel);
+    m_buffer.Append(IModelTile::Version);
+    m_buffer.Append(static_cast<uint32_t>(metadata.m_flags));
+    m_buffer.Append(metadata.m_contentRange);
+    m_buffer.Append(metadata.m_tolerance);
+    m_buffer.Append(metadata.m_numElementsIncluded);
+    m_buffer.Append(metadata.m_numElementsExcluded);
+
+    // Length will be filled in afterward
+    uint32_t lengthDataPosition = m_buffer.GetSize();
+    m_buffer.Append((uint32_t) 0);
+
+    WriteFeatureTable(geometry.Meshes().FeatureTable());
+    PadToBoundary();
+
+    if (IsCanceled())
+        return IModelTile::WriteStatus::Aborted;
+
+    AddMeshes(geometry);
+
+    if (IsCanceled())
+        return IModelTile::WriteStatus::Aborted;
+
+    if (SUCCESS != WriteGltf())
+        return IModelTile::WriteStatus::Error;
+
+    PadToBoundary();
+    WriteLength(startPosition, lengthDataPosition);
+
+    return IModelTile::WriteStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
 IModelTile::WriteStatus Tile::IO::WriteIModelTile(StreamBufferR streamBuffer, Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry, Tile::LoaderCR loader)
     {
-    return IModelTile::WriteStatus::Error; // ###TODO...
+    IModelTileWriter writer(streamBuffer, loader);
+    return writer.WriteTile(metadata, geometry);
     }
 

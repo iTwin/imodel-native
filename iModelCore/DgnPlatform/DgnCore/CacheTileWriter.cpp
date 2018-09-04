@@ -351,7 +351,7 @@ void WriteFeatureTable(FeatureTableCR featureTable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
+BentleyStatus AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
     { 
     Utf8String          idStr(std::to_string(index++).c_str());
     Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
