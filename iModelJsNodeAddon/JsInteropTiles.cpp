@@ -281,7 +281,7 @@ struct JsSystem : Render::System
         return ResourceCache::Get(db).GetGradient(grad);
         }
 
-    uint32_t _GetMaxFeaturesPerBatch() const override { return 2048; }
+    uint32_t _GetMaxFeaturesPerBatch() const override { return 2048*1024; }
     Render::GraphicPtr _CreateTriMesh(Render::TriMeshArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateIndexedPolylines(Render::IndexedPolylineArgsCR args, Dgn::DgnDbR db) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateGraphicList(bvector<Render::GraphicPtr>&& graphics, Dgn::DgnDbR db) const override RETURN_GRAPHIC
