@@ -38,28 +38,21 @@ static pthread_key_t    s_destructorKey;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SecureStore::SecureStore(ILocalState& customLocalState) :
-m_localState (customLocalState)
-    {
-    }
+SecureStore::SecureStore(ILocalState& localState) :
+m_localState (localState)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-SecureStore::~SecureStore()
-    {
-    }
+SecureStore::~SecureStore() {}
 
-#if !defined(ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE_IOS)
+#if !defined(ANDROID)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SecureStore::Initialize(void* arg)
-    {
-    }
+void SecureStore::Initialize(void* arg) {}
 #endif
-
-#if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 
 #if defined(ANDROID)
 //---------------------------------------------------------------------------------------
@@ -198,10 +191,8 @@ void SecureStore::SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8CP value)
         return;
         }
 
-#if defined(ANDROID) || defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     Utf8String encrypted = Encrypt(value);
     m_localState.SaveValue(LOCAL_STATE_NAMESPACE, identifier.c_str(), encrypted);
-#endif
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -215,13 +206,8 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
         return nullptr;
         }
 
-#if defined(ANDROID) || defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     Utf8String encrypted = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ());
     return Decrypt(encrypted.c_str());
-#else
-    BeAssert("Platform not supported!");
-    return nullptr;
-#endif
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -240,6 +226,8 @@ Utf8String SecureStore::CreateIdentifier (Utf8CP nameSpace, Utf8CP key)
         }
     return Utf8PrintfString ("%s:%s", nameSpace, key);
     }
+
+#if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2016

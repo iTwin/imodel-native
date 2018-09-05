@@ -12,48 +12,61 @@
 
 USING_NAMESPACE_BENTLEY_SECURITY
 
-#define KEY_NAMESPACE   "Keys"
-#define KEY_ALIAS       "MobileDgnSecureStore"
-
-static NSString* g_accessGroupPrefix = nil;
+#define KEY_NAMESPACE   "com.bentley.SecureStore"
+#define KEY_ALIAS       "Key"
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
+* @bsimethod                                                    Vincas.Razma    09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SecureStore::Initialize (void* prefix)
+NSString* GetBundleSeedId()
     {
-    g_accessGroupPrefix = [NSString stringWithUTF8String:(const char*)prefix];
+    // There is no easy way to get this value, so workaround is to pick first (or defalt) keychain access
+    // group and parse it to extract first member - "<bundleSeedId>.<accessGroup>"
+
+    NSDictionary *query = [NSDictionary dictionaryWithObjectsAndKeys:
+                           (__bridge NSString *)kSecClassGenericPassword, (__bridge NSString *)kSecClass,
+                           @"bundleSeedID", kSecAttrAccount,
+                           @"", kSecAttrService,
+                           (id)kCFBooleanTrue, kSecReturnAttributes,
+                           nil];
+
+    CFDictionaryRef result = nil;
+    OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&result);
+    if (status == errSecItemNotFound)
+        status = SecItemAdd((__bridge CFDictionaryRef)query, (CFTypeRef *)&result);
+
+    if (status != errSecSuccess)
+        return nil;
+
+    NSString *accessGroup = [(__bridge NSDictionary *)result objectForKey:(__bridge NSString *)kSecAttrAccessGroup];
+    NSArray *components = [accessGroup componentsSeparatedByString:@"."];
+    NSString *bundleSeedID = [[components objectEnumerator] nextObject];
+    CFRelease(result);
+    return bundleSeedID;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
+* @bsimethod                                                    Vincas.Razma    09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NSString* CreateAccessGroup (Utf8CP postfix)
+BEKeychainItem* CreateKeychainItem (Utf8CP nameSpace, Utf8CP key)
     {
-    if (nil == g_accessGroupPrefix)
-         {
-         BeAssert (false && "Keychain access group prefix not initialized for iOS - call SecureStore::Initialize()");
-         // Return invalid access group
-         return @"";
-         }
+    id identifier = [NSString stringWithFormat:@"%s.%s", nameSpace, key];
 
-    return [g_accessGroupPrefix stringByAppendingString:[NSString stringWithUTF8String:postfix]];
-    }
+    // Using AppId [$(teamID).com.example.AppOne] to use private Keychain. Using nil would pick up first accessGroup that could be shared.
+    // https://developer.apple.com/documentation/security/keychain_services/keychain_items/sharing_access_to_keychain_items_among_a_collection_of_apps?language=objc
+    // https://developer.apple.com/documentation/security/ksecattraccessgroup?language=objc
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-BEKeychainItem* CreateKeychainItem (Utf8CP accessGroupPostfix, Utf8CP identifier)
-    {
-    return [[BEKeychainItem alloc]
-                initWithIdentifier:[NSString stringWithUTF8String:identifier]
-                accessGroup:CreateAccessGroup (accessGroupPostfix)];
+	id teamId = GetBundleSeedId();
+	id bundleId = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
+	id appId = [NSString stringWithFormat: @"%@.%@", teamId, bundleId];
+
+    return [[BEKeychainItem alloc] initWithIdentifier:identifier accessGroup:appId];
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SecureStore::SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value)
+void SaveValueInternal(Utf8CP nameSpace, Utf8CP key, Utf8CP value)
     {
     if (Utf8String::IsNullOrEmpty (nameSpace) ||
         Utf8String::IsNullOrEmpty (key))
@@ -75,7 +88,7 @@ void SecureStore::SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
+Utf8String LoadValueInternal(Utf8CP nameSpace, Utf8CP key)
     {
     if (Utf8String::IsNullOrEmpty (nameSpace) ||
         Utf8String::IsNullOrEmpty (key))
@@ -90,9 +103,9 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String GetKeyBytesStr(ISecureStore& store, bool createNewIfNeeded)
+Utf8String GetKeyBytesStr(bool createNewIfNeeded)
     {
-    Utf8String keyStr = store.LoadValue(KEY_NAMESPACE, KEY_ALIAS);
+    Utf8String keyStr = LoadValueInternal(KEY_NAMESPACE, KEY_ALIAS);
 
     if (keyStr.empty() && createNewIfNeeded)
         {
@@ -105,8 +118,8 @@ Utf8String GetKeyBytesStr(ISecureStore& store, bool createNewIfNeeded)
 
         keyStr = Base64Utilities::Encode((Utf8CP) keyBytes, (size_t) kCCKeySizeAES128);
 
-        store.SaveValue (KEY_NAMESPACE, KEY_ALIAS, keyStr.c_str());
-        keyStr = store.LoadValue(KEY_NAMESPACE, KEY_ALIAS);
+        SaveValueInternal(KEY_NAMESPACE, KEY_ALIAS, keyStr.c_str());
+        keyStr = LoadValueInternal(KEY_NAMESPACE, KEY_ALIAS);
         }
 
     if (keyStr.empty())
@@ -129,7 +142,7 @@ Utf8String SecureStore::Encrypt(Utf8CP valueStr)
         valueStr = empty;
         }
 
-    Utf8String keyStr = GetKeyBytesStr(*this, true);
+    Utf8String keyStr = GetKeyBytesStr(true);
     if (keyStr.empty())
         {
         BeAssert(false);
@@ -179,7 +192,7 @@ Utf8String SecureStore::Decrypt(Utf8CP valueStr)
     if (Utf8String::IsNullOrEmpty(valueStr))
         return nullptr;
 
-    Utf8String keyStr = GetKeyBytesStr(*this, false);
+    Utf8String keyStr = GetKeyBytesStr(false);
     if (keyStr.empty())
         return nullptr;
 

@@ -14,11 +14,6 @@ USING_NAMESPACE_BENTLEY_SECURITY
 
 void SecureStoreTests::SetUpTestCase()
     {
-#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-    // TODO: sign test project to use predefined keychain access group
-    SecureStore::Initialize((void*)"Test");
-#endif
-
 #if defined(ANDROID)
     SecureStore::Initialize(BeTest::GetHost().InvokeP("getEnv"));
 #endif
