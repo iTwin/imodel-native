@@ -156,7 +156,7 @@ struct Content : RefCountedBase
     //=======================================================================================
     struct Metadata
     {
-        ElementAlignedBox3d m_contentRange = ElementAlignedBox3d(DRange3d::NullRange()); // A sub-range of the tile's range tightly enclosing its geometry.
+        ElementAlignedBox3d m_contentRange; // A sub-range of the tile's range tightly enclosing its geometry.
         double m_tolerance = 0.0; // Chord tolerance at which geometry was facetted.
         uint32_t m_numElementsIncluded = 0; // Number of elements whose geometry (or a subset thereof) is included in this content.
         uint32_t m_numElementsExcluded = 0; // Number of elements within the tile's range which contributed no geometry to this content.
