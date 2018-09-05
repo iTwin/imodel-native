@@ -10,6 +10,7 @@
 
 #include "DgnPlatform.h"
 #include <DgnPlatform/RealityDataCache.h>
+#include <DgnPlatform/RenderPrimitives.h>
 #include <set>
 
 #define BEGIN_TILE_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace Tile {
@@ -228,8 +229,8 @@ public:
     ContentCP GetContent() const { return m_content.get(); }
     TreeR GetTree() const { return m_tree; }
 
-    virtual CurveVectorPtr Preprocess(CurveVectorR cv) const { return &cv; }
     virtual PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const { return &pf; }
+    virtual bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const { return false; }
     virtual bool SeparatePrimitivesById() const { return false; }
 
     struct PtrComparator
@@ -258,14 +259,18 @@ struct Tree : RefCountedBase, NonCopyableClass
     {
         DgnModelId m_modelId;
         Tree::Type m_type;
+        double m_classifierExpansion;
 
-        Id(DgnModelId modelId, Tree::Type type) : m_modelId(modelId), m_type(type) { }
+        Id(DgnModelId modelId, Tree::Type type, double expansion = 0.0) : m_modelId(modelId), m_type(type), m_classifierExpansion(expansion) { }
 
         bool IsValid() const { return m_modelId.IsValid(); }
         bool IsClassifier() const { return Tree::Type::Classifier == m_type; }
+        double GetClassifierExpansion() const { BeAssert(IsClassifier()); return m_classifierExpansion; }
+        Tree::Type GetType() const { return m_type; }
 
         DGNPLATFORM_EXPORT Utf8String ToString() const;
         DGNPLATFORM_EXPORT static Id FromString(Utf8StringCR idString);
+        DGNPLATFORM_EXPORT Utf8String GetPrefixString() const;
     };
 private:
     friend struct LoaderScope;
@@ -290,7 +295,7 @@ private:
     bool m_is3d;
     bool m_populateRootTile;
 protected:
-    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Type type, bool populateRootTile);
+    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, bool populateRootTile);
 
     DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId);
 public:
@@ -328,7 +333,7 @@ public:
 
     Id GetId() const { return m_id; }
 
-    DGNPLATFORM_EXPORT static TreePtr Create(GeometricModelR model, Render::SystemR system, Type type);
+    DGNPLATFORM_EXPORT static TreePtr Create(GeometricModelR model, Render::SystemR system, Id id);
     DGNPLATFORM_EXPORT static Type TypeFromId(Utf8StringCR treeId);
     DGNPLATFORM_EXPORT static Type ExtractTypeFromid(Utf8StringR treeId);
 };
