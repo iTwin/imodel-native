@@ -1077,7 +1077,7 @@ BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR
     AddVertexTable(primitiveJson, meshParams.m_lutParams, meshParams.m_vertexParams, idStr);
 
     SurfaceParams surface(args);
-    AddVertexIndices(primitiveJson["surface"], surface.m_vertexIndices, idStr);
+    AddVertexIndices(primitiveJson["surface"], surface.m_vertexIndices, idStr + "Surface");
     primitiveJson["surface"]["type"] = static_cast<uint32_t>(meshParams.m_type);
 
     if (args.m_texture.IsValid())
@@ -1104,23 +1104,25 @@ Json::Value IModelTileWriter::CreateMeshEdges(TriMeshArgs::Edges const& edges, T
     if (edges.m_edges.IsValid())
         {
         EdgeParams edgeParams(edges.m_edges);
-        AddVertexIndices(json["segments"], edgeParams.m_vertexIndices, idStr);
-        AddVertexIndices(json["segments"], edgeParams.m_endPointAndQuadIndices, idStr, "endPointAndQuadIndices");
+        auto segIdStr = idStr + "Segments";
+        AddVertexIndices(json["segments"], edgeParams.m_vertexIndices, segIdStr);
+        AddVertexIndices(json["segments"], edgeParams.m_endPointAndQuadIndices, segIdStr, "endPointAndQuadIndices");
         }
 
     if (edges.m_silhouettes.IsValid())
         {
         SilhouetteParams silhouetteParams(edges.m_silhouettes);
-        AddVertexIndices(json["silhouettes"], silhouetteParams.m_vertexIndices, idStr);
-        AddVertexIndices(json["silhouettes"], silhouetteParams.m_endPointAndQuadIndices, idStr, "endPointAndQuadIndices");
-        AddVertexIndices(json["silhouettes"], silhouetteParams.m_normalPairs, idStr, "normalPairs");
+        auto silIdStr = idStr + "Silhouettes";
+        AddVertexIndices(json["silhouettes"], silhouetteParams.m_vertexIndices, silIdStr);
+        AddVertexIndices(json["silhouettes"], silhouetteParams.m_endPointAndQuadIndices, silIdStr, "endPointAndQuadIndices");
+        AddVertexIndices(json["silhouettes"], silhouetteParams.m_normalPairs, silIdStr, "normalPairs");
         }
 
     if (edges.m_polylines.IsValid())
         {
         auto polylineParams = PolylineEdgeParams::Create(meshArgs);
         if (nullptr != polylineParams)
-            AddPolyline(json["polylines"], polylineParams->m_polyline, idStr);
+            AddPolyline(json["polylines"], polylineParams->m_polyline, idStr + "PolylineEdges");
         }
 
     return json;
