@@ -70,7 +70,7 @@ enum class Format : uint32_t
     PointCloud = 'stnp',
     Composite = 'tpmc',
     Dgn = 'Tngd',
-    IModel = 'iMdl',
+    IModel = 'ldMi',
 };
 
 //=======================================================================================

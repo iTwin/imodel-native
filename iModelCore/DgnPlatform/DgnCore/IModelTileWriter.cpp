@@ -164,6 +164,31 @@ struct FeaturesInfo
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct ColorInfo
+{
+    ColorDef    m_uniform;
+    bool        m_isUniform;
+    bool        m_hasAlpha;
+
+    ColorInfo() : m_isUniform(false), m_hasAlpha(false) { }
+
+    explicit ColorInfo(ColorIndex const& colorIndex) : m_isUniform(colorIndex.IsUniform())
+        {
+        if (m_isUniform)
+            {
+            m_uniform = ColorDef(colorIndex.m_uniform);
+            m_hasAlpha = 0 != m_uniform.GetAlpha();
+            }
+        else
+            {
+            m_hasAlpha = colorIndex.m_nonUniform.m_hasAlpha;
+            }
+        }
+};
+
+//=======================================================================================
 //! Holds vertex data (position, color index, normal, UV params, etc) in a texture.
 //! Color table is appended to the end of this data.
 // @bsistruct                                                   Paul.Connelly   01/18
@@ -203,10 +228,12 @@ public:
     uint32_t        m_numVertices = 0;
     uint32_t        m_numRgbaPerVertex = 0;
     FeaturesInfo    m_features;
+    ColorInfo       m_colors;
 
     template<typename T_Vertex, typename T_Args, typename T_ExtraData> void Init(T_Args const& args, T_ExtraData const& extraData)
         {
         m_features = FeaturesInfo(args.m_features);
+        m_colors = ColorInfo(args.m_colors);
 
         uint32_t nVerts = args.m_numPoints;
         m_numVertices = nVerts;
@@ -1143,8 +1170,12 @@ void IModelTileWriter::AddVertexTable(Json::Value& primitiveJson, VertexTable co
     primitiveJson["vertices"]["params"] = CreateDecodeQuantizeValues(&range.low.x, &range.high.x, 3);
 
     primitiveJson["vertices"]["featureIndexType"] = static_cast<uint32_t>(table.m_features.m_type);
-    if (FeatureIndex::Type::NonUniform == table.m_features.m_type)
+    if (FeatureIndex::Type::Uniform == table.m_features.m_type)
         primitiveJson["vertices"]["featureID"] = table.m_features.m_uniform;
+
+    primitiveJson["vertices"]["hasTranslucency"] = table.m_colors.m_hasAlpha;
+    if (table.m_colors.m_isUniform)
+        primitiveJson["vertices"]["uniformColor"] = table.m_colors.m_uniform.GetValue();
 
     primitiveJson["vertices"]["count"] = table.m_numVertices;
     primitiveJson["vertices"]["width"] = table.m_dimensions.GetWidth();
