@@ -298,7 +298,8 @@ JsSystem s_system;
 //=======================================================================================
 struct TileTreeAppData : DgnModel::AppData
 {
-    bmap<Utf8String, Tile::TreePtr>    m_trees;
+    bmap<Utf8String, Tile::TreePtr>     m_trees;
+    mutable BeMutex                     m_mutex;
 
     void _OnUnload(DgnModelR model) override
         {
@@ -317,11 +318,14 @@ struct TileTreeAppData : DgnModel::AppData
         }
 
     static Tile::TreeP FindTileTree(GeometricModelR model, Tile::Tree::Id const& id)
-        {
+        {  
+
         static Key  s_key;
         auto appData = (TileTreeAppData*) model.FindOrAddAppData(s_key, [&]() { return new TileTreeAppData(); }).get();
         Utf8String  idString = id.GetPrefixString();
     
+        BeMutexHolder lock(appData->m_mutex);
+
         auto found = appData->m_trees.find(idString);
         if (found != appData->m_trees.end())
             return found->second.get();
