@@ -1697,9 +1697,16 @@ bool ClassificationLoader::Preprocess(Render::Primitives::PolyfaceList& polyface
 GeometryLoader::GeometryLoader(LoaderCR loader) : m_loader(loader)
     {
     m_range = loader.GetContentId().ComputeRange(GetTree().GetRange(), Is2d());
-    double diagDist = Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
-    m_tolerance = diagDist / (s_minToleranceRatio * GetSizeMultiplier());
-    BeAssert(0.0 != m_tolerance);
+    if (m_range.IsPoint() || m_range.IsEmpty())
+        {
+        m_tolerance = 0.0;
+        }
+    else
+        {
+        double diagDist = Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
+        m_tolerance = diagDist / (s_minToleranceRatio * GetSizeMultiplier());
+        BeAssert(0.0 != m_tolerance);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1707,6 +1714,9 @@ GeometryLoader::GeometryLoader(LoaderCR loader) : m_loader(loader)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryLoader::GenerateGeometry()
     {
+    if (m_range.IsPoint() || m_range.IsEmpty())
+        return true;
+
     auto model = GetTree().FetchModel();
     if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
         return false;
