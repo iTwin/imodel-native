@@ -220,7 +220,7 @@ Json::Value Writer::CreateDecodeQuantizeValues(double const* min, double const* 
     decodeMatrix.append (1.0);
     quantizeValue["decodeMatrix"] = decodeMatrix;
 
-    for (size_t i=0; i<3; i++)
+    for (size_t i=0; i<nComponents; i++)
         {
         quantizeValue["decodedMin"].append (min[i]);
         quantizeValue["decodedMax"].append (max[i]);

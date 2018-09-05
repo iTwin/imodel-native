@@ -2104,12 +2104,13 @@ struct QPoint2d
 
         DPoint2dCR GetOrigin() const { return origin; }
         DPoint2dCR GetScale() const { return scale; }
-        DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
+        DRange2d GetRange() const { return DRange2d::From(origin, QPoint2d((uint16_t)Quantization::RangeScale(), (uint16_t)Quantization::RangeScale()).Unquantize(*this)); }
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
 
     QPoint2d() { }
+    QPoint2d(uint16_t x_, uint16_t y_) : x(x_), y(y_) { }
     QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
     QPoint2d(FPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
     QPoint2d(FPoint2dCR pt, ParamsCR params) : QPoint2d(ToDPoint(pt), params) { }

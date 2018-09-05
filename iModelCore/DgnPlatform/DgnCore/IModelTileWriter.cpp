@@ -328,8 +328,8 @@ private:
 
     template<typename VertexType> void Init(TriMeshArgsCR args)
         {
-        QPoint2d::Params uvParams = InitUVParams(args);
-        m_lutParams.Init<VertexType>(args, uvParams);
+        m_uvParams = InitUVParams(args);
+        m_lutParams.Init<VertexType>(args, m_uvParams);
         }
 public:
     VertexTable                     m_lutParams;
