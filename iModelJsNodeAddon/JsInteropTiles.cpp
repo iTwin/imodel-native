@@ -298,32 +298,37 @@ JsSystem s_system;
 //=======================================================================================
 struct TileTreeAppData : DgnModel::AppData
 {
-    Tile::TreePtr m_tree;
+    bmap<Utf8String, Tile::TreePtr>    m_trees;
 
     void _OnUnload(DgnModelR model) override
         {
-        if (m_tree.IsValid())
-            m_tree->CancelAllTileLoads();
+        for (auto& tree : m_trees)
+            if (tree.second.IsValid())
+                tree.second->CancelAllTileLoads();
         }
 
     void _OnUnloaded(DgnModelR model) override
         {
-        BeAssert(m_tree.IsNull() || 1 == m_tree->GetRefCount());
-        m_tree = nullptr;
+        for (auto& tree : m_trees)
+            {
+            BeAssert(tree.second.IsNull() || 1 == tree.second->GetRefCount());
+            tree.second = nullptr;
+            }
         }
 
-    explicit TileTreeAppData(GeometricModelR model, Tile::Tree::Type type)
+    static Tile::TreeP FindTileTree(GeometricModelR model, Tile::Tree::Id const& id)
         {
-        m_tree = Tile::Tree::Create(model, s_system, type);
-        BeAssert(m_tree.IsValid());
-        }
+        static Key  s_key;
+        auto appData = (TileTreeAppData*) model.FindOrAddAppData(s_key, [&]() { return new TileTreeAppData(); }).get();
+        Utf8String  idString = id.GetPrefixString();
+    
+        auto found = appData->m_trees.find(idString);
+        if (found != appData->m_trees.end())
+            return found->second.get();
 
-    static Tile::TreePtr FindTileTree(GeometricModelR model, Tile::Tree::Type type)
-        {
-        static Key s_key, s_classifierKey;
-        auto const& key = Tile::Tree::Type::Classifier == type ? s_classifierKey : s_key;
-        auto appData = model.FindOrAddAppData(key, [&]() { return new TileTreeAppData(model, type); });
-        return static_cast<TileTreeAppData&>(*appData).m_tree;
+        auto    tree = Tile::Tree::Create(model, s_system, id);
+        appData->m_trees.Insert(idString, tree); 
+        return tree.get();
         }
 };
 
@@ -340,7 +345,7 @@ static DgnDbStatus findTileTree(Tile::TreeP& tree, Utf8StringCR idStr, DgnDbR db
     if (model.IsNull())
         return DgnDbStatus::MissingId;
 
-    tree = TileTreeAppData::FindTileTree(*model, treeId.m_type).get();
+    tree = TileTreeAppData::FindTileTree(*model, treeId);
     return nullptr != tree ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
