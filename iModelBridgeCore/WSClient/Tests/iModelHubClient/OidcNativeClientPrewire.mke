@@ -15,6 +15,18 @@ $(BuildContext)PublicAPI/OidcNativeClient/OidcNative.h : $(oidcClientNugetDir)in
 
 $(OutputRootDir)Product/iModelHubNativeTests/iModelHubNativeTests.exe.config : $(oidcClientNugetDir)lib/native/OidcClient.dll.config
     $(LinkFirstDepToFirstTarget)
-    
+
+$(BuildContext)Delivery/Gtest/iModelHubNativeTests/Assemblies/iModelHubNativeTests.exe.config : $(oidcClientNugetDir)lib/native/OidcClient.dll.config
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/iModelHubNativeTests.exe.config : $(oidcClientNugetDir)lib/native/OidcClient.dll.config
+    $(LinkFirstDepToFirstTarget)
+
 $(OutputRootDir)Product/iModelHubNativeTests/chromedriver.exe : $(oidcClientNugetDir)Assets/chromedriver.exe
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/Gtest/iModelHubNativeTests/Assemblies/chromedriver.exe : $(oidcClientNugetDir)Assets/chromedriver.exe
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/chromedriver.exe : $(oidcClientNugetDir)Assets/chromedriver.exe
     $(LinkFirstDepToFirstTarget)
