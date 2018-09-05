@@ -29,7 +29,7 @@ USING_NAMESPACE_BENTLEY_SECURITY
 
 #if defined(ANDROID)
 #include <Bentley/BeJStringUtilities.h>
-#define KEY_ALIAS "MobileDgnSecureStore"
+#define KEY_ALIAS "com.bentley.SecureStore.Key"
 jclass                  s_keyStoreCipherJClass = nullptr;
 static JavaVM*          s_jvm;
 static pthread_key_t    s_destructorKey;
