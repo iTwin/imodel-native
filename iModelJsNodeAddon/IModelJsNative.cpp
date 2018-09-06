@@ -1282,6 +1282,13 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)stat);
         }
 
+    Napi::Value ImportFunctionalSchema(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        DbResult result = JsInterop::ImportFunctionalSchema(GetDgnDb());
+        return Napi::Number::New(Env(), (int)result);
+        }
+
     void CloseDgnDb(Napi::CallbackInfo const& info)
         {
         CloseDgnDb();
@@ -1781,6 +1788,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTiles", &NativeDgnDb::GetTiles),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
+            InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),

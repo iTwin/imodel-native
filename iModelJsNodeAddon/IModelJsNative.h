@@ -52,6 +52,7 @@ private:
 
     static RevisionStatus ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken);
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
+    static void RegisterOptionalDomains();
 
 public:
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
@@ -85,6 +86,7 @@ public:
     static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
     static BeSQLite::DbResult ImportSchema(BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
     static BeSQLite::DbResult ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname);
+    static BeSQLite::DbResult ImportFunctionalSchema(DgnDbR);
     static Utf8StringCR GetLastECDbIssue();
 
     static RevisionStatus ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);

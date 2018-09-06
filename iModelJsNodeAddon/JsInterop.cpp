@@ -9,6 +9,7 @@
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
+#include <DgnPlatform/FunctionalDomain.h>
 
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
@@ -182,8 +183,17 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env, BeFileNameC
     std::call_once(s_initFlag, []() 
         {
         DgnPlatformLib::Initialize(*new DgnPlatformHost, true);
+        RegisterOptionalDomains();
         InitLogging();
         });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                09/18
+//---------------------------------------------------------------------------------------
+void JsInterop::RegisterOptionalDomains()
+    {
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     }
 
 //---------------------------------------------------------------------------------------
@@ -692,6 +702,14 @@ DbResult JsInterop::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
         return DgnDb::SchemaStatusToDbResult(status, true);
 
     return dgndb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                09/18
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::ImportFunctionalSchema(DgnDbR db)
+    {
+    return SchemaStatus::Success == FunctionalDomain::GetDomain().ImportSchema(db) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //---------------------------------------------------------------------------------------
