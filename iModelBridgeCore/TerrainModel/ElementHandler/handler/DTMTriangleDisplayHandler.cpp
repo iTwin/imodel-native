@@ -2,16 +2,16 @@
 |
 |     $Source: ElementHandler/handler/DTMTriangleDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
 
 #include <ScalableTerrainModel/MrDTMUtilityFunctions.h>
 #include "MrDTMDataRef.h"
-#include <TerrainModel\ElementHandler\IMrDTMProgressiveDisplay.h>
-#include <TerrainModel\ElementHandler\IMultiResolutionGridMaterialManager.h>
-#include <TerrainModel\Core\DTMIterators.h>
+#include <TerrainModel/ElementHandler/IMrDTMProgressiveDisplay.h>
+#include <TerrainModel/ElementHandler/IMultiResolutionGridMaterialManager.h>
+#include <TerrainModel/Core/DTMIterators.h>
 
 USING_NAMESPACE_RASTER
 

@@ -2,18 +2,19 @@
 |
 |     $Source: Formats/bcdtmMX.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/TerrainModel.h"
 #include "TerrainModel/Formats/Formats.h"
 #include "TerrainModel/Core/bcDTMBaseDef.h"
 #include "TerrainModel/Core/dtmdefs.h"
-#include "TerrainModel/Core/dtmevars.h"
+#include "TerrainModel/Core/DTMEvars.h"
 #include <TerrainModel/Core/bcdtmInlines.h> 
 #include "mxtriangle.h"
 #include "TerrainModel/Formats/MX.h"
 #include <stack>
+#include <TerrainModel/Core/PartitionArray.h>
 
 #define MARKER_EXTERNAL 8
 #define MARKER_EXTERNAL_HULL 16

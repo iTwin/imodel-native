@@ -2,13 +2,13 @@
 |
 |     $Source: FormatsNET/ImagePP.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
-#include <TerrainModel\Formats\ImagePP.h>
+#include <TerrainModel/Formats/ImagePP.h>
 
 BEGIN_BENTLEY_TERRAINMODELNET_FORMATS_NAMESPACE
 

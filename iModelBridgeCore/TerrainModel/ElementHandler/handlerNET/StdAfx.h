@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/StdAfx.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,22 +14,22 @@
 
 #include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
 #define REFERENCE_FILE_CLASS
-#include <DgnPlatform\DgnPlatformAPI.h>
-#include <DgnView\IViewManager.h>
+#include <DgnPlatform/DgnPlatformAPI.h>
+#include <DgnView/IViewManager.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 using namespace std;
 
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
-#include <DgnPlatform\TerrainModel\TMPersistentAppIDs.h>
-#include <DgnPlatform\TerrainModel\TMReferenceXAttributeHandler.h>
-#include <TerrainModel\ElementHandler\DTMElementHandlerManager.h>
-#include <DgnPlatform\TerrainModel\TMSymbologyOverrideManager.h>
-#include <TerrainModel\ElementHandler\TMElementDisplayHandler.h>
-#include <TerrainModel\Core\bcDTMClass.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
+#include <DgnPlatform/TerrainModel/TMPersistentAppIDs.h>
+#include <DgnPlatform/TerrainModel/TMReferenceXAttributeHandler.h>
+#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
+#include <DgnPlatform/TerrainModel/TMSymbologyOverrideManager.h>
+#include <TerrainModel/ElementHandler/TMElementDisplayHandler.h>
+#include <TerrainModel/Core/bcDTMClass.h>
 
 #pragma managed
 
@@ -39,7 +39,7 @@ using namespace std;
 #using <Bentley.TerrainModelNET.dll>
 #using <Bentley.DgnPlatformNET.dll>  as_friend
 
-#include <msclr\gcroot.h>
+#include <msclr/gcroot.h>
 #include <vcclr.h>
 
 using namespace Bentley::Exceptions;

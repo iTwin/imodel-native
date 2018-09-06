@@ -2,12 +2,12 @@
 |
 |     $Source: Formats/LandXMLExporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
 #include <BeXml/BeXml.h>
-#include <Bentley\DateTime.h>
+#include <Bentley/DateTime.h>
 #include <list>
 
 /*__PUBLISH_SECTION_START__*/

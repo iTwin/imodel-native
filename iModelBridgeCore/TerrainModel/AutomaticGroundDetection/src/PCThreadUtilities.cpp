@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 #include "PCThreadUtilities.h"
-#include "Bentley\BeTimeUtilities.h"
+#include "Bentley/BeTimeUtilities.h"
 
 //USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY

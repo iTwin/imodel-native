@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmStockPile.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 #include "bcdtmSideSlope.h"
 
@@ -151,7 +151,6 @@ BENTLEYDTM_Private int bcdtmStockPile_createPointStockPileToGroundSurfaceDtmObje
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID  ; 
  bvector<DPoint3d> slopeToePoints ;
  bvector<DPoint3d>::iterator stp ;
- bool angleIncNotFound=true ;
 
 // Log Entry Arguments
 

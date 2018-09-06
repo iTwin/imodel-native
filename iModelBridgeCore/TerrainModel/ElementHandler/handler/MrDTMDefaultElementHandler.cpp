@@ -2,14 +2,14 @@
 |
 |     $Source: ElementHandler/handler/MrDTMDefaultElementHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h" 
 
-#include <TerrainModel\ElementHandler\DTMDataRef.h>
+#include <TerrainModel/ElementHandler/DTMDataRef.h>
 #include "MrDTMDataRef.h"
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 

@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmLos.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 #include <stdlib.h>
 //#pragma optimize( "p", on )
@@ -665,7 +665,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmFile
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Dtm File      = %s",dtmFileP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"Eye x         = %10.4lf",Xe) ;
     bcdtmWrite_message(0,0,0,"Eye y         = %10.4lf",Ye) ;
     bcdtmWrite_message(0,0,0,"Eye z         = %10.4lf",Ze) ;
@@ -749,7 +749,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmObject
     bcdtmWrite_message(0,0,0,"X2            = %10.4lf",X2) ;
     bcdtmWrite_message(0,0,0,"Y2            = %10.4lf",Y2) ;
     bcdtmWrite_message(0,0,0,"Z2            = %10.4lf",Z2) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP         = %p",userP) ;
    }
 /*
@@ -922,7 +922,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
     bcdtmWrite_message(0,0,0,"Eye x         = %10.4lf",Xe) ;
     bcdtmWrite_message(0,0,0,"Eye y         = %10.4lf",Ye) ;
     bcdtmWrite_message(0,0,0,"Eye z         = %10.4lf",Ze) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP         = %p",userP) ;
    }
 /*
@@ -1108,7 +1108,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
     bcdtmWrite_message(0,0,0,"Eye x         = %10.4lf",Xe) ;
     bcdtmWrite_message(0,0,0,"Eye y         = %10.4lf",Ye) ;
     bcdtmWrite_message(0,0,0,"Eye z         = %10.4lf",Ze) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP         = %p",userP) ;
    }
 /*
@@ -1375,7 +1375,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
     bcdtmWrite_message(0,0,0,"viewShedOption   = %8ld",viewShedOption) ;
     bcdtmWrite_message(0,0,0,"numberRadials    = %8ld",numberRadials) ;
     bcdtmWrite_message(0,0,0,"radialIncrement  = %10.4lf",radialIncrement) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP            = %p",userP) ;
    }
 /*
@@ -1605,7 +1605,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmFile
    {
     bcdtmWrite_message(0,0,0,"Determining Region View Sheds From DTM File") ;
     bcdtmWrite_message(0,0,0,"Dtm File      = %s",dtmFileP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"Eye x         = %10.4lf",Xe) ;
     bcdtmWrite_message(0,0,0,"Eye y         = %10.4lf",Ye) ;
     bcdtmWrite_message(0,0,0,"Eye z         = %10.4lf",Ze) ;
@@ -1661,7 +1661,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmObject
    {
     bcdtmWrite_message(0,0,0,"Determining Region View Sheds From DTM Object") ;
     bcdtmWrite_message(0,0,0,"Dtm Object       = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"Eye x            = %10.4lf",Xe) ;
     bcdtmWrite_message(0,0,0,"Eye y            = %10.4lf",Ye) ;
     bcdtmWrite_message(0,0,0,"Eye z            = %10.4lf",Ze) ;

@@ -2,13 +2,13 @@
 |
 |     $Source: Drainage/bcdtmDrainageTables.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <algorithm>
 #include <stack>
-#include <TerrainModel\Core\DTMIterators.h>
+#include <TerrainModel/Core/DTMIterators.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -646,8 +646,8 @@ class DTMDrainageTracePoints : bvector<DTM_STREAM_TRACE_POINTS>
 
         int  StoreTracePoint(double X, double Y, double Z, int point1, int point2)
             {
-            if (CheckForPriorExitPoint(point1, point2))
-                X = X;
+            //if (CheckForPriorExitPoint(point1, point2))
+            //    X = X;
             // Check Memory
             DTM_STREAM_TRACE_POINTS newPoint;
             newPoint.x = X;
@@ -801,7 +801,7 @@ class DTMTriangleIndex
     DtmTriangleIndex::iterator FirstTriangle(void) ;
     DtmTriangleIndex::iterator LastTriangle(void) ;
     BC_DTM_OBJ* TriangleIndexedDtm(void) ;
-    bool CheckForChangedDtm(int numPoints, int numLines, int numTriangles,int numFeatures,__time32_t modifiedTime) ;
+    bool CheckForChangedDtm(int numPoints, int numLines, int numTriangles,int numFeatures,time_t modifiedTime) ;
     
     private:
     
@@ -812,7 +812,7 @@ class DTMTriangleIndex
     int                m_numLines ;
     int                m_numTriangles ;
     int                m_numFeatures ;
-    __time32_t         m_modifiedTime ;
+    time_t         m_modifiedTime ;
     DtmTriangleIndex   m_triangleIndex;
     
 //  Private Methods
@@ -987,13 +987,13 @@ class DTMDrainageTables
     {
     } 
  
-    bool DTMDrainageTables::CheckForDtmChange
+    bool CheckForDtmChange
     (
      int numPoints,                 // ==> Number Of DTM Points
      int numLines,                  // ==> Number Of DTM Lines
      int numTriangles,              // ==> Number Of DTM Triangles
      int numFeatures,               // ==> Number Of DTM Features 
-     __time32_t modifiedTime        // ==> Modified Time
+     time_t modifiedTime        // ==> Modified Time
      ) ;
      
     int GetTriangleHydrologyParameters
@@ -1104,7 +1104,7 @@ class DTMDrainageTables
     int                   m_numLines ;
     int                   m_numTriangles ;
     int                   m_numFeatures ;
-    __time32_t            m_modifiedTime ;
+    time_t            m_modifiedTime ;
     DTMTriangleIndex      m_drainageTriangleIndex ;
     DTMHydrologyTable     m_drainageHydrologyTable ;
     DTMLowPointPondTable  m_drainageLowPointPondTable ;

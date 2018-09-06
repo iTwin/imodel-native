@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmDrape.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 /*
 ** macros, globals & functions used by bcdtmDrape_getCoordiantesFromLength
@@ -298,9 +298,11 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 ** Process Each String Section
 */
  lineNum = 0 ;
+ volatile long lineL = lineNum;
  for( p3dP = stringPtsP + 1 ; p3dP < stringPtsP + numStringPts ; ++p3dP )
    {
     ++lineNum ;
+	lineL = lineNum;
     xls = (p3dP-1)->x ; yls = (p3dP-1)->y ;
     xle =  p3dP->x    ; yle = p3dP->y     ;
 /*
@@ -1120,6 +1122,7 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
 /*
 ** Initialise
 */
+ size_t numDrapePts = 0;
  if (drapeType == 0) newDrapeType = DTMDrapedLineCode::External;
  else if (drapeType == 1) newDrapeType = DTMDrapedLineCode::OnPoint;
  else if (drapeType == 2) newDrapeType = DTMDrapedLineCode::Edge;
@@ -1212,15 +1215,14 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
 /*
 ** Store Drape Point
 */
- size_t numDrapePts = drapePts.size();
+ numDrapePts = drapePts.size();
  drapePts.resize(numDrapePts + 1);
- auto& drapePt = drapePts[numDrapePts];
- drapePt.drapeLine = lineNum ;
- drapePt.drapeType = newDrapeType ;
- drapePt.drapePt.x = x   ;
- drapePt.drapePt.y = y   ;
- drapePt.drapePt.z = z   ;
- drapePt.drapeFeatures.swap(drapeFeatures) ;
+ drapePts[numDrapePts].drapeLine = lineNum ;
+ drapePts[numDrapePts].drapeType = newDrapeType ;
+ drapePts[numDrapePts].drapePt.x = x   ;
+ drapePts[numDrapePts].drapePt.y = y   ;
+ drapePts[numDrapePts].drapePt.z = z   ;
+ drapePts[numDrapePts].drapeFeatures.swap(drapeFeatures) ;
 /*
 ** Clean Up
 */

@@ -11,7 +11,7 @@
 #include "TerrainModel/Core/dtm2dfns.h"
 #include "TerrainModel/Formats/LidarImporter.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
-#include <GeoCoord\IGeoTiffKeysList.h>
+#include <GeoCoord/IGeoTiffKeysList.h>
 #include <Bentley/BeFile.h>
 
 #define LAS_POINT_DATA_RECORD_FORMAT0 20

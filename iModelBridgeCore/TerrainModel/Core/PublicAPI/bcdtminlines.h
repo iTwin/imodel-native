@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcdtminlines.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -27,7 +27,7 @@
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-__forceinline  BC_DTM_FEATURE * ftableAddrP(BC_DTM_OBJ *dtmP,long feature )
+inline  BC_DTM_FEATURE * ftableAddrP(BC_DTM_OBJ *dtmP,long feature )
 {
  return( dtmP->fTablePP[feature >> DTM_PARTITION_SHIFT_FEATURE ] + (feature & (DTM_PARTITION_SIZE_FEATURE - 1)) ) ;
 }
@@ -36,7 +36,7 @@ __forceinline  BC_DTM_FEATURE * ftableAddrP(BC_DTM_OBJ *dtmP,long feature )
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-__forceinline  DPoint3d * pointAddrP(BC_DTM_OBJ *dtmP,long point )
+inline  DPoint3d * pointAddrP(BC_DTM_OBJ *dtmP,long point )
 {
  //    x = (dtmP->pointsP+offset)->x ;     old 
  //    x = pointAddrP(dtmP,offset)->x ;    new
@@ -47,7 +47,7 @@ __forceinline  DPoint3d * pointAddrP(BC_DTM_OBJ *dtmP,long point )
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-__forceinline   DTM_TIN_NODE * nodeAddrP(BC_DTM_OBJ *dtmP,long node )
+inline   DTM_TIN_NODE * nodeAddrP(BC_DTM_OBJ *dtmP,long node )
 {
  return( dtmP->nodesPP[node >> DTM_PARTITION_SHIFT_NODE ] + ( node & (DTM_PARTITION_SIZE_NODE - 1) ) ) ;
 }
@@ -56,7 +56,7 @@ __forceinline   DTM_TIN_NODE * nodeAddrP(BC_DTM_OBJ *dtmP,long node )
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-__forceinline   DTM_CIR_LIST * clistAddrP(BC_DTM_OBJ *dtmP,long clPtr )
+inline   DTM_CIR_LIST * clistAddrP(BC_DTM_OBJ *dtmP,long clPtr )
 {
  return( dtmP->cListPP[clPtr >> DTM_PARTITION_SHIFT_CLIST ] + ( clPtr & (DTM_PARTITION_SIZE_CLIST - 1)) ) ;
 }
@@ -65,17 +65,17 @@ __forceinline   DTM_CIR_LIST * clistAddrP(BC_DTM_OBJ *dtmP,long clPtr )
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-__forceinline  DTM_FEATURE_LIST * flistAddrP(BC_DTM_OBJ *dtmP,long flPtr )
+inline  DTM_FEATURE_LIST * flistAddrP(BC_DTM_OBJ *dtmP,long flPtr )
 {
  return( dtmP->fListPP[flPtr >> DTM_PARTITION_SHIFT_FLIST ] + ( flPtr & (DTM_PARTITION_SIZE_FLIST - 1))) ;
 }
 
-__forceinline long GetNextHullPtr (BC_DTM_OBJ* dtmP, long hullPtr)
+inline long GetNextHullPtr (BC_DTM_OBJ* dtmP, long hullPtr)
     {
     return nodeAddrP (dtmP, hullPtr)->hPtr;
     }
 
-__forceinline long GetPointFeatureListPtr (BC_DTM_OBJ* dtmP, long point)
+inline long GetPointFeatureListPtr (BC_DTM_OBJ* dtmP, long point)
     {
     return nodeAddrP (dtmP, point)->fPtr;
     }

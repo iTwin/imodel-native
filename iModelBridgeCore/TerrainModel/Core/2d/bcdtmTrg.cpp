@@ -2,15 +2,15 @@
 |
 |     $Source: Core/2d/bcdtmTrg.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <TerrainModel\Core\bcDTMBaseDef.h>
-#include <TerrainModel\Core\dtmevars.h>
-#include <TerrainModel\Core\bcdtminlines.h>
-#include <TerrainModel\Core\partitionarray.h>
+#include <TerrainModel/Core/bcDTMBaseDef.h>
+#include <TerrainModel/Core/DTMEvars.h>
+#include <TerrainModel/Core/bcdtminlines.h>
+#include <TerrainModel/Core/PartitionArray.h>
 #include <thread>
-#include <Bentley\BeTimeUtilities.h>
+#include <Bentley/BeTimeUtilities.h>
 
 const int MINIMUM_POINTS_PER_SORT_THREAD = 5000;
 
@@ -24,12 +24,18 @@ BENTLEYDTM_Public void bcdtmObject_updateLastModifiedTime
  BC_DTM_OBJ *dtmP
 )
 {
-  _time32(&dtmP->modifiedTime);
+#if _WIN32
+    #if _WIN32
+        _time32(&dtmP->modifiedTime);
+    #else     
+        time(&dtmP->modifiedTime);
+    #endif        
   uint64_t now = BeTimeUtilities::GetCurrentTimeAsUnixMillis ();
 #ifdef BUILDTMFORDGNDB
   BeTimeUtilities::ConvertUnixTimeToFiletime (*(_FILETIME*)&dtmP->lastModifiedTime, now / 1000LL);
 #else
   BeTimeUtilities::ConvertUnixMillisToFiletime (*(_FILETIME*)&dtmP->lastModifiedTime, now);
+#endif
 #endif
 }
 /*-------------------------------------------------------------------+
@@ -3208,7 +3214,7 @@ void bcdtmTin_multiThreadSortWorkerDtmObject (DTM_MULTI_THREAD *srtParametersP)
 */
     {
     int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
-    __time32_t startTime;
+    time_t startTime;
 
     /*
     ** Initialise variables
@@ -3220,7 +3226,7 @@ void bcdtmTin_multiThreadSortWorkerDtmObject (DTM_MULTI_THREAD *srtParametersP)
     startTime = bcdtmClock ();
     if (dbg) bcdtmWrite_message (0, 0, 0, "Thread[%2ld] ** Sorting %9ld Dtm Points", srtParametersP->thread, srtParametersP->numPoints);
     if (bcdtmObject_divConqMergeSortDtmObject (srtParametersP->dtmP, srtParametersP->startPoint, srtParametersP->numPoints, srtParametersP->sortOfsP, srtParametersP->tempOfsP)) goto errexit;
-    if (tdbg) bcdtmWrite_message (0, 0, 0, "Thread[%2ld] ** Sorting Time = %8.3lf Seconds", srtParametersP->thread, bcdtmClock_elapsedTime (bcdtmClock (), startTime));
+    if (tdbg) bcdtmWrite_message (0, 0, 0, "Thread[%2ld] ** Sorting Time = %8.3lf Seconds", srtParametersP->thread, bcdtmClock_elapsedTime (bcdtmClock (), (long)startTime));
     /*
     ** Clean Up
     */
@@ -5040,7 +5046,7 @@ BENTLEYDTM_Public int bcdtmObject_processForTriangulationDtmObjectOverload
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- long n,point,dtmFeature,startTime,firstPoint,numDuplicates,numHullpts=0;
+ long n,point,dtmFeature,startTime,firstPoint,numDuplicates;
  DPoint3d  *hullPtsP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP=nullptr ;
  DTMRollbackData* rollBackInfo = dtmP->extended ? dtmP->extended->rollBackInfoP : nullptr;
@@ -5917,10 +5923,10 @@ BENTLEYDTM_Private int bcdtmObject_checkAndFixTopologyStmTrianglesDtmObject
  BC_DTM_OBJ *trgDtmP //  Pointer To Untriangulated DTM Object
  )
     {
-    int ret = DTM_SUCCESS, dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
-    long n, cPtr, pnt, npnt, spnt, antPnt, clkPnt, numUnconnectedTriangles = 0;
+    int ret = DTM_SUCCESS, dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
+    long n, cPtr, pnt, npnt, spnt, antPnt, clkPnt;
     long numTriangles, hullStartPnt, hullNextPnt, numTinHulls, numConnected, numUnconnected;
-    long cNpnt, cSpnt, lcNpnt, mark = -9999, numMarked = 0, totalNumMarked = 0;
+    long cNpnt, cSpnt, lcNpnt, mark = -9999, numMarked = 0;
     long numHullPts, numVoidHullStartPoints = 0, hullStartPoints[100], voidHullStartPoints[100];
  DPoint3d trgPts[4],*hullPtsP=nullptr ;
     DPoint3d *pntP;
@@ -6378,7 +6384,7 @@ BENTLEYDTM_Private int bcdtmObject_fixStmHullKnotPointDtmObject
  long priorHullPoint //  Prior Point On Tin Hull Before Knot Point
  )
     {
-    int ret = DTM_SUCCESS, dbg = 0, cdbg = 0;
+    int ret = DTM_SUCCESS, dbg = 0;
     int sideOf1, sideOf2;
     long ppnt1, npnt1, ppnt2, npnt2;
     double radius1, radius2;
@@ -7232,7 +7238,7 @@ BENTLEYDTM_Private int bcdtmObject_logProblemStmTrianglesDtmObject
  )
     {
     int ret = DTM_SUCCESS, dbg = 0, cdbg = 0;
-    long n, dtmFeature, numTrgPts, stmPoints[4], startTime = bcdtmClock ();
+    long n, dtmFeature, numTrgPts, stmPoints[4];
     long index, mid, bottom, top, clkPnt, numLines, offset;
  unsigned char *linesP=nullptr ;
  DPoint3d *p3dP,*trgPtsP=nullptr  ;
@@ -7795,7 +7801,7 @@ int bcdtmObject_fixTrianglesWhichCrossDtmObject(BC_DTM_OBJ *dtmP, long startPnt,
             long newDtmFeature = dtmP->numFeatures++;
             long sP;
             bcdtmList_copyPointListToTptrListDtmObject(dtmP, newOffsetPoints, 4, &sP);
-            int status = bcdtmInsert_addDtmFeatureToDtmObject(dtmP, newDtmFeatureP, newDtmFeature, newDtmFeatureP->dtmFeatureType, newDtmFeatureP->dtmUserTag, newDtmFeatureP->dtmFeatureId, sP, 1);
+            bcdtmInsert_addDtmFeatureToDtmObject(dtmP, newDtmFeatureP, newDtmFeature, newDtmFeatureP->dtmFeatureType, newDtmFeatureP->dtmUserTag, newDtmFeatureP->dtmFeatureId, sP, 1);
             }
         }
 cleanup:
@@ -7851,7 +7857,7 @@ int bcdtmObject_tryAndSplitTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP, long dtmF
             long newDtmFeature = dtmP->numFeatures++;
             long sP;
             bcdtmList_copyPointListToTptrListDtmObject(dtmP, newOffsetPoints, 4, &sP);
-            int status = bcdtmInsert_addDtmFeatureToDtmObject(dtmP, newDtmFeatureP, newDtmFeature, newDtmFeatureP->dtmFeatureType, newDtmFeatureP->dtmUserTag, newDtmFeatureP->dtmFeatureId, sP, 1);
+            bcdtmInsert_addDtmFeatureToDtmObject(dtmP, newDtmFeatureP, newDtmFeature, newDtmFeatureP->dtmFeatureType, newDtmFeatureP->dtmUserTag, newDtmFeatureP->dtmFeatureId, sP, 1);
             }
         firstPnt = lastPnt;
         }
@@ -7976,8 +7982,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     {
     BC_DTM_OBJ *tempDtmP = nullptr;
     nOfTriangulations++;
-    clock_t timeAtStart = clock();
-    int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0), tdbg = DTM_TIME_VALUE(0);
+//    clock_t timeAtStart = clock();
+    int ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
     long dtmFeature;
     DPoint3dP trgPtsP = nullptr;
     BC_DTM_FEATURE *dtmFeatureP;
@@ -7991,6 +7997,14 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         bcdtmWrite_message (0, 0, 0, "Triangulating STM Triangles");
         bcdtmWrite_message (0, 0, 0, "dtmP  = %p", dtmP);
         }
+
+    long numSwapped = 0;
+    long colinear;
+
+    int method = 0;
+    int numFailedTriangles = 0;
+    double prevMaxSide = 0;
+    long previousNumPoints = 0;
 
     // Check For Valid DTM Object
     if (bcdtmObject_testForValidDtmObject (dtmP)) goto errexit;
@@ -8012,7 +8026,6 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     // Log Number Of Triangles
     if (dbg) bcdtmWrite_message (0, 0, 0, "Number Of STM Triangles = %8ld", dtmP->numFeatures);
 
-    long numSwapped = 0;
     if (cdbg)
         if (bcdtmObject_createDtmObject (&tempDtmP)) goto errexit;
 
@@ -8093,10 +8106,10 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         dtmFeatureP->dtmFeatureType = DTMFeatureType::Breakline;
         }
 
-    long previousNumPoints = dtmP->numPoints;
+    previousNumPoints = dtmP->numPoints;
+    prevMaxSide = dtmP->maxSide;
     // Triangulate DTM
     dtmP->edgeOption = 3;
-    double prevMaxSide = dtmP->maxSide;
     dtmP->maxSide = dtmP->ppTol;
     dtmP->ppTol = 0;
     dtmP->plTol = 0;
@@ -8107,7 +8120,6 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     dtmP->dtmState = DTMState::Tin;
     dtmP->numSortedPoints = dtmP->numPoints;
 
-    long colinear;
     if (bcdtmTin_triangulateDtmObject(dtmP, &colinear)) goto errexit;
     if (colinear == 1)
         {
@@ -8132,9 +8144,6 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
             if (bcdtmObject_tryAndAddTriangleFeatureDtmObject(dtmP, dtmFeature) != DTM_SUCCESS)
                 failedFeatures.push_back(dtmFeature);
         }
-
-    int method = 0;
-    int numFailedTriangles = 0;
     while (!failedFeatures.empty())
         {
         bvector<long> featureList;

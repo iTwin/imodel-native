@@ -2,11 +2,13 @@
 |
 //    $Source: Core/cppwrappers/bcDTMInputClass.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
+#if _WIN32
 #pragma warning(disable: 4018) 
+#endif
 
 //----------------------------------------------------------------------+
 //Include standard library header files                                 |
@@ -28,7 +30,7 @@
 #include "bcMem.h"
 #include "bcDTMImpl.h"
 
-#include <TerrainModel\Core\TMTransformHelper.h>
+#include <TerrainModel/Core/TMTransformHelper.h>
 
 //-------------------------------------------------------------------
 //Include COGO definitions                                          |

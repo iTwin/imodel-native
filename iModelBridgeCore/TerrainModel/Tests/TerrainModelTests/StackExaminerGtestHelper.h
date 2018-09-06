@@ -2,13 +2,13 @@
 |
 |     $Source: Tests/TerrainModelTests/StackExaminerGtestHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <map>
 #include <windows.h>
-#include <gtest\gtest.h>
+#include <gtest/gtest.h>
 #include <string>
 
 /*================================================================================**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MXModelFile.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,7 @@
 class MXTriangle;
 #include <Bentley/bmap.h>
 #include <Bentley/bvector.h>
-#include <Bentley\BeFile.h>
+#include <Bentley/BeFile.h>
 
 #pragma warning( disable: 4275 4251 )
 #ifdef MXMODEL_EXPORTS

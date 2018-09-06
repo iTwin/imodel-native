@@ -2,20 +2,20 @@
 |
 |     $Source: TerrainModelNET/DTMSideSlopeInput.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include <vcclr.h >
 #using <mscorlib.dll>
-#include ".\DTMHelpers.h"
-#include ".\DTMSideSlopeInput.h"
-#include ".\Bentley.Civil.DTM.h"
-#include ".\dtm.h"
-#include ".\dtmexception.h"
-#include "TerrainModel\TerrainModel.h"
-#include "TerrainModel\Core\bcdtmSideSlope.h"
-#include "TerrainModel\Core\TMTransformHelper.h"
+#include "./DTMHelpers.h"
+#include "./DTMSideSlopeInput.h"
+#include "./Bentley.Civil.DTM.h"
+#include "./dtm.h"
+#include "./dtmexception.h"
+#include "TerrainModel/TerrainModel.h"
+#include "TerrainModel/Core/bcdtmSideSlope.h"
+#include "TerrainModel/Core/TMTransformHelper.h"
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE
 

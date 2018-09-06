@@ -2,12 +2,16 @@
 |
 |     $Source: Core/2d/bcdtmGeopakIO.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
+
+#if TERRAINMODEL_LINUX
+#include <errno.h>
+#endif
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  int bcdtmRead_dataFileToDataObject                                |
@@ -909,7 +913,11 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer500DataObject(DTM_DAT_OBJ
 #ifdef _WIN32_WCE
    long     creationTime,modifiedTime,userTime ;
 #else
+#if _WIN32
    __time32_t   creationTime,modifiedTime,userTime ;
+#else
+   time_t   creationTime,modifiedTime,userTime ;
+#endif
 #endif
    double   xMin,yMin,zMin,xMax,yMax,zMax ;
    double   ppTol,plTol ;
@@ -1115,7 +1123,11 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer501DataObject(DTM_DAT_OBJ
 #ifdef _WIN32_WCE
    long     creationTime,modifiedTime,userTime ;
 #else
-   __time32_t   creationTime,modifiedTime,userTime ;
+#if _WIN32 //NOTE: THIS IS STORED 32BIT. When time_t is 64-bit, on non win32 archs, it won't work!
+__time32_t   creationTime,modifiedTime,userTime ;
+#else
+   time_t   creationTime,modifiedTime,userTime ;
+#endif
 #endif
    double   xMin,yMin,zMin,xMax,yMax,zMax ;
    double   ppTol,plTol ;
@@ -1333,6 +1345,8 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long fndp,headerSize,buffer[4] ;
+bool HasUserTagP     = false;
+bool HasGuidP        = false;
 /*
 ** Write Entry Message
 */
@@ -1370,6 +1384,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
     bcdtmWrite_message(1,0,0,"Error Reading Data Object") ;
     goto errexit  ;
    }
+
 /*
 ** Read Pointers
 */
@@ -1381,8 +1396,8 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 /*
 ** Set Pointer Values
 */
- bool HasUserTagP     = buffer[1] != 0;
- bool HasGuidP        = buffer[3] != 0;
+ HasUserTagP     = buffer[1] != 0;
+ HasGuidP        = buffer[3] != 0;
 /*
 ** Write Header Pointer Arrays
 */
@@ -2170,7 +2185,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400TinObject
  headerSize = sizeof(Tinobj);
 #else
  headerSize = offsetof(struct Tinobj,pointsP) + (4 * 4) ;
- #endif ;
+#endif
 
  if( bcdtmStream_fread(&Tinobj,headerSize,1,dtmStreamP) != 1 )
    {
@@ -2435,7 +2450,7 @@ DTM_GUID nullGuid=DTM_NULL_GUID ;
  headerSize = sizeof(struct ver500TinObject) ;
  #ifndef _M_IX86
  headerSize =  offsetof(struct ver500TinObject,SP1) + 40 ;
- #endif ;
+ #endif
 /*
 ** Read Tin Header
 */
@@ -2716,7 +2731,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer501TinObject
  headerSize = sizeof(DTM_TIN_OBJ) ;
  #ifndef _M_IX86
  headerSize = headerSize - 40 ;
- #endif ;
+ #endif
  if( dbg ) bcdtmWrite_message(0,0,0,"Reading Tin Header         ** Header Size = %9ld",headerSize) ;
  if( bcdtmStream_fread(tinP,headerSize,1,dtmStreamP) != 1 )
    {

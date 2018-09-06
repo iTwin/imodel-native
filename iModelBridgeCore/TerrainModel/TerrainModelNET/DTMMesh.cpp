@@ -2,12 +2,12 @@
 |
 |     $Source: TerrainModelNET/DTMMesh.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include < vcclr.h >
-#include ".\dtmmesh.h"
+#include "./dtmmesh.h"
 #using <mscorlib.dll>
 
 using namespace System;

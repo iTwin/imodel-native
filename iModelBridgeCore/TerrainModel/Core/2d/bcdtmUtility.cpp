@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmUtility.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -992,9 +992,9 @@ BENTLEYDTM_Public int bcdtmUtl_copy3DTo3D(DPoint3d *Points3D,long NumPoints,DPoi
 BENTLEYDTM_Public int bcdtmUtl_getDateAndTime(char *dstr, char *tstr)
 {
 #ifndef _WIN32_WCE
- __time32_t ltime ;
- _time32(&ltime) ;
- strcpy(dstr,_ctime32(&ltime)) ;
+ time_t ltime ;
+ time(&ltime) ;
+ strcpy(dstr,ctime(&ltime)) ;
  memcpy(tstr,dstr+11,8) ;
  *(dstr+24) = 0 ;
  *(tstr+8)  = 0 ;

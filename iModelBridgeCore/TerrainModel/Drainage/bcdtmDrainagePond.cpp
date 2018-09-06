@@ -2,11 +2,11 @@
 |
 |     $Source: Drainage/bcdtmDrainagePond.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
-#include <TerrainModel/Core/bcdtmInlines.h>
+#include <TerrainModel/Core/bcdtminlines.h>
 #include <TerrainModel/Core/bcdtmSideSlope.h>
 //#pragma optimize('p', on )
 
@@ -429,7 +429,7 @@ int bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject
         bcdtmWrite_message(0, 0, 0, "dtmPnt1       = %8ld", dtmPnt1);
         bcdtmWrite_message(0, 0, 0, "dtmPnt2       = %8ld", dtmPnt2);
         bcdtmWrite_message(0, 0, 0, "dtmPnt3       = %8ld", dtmPnt3);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "loadFlag      = %8ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "boundaryFlag  = %8ld", boundaryFlag);
         }
@@ -540,7 +540,7 @@ int bcdtmDrainage_extractPondBoundaryDtmObject
         bcdtmWrite_message(0, 0, 0, "pondElevation = %10.4lf", pondElevation);
         bcdtmWrite_message(0, 0, 0, "startPoint    = %10ld ** %12.5lf %12.5lf %10.4lf", startPoint, pointAddrP(dtmP, startPoint)->x, pointAddrP(dtmP, startPoint)->y, pointAddrP(dtmP, startPoint)->z);
         bcdtmWrite_message(0, 0, 0, "nextPoint     = %10ld ** %12.5lf %12.5lf %10.4lf", nextPoint, pointAddrP(dtmP, nextPoint)->x, pointAddrP(dtmP, nextPoint)->y, pointAddrP(dtmP, nextPoint)->z);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP = %p", loadFunctionP);
+   //     bcdtmWrite_message(0, 0, 0, "loadFunctionP = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "loadFlag      = %8ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "boundaryFlag  = %8ld", boundaryFlag);
         bcdtmWrite_message(0, 0, 0, "userP         = %p", userP);
@@ -1285,7 +1285,7 @@ int  bcdtmDrainage_determinePondsDtmObject
         bcdtmWrite_message(0, 0, 0, "Determining Ponds");
         bcdtmWrite_message(0, 0, 0, "dtmP            = %p", dtmP);
         bcdtmWrite_message(0, 0, 0, "drainageTablesP = %p", drainageTablesP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP   = %p", loadFunctionP);
+     //   bcdtmWrite_message(0, 0, 0, "loadFunctionP   = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "loadFlag        = %2ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "buildTable      = %2ld", buildTable);
         bcdtmWrite_message(0, 0, 0, "userP           = %p", userP);
@@ -1462,7 +1462,7 @@ int bcdtmDrainage_determineLowPointPondsDtmObject
         bcdtmWrite_message(0, 0, 0, "drainageTablesP       = %p", drainageTablesP);
         bcdtmWrite_message(0, 0, 0, "zeroSlopePolygonsP    = %p", zeroSlopePolygonsP);
         bcdtmWrite_message(0, 0, 0, "zeroSlopePointsIndexP = %p", zeroSlopePointsIndexP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP         = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP         = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "loadFlag              = %8ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "buildTable            = %8ld", buildTable);
         bcdtmWrite_message(0, 0, 0, "userP                 = %p", userP);
@@ -1585,7 +1585,7 @@ int bcdtmDrainage_determinePondAboutLowPointDtmObject
         bcdtmWrite_message(0, 0, 0, "drainageTablesP       = %p", drainageTablesP);
         bcdtmWrite_message(0, 0, 0, "zeroSlopePolygonsP    = %p", zeroSlopePolygonsP);
         bcdtmWrite_message(0, 0, 0, "zeroSlopePointsIndexP = %p", zeroSlopePointsIndexP);
-        bcdtmWrite_message(0, 0, 0, "LoadFunctionP         = %p", loadFunctionP);
+     //   bcdtmWrite_message(0, 0, 0, "LoadFunctionP         = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "Low Point             = %8ld ** %10.4lf %10.4lf %10.4lf", lowPoint, pointAddrP(dtmP, lowPoint)->x, pointAddrP(dtmP, lowPoint)->y, pointAddrP(dtmP, lowPoint)->z);
         bcdtmWrite_message(0, 0, 0, "loadFlag              = %8ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "boundaryFlag          = %8ld", boundaryFlag);
@@ -2090,7 +2090,7 @@ int bcdtmDrainage_determineZeroSlopeSumpLinePondsDtmObject
         bcdtmWrite_message(0, 0, 0, "Determing Zero Slope Sump Line Ponds");
         bcdtmWrite_message(0, 0, 0, "dtmP             = %p", dtmP);
         bcdtmWrite_message(0, 0, 0, "drainageTablesP  = %p", drainageTablesP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP    = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP    = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "loadFlag         = %8ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "buildTable       = %8ld", buildTable);
         }
@@ -2596,7 +2596,7 @@ int bcdtmDrainage_concatenateZeroSlopeSumpLines
                     if (*numSumpLinesP == memSumpLines)
                         {
                  memSumpLines *= 15; memSumpLines /= 10;
-                 __int64 stackPtrIndex = stackPtrP - *sumpLinesPP;
+                 int64_t stackPtrIndex = stackPtrP - *sumpLinesPP;
                         *sumpLinesPP = (DTM_SUMP_LINES *)realloc(*sumpLinesPP, memSumpLines * sizeof(DTM_SUMP_LINES));
                         stackPtrP = *sumpLinesPP + stackPtrIndex;
                         }
@@ -2670,7 +2670,7 @@ int bcdtmDrainage_determinePondAboutZeroSlopeSumpLinesDtmObject
         bcdtmWrite_message(0, 0, 0, "dtmP          = %p", dtmP);
         bcdtmWrite_message(0, 0, 0, "sumpLinesP    = %p", sumpLinesP);
         bcdtmWrite_message(0, 0, 0, "numSumpLines  = %8ld", numSumpLines);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "loadFlag      = %8ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "boundaryFlag  = %8ld", boundaryFlag);
         if (dbg == 1)
@@ -3974,7 +3974,7 @@ int bcdtmDrainage_determineZeroSlopeTrianglePondsDtmObject
         bcdtmWrite_message(0, 0, 0, "drainageTablesP       = %p", drainageTablesP);
         bcdtmWrite_message(0, 0, 0, "zeroSlopePolygonsP    = %p", zeroSlopePolygonsP);
         bcdtmWrite_message(0, 0, 0, "zeroSlopePointsIndexP = %p", zeroSlopePointsIndexP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP         = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP         = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "loadFlag              = %8ld", loadFlag);
         bcdtmWrite_message(0, 0, 0, "buildTable            = %8ld", buildTable);
         bcdtmWrite_message(0, 0, 0, "userP                 = %p", userP);
@@ -8207,7 +8207,7 @@ int bcdtmDrainage_markPointsInternalToZeroSlopePolygonsDtmObject
         {
         bcdtmWrite_message(0, 0, 0, "Marking Points Internal To Zero Slope Polygons");
         bcdtmWrite_message(0, 0, 0, "dtmP              = %p", dtmP);
-        bcdtmWrite_message(0, 0, 0, "zeroSlopePolygons = %p", zeroSlopePolygons);
+       // bcdtmWrite_message(0, 0, 0, "zeroSlopePolygons = %p", zeroSlopePolygons);
         bcdtmWrite_message(0, 0, 0, "*pointIndexPP     = %p", *pointIndexPP);
         }
 
@@ -9088,7 +9088,7 @@ static int bcdtmDrainage_appendBermToPondDtmObject
     if( dbg )
         {
         bcdtmWrite_message(0,0,0,"Calculating Berm") ;
-        bcdtmWrite_message(0,0,0,"pondSideSlopeP   = %p",*pondSideSlopesP) ;
+        bcdtmWrite_message(0,0,0,"pondSideSlopeP   = %p",pondSideSlopesP) ;
         bcdtmWrite_message(0,0,0,"isBermFillOnly   = %8ld",isBermFillOnly) ;
         bcdtmWrite_message(0,0,0,"fillTinP         = %p",fillTinP) ;
         bcdtmWrite_message(0,0,0,"bermSlope        = %8.4lf",bermSlope) ;

@@ -2,10 +2,10 @@
 |
 |     $Source: ElementHandler/Commands/transkit/commandsTxt.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Mstn\MdlApi\rsctext.r.h>
+#include <Mstn/MdlApi/rsctext.r.h>
 
 #define MESSAGE_HandleMoveStart "Start"
 

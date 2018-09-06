@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMDefs.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -30,9 +30,19 @@
 #include <float.h>
 #include <stdarg.h>
 #include <time.h>
+#if _WIN32
 typedef __time32_t DTMTime32;
+#else
+typedef time_t DTMTime32;
+#endif
 struct DTM_LAT_OBJ;
 /*__PUBLISH_SECTION_END__*/
+
+#if _WIN32
+#else
+#pragma clang diagnostic ignored "-Wwritable-strings"
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
 /*-------------------------------------------------------------------+
 |                                                                    |
 |   DTM Specific                                                     |
@@ -467,7 +477,8 @@ struct DTMContourIndex
     {
     long p1, p2; double z1, z2;
     };       // Athens Version
-#include <TerrainModel\Core\partitionarray.h>
+
+//#include <TerrainModel/Core/PartitionArray.h>
 //typedef PartitionArray<DTMContourIndex, 15, MAllocAllocator> DTMContourIndexArray;
 
 struct DTMContourIndexArray : bvector<DTMContourIndex>

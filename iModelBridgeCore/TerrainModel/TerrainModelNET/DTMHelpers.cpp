@@ -2,11 +2,11 @@
 |
 |     $Source: TerrainModelNET/DTMHelpers.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
-#include ".\dtmhelpers.h"
+#include "./dtmhelpers.h"
 #using <mscorlib.dll>
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE

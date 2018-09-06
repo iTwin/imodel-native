@@ -20,7 +20,7 @@
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <Bentley/WString.h>
 #include <TerrainModel/Drainage/Drainage.h>
-#include <TerrainModel/Core\bcdtmInlines.h>
+#include <TerrainModel/Core/bcdtmInlines.h>
 #include <TerrainModel/Formats/Formats.h>
 #include <TerrainModel/Formats/TerrainImporter.h>
 #include <TerrainModel/Core/DTMIterators.h>

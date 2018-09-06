@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <TerrainModel\Drainage\WaterAnalysis.h>
-#include <TerrainModel\Core\TMTransformHelper.h>
+#include <TerrainModel/Drainage/WaterAnalysis.h>
+#include <TerrainModel/Core/TMTransformHelper.h>
 #include "bcdtmDrainage.h"
 #include <set>
 
@@ -3581,7 +3581,7 @@ TracePondEdge::TracePondEdge(TracePondEdgeCR from, WaterAnalysis& newTracer) : T
 void TracePondEdge::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args)
     {
     if (!m_points.empty())
-        __super::DoTraceCallback(waterCallback, loadFunction, args);
+        TracePond::DoTraceCallback(waterCallback, loadFunction, args);
 
     for (auto&& sump : m_sumpLines)
         loadFunction(DTMFeatureType::SumpLine, 0, 0, sump.data(), (long)sump.size(), args);
@@ -3593,7 +3593,7 @@ void TracePondEdge::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadF
 void TracePondEdge::AddResult(WaterAnalysisResultR result) const
     {
     if (!m_points.empty())
-        __super::AddResult(result);
+        TracePond::AddResult(result);
 
     for (auto&& sump : m_sumpLines)
         result.AddStream(sump, CurrentVolume());
@@ -3711,7 +3711,7 @@ TracePond::TracePond(TracePondCR from, WaterAnalysis& newTracer) : TraceFeature(
 // +---------------+---------------+---------------+---------------+---------------+------*
 bvector<TraceFeatureP> TracePond::GetReferences() const
     {
-    auto ret = __super::GetReferences();
+    auto ret = TraceFeature::GetReferences();
     for (auto& exit : m_exitPoints)
         ret.push_back(exit.exit);
     ret.push_back(m_topLevelPond);
@@ -3723,7 +3723,7 @@ bvector<TraceFeatureP> TracePond::GetReferences() const
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePond::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable)
     {
-    __super::RemapFeatures(featureRemapTable);
+    TraceFeature::RemapFeatures(featureRemapTable);
     for (auto& exit : m_exitPoints)
         exit.exit = dynamic_cast<TracePondExitP>(featureRemapTable[exit.exit]);
     m_topLevelPond = dynamic_cast<TracePondP>(featureRemapTable[m_topLevelPond]);
@@ -4313,7 +4313,7 @@ void TracePondExit::CheckFullPond(TracePond& pond)
 // +---------------+---------------+---------------+---------------+---------------+------*
 bvector<TraceFeatureP> TracePondExit::GetReferences() const
     {
-    auto ret = __super::GetReferences();
+    auto ret = TraceFeature::GetReferences();
     ret.push_back(m_enclosingPond);
     for (auto& pond : m_ponds)
         ret.push_back(pond);
@@ -4332,7 +4332,7 @@ bvector<TraceFeatureP> TracePondExit::GetReferences() const
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondExit::ReplaceChildren(TraceFeature& oldChild, TraceFeature& newChild)
     {
-    __super::ReplaceChildren(oldChild, newChild);
+    TraceFeature::ReplaceChildren(oldChild, newChild);
     if (m_enclosingPond == &oldChild)
         m_enclosingPond = dynamic_cast<TracePondFromPondExitP>(&newChild);
 
@@ -4357,7 +4357,7 @@ void TracePondExit::ReplaceChildren(TraceFeature& oldChild, TraceFeature& newChi
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondExit::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable)
     {
-    __super::RemapFeatures(featureRemapTable);
+    TraceFeature::RemapFeatures(featureRemapTable);
     m_enclosingPond = dynamic_cast<TracePondFromPondExitP>(featureRemapTable[m_enclosingPond]);
     for (auto& pond : m_ponds)
         pond = dynamic_cast<TracePondP>(featureRemapTable[pond]);
@@ -5563,7 +5563,7 @@ struct WaterAnalysisResultImpl : WaterAnalysisResult
                 push_back(WaterAnalysisResultPond::Create(geometry, isFull, volume, depth));
             }
 
-        virtual bool _IsWaterVolumeResult() const
+        virtual bool _IsWaterVolumeResult() const override
             {
             return m_forWater;
             }

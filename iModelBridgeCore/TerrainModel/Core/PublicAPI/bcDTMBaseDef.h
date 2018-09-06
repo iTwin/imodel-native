@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcDTMBaseDef.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -46,9 +46,9 @@ inline DVec2d DVec2d::FromXY (double newX, double newY)
 +-------------------------------------------------------------------*/
 #define  BENTLEYDTM_Private   static
 
-#include <Bentley\Bentley.h>
-#include <Bentley\RefCounted.h>
-#include <TerrainModel\TerrainModel.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/RefCounted.h>
+#include <TerrainModel/TerrainModel.h>
 
 #ifdef DTM_MEMORY_DEBUG
 
@@ -61,6 +61,6 @@ inline DVec2d DVec2d::FromXY (double newX, double newY)
 ///*-------------------------------------------------------------------+
 //|	DTM Definition files				                             |
 //+-------------------------------------------------------------------*/
-#include  <TerrainModel\Core\DTMDefs.h>
-#include  <TerrainModel/Core/dtmfns.h>
+#include  <TerrainModel/Core/DTMDefs.h>
+#include  <TerrainModel/Core/DTMFns.h>
 #endif

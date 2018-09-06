@@ -2,13 +2,13 @@
 |
 |     $Source: TerrainModelNET/DTMFeature.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include < vcclr.h >
-#include ".\dtmfeature.h"
-#include ".\dtmexception.h"
+#include "./dtmfeature.h"
+#include "./dtmexception.h"
 #using <mscorlib.dll>
 #include "DTMHelpers.h"
 

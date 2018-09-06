@@ -2,14 +2,16 @@
 |
 |     $Source: Core/2d/bcdtmMath.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 
+#if _WIN32
 #pragma float_control(precise, on, push)
+#endif
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -1799,7 +1801,7 @@ BENTLEYDTM_EXPORT int bcdtmMath_transformViaCallbackDtmObject
    {
     bcdtmWrite_message(0,0,0,"Transforming DTM Via Function") ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunction = %p",loadFunction) ;
+   // bcdtmWrite_message(0,0,0,"loadFunction = %p",loadFunction) ;
     bcdtmWrite_message(0,0,0,"userP        = %p",dtmP) ;
    }
 /*
@@ -4028,7 +4030,7 @@ BENTLEYDTM_Public double bcdtmMath_coordinateTriangleArea(double X1,double Y1,do
 {
  double Area ;
  Area = (X1*Y2 + Y1*X3 + Y3*X2 - Y2*X3 - Y1*X2 - X1*Y3) / 2.0 ;
- if( Area < 0.0 ) Area =- Area ;
+ if( Area < 0.0 ) Area = - Area ;
  return(Area) ;
 }
 /*-------------------------------------------------------------------+

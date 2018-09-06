@@ -2,12 +2,12 @@
 |
 |     $Source: AutomaticGroundDetection/src/IDtmProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
 #include "IDtmProvider.h"
 
 USING_NAMESPACE_BENTLEY

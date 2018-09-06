@@ -6,12 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
-#include <DgnPlatform\ElementUtil.h>
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
+#include <DgnPlatform/ElementUtil.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
 #include "MrDTMDataRef.h"
 
-#include <TerrainModel\ElementHandler\IMultiResolutionGridMaterialManager.h>
+#include <TerrainModel/ElementHandler/IMultiResolutionGridMaterialManager.h>
 
 
 USING_NAMESPACE_RASTER

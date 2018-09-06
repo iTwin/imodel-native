@@ -6,13 +6,13 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <Bentley/Bentley.h>
-#include <Bentley\BeStringUtilities.h>
+#include <Bentley/BeStringUtilities.h>
 #include <Geom/GeomApi.h>
 #include <GeoCoord/BaseGeoCoord.h>
 
@@ -61,7 +61,7 @@
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <TerrainModel/Core/bcdtminlines.h>
-#include <TerrainModel\Formats\InroadsImporter.h>
+#include <TerrainModel/Formats/InroadsImporter.h>
 
 #include <ScalableTerrainModel/Foundations/Definitions.h>
 #include <ScalableTerrainModel/GeoCoords/Definitions.h>

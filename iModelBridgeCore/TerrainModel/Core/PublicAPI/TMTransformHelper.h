@@ -9,7 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "bcDTMClass.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 struct TMTransformHelper : RefCountedBase
@@ -210,7 +210,7 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<double*>(values);
                     m_ownValues = ownValues;
                     }
-                DoubleCopy(DoubleCopy&& copy) : DoubleCopy((DoubleCopy&&)copy)
+                DoubleCopy(DoubleCopy&& copy) //: DoubleCopy((DoubleCopy&&)copy)
                     {
                     m_values = copy.m_values;
                     m_ownValues = copy.m_ownValues;
@@ -237,7 +237,7 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<VOLRANGETAB*>(values);
                     m_ownValues = ownValues;
                     }
-                VOLRANGETABCopy(VOLRANGETABCopy&& copy) : VOLRANGETABCopy((VOLRANGETABCopy&&)copy)
+                VOLRANGETABCopy(VOLRANGETABCopy&& copy) //: VOLRANGETABCopy((VOLRANGETABCopy&&)copy)
                     {
                     m_values = copy.m_values;
                     m_ownValues = copy.m_ownValues;
@@ -264,7 +264,7 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<DRange1d*>(values);
                     m_ownValues = ownValues;
                     }
-                DRange1dCopy(DRange1dCopy&& copy) : DRange1dCopy((DRange1dCopy&&)copy)
+                DRange1dCopy(DRange1dCopy&& copy) //: DRange1dCopy((DRange1dCopy&&)copy)
                     {
                     m_values = copy.m_values;
                     m_ownValues = copy.m_ownValues;

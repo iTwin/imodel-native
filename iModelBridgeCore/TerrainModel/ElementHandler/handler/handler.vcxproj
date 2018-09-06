@@ -51,13 +51,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64  </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\TerrainModelElementHandler\TerrainModelElementHandler.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>__BENTLEY_DTM_ELEMENT_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;_DEBUG;TDORAY_PORT_EXCLUDED;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"
+    <NMakeReBuildCommandLine>bb -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"
 </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>bb -p ElementHandlerApp -f TerrainModelElement -r TerrainModel re ElementHandler ElementHandlerApp -x64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(OutRoot)Winx64\BuildContexts\TerrainModelElement\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModelElement\VendorAPI</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
@@ -127,6 +127,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModelElement\TerrainModelElementHandle
   <ItemGroup>
     <ClCompile Include="..\app\handlerApp.cpp" />
     <ClCompile Include="..\app\handlerAppManaged.cpp" />
+    <ClCompile Include="CivilElemSource.cpp" />
     <ClCompile Include="DTMContourDisplayHandler.cpp" />
     <ClCompile Include="DTMDataRef.cpp" />
     <ClCompile Include="DTMDataRefCachingManager.cpp" />

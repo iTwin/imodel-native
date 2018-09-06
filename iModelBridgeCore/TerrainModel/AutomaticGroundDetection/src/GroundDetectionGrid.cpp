@@ -2,13 +2,13 @@
 |
 |     $Source: AutomaticGroundDetection/src/GroundDetectionGrid.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/IPointsProvider.h>
 #include "PCGroundTIN.h"
 
 #pragma warning( disable : 4456 )  

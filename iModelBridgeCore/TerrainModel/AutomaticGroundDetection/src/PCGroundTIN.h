@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCGroundTIN.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -14,8 +14,8 @@
 #include "GroundDetectionGrid.h"
 #include "IDtmProvider.h"
 #include "PCThreadUtilities.h"
-#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
-#include <Bentley\bset.h>
+#include <TerrainModel/AutomaticGroundDetection/IPointsProvider.h>
+#include <Bentley/bset.h>
 
 #include "GroundDetectionGrid.h"
 

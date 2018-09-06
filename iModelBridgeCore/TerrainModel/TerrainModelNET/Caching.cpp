@@ -2,13 +2,13 @@
 |
 |     $Source: TerrainModelNET/Caching.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <TerrainModel\TerrainModel.h>
-#include <TerrainModel\Core\BcDTM.h>
-#include <TerrainModel\Core\dtm2dfns.h>
+#include <TerrainModel/TerrainModel.h>
+#include <TerrainModel/Core/BcDTM.h>
+#include <TerrainModel/Core/dtm2dfns.h>
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "Caching.h"
 

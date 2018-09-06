@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainage.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //
@@ -233,8 +233,6 @@ DTMStatusInt BcDTMDrainage::CalculatePondForPoint
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMDynamicFeatureArray& pondFeatures
     )
     {
-    DTMStatusInt ret = DTM_SUCCESS;
-    void*    userP = nullptr;
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureBuffer buffer;
 
     //  Initialise
@@ -285,7 +283,6 @@ DTMStatusInt BcDTMDrainage::TraceCatchmentForPoint
     bvector<DPoint3d>& catchmentPts
     )
     {
-    DTMStatusInt ret = DTM_SUCCESS ;
     long catchmentClosure = 0;
 
     //  Initialise

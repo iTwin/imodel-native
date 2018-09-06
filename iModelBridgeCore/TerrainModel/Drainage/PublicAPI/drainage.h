@@ -2,20 +2,20 @@
 |
 |     $Source: Drainage/PublicAPI/drainage.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef TERRAINMODEL_DRAINAGE_H
 #define TERRAINMODEL_DRAINAGE_H
-#include <TerrainModel\Core\bcDTMClass.h>
-#include <TerrainModel\Core\IDTM.h>
-#include <TerrainModel\Core\dtmdefs.h>
-#include <TerrainModel\Core\dtm2dfns.h>
+#include <TerrainModel/Core/bcDTMClass.h>
+#include <TerrainModel/Core/IDTM.h>
+#include <TerrainModel/Core/DTMDefs.h>
+#include <TerrainModel/Core/dtm2dfns.h>
 
 #include <iterator>
 
 #if defined (CREATE_STATIC_LIBRARIES) || defined (TERRAINMODEL_STATICLIB)
-  #define BENTLEYDTMDRAINAGE_EXPORT 
+  #define BENTLEYDTMDRAINAGE_EXPORT
 #elif defined (__BENTLEYTMDRAINAGE_BUILD__) || defined (__BENTLEYDTM_BUILD__)
   #define BENTLEYDTMDRAINAGE_EXPORT EXPORT_ATTRIBUTE
 #else
@@ -71,7 +71,7 @@ struct DtmPondDesignCriteria
         }
 
     DtmPondDesignCriteria(DTMPondDesignMethod designMethod, DPoint3dCP pointsP, double sideSlope, double freeBoard, DTMPondTarget pondTarget, double targetElevation, double target, BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP fillTinP) :
-        points(points), sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target), fillTinP(fillTinP)
+        points(), sideSlope(sideSlope), freeBoard(freeBoard), pondTarget(pondTarget), designMethod(designMethod), target(target), fillTinP(fillTinP)
         {
         }
 

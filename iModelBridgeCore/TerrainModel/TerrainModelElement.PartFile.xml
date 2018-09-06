@@ -9,7 +9,8 @@
         <SubPart PartName="DgnView"     PartFile="DgnDisplay"      Repository="DgnDisplay" />
         <SubPart PartName="Core"        PartFile="TerrainModel" />
         <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord"        Repository="GeoCoord" />
-        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" />              
+        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" />
+        <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />
         <!-- MST TBD - Temp -->
         <SubPart PartName="RasterCore"           PartFile="DgnDisplay"           Repository="DgnDisplay"/>        
         

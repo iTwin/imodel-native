@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmLoadRegions.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 
 /*-------------------------------------------------------------------+
@@ -455,7 +455,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_trianglesFromRegionDtmObject
     bcdtmWrite_message(0,0,0,"Loading Triangles for Region") ;
     bcdtmWrite_message(0,0,0,"dtmP          = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"featureId     = %10I64d",featureId) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP         = %p",userP) ;
    }
 /*
@@ -633,7 +633,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_triangleShadeMeshForRegionDtmObject
     bcdtmWrite_message(0,0,0,"regionOption  = %8ld",regionOption) ;
     bcdtmWrite_message(0,0,0,"indexOption   = %8ld",indexOption) ;
     bcdtmWrite_message(0,0,0,"indexValue    = %8I64d",indexValue) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP         = %p",userP) ;
    }
 /*

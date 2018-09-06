@@ -2,13 +2,13 @@
 |
 |     $Source: ElementHandler/handler/DTMDrawingInfo.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <TerrainModel\ElementHandler\TerrainModelElementHandler.h>
-#include <TerrainModel\ElementHandler\DTMDataRef.h>
+#include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
+#include <TerrainModel/ElementHandler/DTMDataRef.h>
 #include "DTMUnitsConverter.h"
 
 BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE

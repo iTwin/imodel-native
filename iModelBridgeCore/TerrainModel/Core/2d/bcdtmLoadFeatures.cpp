@@ -2,13 +2,15 @@
 |
 |     $Source: Core/2d/bcdtmLoadFeatures.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
+#if _WIN32
 #include "ppl.h"
+#endif
 /*
 ** Define Cache Variables
 */
@@ -268,7 +270,7 @@ BENTLEYDTM_Public int bcdtmLoad_callUserBrowseFunctionWithCachePoints
 */
     if( loadFunctionP != nullptr )
       {
-       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ;
+      // if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ;
        if( loadFunctionP((DTMFeatureType)dtmFeatureType,userTag,userFeatureId,cachePtsP,numCachePts,userP) != DTM_SUCCESS ) goto errexit ;
       }
 /*
@@ -396,7 +398,7 @@ BENTLEYDTM_Public int bcdtmLoad_callUserLoadFunction
 */
    if( loadFunctionP != nullptr )
       {
-       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ;
+      // if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ;
        if( (ret = loadFunctionP((DTMFeatureType)dtmFeatureType,userTag,userFeatureId,featurePtsP,numFeaturePts,userP)) != DTM_SUCCESS ) goto errexit ;
       }
 /*
@@ -465,7 +467,7 @@ BENTLEYDTM_Public int bcdtmLoad_callUserTriangleShadeMeshLoadFunction
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Calling User Triangle Shade Mesh Load Function") ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureType  = %8ld",dtmFeatureType) ;
     bcdtmWrite_message(0,0,0,"numTriangles    = %8ld",numTriangles) ;
     bcdtmWrite_message(0,0,0,"numMeshPts      = %8ld",numMeshPts) ;
@@ -546,7 +548,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_dtmFeatureTypeFromDtmFile
     bcdtmWrite_message(0,0,0,"dtmFile           = %s",dtmFileP) ;
     bcdtmWrite_message(0,0,0,"maxSpots          = %8ld",maxSpots) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureType    = %8ld",dtmFeatureType) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+  // bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
     bcdtmWrite_message(0,0,0,"fencePtsP         = %p",fencePtsP) ;
@@ -619,7 +621,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureType    = %8ld",dtmFeatureType) ;
     bcdtmWrite_message(0,0,0,"maxSpots          = %8ld",maxSpots) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType         = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
@@ -723,7 +725,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureTypeOccurrencesDtmObject(BC_
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureType    = %8ld",dtmFeatureType) ;
     bcdtmWrite_message(0,0,0,"maxSpots          = %8ld",maxSpots) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType         = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
@@ -2087,7 +2089,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_dtmFeaturesWithTinErrorsDtmObject
    {
     bcdtmWrite_message(0,0,0,"Interrupt Loading Dtm Features With Tin Errors From Dtm Object") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+//    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP             = %p",userP) ;
   }
 /*
@@ -3172,7 +3174,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_dtmFeatureTypeFromLatticeObject
     bcdtmWrite_message(0,0,0,"dtmFeatureType   = %8ld",dtmFeatureType) ;
     bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType,dtmFeatureTypeName) ;
     bcdtmWrite_message(0,0,0,"*** Feature Name = %s",dtmFeatureTypeName) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence         = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType        = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption      = %8ld",fenceOption) ;
@@ -3256,7 +3258,7 @@ BENTLEYDTM_Private int bcdtmLoad_dtmFeatureTypeOccurrencesFromLatticeObject
     bcdtmWrite_message(0,0,0,"Dtm Feature Type = %8ld",dtmFeatureType) ;
     bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType,dtmFeatureTypeName) ;
     bcdtmWrite_message(0,0,0,"*** Feature Name = %s",dtmFeatureTypeName) ;
-    bcdtmWrite_message(0,0,0,"Load Function    = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"Load Function    = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"Use Fence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"Fence Type       = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"Fence Option     = %8ld",fenceOption) ;
@@ -3706,7 +3708,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureOccurrenceForDtmFeatureIdFromD
 /*
 ** Static Variables For Maintaining Clipping Context
 */
- static long numClipNext=0,numClipArrays=0,numHullPts=0 ;
+ static long numClipNext=0,numClipArrays=0 ;
  static BC_DTM_OBJ       *clipDtmP=nullptr ;
  static DTM_POINT_ARRAY  **clipArraysPP=nullptr ;
  static BC_DTM_FEATURE   *clipFeatureP ;
@@ -3938,7 +3940,7 @@ BENTLEYDTM_EXPORT int bcdtmScanLoad_nextDtmFeatureOccurrenceForUserTagFromDtmObj
 /*
 ** Static Variables For Maintaining Clipping Context
 */
- static long numClipNext=0,numClipArrays=0,numHullPts=0 ;
+ static long numClipNext=0,numClipArrays=0;
  static BC_DTM_OBJ       *clipDtmP=nullptr ;
  static DTM_POINT_ARRAY  **clipArraysPP=nullptr ;
  static BC_DTM_FEATURE   *clipFeatureP ;
@@ -5320,7 +5322,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_dtmFeaturesForUsertagDtmObject
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"userTag           = %8ld",userTag) ;
     bcdtmWrite_message(0,0,0,"maxSpots          = %8ld",maxSpots) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType         = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
@@ -5420,7 +5422,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureUsertagOccurrencesDtmObject
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"userTag           = %8I64d",userTag) ;
     bcdtmWrite_message(0,0,0,"maxSpots          = %8ld",maxSpots) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType         = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
@@ -5619,7 +5621,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_dtmFeaturesForFeatureIdDtmObject
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"featureId         = %8I64d",featureId) ;
     bcdtmWrite_message(0,0,0,"maxSpots          = %8ld",maxSpots) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType         = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
@@ -5706,7 +5708,7 @@ BENTLEYDTM_Private int bcdtmInterruptLoad_dtmFeatureFeatureIdOccurrencesDtmObjec
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"featureId         = %8I64d",featureId) ;
     bcdtmWrite_message(0,0,0,"maxSpots          = %8ld",maxSpots) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType         = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;

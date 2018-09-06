@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmTheme.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -208,7 +208,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadThemeFromDtmFile
     bcdtmWrite_message(0,0,0,"dtmFileP        = %s",dtmFileP) ;
     bcdtmWrite_message(0,0,0,"polyOption      = %8ld",polyOption) ;
     bcdtmWrite_message(0,0,0,"themeOption     = %8ld",themeOption) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fencePtsP       = %p",fencePtsP) ;
     bcdtmWrite_message(0,0,0,"numFencePts     = %8ld",numFencePts) ;
@@ -279,7 +279,7 @@ BENTLEYDTM_EXPORT int bcdtmTheme_loadThemeFromDtmObject
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"polyOption      = %8ld",polyOption) ;
     bcdtmWrite_message(0,0,0,"themeOption     = %8ld",themeOption) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fencePtsP       = %p",fencePtsP) ;
     bcdtmWrite_message(0,0,0,"numFencePts     = %8ld",numFencePts) ;
@@ -1140,7 +1140,7 @@ BENTLEYDTM_EXPORT int  bcdtmTheme_loadThemeFromLatticeFile
     bcdtmWrite_message(0,0,0,"latticeFileP    = %s",latticeFileP) ;
     bcdtmWrite_message(0,0,0,"polyOption      = %8ld",polyOption) ;
     bcdtmWrite_message(0,0,0,"themeOption     = %8ld",themeOption) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fencePtsP       = %p",fencePtsP) ;
     bcdtmWrite_message(0,0,0,"numFencePts     = %8ld",numFencePts) ;
@@ -1212,7 +1212,7 @@ BENTLEYDTM_EXPORT int bcdtmTheme_loadThemeFromLatticeObject
     bcdtmWrite_message(0,0,0,"latticeP        = %p",latticeP) ;
     bcdtmWrite_message(0,0,0,"polyOption      = %8ld",polyOption) ;
     bcdtmWrite_message(0,0,0,"themeOption     = %8ld",themeOption) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fencePtsP       = %p",fencePtsP) ;
     bcdtmWrite_message(0,0,0,"numFencePts     = %8ld",numFencePts) ;
@@ -1302,7 +1302,7 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellThemesFromLatticeObject
     bcdtmWrite_message(0,0,0,"Loading Lattice Cell Themes From Lattice Object") ;
     bcdtmWrite_message(0,0,0,"latticeP        = %p",latticeP) ;
     bcdtmWrite_message(0,0,0,"themeOption     = %8ld",themeOption) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"clipDtmP        = %p",clipDtmP) ; 
     bcdtmWrite_message(0,0,0,"userP           = %p",userP) ;
@@ -1461,7 +1461,7 @@ BENTLEYDTM_Private int bcdtmTheme_loadPolygonThemesFromLatticeObject
     bcdtmWrite_message(0,0,0,"Loading Lattice Polygon Themes From Lattice Object") ;
     bcdtmWrite_message(0,0,0,"latticeP        = %p",latticeP) ;
     bcdtmWrite_message(0,0,0,"themeOption     = %8ld",themeOption) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+    // bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"clipDtmP        = %p",clipDtmP) ; 
     bcdtmWrite_message(0,0,0,"userP           = %p",userP) ;
@@ -2248,7 +2248,7 @@ BENTLEYDTM_Private int  bcdtmTheme_loadCellHillShadeFromLatticeObject
     bcdtmWrite_message(0,0,0,"greyScaleRange   = %8ld",greyScaleRange) ;
     bcdtmWrite_message(0,0,0,"altitudeDegrees  = %8ld",altitudeDegrees) ;
     bcdtmWrite_message(0,0,0,"azimuthDegrees   = %p",azimuthDegrees) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
+    // bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence         = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"clipDtmP         = %p",clipDtmP) ; 
     bcdtmWrite_message(0,0,0,"userP            = %p",userP) ;

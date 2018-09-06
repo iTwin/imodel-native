@@ -2,14 +2,14 @@
 |
 |     $Source: Core/2d/bcdtmSort.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 thread_local static unsigned long randomSeed ;
-thread_local static unsigned long dtmRandomSeed=0 ;
+//thread_local static unsigned long dtmRandomSeed=0 ;
 thread_local static long  lastStartPoint = -1;
 thread_local static long  numTiles = 0;
 thread_local static long  tileStartPointArray[100000];

@@ -2,21 +2,21 @@
 |
 |     $Source: ElementHandler/app/handlerApp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Mstn\MdlApi\mdl.h>
-#include <Mstn\basetype.h>
+#include <Mstn/MdlApi/mdl.h>
+#include <Mstn/basetype.h>
    
-#include <Mstn\MdlApi\msrmgr.h>
-#include <Mstn\MdlApi\ditemlib.fdf>
-#include <Mstn\MdlApi\msoutput.fdf>
-#include <Mstn\MdlApi\msparse.fdf>
-#include <Mstn\MdlApi\msritem.fdf>
-#include <Mstn\MdlApi\msstate.fdf>
-#include <Mstn\MdlApi\mssystem.fdf>
+#include <Mstn/MdlApi/msrmgr.h>
+#include <Mstn/MdlApi/ditemlib.fdf>
+#include <Mstn/MdlApi/msoutput.fdf>
+#include <Mstn/MdlApi/msparse.fdf>
+#include <Mstn/MdlApi/msritem.fdf>
+#include <Mstn/MdlApi/msstate.fdf>
+#include <Mstn/MdlApi/mssystem.fdf>
 
-#include <RmgrTools\Tools\RscFileManager.h>
+#include <RmgrTools/Tools/RscFileManager.h>
 
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/idtm.h>
@@ -34,7 +34,7 @@ void registerSelectionListener ();
 
 #include "handlerApp.h"
 #include "handlerAppDefs.h"
-#include    <Mstn\MdlApi\mstagdat.fdf> 
+#include    <Mstn/MdlApi/mstagdat.fdf> 
 //
 // ToDo copied from internal
 enum SharedCellSearch

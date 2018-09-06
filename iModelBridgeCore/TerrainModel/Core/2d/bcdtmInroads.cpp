@@ -5,7 +5,7 @@
 #include <string.h>
 #include <mbstring.h>
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtmInline.c"
 #include "bcdtmclass.h"
 

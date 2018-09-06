@@ -6,9 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
+#if _WIN32
 #include <ppl.h>
+#endif
 
 extern long numPrecisionError,numSnapFix ;  //These are only used in Debug Code.
 extern thread_local bool justForDelta;
@@ -1256,7 +1258,9 @@ BENTLEYDTM_Private int bcdtmDelta_drapeTin1PointsOnTin2DtmObject(BC_DTM_OBJ *dtm
          function(pnt);
      }
  else
+#if _WIN32
     concurrency::parallel_for ((int)0, (int)dtm1P->numPoints, (int)1, function);
+#endif
 
  if (doErrexit) goto errexit;
  if( dbg )

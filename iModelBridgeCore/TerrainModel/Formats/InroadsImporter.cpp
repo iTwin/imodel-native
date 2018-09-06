@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/InroadsImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -10,10 +10,10 @@
 #include <TerrainModel/Formats/InroadsImporter.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeFile.h>
-#include <Geom\GeomApi.h>
+#include <Geom/GeomApi.h>
 #include "TriangulationPreserver.h"
 
-#include "InroadsTM\InroadsTM.h"
+#include "InroadsTM/InroadsTM.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL

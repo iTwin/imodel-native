@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PublicAPI/IGroundDetectionServices.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,8 +10,8 @@
 
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#include <TerrainModel/AutomaticGroundDetection/IPointsAccumulator.h>
+#include <TerrainModel/AutomaticGroundDetection/IPointsProvider.h>
 
 
 GROUND_DETECTION_TYPEDEF(ProgressReport)

@@ -2,12 +2,12 @@
 |
 |     $Source: ElementHandler/handler/DTMReferenceXAttributeHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <stdafx.h>
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
 #include <TerrainModel/ElementHandler/DTMReferenceXAttributeHandler.h>
 
 #define CURRENT_REFERENCE_VERSION 1

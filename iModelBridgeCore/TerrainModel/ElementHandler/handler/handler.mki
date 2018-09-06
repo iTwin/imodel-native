@@ -2,7 +2,7 @@
 #
 #     $Source: ElementHandler/handler/handler.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 #
@@ -22,6 +22,9 @@ nameToDefine = __BENTLEY_DTM_ELEMENT_BUILD__
 %include cdefapnd.mki
 
 nameToDefine=BENTLEY_PORTABLE_CODE
+%include cdefapnd.mki
+
+nameToDefine=VANCOUVER_API
 %include cdefapnd.mki
 
 

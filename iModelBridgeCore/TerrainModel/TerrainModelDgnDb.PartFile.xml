@@ -6,7 +6,7 @@
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
     </Part>
 
-    <Part Name="HeaderFiles" BentleyBuildMakeFile="TerrainModelDgnDb.prewire.mke" >
+    <Part Name="HeaderFiles" BentleyBuildMakeFile="terrainModelDgnDb.prewire.mke" >
         <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="PublicAPI"  PartFile="geomlibs"                            Repository="GeomLibs" />
         <Bindings>
@@ -19,7 +19,15 @@
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)TerrainModelCore$(ApiNumber)$(shlibext)</Assemblies>
-            <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
+            <Libs> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="CoreStatic" BentleyBuildMakeFile="Core/coreDgnDb.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
+        <SubPart PartName="HeaderFiles" LibType="Static"/>
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" LibType="Static"/>
+        <Bindings>
+            <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(stlibprefix)TerrainModelCore$(stlibext)</Libs>
         </Bindings>
     </Part>
 

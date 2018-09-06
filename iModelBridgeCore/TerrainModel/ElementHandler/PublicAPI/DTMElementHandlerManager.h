@@ -2,15 +2,15 @@
 |
 |     $Source: ElementHandler/PublicAPI/DTMElementHandlerManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 /*__PUBLISH_SECTION_START__*/
 #pragma once
 
-#include <TerrainModel\ElementHandler\DTMDataRef.h>
-#include <TerrainModel\ElementHandler\IRasterTextureSourceManager.h>
+#include <TerrainModel/ElementHandler/DTMDataRef.h>
+#include <TerrainModel/ElementHandler/IRasterTextureSourceManager.h>
 
 //#include "DgnPlatform\DgnPlatform.h"
 //#d:\BSI\Topaz\src\DgnPlatform\PublicAPI\DgnPlatform\DgnPlatform.h

@@ -9,7 +9,7 @@
 #include "TerrainModel/Formats/Formats.h"
 #include "MXModelFile.h"
 #include "mxtriangle.h"
-#include "TerrainModel\Formats\mx.h"
+#include "TerrainModel/Formats/mx.h"
 
 #define asLong(a) *((long*)a)
 

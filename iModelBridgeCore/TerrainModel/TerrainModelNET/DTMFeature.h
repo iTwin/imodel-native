@@ -2,11 +2,11 @@
 |
 |     $Source: TerrainModelNET/DTMFeature.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include ".\Bentley.Civil.DTM.h"
+#include "./Bentley.Civil.DTM.h"
 #include <vcclr.h>
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE

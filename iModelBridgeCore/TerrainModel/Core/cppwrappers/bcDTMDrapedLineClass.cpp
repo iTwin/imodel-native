@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMDrapedLineClass.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <math.h>
@@ -19,14 +19,16 @@
 #include "bcDTMImpl.h"
 #include "bcDTM.h"
 #include "bcMem.h"
-#include "bcUtil.h"
+#include "bcutil.h"
 
 /*------------------------------------------------------------------+
 | Include COGO definitions                                          |
 +------------------------------------------------------------------*/
 #include <bcDTMBaseDef.h>
 
+#if _WIN32
 #pragma warning(disable: 4102)
+#endif
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 

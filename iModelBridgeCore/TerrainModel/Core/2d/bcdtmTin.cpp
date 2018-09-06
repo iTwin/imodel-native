@@ -2,14 +2,16 @@
 |
 |     $Source: Core/2d/bcdtmTin.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <TerrainModel\Core\bcDTMBaseDef.h>
-#include <TerrainModel\Core\dtmevars.h>
-#include <TerrainModel\Core\bcdtminlines.h>
+#include <TerrainModel/Core/bcDTMBaseDef.h>
+#include <TerrainModel/Core/DTMEvars.h>
+#include <TerrainModel/Core/bcdtminlines.h>
+#if _WIN32
 #pragma float_control(precise, on, push)
-#include <TerrainModel\Core\partitionarray.h>
+#endif
+#include <TerrainModel/Core/PartitionArray.h>
 #include <algorithm>
 #include <list>
 #include <mutex>
@@ -85,8 +87,10 @@ BENTLEYDTM_Public int bcdtmTin_createTinDtmObject
     bcdtmWrite_message(0,0,0,"dtmP->mppTol               = %20.16lf",dtmP->mppTol) ;
     bcdtmWrite_message(0,0,0,"DTM_NUM_PROCESSORS         = %8ld",DTM_NUM_PROCESSORS) ;
 
+#if _WIN32
 #ifndef _WIN32_WCE
     bcdtmWrite_message(0,0,0,"Floating Control Word      = 0x%.4x ",_control87(0,0)) ;
+#endif
 #endif
 
    }
@@ -555,10 +559,10 @@ void bcdtmTin_multiThreadTriangulationWorkerDtmObject (DTM_MULTI_THREAD *trgPara
     **
     */
     {
-    int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
+    int    dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
     long   p, *longP;
     BC_DTM_OBJ threadDtm;
-    __time32_t startTime;
+    time_t startTime;
     /*
     ** Initialise variables
     */
@@ -569,7 +573,7 @@ void bcdtmTin_multiThreadTriangulationWorkerDtmObject (DTM_MULTI_THREAD *trgPara
     startTime = bcdtmClock ();
     if (dbg) bcdtmWrite_message (0, 0, 0, "Thread[%2ld] ** Tile Sorting %9ld Dtm Points", trgParametersP->thread, trgParametersP->numPoints);
     bcdtmSort_taggedPointsIntoTilesForTriangulationDtmObject (trgParametersP->dtmP, trgParametersP->sortOfsP, trgParametersP->startPoint, trgParametersP->numPoints);
-    if (dbg) bcdtmWrite_message (0, 0, 0, "Thread[%2ld] ** Tile Sorting Time = %8.3lf Seconds", trgParametersP->thread, bcdtmClock_elapsedTime (bcdtmClock (), startTime));
+    if (dbg) bcdtmWrite_message (0, 0, 0, "Thread[%2ld] ** Tile Sorting Time = %8.3lf Seconds", trgParametersP->thread, bcdtmClock_elapsedTime (bcdtmClock (), (long)startTime));
     /*
     ** Check For Check Stop Termination
     */
@@ -591,7 +595,7 @@ void bcdtmTin_multiThreadTriangulationWorkerDtmObject (DTM_MULTI_THREAD *trgPara
     if (dbg) bcdtmWrite_message (0, 0, 0, "Delaunay Triangulating");
     if (bcdtmTin_delaunayTriangulateDtmObject (&threadDtm, trgParametersP->startPoint, trgParametersP->numPoints, DTM_X_AXIS, &trgParametersP->leftMostPoint, &trgParametersP->rightMostPoint, &trgParametersP->bottomMostPoint, &trgParametersP->topMostPoint, &trgParametersP->isColinear) != DTM_SUCCESS)
         return;
-    if (tdbg) bcdtmWrite_message (0, 0, 0, "**  Dtm Delaunay  Time       = %8.3lf Seconds", bcdtmClock_elapsedTime (bcdtmClock (), startTime));
+    if (tdbg) bcdtmWrite_message (0, 0, 0, "**  Dtm Delaunay  Time       = %8.3lf Seconds", bcdtmClock_elapsedTime (bcdtmClock (), (long)startTime));
     /*
     ** Set Return Cyclic List Parameter Values
     */
@@ -2802,6 +2806,7 @@ BENTLEYDTM_Private int bcdtmTin_validatePolygonalOffsetFeatureDtmObject
 ** Initialise
 */
  *validateResultP = FALSE ;
+ long* offsetP = nullptr;
 /*
 ** Check For None Null Dtm Feature Pointer
 */
@@ -2814,7 +2819,7 @@ BENTLEYDTM_Private int bcdtmTin_validatePolygonalOffsetFeatureDtmObject
 ** Polygonal Offset Feature Must Have Three Or More Points And Must Close, Test for 4 or more as the first and last would be the same.
 
 */
- long* offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
+ offsetP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI);
  if( dtmFeatureP->numDtmFeaturePts >= 4 && offsetP[0] == offsetP[dtmFeatureP->numDtmFeaturePts-1] )
    {
     *validateResultP = TRUE ;

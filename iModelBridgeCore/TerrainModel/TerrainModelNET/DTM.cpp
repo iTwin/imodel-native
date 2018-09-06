@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTM.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -15,7 +15,7 @@
 #endif
 #using <mscorlib.dll>
 
-#include <TerrainModel\Core\bcDTMStream.h>
+#include <TerrainModel/Core/bcDTMStream.h>
 #include "Caching.h"
 
 using namespace System;

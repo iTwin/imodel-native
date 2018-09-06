@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmConnect.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -22,7 +22,7 @@ BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
 )
 {
  int  ret=DTM_SUCCESS ;
- __time32_t localTime ;
+ time_t localTime ;
  DPoint3d  *p3d1P,*p3d2P ;
  char dateStrP[100] ;
  FILE *errorFP=NULL ;
@@ -44,8 +44,8 @@ BENTLEYDTM_EXPORT int bcdtmConnect_reportValidationErrorsInConnectStrings
 /*
 **  Get Date
 */
-    _time32(&localTime) ;
-    strcpy(dateStrP,_ctime32(&localTime)) ;
+    time(&localTime) ;
+    strcpy(dateStrP,ctime(&localTime)) ;
     fprintf(errorFP,"%s \n\n",dateStrP) ;
 /*
 **  Write Errors

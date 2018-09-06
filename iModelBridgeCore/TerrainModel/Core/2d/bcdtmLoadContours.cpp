@@ -2,22 +2,26 @@
 |
 |     $Source: Core/2d/bcdtmLoadContours.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
-#include "Drainage\PublicAPI\drainage.h"
-#include "Drainage\bcdtmDrainagePond.h"
+#include "Drainage/PublicAPI/drainage.h"
+#include "Drainage/bcdtmDrainagePond.h"
+#if _WIN32
 #include <ppl.h>
+#endif
 #include <mutex>
 #include <condition_variable>
 #include <thread>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
+#if _WIN32
 #pragma float_control(precise, on, push)
+#endif
 
 struct ContourThreadData
     {
@@ -41,7 +45,9 @@ typedef int (*DtmCallBack) ();
 //concurrency::combinable<DTMFeatureCallback> ContourLoadFunctionP;
 //thread_local void* ContourLoadFunctionUserArgP = nullptr;
 
+#if _WIN32
 BcDTMAppData::Key const DTMPondAppData::AppDataID;
+#endif
 // Prototype Functions
 
 static bool contourIndexCompare(const DTMContourIndex& index1P, const  DTMContourIndex& index2P)
@@ -406,6 +412,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObjectNew
     */
 
     {
+#if _WIN32
     concurrency::combinable<DTMContourIndexArray> contourCombinable;
     concurrency::parallel_for((int)startPnt, (int)lastPnt, (int)1, [&](int p1)
         {
@@ -482,6 +489,7 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObjectNew
         {
         for (auto& v : vals) contourIndexPP.push_back(v);
         });
+#endif
     }
     *numContourIndexP = (long)contourIndexPP.size();
     /*
@@ -503,8 +511,9 @@ BENTLEYDTM_Public int bcdtmLoad_buildContourIndexDtmObjectNew
         {
         startTime = bcdtmClock();
         if (dbg) bcdtmWrite_message(0, 0, 0, "Sorting Contour Index");
-
+#if _WIN32
         concurrency::parallel_sort(std::begin(contourIndexPP), std::end(contourIndexPP), contourIndexCompare);
+#endif
         }
     /*
    ** Write Statistics On Sort And Build Times
@@ -1299,7 +1308,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              bcdtmWrite_message(0, 0, 0, "depressionOption = %8ld", contourParams.depressionOption);
              bcdtmWrite_message(0, 0, 0, "maxSlopeOption   = %8ld", contourParams.maxSlopeOption);
              bcdtmWrite_message(0, 0, 0, "maxSlopeValue    = %8ld", contourParams.maxSlopeValue);
-             bcdtmWrite_message(0, 0, 0, "Load Function    = %p", loadFunctionP);
+          //   bcdtmWrite_message(0, 0, 0, "Load Function    = %p", loadFunctionP);
              bcdtmWrite_message(0, 0, 0, "User Pointer     = %p", userP);
              if (useFence && fenceParams.numPoints > 2 && fenceParams.points != nullptr)
                  {
@@ -1319,6 +1328,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
          /*
          ** Test For Valid Dtm Object
          */
+DTMPondAppData* pondAppData = nullptr;
          if (bcdtmObject_testForValidDtmObject(dtmP)) goto errexit;
          /*
          ** Check If DTM Is In Tin State
@@ -1386,7 +1396,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
          if (contourParams.depressionOption)
              bcdtmLoad_contoursCreateDepressionDtmObject(dtmP, loadFunctionP, userP);
 
-         DTMPondAppData* pondAppData = contourParams.depressionOption ? reinterpret_cast <DTMPondAppData*>(dtmP->FindAppData(DTMPondAppData::AppDataID)) : nullptr;
+         pondAppData = contourParams.depressionOption ? reinterpret_cast <DTMPondAppData*>(dtmP->FindAppData(DTMPondAppData::AppDataID)) : nullptr;
 
 
          /*
@@ -1603,7 +1613,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              if (tinLine2P != nullptr) memcpy(tinLine1P, tinLine2P, dtmP->numLines * sizeof(char));
              if (bcdtmLoad_buildContourIndexDtmObjectNew(dtmP, startPnt, lastPnt, contourParams.conMin, contourParams.conMax, contourParams.interval, contourParams.conReg, &tinLine1P, contourIndex, &numContourIndex)) goto errexit;
 
-             if (tdbg) bcdtmWrite_message(0, 0, 0, "Time To Build Index = %7.3lf seconds ** Index = %p Index Size = %8ld", bcdtmClock_elapsedTime(bcdtmClock(), testTime), contourIndex, numContourIndex);
+             if (tdbg) bcdtmWrite_message(0, 0, 0, "Time To Build Index = %7.3lf seconds ** Index = %p Index Size = %8ld", bcdtmClock_elapsedTime(bcdtmClock(), testTime), &contourIndex, numContourIndex);
              }
 
          {
@@ -2515,7 +2525,7 @@ BENTLEYDTM_Public int bcdtmLoad_contourFeature
 */
        if (fenceParams.fenceType == DTMFenceType::None /*&& fenceParams.fenceOption != DTMFenceOption::Overlap*/)
          {
-          if( dbg ) bcdtmWrite_message(0,0,0,"Calling User Load Function %p",loadFunctionP) ;
+         // if( dbg ) bcdtmWrite_message(0,0,0,"Calling User Load Function %p",loadFunctionP) ;
           if( bcdtmLoad_callUserLoadFunction(loadFunctionP,DTMFeatureType::Contour,(DTMUserTag)contourDirection,depressionId,s_contourthreadData.conPtsP,s_contourthreadData.numConPts,userP)) goto errexit ;
          }
 /*
@@ -3746,15 +3756,15 @@ BENTLEYDTM_Private int bcdtmLoad_solvePentaDiagonalMatrix(long n,double a[],doub
 /*
 ** This Function solves linear systems of the form
 **
-** Ú                                          ¿ Ú  ¿ Ú  ¿
-** ³a1   b1   c1    0   ..........0   e1   d1 ³ ³z1³ ³g1³
-** ³d2   a2   b2   c2    0 ........    0   e2 ³ ³z2³ ³g2³
-** ³e3   d3   a3   b3   c3    0 ...    0    0 ³ ³z3³ ³g3³
-** ³O    e4   d4   a4   b4   c4   .         0 ³ ³z4³=³g4³
-** ³..........................................³ ³..³ ³  ³
-** ³                                          ³ ³  ³ ³  ³
-** ³bn   cn   0     0  .....  0   en  dn   an ³ ³zn³ ³gn³
-** À                                          Ù À  Ù À  Ù
+** \DA                                          \BF \DA  \BF \DA  \BF
+** \B3a1   b1   c1    0   ..........0   e1   d1 \B3 \B3z1\B3 \B3g1\B3
+** \B3d2   a2   b2   c2    0 ........    0   e2 \B3 \B3z2\B3 \B3g2\B3
+** \B3e3   d3   a3   b3   c3    0 ...    0    0 \B3 \B3z3\B3 \B3g3\B3
+** \B3O    e4   d4   a4   b4   c4   .         0 \B3 \B3z4\B3=\B3g4\B3
+** \B3..........................................\B3 \B3..\B3 \B3  \B3
+** \B3                                          \B3 \B3  \B3 \B3  \B3
+** \B3bn   cn   0     0  .....  0   en  dn   an \B3 \B3zn\B3 \B3gn\B3
+** \C0                                          \D9 \C0  \D9 \C0  \D9
 **
 **  with pentadiagonal matrix by sweep method
 **
@@ -4703,7 +4713,7 @@ void    *userP               /* ==> User Pointer Passed Back To User      */
         bcdtmWrite_message (0, 0, 0, "Smooth Option          = %8ld", smoothOption);
         bcdtmWrite_message (0, 0, 0, "Smooth Factor          = %8.2lf", smoothFactor);
         bcdtmWrite_message (0, 0, 0, "Smooth Density         = %8ld", smoothDensity);
-        bcdtmWrite_message (0, 0, 0, "Load Function          = %p", loadFunctionP);
+       // bcdtmWrite_message (0, 0, 0, "Load Function          = %p", loadFunctionP);
         bcdtmWrite_message (0, 0, 0, "Use Fence              = %8ld", useFence);
         bcdtmWrite_message (0, 0, 0, "Fence Option           = %8ld", fenceOption);
         bcdtmWrite_message (0, 0, 0, "Fence Points           = %p", fencePtsP);
@@ -5248,7 +5258,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contourForPointDtmObject
     bcdtmWrite_message(0,0,0,"Smooth Option          = %8ld",smoothOption) ;
     bcdtmWrite_message(0,0,0,"Smooth Factor          = %8.2lf",smoothFactor) ;
     bcdtmWrite_message(0,0,0,"Smooth Density         = %8ld",smoothDensity) ;
-    bcdtmWrite_message(0,0,0,"Load Function          = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"Load Function          = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"Use Fence              = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"Fence Option           = %8ld",fenceOption) ;
     bcdtmWrite_message(0,0,0,"Fence Type             = %8ld",fenceType) ;
@@ -5950,7 +5960,7 @@ BENTLEYDTM_Private int bcdtmLoad_createDepressionDtmObject
    {
     bcdtmWrite_message(0,0,0,"Creating Depression DTM") ;
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"depressionDtmPP = %p",*depressionDtmP) ;
+    bcdtmWrite_message(0,0,0,"depressionDtmPP = %p",depressionDtmP) ;
    }
 /*
 ** Check If DTM Is In Tin State
@@ -6141,6 +6151,7 @@ BENTLEYDTM_Public int bcdtmLoad_checkForDepressionContourDtmObject
 ** Initialise
 */
  *conTypeP = 0 ;
+long midPt = 0;
 /*
 ** Check If DTM Is In Tin State
 */
@@ -6153,7 +6164,7 @@ BENTLEYDTM_Public int bcdtmLoad_checkForDepressionContourDtmObject
 **  Find Triangle For Contour Point In Depression DTM
 */
  fndType = 0 ;
- long midPt = numConPts / 2;
+ midPt = numConPts / 2;
  for( p3dP = conPtsP + midPt; p3dP < conPtsP + numConPts && fndType != 2 ; ++p3dP )
    {
     if( bcdtmFind_triangleDtmObject(depressionDtmP,p3dP->x,p3dP->y,&fndType,&trgPnts[0],&trgPnts[1],&trgPnts[2]) ) goto errexit ;

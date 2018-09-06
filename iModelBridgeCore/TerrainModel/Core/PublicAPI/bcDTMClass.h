@@ -11,9 +11,9 @@
 #ifndef __bcDTMClassH__
 #define __bcDTMClassH__
 
-#include <Bentley\Bentley.h>
-#include <Bentley\RefCounted.h>
-#include <TerrainModel\TerrainModel.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/RefCounted.h>
+#include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <Geom/GeomApi.h>
 
@@ -29,14 +29,16 @@
 #include <string>
 #include <list>
 #include "bcDTM.h"
-#include "bcdtmstream.h"
+#include "bcDTMStream.h"
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
+#if _WIN32
 #pragma warning(push)
 #pragma warning(disable:4263)
 #pragma warning(disable:4264)
+#endif
 //__PUBLISH_SECTION_END__
 
 /*----------------------------------------------------------------------+
@@ -1328,9 +1330,9 @@ struct BcDTMFeatureEnumerator : RefCountedBase
         int             _ResetScanContextForTin (DTMFeatureType newfeatureType, bool newScan);
     };
 
-
+#if _WIN32
 #pragma warning(pop)
-
+#endif
 //__PUBLISH_SECTION_START__
 END_BENTLEY_TERRAINMODEL_NAMESPACE
 

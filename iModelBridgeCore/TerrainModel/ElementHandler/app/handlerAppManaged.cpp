@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/app/handlerAppManaged.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma unmanaged
@@ -13,14 +13,14 @@
 #include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 #include <TerrainModel/ElementHandler/TMElementDisplayHandler.h>
 #include <DgnPlatform/TerrainModel/TMSymbologyOverrideManager.h>
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
 #include <RmgrTools/Tools/RscFileManager.h>
 #include "handlerAppDefs.h"
-#include <Mstn\MdlApi\mdl.h>
-#include <Mstn\basetype.h>
-#include <Mstn\MdlApi\msdisplaypath.h>
+#include <Mstn/MdlApi/mdl.h>
+#include <Mstn/basetype.h>
+#include <Mstn/MdlApi/msdisplaypath.h>
 
-#include <DgnPlatform\DgnECTypeAdapters.h>
+#include <DgnPlatform/DgnECTypeAdapters.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

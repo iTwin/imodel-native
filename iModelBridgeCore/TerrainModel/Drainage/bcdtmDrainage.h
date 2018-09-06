@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainage.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,7 @@ extern double DTM_PYE;
 extern double DTM_2PYE;
 
 //#include <bcBaseDefs.h>
-#include <TerrainModel/Drainage/Drainage.h>
+#include <TerrainModel/Drainage/drainage.h>
 #include <TerrainModel/TerrainModel.h>
 
 

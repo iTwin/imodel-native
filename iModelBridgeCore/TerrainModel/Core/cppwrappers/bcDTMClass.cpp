@@ -5,17 +5,19 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#if _WIN32
 #pragma warning(disable: 4018)
 #pragma warning(disable: 4786)
 #pragma warning(disable: 4102)
+#endif
 /*----------------------------------------------------------------------+
 | Include standard library header files                                 |
 +----------------------------------------------------------------------*/
 #include <math.h>
 #include <TerrainModel/TerrainModel.h>
-#include <Geom\msgeomstructs.h>
+#include <Geom/msgeomstructs.h>
 #include <bcDTMBaseDef.h>
-#include <dtmevars.h>
+#include <DTMEvars.h>
 
 /*----------------------------------------------------------------------+
 | Include BCivil general header files                                   |
@@ -32,17 +34,19 @@
 #include "bcpoint.fdf"
 
 #include "bcdtmSideSlope.h"
-#include <TerrainModel\Core\TMTransformHelper.h>
-#include <TerrainModel\Drainage\drainage.h>
+#include <TerrainModel/Core/TMTransformHelper.h>
+#include <TerrainModel/Drainage/drainage.h>
 
-#include "Drainage\bcdtmDrainageFeatures.h"
-#include "Drainage\bcdtmDrainagePond.h"
-#include "Drainage\bcdtmDrainageTrace.h"
-#include "Drainage\bcdtmDrainageCatchment.h"
+#include "Drainage/bcdtmDrainageFeatures.h"
+#include "Drainage/bcdtmDrainagePond.h"
+#include "Drainage/bcdtmDrainageTrace.h"
+#include "Drainage/bcdtmDrainageCatchment.h"
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
+#if _WIN32
 #pragma region Transform callback helpers
+#endif
 
 class FeatureCallbackTransformHelper
     {
@@ -303,9 +307,11 @@ class TriangleMeshCallbackTransformHelper
             }
     };
 
+#if _WIN32
 #pragma endregion
 
 #pragma region DigitalTM Functions
+#endif
 /*------------------------------------------------------------------+
     | Include COGO definitions                                          |
     +------------------------------------------------------------------*/
@@ -633,7 +639,9 @@ BC_END:;
 
     BC_END_RETURNSTATUS();
     }
+#if _WIN32
 #pragma endregion
+#endif
 
 struct Dtm_Handler_t
     {
@@ -888,7 +896,6 @@ BcDTMPtr BcDTM::DesignPondToTargetVolumeOrElevation
     double freeBoard
     )
     {
-    DTMStatusInt status = DTM_ERROR;
 
     DtmPondDesignCriteria pondDesignCrit((DTMPondDesignMethod)perimeterOrInvert, points, (int)numPoints, sideSlope, freeBoard, (DTMPondTarget)targetVolumeOrElevation, (DTMPondTarget)targetVolumeOrElevation == DTMPondTarget::Elevation ? targetElevation : targetVolume);
     BcDTMPtr dtm;
@@ -2724,7 +2731,6 @@ DTMStatusInt BcDTM::BrowseContours (DTMContourParamsCR contourParams, const DTMF
     BeAssert (GetTinHandle () != nullptr);
 
     DTMStatusInt status = DTM_SUCCESS;
-    double smoothLength = 0.0;
 
     if (_dtmTransformHelper.IsValid ())
         {
@@ -3532,12 +3538,12 @@ DTMStatusInt BcDTM::PurgeDTM (unsigned int flags)
         }
     if ((flags & 4) == 4)
         bcdtmData_deleteAllRollBackFeaturesDtmObject (GetTinHandle ());
-    if (ret != SUCCESS) return ret;
+    if (ret != DTM_SUCCESS) return ret;
 
     if ((flags & 2) == 2)
         bcdtmData_deleteAllTinErrorFeaturesDtmObject(GetTinHandle());
 
-    if(ret != SUCCESS) return ret;
+    if(ret != DTM_SUCCESS) return ret;
 
     if((flags & 1) == 1)
         ret = (DTMStatusInt)bcdtmData_compactFeatureTableDtmObject (GetTinHandle ());
@@ -4226,7 +4232,7 @@ DTMStatusInt BcDTM::_GetDescentTrace (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMD
     {
     DTMDrainageFeature* result =  new DTMDrainageFeature();
 
-    if (GetDescentTrace (minDepth, pt.x, pt.y, result, &DTMDrainageFeatureCallback) == SUCCESS)
+    if (GetDescentTrace (minDepth, pt.x, pt.y, result, &DTMDrainageFeatureCallback) == DTM_SUCCESS)
         {
         ret = result;
         return DTM_SUCCESS;
@@ -4642,7 +4648,7 @@ DTMStatusInt BcDTM::DrapeLinearPoints(bvector<DTMDrapePoint>& drapedPts, DPoint3
     if (_dtmTransformHelper.IsValid())
         {
         status = (DTMStatusInt)bcdtmDrape_stringDtmObject(GetTinHandle(), _dtmTransformHelper->copyPointsToDTM(pointsP, nPts), nPts, getFeatures, drapedPts);
-        if (SUCCESS == status)
+        if (DTM_SUCCESS == status)
             {
             for (auto& pt : drapedPts)
                 {

@@ -2,11 +2,11 @@
 |
 |     $Source: Drainage/bcdtmDrainageList.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
-#include <TerrainModel/Core/bcdtmInlines.h>
+#include <TerrainModel/Core/bcdtminlines.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -33,7 +33,7 @@ int bcdtmDrainageList_copyTptrListToPointListDtmObject
     bcdtmWrite_message(0,0,0,"Copying Tptr List To Point List") ;
     bcdtmWrite_message(0,0,0,"dtmP        = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"startPoint  = %8ld",startPoint) ;
-    bcdtmWrite_message(0,0,0,"pointList   = %p",pointList) ;
+    bcdtmWrite_message(0,0,0,"pointList   = %p",&pointList) ;
    }
 
   
@@ -84,7 +84,7 @@ int bcdtmDrainageList_copySptrListToPointListDtmObject
     bcdtmWrite_message(0,0,0,"Copying Sptr List To Point List") ;
     bcdtmWrite_message(0,0,0,"dtmP        = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"startPoint  = %8ld",startPoint) ;
-    bcdtmWrite_message(0,0,0,"pointList   = %p",pointList) ;
+    bcdtmWrite_message(0,0,0,"pointList   = %p",&pointList) ;
    }
 
 // Initialise   
@@ -136,7 +136,7 @@ int bcdtmDrainageList_copyPointListToTptrListDtmObject
    {
     bcdtmWrite_message(0,0,0,"Copying Point List To Tptr List") ;
     bcdtmWrite_message(0,0,0,"dtmP        = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"pointList   = %p",pointList) ;
+    bcdtmWrite_message(0,0,0,"pointList   = %p",&pointList) ;
     bcdtmWrite_message(0,0,0,"startPointP = %8ld",*startPointP) ;
    }
 
@@ -210,7 +210,7 @@ int bcdtmDrainageList_copyPointListToSptrListDtmObject
    {
     bcdtmWrite_message(0,0,0,"Copying Point List To Sptr List") ;
     bcdtmWrite_message(0,0,0,"dtmP        = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"pointList   = %p",pointList) ;
+    bcdtmWrite_message(0,0,0,"pointList   = %p",&pointList) ;
     bcdtmWrite_message(0,0,0,"startPointP = %8ld",*startPointP) ;
    }
 

@@ -6,7 +6,7 @@
 |       $Date: 2011/11/15 17:54:58 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------+
@@ -14,7 +14,7 @@
 +----------------------------------------------------------------------------*/
 #include "StdAfx.h"  // Always include first
 
-#include <TerrainModel\ElementHandler\IRasterTextureSourceManager.h>
+#include <TerrainModel/ElementHandler/IRasterTextureSourceManager.h>
 
 /*----------------------------------------------------------------------------+
 |IRasterTextureSourceManager Method Definition Section - Begin

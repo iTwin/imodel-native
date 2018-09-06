@@ -2,13 +2,13 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayHandlers.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <TerrainModel\ElementHandler\TMElementDisplayHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
+#include <TerrainModel/ElementHandler/TMElementDisplayHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 

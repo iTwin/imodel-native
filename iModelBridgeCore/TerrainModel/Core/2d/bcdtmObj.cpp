@@ -2,12 +2,12 @@
 |
 |     $Source: Core/2d/bcdtmObj.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
  #include "bcDTMBaseDef.h"
 
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 #include <mutex>
 
@@ -37,7 +37,7 @@ void RemoveMemoryReference(void* a)
     }
 
 
-__declspec(dllexport) void TMMapMemoryReferences()
+BENTLEYDTM_EXPORT void TMMapMemoryReferences()
     {
     for (auto&i : map)
         {
@@ -46,7 +46,7 @@ __declspec(dllexport) void TMMapMemoryReferences()
         }
     }
 #else
-__declspec(dllexport) void TMMapMemoryReferences()
+BENTLEYDTM_EXPORT void TMMapMemoryReferences()
 {
 }
 #endif
@@ -350,7 +350,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
  (*dtmPP)->modifiedTime         =  0 ;
  (*dtmPP)->userTime             =  0 ;
 #ifndef _WIN32_WCE
- _time32(&(*dtmPP)->creationTime) ;
+    #if _WIN32
+     _time32(&(*dtmPP)->creationTime);
+    #else     
+     time(&(*dtmPP)->creationTime);
+    #endif     
 #endif
  (*dtmPP)->ppTol                = DTM_PPTOL ;
  (*dtmPP)->plTol                = DTM_PLTOL ;
@@ -1347,7 +1351,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_initialiseDtmObject( BC_DTM_OBJ *dtmP )
  dtmP->modifiedTime         =  0 ;
  dtmP->userTime             =  0 ;
 #ifndef _WIN32_WCE
- _time32(&dtmP->creationTime) ;
+    #if _WIN32
+     _time32(&dtmP->creationTime);
+    #else     
+     time(&dtmP->creationTime);
+    #endif      
 #endif
  dtmP->ppTol                = DTM_PPTOL ;
  dtmP->plTol                = DTM_PLTOL ;
