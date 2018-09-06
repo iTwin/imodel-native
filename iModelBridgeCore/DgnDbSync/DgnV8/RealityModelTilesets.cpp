@@ -8,7 +8,6 @@
 #include "ConverterInternal.h"
 #include <RealityPlatformTools/SimpleRDSApi.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
-#include "DgnPlatform/WebMercator.h"
 
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -18,6 +17,7 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 
 BE_JSON_NAME(tilesetUrl)
+BE_JSON_NAME(tilesetToDbTransform)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
@@ -197,7 +197,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
                 }
 
             identifier = crd.GetIdentifier();
-            RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);
+            RealityDataByIdRequest rd = RealityDataByIdRequest(identifier);                        
             url = BeStringUtilities::UriDecode(rd.GetHttpRequestString().c_str());
             BeFileName::EmptyAndRemoveDirectory(modelDir);
             }
@@ -205,13 +205,18 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             {
             url = Utf8String("http://localhost:8080/") + Utf8String(dbFileName).c_str() + "/" + model->GetModelId().ToString() + Utf8String("/TileRoot.json");
             }
-        if (smModel != nullptr)
+    
+        // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.
+        if (smModel != nullptr && !ecefLocation.m_isValid) 
             {
             // Reload 3sm using new url
             auto unConstSMModel = const_cast<ScalableMeshModelP>(smModel);
             unConstSMModel->CloseFile();
             unConstSMModel->UpdateFilename(BeFileName(WString(url.c_str(), true)));
-            auto transform = unConstSMModel->GetUorsToStorage();
+            Transform   tilesetToDb, dbToTileset = unConstSMModel->GetUorsToStorage();
+
+            tilesetToDb.InverseOf (dbToTileset);
+            StoreRealityTilesetTransform(*model, tilesetToDb);
             }
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
@@ -224,6 +229,14 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         }
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void  Converter::StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb)
+    {
+    model.SetJsonProperties(json_tilesetToDbTransform(), JsonUtils::FromTransform(tilesetToDb));
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

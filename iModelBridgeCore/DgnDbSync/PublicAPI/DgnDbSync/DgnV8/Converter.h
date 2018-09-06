@@ -1183,6 +1183,8 @@ public:
     //! @{
     BentleyStatus GenerateThumbnails();
     BentleyStatus GenerateRealityModelTilesets();
+    void  StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb);
+
 
     bool ThumbnailUpdateRequired(ViewDefinition const& view);
 
