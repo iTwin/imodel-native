@@ -261,6 +261,7 @@ struct Tree : RefCountedBase, NonCopyableClass
         Tree::Type m_type;
         double m_classifierExpansion;
 
+        Id() : m_type(Type::Model), m_classifierExpansion(0.0) { }
         Id(DgnModelId modelId, Tree::Type type, double expansion = 0.0) : m_modelId(modelId), m_type(type), m_classifierExpansion(expansion) { }
 
         bool IsValid() const { return m_modelId.IsValid(); }
