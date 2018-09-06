@@ -873,7 +873,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2018
 //---------------------------------------------------------------------------------------
-DbResult MergeChangeSetWithReopen(Dgn::DgnDbPtr db, BeFileNameCR filePath, DgnRevisionPtr changeSet)
+DbResult MergeChangeSetWithReopen(Dgn::DgnDbPtr& db, BeFileNameCR filePath, DgnRevisionPtr changeSet)
     {
     db->CloseDb();
 
