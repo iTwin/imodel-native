@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Licensing", "Licensing.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LicensingUnitTests", "Tests\UnitTests\UnitTests.vcxproj", "{CF6DF431-C978-46EC-8E32-A409994F676D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WSClient", "..\..\WSClient\WSClient.vcxproj", "{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WSClient", "..\WSClient\WSClient.vcxproj", "{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

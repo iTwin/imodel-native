@@ -49,7 +49,7 @@
     <None Include="LicensingCompileOptions.mki" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\LicensingCrossPlatform.PartFile.xml">
+    <Xml Include="LicensingCrossPlatform.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
   </ItemGroup>
@@ -80,11 +80,11 @@
     <NMakeOutput>
     </NMakeOutput>
     <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r LicensingCrossPlatform -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)licensing\LicensingCrossPlatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\PublicAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
+    <IncludePath>$(SrcRoot)licensingcrossplatform\PublicAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;$(OutRoot)Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI;$(IncludePath);D:\dev\crossDev\src\licensing\LicensingCrossPlatform\PublicAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\VendorAPI;D:\dev\crossDev\out\Winx64\BuildContexts\LicensingCrossPlatform\PublicAPI</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>

@@ -2,10 +2,10 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="PublicAPI" BentleyBuildMakeFile="LicensingCrossPlatform/DeliverPublicAPI.mke">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="DeliverPublicAPI.mke">
     </Part>
 
-    <Part Name="LicensingNativeLib" BentleyBuildMakeFile="LicensingCrossPlatform/Licensing.mke" >
+    <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke" >
         <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" /> 
         <SubPart PartName="PublicAPI"/>
@@ -40,13 +40,13 @@
         <SubPart PartName="LicensingNativeLib" LibType="Static" />
     </Part>
 
-	<Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="LicensingCrossPlatform/Tests/UnitTests/Prewire.mke">
+	<Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/Prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="Licensing" SubPartDirectory="UnitTests/Licensing">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 	
-    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="LicensingCrossPlatform/Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="Licensing" />
         

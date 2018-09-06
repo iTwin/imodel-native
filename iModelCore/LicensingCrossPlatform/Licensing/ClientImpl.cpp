@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/ClientImpl.cpp $
+|     $Source: Licensing/ClientImpl.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,7 +11,7 @@
 #include "Logging.h"
 #include "PolicyToken.h"
 #include "UsageDb.h"
-#include "StringHelper.h"
+//#include "StringHelper.h"
 
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
