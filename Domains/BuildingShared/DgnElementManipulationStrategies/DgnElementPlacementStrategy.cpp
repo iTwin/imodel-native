@@ -14,6 +14,8 @@ USING_NAMESPACE_BUILDING_SHARED
 #define Squared_Template "SQ_%s"
 #define Cubed_Template "CUB_%s"
 
+#define DefaultRealU "DefaultRealU" // real4u
+
 #define Meter "M"
 #define Meter_Squared "SQ_M"
 #define Meter_Cubed "CUB_M"
@@ -63,10 +65,9 @@ DgnElementPlacementStrategy::DgnElementPlacementStrategy
     : T_Super()
     {
     ECN::ECUnitCP unit = db.Schemas().GetUnit(Standard_Units_Schema, Meter);
-
-    static Utf8String formatName = "DefaultRealU"; // real4u
-    static Utf8String formatSchema = "Formats";
-    ECN::ECFormatCP format = db.Schemas().GetFormat(formatSchema, formatName);
+    BeAssert(nullptr != unit);
+    ECN::ECFormatCP format = db.Schemas().GetFormat(Standard_Formats_Schema, DefaultRealU);
+    BeAssert(nullptr != format);
 
     // This creates a copy of the original format so that we can make the precision change.
     Formatting::Format formatOverride(*format);
@@ -195,9 +196,7 @@ Formatting::Format DgnElementPlacementStrategy::GetAreaFUS() const
     Utf8PrintfString squaredUnitName(Squared_Template, unitName);
     ECN::ECUnitCP unit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, squaredUnitName.c_str());
 
-    static Utf8String formatName = "DefaultRealU"; // real4u
-    static Utf8String formatSchema = "Formats";
-    ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(formatSchema, formatName);
+    ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(Standard_Formats_Schema, DefaultRealU);
 
     // This creates a copy of the original format so that we can make the precision change.
     Formatting::Format formatOverride(*format);
@@ -224,9 +223,7 @@ Formatting::Format DgnElementPlacementStrategy::GetVolumeFUS() const
     Utf8PrintfString cubedUnitName(Cubed_Template, unitName);
     ECN::ECUnitCP unit = GetDgnDb().Schemas().GetUnit(Standard_Units_Schema, cubedUnitName.c_str());
 
-    static Utf8String formatName = "DefaultRealU"; // real4u
-    static Utf8String formatSchema = "Formats";
-    ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(formatSchema, formatName);
+    ECN::ECFormatCP format = GetDgnDb().Schemas().GetFormat(Standard_Formats_Schema, DefaultRealU);
  
     // This creates a copy of the original format so that we can make the precision change.
     Formatting::Format formatOverride(*format);

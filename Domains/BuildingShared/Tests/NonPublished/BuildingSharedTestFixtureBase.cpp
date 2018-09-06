@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/BuildingSharedTestFixtureBase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeXml/BeXml.h>
@@ -54,10 +54,26 @@ void CreatSeedDb (WCharCP seedFileName)
     ASSERT_TRUE (dgnDbPtr.IsValid ());
 
     dgnDbPtr->SetAsBriefcase (BeBriefcaseId (BeBriefcaseId::Standalone ()));
+
+    // Import the units and formats schema.
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+    static ECN::SchemaKey unitsKey("Units", 1, 0, 0);
+    ECN::ECSchemaPtr units = context->LocateSchema(unitsKey, ECN::SchemaMatchType::Latest);
+    ASSERT_TRUE(units.IsValid());
+
+    static ECN::SchemaKey formatsKey("Formats", 1, 0, 0);
+    ECN::ECSchemaPtr formats = context->LocateSchema(formatsKey, ECN::SchemaMatchType::Latest);
+    ASSERT_TRUE(formats.IsValid());
+
+    ECN::ECSchemaCachePtr schemaList = ECN::ECSchemaCache::Create();
+    schemaList->AddSchema(*units.get());
+    schemaList->AddSchema(*formats.get());
+    dgnDbPtr->ImportSchemas(schemaList->GetSchemas());
+
     dgnDbPtr->GeoLocation ().SetProjectExtents (AxisAlignedBox3d (DPoint3d::From (-500.0, -500.0, 0.0), DPoint3d::From (500.0, 500.0, 500.0)));
 
-    dgnDbPtr->SaveChanges ();
-    dgnDbPtr->SaveSettings ();
+    dgnDbPtr->SaveChanges();
+    dgnDbPtr->SaveSettings();
     }
     dgnDbPtr->CloseDb ();
     Dgn::T_HOST.GetScriptAdmin ().TerminateOnThread ();
