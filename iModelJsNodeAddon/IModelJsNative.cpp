@@ -2787,6 +2787,18 @@ private:
     static Napi::FunctionReference s_constructor;
     std::unique_ptr<ECSqlStatement> m_stmt;
 
+    struct IssueListener : BeSQLite::EC::ECDb::IIssueListener
+        {
+        mutable Utf8String m_lastIssue;
+        ECDbR m_db;
+        bool m_active;
+
+        void _OnIssueReported(BentleyApi::Utf8CP message) const override { m_lastIssue = message;}
+
+        explicit IssueListener(ECDbR db) : m_active(SUCCESS == db.AddIssueListener(*this)), m_db(db) { }
+        ~IssueListener() { if (m_active) m_db.RemoveIssueListener(); }
+        };
+
 public:
     NativeECSqlStatement(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlStatement>(info), m_stmt(new ECSqlStatement()) {}
 
@@ -2846,10 +2858,10 @@ public:
 
         REQUIRE_ARGUMENT_STRING(1, ecsql, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
-        BeSqliteDbMutexHolder serializeAccess(*ecdb); // hold mutex, so that we have a chance to get last ECDb error message
+        IssueListener listener(*ecdb);
 
         ECSqlStatus status = m_stmt->Prepare(*ecdb, ecsql.c_str());
-        return NapiUtils::CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? JsInterop::GetLastECDbIssue().c_str() : nullptr, Env());
+        return NapiUtils::CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? listener.m_lastIssue.c_str() : nullptr, Env());
         }
 
     Napi::Value Reset(Napi::CallbackInfo const& info)

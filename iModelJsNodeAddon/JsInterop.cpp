@@ -24,16 +24,6 @@ BE_JSON_NAME(codeScope)
 BE_JSON_NAME(value)
 BE_JSON_NAME(state)
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  05/17
-//---------------------------------------------------------------------------------------
-struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
-    {
-    void _OnIssueReported(BentleyApi::Utf8CP message) const override { s_lastECDbIssue = message;}
-    };
-
-static ECDbIssueListener s_listener;
-
 /*=================================================================================**//**
 * An implementation of IKnownLocationsAdmin that is useful for desktop applications.
 * This implementation works for Windows, Linux, and MacOS.
@@ -188,15 +178,6 @@ NativeLogging::ILogger& JsInterop::GetLogger()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  05/17
-//---------------------------------------------------------------------------------------
-Utf8StringCR JsInterop::GetLastECDbIssue()
-    {
-    // It's up to the caller to serialize access to this.
-    return s_lastECDbIssue;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 02/18
 //---------------------------------------------------------------------------------------
 DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueCR in, Napi::Env env)
@@ -235,7 +216,6 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
     // NEEDS_WORK - create GCS from ecef location
     // NEEDS_WORK - save thumbnail.
 
-    db->AddIssueListener(s_listener);
     return db;
     }
 
@@ -282,8 +262,6 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
     DgnDb::OpenParams openParams(mode, BeSQLite::DefaultTxn::Yes, schemaUpgradeOptions);
 
     db = DgnDb::OpenDgnDb(&result, pathname, openParams);
-    if (db.IsValid())
-        db->AddIssueListener(s_listener);
 
     return result;
     }
@@ -605,7 +583,6 @@ DbResult JsInterop::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::Op
     if (res != BE_SQLITE_OK)
         return res;
 
-    ecdb.AddIssueListener(s_listener);
     return BE_SQLITE_OK;
     }
 
@@ -622,7 +599,6 @@ DbResult JsInterop::CreateECDb(ECDbR ecdb, BeFileNameCR pathname)
     if (res != BE_SQLITE_OK)
         return res;
 
-    ecdb.AddIssueListener(s_listener);
     return BE_SQLITE_OK;
     }
 
