@@ -9,6 +9,8 @@
 
 #include "../DwgImportInternal.h"
 
+USING_NAMESPACE_DGNDBSYNC_DWG
+
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
 //=======================================================================================
@@ -27,15 +29,14 @@ protected:
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
 //=======================================================================================
-//struct SyncInfoReader
-//    {
-//    DgnDbPtr m_dgndb;
-//    BentleyApi::BeSQLite::Db m_syncInfo;
-//
-//    SyncInfoReader();
-//    void AttachToDgnDb(BentleyApi::BeFileNameCR);
-//    void MustFindFileByName(SyncInfo::V8FileId&, BentleyApi::BeFileNameCR v8FileName, int expectedCount=1);
-//    void MustFindModelByV8ModelId(SyncInfo::V8FileId, DgnV8Api::ModelId, int expectedCount=1);
-//    void MustFindElementByV8ElementId(DgnElementId&, SyncInfo::V8FileId, DgnV8Api::ElementId, int expectedCount=1);
-//    };
+struct SyncInfoReader
+    {
+    DgnDbPtr m_dgndb;
+    BentleyApi::BeSQLite::Db m_syncInfo;
+
+    SyncInfoReader (BentleyApi::BeFileNameCR);
+    void AttachToDgnDb (BentleyApi::BeFileNameCR);
+    void MustFindModelSyncInfo (DwgSyncInfo::DwgModelSyncInfoId& out, uint64_t dwgModelId, DwgSyncInfo::ModelSourceType type) const;
+    void MustFindElementByDwgEntityHandle (DgnElementId&, DwgSyncInfo::DwgModelSyncInfoId const&, DwgDbHandleCR, int expectedCount=1) const;
+    };
 

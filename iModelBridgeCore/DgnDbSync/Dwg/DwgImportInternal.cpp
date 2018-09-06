@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImportInternal.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -109,6 +109,7 @@ void        DwgImporter::RegisterProtocalExtensions ()
     DwgPointCloudExExt::RxInit ();
     DwgViewportExt::RxInit ();
     DwgLightExt::RxInit ();
+    DwgBrepExt::RxInit ();
 
     DwgRxClass::BuildClassHierarchy ();
 
@@ -124,5 +125,10 @@ void        DwgImporter::RegisterProtocalExtensions ()
     DwgRxClass::AddProtocolExtension (DwgDbPointCloudEx::SuperDesc(), protocalClass, DwgPointCloudExExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbViewport::SuperDesc(), protocalClass, DwgViewportExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbLight::SuperDesc(), protocalClass, DwgLightExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDb3dSolid::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbRegion::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbBody::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    // WIP - add surface entities
+    //DwgRxClass::AddProtocolExtension (DwgDbSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
     }
 

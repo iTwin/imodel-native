@@ -27,17 +27,22 @@ DgnElementId QueryElementId (DgnDbCR db, Utf8CP className, Utf8CP codeValue) con
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          04/18
+* @bsimethod                                                    Don.Fu          06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  BuildSpatialElementCode (Utf8StringCR modelname, DwgDbHandleCR entityHandle) const
+DgnElementId    FindElement (DwgDbHandleCR entityHandle, uint64_t dwgModelId, SyncInfoReader const& reader, bool shouldExist = true) const
     {
-    return Utf8PrintfString ("%s:%llx", modelname.c_str(), entityHandle.AsUInt64());
+    DwgSyncInfo::DwgModelSyncInfoId infoId;
+    reader.MustFindModelSyncInfo (infoId, dwgModelId, DwgSyncInfo::ModelSourceType::ModelSpace);
+    DgnElementId    elementId;
+    int count = shouldExist ? 1 : 0;
+    reader.MustFindElementByDwgEntityHandle (elementId, infoId, entityHandle, count);
+    return  elementId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbHandle AddCircle (Utf8StringR codeValue) const
+DwgDbHandle AddCircle (uint64_t& dwgModelId) const
     {
     DwgFileEditor   editor(m_dwgFileName);
     editor.AddCircleInDefaultModel ();
@@ -46,8 +51,7 @@ DwgDbHandle AddCircle (Utf8StringR codeValue) const
     DwgDbHandle entityHandle = editor.GetCurrentObjectId().GetHandle ();
     EXPECT_TRUE (!entityHandle.IsNull());
 
-    // save off the CodeValue
-    codeValue = BuildSpatialElementCode (BuildModelspaceModelname(m_dwgFileName), entityHandle);
+    dwgModelId = editor.GetModelspaceId().ToUInt64 ();
 
     editor.SaveFile ();
     return  entityHandle;
@@ -56,10 +60,11 @@ DwgDbHandle AddCircle (Utf8StringR codeValue) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DeleteEntity (DwgDbHandleCR entityHandle) const
+void DeleteEntity (DwgDbHandleCR entityHandle, uint64_t& modelspaceId) const
     {
     DwgFileEditor   editor(m_dwgFileName);
     editor.DeleteEntity (entityHandle);
+    modelspaceId = editor.GetModelspaceId().ToUInt64 ();
     editor.SaveFile ();
     }
 
@@ -80,14 +85,17 @@ size_t  CountImportedElements () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CheckDbElement (size_t expectedCount, Utf8StringCR codeValue, bool shouldExist) const
+void CheckDbElement (size_t expectedCount, DwgDbHandleCR entityHandle, uint64_t dwgModelId, bool shouldExist) const
     {
     // check expected element count
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     EXPECT_EQ (expectedCount, db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialElement)).BuildIdList<DgnElementId>().size()) << "Spaitial element count in the DgnDb is incorrect.";
 
+    // retreive element ID for the requested entity handle from the syncInfo:
+    SyncInfoReader reader (m_dgnDbFileName);
+    auto elementId = FindElement (entityHandle, dwgModelId, reader, shouldExist);
+    
     // check the presence of the imported element
-    auto elementId = QueryElementId (*db.get(), GENERIC_CLASS_PhysicalObject, codeValue.c_str());
     EXPECT_EQ (shouldExist, elementId.IsValid()) << "The requested elememnt is not added/deleted as it should!";
     }
 
@@ -102,22 +110,22 @@ void ExtractPlacementOrigins (DPoint3dArrayR origins, T_EntityHandles handles) c
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     EXPECT_TRUE (db.IsValid());
 
-    auto modelname = BuildModelspaceModelname (m_dwgFileName);
+    SyncInfoReader  reader(m_dgnDbFileName);
+    DwgFileEditor   editor(m_dwgFileName);
+
+    auto modelspaceId = editor.GetModelspaceId().ToUInt64 ();
     auto iter = db->Elements().MakeIterator (BIS_SCHEMA(BIS_CLASS_SpatialElement));
     for (auto& handle : handles)
         {
-        auto codeValue = BuildSpatialElementCode (modelname, handle);
+        auto elementId = FindElement (handle, modelspaceId, reader);
         for (auto& entry : iter)
             {
-            if (codeValue.EqualsI(entry.GetCodeValue()))
-                {
-                auto element = db->Elements().GetElement (entry.GetElementId());
-                ASSERT_TRUE (element.IsValid());
-                auto geom = element->ToGeometrySource3d ();
-                ASSERT_NOT_NULL (geom);
-                origins.push_back (geom->GetPlacement().GetOrigin());
-                break;
-                }
+            auto element = db->Elements().GetElement (elementId);
+            ASSERT_TRUE (element.IsValid());
+            auto geom = element->ToGeometrySource3d ();
+            ASSERT_NOT_NULL (geom);
+            origins.push_back (geom->GetPlacement().GetOrigin());
+            break;
             }
         }
     EXPECT_EQ (origins.size(), handles.size());
@@ -194,6 +202,52 @@ void CheckDefaultView (Utf8StringCR expectedName)
     auto name = view->GetName ();
     EXPECT_EQ (name, expectedName) << "Wrong default view name!";
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CheckGenericGroup (Utf8StringCR expectedName, DwgDbObjectIdArrayCR expectedEntities, DwgDbObjectIdCR blockId)
+    {
+    auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
+    ASSERT_TRUE (db.IsValid());
+    EXPECT_TRUE (db->IsDbOpen()) << "DgnDb is not open!";
+
+    auto& elements = db->Elements ();
+    DgnElementId    groupId;
+    DgnElementIdSet expectedElements;
+
+    // expect spatial elements exist in db
+    SyncInfoReader  reader (m_dgnDbFileName);
+    for (auto entityId : expectedEntities)
+        {
+        auto elementId = FindElement (entityId.GetHandle(), blockId.ToUInt64(), reader, true);
+        EXPECT_TRUE (elementId.IsValid()) << "DgnElement is not found for a DWG group's memeber entity!";
+        expectedElements.insert (elementId);
+        }
+    EXPECT_EQ(expectedElements.size(), expectedEntities.size());
+
+    // expect a GenericGroup element in db:
+    for (auto entry : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_GroupInformationElement)))
+        {
+        auto genericGroup = elements.Get<GenericGroup>(entry.GetElementId());
+        if (genericGroup.IsValid())
+            {
+            // the defaul implementation should have added a user label
+            auto name = genericGroup->GetUserLabel ();
+            ASSERT_NOT_NULL (name);
+            if (expectedName.Equals(name))
+                {
+                // found expected GenericGroup by name
+                auto members = genericGroup->QueryMembers ();
+                for (auto id : expectedElements)
+                    EXPECT_TRUE(members.Contains(id)) << "An expected member is not found in a GenericGroup!";
+                groupId = genericGroup->GetElementId ();
+                break;
+                }
+            }
+        }
+    EXPECT_TRUE(groupId.IsValid()) << "A GenericGroup for the given name is not found in DgnDb!";
+    }
 };  // BasicTests
 
 /*--------------------------------------------------------------------------------**//**
@@ -215,17 +269,17 @@ TEST_F(BasicTests, UpdateElements_AddDelete)
     size_t  numElements = CountImportedElements ();
 
     // add a circle in DWG file
-    Utf8String  codeValue;
-    DwgDbHandle entityHandle = AddCircle (codeValue);
+    uint64_t    modelspaceId = 0;
+    DwgDbHandle entityHandle = AddCircle (modelspaceId);
 
     // update DgnDb
     DoUpdate (m_dgnDbFileName, m_dwgFileName);
     // exactly 1 element imported?
     EXPECT_EQ (1, GetCount());
-    CheckDbElement (numElements + 1, codeValue, true);
+    CheckDbElement (numElements + 1, entityHandle, modelspaceId, true);
 
     // delete the circle from the DWG file
-    DeleteEntity (entityHandle);
+    DeleteEntity (entityHandle, modelspaceId);
 
     // update DgnDb again
     DoUpdate (m_dgnDbFileName, m_dwgFileName);
@@ -240,7 +294,7 @@ TEST_F(BasicTests, UpdateElements_AddDelete)
         OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     CheckDwgEntity (numElements, entityHandle, false);
 #ifndef PRG
-    CheckDbElement (numElements, codeValue, false);
+    CheckDbElement (numElements, entityHandle, modelspaceId, false);
 #endif
     }
 
@@ -264,7 +318,8 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
 
     // delete the last element from db and from our list as well:
     auto deleteHandle = handles.back ();
-    DeleteEntity (deleteHandle);
+    uint64_t    modelspaceId = 0;
+    DeleteEntity (deleteHandle, modelspaceId);
 
     // move remaining entities to a new location, in DWG units:
     auto delta = DPoint3d::From (20.0, 30.0, 5.0);
@@ -286,21 +341,20 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
     EXPECT_TRUE (db->IsDbOpen());
 
     // is the deleted element in the DgnDb
-    auto modelname = BuildModelspaceModelname (m_dwgFileName);
-    auto codeValue = BuildSpatialElementCode (modelname, deleteHandle);
-    auto id = QueryElementId(*db, GENERIC_CLASS_PhysicalObject, codeValue.c_str());
+    SyncInfoReader  reader (m_dgnDbFileName);
+    auto id = FindElement (deleteHandle, modelspaceId, reader, false);
     EXPECT_FALSE (id.IsValid());
 
     // check element placement origins, in Meters
     auto iter = db->Elements().MakeIterator (BIS_SCHEMA(BIS_CLASS_SpatialElement));
     for (auto& handle : handles)
         {
-        auto codeValue = BuildSpatialElementCode (modelname, handle);
+        id = FindElement (handle, modelspaceId, reader);
         for (auto& entry : iter)
             {
-            if (codeValue.EqualsI(entry.GetCodeValue()))
+            if (entry.GetElementId() == id)
                 {
-                auto element = db->Elements().GetElement (entry.GetElementId());
+                auto element = db->Elements().GetElement (id);
                 ASSERT_TRUE (element.IsValid()) << "Invalid DgnElementCPtr!";
                 auto geom = element->ToGeometrySource3d ();
                 ASSERT_NOT_NULL (geom) << "Not an element of GeometricElement3d!";
@@ -422,3 +476,47 @@ TEST_F(BasicTests, ChangeAndActivateLayout)
     // output sheet model/view should be renamed:
     CheckDefaultView ("test layout[basictype]");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (BasicTests, AddAndUpdateGroup)
+    {
+    LineUpFiles(L"groupTests.ibim", L"basictype.dwg", true); 
+
+    DwgDbObjectId       modelspaceId;
+    DwgDbObjectIdArray  members;
+
+    // create a group dictionary named "TestGroup" in file basictype.dwg, adding all modelspace entities as members:
+    DwgFileEditor   editor (m_dwgFileName);
+    editor.GetModelspaceEntities (members);
+    editor.CreateGroup ("TestGroup", members);
+    modelspaceId = editor.GetModelspaceId ();
+    editor.SaveFile ();
+    
+    EXPECT_GT(members.size(), 0) << "Empty modelspace in seed DWG file!";
+
+    // update DgnDb:
+    DoUpdate (m_dgnDbFileName, m_dwgFileName);
+
+    // check the GenericGroup imported against entities expected:
+    CheckGenericGroup ("TestGroup", members, modelspaceId);
+
+    editor.OpenFile (m_dwgFileName);
+    editor.GetModelspaceEntities (members);
+
+    // remove two members from the DWG group:
+    members.erase (members.begin(), members.begin() + 3);
+    editor.UpdateGroup ("TestGroup", members);
+    modelspaceId = editor.GetModelspaceId ();
+    editor.SaveFile ();
+
+    EXPECT_GT(members.size(), 0) << "Empty modelspace in seed DWG file!";
+
+    // update DgnDb again:
+    DoUpdate (m_dgnDbFileName, m_dwgFileName);
+
+    // check the GenericGroup again in updated DgnDb:
+    CheckGenericGroup ("TestGroup", members, modelspaceId);
+    }
+

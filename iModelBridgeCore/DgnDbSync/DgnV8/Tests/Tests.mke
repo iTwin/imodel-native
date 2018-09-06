@@ -91,8 +91,6 @@ $(o)ECSchemaTests.obj           : $(BEGTEST_INPUT)ECSchemaTests.cpp             
 
 $(o)BeXmlCompareHelper.obj      : $(BEGTEST_INPUT)BeXmlCompareHelper.cpp        $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)DataValidationTests.obj     : $(BEGTEST_INPUT)DataValidationTests.cpp       $(TestsHeaders) ${MultiCompileDepends}
-
 $(o)TagTests.obj                : $(BEGTEST_INPUT)TagTests.cpp                  $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)DimensionTests.obj          : $(BEGTEST_INPUT)DimensionTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
@@ -107,7 +105,11 @@ $(o)ConverterAppTests.obj       : $(BEGTEST_INPUT)ConverterAppTests.cpp         
 
 $(o)RasterTests.obj             : $(BEGTEST_INPUT)RasterTests.cpp               $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)TextBlockTests.obj          : $(BEGTEST_INPUT)TextBlockTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
+$(o)TextBlockTests.obj          : $(BEGTEST_INPUT)TextBlockTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ItemTypeTests.obj           : $(BEGTEST_INPUT)ItemTypeTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)ViewTests.obj               : $(BEGTEST_INPUT)ViewTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)ConvertToDgnDbElementExtensionTests.obj : $(BEGTEST_INPUT)ConvertToDgnDbElementExtensionTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
 

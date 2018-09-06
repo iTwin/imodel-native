@@ -14,8 +14,9 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
 #include <DgnPlatform/GenericDomain.h>
-#include "../../Fwk/DgnDbServerClientUtils.h"
+#include "../../Fwk/IModelClientForBridges.h"
 #include <Bentley/BeFileName.h>
+#include "FakeRegistry.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -499,9 +500,8 @@ static BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir)
 // @bsistruct                                                   Sam.Wilson   10/17
 //=======================================================================================
 BEGIN_BENTLEY_DGN_NAMESPACE
-struct TestiModelHubFX : iModelHubFX
+struct TestIModelHubClientForBridges : IModelHubClientForBridges
 {
-	Utf8String m_projectId;
     iModel::Hub::Error m_lastServerError;
     BeFileName m_serverRepo;
     BeFileName m_testWorkDir;
@@ -511,7 +511,7 @@ struct TestiModelHubFX : iModelHubFX
         bool haveTxns;
         } m_expect {};
 
-    TestiModelHubFX(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir) {}
+    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir) {}
 
     static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
         {
@@ -521,20 +521,7 @@ struct TestiModelHubFX : iModelHubFX
         return repoPath;
         }
 
-    BentleyStatus SignIn(Tasks::AsyncError* servererror, Http::Credentials credentials) override
-        {
-        return BSISUCCESS;
-        }
-
-    BentleyStatus QueryProjectId(WebServices::WSError* wserror, Utf8StringCR bcsProjectName) override
-        {
-        m_projectId = "Foo";
-        return BSISUCCESS;
-        }
-
-    void SetProjectId(Utf8CP guid) override {m_projectId=guid;}
-
-    bool IsSignedIn() const override {return true;}
+    bool IsConnected() const override {return true;}
 
     StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override
         {
@@ -617,7 +604,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     TestSourceItemWithId m_foo_i1;
     TestSourceItemWithId m_bar_i0;
     TestSourceItemWithId m_bar_i1;
-    TestiModelHubFX& m_testiModelHubFX;
+    TestIModelHubClientForBridges& m_testIModelHubClientForBridges;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
     int m_changeCount = 0;
@@ -658,7 +645,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
             el->Delete();
             }
 
-        m_testiModelHubFX.m_expect.haveTxns = m_expect.anyDeleted;
+        m_testIModelHubClientForBridges.m_expect.haveTxns = m_expect.anyDeleted;
         }
 
     SubjectCPtr _FindJob() override
@@ -699,92 +686,41 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
     void ConvertItem(TestSourceItemWithId& item, iModelBridgeSyncInfoFile::ChangeDetector&);
 
-    iModelBridgeTests_Test1_Bridge(TestiModelHubFX& tc)
+    iModelBridgeTests_Test1_Bridge(TestIModelHubClientForBridges& tc)
         :
         iModelBridgeWithSyncInfoBase(),
         m_foo_i0("0", "foo i0 - initial"),
         m_foo_i1("1", "foo i1 - initial"),
         m_bar_i0("0", "bar i0 - initial"),
         m_bar_i1("1", "bar i1 - initial"),
-        m_testiModelHubFX(tc)
+        m_testIModelHubClientForBridges(tc)
         {}
 };
-
-//=======================================================================================
-// @bsistruct                                                   Sam.Wilson   04/17
-//=======================================================================================
-struct TestRegistry : RefCounted<IModelBridgeRegistry>
-    {
-    WString m_bridgeRegSubKey;
-    bmap<BeFileName, iModelBridgeDocumentProperties> m_docPropsByFilename;
-#ifdef WIP_GUID_BINARY
-#endif
-    bmap<Utf8String, iModelBridgeDocumentProperties> m_docPropsByGuid;
-
-    bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override
-        {
-        return m_bridgeRegSubKey == bridgeRegSubKey;
-        }
-
-    void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
-        {
-        if (m_bridgeRegSubKey != bridgeRegSubKey)
-            return;
-        for (auto const& r : m_docPropsByFilename)
-            fns.push_back(r.first);
-        }
-
-    BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) override
-        {
-        if (m_docPropsByFilename.find(bridgeLibraryPath) == m_docPropsByFilename.end())
-            return BSIERROR;
-        bridgeLibraryPath = BeFileName(bridgeName.c_str());
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(bridgeAssetsDir);
-        return BSISUCCESS;
-        }
-    BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) override
-        {
-        auto i = m_docPropsByFilename.find(fn);
-        if (i == m_docPropsByFilename.end())
-            return BSIERROR;
-        props = i->second;
-        return BSISUCCESS;
-        }
-    BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override
-        {
-        if (!docGuid.IsValid())
-            return _GetDocumentProperties(props, localFilePath);
-
-        auto guidStr = docGuid.ToString();
-        auto i = m_docPropsByGuid.find(docGuid.ToString());
-        if (i == m_docPropsByGuid.end())
-            return BSIERROR;
-        props = i->second;
-        return BSISUCCESS;
-        }
-
-    BentleyStatus _AssignFileToBridge(BeFileNameCR sourceFilePath, wchar_t const* bridgeRegSubKey)
-        {
-        if (m_bridgeRegSubKey != bridgeRegSubKey)
-            return ERROR;
-
-        m_docPropsByFilename[sourceFilePath] = iModelBridgeDocumentProperties();
-        return SUCCESS;
-        }
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void populateRegistryWithFooBar(TestRegistry& testRegistry, WCharCP bridgeRegSubKey)
+static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridgeRegSubKey)
     {
-    testRegistry.m_bridgeRegSubKey = bridgeRegSubKey;
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                          const size_t bufferSize,
+                                                          BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                          BentleyApi::WCharCP affinityLibraryPath,
+                                                          BentleyApi::WCharCP sourceFileName)
+        {
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        wcsncpy(buffer, bridgeRegSubKey.c_str(), bridgeRegSubKey.length());
+        };
+
+    testRegistry.AddBridge(bridgeRegSubKey, lambda);
+
     iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1", "");
     iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2", "");
-    testRegistry.m_docPropsByFilename[BeFileName(L"Foo")] = fooDocProps;
-    testRegistry.m_docPropsByFilename[BeFileName(L"Bar")] = barDocProps;
-    testRegistry.m_docPropsByGuid[s_fooGuid] = fooDocProps;
-    testRegistry.m_docPropsByGuid[s_barGuid] = barDocProps;
+    testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
+    testRegistry.SetDocumentProperties(barDocProps, BeFileName(L"Bar"));
+    WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(L"Foo"),L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(L"Bar"),L"");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -800,7 +736,7 @@ static bool anyTxnsInFile(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestiModelHubFX::CaptureChangeSet(DgnDbP db)
+void TestIModelHubClientForBridges::CaptureChangeSet(DgnDbP db)
     {
     ASSERT_TRUE(db != nullptr);
 
@@ -888,7 +824,7 @@ void iModelBridgeTests_Test1_Bridge::DoConvertToBim(SubjectCR jobSubject)
 
     ASSERT_EQ((m_expect.anyChanges || m_expect.anyDeleted), anyChanges);
 
-    m_testiModelHubFX.m_expect.haveTxns = anyChanges;
+    m_testIModelHubClientForBridges.m_expect.haveTxns = anyChanges;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -928,21 +864,25 @@ TEST_F(iModelBridgeTests, Test1)
     args.push_back(L"--fwk-input=Foo");
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestiModelHubFX testiModelHubFX(testDir);
-    iModelBridgeFwk::SetiModelHubFXForTesting(testiModelHubFX);
+    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run
-    iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
+    iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    TestRegistry testRegistry;
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"test1Assignments.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
+    
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
     if (true)
         {
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = false;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -961,7 +901,7 @@ TEST_F(iModelBridgeTests, Test1)
 
         // and run an update
         // This time, we expect to find the repo and briefcase already there.
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -975,7 +915,7 @@ TEST_F(iModelBridgeTests, Test1)
     if (true)
         {
         // Run an update with no changes
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1022,14 +962,17 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestiModelHubFX testiModelHubFX(testDir);
-    iModelBridgeFwk::SetiModelHubFXForTesting(testiModelHubFX);
+    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run
-    iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
+    iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    TestRegistry testRegistry;
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"DelDocTest1.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
@@ -1038,7 +981,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
 
     if (true)
         {
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = false;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -1055,7 +998,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     if (true)
         {
         // convert another document
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = false; // since this is a new "root" document, it must have its own jobsubject
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -1071,7 +1014,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     if (true)
         {
         // Run an update with no changes
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1087,10 +1030,9 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     if (true)
         {
         // now pretend that the document called "bar" was deleted.
-        testRegistry.m_docPropsByFilename.erase(BeFileName(L"Bar"));
-        testRegistry.m_docPropsByGuid.erase(s_barGuid);
-
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testRegistry.RemoveFileAssignment(BeFileName(L"Bar"));
+        
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = true;
@@ -1107,7 +1049,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     if (true)
         {
         // Run an update with no changes
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1157,17 +1099,24 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestiModelHubFX testiModelHubFX(testDir);
-    iModelBridgeFwk::SetiModelHubFXForTesting(testiModelHubFX);
+    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run
-    iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
+    iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    TestRegistry testRegistry;
+    
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"SpatialDataTransformTest.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
+    
+    
+    
 
     testBridge.m_expect.assignmentCheck = true;
 
@@ -1179,7 +1128,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
 
     if (true)
         {
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = false;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -1197,7 +1146,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     if (true)
         {
         // Run an update with no changes
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1216,7 +1165,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     if (true)
         {
         // Run an update with a spatial data transform change
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -1239,7 +1188,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     if (true)
         {
         // Run an update with same transform => verify no changes
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1260,7 +1209,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     if (true)
         {
         // Run an update with same transform passed via doc props => verify no changes
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
         testBridge.m_expect.anyDeleted = false;
@@ -1269,8 +1218,13 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
-        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+
+        iModelBridgeDocumentProperties fooDocProps;
+        testRegistry._GetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
         fooDocProps.m_spatialRootTransformJSON = transform_offset1.ToString();
+        testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
+        testRegistry.Save();
+        
         //args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -1282,7 +1236,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     if (true)
         {
         // Run an update with a new transform passed via doc props => verify 2 changes
-        testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
+        testIModelHubClientForBridges.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = true;
         testBridge.m_expect.anyDeleted = false;
@@ -1291,8 +1245,11 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
-        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+        iModelBridgeDocumentProperties fooDocProps;
+        testRegistry._GetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
         fooDocProps.m_spatialRootTransformJSON = transform_offset1_45.ToString();
+        testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
+        testRegistry.Save();
         //args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -1302,3 +1259,54 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         }
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+    TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
+        {
+        auto testDir = getiModelBridgeTestsOutputDir(L"MixedFileTypeBridgeAssignmentTest");
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+        BeFileName assignDbName(testDir);
+        assignDbName.AppendToPath(L"test1Assignments.db");
+        FakeRegistry testRegistry(testDir, assignDbName);
+        testRegistry.WriteAssignments();
+
+        WString mstnBridgeRegSubKey(L"iModelBridgeForMstn");
+        std::function<T_iModelBridge_getAffinity> mstnLamda = [=](BentleyApi::WCharP buffer,
+                                                               const size_t bufferSize,
+                                                               BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                               BentleyApi::WCharCP affinityLibraryPath,
+                                                               BentleyApi::WCharCP sourceFileName)
+            {
+            BeFileName srcFile(sourceFileName);
+            if (srcFile.GetExtension().CompareToI(L"Dgn"))
+                {
+                
+                affinityLevel = iModelBridgeAffinityLevel::Medium;
+                wcsncpy(buffer, mstnBridgeRegSubKey.c_str(), mstnBridgeRegSubKey.length());
+                }
+            };
+
+        testRegistry.AddBridge(mstnBridgeRegSubKey, mstnLamda);
+
+        
+        WString realDwgBridgeRegSubKey(L"RealDWG");
+        std::function<T_iModelBridge_getAffinity> realDWGLamda = [=](BentleyApi::WCharP buffer,
+                                                                  const size_t bufferSize,
+                                                                  BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                                  BentleyApi::WCharCP affinityLibraryPath,
+                                                                  BentleyApi::WCharCP sourceFileName)
+            {
+            BeFileName srcFile(sourceFileName);
+            if (srcFile.GetExtension().CompareToI(L"DWG"))
+                {
+
+                affinityLevel = iModelBridgeAffinityLevel::Medium;
+                wcsncpy(buffer, realDwgBridgeRegSubKey.c_str(), realDwgBridgeRegSubKey.length());
+                }
+            };
+
+        testRegistry.AddBridge(realDwgBridgeRegSubKey, realDWGLamda);
+        }

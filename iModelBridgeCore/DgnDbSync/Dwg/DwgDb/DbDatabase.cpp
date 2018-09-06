@@ -23,6 +23,7 @@ DwgDbObjectId       DwgDbDatabase::GetTextStyleTableId () const { return DWGDB_C
 DwgDbObjectId       DwgDbDatabase::GetViewportTableId () const { return DWGDB_CALLSDKMETHOD(T_Super::getViewportTableId, T_Super::viewportTableId)(); }
 DwgDbObjectId       DwgDbDatabase::GetModelspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getModelSpaceId(), acdbSymUtil()->blockModelSpaceId(this)); }
 DwgDbObjectId       DwgDbDatabase::GetPaperspaceId () { return DWGDB_CALLSDKMETHOD(T_Super::getPaperSpaceId(), acdbSymUtil()->blockPaperSpaceId(this)); }
+DwgDbObjectId       DwgDbDatabase::GetGroupDictionaryId () const { return DWGDB_CALLSDKMETHOD(T_Super::getGroupDictionaryId(), T_Super::groupDictionaryId()); }
 double              DwgDbDatabase::GetANGBASE () const { return DWGDB_CALLSDKMETHOD(T_Super::getANGBASE(), T_Super::angbase()); }
 bool                DwgDbDatabase::GetANGDIR () const { return DWGDB_CALLSDKMETHOD(T_Super::getANGDIR(), T_Super::angdir()); }
 DwgDbAngularUnits   DwgDbDatabase::GetAUNITS () const { return DWGDB_UPWARDCAST(AngularUnits)(DWGDB_CALLSDKMETHOD(T_Super::getAUNITS, T_Super::aunits)()); }
@@ -57,6 +58,7 @@ double              DwgDbDatabase::GetTEXTSIZE () const { return DWGDB_CALLSDKME
 DwgDbObjectId       DwgDbDatabase::GetTEXTSTYLE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTEXTSTYLE, T_Super::textstyle)(); }
 bool                DwgDbDatabase::GetTILEMODE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTILEMODE, T_Super::tilemode)(); }
 bool                DwgDbDatabase::GetVISRETAIN () const { return DWGDB_CALLSDKMETHOD(T_Super::getVISRETAIN, T_Super::visretain)(); }
+DwgDbStatus         DwgDbDatabase::SetVISRETAIN (bool on) { DWGDB_CALLSDKMETHOD(T_Super::setVISRETAIN(on); return DwgDbStatus::Success, return ToDwgDbStatus(T_Super::setVisretain(on))); }
 bool                DwgDbDatabase::GetLineweightDisplay () const { return DWGDB_CALLSDKMETHOD(T_Super::getLWDISPLAY, T_Super::lineWeightDisplay)(); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByBlockId(), T_Super::byBlockLinetype()); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByLayerId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByLayerId(), T_Super::byLayerLinetype()); }
@@ -349,9 +351,9 @@ DwgString       DwgDbDatabase::GetVersionGuid () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus DwgDbDatabase::SaveAs (WCharCP newFileName, DwgFileVersion version, bool createBakFile)
     {
-    DwgDbVersion    toVersion = Util::GetDwgVersionFrom (version);
+    TkDbVersion    toVersion = Util::GetDwgVersionFrom (version);
 
-    if (toVersion != DwgDbVersion::kDHL_Unknown && nullptr != newFileName && newFileName[0] != 0)
+    if (toVersion != TkDbVersion::kDHL_Unknown && nullptr != newFileName && newFileName[0] != 0)
         {
 #if DWGTOOLKIT_OpenDwg
         T_Super::writeFile(OdString(newFileName), OdDb::SaveType::kDwg, static_cast<OdDb::DwgVersion>(version), true);
@@ -384,9 +386,9 @@ DwgDbStatus DwgDbDatabase::SaveAs (WCharCP newFileName, DwgFileVersion version, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus DwgDbDatabase::SaveAsDxf (WCharCP dxfFileName, DwgFileVersion version, int precision)
     {
-    DwgDbVersion    toVersion = Util::GetDwgVersionFrom (version);
+    TkDbVersion    toVersion = Util::GetDwgVersionFrom (version);
 
-    if (toVersion != DwgDbVersion::kDHL_Unknown && nullptr != dxfFileName && dxfFileName[0] != 0)
+    if (toVersion != TkDbVersion::kDHL_Unknown && nullptr != dxfFileName && dxfFileName[0] != 0)
         {
 #if DWGTOOLKIT_OpenDwg
         T_Super::writeFile(OdString(dxfFileName), OdDb::SaveType::kDxf, static_cast<OdDb::DwgVersion>(version), true, precision);

@@ -28,6 +28,7 @@ struct RasterTests : public ConverterTestBaseFixture
     void ValidateModelViews(DgnDbR db, Utf8StringCR  name, uint32_t nbConvertedViews, bool modelIs3d, bool expectedViewState[MAX_VIEWS]);
 
     void CreateRasterAttachmentElement(WCharCP fileName, DgnV8Api::EditElementHandle& eeh, Bentley::DgnModelR model/*, bool addToModel = true*/, bool reLocate = false);
+    void CreateRasterAttachmentElement(WCharCP fileName, Transform transform, DgnV8Api::EditElementHandle& eeh, Bentley::DgnModelR model/*, bool addToModel = true*/, bool reLocate = false);
     };
 
 //-----------------------------------------------------------------------------------------
@@ -57,7 +58,7 @@ BentleyApi::RefCountedPtr<Model_T> RasterTests::FindModel(DgnDbCR db, Utf8String
 void RasterTests::ValidateModelRange(GeometricModel3dCR geomModel, Utf8StringCR name, double x0, double y0, double z0, double x1, double y1, double z1, double tol)
     {
     BentleyApi::DRange3d expectedRange = BentleyApi::DRange3d::From(x0, y0, z0, x1, y1, z1);
-    AxisAlignedBox3d modelRange = geomModel.QueryModelRange();
+    BentleyApi::AxisAlignedBox3d modelRange = geomModel.QueryModelRange();
 
     // Compare ranges. Ignore z values because QueryModelRange adds some depth (z = 1.0 or -1.0), which is irrelevant for us.
     bool areEqual = true;
@@ -166,16 +167,24 @@ void RasterTests::ValidateModelViews(DgnDbR db, Utf8StringCR  name, uint32_t nbC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RasterTests::CreateRasterAttachmentElement(WCharCP fileName, DgnV8Api::EditElementHandle& eeh, Bentley::DgnModelR model/*, bool addToModel = true*/, bool reLocate)
     {
-    Transform identityTransform;
-    memset(&identityTransform, 0, sizeof(identityTransform.form3d));
+    Transform transform;
+    memset(&transform, 0, sizeof(transform.form3d));
     int i = 1;
     if (reLocate)
         i = 10.5;
 
-    identityTransform.form3d[0][0] = -10000 * i;
-    identityTransform.form3d[1][1] = 5000 * i;
-    identityTransform.form3d[2][2] = 10000 * i;
+    transform.form3d[0][0] = -10000 * i;
+    transform.form3d[1][1] = 5000 * i;
+    transform.form3d[2][2] = 10000 * i;
 
+    CreateRasterAttachmentElement(fileName, transform, eeh, model, reLocate);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void RasterTests::CreateRasterAttachmentElement(WCharCP fileName, Transform transform, DgnV8Api::EditElementHandle& eeh, Bentley::DgnModelR model, bool reLocate /* = false */)
+    {
     DPoint2d  extentInUORVerifier;
     extentInUORVerifier.x = 50.0;
     extentInUORVerifier.y = 100.0;
@@ -190,7 +199,7 @@ void RasterTests::CreateRasterAttachmentElement(WCharCP fileName, DgnV8Api::Edit
     DgnDocumentMonikerPtr pMoniker = DgnV8Api::DgnDocumentMoniker::CreateFromRawData(InputFilename.c_str(), InputFilespec.c_str(), NULL, /*NULL/*searchPath will be added by DgnRaster*/DgnV8Api::IRasterAttachmentQuery::GetSearchPath(&model).c_str(), false, NULL);
     DgnRasterOpenParamsPtr openParams = DgnV8Api::Raster::DgnRasterOpenParams::Create(pMoniker, true/*read only*/);
 
-    EXPECT_EQ(SUCCESS, DgnV8Api::RasterFrameHandler::CreateRasterAttachment(eeh, NULL, *pMoniker, identityTransform, extentInUORVerifier, model));
+    EXPECT_EQ(SUCCESS, DgnV8Api::RasterFrameHandler::CreateRasterAttachment(eeh, NULL, *pMoniker, transform, extentInUORVerifier, model));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -904,4 +913,97 @@ TEST_F(RasterTests, WMS_Reprojected)
     ASSERT_EQ(190597, mapInfo.m_metaHeight);
     }
 #endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(RasterTests, CRUD)
+    {
+    LineUpFiles(L"RasterCRUD.ibim", L"Test3d.dgn", false);
+
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    WCharCP fileName = L"popotons.jpg";
+    Bentley::DgnModelP model = v8editor.m_defaultModel->GetDgnModelP();
+
+    DgnV8Api::EditElementHandle eeh;
+    Transform identity = Transform::FromIdentity();
+
+    CreateRasterAttachmentElement(fileName, identity, eeh, *model);
+    eeh.AddToModel();
+    v8editor.Save();
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+        Utf8String name("popotons.jpg");
+        auto rasterModelP = FindModel<BentleyApi::Raster::RasterFileModel>(*db, name);
+        ASSERT_NE(nullptr, rasterModelP.get()) << L"Model not found: " << name;
+        }
+    DgnV8Api::EditElementHandle eeh2;
+    Transform transform2;
+    memset(&transform2, 0, sizeof(transform2.form3d));
+    transform2.form3d[0][0] = 2;
+    transform2.form3d[0][3] = 200;
+    transform2.form3d[1][1] = 2;
+    transform2.form3d[1][3] = 200;
+    transform2.form3d[2][2] = 1;
+
+    CreateRasterAttachmentElement(L"12TVL290030_saltLake.jpg", transform2, eeh2, *model);
+    eeh2.AddToModel();
+
+    v8editor.Save();
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+        Utf8String name2("12TVL290030_saltLake.jpg");
+        auto rasterModel2P = FindModel<BentleyApi::Raster::RasterFileModel>(*db, name2);
+        ASSERT_NE(nullptr, rasterModel2P.get()) << L"Model not found: " << name2;
+        }
+
+    IRasterAttachmentEditP rasterEdit = dynamic_cast<IRasterAttachmentEditP> (&eeh2.GetHandler());
+    ASSERT_TRUE(NULL != rasterEdit);
+    Transform transform3;
+    memset(&transform3, 0, sizeof(transform3.form3d));
+    transform3.form3d[0][0] = 1.5;
+    transform3.form3d[0][3] = -150;
+    transform3.form3d[1][1] = 1.5;
+    transform3.form3d[1][3] = -150;
+    transform3.form3d[2][2] = 1;
+
+    rasterEdit->SetTransform(eeh2, transform3);
+    eeh2.ReplaceInModel(eeh2.GetElementRef());
+    v8editor.Save();
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        // for DgnDb, all coordinates are stored as meters. Determine the ratio of DgnV8 storage units to meters
+        auto toMeters = 1.0 / 1000000.0;
+
+        BentleyApi::DPoint4d row0 = BentleyApi::DPoint4d::From(1.5 * toMeters, 0.0, 0.0, -150.0 * toMeters);
+        BentleyApi::DPoint4d row1 = BentleyApi::DPoint4d::From(0.0, 1.5 * toMeters, 0.0, -150.0 * toMeters);
+        BentleyApi::DPoint4d row2 = BentleyApi::DPoint4d::From(0.0, 0.0, 1.0 * toMeters, 0.0);
+
+        BentleyApi::DPoint4d actual0, actual1, actual2, actual3;
+        Utf8String name2("12TVL290030_saltLake.jpg");
+        auto rasterModel2P = FindModel<BentleyApi::Raster::RasterFileModel>(*db, name2);
+        ASSERT_NE(nullptr, rasterModel2P.get()) << L"Model not found: " << name2;
+        rasterModel2P->GetSourceToWorld().GetRows(actual0, actual1, actual2, actual3);
+        ASSERT_TRUE(row0.IsEqual(actual0, 0.0001));
+        ASSERT_TRUE(row1.IsEqual(actual1, 0.0001));
+        ASSERT_TRUE(row2.IsEqual(actual2, 0.0001));
+        }
+
+    BentleyApi::BeFileName popotons = GetOutputFileName(L"popotons.jpg");
+    time_t mtime;
+    popotons.GetFileTime(nullptr, nullptr, &mtime);
+    mtime += 1000;
+    popotons.SetFileTime(nullptr, &mtime);
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    }
 

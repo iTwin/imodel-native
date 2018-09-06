@@ -128,7 +128,53 @@ static ColorDef toColorDef(UInt32 val, DgnFileR dgnFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void convertSkyboxDisplay(DisplayStyle3dR dstyle3d, DgnV8Api::DisplayStyle const& v8displayStyle, DgnFileR dgnFile)
+void convertGradientSkybox(DisplayStyle3d::EnvironmentDisplay& env, LxoEnvironmentGradientLayerR gradLayer)
+    {
+    env.m_skybox.m_zenithColor = toColorDef(gradLayer.GetZenithColor());
+    env.m_skybox.m_skyColor = toColorDef(gradLayer.GetSkyColor());
+    env.m_skybox.m_groundColor = toColorDef(gradLayer.GetGroundColor());
+    env.m_skybox.m_nadirColor = toColorDef(gradLayer.GetNadirColor());
+    env.m_skybox.m_skyExponent = gradLayer.GetSkyExponent();
+    env.m_skybox.m_groundExponent = gradLayer.GetGroundExponent();
+    env.m_skybox.m_twoColor = gradLayer.Is2Color();
+    env.m_skybox.m_enabled = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void convertImageSkybox(DisplayStyle3d::EnvironmentDisplay& env, LxoEnvironmentImageLayerR layer, DgnFileR v8File, Converter& converter)
+    {
+    using ImageType = DisplayStyle3d::EnvironmentDisplay::SkyBox::Image::Type;
+
+    ImageType imageType = ImageType::None;
+    auto projection = layer.GetProjectionType();
+    switch (projection)
+        {
+        case DgnV8Api::LxoEnvironmentImageLayer::LXO_ENVPROJECT_Spherical:
+            imageType = ImageType::Spherical;
+            break;
+        case DgnV8Api::LxoEnvironmentImageLayer::LXO_ENVPROJECT_Cylindrical:
+            imageType = ImageType::Cylindrical;
+            break;
+        default:
+            return; // ###TODO: Image Cube apparently soon to be supported by MicroStation; any others we can support?
+        }
+
+    WCharCP imageFileName = layer.GetFileName();
+    DgnTextureId textureId = converter.FindOrInsertTextureImage(imageFileName, v8File);
+    if (!textureId.IsValid())
+        return;
+
+    env.m_skybox.m_image.m_type = imageType;
+    env.m_skybox.m_image.m_textureId = textureId;
+    env.m_skybox.m_enabled = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void convertSkyboxDisplay(DisplayStyle3dR dstyle3d, DgnV8Api::DisplayStyle const& v8displayStyle, DgnFileR dgnFile, Converter& converter)
     {
     auto v8env = DgnV8Api::LxoEnvironmentManager::GetManagerR().FindLxoEnvironmentByName(v8displayStyle.GetEnvironmentName().c_str(), dgnFile);
 
@@ -139,21 +185,16 @@ void convertSkyboxDisplay(DisplayStyle3dR dstyle3d, DgnV8Api::DisplayStyle const
         return;
 
     auto layer = v8env->GetCurrentLayer();
-    if (layer->GetType() != DgnV8Api::LxoEnvironmentLayerType::Gradient)
-        return;
-
-    auto gradLayer = (LxoEnvironmentGradientLayerP) layer;
-
-    auto env = dstyle3d.GetEnvironmentDisplay();
-    env.m_skybox.m_zenithColor = toColorDef(gradLayer->GetZenithColor());
-    env.m_skybox.m_skyColor = toColorDef(gradLayer->GetSkyColor());
-    env.m_skybox.m_groundColor = toColorDef(gradLayer->GetGroundColor());
-    env.m_skybox.m_nadirColor = toColorDef(gradLayer->GetNadirColor());
-    env.m_skybox.m_skyExponent = gradLayer->GetSkyExponent();
-    env.m_skybox.m_groundExponent = gradLayer->GetSkyExponent();
-    env.m_skybox.m_twoColor = gradLayer->Is2Color();
-    env.m_skybox.m_enabled = true;
-    dstyle3d.SetEnvironmentDisplay(env);
+    auto& env = dstyle3d.GetEnvironmentDisplayR();
+    switch (layer->GetType())
+        {
+        case DgnV8Api::LxoEnvironmentLayerType::Gradient:
+            convertGradientSkybox(env, *(LxoEnvironmentGradientLayerP)layer);
+            break;
+        case DgnV8Api::LxoEnvironmentLayerType::Image:
+            convertImageSkybox(env, *(LxoEnvironmentImageLayerP)layer, dgnFile, converter);
+            break;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -179,7 +220,7 @@ void Converter::ConvertDisplayStyle(DisplayStyleR style, DgnV8Api::DisplayStyle 
                 style.SetBackgroundColor(toColorDef(overrides.m_backgroundColor, dgnFile));
             else
                 {
-                convertSkyboxDisplay(*style3d, v8displayStyle, dgnFile);
+                convertSkyboxDisplay(*style3d, v8displayStyle, dgnFile, *this);
 
                 // due to a bug in MS, when this flag is on, viewInfo.ResolveBGColor returns the wrong answer. 
                 // It matters for transparency with QV. 255 is the right bg color. 
@@ -381,6 +422,45 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ViewDefinitionPtr SpatialViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+    {
+    ViewDefinitionPtr newDef = _MakeView(converter, params);
+    if (!newDef.IsValid())
+        return newDef;
+    
+    SpatialViewDefinition* spatial = newDef->ToSpatialViewP();
+
+    DgnDbStatus stat;
+    // need to update the ModelSelector, DisplayStyle, etc.
+    SpatialViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId);
+    ModelSelectorR newModelSelector = spatial->GetModelSelector();
+    newModelSelector.ForceElementIdForInsert(existingDef->GetModelSelectorId());
+    newModelSelector.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    spatial->SetModelSelector(newModelSelector);
+
+    DisplayStyle3dR newDisplayStyle = spatial->GetDisplayStyle3d();
+    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
+    newDisplayStyle.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    spatial->SetDisplayStyle(newDisplayStyle);
+
+    CategorySelectorR newCategorySelector = spatial->GetCategorySelector();
+    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
+    newCategorySelector.Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    spatial->SetCategorySelector(newCategorySelector);
+
+    newDef->ForceElementIdForInsert(viewId);
+    return newDef;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 ViewFactory::ViewDefinitionParams::ViewDefinitionParams(Converter* c, Utf8StringCR n, ResolvedModelMapping const& m, Bentley::ViewInfoCR vi, bool is3d) : m_name(n), m_modelMapping(m), m_viewInfo(vi)
@@ -541,6 +621,35 @@ void Converter::ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo,
         }
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, DgnFileR dgnFile)
+    {
+    auto        elementRef = dgnFile.FindByElementId(viewInfo.GetElementId(), true);
+    size_t      stringLength = 0;
+    static      uint32_t   STRING_LINKAGE_KEY_BackgroundMapJson = 89;
+
+    if (nullptr == elementRef)
+        return false;
+
+    DgnV8Api::ElementHandle       eeh(elementRef);
+
+    if (BSISUCCESS != DgnV8Api::StringXAttribute::Extract(nullptr, 0, &stringLength, eeh, 0, STRING_LINKAGE_KEY_BackgroundMapJson) ||
+        0 == stringLength)
+        return false;
+
+    WChar*      wBackgroundMapJson = (WChar*) _alloca ((1+stringLength) * sizeof (WChar));
+    DgnV8Api::StringXAttribute::Extract (wBackgroundMapJson, stringLength, nullptr, eeh, 0, STRING_LINKAGE_KEY_BackgroundMapJson);
+    Json::Value     value = Json::Reader::DoParse(Utf8String(wBackgroundMapJson));
+
+    if (value.isObject())
+        displayStyle.SetStyle(DisplayStyle::json_backgroundMap(), value);
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -553,13 +662,29 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     if (!definitionModel.IsValid())
         return BSIERROR;
 
+    DgnViewId existingViewId;
+    bool doUpdate = false;
     if (IsUpdating())
         {
-        auto viewId = ViewDefinition::QueryViewId(*definitionModel, name);
-        if (viewId.IsValid())
+        // For imodels that were created during the EAP, but before this table was implemented, need to do a check
+        if (GetSyncInfo().ViewTableExists())
             {
-            // *** WIP_UPDATER: check that per-attachment level definitions and visibility are unchanged
-            return BSISUCCESS;
+            double lastModified;
+            if (GetSyncInfo().TryFindView(existingViewId, lastModified, viewInfo))
+                {
+                if (lastModified == viewInfo.GetElementRef()->GetLastModified())
+                    {
+                    GetChangeDetector()._OnViewSeen(*this, existingViewId);
+                    return BSISUCCESS;
+                    }
+                doUpdate = true;
+                }
+            }
+        else
+            {
+            auto viewId = ViewDefinition::QueryViewId(*definitionModel, name);
+            if (viewId.IsValid())
+                doUpdate = true;
             }
         }
 
@@ -604,6 +729,9 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     // DisplayStyle
     ViewFlags flags = ConvertV8Flags(viewInfo.GetViewFlags());
+
+    flags.SetShowBackgroundMap(convertBackgroundMap(*parms.m_dstyle, parms.m_viewInfo, *v8File));
+
     parms.m_dstyle->SetViewFlags(flags);
     ColorDef bgColor(DgnV8Api::IntColorDef(viewInfo.ResolveBGColor()).m_int); // Always set view's background color to "resolved" background color from V8.
     parms.m_dstyle->SetBackgroundColor(bgColor);
@@ -643,7 +771,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     parms.m_rot = (RotMatrixCR)v8Rotation;
 
-    ViewDefinitionPtr view = viewFactory._MakeView(*this, parms);
+    ViewDefinitionPtr view;
+    if (doUpdate)
+        view = viewFactory._UpdateView(*this, parms, existingViewId);
+    else
+        view = viewFactory._MakeView(*this, parms);
+
     if (!view.IsValid())
         return BSIERROR;
 
@@ -651,12 +784,23 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
     ConvertViewACS(view, viewInfo, *v8Model, trans, name);
 
-    if (!view->Insert().IsValid())
+    if (doUpdate)
         {
-        // this sometimes happens when a corrupt DgnV8 file has more than one viewgroup with the same name (which is an error).
-        // Just ignore the later viewgroups.
-        ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
-        return BSIERROR;
+        if (!view->Update().IsValid())
+            {
+            ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
+            return BSIERROR;
+            }
+        }
+    else
+        {
+        if (!view->Insert().IsValid())
+            {
+            // this sometimes happens when a corrupt DgnV8 file has more than one viewgroup with the same name (which is an error).
+            // Just ignore the later viewgroups.
+            ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
+            return BSIERROR;
+            }
         }
 
     if (LOG_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
@@ -666,6 +810,11 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     m_viewNumberMap.insert({view->GetViewId(), viewInfo.GetViewNumber()});
     if (!viewId.IsValid())
         viewId = view->GetViewId();
+    GetChangeDetector()._OnViewSeen(*this, viewId);
+    if (doUpdate)
+        GetSyncInfo().UpdateView(viewId, viewInfo);
+    else
+        GetSyncInfo().InsertView(viewId, viewInfo);
     return BSISUCCESS;
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Updater.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -114,6 +114,28 @@ bool ChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter,
 
         if (v8mm.GetDgnModel().IsSpatialModel() && converter.HasRootTransChanged())
             res.m_changeType = ChangeType::Update;
+
+        // If the element is reality data, then need to check if the image file has changed
+        Utf8String fileName;
+        uint64_t existingLastModifiedTime;
+        uint64_t existingFileSize;
+        Utf8String existingEtag;
+        Utf8String rdsId; // unnecessary but the method requires it
+        if (converter.GetSyncInfo().TryFindImageryFile(res.m_v8ElementMapping.GetElementId(), fileName, existingLastModifiedTime, existingFileSize, existingEtag, rdsId))
+            {
+            uint64_t currentLastModifiedTime;
+            uint64_t currentFileSize;
+            Utf8String currentEtag;
+            converter.GetSyncInfo().GetCurrentImageryInfo(fileName, currentLastModifiedTime, currentFileSize, currentEtag);
+
+            if (!existingEtag.empty())
+                {
+                if (!existingEtag.Equals(currentEtag))
+                    res.m_changeType = ChangeType::Update;
+                }
+            else if (currentLastModifiedTime != existingLastModifiedTime || currentFileSize != existingFileSize)
+                res.m_changeType = ChangeType::Update;
+            }
         }
 
     iter->GetStatement()->Reset();  // NB: don't leave the iterator in an active state!
@@ -161,7 +183,7 @@ bool ChangeDetector::_ShouldSkipFile(Converter& converter, DgnV8FileCR v8file)
         return false;
 
     // if it hasn't changed per the "last saved time", don't bother with it.
-    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file))
+    if (!s_doFileSaveTimeCheck || converter.GetSyncInfo().HasLastSaveTimeChanged(v8file) || converter.GetSyncInfo().ModelHasChangedImagery(Converter::GetV8FileSyncInfoIdFromAppData(v8file)))
         return false;
 
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
@@ -230,6 +252,9 @@ void ChangeDetector::_DetectDeletedModels(Converter& converter, SyncInfo::ModelI
     // them were missing this time around. Those models and their constituent Models must to be deleted.
     for (auto wasModel=iter.begin(); wasModel!=iter.end(); ++wasModel)
         {
+        if (!converter.IsBimModelAssignedToJobSubject(wasModel.GetModelId()))
+            continue;
+
         if (m_v8ModelsSeen.find(wasModel.GetV8ModelSyncInfoId()) == m_v8ModelsSeen.end())
             {
             if (m_v8ModelsSkipped.find(wasModel.GetV8ModelSyncInfoId()) != m_v8ModelsSkipped.end())
@@ -298,6 +323,8 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
     modelsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
     for (auto modelInFile = modelsInFile.begin(); modelInFile != modelsInFile.end(); ++modelInFile)
         {
+        if (!converter.IsBimModelAssignedToJobSubject(modelInFile.GetModelId()))
+            continue;
         SyncInfo::ElementIterator elementsInModel(converter.GetDgnDb(), "V8ModelSyncInfoId=?");
         elementsInModel.GetStatement()->BindInt(1, modelInFile.GetV8ModelSyncInfoId().GetValue());
         _DetectDeletedElements(converter, elementsInModel);
@@ -399,6 +426,96 @@ bool CreatorChangeDetector::_IsElementChanged(SearchResults& res, Converter& con
     res.m_currentElementProvenance = SyncInfo::ElementProvenance(v8eh, converter.GetSyncInfo(), converter.GetCurrentIdPolicy());
     res.m_changeType = ChangeType::Insert;
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void ChangeDetector::_OnViewSeen(Converter&, DgnViewId viewId)
+    {
+    if (viewId.IsValid())
+        m_viewsSeen.insert(viewId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void ChangeDetector::_DetectDeletedViews(Converter& converter, SyncInfo::ViewIterator &iter)
+    {
+    auto&   elements = converter.GetDgnDb().Elements();
+    auto&   syncInfo = converter.GetSyncInfo();
+    auto    jobModelId = converter.GetJobDefinitionModel()->GetModelId();
+
+    for (auto viewSyncInfo = iter.begin(); viewSyncInfo != iter.end(); ++viewSyncInfo)
+        {
+        auto previouslyConvertedViewId = viewSyncInfo.GetId();
+        if (m_viewsSeen.find(previouslyConvertedViewId) != m_viewsSeen.end())
+            continue;
+
+        // a special case for a SpatialView: if attached to a Sheet::ViewAttachment, do not delete it:
+        bool    isAttached = false;
+        for (auto va : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment)))
+            {
+            auto viewAttachment = elements.Get<Sheet::ViewAttachment>(va.GetElementId());
+            if (viewAttachment.IsValid() && viewAttachment->GetAttachedViewId() == previouslyConvertedViewId)
+                {
+                isAttached = true;
+                break;
+                }
+            }
+        if (!isAttached)
+            {
+            ViewDefinitionCPtr tempView = converter.GetDgnDb().Elements().Get<ViewDefinition>(previouslyConvertedViewId);
+            DgnElementId categorySelectorId = tempView->GetCategorySelectorId();
+            DgnElementId displayStyleId = tempView->GetDisplayStyleId();
+            DgnElementId modelSelectorId;
+
+            if (tempView->ToSpatialView() != nullptr)
+                 modelSelectorId = tempView->ToSpatialView()->GetModelSelectorId();
+
+            elements.Delete(previouslyConvertedViewId);
+            syncInfo.DeleteView(previouslyConvertedViewId);
+
+            // Clean up the component elements
+            // Category Selector
+            BeSQLite::EC::ECSqlStatement stmt;
+            Utf8PrintfString sql("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_ViewDefinition), BIS_CLASS_CategorySelector);
+            stmt.Prepare(converter.GetDgnDb(), sql.c_str());
+            stmt.BindId(1, categorySelectorId);
+            auto rc = stmt.Step();
+            if (BE_SQLITE_DONE == rc)
+                elements.Delete(categorySelectorId);
+
+            BeSQLite::EC::ECSqlStatement stmt2;
+            Utf8PrintfString sql2("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_ViewDefinition), BIS_CLASS_DisplayStyle);
+            stmt2.Prepare(converter.GetDgnDb(), sql2.c_str());
+            stmt2.BindId(1, displayStyleId);
+            rc = stmt2.Step();
+            if (BE_SQLITE_DONE == rc)
+                elements.Delete(displayStyleId);
+
+            if (modelSelectorId.IsValid())
+                {
+                BeSQLite::EC::ECSqlStatement stmt3;
+                Utf8PrintfString sql3("SELECT 1 FROM %s WHERE %s.Id = ?", BIS_SCHEMA(BIS_CLASS_SpatialViewDefinition), BIS_CLASS_ModelSelector);
+                stmt3.Prepare(converter.GetDgnDb(), sql3.c_str());
+                stmt3.BindId(1, modelSelectorId);
+                rc = stmt3.Step();
+                if (BE_SQLITE_DONE == rc)
+                    elements.Delete(modelSelectorId);
+                }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void ChangeDetector::_DetectDeletedViewsInFile(Converter& converter, DgnV8FileR v8File)
+    {
+    SyncInfo::ViewIterator viewsInFile(converter.GetDgnDb(), "V8FileSyncInfoId=?");
+    viewsInFile.GetStatement()->BindInt(1, Converter::GetV8FileSyncInfoIdFromAppData(v8File).GetValue());
+    _DetectDeletedViews(converter, viewsInFile);
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

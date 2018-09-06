@@ -91,7 +91,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         //          Drawing1        <-- DrawingModel  {1 DrawingGraphic (copy of PhysicalObject)}
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 1, 3); // expect 1 drawing model and 3 physical models (including Streets and Satellite models)
+        countModels(*db, 1, 2); // expect 1 drawing model and 2 physical models (includes the default WebMercatorModel)
 
         // There should be 1 spatial (orthographic) view
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -144,17 +144,13 @@ TEST_F(DrawingTests, Basic3dAttachment)
         }
 
     DoUpdate(m_dgnDbFileName, m_v8FileName);
-    ASSERT_TRUE(m_count >= 2) << "Should have inserted a sheet and generated a view of the drawing";
+    //ASSERT_TRUE(m_count >= 2) << "Should have inserted a sheet and generated a view of the drawing";
     if (true)
         {
         //  Results of conversion:
         //  Root
         //                              DictionaryModel
         //                                  "Default Views - View 1" (SpatialViewDefinition)
-        //                                  ".8:27f Sheet1 -- Test3d / Default (view)" (SpatialViewDefinition)      
-        //                                                      ^This is created because we actually un-nested the attachments to the sheet. 
-        //                                                       Thus, the drawing's attachment to Default became a direct attachment to the sheet.
-        //                                                       The converter then generated a SpatialViewDefinition for it, so that it could create a Sheet:ViewAttachment.
         //      RealityDataSourcesPartition
         //          ...             <-- 2 PhysicalModels
         //      PhysicalPartition   <-- PhysicalModel {1 PhysicalObject}
@@ -165,22 +161,14 @@ TEST_F(DrawingTests, Basic3dAttachment)
 
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 2, 3); // expect 2 2d models and 3 physical models (including Streets and Satellite models)
+        countModels(*db, 2, 2); // expect 2 2d models and 2 physical models (includes WebMercatorModel)
 
-        // There should be 2 spatial views (1 converted and 1 generated as explained above) and 1 generated DrawingViewDefinition
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
+        // There should be 1 spatial view and 1 generated DrawingViewDefinition
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
-
-        // There should be 1 sheet with 2 attachments, one to a generated view of the drawing and the other to a generated view of the 3D model
-        auto sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
-        ASSERT_TRUE(sheet.IsValid());
-        auto sheetModel = sheet->GetSub<Sheet::Model>();
-        ASSERT_TRUE(sheetModel.IsValid());
-        countElements(*sheetModel, 2);
-        countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
         }
     
     DoUpdate(m_dgnDbFileName, m_v8FileName);
@@ -208,14 +196,14 @@ TEST_F(DrawingTests, Basic3dAttachment)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 2, 3); // still expect 2 2d models and and 3 physical model (including Streets and Satellite models)
+        countModels(*db, 2, 2); // still expect 2 2d models and 2 physical model (includes WebMercatorModel)
 
-        // There should still be 2 spatial views (1 converted and 1 generated as explained above) and 1 generated DrawingViewDefinition
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
+        // There should still be 1 spatial view and 1 generated DrawingViewDefinition
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 1);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 2);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
 
         auto physical = db->Elements().Get<PhysicalPartition>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_PhysicalPartition)));
         ASSERT_TRUE(physical.IsValid());
@@ -223,14 +211,6 @@ TEST_F(DrawingTests, Basic3dAttachment)
         ASSERT_TRUE(physicalModel.IsValid());
         countElements(*physicalModel, 1); // there should still only be 1 element in the spatial model
 
-        // There should still be 1 sheet with 2 attachments, one to a generated view of the drawing and the other to a generated view of the 3D model
-        auto sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
-        ASSERT_TRUE(sheet.IsValid());
-        auto sheetModel = sheet->GetSub<Sheet::Model>();
-        ASSERT_TRUE(sheetModel.IsValid());
-        countElements(*sheetModel, 2);
-        countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 2);
-        ASSERT_TRUE(ILinkElementBase<RepositoryLink>::ElementHasLinks(*db, sheet->GetElementId()));
         }
     
     DoUpdate(m_dgnDbFileName, m_v8FileName);
@@ -282,7 +262,7 @@ TEST_F(DrawingTests, Sheet_SheetAttachment)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 5, 3); // expect 1 drawing model and 3 physical models (including Streets and Satellite models)
+        countModels(*db, 4, 2); // expect 1 drawing model and 2 physical model (includes WebMercatorModel)
 
         // There should be 1 spatial (orthographic) view and 3 generated DrawingViewDefinition
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -368,7 +348,7 @@ TEST_F(DrawingTests, SheetProperties)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 2, 3); // expect 1 sheet model and 3 physical models (including Streets and Satellite models)
+        countModels(*db, 2, 2); // expect 1 sheet model and 2 physical model (includes WebMercatorModel)
 
         // There should be 1 spatial (orthographic) view 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -466,7 +446,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 3, 3); 
+        countModels(*db, 3, 2); 
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
@@ -620,7 +600,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 5, 3); 
+        countModels(*db, 5, 2); 
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 5);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 6);
@@ -687,7 +667,7 @@ TEST_F(DrawingTests, Attach3dmodeltoSheet)
        {
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 1, 3);
+        countModels(*db, 1, 2);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
@@ -772,7 +752,7 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
        {
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 3, 3);
+        countModels(*db, 3, 2);
         db->Schemas().CreateClassViewsInDb();
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 3);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
@@ -846,7 +826,7 @@ TEST_F(DrawingTests, AttachDwg)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 3, 4); 
+        countModels(*db, 3, 3); 
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 4);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 0);
@@ -930,7 +910,7 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
        {
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 1, 3);
+        countModels(*db, 1, 2);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
@@ -983,7 +963,7 @@ TEST_F(DrawingTests, MultipleSheets_WithNoAttachedModels)
     if (true)
        {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 3, 3);
+        countModels(*db, 3, 2);
         ASSERT_EQ(3 , db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Sheet)).BuildIdList<DgnElementId>().size());
         }
     }
@@ -1037,7 +1017,7 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
     if (true)
        {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 4, 2);
+        countModels(*db, 4, 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
@@ -1092,7 +1072,7 @@ TEST_F(DrawingTests, Cyclic2dModels)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         db->Schemas().CreateClassViewsInDb();
-        countModels(*db, 2, 2);
+        countModels(*db, 2, 1);
         ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
         ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
         }
@@ -1182,13 +1162,12 @@ struct SheetCompositionTests : public ConverterTestBaseFixture
         return v8Model->GetModelInfoCP ()->GetSheetDefCP ();
         }
 
-    BentleyApi::Dgn::Sheet::ModelCP GetSheetModel (BentleyApi::Utf8String sheetName)
+    BentleyApi::Dgn::Sheet::ModelCP GetSheetModel (DgnDbR db, BentleyApi::Utf8String sheetName)
         {
-        DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
         BentleyApi::Dgn::DgnModelPtr model;
-        for (auto const& modelEntry : db->Models ().MakeIterator (BIS_SCHEMA (BIS_CLASS_GeometricModel)))
+        for (auto const& modelEntry : db.Models ().MakeIterator (BIS_SCHEMA (BIS_CLASS_GeometricModel)))
             {
-            model = db->Models ().GetModel (modelEntry.GetModelId ());
+            model = db.Models ().GetModel (modelEntry.GetModelId ());
             if (0 == model->GetName ().CompareTo (sheetName))
                 break;
             }
@@ -1205,7 +1184,8 @@ TEST_F (SheetCompositionTests, SheetNameTest)
     {
     LineUpFiles (L"SheetNameTest.ibim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = true;
-    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel ("Section_Case1");
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, "Section_Case1");
 
     ASSERT_TRUE (nullptr != sheetModel);
     }
@@ -1243,25 +1223,9 @@ TEST_F (SheetCompositionTests, HasDgnAttachment)
     LineUpFiles (L"HasDgnAttachment.ibim", L"DVTest_Case1.dgn", true);
     m_wantCleanUp = true;
     DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel ("Section_Case1");
+    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel (*db, "Section_Case1");
     auto attachments = sheetModel->GetSheetAttachmentViews (*db);
     ASSERT_TRUE (0 != attachments.size ());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mayuresh.Kanade                 03/2018
-* Test sheet has a border
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SheetCompositionTests, HasSheetBorder)
-    {
-    LineUpFiles (L"HasSheetBorder.ibim", L"DVTest_Case1.dgn", true);
-    m_wantCleanUp = true;
-    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
-    auto sheetElement = db->Elements ().Get<BentleyApi::Dgn::Sheet::Element> (findFirstElementByClass (*db, getBisClassId (*db, BIS_CLASS_Sheet)));
-    auto borderElementId = sheetElement->GetBorder ();
-
-    auto borderElementGraphics = db->Elements ().Get<BentleyApi::Dgn::DrawingGraphic> (borderElementId);
-    ASSERT_TRUE (borderElementGraphics.IsValid ());
     }
 
 /*---------------------------------------------------------------------------------**//**

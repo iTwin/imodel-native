@@ -25,6 +25,11 @@
 #include    <Bentley/bvector.h>
 #include    <Geom/GeomApi.h>
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+#include    <PSolid/parasolid_kernel.h>
+#include    <PSolid/parasolid_debug.h>
+#endif
+
 BEGIN_DWGDB_NAMESPACE
 
 class DwgDbObjectId;
@@ -36,12 +41,14 @@ typedef bvector <BentleyApi::DPoint3d>  DPoint3dArray;
 typedef bvector <int32_t>               DwgDbIntArray;
 typedef bvector <double>                DwgDbDoubleArray;
 typedef bvector <DwgDbObjectId>         DwgDbObjectIdArray;
+typedef bvector <DwgDbObjectP>          DwgDbObjectPArray;
 typedef bvector <DwgCmColor>            DwgColorArray;
 DEFINE_NO_NAMESPACE_TYPEDEFS (DPoint2dArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DPoint3dArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbIntArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbDoubleArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbObjectIdArray)
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbObjectPArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgColorArray)
 
 /*=================================================================================**//**
@@ -126,6 +133,7 @@ public:
 
     DWGDB_EXPORT DwgString (WCharCP chars);
     DWGDB_EXPORT DwgString (DwgString const& in) : DwgString(in.c_str()) {}
+    DWGDB_EXPORT DwgString (Utf8StringCR in);
     DWGDB_EXPORT ~DwgString ();
 
     DWGDB_EXPORT void       Assign (WCharCP chars);
@@ -134,6 +142,7 @@ public:
     DWGDB_EXPORT int        GetLength () const;
     DWGDB_EXPORT int        Find (WCharCP chars) const;
     DWGDB_EXPORT bool       IsEmpty () const;
+    DWGDB_EXPORT bool       IsAscii () const;
     DWGDB_EXPORT bool       EqualsI (WCharCP other) const;
     DWGDB_EXPORT bool       StartsWithI (WCharCP suffix) const;
     DWGDB_EXPORT void       Empty ();
@@ -287,6 +296,25 @@ public:
     DWGDB_EXPORT void       GetTime (int16_t& hour, int16_t& minute, int16_t& second, int16_t& minisecond) const;
     };
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbDate)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          07/18
++===============+===============+===============+===============+===============+======*/
+struct UtilsLib
+    {
+#ifdef BENTLEYCONFIG_PARASOLID
+    //! Converts an Autodesk ShapeManager entity to a Parasolid body. Valid ASM types are SOLID3D, BODY, REGION, and SURFACE.
+    //! @param[out] results Output Parasolid body
+    //! @param[out] trans   Output transform for the Parasolid body
+    //! @param[in] entity   An input ASM entity
+    //! @return BSISUCCESS on success conversion, in which case the caller is responsible to free Parasolid memory in the output results.
+    //! @note A caller is responsible for managing the Parasolid session, which must be started before this method is called.
+    DWGDB_EXPORT static BentleyStatus   ConvertAsmToParasolid (PK_BODY_create_topology_2_r_t& results, TransformR trans, DwgDbEntityCP entity);
+#endif
+    //! Check if an entity is an Autodesk ShapeManager object.
+    DWGDB_EXPORT static bool IsAsmEntity (DwgDbEntityCP entity);
+    };  // UtilsLib
+
 
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

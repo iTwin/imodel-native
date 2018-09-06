@@ -79,15 +79,15 @@ BentleyStatus   DwgImporter::MakeSchemaChanges ()
     if (DwgDbStatus::Success != blockTable.OpenStatus())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // collect attribute definitions from regular blocks
     ECSchemaPtr     attrdefSchema;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbObjectId   blockId = iter.GetRecordId ();
+        DwgDbObjectId   blockId = iter->GetRecordId ();
         if (!blockId.IsValid() || m_dwgdb->GetModelspaceId() == blockId || m_dwgdb->GetPaperspaceId() == blockId)
             continue;
 
@@ -119,6 +119,33 @@ void   DwgImporter::GetOrCreateJobPartitions ()
     this->InitUncategorizedCategory ();
     this->InitBusinessKeyCodeSpec ();
     this->InitSheetListModel ();
+    this->InitGroupModel ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DwgImporter::InitGroupModel ()
+    {
+    static Utf8CP s_partitionName = "Imported Groups";
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), s_partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_groupModelId = DgnModelId(partitionId.GetValueUnchecked());
+    
+    if (m_groupModelId.IsValid())
+        return BentleyStatus::BSISUCCESS;
+
+    GroupInformationPartitionPtr ed = GroupInformationPartition::Create(GetJobSubject(), s_partitionName);
+    GroupInformationPartitionCPtr partition = ed->InsertT<GroupInformationPartition>();
+    if (!partition.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    GenericGroupModelPtr groupModel = GenericGroupModel::CreateAndInsert(*partition);
+    if (!groupModel.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    m_groupModelId = groupModel->GetModelId();
+    return BentleyStatus::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,7 +200,7 @@ DgnDbStatus     DwgImporter::UpdateElementName (DgnElementR editElement, Utf8Str
             editElement.Update (&status);
         }
     if (status != DgnDbStatus::Success)
-        this->ReportIssueV (IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), code.GetValueUtf8().c_str(), newValue.c_str());
+        this->ReportIssueV (IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), "Element", code.GetValueUtf8().c_str(), newValue.c_str());
     return  status;
     }
 
@@ -202,25 +229,25 @@ void            DwgImporter::InitBusinessKeyCodeSpec ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::ReportDbFileStatus (DbResult fileStatus, BeFileNameCR projectFileName)
     {
-    auto category = DwgImporter::IssueCategory::DiskIO();
-    auto issue = DwgImporter::Issue::Error();
+    auto category = IssueCategory::DiskIO();
+    auto issue = Issue::Error();
     switch (fileStatus)
         {
         case BE_SQLITE_ERROR_FileNotFound:
-            issue = DwgImporter::Issue::FileNotFound();
+            issue = Issue::FileNotFound();
             break;
 
         case BE_SQLITE_CORRUPT:
         case BE_SQLITE_ERROR_NoPropertyTable:
-            issue = DwgImporter::Issue::NotADgnDb();
+            issue = Issue::NotADgnDb();
             break;
 
         case BE_SQLITE_ERROR_InvalidProfileVersion:
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:
-        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite:
+        case BE_SQLITE_ERROR_ProfileTooOldForReadWrite:
         case BE_SQLITE_ERROR_ProfileTooOld:
-            category = DwgImporter::IssueCategory::Compatibility();
-            issue = DwgImporter::Issue::Error();
+            category = IssueCategory::Compatibility();
+            issue = Issue::Error();
             break;
         }
 
@@ -244,7 +271,7 @@ BentleyStatus   DwgImporter::AttachSyncInfo ()
         else if (DgnDbStatus::VersionTooOld == static_cast<DgnDbStatus>(status))
             reason = "file version too old";
 
-        this->ReportSyncInfoIssue(DwgImporter::IssueSeverity::Fatal, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::CantOpenSyncInfo(), reason);
+        this->ReportSyncInfoIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::CantOpenSyncInfo(), reason);
         BeFileName::BeDeleteFile(syncInfoFileName.c_str());
         return this->OnFatalError (IssueCategory::Sync(), Issue::FatalError(), reason);
         }
@@ -388,6 +415,25 @@ ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, Trans
         {
         // a DgnModel exists, check transform & source type!
         if (modelMap->GetTransform().IsEqual(trans) && modelMap->GetMapping().GetSourceType() == sourceType) 
+            return *modelMap;
+        }
+
+    return  ResolvedModelMapping();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR attachmentId, DwgSyncInfo::ModelSourceType sourceType)
+    {
+    // find cached model mapping by an xRef or raster attachment ID:
+    ResolvedModelMapping    unresolved (attachmentId);
+
+    auto    range = m_dwgModelMap.equal_range (unresolved);
+    for (auto modelMap = range.first; modelMap != range.second; ++modelMap)
+        {
+        // a DgnModel exists, check source type!
+        if (modelMap->GetMapping().GetSourceType() == sourceType) 
             return *modelMap;
         }
 
@@ -659,11 +705,11 @@ BentleyStatus   DwgImporter::SetModelPropertiesFromModelspaceViewport (DgnModelP
         if (viewportTable.IsNull())
             return  BSIERROR;
 
-        DwgDbSymbolTableIterator    iter = viewportTable->NewIterator ();
-        if (!iter.IsValid())
+        DwgDbSymbolTableIteratorPtr iter = viewportTable->NewIterator ();
+        if (!iter.IsValid() || !iter->IsValid())
             return  BSIERROR;
 
-        viewport.OpenObject (iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        viewport.OpenObject (iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (viewport.IsNull())
             return  BSIERROR;
         }
@@ -707,7 +753,7 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         // modelspace or xref model
         SubjectCPtr             rootSubject = m_dgndb->Elements().GetRootSubject ();
         DgnCode                 partitionCode = PhysicalPartition::CreateUniqueCode (*rootSubject, modelName.c_str());
-        PhysicalPartitionCPtr   partition = PhysicalPartition::CreateAndInsert (*rootSubject, partitionCode.GetValueUtf8CP());
+        PhysicalPartitionCPtr   partition = PhysicalPartition::CreateAndInsert (*rootSubject, partitionCode.GetValueUtf8CP(), descr.c_str());
         if (partition.IsValid())
             modelElementId = partition->GetElementId();
         else
@@ -1053,14 +1099,14 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
     SubjectCPtr parentSubject = this->GetSpatialParentSubject ();
     BeAssert (parentSubject.IsValid() && "parent subject for spatial models not set yet!!");
 
-    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // walk through all blocks and create models for paperspace and xref blocks:
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbObjectId   blockId = iter.GetRecordId ();
+        DwgDbObjectId   blockId = iter->GetRecordId ();
         if (!blockId.IsValid() || blockId == m_modelspaceId)
             continue;
 
@@ -1177,8 +1223,11 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                         continue;
                         }
 
+                    // cache the mapped model in the xref holder:
+                    m_loadedXrefFiles.back().AddDgnModel (model->GetModelId());
+
                     // give the updater a chance to cache skipped models as we may not see xref inserts during importing phase:
-                    changeDetector._ShouldSkipModel (*this, modelMap);
+                    changeDetector._ShouldSkipModel (*this, modelMap, xref.GetDatabaseP());
 
                     if (!hasPushedReferencesSubject && parentSubject.IsValid())
                         {
@@ -1344,7 +1393,8 @@ DefinitionModelPtr  DwgImporter::GetOrCreateJobDefinitionModel ()
 
     // get or create the importer job partition
     auto const& jobSubject = this->GetJobSubject ();
-    Utf8PrintfString    partitionName("%s:%ls", s_definitionPartitionName, m_rootFileName.GetFileNameWithoutExtension());
+    Utf8String  utf8Name (m_rootFileName.GetFileNameWithoutExtension());
+    Utf8PrintfString    partitionName("%s:%s", s_definitionPartitionName, utf8Name.c_str());
 
     auto partitionCode = DefinitionPartition::CreateCode (jobSubject, partitionName);
     auto partitionId = m_dgndb->Elements().QueryElementIdByCode (partitionCode);
@@ -1395,7 +1445,8 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
         }
 
     // create a GeometryParts subject
-    Utf8PrintfString  partitionName("%s:%ls", s_geometryPartsPartitionName, m_rootFileName.GetFileNameWithoutExtension());
+    Utf8String  utf8Name (m_rootFileName.GetFileNameWithoutExtension());
+    Utf8PrintfString  partitionName("%s:%s", s_geometryPartsPartitionName, utf8Name.c_str());
     auto partsSubject = this->GetOrCreateModelSubject (*m_spatialParentSubject, partitionName, ModelSubjectType::GeometryParts);
     if (!partsSubject.IsValid())
         {
@@ -1483,6 +1534,10 @@ SubjectCPtr DwgImporter::GetOrCreateModelSubject (SubjectCR parent, Utf8StringCR
     SubjectPtr ed = Subject::Create(parent, modelName.c_str());
 
     ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
+
+    // set user label to help the element name display in Navigator's version comparison - TFS 915733:
+    Utf8PrintfString    userLabel("%s %s", modelProps["Type"].asCString(), DataStrings::GetString(DataStrings::Subject()).c_str());
+    ed->SetUserLabel (userLabel.c_str());
 
     return ed->InsertT<Subject>();
     }
@@ -1792,6 +1847,11 @@ void            DwgImporter::_FinishImport ()
         changeDetector._DetectDeletedModelsEnd (*this);
         changeDetector._DetectDeletedMaterials (*this);
         changeDetector._DetectDeletedViews (*this);
+        changeDetector._DetectDeletedGroups (*this);
+
+#ifdef DEBUG_DELETE_DOCUMENTS
+        this->_DetectDeletedDocuments ();
+#endif
 
         // update syncinfo for master DWG file
         DwgSyncInfo&    syncInfo = GetSyncInfo ();
@@ -1905,6 +1965,13 @@ BentleyStatus   DwgImporter::Process ()
 
     DwgImportLogging::LogPerformance(timer, "Import Layouts");
 
+    timer.Start();
+    this->_ImportGroups ();
+    if (this->WasAborted())
+        return BSIERROR;
+
+    DwgImportLogging::LogPerformance(timer, "Import Groups");
+
     timer.Start ();
     this->_FinishImport ();
     if (this->WasAborted())
@@ -1929,6 +1996,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_currIdPolicy = StableIdPolicy::ById;
     m_modelspaceXrefs.clear ();
     m_paperspaceXrefs.clear ();
+    m_layersInSync.clear ();
     m_importedTextstyles.clear ();
     m_importedLinestyles.clear ();
     m_importedMaterials.clear ();
@@ -2062,6 +2130,8 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
                 m_options.SetSyncBlockChanges (boolValue);
             else if (str.EqualsI("PreferRenderableGeometry"))
                 m_options.SetPreferRenderableGeometry (boolValue);
+            else if (str.EqualsI("ConvertAsmAsParasolid"))
+                m_options.SetAsmAsParasolid (boolValue);
             else if (str.EqualsI("SyncDwgVersionGuid"))
                 m_options.SetSyncDwgVersionGuid (boolValue);
             else if (str.EqualsI("SyncAsmBodyInFull"))

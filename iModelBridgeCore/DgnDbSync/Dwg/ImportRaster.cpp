@@ -159,7 +159,14 @@ bool    DwgRasterImageExt::GetUrlCacheFile (DwgStringR checkPath)
         {
         WString localPath;
         if (DwgImportHost::GetHost().GetCachedLocalFile(localPath, WString(checkPath.c_str())))
+            {
             checkPath.Assign (localPath.c_str());
+            return  true;
+            }
+        else
+            {
+            m_importer->ReportError (IssueCategory::DiskIO(), Issue::Message(), "Failed downloading a raster file from URL or could not find its cached local path!");
+            }
         }
 #endif 
     return  false;
@@ -225,7 +232,9 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     // the default raster admin expects raster file to be located on the DgnDb folder:
     if (!this->CopyRasterToDgnDbFolder(rasterFilename, m_importer->GetDgnDb().GetFileName(), BeFileName(activePath.c_str())))
         {
-        m_importer->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantCreateRaster(), Utf8PrintfString("<%s (%I64d)>", fileId.c_str(), rasterId.ToUInt64()).c_str());
+        auto from = rasterFilename.DoesPathExist() ? rasterFilename.c_str() : activePath.c_str();
+        auto to = m_importer->GetDgnDb().GetFileName().GetDirectoryName().c_str ();
+        m_importer->ReportError (IssueCategory::DiskIO(), Issue::CantCreateRaster(), Utf8PrintfString("failed copying file %ls to %ls", from, to).c_str());
         return BSIERROR;
         }
 
@@ -258,7 +267,7 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     // add the model into DgnDb
     if (DgnDbStatus::Success != rasterModel->Insert())
         {
-        m_importer->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantCreateModel(), Utf8PrintfString("<%s (%I64d)>", fileId.c_str(), rasterId.ToUInt64()).c_str());
+        m_importer->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), Utf8PrintfString("<%s (%I64d)>", fileId.c_str(), rasterId.ToUInt64()).c_str());
         return  BSIERROR;
         }
 
@@ -266,7 +275,7 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     DgnModelP   model = m_importer->GetDgnDb().Models().GetModel(modelId).get ();
     if (nullptr == model)
         {
-        m_importer->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantCreateRaster(), Utf8PrintfString("<%s (%I64d)>", fileId.c_str(), rasterId.ToUInt64()).c_str());
+        m_importer->ReportError (IssueCategory::Unknown(), Issue::CantCreateRaster(), Utf8PrintfString("%s (%I64d)", fileId.c_str(), rasterId.ToUInt64()).c_str());
         return BSIERROR;
         }
 
@@ -331,7 +340,7 @@ void    DwgRasterImageExt::AddModelToViews (DgnModelId modelId)
                 else
                     {
                     // WIP - add model to paperspace view
-                    m_importer->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("adding a raster model in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
+                    m_importer->ReportError (IssueCategory::Unsupported(), Issue::Message(), Utf8PrintfString("adding a raster model in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
                     }
                 }
             }
@@ -377,7 +386,7 @@ void            DwgRasterImageExt::UpdateViews (DgnModelId modelId, bool isOn)
                 else
                     {
                     // WIP - add or drop the rater model from paperspace view
-                    m_importer->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("adding a raster mode in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
+                    m_importer->ReportError (IssueCategory::Unsupported(), Issue::Message(), Utf8PrintfString("adding a raster mode in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
                     }
                 }
             }
@@ -416,7 +425,7 @@ BentleyStatus   DwgRasterImageExt::UpdateRasterModel (ResolvedModelMapping& mode
         {
         // WIP - set the new matrix
         BeDataAssert (false && "need to support editing RasterFileModel!");
-        m_importer->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("changing raster model origin/size <%s (%I64d)>", rasterModel->GetName().c_str(), rasterModel->GetModelId().GetValue()).c_str());
+        m_importer->ReportError (IssueCategory::Unsupported(), Issue::Message(), Utf8PrintfString("changing raster model origin/size <%s (%I64d)>", rasterModel->GetName().c_str(), rasterModel->GetModelId().GetValue()).c_str());
         }
 
     // update clipper

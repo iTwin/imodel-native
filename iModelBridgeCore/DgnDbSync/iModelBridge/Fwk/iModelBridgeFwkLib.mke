@@ -2,7 +2,7 @@
 #
 #     $Source: iModelBridge/Fwk/iModelBridgeFwkLib.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -19,6 +19,11 @@ always:
 iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
 RegistryDir = $(baseDir)Registry/
 
+iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+
+dirToSearch  = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
+
 #--------------------------------------------------------------------------------------
 #   Compile the source
 #--------------------------------------------------------------------------------------
@@ -28,15 +33,19 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)iModelBridgeFwk$(oext): $(baseDir)iModelBridgeFwk.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
-$(o)Briefcase$(oext): $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(iModelBridgeAPISrc)iModelBridgeFwk.h $(baseDir)DgnDbServerClientUtils.h ${MultiCompileDepends}
+$(o)Briefcase$(oext): $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(iModelBridgeAPISrc)iModelBridgeFwk.h $(baseDir)IModelClientForBridges.h ${MultiCompileDepends}
 
-$(o)DgnDbServerClientUtils$(oext): $(baseDir)DgnDbServerClientUtils.cpp $(BuildContext)PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $(baseDir)DgnDbServerClientUtils.h $(DgnDbServerDepends) ${MultiCompileDepends}
+$(o)IModelClientForBridges$(oext): $(baseDir)IModelClientForBridges.cpp $(BuildContext)PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $(baseDir)IModelClientForBridges.h $(DgnDbServerDepends) ${MultiCompileDepends}
 
-$(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(RegistryDir)iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+$(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
+$(o)iModelBridgeRegistryUtils$(oext): $(RegistryDir)iModelBridgeRegistryUtils.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
 $(o)cpl_spawn$(oext): $(RegistryDir)cpl_spawn.cpp $(RegistryDir)cpl_spawn.h ${MultiCompileDepends}
 
 $(o)Decrypt$(oext): $(baseDir)Decrypt.cpp $(baseDir)Decrypt.h ${MultiCompileDepends}
+
+$(o)iModelBridgeFwkDmsOptions$(oext): $(baseDir)iModelBridgeFwkDmsOptions.cpp  $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -63,6 +72,8 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)bentleylog4cxx$(stlibext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
 
 %if $(TARGET_PLATFORM)=="Windows" || $(TARGET_PLATFORM)=="WinRT"
 LINKER_LIBRARIES  + Crypt32.lib

@@ -14,12 +14,11 @@
 #include <DgnDbSync/Dwg/DwgDb/DwgDbSymbolTables.h>
 #include <DgnDbSync/Dwg/DwgDb/DwgDrawables.h>
 #include <DgnPlatform/DgnProgressMeter.h>
-#include <BeSQLite/L10N.h>
 #include <BeXml/BeXml.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnDbSync/DgnDbSync.h>
 #include <DgnDbSync/Dwg/DwgSyncInfo.h>
-#include <iModelBridge/iModelBridge.h>
+#include <DgnDbSync/Dwg/DwgL10N.h>
 
 USING_NAMESPACE_DWGDB
 
@@ -182,8 +181,8 @@ struct IDwgChangeDetector
     //! Called to check if the specified file could be skipped (i.e., because it has not changed) by checking timestamps that may be stored in the file.
     virtual bool _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) = 0;
     //! Called to check if an entire model could be skipped (i.e., because no element in the model is changed).
-    //! @note DwgImporter must not call this during the model-discovery step but only during the element-conversion step.
-    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&) = 0;
+    //! @note DwgImporter must not call this during the model-discovery step but only skip it during the element-conversion step.
+    virtual bool _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&,  DwgDbDatabaseCP xref = nullptr) = 0;
 
     //! Used to choose one of many existing entries in DwgSyncInfo
     typedef std::function<bool(DwgSyncInfo::ElementIterator::Entry const&, DwgImporter& converter)> T_DwgSyncInfoElementFilter;
@@ -219,6 +218,9 @@ struct IDwgChangeDetector
     //! Called when a DWG modelspace viewport or a paperspace viewport is dicovered.
     virtual void  _OnViewSeen (DwgImporter&, DgnViewId) = 0;
 
+    //! Called when a DWG dictionary group is discovered.
+    virtual void  _OnGroupSeen (DwgImporter&, DgnElementId) = 0;
+
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
     virtual void _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) = 0;  //!< don't forget to call _DetectDeletedElementsEnd when done
@@ -229,6 +231,7 @@ struct IDwgChangeDetector
     virtual void _DetectDeletedModelsEnd (DwgImporter&) = 0;
     virtual void _DetectDeletedMaterials (DwgImporter&) = 0;
     virtual void _DetectDeletedViews (DwgImporter&) = 0;
+    virtual void _DetectDeletedGroups (DwgImporter&) = 0;
     //! @}
 };  // IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
@@ -248,12 +251,14 @@ struct DwgImporter
     friend struct LineStyleFactory;
     friend struct LayoutFactory;
     friend struct LayoutXrefFactory;
+    friend struct GroupFactory;
     friend struct ElementFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
     friend class DwgViewportExt;
     friend class DwgLightExt;
+    friend class DwgBrepExt;
 
 public:
     //! Configuration for the conversion process
@@ -325,6 +330,7 @@ public:
         bool                m_importPointClouds;
         uint16_t            m_pointCloudLevelOfDetails;
         bool                m_preferRenderableGeometry;
+        bool                m_asmAsParasolid;
         Utf8String          m_namePrefix;
         bool                m_includeDwgPathInMaterialSearchPaths;
         bool                m_runAsStandaloneApp;
@@ -345,6 +351,7 @@ public:
             m_importPointClouds = false;
             m_pointCloudLevelOfDetails = 1;
             m_preferRenderableGeometry = false;
+            m_asmAsParasolid = false;
             m_includeDwgPathInMaterialSearchPaths = false;
             m_runAsStandaloneApp = false;
             }
@@ -368,6 +375,7 @@ public:
         void SetImportPointClouds (bool allow) { m_importPointClouds = allow; }
         void SetPointCloudLevelOfDetails (uint16_t lod) { if (lod <= 100) m_pointCloudLevelOfDetails = lod; }
         void SetPreferRenderableGeometry (bool forRendering) { m_preferRenderableGeometry = forRendering; }
+        void SetAsmAsParasolid (bool toBrep) { m_asmAsParasolid = toBrep; }
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
         void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
         void SetRunAsStandaloneApp (bool v) { m_runAsStandaloneApp = v; }
@@ -396,6 +404,7 @@ public:
         bool GetImportPointClouds () const { return m_importPointClouds; }
         uint16_t GetPointCloudLevelOfDetails () const { return m_pointCloudLevelOfDetails; }
         bool IsRenderableGeometryPrefered () const { return m_preferRenderableGeometry; }
+        bool IsAsmAsParasolid () const { return m_asmAsParasolid; }
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
         bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
         bool IsRunAsStandaloneApp () const { return m_runAsStandaloneApp; }
@@ -531,6 +540,7 @@ public:
         BeFileName          m_savedPath;
         WString             m_prefixInRootFile;
         DwgDbObjectId       m_blockIdInRootFile;
+        DgnModelIdSet       m_dgnModels;
 
     public:
         DwgXRefHolder () : m_xrefDatabase() { }
@@ -546,6 +556,9 @@ public:
         WStringCR       GetPrefixInRootFile () const { return m_prefixInRootFile; }
         BeFileNameCR    GetResolvedPath () const { return m_resolvedPath; }
         BeFileNameCR    GetSavedPath () const { return m_savedPath; }
+        bool            HasDgnModel (DgnModelId id) const { return m_dgnModels.Contains(id); }
+        void            AddDgnModel (DgnModelId id) { m_dgnModels.insert(id); }
+        DgnModelIdSet&  GetDgnModelsR () { return m_dgnModels; }
         };  // DwgXRefHolder
     typedef bvector<DwgXRefHolder>    T_LoadedXRefFiles;
 
@@ -564,6 +577,7 @@ public:
     typedef bpair<DgnViewId,DwgDbObjectId>  T_PaperspaceView;
     typedef bmap<DgnViewId,DwgDbObjectId>   T_PaperspaceViewMap;
 
+    //! A data context for a modelspace or paperspace entity ready to be imported into a target DgnDb model.
     struct ElementImportInputs
         {
     public:
@@ -598,6 +612,7 @@ public:
         DwgSyncInfo::DwgModelSyncInfoId GetModelSyncInfoId () const { return m_modelMapping.GetModelSyncInfoId(); }
         };  // ElementImportInputs
 
+    //! A data context for output DgnElement's imported from a modelspace or paperspace entity.
     struct ElementImportResults
         {
     public:
@@ -699,6 +714,21 @@ public:
     typedef bpair<DwgDbObjectId, RenderMaterialId>      T_DwgRenderMaterialId;
     typedef bmap<DwgDbObjectId, RenderMaterialId>       T_MaterialIdMap;
     typedef bmap<Utf8String, DgnTextureId>              T_MaterialTextureIdMap;
+
+    //! Category cache for fast layer-category retrieving
+    struct CategoryEntry
+        {
+    private:
+        DgnCategoryId       m_categoryId;
+        DgnSubCategoryId    m_subcategoryId;
+    public:
+        CategoryEntry (DgnCategoryId cat, DgnSubCategoryId sub) : m_categoryId(cat), m_subcategoryId(sub) {}
+        CategoryEntry () {}
+        DgnCategoryId       GetCategoryId () const { return m_categoryId; }
+        DgnSubCategoryId    GetSubCategoryId () const { return m_subcategoryId; }
+        };  // CategoryEntry
+    typedef bpair<DwgDbObjectId, CategoryEntry>         T_DwgDgnLayer;
+    typedef bmap<DwgDbObjectId, CategoryEntry>          T_DwgDgnLayerMap;
 
     //! ElementAspect's host element cache for PresentationRules
     struct PresentationRuleContent
@@ -806,130 +836,7 @@ public:
         Info        = 4,
         };
 
-    //! Categories for issues
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(IssueCategory, dwg_issueCategory)
-        L10N_STRING(Compatibility)      // =="Compatibility"==
-        L10N_STRING(ConfigXml)          // =="Config"==
-        L10N_STRING(CorruptData)        // =="Corrupt Data"==
-        L10N_STRING(DigitalRights)      // =="Digital Rights"==
-        L10N_STRING(DiskIO)             // =="Disk I/O"==
-        L10N_STRING(Filtering)          // =="Filtering"==
-        L10N_STRING(InconsistentData)   // =="Inconsistent Data"==
-        L10N_STRING(MissingData)        // =="Missing Data"==
-        L10N_STRING(UnexpectedData)     // =="Unexpected Data"==
-        L10N_STRING(Sync)               // =="SyncInfo"==
-        L10N_STRING(ToolkitError)       // =="Toolkit Error"==
-        L10N_STRING(ToolkitMessage)     // =="From Toolkit"==
-        L10N_STRING(Unknown)            // =="Unknown"==
-        L10N_STRING(Unsupported)        // =="Unsupported"==
-        L10N_STRING(VisualFidelity)     // =="Visual Fidelity"==
-        L10N_STRING(Briefcase)          // =="Briefcase"==
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
-
-    //! A problem in the conversion process
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue, dwg_issue)
-        L10N_STRING(CannotCreateChangesFile)     // =="Cannot create changes file"==
-        L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will be used for display."==
-        L10N_STRING(CannotOpenModelspace)        // =="Cannot open modelspace for file [%s]"==
-        L10N_STRING(CannotUseStableIds)          // =="Cannot use DgnElementIds for this kind of file"==
-        L10N_STRING(CantCreateModel)             // =="Cannot create model [%s]"==
-        L10N_STRING(CantCreateProject)           // =="Cannot create project file [%s]"==
-        L10N_STRING(CantCreateSyncInfo)          // =="Cannot create sync info [%s]"==
-        L10N_STRING(CantOpenSyncInfo)            // =="Cannot open sync info [%s]"==
-        L10N_STRING(CantOpenObject)              // =="Cannot open DwgDb object [%s]"==
-        L10N_STRING(ChangesFileInconsistent)     // =="The changes file [%s] is inconsistent with the syncinfo file"==
-        L10N_STRING(ChangesFileInvalid)          // =="The changes file exists but cannot be opened. It may be invalid."==
-        L10N_STRING(ConfigFileError)             // =="[%s] error at [%d,%d], %s"==
-        L10N_STRING(ConfigUsingDefault)          // =="Using default configuration."==
-        L10N_STRING(ImportFailure)               // =="Failed to import [%s]"==
-        L10N_STRING(UpdateFailure)               // =="Failed to update [%s]"==
-        L10N_STRING(ElementFilteredOut)          // =="Element [%s] was not converted."==
-        L10N_STRING(EmptyGeometry)               // ==" No geometry created for entity %s."== <<Leading space is necessary>>
-        L10N_STRING(Error)                       // =="Error: %s"==
-        L10N_STRING(Exception)                   // =="DWGToolKit Exception: %s"==
-        L10N_STRING(FatalError)                  // =="A fatal error is stopping the conversion: %s"==
-        L10N_STRING(ProgramExits)                // =="The importer must exit due to a fatal error!"==
-        L10N_STRING(FileFilteredOut)             // =="File [%s] was not converted."==
-        L10N_STRING(FileInUse)                   // =="File [%s] is in use"==
-        L10N_STRING(FileNotFound)                // =="File [%s] was not found"==
-        L10N_STRING(FileReadOnly)                // =="The file is read-only"==
-        L10N_STRING(FontEmbedError)              // =="Could not embed %s font '%s'. Some elements may not display properly."==
-        L10N_STRING(FontIllegalNumber)           // =="Illegal font number %u."==
-        L10N_STRING(FontMissing)                 // =="Missing %s font '%s'. Some elements may not display properly."==
-        L10N_STRING(FontNotEmbedded)             // =="Did not embed %s font '%s' due to importer configuration. Some elements may not display properly."==
-        L10N_STRING(FontNumberError)             // =="Could not resolve font number %u."==
-        L10N_STRING(InvalidLayer)                // =="Invalid Layer [%s] could not be converted"==
-        L10N_STRING(InvalidRange)                // =="Invalid Range"==
-        L10N_STRING(InvisibleElementFilteredOut) // =="Element [%s] is invisible. It was not converted."==
-        L10N_STRING(LayerDefinitionChange)       // =="Layer [%s] has changed in [%s]: %s. Update is not possible. You must do a full conversion."==
-        L10N_STRING(LayerDisplayInconsistent)    // =="Layer [%s] is turned on for some attachments but is turned off for [%s]"==
-        L10N_STRING(LayerNotFoundInRoot)         // =="Layer [%s] found in tile file [%s] but not in root file [%s]. The root file must define all Layers."==
-        L10N_STRING(LayerSymbologyInconsistent)  // =="Layer [%s] has a different definition in [%s] than in other files or attachments: %s"==
-        L10N_STRING(LinetypeError)               // =="Linetype import error %s: "==
-        L10N_STRING(Message)                     // =="%s"==
-        L10N_STRING(MissingLayer)                // =="Missing Layer %d"==
-        L10N_STRING(MissingLinetype)             // =="Could not find linetype [%s]. Some elements may not display properly."==
-        L10N_STRING(MaterialError)               // =="Material import error [%s]"==
-        L10N_STRING(ModelAlreadyImported)        // =="Model [%s] has already been converted."==
-        L10N_STRING(ModelFilteredOut)            // =="Model [%s] was not imported."==
-        L10N_STRING(NotADgnDb)                   // =="The file is not a DgnDb"==
-        L10N_STRING(NotRecognizedFormat)         // =="File [%s] is not in a recognized format"==
-        L10N_STRING(NewerDwgVersion)             // =="File [%s] is a newer version not currently supported"==
-        L10N_STRING(CantCreateRaster)            // =="Cannot create raster attachment [%s]."==
-        L10N_STRING(RootModelChanged)            // =="The original root model was deleted or has changed units."==
-        L10N_STRING(RootModelMustBePhysical)     // =="Root model [%s] is not a physical model."==
-        L10N_STRING(SaveError)                   // =="An error occurred when saving changes (%s)"==
-        L10N_STRING(SeedFileMismatch)            // =="Seed file [%s] does not match target [%s]"==
-        L10N_STRING(SyncInfoInconsistent)        // =="The syncInfo file [%s] is inconsistent with the project"==
-        L10N_STRING(SyncInfoTooNew)              // =="Sync info was created by a later version"==
-        L10N_STRING(ViewNoneFound)               // =="No view was found"==
-        L10N_STRING(ViewportError)               // =="Modelspace viewport error %s"==
-        L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
-        L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
-        L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
-        L10N_STRING(MissingJobDefinitionModel)   // =="Missing JobDefinitionModel for %s"==
-        L10N_STRING(CircularXrefIgnored)         // =="Circular xRef %s is ignored"==
-        L10N_STRING(CannotUpdateName)            // =="Unable to change name from %s to %s"==
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
-
-    //! Progress messages for the conversion process
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ProgressMessage, dwg_progress)
-        L10N_STRING(STEP_INITIALIZING)                 // =="Initializing"==
-        L10N_STRING(STEP_CLEANUP_EMPTY_TABLES)         // =="Cleaning up empty tables"==
-        L10N_STRING(STEP_OPENINGFILE)                  // =="Opening File %ls [%s]"==
-        L10N_STRING(STEP_COMPACTING)                   // =="Compacting File"==
-        L10N_STRING(STEP_IMPORTING_ENTITIES)           // =="Importing Entities"==
-        L10N_STRING(STEP_IMPORTING_VIEWS)              // =="Importing Views"==
-        L10N_STRING(STEP_CREATE_IMODEL)                // =="Creating .imodel File"==
-        L10N_STRING(STEP_CREATE_THUMBNAILS)            // =="Creating Thumbnails"==
-        L10N_STRING(STEP_CREATING)                     // =="Creating DgnDb [%s]"==
-        L10N_STRING(STEP_EMBED_FILES)                  // =="Embedding Files"==
-        L10N_STRING(STEP_EMBED_FONTS)                  // =="Embedding Fonts"==
-        L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Create ECClass Views"==
-        L10N_STRING(STEP_IMPORTING_LAYERS)             // =="Importing Layers"==
-        L10N_STRING(STEP_IMPORTING_TEXTSTYLES)         // =="Importing Text Styles"==
-        L10N_STRING(STEP_IMPORTING_LINETYPES)          // =="Importing Line Types"==
-        L10N_STRING(STEP_UPDATING)                     // =="Updating DgnDb"==
-        L10N_STRING(STEP_IMPORTING_MATERIALS)          // =="Importing Materials"==
-        L10N_STRING(STEP_IMPORTING_ATTRDEFSCHEMA)      // =="Importing Attribute Definition Schema [%d classes]"==
-        L10N_STRING(TASK_LOADING_FONTS)                // =="Loading %s Fonts"==
-        L10N_STRING(TASK_IMPORTING_MODEL)              // =="Model: %s"==
-        L10N_STRING(TASK_IMPORTING_RASTERDATA)         // =="Importing raster data file: %s"==
-        L10N_STRING(TASK_CREATING_THUMBNAIL)           // =="Creating thumbnail for: %s"==
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
-
-    //! Miscellaneous strings needed for DwgImporter
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
-        L10N_STRING(AttrdefsSchemaDescription)         // =="Block attribute definitions created from DWG file %ls"==
-        L10N_STRING(BlockAttrdefDescription)           // =="Attribute definition created from DWG block %ls"==
-        L10N_STRING(ModelView)                         // =="Model View"==
-        L10N_STRING(LayoutView)                        // =="Layout View"==
-        L10N_STRING(XrefView)                          // =="XReference View"==
-        L10N_STRING(CategorySelector)                  // =="Categories"==
-        L10N_STRING(ModelSelector)                     // =="Models"==
-        L10N_STRING(DisplayStyle)                      // =="Display Style"==
-    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
-    
+    //! Report and/or log issues seen during a conversion
     struct IssueReporter
         {
     public:
@@ -943,7 +850,7 @@ public:
             public:
                 explicit ECDbIssueListener(IssueReporter& issueReporter) : BeSQLite::EC::ECDb::IIssueListener(), m_issueReporter(issueReporter) {}
                 ~ECDbIssueListener() {}
-            };
+            };  // ECDbIssueListener
 
     private:
         bool                m_triedOpenReport;
@@ -973,7 +880,7 @@ public:
         static Utf8String FmtDPoint3d (DPoint3dCR point);
         static Utf8String FmtTransform (BentleyApi::TransformCR trans);
         static Utf8CP ToString (IssueSeverity);
-        };
+        };  // IssueReporter
 
 protected:
     mutable DgnDbPtr            m_dgndb;
@@ -1018,12 +925,14 @@ protected:
     T_MaterialIdMap             m_importedMaterials;
     T_MaterialTextureIdMap      m_materialTextures;
     bvector<BeFileName>         m_materialSearchPaths;
+    T_DwgDgnLayerMap            m_layersInSync;
     uint32_t                    m_entitiesImported;
     uint32_t                    m_layersImported;
     MessageCenter               m_messageCenter;
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
+    DgnModelId                  m_groupModelId;
     DefinitionModelPtr          m_geometryPartsModel;
     DefinitionModelPtr          m_jobDefinitionModel;
     T_BlockPartsMap             m_blockPartsMap;
@@ -1033,6 +942,7 @@ private:
     void                    InitUncategorizedCategory ();
     void                    InitBusinessKeyCodeSpec ();
     BentleyStatus           InitSheetListModel ();
+    BentleyStatus           InitGroupModel ();
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
     void                    AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId);
@@ -1054,7 +964,10 @@ private:
     Utf8String              GetImportJobNamePrefix () const { return ""; }
     ResolvedModelMapping    FindRootModelFromImportJob ();
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
+    bool                    ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
+    DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
     static void             RegisterProtocalExtensions ();
 
@@ -1119,7 +1032,9 @@ protected:
     ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
     ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
     //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
-    ResolvedModelMapping                FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
+    DGNDBSYNC_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
+    //! Find a cached DgnModel mapped from an xRef or raster attachment.
+    DGNDBSYNC_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR atatchmentId, DwgSyncInfo::ModelSourceType sourceType);
     Utf8String                          RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
     DGNDBSYNC_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, Utf8CP suffix = nullptr);
     DGNDBSYNC_EXPORT virtual DgnClassId _GetModelType (DwgDbBlockTableRecordCR block);
@@ -1192,12 +1107,38 @@ protected:
     DgnDbStatus     UpdateResults (ElementImportResults& results, DgnElementId existingElement);
     //! Insert or update imported DgnElement and source DWG entity in DwgSynchInfo
     BentleyStatus   InsertOrUpdateResultsInSyncInfo (ElementImportResults& results, IDwgChangeDetector::DetectionResults const& updatePlan, DwgDbEntityCR entity, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId);
+    //! Create a new or update an existing element from an entity based on the sync info
+    BentleyStatus   ImportOrUpdateEntity (ElementImportInputs& inputs);
 
     //! @name  Importing layouts
     //! @{
-    // A DWG layout is made up by a Paperspace block containing graphical entities and a sheet/plot definition.
+    //! A DWG layout is made up by a Paperspace block containing graphical entities and a sheet/plot definition.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportLayouts ();
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportLayout (ResolvedModelMapping& modelMap, DwgDbBlockTableRecordR block, DwgDbLayoutCR layout);
+
+    //! @name  Importing groups
+    //! @{
+    //! After models and elements have been processed, this method will be called to process all DWG groups in all files.
+    //! The default implementations will import DWG groups as GenericGroup elements.
+    //! @note Multiple attachments of the same xRef file are imported as individual DgnModel's. A group element created from a group in such an xRef will contain member elements across these models, by the default implementation.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroups ();
+    //! Import dictionary groups from a DWG file.  This method is called for the root DWG file, then followed by each of its xRef files.
+    //! In an updating job, this method also consults the sync info and calls _OnUpdateGroup on an existing DWG group.
+    //! @param[in] dwg Input root or xRef DWG file whose group dictionary will be processed.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportGroups (DwgDbDatabaseCR dwg);
+    //! Create and insert a new group element from a DWG group which may be in either a root or an xRef DWG file.
+    //! @param dwgGroup Input object of the DWG group dictionary.
+    //! @return A new and inserted DgnDb group element.  The default implementation creates a GenericGroup.
+    DGNDBSYNC_EXPORT virtual DgnElementPtr  _ImportGroup (DwgDbGroupCR dwgGroup);
+    //! Update existing group element.
+    //! @param[out] dgnGroup Existing DgnDb group element to be updated.
+    //! @param[in] dwgGroup Input object of the DWG group from which the DgnDb group will be updated.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _UpdateGroup (DgnElementR dgnGroup, DwgDbGroupCR dwgGroup);
+    //! Detect existing DWG group against its provenance and act according to the detection results.
+    //! @param[in] prov Input provenance of the DWG group retrieved from the sync info.
+    //! @param[in] dwgGroup Input object of the DWG group dictionary.
+    //! @note When a change is detected for a DWG group, _UpdateGroup will be called; otherwise _ImportGroup will be called, by the default implementation.
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSyncInfo::Group const& prov, DwgDbGroupCR dwgGroup);
 
     //! @name Options and configs
     //! @{
@@ -1272,8 +1213,9 @@ public:
     void                                AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
     ECN::ECSchemaCP                     GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
     bool                                GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
-    DgnCategoryId                       FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
-    DgnSubCategoryId                    FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    //! Get a spatial category and/or a sub-category for a modelspace entity layer. The syncInfo is read in and cached for fast retrieval.
+    DgnCategoryId                       GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    //! Get a drawing category for paperspace entity layer. If the category not already exists, a new one will be created.
     DgnCategoryId                       GetOrAddDrawingCategory (DgnSubCategoryId& subCategory, DwgDbObjectIdCR layerId, DwgDbObjectIdCR viewportId, DgnModelCR model, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     //! Get the block-geometry map that caches imported geometries.
@@ -1317,10 +1259,9 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus      ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
     DGNDBSYNC_EXPORT BentleyStatus      ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId, Utf8StringCR desiredCode);
-    //! Create a new or update an existing element from an entity based on the sync info
-    DGNDBSYNC_EXPORT BentleyStatus      ImportOrUpdateEntity (ElementImportInputs& inputs);
     DGNDBSYNC_EXPORT DgnCode            CreateCode (Utf8StringCR value) const;
     DGNDBSYNC_EXPORT uint32_t           GetEntitiesImported () const { return m_entitiesImported; }
+    DGNDBSYNC_EXPORT DgnModelId         GetGroupModelId () const { return m_groupModelId; }
     
     };  // DwgImporter
 
@@ -1335,9 +1276,10 @@ public:
     void    _Prepare (DwgImporter&) override {}
     void    _Cleanup (DwgImporter&) override {}
     bool    _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override { return false; }
-    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const& m) override { return false; }
+    bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const& m,  DwgDbDatabaseCP xref = nullptr) override { return false; }
     void    _OnModelSeen (DwgImporter&, ResolvedModelMapping const& m) override {}
     void    _OnViewSeen (DwgImporter&, DgnViewId) override {}
+    void    _OnGroupSeen (DwgImporter&, DgnElementId) override {}
     void    _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP) override {}
     void    _OnElementSeen (DwgImporter&, DgnElementId) override {}
     void    _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) override {}
@@ -1348,6 +1290,7 @@ public:
     void    _DetectDeletedModelsEnd (DwgImporter&) override {}
     void    _DetectDeletedMaterials (DwgImporter&) override {}
     void    _DetectDeletedViews (DwgImporter&) override {}
+    void    _DetectDeletedGroups (DwgImporter&) override {}
 
     //! always fills in element provenence and returns true
     DGNDBSYNC_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter*) override;
@@ -1368,6 +1311,7 @@ private:
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSkipped;
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_newlyDiscoveredModels;
     bset<DgnViewId>                         m_viewsSeen;
+    DgnElementIdSet                         m_groupsSeen;
     uint32_t                                m_elementsDiscarded;
 
     bool    IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const;
@@ -1381,10 +1325,11 @@ public:
     //! @name  Override tracking & detection methods
     //! @{
     DGNDBSYNC_EXPORT bool   _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override;
-    DGNDBSYNC_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&) override;
+    DGNDBSYNC_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xref = nullptr) override;
     DGNDBSYNC_EXPORT void   _OnModelSeen (DwgImporter&, ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT void   _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xRef) override;
     DGNDBSYNC_EXPORT void   _OnViewSeen (DwgImporter&, DgnViewId) override;
+    DGNDBSYNC_EXPORT void   _OnGroupSeen (DwgImporter&, DgnElementId) override;
     DGNDBSYNC_EXPORT void   _OnElementSeen (DwgImporter&, DgnElementId) override;
     DGNDBSYNC_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter* filter) override;
     //! @}
@@ -1402,6 +1347,7 @@ public:
     //! delete tables
     DGNDBSYNC_EXPORT void   _DetectDeletedMaterials (DwgImporter&) override;
     DGNDBSYNC_EXPORT void   _DetectDeletedViews (DwgImporter&) override;
+    DGNDBSYNC_EXPORT void   _DetectDeletedGroups (DwgImporter&) override;
     //! @}
 };  // UpdaterChangeDetector
 

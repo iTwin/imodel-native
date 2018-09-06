@@ -59,7 +59,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
         {
         // the xref file has not been be loaded in block section - error out!
         if (xrefBlock->GetPath().Find(this->GetRootDwgFileName().GetFileNameAndExtension().c_str()) >= 0)
-            this->ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::UnexpectedData(), DwgImporter::Issue::CircularXrefIgnored(), Utf8String(xrefBlock->GetPath().c_str()).c_str());
+            this->ReportIssue (IssueSeverity::Warning, IssueCategory::UnexpectedData(), Issue::CircularXrefIgnored(), Utf8String(xrefBlock->GetPath().c_str()).c_str());
         else
             this->ReportError (IssueCategory::UnexpectedData(), Issue::ModelFilteredOut(), Utf8PrintfString("%ls, INSERT ID=%ls", xrefBlock->GetPath().c_str(), xrefInsertId.ToAscii().c_str()).c_str());
         return  BSIERROR;
@@ -163,13 +163,13 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     else
         {
         // import entities in database order:
-        DwgDbBlockChildIterator     entityIter = xModelspace->GetBlockChildIterator ();
-        if (entityIter.IsValid())
+        DwgDbBlockChildIteratorPtr  entityIter = xModelspace->GetBlockChildIterator ();
+        if (entityIter.IsValid() && entityIter->IsValid())
             {
             // fill the xref model with entities
-            for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
+            for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
                 {
-                childInputs.SetEntityId (entityIter.GetEntityId());
+                childInputs.SetEntityId (entityIter->GetEntityId());
                 this->OpenAndImportEntity (childInputs);
                 }
             }
@@ -226,7 +226,7 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
             if (!m_xrefDatabase.IsValid() && !m_resolvedPath.EqualsI(importer.GetRootDwgFileName()) && DwgHelper::SniffDwgFile (m_resolvedPath, &version))
                 {
                 Utf8String  verstr = DwgHelper::GetStringFromDwgVersion (version);
-                importer.SetStepName (DwgImporter::ProgressMessage::STEP_OPENINGFILE(), m_resolvedPath.c_str(), verstr.c_str());
+                importer.SetStepName (ProgressMessage::STEP_OPENINGFILE(), m_resolvedPath.c_str(), verstr.c_str());
                 m_xrefDatabase = host.ReadFile (m_resolvedPath, false, false, FileShareMode::DenyNo);
                 }
             }
@@ -236,16 +236,19 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
             // the nested block name should be propagated into the root file
             m_prefixInRootFile = xrefBlock.GetName().GetWCharCP ();
             m_blockIdInRootFile = xrefBlock.GetObjectId ();
+            // will add DgnModels resolved from xref inserts
+            m_dgnModels.clear ();
             return  BSISUCCESS;
             }
 
-        importer.ReportError (DwgImporter::IssueCategory::DiskIO(), DwgImporter::Issue::FileFilteredOut(), Utf8String(m_savedPath.c_str()).c_str());
+        importer.ReportError (IssueCategory::DiskIO(), Issue::FileFilteredOut(), Utf8String(m_savedPath.c_str()).c_str());
         }
 
     m_resolvedPath.clear ();
     m_savedPath.clear ();
     m_prefixInRootFile.clear ();
     m_blockIdInRootFile.SetNull ();
+    m_dgnModels.clear ();
 
     return  BSIERROR;
     }
@@ -342,7 +345,7 @@ LayoutXrefFactory::LayoutXrefFactory (DwgImporter& im, DwgDbBlockReferenceCR x) 
     m_jobDefinitionModel = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == m_jobDefinitionModel)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SpatialView");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "SpatialView");
         m_jobDefinitionModel = &m_importer.GetDgnDb().GetDictionaryModel ();
         }
     m_xrefModel = nullptr;
@@ -389,17 +392,17 @@ bool    LayoutXrefFactory::UpdateViewName ()
     auto status = m_spatialView->SetCode (DgnCode::From(code.GetCodeSpecId(), code.GetScopeString(), m_viewName));
     if (status != DgnDbStatus::Success)
         {
-        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::Briefcase(), DwgImporter::Issue::CannotUpdateName(), m_spatialView->GetName().c_str(), m_viewName.c_str());
+        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), "Layout View", m_spatialView->GetName().c_str(), m_viewName.c_str());
         return  false;
         }
 
     // change category selector name - caller shall update element
-    auto userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::CategorySelector());
+    auto userLabel = DataStrings::GetString (DataStrings::CategorySelector());
     auto& categorySelector = m_spatialView->GetCategorySelector ();
     m_importer.UpdateElementName (categorySelector, m_viewName, userLabel.c_str(), false);
     
     // change display style name - caller shall update element
-    userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::DisplayStyle());
+    userLabel = DataStrings::GetString (DataStrings::DisplayStyle());
     auto& displayStyle = m_spatialView->GetDisplayStyle ();
     m_importer.UpdateElementName (displayStyle, m_viewName, userLabel.c_str(), false);
 
@@ -407,7 +410,7 @@ bool    LayoutXrefFactory::UpdateViewName ()
     auto spatialView = m_spatialView->ToSpatialViewP ();
     if (nullptr != spatialView)
         {
-        userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::ModelSelector());
+        userLabel = DataStrings::GetString (DataStrings::ModelSelector());
         m_importer.UpdateElementName (spatialView->GetModelSelector(), m_viewName, userLabel.c_str(), true);
         }
 
@@ -611,7 +614,7 @@ BentleyStatus   LayoutXrefFactory::UpdateSpatialView (bool updateBim)
 #else
     m_spatialView->SetIsPrivate (false);
 #endif
-    m_spatialView->SetUserLabel (DwgImporter::DataStrings::GetString(DwgImporter::DataStrings::XrefView()).c_str());
+    m_spatialView->SetUserLabel (DataStrings::GetString(DataStrings::XrefView()).c_str());
 
     if (updateBim)
         {
@@ -622,7 +625,7 @@ BentleyStatus   LayoutXrefFactory::UpdateSpatialView (bool updateBim)
         auto viewId = m_spatialView->GetViewId ();
         if (!viewId.IsValid())
             {
-            m_importer.ReportError(DwgImporter::IssueCategory::CorruptData(), DwgImporter::Issue::Error(), m_viewName.c_str());
+            m_importer.ReportError(IssueCategory::CorruptData(), Issue::Error(), m_viewName.c_str());
             return  BSIERROR;
             }
         m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
@@ -665,7 +668,7 @@ BentleyStatus   LayoutXrefFactory::CreateSpatialView ()
     // add the new SpatialView to db
     if (m_spatialView->Insert().IsNull())
         {
-        m_importer.ReportError(DwgImporter::IssueCategory::CorruptData(), DwgImporter::Issue::Error(), m_viewName.c_str());
+        m_importer.ReportError(IssueCategory::CorruptData(), Issue::Error(), m_viewName.c_str());
         return  BSIERROR;
         }
 

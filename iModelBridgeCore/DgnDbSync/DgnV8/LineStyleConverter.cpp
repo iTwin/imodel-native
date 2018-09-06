@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/LineStyleConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -214,7 +214,9 @@ LineStyleStatus LineStyleConverter::ConvertLinePoint (LsComponentId& v10Id, DgnV
 
         DgnV8Api::LsCacheSymbolReference const* symbolRef = linePointComponent.GetSymbolCP(i);
         BeAssert(nullptr != symbolRef);
-        DgnV8Api::LsCacheSymbolComponent const* symbolComponent = symbolRef->GetSymbolComponentCP();    
+        DgnV8Api::LsCacheSymbolComponent const* symbolComponent = symbolRef->GetSymbolComponentCP();
+        if (nullptr == symbolComponent)
+            continue;
         LsComponentId symbolId;
 
         ConvertLsComponent (symbolId, v8File, *symbolComponent, lsScale);

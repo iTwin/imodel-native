@@ -129,22 +129,22 @@
 
     <ProductDirectoryList ListName="DgnDbSyncAppCommonDirList">
         <ProductDirectory Name="applicationroot"            Path=""/>
-        <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assets"                     Path="assets" RelativeTo="applicationroot" LibType="static"/>
-        <ProductDirectory Name="VendorNotices"              Path="notices" />
-        <ProductDirectory Name="VendorNotices"              Path="notices" LibType="Static" />
-        <ProductDirectory Name="BentleyEulaDelivery"        Path="notices"/>
+        <ProductDirectory Name="Assets"                     RelativeTo="applicationroot" Path="assets"/>
+        <ProductDirectory Name="Assets"                     RelativeTo="applicationroot" Path="assets" LibType="static"/>
+        <ProductDirectory Name="VendorNotices"              RelativeTo="applicationroot" Path="notices"/>
+        <ProductDirectory Name="VendorNotices"              RelativeTo="applicationroot" Path="notices" LibType="Static"/>
+        <ProductDirectory Name="BentleyEulaDelivery"        RelativeTo="applicationroot" Path="notices"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
-        <ProductDirectory Name="dgnplatformlinestylersc"    Path="LineStyles"            RelativeTo="applicationroot"/>
+        <ProductDirectory Name="dgnplatformlinestylersc"    RelativeTo="applicationroot" Path="LineStyles"/>
         <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnV8Dlls"                  RelativeTo="applicationroot" Path="DgnV8"/>
+        
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8"/>
-
     </ProductDirectoryList>
 
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <!-- DgnV8Bridge - an iModelBridge that converts DgnV8 files. This bridge starts with a root model.              -->
+    <!-- DgnV8Bridge - Part of Vancouver Bridge SDK              -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <Product Name="DgnV8Bridge" SaveProduct="true">
         <SubPart PartName="DgnV8ConverterExe" />
@@ -176,6 +176,53 @@
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""     RelativeTo="Assemblies"/>
     </ProductDirectoryList>
 
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- MstnBridge - an iModelBridge that converts DgnV8 files. This bridge starts with a root model.              -->
+    <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
+        <SubPart PartName="DgnV8ConverterExe" />
+        <SubPart PartName="DgnV8ConverterDLL" />
+        <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
+        <SubPart PartName="__GatherDgnV8ConverterNotices"/>
+        <SubPart PartName="DgnV8BridgeInstallFiles"/>
+        <InstallerWixFile SourceFile="DgnV8/Converters/Dgnv8BridgeInstaller/Dgnv8BridgeInstaller"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="MstnBridgeDirList" />
+    </Product>
+
+    <Part Name="DgnV8BridgeInstallFiles" OnlyPlatforms="x64" BentleyBuildMakeFile="DgnV8/Converters/Dgnv8BridgeInstaller/Dgnv8BridgeInstaller.prewire.mke">
+      <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+      <SubPart PartName="Microsoft_VC_140" PartFile="Microsoft_VC_14_0" Repository="Mergemodule-Microsoft_VC_14.0"/>
+      <SubPart Repository="Miscdev-Eula" PartFile="Eula" PartName="Eula"/>
+      <Bindings>
+        <Files BindToWixBuild="true" SubPartDirectory="installer">
+          DgnV8BridgeInstallFiles/DgnV8BridgeInstallerBeforeCompile.mki
+          DgnV8BridgeInstallFiles/DgnV8BridgeInstaller.wxs
+        </Files>
+      </Bindings>
+    </Part>
+  
+    <ProductDirectoryList ListName="MstnBridgeDirList">
+        <ProductDirectory Name="applicationroot" Path=""/>
+        
+        <ProductDirectory Name="DgnPlatformV8TranskitEn"        RelativeTo="DgnV8Dlls" Path="en"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""     RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Path=""     RelativeTo="Assemblies" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""     RelativeTo="Assemblies"/>
+      
+        <ProductDirectory Name="DgnV8ConverterLibs"             Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Deliver="false"/>
+        <ProductDirectory Name="PublicApi"                      Deliver="false"/>
+        <ProductDirectory Name="PublicApi" LibType="Static"     Deliver="false"/>
+        <ProductDirectory Name="VersionedDgnV8Api"              Deliver="false"/>
+        <ProductDirectory Name="VendorApi"                      Deliver="false"/>
+        <ProductDirectory Name="VendorApi" LibType="Static"     Deliver="false"/>
+        <ProductDirectory Name="Libs"                           Deliver="false"/>
+        <ProductDirectory Name="Libs" LibType="Static"          Deliver="false"/>
+        <ProductDirectory Name="MergeModules" Deliver="false"/>
+    </ProductDirectoryList>
+
 
     <Product Name="DgnV8Converter">
         <SubPart PartName="TiledDgnV8ConverterExe" />
@@ -183,6 +230,17 @@
         <Directories DirectoryListName="DgnV8ConverterDirList" />
     </Product>
 
+    <ProductDirectoryList ListName="DgnV8ConverterNugetDirsOverride">
+        <ProductDirectory Name="applicationroot" Path="DgnV8Converter"/>
+    </ProductDirectoryList>
+
+    <NuGetProduct Name="DgnV8Converter_2_0_Nuget" OnlyPlatforms="x64" Description="DgnV8ConverterNuget">
+        <SubPart PartName="TiledDgnV8ConverterExe"/>
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterNugetDirsOverride"/>
+    </NuGetProduct>
+    
     <ProductDirectoryList ListName="Bimv8SyncSDKDirList">
         <ProductDirectory Name="PublicAPI"                  Deliver="true" Path="PublicAPI"/>
         <ProductDirectory Name="DgnV8ConverterLibs"         Deliver="true" Path="Libs"/>
@@ -227,11 +285,11 @@
 
     <ProductDirectoryList ListName="DgnV8ConverterDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
-        <ProductDirectory Name="DgnPlatformV8Assemblies"                         RelativeTo="applicationroot"/>
-        <ProductDirectory Name="DgnPlatformV8TranskitEn"            Path="en"    RelativeTo="applicationroot"/>
-        <ProductDirectory Name="BentleyClientSharedAssemblies"                   RelativeTo="applicationroot"/>
-        <ProductDirectory Name="BentleyDesktopClientApi"                         RelativeTo="applicationroot" />
-        <ProductDirectory Name="BentleyDesktopClientApi_Native"                  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnPlatformV8Assemblies"        RelativeTo="applicationroot"/>
+        <ProductDirectory Name="DgnPlatformV8TranskitEn"        RelativeTo="applicationroot" Path="en"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="applicationroot"/>
     </ProductDirectoryList>
 
     <Part Name="ConverterApp-Source" BentleyBuildMakeFile="DgnV8/Converters/DeliverConverterAppSource.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
@@ -382,65 +440,72 @@
         <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
     </Part>
 
-    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64">
+    <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64">
         <Bindings>
-            <PublicAPI Domain="BimTeleporter" />
+            <PublicAPI Domain="BimFromDgnDb" />
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+    <Part Name="BimFromJson">
+        <SubPart PartName="BimFromDgnDbPublicApi"/>
+        <SubPart PartName="BimFromJsonLib"/>
+        <SubPart PartName="BimFromDgnDb-Xliffs"/>
+    </Part>
+    
+    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"      Repository="DgnPlatform"/>
         <SubPart PartName="ECPresentation"  PartFile="ECPresentation"   Repository="ECPresentation"/>
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"       Repository="DgnDisplay" />
         <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
-        <SubPart PartName="TeleporterPublicAPI"/>
+        <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="BimFromDgnDbPublicApi"/>
         <Bindings>
-            <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Importer$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BisJson1Importer$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="BisJson1ImporterXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/BisJson1ImporterMessages_en.xliff</Files>
+            <Libs ProductDirectoryName="BimFromDgnDbLibs" Required="false">Delivery/$(libprefix)BimFromJson$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BimFromJson$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1ImporterSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/DgnDbSync/BisJson1Importer/SQLang/BisJson1Importer_en-US.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
-        <SubPart PartName="BisJson1Importer"/>
+    <Part Name="BimFromJsonSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/BimFromDgnDb/BimFromJson/SQLang/BimFromJson_en-US.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="BimFromJson"/>
         <Bindings>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/BisJson1Importer_en-US.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/BimFromJson_en-US.sqlang.db3</Files>
         </Bindings>
     </Part>
-    <Part Name="BimImporterExe" BentleyBuildMakeFile="BimTeleporter/BimImporter/exe/BimImporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    
+    <Part Name="BimImporterExe" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/exe/BimImporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="TeleporterPublicAPI"/>
-        <SubPart PartName="BisJson1Importer"/>
-        <SubPart PartName="BisJson1ImporterSqlang"/>
+        <SubPart PartName="BimFromJson"/>
+        <SubPart PartName="BimFromJsonSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\BimImporter.exe</Files>
-            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimTeleporter.logging.config.xml</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimUpgrader.logging.config.xml</Files>
         </Bindings>
     </Part>
 
-    <Part Name="BimTeleporterExe" BentleyBuildMakeFile="BimTeleporter/src/BimTeleporter.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
-        <SubPart PartName="BisJson1Importer"/>
-        <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
-        <SubPart PartName="DgnDb0601ToBimConverter" />
-        <SubPart PartName="BisJson1ImporterSqlang"/>
+    <Part Name="BimUpgraderExe" BentleyBuildMakeFile="BimFromDgnDb/BimUpgrader/BimUpgrader.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
+        <SubPart PartName="BimFromJson"/>
+        <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
+        <SubPart PartName="BimFromDgnDb" />
+        <SubPart PartName="BimFromJsonSqlang"/>
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery\BimTeleporter.exe</Files>
-            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimTeleporter.logging.config.xml</Files>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery\BimUpgrader.exe</Files>
+            <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimUpgrader.logging.config.xml</Files>
         </Bindings>
     </Part>
 
-    <Part Name="DgnDb0601ToBimConverter" BentleyBuildMakeFile="BimTeleporter/src/DgnDbToBimConverter.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
-        <SubPart PartName="BisJson1Importer"/>
-        <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
+    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+        <SubPart PartName="BimFromJson"/>
+        <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
         <Bindings>
-            <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)DgnDbToBimConverter$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)DgnDbToBimConverter$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs ProductDirectoryName="BimFromDgnDbLibs" Required="false">Delivery/$(libprefix)BimFromDgnDb$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BimFromDgnDb$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <ProductDirectoryList ListName="BimTeleporterDirList">
+    <ProductDirectoryList ListName="BimUpgraderDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
-        <ProductDirectory Name="BimTeleporterNativeAssemblies"          Path=""/>
         <ProductDirectory Name="DgnDbAssemblies"                        Path=""/>
         <ProductDirectory Name="Assets"                                 Path="Assets"/>
         <ProductDirectory Name="DgnDbPlatformAssets"                    Path="Assets"/>
@@ -450,38 +515,136 @@
     <Product Name="BimImporter">
         <SubPart PartName="BimImporterExe"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
-        <Directories DirectoryListName="BimTeleporterDirList" />
+        <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>
 
     <Product Name="BimExporter0601">
-        <SubPart PartFile="BimTeleporter" PartName="BimExporter0601Exe"/>
+        <SubPart PartFile="BimUpgrader" PartName="BimExporter0601Exe"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
-        <Directories DirectoryListName="BimTeleporterDirList" />
+        <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>
 
-    <Product Name="BimTeleporter">
-        <SubPart PartName="BimTeleporterExe"/>
+    <Product Name="BimUpgrader">
+        <SubPart PartName="BimUpgraderExe"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
-        <Directories DirectoryListName="BimTeleporterDirList" />
+        <Directories DirectoryListName="BimUpgraderDirList" />
     </Product>
 
-    <Part Name="BisJson" BentleyBuildMakeFile="BimTeleporter/BisJson.prewire.mke">
-        <SubPart PartName="PublicApi" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="BimFromDgnDb-Xliffs" BentleyBuildMakeFile="BimFromDgnDb/Localization/xliffs.mke">
         <Bindings>
-            <Files ProductDirectoryName="BisJsonSchema">*Delivery\*.json</Files>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/BimFromDgnDb_en.xliff</Files>
         </Bindings>
     </Part>
 
-    <ProductDirectoryList ListName="BisJsonDirList">
-        <ProductDirectory Name="PublicApi"          Deliver="false"/>
-        <ProductDirectory Name="BisJsonSchema"      Path=""/>
-        <ProductDirectory Name="ECSchemas"          Path=""/>
-    </ProductDirectoryList>
 
-    <Product Name="BisJsonSdk">
-        <SubPart PartName="BisJson"/>
-        <Directories DirectoryListName="BisJsonDirList"/>
-    </Product>
+    <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
+    <Part Name="L10N-BimFromDgnDbXliffs-en" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/DgnDbSync/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-BimFromDgnDb/ -dL10N_XLIFF_LANG_DIRECTORY=en">
+        <SubPart PartName="BimFromDgnDb-Xliffs" />
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-BimFromDgnDbXliffs-cs" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/BimFromDgnDb_cs.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-de" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/BimFromDgnDb_de.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-es" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/BimFromDgnDb_es.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-fi" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/BimFromDgnDb_fi.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-fr" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/BimFromDgnDb_fr.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-it" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/BimFromDgnDb_it.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-ja" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/BimFromDgnDb_ja.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-ko" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/BimFromDgnDb_ko.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-nl" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/BimFromDgnDb_nl.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-pl" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/BimFromDgnDb_pl.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-pt" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/BimFromDgnDb_pt.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-ru" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/BimFromDgnDb_ru.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-sv" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/BimFromDgnDb_sv.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-tr" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/BimFromDgnDb_tr.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-zh-cn" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/BimFromDgnDb_zh-cn.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-BimFromDgnDbXliffs-zh-tw" BentleyBuildMakeFile="BimFromDgnDb/Localization/l10n-BimFromDgnDb.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
+        <RequiredRepository>l10n-BimFromDgnDb</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-BimFromDgnDbXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/BimFromDgnDb_zh-tw.xliff</Files>
+        </Bindings>
+    </Part>
+
 
     <!-- VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV -->
     <!-- The below parts exist to work around a `bb buildinstallset` deficiency that ignores <VendorNotice> bindings. -->

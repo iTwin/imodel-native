@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwk.h>
-#include "DgnDbServerClientUtils.h"
+#include "IModelClientForBridges.h"
 #include <WebServices/iModelHub/Client/Client.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <DgnPlatform/DgnProgressMeter.h>
@@ -18,19 +18,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE
 
-static iModelHubFX* s_iModelHubFXForTesting;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getArgValue(WCharCP arg)
-    {
-    WString argValue(arg);
-    argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
-    argValue.Trim(L"\"");
-    argValue.Trim();
-    return Utf8String(argValue);
-    }
+static IModelClientForBridges* s_IModelHubClientForBridgesForTesting;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   05/17
@@ -61,41 +49,24 @@ DgnProgressMeter& iModelBridgeFwk::GetProgressMeter() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::ServerArgs::PrintUsage()
+void iModelBridgeFwk::IModelHubArgs::PrintUsage()
     {
     fwprintf(stderr, L"\n\
-SERVER:\n\
+iModelHub:\n\
     --server-project=       (optional)  The name of a project in the iModel Hub Services. Optional if --server-project-guid is specified.\n\
-    --server-project-guiid= (optional)  The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
+    --server-project-guid= (optional)  The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
     --server-repository=    (required)  The name of a repository in the project.\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\
     --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
-    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted. \n\
-    --server-dmsUser=       (optional) The username for the DMS Project. \n\
-    --server-dmsPassword=   (optional) The password for the DMS Project. \n\
-    ");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            getNeedsPasswordDecryptionFromEnv()
-    {
-    CharCP envValue = getenv("BAS_ShouldDataProtectBridgeCredentials");
-    if (NULL == envValue)
-        return false;
-
-    if (0 == BeStringUtilities::Stricmp("1", envValue))
-        return true;
-
-    return false;
+    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted.\n\
+    \n");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     DecryptCredentials(Http::Credentials& credentials)
+void            iModelBridgeFwk::DecryptCredentials(Http::Credentials& credentials)
     {
     Utf8String userName;
     CryptoHelper::DecryptString(userName, credentials.GetUsername());
@@ -110,9 +81,9 @@ static void     DecryptCredentials(Http::Credentials& credentials)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::IModelHubArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
-    bool needsDecryption = getNeedsPasswordDecryptionFromEnv();
+    m_isEncrypted = true;
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--server", 8))
@@ -122,6 +93,8 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
             bargptrs.push_back(m_bargs.back().c_str());
             continue;
             }
+
+        m_parsedAny = true;
 
         if (argv[iArg] == wcsstr(argv[iArg], L"--server-retries="))
             {
@@ -176,22 +149,9 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
                 }
             continue;
             }
-        //Once we support OIDC this can be the same as  iModelHub user
-        if (argv[iArg] == wcsstr(argv[iArg], L"--server-dmsUser="))
-            {
-            m_dmsCredentials.SetUsername(getArgValue(argv[iArg]));
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--server-dmsPassword="))
-            {
-            m_dmsCredentials.SetPassword(getArgValue(argv[iArg]));
-            continue;
-            }
-
         if (argv[iArg] == wcsstr(argv[iArg], L"--server-credentials-isEncrypted"))
             {
-            needsDecryption = true;
+            m_isEncrypted = true;
             continue;
             }
 
@@ -200,19 +160,19 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
         return BSIERROR;
         }
 
-    if (needsDecryption)
-        {
+    if (m_isEncrypted)
         DecryptCredentials(m_credentials);
-        DecryptCredentials(m_dmsCredentials);
-        }
     return BSISUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus iModelBridgeFwk::ServerArgs::Validate(int argc, WCharCP argv[])
+BentleyStatus iModelBridgeFwk::IModelHubArgs::Validate(int argc, WCharCP argv[])
     {
+    if (!m_parsedAny)
+        return BSISUCCESS;
+
     if (m_bcsProjectId.empty())
         {
         GetLogger().fatal("missing project name or GUID");
@@ -237,12 +197,119 @@ BentleyStatus iModelBridgeFwk::ServerArgs::Validate(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::IModelBankArgs::PrintUsage()
+    {
+    fwprintf(stderr, L"\n\
+iModelBank:\n\
+    --imodel-bank-url=              The URL of the iModelBank server to use.\n\
+    --imodel-bank-imodel-id=        The GUID of the iModel that is served by the bank at the specified URL.\n\
+    --imodel-bank-access-token=     (optional) The JSON-encoded user access token, if needed by the project mgmt system.\n\
+    --imodel-bank-retries=          (optional) The number of times to retry a pull, merge, and/or push to iModelBank. Must be a value between 0 and 255.\n\
+    --imodel-bank-dms-credentials-isEncrypted (optional) The DMS user name and password passed in is encrypted.\n\
+    \n");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridgeFwk::IModelBankArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
+    {
+    for (int iArg = 1; iArg < argc; ++iArg)
+        {
+        if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--imodel-bank", 13))
+            {
+            // Not a fwk argument. We will forward it to the bridge.
+            m_bargs.push_back(argv[iArg]);  // Keep the string alive
+            bargptrs.push_back(m_bargs.back().c_str());
+            continue;
+            }
+
+        m_parsedAny = true;
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-retries="))
+            {
+            int n = atoi(getArgValue(argv[iArg]).c_str());
+            if (n < 0 || 256 >= n)
+                {
+                fprintf(stderr, "%s - invalid retries value. Must be a value between 0 and 255\n", getArgValue(argv[iArg]).c_str());
+                return BSIERROR;
+                }
+            m_maxRetryCount = (uint8_t)n;
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-url="))
+            {
+            m_url = getArgValue(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-access-token="))
+            {
+            m_accessToken = getArgValue(argv[iArg]);
+            continue;
+            }
+        
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-imodel-id="))
+            {
+            m_iModelId = getArgValue(argv[iArg]);
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--imodel-bank-dms-credentials-isEncrypted"))
+            {
+            m_dmsCredentialsEncrypted = true;
+            continue;
+            }
+
+        BeAssert(false);
+        fwprintf(stderr, L"%ls: unrecognized imodel-bank argument\n", argv[iArg]);
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridgeFwk::IModelBankArgs::Validate(int argc, WCharCP argv[])
+    {
+    if (!m_parsedAny)
+        return BSISUCCESS;
+
+    if (m_url.empty())
+        {
+        GetLogger().fatal("missing URL");
+        return BSIERROR;
+        }
+
+    if (m_iModelId.empty())
+        {
+        GetLogger().fatal("missing iModel GUID");
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Utf8String iModelBridgeFwk::IModelBankArgs::GetBriefcaseBasename() const
+    {
+    return m_iModelId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::Briefcase_MakeBriefcaseName()
     {
     BeAssert(!m_jobEnvArgs.m_stagingDir.empty() && m_jobEnvArgs.m_stagingDir.IsDirectory());
     // We always create a file in the localDir with the same name as the project. (It's too confusing otherwise.)
     m_briefcaseName = m_jobEnvArgs.m_stagingDir;
-    m_briefcaseName.AppendToPath(WString(m_serverArgs.m_repositoryName.c_str(), true).c_str());
+    m_briefcaseName.AppendToPath(WString(m_briefcaseBasename.c_str(), true).c_str());
     m_briefcaseName.append(L".bim");
     }
 
@@ -256,7 +323,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
     GetLogger().info("AcquireBriefcase");
     GetProgressMeter().SetCurrentStepName("AcquireBriefcase");
 
-    if (nullptr == m_clientUtils || !m_clientUtils->IsSignedIn())
+    if (nullptr == m_client || !m_client->IsConnected())
         {
         BeAssert(false);
         return BSIERROR;
@@ -268,17 +335,37 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         return BSIERROR;
         }
 
-    if (BSISUCCESS != m_clientUtils->AcquireBriefcase(m_briefcaseName, m_serverArgs.m_repositoryName.c_str()))
+    if (BSISUCCESS != m_client->AcquireBriefcase(m_briefcaseName, m_briefcaseBasename.c_str()))
         {
-        if (Error::Id::iModelDoesNotExist == m_clientUtils->GetLastError().GetId())
+        if (Error::Id::iModelDoesNotExist == m_client->GetLastError().GetId())
+            {
             m_lastServerError = EffectiveServerError::iModelDoesNotExist;
-        GetLogger().infov("%s - iModel not found in project\n", m_serverArgs.m_repositoryName.c_str());
+            GetLogger().infov("%s - iModel not found in project\n", m_briefcaseBasename.c_str());
+            }
+        else
+            {
+            GetLogger().fatalv("%s - AcquireBriefcase failed\n", m_briefcaseBasename.c_str());
+            }
         return BSIERROR;
         }
 
-    SaveBriefcaseId();
+    auto rc = SaveBriefcaseId();
 
-    return BSISUCCESS;
+    if (BE_SQLITE_OK != rc)
+        {
+        if (BE_SQLITE_ERROR_SchemaUpgradeRequired == rc)
+            {
+            bool madeSchemaChanges = false;
+            iModelBridge::OpenBimAndMergeSchemaChanges(rc, madeSchemaChanges, m_briefcaseName);
+            rc = SaveBriefcaseId();
+            }
+        else
+            {
+            GetLogger().infov("Cannot open briefcase (error %x)\n", rc);
+            }
+        }
+        
+    return (BE_SQLITE_OK==rc)? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -301,39 +388,41 @@ bool iModelBridgeFwk::Briefcase_IsBriefcase()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_CreateRepository()
+BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
     {
     m_lastServerError = EffectiveServerError::Unknown;
 
-    if (nullptr == m_clientUtils || !m_clientUtils->IsSignedIn())
+    auto hubClient = dynamic_cast<IModelHubClientForBridges*>(m_client);
+
+    if (nullptr == hubClient || !hubClient->IsConnected())
         {
         BeAssert(false);
         return BSIERROR;
         }
 
-    if (!m_briefcaseName.GetFileNameWithoutExtension().EqualsI(WString(m_serverArgs.m_repositoryName.c_str(), true)))
+    if (!m_briefcaseName.GetFileNameWithoutExtension().EqualsI(WString(m_briefcaseBasename.c_str(), true)))
         {
         BeAssert(false && "Keep the name of the project and the dgndb the same. It's too confusing otherwise.");
         return BSIERROR;
         }
 
     GetProgressMeter().SetCurrentStepName("CreateRepository");
-    GetLogger().infov("CreateRepository %s", m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("CreateRepository %s", m_briefcaseBasename.c_str());
 
-    if (BSISUCCESS == m_clientUtils->CreateRepository(m_serverArgs.m_repositoryName.c_str(), m_briefcaseName))
+    if (BSISUCCESS == hubClient->CreateRepository(m_briefcaseBasename.c_str(), m_briefcaseName))
         return BSISUCCESS;
 
-    if (Error::Id::iModelAlreadyExists == m_clientUtils->GetLastError().GetId())
+    if (Error::Id::iModelAlreadyExists == hubClient->GetLastError().GetId())
         {
         // If the local file is not a briefcase and yet the server repository does exist, we'll assume that
         // a previous attempt to use a local file to create a server repo did succeed, but the program crashed
         // before we could clean up the local file.
-        GetLogger().info(m_clientUtils->GetLastError().GetMessage().c_str());
+        GetLogger().info(hubClient->GetLastError().GetMessage().c_str());
         return BSISUCCESS;
         }
 
-    ReportIssue(m_clientUtils->GetLastError().GetMessage());
-    GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
+    ReportIssue(hubClient->GetLastError().GetMessage());
+    GetLogger().error(hubClient->GetLastError().GetMessage().c_str());
     return BSIERROR;
     }
 
@@ -345,44 +434,44 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
     m_lastServerError = EffectiveServerError::Unknown;
 
     GetProgressMeter().SetCurrentStepName("PullMergePush");
-    GetLogger().infov("PullMergePush %s", m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("PullMergePush %s", m_briefcaseBasename.c_str());
 
-    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_clientUtils || !m_clientUtils->IsSignedIn())
+    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
         {
         BeAssert(false);
         return BSIERROR;
         }
 
-    if (BSISUCCESS != m_clientUtils->OpenBriefcase(*m_briefcaseDgnDb))
+    if (BSISUCCESS != m_client->OpenBriefcase(*m_briefcaseDgnDb))
         {
-        ReportIssue(m_clientUtils->GetLastError().GetMessage());
-        GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
+        ReportIssue(m_client->GetLastError().GetMessage());
+        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
 
-    auto status = m_clientUtils->PullMergeAndPush(desc);
+    auto status = m_client->PullMergeAndPush(desc);
     bool needsSchemaMerge = false;
     if (SUCCESS != status)
         {
-        iModel::Hub::Error const& errorVal = m_clientUtils->GetLastError();
+        iModel::Hub::Error const& errorVal = m_client->GetLastError();
         if (iModel::Hub::Error::Id::MergeSchemaChangesOnOpen == errorVal.GetId())
             needsSchemaMerge = true;
         }
 
     if (needsSchemaMerge)
         {
-        GetLogger().infov("PullAndMergeSchemaRevisions %s", m_serverArgs.m_repositoryName.c_str());
-        status = m_clientUtils->PullAndMergeSchemaRevisions(m_briefcaseDgnDb); // *** TRICKY: PullAndMergeSchemaRevisions closes and re-opens the briefcase, so m_briefcaseDgnDb is re-assigned!
+        GetLogger().infov("PullAndMergeSchemaRevisions %s", m_briefcaseBasename.c_str());
+        status = m_client->PullAndMergeSchemaRevisions(m_briefcaseDgnDb); // *** TRICKY: PullAndMergeSchemaRevisions closes and re-opens the briefcase, so m_briefcaseDgnDb is re-assigned!
         if (SUCCESS == status)
-            status = m_clientUtils->PullMergeAndPush(desc);
+            status = m_client->PullMergeAndPush(desc);
         }
 
-    m_clientUtils->CloseBriefcase();
+    m_client->CloseBriefcase();
 
     if (BSISUCCESS != status)
         {
-        ReportIssue(m_clientUtils->GetLastError().GetMessage());
-        GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
+        ReportIssue(m_client->GetLastError().GetMessage());
+        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
 
@@ -399,27 +488,27 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullAndMerge()
     m_lastServerError = EffectiveServerError::Unknown;
 
     GetProgressMeter().SetCurrentStepName("PullAndMerge");
-    GetLogger().infov("PullAndMerge %s", m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("PullAndMerge %s", m_briefcaseBasename.c_str());
 
-    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_clientUtils || !m_clientUtils->IsSignedIn())
+    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
         {
         BeAssert(false);
         return BSIERROR;
         }
 
-    if (BSISUCCESS != m_clientUtils->OpenBriefcase(*m_briefcaseDgnDb))
+    if (BSISUCCESS != m_client->OpenBriefcase(*m_briefcaseDgnDb))
         {
-        GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
+        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
 
-    auto status = m_clientUtils->PullAndMerge();
+    auto status = m_client->PullAndMerge();
 
-    m_clientUtils->CloseBriefcase();
+    m_client->CloseBriefcase();
 
     if (BSISUCCESS != status)
         {
-        GetLogger().error(m_clientUtils->GetLastError().GetMessage().c_str());
+        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
 
@@ -461,7 +550,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
                 continue;
             if (LockableType::Db == lock.GetType())
                 continue;                                   // Don't demote/relinquish the shared lock on the Db. That would have the side effect of relinquishing *all* my locks.
-            GetLogger().infov("Releasing lock: type=%d level=%d", lock.GetType(), lock.GetLevel());
+            GetLogger().infov("Releasing lock: type=%d level=%d objid=%llx", lock.GetType(), lock.GetLevel(), lock.GetId());
             DgnLock lockReq(lock);
             lockReq.SetLevel(LockLevel::None);
             toRelease.insert(lockReq);
@@ -488,10 +577,10 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeFwk::Briefcase_Shutdown()
     {
-    if (nullptr != m_clientUtils && m_clientUtils != s_iModelHubFXForTesting)
-        delete m_clientUtils;       // This relases the DgnDbBriefcase
+    if (nullptr != m_client && m_client != s_IModelHubClientForBridgesForTesting)
+        delete m_client;       // This relases the DgnDbBriefcase
         
-    m_clientUtils = nullptr;
+    m_client = nullptr;
 
     Http::HttpClient::Uninitialize();
     }
@@ -499,9 +588,9 @@ void iModelBridgeFwk::Briefcase_Shutdown()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SetiModelHubFXForTesting(iModelHubFX& c)
+void iModelBridgeFwk::SetIModelClientForBridgesForTesting(IModelClientForBridges& c)
     {
-    s_iModelHubFXForTesting = &c;
+    s_IModelHubClientForBridgesForTesting = &c;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -511,46 +600,36 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     {
     BeAssert((nullptr != DgnPlatformLib::QueryHost()) && "framework must initialize the host before calling this.");
 
-    if (m_serverArgs.m_maxRetryCount > 0)
-        GetLogger().infov("Server max retry count = %d", (int)m_serverArgs.m_maxRetryCount);
-
     // Note that we use the framework's asset directory, which is different from the bridge's assets dir.
     BeFileName assetsDir = m_jobEnvArgs.m_fwkAssetsDir;
 
     m_lastServerError = EffectiveServerError::Unknown;
 
     Http::HttpClient::Initialize(assetsDir);
-    BeAssert(nullptr == m_clientUtils);
+    BeAssert(nullptr == m_client);
     WebServices::ClientInfoPtr clientInfo = nullptr;
     if (NULL != m_bridge)
+        {
+        m_bridge->_GetParams().m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
         clientInfo = m_bridge->GetParamsCR().GetClientInfo();
-
-    m_clientUtils = s_iModelHubFXForTesting? s_iModelHubFXForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount, clientInfo);
-    Tasks::AsyncError serror;
-    if (BSISUCCESS != m_clientUtils->SignIn(&serror, m_serverArgs.m_credentials))
-        {
-        GetLogger().fatalv("briefcase sign in failed: %s - %s", serror.GetMessage().c_str(), serror.GetDescription().c_str());
-        return BSIERROR;
         }
 
-    if (m_serverArgs.m_haveProjectGuid)
-        {
-        m_clientUtils->SetProjectId(m_serverArgs.m_bcsProjectId.c_str());
-        }
+    if (s_IModelHubClientForBridgesForTesting)
+        m_client = s_IModelHubClientForBridgesForTesting;
     else
         {
-        WebServices::WSError wserror;
-        if (BSISUCCESS != m_clientUtils->QueryProjectId(&wserror, m_serverArgs.m_bcsProjectId))
-            {
-            GetLogger().fatalv("Cannot find iModelHub project: [%s]", m_serverArgs.m_bcsProjectId.c_str());
-            if (wserror.GetStatus() != WebServices::WSError::Status::None)
-                GetLogger().fatalv("%s - %s", wserror.GetDisplayMessage().c_str(), wserror.GetDisplayDescription().c_str());
-            return BSIERROR;
-            }
+        if (m_useIModelHub)
+            m_client = new IModelHubClient(*m_iModelHubArgs, clientInfo);
+        else
+            m_client = new IModelBankClient(*m_iModelBankArgs, clientInfo);
         }
+
+    if (!m_client->IsConnected())
+        return BSIERROR;
 
     return BSISUCCESS;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -573,9 +652,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireExclusiveLocks()
         req.Insert(*model, LockLevel::Exclusive);
         }
 
-    if (BSISUCCESS != m_clientUtils->AcquireLocks(req, *db))
+    if (BSISUCCESS != m_client->AcquireLocks(req, *db))
         {
-        GetLogger().info(m_clientUtils->GetLastError().GetMessage().c_str());
+        GetLogger().info(m_client->GetLastError().GetMessage().c_str());
         return BSIERROR;
         }
 
@@ -596,6 +675,6 @@ IRepositoryManagerP iModelBridgeFwk::FwkRepoAdmin::_GetRepositoryManager(DgnDbR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 IRepositoryManagerP iModelBridgeFwk::GetRepositoryManager(DgnDbR db) const
     {
-    return m_clientUtils->GetRepositoryManager(db);
+    return m_client->GetRepositoryManager(db);
     }
 

@@ -17,9 +17,10 @@
 #include <Bentley/BeGetProcAddress.h>
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
-#include "Registry/iModelBridgeRegistry.h"
+#include <iModelBridge/iModelBridgeRegistry.h>
 #include "../iModelBridgeHelpers.h"
-#include "DgnDbServerClientUtils.h"
+#include "IModelClientForBridges.h"
+#include <BentleyLog4cxx/log4cxx.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -113,7 +114,7 @@ T_iModelBridge_releaseInstance* iModelBridgeFwk::JobDefArgs::ReleaseBridge()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getArgValueW(WCharCP arg)
+WString         iModelBridgeFwk::getArgValueW(WCharCP arg)
     {
     WString argValue(arg);
     argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
@@ -125,7 +126,7 @@ static WString getArgValueW(WCharCP arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getArgValue(WCharCP arg)
+Utf8String      iModelBridgeFwk::getArgValue(WCharCP arg)
     {
     return Utf8String(getArgValueW(arg));
     }
@@ -179,7 +180,9 @@ void iModelBridgeFwk::PrintUsage(WCharCP programName)
     fwprintf (stderr, L"Usage: %ls\n", exeName.c_str());
 
     JobDefArgs::PrintUsage();
-    ServerArgs::PrintUsage();
+    IModelHubArgs::PrintUsage();
+    IModelBankArgs::PrintUsage();
+    DmsServerArgs::PrintUsage();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -197,11 +200,11 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
         L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
-        L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
-        L"--fwk-inputFileUrn=         (optional)  The urn to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by --fwk-input and --fwk-workspaceDir=\n"
-                                                  "eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n"
-        L"--fwk-workspaceDir=         (optional)  Directory to cache workspace files.\n"
-        L"--fwk-dms-library=          (optional)  The full path to the dms library. Use this for direct Dms support from the framework.\n"
+        L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
+        L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for correlation. This will be passed along to all dependant services and logs.\n"
+        L"--fwk-assetsDir=            (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
+        L"--fwk-bridgeAssetsDir=      (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
+        L"--fwk-imodelbank-url=       (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
         );
     }
 
@@ -213,7 +216,9 @@ void iModelBridgeFwk::InitLogging()
     if (!m_jobEnvArgs.m_loggingConfigFileName.empty() && m_jobEnvArgs.m_loggingConfigFileName.DoesPathExist())
         {
         NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, m_jobEnvArgs.m_loggingConfigFileName);
-        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        if (NULL == m_logProvider)
+            m_logProvider = new NativeLogging::Provider::Log4cxxProvider();
+        NativeLogging::LoggingConfig::ActivateProvider(m_logProvider);
         return;
         }
 
@@ -408,35 +413,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
                 m_bridgeAssetsDir = assetsDir;
             continue;
             }
-        
-        if (argv[iArg]==wcsstr(argv[iArg],L"--fwk-workspaceDir="))
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-jobrun-guid="))
             {
-            m_workspaceDir = BeFileName (WString(getArgValueW(argv[iArg]), true));
+            m_jobRunCorrelationId = getArgValue(argv[iArg]);
             continue;
             }
 
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-dms-library"))
-            {
-            if (!m_dmsLibraryName.empty())
-                {
-                fwprintf(stderr, L"The --fwk-dms-library= option may appear only once.\n");
-                return BSIERROR;
-                }
-
-            m_dmsLibraryName.SetName(getArgValueW(argv[iArg]));
-            continue;
-            }
-        //--fwk-inputFileUri=
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-inputFileUrn="))
-            {
-            if (!m_inputFileUrn.empty())
-                {
-                fwprintf(stderr, L"The --fwk-input= option may appear only once.\n");
-                return BSIERROR;
-                }
-            m_inputFileUrn =  getArgValueW(argv[iArg]);
-            continue;
-            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
         return BSIERROR;
@@ -566,12 +548,61 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     InitLogging();
 
-    bvector<WCharCP> rawArgPtrs;        // pare down the args once again, removing the server-specific args and leaving the rest for the bridge
-    std::swap(rawArgPtrs, m_bargptrs);
+    bvector<WCharCP> serverRawArgPtrs;        // pare down the args once again, removing the server-specific args and leaving the rest for the bridge
+    std::swap(serverRawArgPtrs, m_bargptrs);
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_serverArgs.ParseCommandLine(m_bargptrs, (int)rawArgPtrs.size(), rawArgPtrs.data())) || (BSISUCCESS != m_serverArgs.Validate((int)rawArgPtrs.size(), rawArgPtrs.data())))
+    IModelBankArgs bankArgs;
+    if ((BSISUCCESS != bankArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != bankArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+        {
+        PrintUsage(argv[0]);
+        return BSIERROR;
+        }
+    
+    if (!bankArgs.ParsedAny())
+        {
+        m_bargptrs.clear();
+        m_bargptrs.push_back(argv[0]);
+        }
+
+    IModelHubArgs hubArgs;
+    if ((BSISUCCESS != hubArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != hubArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+        {
+        PrintUsage(argv[0]);
+        return BSIERROR;
+        }
+
+    if (bankArgs.ParsedAny() && hubArgs.ParsedAny())
+        {
+        fwprintf (stderr, L"Specify either imodel-bank arguments or server arguments but not both\n");
+        return BSIERROR;
+        }
+
+    bool dmsCredentialsAreEncrypted = false;
+    if (bankArgs.ParsedAny())
+        {
+        m_useIModelHub = false;
+        m_iModelBankArgs = new IModelBankArgs(bankArgs);
+        m_briefcaseBasename = m_iModelBankArgs->GetBriefcaseBasename();
+        m_maxRetryCount = m_iModelBankArgs->m_maxRetryCount;
+        dmsCredentialsAreEncrypted = m_iModelBankArgs->m_dmsCredentialsEncrypted;
+        }
+    else
+        {
+        m_useIModelHub = true;
+        m_iModelHubArgs = new IModelHubArgs(hubArgs);
+        m_briefcaseBasename = m_iModelHubArgs->m_repositoryName;
+        m_maxRetryCount = m_iModelHubArgs->m_maxRetryCount;
+        dmsCredentialsAreEncrypted = m_iModelHubArgs->m_isEncrypted;
+        }
+
+    bvector<WCharCP> dmsRawArgPtrs;        // pare down the args once again, removing the dms server-specific args and leaving the rest for the bridge
+    std::swap(dmsRawArgPtrs, m_bargptrs);
+
+    m_bargptrs.push_back(argv[0]);
+
+    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), dmsCredentialsAreEncrypted)) || (BSISUCCESS != m_dmsServerArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
@@ -784,7 +815,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
         }
 
     // Maybe we just need to acquire a briefcase for an existing repository.
-    GetLogger().infov("bridge:%s iModel:%s - acquiring briefcase.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - acquiring briefcase.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
     if (BSISUCCESS == Briefcase_AcquireBriefcase())
         {
         SetState(BootstrappingState::HaveBriefcase);
@@ -803,7 +834,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
     if (!m_jobEnvArgs.m_createRepositoryIfNecessary)
         {
         ReportIssue("iModel not found"); // *** WIP translate
-        GetLogger().fatalv("%s - repository not found in project. Create option was not specified.\n", m_serverArgs.m_repositoryName.c_str());
+        GetLogger().fatalv("%s - repository not found in project. Create option was not specified.\n", m_briefcaseBasename.c_str());
         return BSIERROR;
         }
 
@@ -858,7 +889,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DoCreatedLocalDb()
+BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedLocalDb()
     {
     bool fileExists = m_briefcaseName.DoesPathExist();
     if (!fileExists)
@@ -875,7 +906,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedLocalDb()
         return BSIERROR;
         }
 
-    if (BSISUCCESS != Briefcase_CreateRepository())
+    if (BSISUCCESS != Briefcase_IModelHub_CreateRepository())
         return BSIERROR;
 
     SetState(BootstrappingState::CreatedRepository);
@@ -885,7 +916,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedLocalDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DoCreatedRepository()
+BentleyStatus iModelBridgeFwk::IModelHub_DoCreatedRepository()
     {
     bool fileExists = m_briefcaseName.DoesPathExist();
     if (fileExists)
@@ -909,7 +940,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedRepository()
             }
         ReportIssue("iModel create failed"); // *** WIP translate
         GetLogger().fatalv("CreateRepository failed or acquireBriefcase failed for repositoryname=%s, stagingdir=%s",
-                            m_serverArgs.m_repositoryName.c_str(), Utf8String(m_jobEnvArgs.m_stagingDir).c_str());
+                            m_briefcaseBasename.c_str(), Utf8String(m_jobEnvArgs.m_stagingDir).c_str());
         return BSIERROR;
         }
 
@@ -920,7 +951,7 @@ BentleyStatus iModelBridgeFwk::DoCreatedRepository()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::DoNewBriefcaseNeedsLocks()
+BentleyStatus iModelBridgeFwk::IModelHub_DoNewBriefcaseNeedsLocks()
     {
     // I just created a repository and pulled a briefcase for it.
     // I must now manually get an exclusive lock on all of the models that I created
@@ -963,9 +994,9 @@ BentleyStatus iModelBridgeFwk::BootstrapBriefcase(bool& createdNewRepo)
         switch (state)
             {
             case BootstrappingState::Initial:                   status = DoInitial(); break;
-            case BootstrappingState::CreatedLocalDb:            status = DoCreatedLocalDb(); createdNewRepo = true; break;
-            case BootstrappingState::CreatedRepository:         status = DoCreatedRepository(); break;
-            case BootstrappingState::NewBriefcaseNeedsLocks:    status = DoNewBriefcaseNeedsLocks(); break;
+            case BootstrappingState::CreatedLocalDb:            status = IModelHub_DoCreatedLocalDb(); createdNewRepo = true; break;
+            case BootstrappingState::CreatedRepository:         status = IModelHub_DoCreatedRepository(); break;
+            case BootstrappingState::NewBriefcaseNeedsLocks:    status = IModelHub_DoNewBriefcaseNeedsLocks(); break;
             }
 
         if (BSISUCCESS != status)
@@ -1024,6 +1055,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     params.ParseJsonArgs(m_jobEnvArgs.m_argsJson, true);
+    params.m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1076,7 +1108,7 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::InitBridge()
     {
-    GetLogger().infov("bridge:%s iModel:%s - Initializing bridge.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - Initializing bridge.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);
 
@@ -1137,17 +1169,18 @@ static RepositoryStatus acquireSharedLocks(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::SaveBriefcaseId()
+DbResult iModelBridgeFwk::SaveBriefcaseId()
     {
-    auto db = DgnDb::OpenDgnDb(nullptr, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    DbResult rc;
+    auto db = DgnDb::OpenDgnDb(&rc, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
     if (!db.IsValid())
         {
-        BeAssert(false);
-        return;
+        return rc;
         }
     uint32_t bcid = db->GetBriefcaseId().GetValue();
     m_stateDb.SaveProperty(s_briefcaseIdPropSpec, &bcid, sizeof(bcid));
     m_stateDb.SaveChanges();
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1170,6 +1203,30 @@ struct HostTerminator
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LoggingContext //This class allows to pass in a logging sequence id to rest of the callers for a bridge job run
+    {
+    private:
+    WString                                      m_jobRunCorrelationId;
+    NativeLogging::Provider::Log4cxxProvider*    m_provider;
+    public:
+    LoggingContext(Utf8StringCR jobRunCorrelationId, NativeLogging::Provider::Log4cxxProvider* provider)
+        :m_jobRunCorrelationId(jobRunCorrelationId.c_str(), true), m_provider(provider)
+        {
+        if (NULL == m_provider)
+            return;
+        m_provider->AddContext(L"CorrelationId", m_jobRunCorrelationId.c_str());
+        }
+    ~LoggingContext()
+        {
+        if (NULL == m_provider)
+            return;
+        m_provider->RemoveContext(L"CorrelationId");
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
@@ -1180,6 +1237,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 	// *** Talk to Sam Wilson if you need to make a change.
 	// ***
 	// ***
+    LoggingContext logContext(m_jobEnvArgs.m_jobRunCorrelationId, m_logProvider);
+
     DbResult dbres;
 
     iModelBridgeSacAdapter::InitCrt(false);
@@ -1295,7 +1354,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::ProcessSchemaChange()
     {
-    GetLogger().infov("bridge:%s iModel:%s - Processing schema change.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - Processing schema change.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     //  Push the pending schema change to iModelHub in its own changeset
     m_briefcaseDgnDb->SaveChanges();
@@ -1308,7 +1367,7 @@ int iModelBridgeFwk::ProcessSchemaChange()
     DbResult dbres;
     bool madeSchemaChanges = false;
     m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
-    m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
+    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
     if (!m_briefcaseDgnDb.IsValid())
         {
         ReportIssue(BeSQLite::Db::InterpretDbResult(dbres));
@@ -1362,6 +1421,45 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
+    {
+    bool madeSchemaChanges = false;
+    DbResult dbres;
+    m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
+    uint8_t retryopenII = 0;
+    while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
+        {
+        // The upgrade may have failed because we could not get the schema lock, and that may have failed because
+        // another briefcase pushed schema changes after this briefcase last pulled.
+        // If so, then we have to pull before re-trying.
+        GetLogger().infov("SchemaUpgrade failed. Pulling.");
+        DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
+        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
+        m_briefcaseDgnDb = DgnDb::OpenDgnDb(&dbres, m_briefcaseName, oparams);
+        Briefcase_PullMergePush("");    // TRICKY Only Briefcase_PullMergePush contains the mergeschemachanges logic. Briefcase_PullAndMerge does not.
+        m_briefcaseDgnDb = nullptr;
+
+        GetLogger().infov("Retrying SchemaUpgrade (if still necessary).");
+        m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
+        }
+    if (!m_briefcaseDgnDb.IsValid())
+        {
+        ReportIssue(BeSQLite::Db::InterpretDbResult(dbres));
+        GetLogger().fatalv("OpenDgnDb failed with error %s (%x)", BeSQLite::Db::InterpretDbResult(dbres), dbres);
+        return BentleyStatus::ERROR;
+        }
+    //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
+    if (madeSchemaChanges)
+        {
+        if (0 != ProcessSchemaChange())  // pullmergepush + re-open
+            return BSIERROR;
+        }
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::UpdateExistingBim()
@@ -1378,7 +1476,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 	// *** Talk to Sam Wilson if you need to make a change.
 	// ***
 	// ***
-    DbResult dbres;
+    
     
     //                                      ************************************************
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
@@ -1388,7 +1486,7 @@ int iModelBridgeFwk::UpdateExistingBim()
     //                            *** Even in case of error, do not attempt to clean up m_briefcaseDgnDb. ***
     //                            *** The caller does all cleanup, including releasing all public locks. ***
 
-    GetLogger().infov("bridge:%s iModel:%s - Opening briefcase I.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+    GetLogger().infov("bridge:%s iModel:%s - Opening briefcase I.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     // ***
     // *** TRICKY: Do not call InitBridge until we have done PullMergePush
@@ -1397,9 +1495,9 @@ int iModelBridgeFwk::UpdateExistingBim()
     // ***          So, we need to be able to open the BIM just in order to pull/merge/push, before we allow the bridge to add a schema import/upgrade into the mix.
     // ***
     //  By getting the BIM to the tip, this initial pull also helps ensure that we will be able to get locks for the other changes that that bridge will make later.
-    m_briefcaseDgnDb = DgnDb::OpenDgnDb(&dbres, m_briefcaseName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-    if (!m_briefcaseDgnDb.IsValid())
+    if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
         return BentleyStatus::ERROR;
+    
 
     if (BSISUCCESS != Briefcase_PullMergePush(""))
         return RETURN_STATUS_SERVER_ERROR;
@@ -1420,32 +1518,14 @@ int iModelBridgeFwk::UpdateExistingBim()
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
 
-        GetLogger().infov("bridge:%s iModel:%s - Opening briefcase II.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - Opening briefcase II.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         // Open the briefcase in the normal way, allowing domain schema changes to be pulled in.
         bool madeSchemaChanges = false;
         m_briefcaseDgnDb = nullptr; // close the current connection to the briefcase db before attempting to reopen it!
-        m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
-        uint8_t retryopenII = 0;
-        while (!m_briefcaseDgnDb.IsValid() && (DbResult::BE_SQLITE_ERROR_SchemaUpgradeFailed == dbres) && (++retryopenII < m_serverArgs.m_maxRetryCount) && DgnDbServerClientUtils::SleepBeforeRetry())
-            {
-            GetLogger().infov("SchemaUpgrade failed. Retrying.");
-            m_briefcaseDgnDb = m_bridge->OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges);
-            }
-        if (!m_briefcaseDgnDb.IsValid())
-            {
-            ReportIssue(BeSQLite::Db::InterpretDbResult(dbres));
-            GetLogger().fatalv("OpenDgnDb failed with error %s (%x)", BeSQLite::Db::InterpretDbResult(dbres), dbres);
+        
+        if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
             return BentleyStatus::ERROR;
-            }
-
-        //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
-    
-        if (madeSchemaChanges)
-            {
-            if (0 != ProcessSchemaChange())  // pullmergepush + re-open
-                return BSIERROR;
-            }
 
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
@@ -1473,13 +1553,13 @@ int iModelBridgeFwk::UpdateExistingBim()
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
         //  Let the bridge generate schema changes
-        GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         int bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
         if (BSISUCCESS != bridgeSchemaChangeStatus)
             {
             uint8_t retryAttempt = 0;
-            while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_serverArgs.m_maxRetryCount) && DgnDbServerClientUtils::SleepBeforeRetry())
+            while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
                 {
                 GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
                 callCloseOnReturn.CallCloseFunctions(); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
@@ -1510,7 +1590,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
         //  Now, finally, we can convert data
-        GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
     
@@ -1520,7 +1600,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
 
-    dbres = m_briefcaseDgnDb->SaveChanges();
+    DbResult dbres = m_briefcaseDgnDb->SaveChanges();
 
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
@@ -1537,7 +1617,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         {
         BeAssert(!m_briefcaseDgnDb->Txns().HasChanges());
 
-        GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_serverArgs.m_repositoryName.c_str());
+        GetLogger().infov("bridge:%s iModel:%s - Pushing Data Changeset.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         if (BSISUCCESS != Briefcase_PullMergePush(GetRevisionComment().c_str()))
             return RETURN_STATUS_SERVER_ERROR;
@@ -1610,8 +1690,9 @@ void iModelBridgeFwk::LogStderr()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::iModelBridgeFwk()
+:m_logProvider(NULL)
     {
-    m_clientUtils = nullptr;
+    m_client = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1621,6 +1702,8 @@ iModelBridgeFwk::~iModelBridgeFwk()
     {
     Briefcase_Shutdown();
     LogStderr();
+    if (NULL != m_logProvider)
+        delete m_logProvider;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1779,106 +1862,15 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         return *(m_registry = s_registryForTesting);
      
     BeSQLite::DbResult res;
-    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_briefcaseBasename);
 
     if (!m_registry.IsValid())
         {
-        std::string str (Utf8String(iModelBridgeRegistry::MakeDbName(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName)).c_str());
+        std::string str (Utf8String(iModelBridgeRegistry::MakeDbName(m_jobEnvArgs.m_stagingDir, m_briefcaseBasename)).c_str());
         str.append(": ");
         str.append(BeSQLite::Db::InterpretDbResult(res));
         throw str;
         }
 
     return *m_registry;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-T_iModelDmsSupport_getInstance* iModelBridgeFwk::JobDefArgs::LoadDmsLibrary()
-    {
-    auto getInstance = (T_iModelDmsSupport_getInstance*) GetBridgeFunction(m_dmsLibraryName, "iModelDmsSupport_getInstance");
-    if (!getInstance)
-        {
-        LOG.errorv(L"%ls: Does not export a function called 'iModelBridge_releaseInstance'", m_dmsLibraryName.c_str());
-        return nullptr;
-        }
-
-    return getInstance;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::LoadDmsLibrary()
-    {
-    auto getInstance = m_jobEnvArgs.LoadDmsLibrary();
-    if (nullptr == getInstance)
-        return BentleyStatus::ERROR;
-
-    m_dmsSupport = getInstance(iModelDmsSupport::SessionType::PWDI, m_serverArgs.m_dmsCredentials.GetUsername(), m_serverArgs.m_dmsCredentials.GetPassword());//m_dmsCredentials
-    
-    if (nullptr == m_dmsSupport)
-        {
-        LOG.fatalv(L"%ls: iModelDmsSupport_getInstance function returned a nullptr", m_jobEnvArgs.m_dmsLibraryName.c_str());
-        return BentleyStatus::ERROR;
-        }
-    
-    if (!m_dmsSupport->_InitializeSession(m_jobEnvArgs.m_inputFileUrn))
-        return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::ReleaseDmsLibrary()
-    {
-    if (m_dmsSupport)
-        m_dmsSupport->_UnInitializeSession();
-
-    return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
-    {
-    BentleyStatus status = BentleyStatus::SUCCESS;
-    if (m_jobEnvArgs.m_dmsLibraryName.empty())
-        return status;
-
-    if (SUCCESS != (status = LoadDmsLibrary()))
-        return status;
-
-    if (SUCCESS != (status = StageInputFile()))
-        return ReleaseDmsLibrary();
-
-    if (SUCCESS != (status = StageWorkspace()))
-        return ReleaseDmsLibrary();
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::StageInputFile()
-    {
-    BentleyStatus status = BentleyStatus::SUCCESS;
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::StageWorkspace()
-    {
-    BentleyStatus status = BentleyStatus::SUCCESS;
-    m_dmsSupport->_Initialize();
-    m_dmsSupport->_FetchWorkspace(m_jobEnvArgs.m_inputFileUrn, m_jobEnvArgs.m_workspaceDir);
-    m_dmsSupport->_UnInitialize();
-    return status;
     }

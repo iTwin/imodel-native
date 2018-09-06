@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include <GeoCoord\BaseGeoCoord.h>
-#include <Geom/transform.fdf>
 
 // Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
 #include "../../V8IModelExtraFiles/V8IModelExtraFiles.h"

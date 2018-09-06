@@ -2,13 +2,14 @@
 |
 |     $Source: DgnV8/Tests/V8FileEditor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "V8FileEditor.h"
 #include <Bentley/BeThread.h>
 #include <VersionedDgnV8Api/DgnPlatform/ECXAProvider.h>
 #include <VersionedDgnV8Api/DgnPlatform/ECXAInstance.h>
+#include <VersionedDgnV8Api/DgnPlatform/ECInstanceHolderHandler.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -178,7 +179,7 @@ void V8FileEditor::CreateArc(EditElementHandleR eeh, bool addToModel, DgnV8Model
     RotMatrix rot;
     rot.InitIdentity();
 
-    DgnV8Api::ArcHandler::CreateArcElement(eeh, NULL, center, 0.5, 1.0, rot, 0.5, 1.0, v8model->Is3d(), *v8model);
+    DgnV8Api::ArcHandler::CreateArcElement(eeh, NULL, center, 150, 100, rot, 0.5, 1.0, v8model->Is3d(), *v8model);
     SetActiveLevel(eeh);
     if (addToModel)
         ASSERT_EQ(BentleyApi::SUCCESS, eeh.AddToModel());
@@ -351,6 +352,25 @@ void V8FileEditor::CreateGroupHole(EditElementHandleR eeh, bool addToModel, DgnV
     if (addToModel)
         ASSERT_EQ(BentleyApi::SUCCESS, eeh.AddToModel());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Bentley::BentleyStatus V8FileEditor::CreateInstance(DgnV8Api::DgnElementECInstancePtr &createdDgnECInstance, DgnV8ModelP targetModel, WCharCP schemaName, WCharCP className)
+    {
+    if (nullptr == targetModel)
+        targetModel = m_defaultModel;
+
+    DgnV8Api::EditElementHandle eeh;
+    DgnV8Api::ECInstanceHolderHandler::CreateECInstanceHolderElement(eeh, *targetModel->GetDgnModelP());
+
+    // Add the element to the dgnRepository. The element must be added before we write the XAttributes.
+    if (SUCCESS != eeh.AddToModel())
+        return ERROR;
+
+    return CreateInstanceOnElement(createdDgnECInstance, eeh, targetModel, schemaName, className);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Umar.Hayat                          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/

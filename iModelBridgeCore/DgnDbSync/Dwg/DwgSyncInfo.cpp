@@ -152,6 +152,16 @@ BentleyStatus DwgSyncInfo::CreateTables()
 
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Material) "NativeIdx ON "  SYNC_TABLE_Material "(Id)");
 
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Group),
+                    "Id INT,"
+                    "DwgFileId INTEGER REFERENCES " SYNC_TABLE_File "(Id) ON DELETE CASCADE,"
+                    "DwgObjectId BIGINT,"
+                    "DwgName CHAR NOT NULL,"
+                    "ObjectHash BLOB,"
+                    "CONSTRAINT FileId UNIQUE(DwgFileId,DwgObjectId)");
+
+    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Group) "NativeIdx ON "  SYNC_TABLE_Material "(Id)");
+
     m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Element), 
                     "ElementId INT NOT NULL,"
                     "DwgFileId INT NOT NULL,"
@@ -416,11 +426,22 @@ Utf8String DwgSyncInfo::GetUniqueName(WStringCR fullFileName)
     //  Therefore, we must distinguish between like-named files in different directories.
     //  The unique name must also be stable. If the whole project is moved to a new directory or machine, 
     //  the unique names of the files must be unaffected.
-    //  To achieve this balance, we use only as much of the full path as we need to distinguish between 
-    //  like-named files in different directories.
+
+    // If we have a DMS GUID for the document corresponding to this file, that is the unique name.
+    BeGuid docGuid = GetDwgImporter().GetOptions().QueryDocumentGuid(BeFileName(fullFileName));
+    if (docGuid.IsValid())
+        {
+        Utf8String lguid = docGuid.ToString();
+        lguid.ToLower();
+        return lguid;
+        }
+
+    // If we do not have a GUID, we try to compute a stable unique name from the filename.
+    // The full path should be unique already. To get something that is stable, we use only as much of 
+    // the full path as we need to distinguish between like-named files in different directories.
     WString uniqueName(fullFileName);
-    auto pdir = m_dwgImporter.GetOptions().GetInputRootDir();
-    if (!pdir.empty() &&(pdir.size() < fullFileName.size()) && pdir.EqualsI(fullFileName.substr(0, pdir.size())))
+    auto pdir = GetDwgImporter().GetOptions().GetInputRootDir();
+    if (!pdir.empty() && (pdir.size() < fullFileName.size()) && pdir.EqualsI(fullFileName.substr(0, pdir.size())))
         uniqueName = fullFileName.substr(pdir.size());
 
     uniqueName.ToLower();  // make sure we don't get fooled by case-changes in file system on Windows
@@ -563,7 +584,13 @@ bool DwgSyncInfo::HasLastSaveTimeChanged(DwgDbDatabaseCR dwg)
     if (!previous.FindByName(true))
         return true;
 
-    return dwg.GetTDUUPDATE().GetJulianFraction() != previous.m_lastSaveTime;
+    // last save time by TDUUPDATE is ideal, but a non-ACAD based product may not update it, so check both:
+    double lastSaveTime = dwg.GetTDUUPDATE().GetJulianFraction();
+    if (lastSaveTime != previous.m_lastSaveTime)
+        return  true;
+    // TDUUPDATE unchanged - also check disk time stamp:
+    BeFileName  fn(dwg.GetFileName().c_str());
+    return  this->HasDiskFileChanged(fn);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -605,6 +632,17 @@ DwgSyncInfo::FileIterator::Entry DwgSyncInfo::FileIterator::begin() const
     {
     m_stmt->Reset();
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::DeleteFile (DwgFileId fileId)
+    {
+    Statement stmt;
+    stmt.Prepare(*m_dgndb, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE ROWID=?");
+    stmt.BindInt64(1, fileId.GetValue());
+    return stmt.Step() == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
     }
 
 DwgSyncInfo::DwgModelSyncInfoId DwgSyncInfo::ModelIterator::Entry::GetDwgModelSyncInfoId() {return DwgModelSyncInfoId(m_sql->GetValueInt64(0));}
@@ -962,7 +1000,7 @@ BentleyStatus   DwgSyncInfo::FindModel (DwgSyncInfo::DwgModelMapping* mapping, D
     if (!modelId.IsValid())
         return  BSIERROR;
 
-    // Note: We can't call GetModelForUpdate at this stage, because it hasn't set up the m_dwgFiles array yet
+    // Note: We can't call DwgImporter::GetDwgModelFromSyncInfo at this stage, because it hasn't set up the m_dwgFiles array yet
     DwgSyncInfo::FileProvenance provenance (*modelId.GetDatabase(), *this, m_dwgImporter.GetCurrentIdPolicy());
     if (!provenance.FindByName(false))
         return BSIERROR;
@@ -1127,6 +1165,27 @@ bool DwgSyncInfo::TryFindElement(DgnElementId& elementId, DwgDbObjectCP obj, Dwg
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgSyncInfo::FindElements (DgnElementIdSet& ids, DwgDbObjectIdCR objectId) const
+    {
+    // query all elements mapped from input DWG object:
+    auto dwg = objectId.GetDatabase ();
+    if (nullptr == dwg)
+        return  false;
+
+    ElementIterator elemsInFile(*m_dgndb, "DwgFileId=? AND DwgObjectId=?");
+
+    elemsInFile.GetStatement()->BindInt64 (1, DwgFileId::GetFrom(*dwg).GetValue());
+    elemsInFile.GetStatement()->BindInt64 (2, objectId.ToUInt64());
+
+    for (auto elem : elemsInFile)
+        ids.insert (elem.GetElementId());
+
+    return  !ids.empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DwgSyncInfo::IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdSet const& known) const
@@ -1137,12 +1196,27 @@ bool DwgSyncInfo::IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdS
     if (iThisElement == findByBimId.end())
         return false;
 
-    ByDwgObjectIdIter othersMappedToDwgId(*m_dgndb);
-    othersMappedToDwgId.Bind(iThisElement.GetDwgModelSyncInfoId(), iThisElement.GetDwgObjectId());
-    for (auto const& otherMappedToDwgId : othersMappedToDwgId)
+    if (iThisElement.GetDwgObjectId() == 0)
         {
-        if (known.find(otherMappedToDwgId.GetElementId()) != known.end())
-            return true;
+        // when StableIdPolicy==ByHash
+        ByHashIter  othersMappedToDwgHash(*m_dgndb);
+        othersMappedToDwgHash.Bind(iThisElement.GetDwgModelSyncInfoId(), iThisElement.GetProvenance().GetPrimaryHash(), iThisElement.GetProvenance().GetSecondaryHash());
+        for (auto const& otherMappedToDwgHash : othersMappedToDwgHash)
+            {
+            if (known.find(otherMappedToDwgHash.GetElementId()) != known.end())
+                return true;
+            }
+        }
+    else
+        {
+        // when StableIdPolicy==ById
+        ByDwgObjectIdIter othersMappedToDwgId(*m_dgndb);
+        othersMappedToDwgId.Bind(iThisElement.GetDwgModelSyncInfoId(), iThisElement.GetDwgObjectId());
+        for (auto const& otherMappedToDwgId : othersMappedToDwgId)
+            {
+            if (known.find(otherMappedToDwgId.GetElementId()) != known.end())
+                return true;
+            }
         }
     return false;
     }
@@ -1186,14 +1260,7 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
         {
         // the primary hash is from the object data itself.
         obj.DxfOut (filer);
-        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
-        if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
-            {
-            DwgDbEntityCP   ent = DwgDbEntity::Cast(&obj);
-            DRange3d        range;
-            if (nullptr != ent && ent->GetRange(range) == DwgDbStatus::Success)
-                m_hasher.Add(&range, sizeof(range));
-            }
+        this->AppendComplexObjectHash (filer, obj);
         m_primaryHash = m_hasher.GetHashVal ();
 
         if (hash2nd)
@@ -1215,6 +1282,67 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DwgSyncInfo::DwgObjectProvenance::AppendComplexObjectHash (DwgObjectHash::HashFiler& filer, DwgDbObjectCR obj)
+    {
+    DwgDbEntityCP   entity = DwgDbEntity::Cast(&obj);
+    if (nullptr == entity)
+        return;
+
+    // handle complex objects which require additional primary hash:
+    if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
+        {
+        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
+        DRange3d    range;
+        if (entity->GetRange(range) == DwgDbStatus::Success)
+            m_hasher.Add (&range, sizeof(range));
+        return;
+        }
+
+    if (obj.IsAProxy())
+        {
+        // a proxy entity does not file out DXF group code 310 - need more data, TFS 933725.
+        DwgDbObjectPArray   proxy;
+        if (DwgDbStatus::Success == entity->Explode(proxy))
+            {
+            for (auto ent : proxy)
+                {
+                ent->DxfOut (filer);
+                // operator delete is hidden by Teigha!
+                ::free (ent);
+                }
+            }
+        return;
+        }
+
+    // 2D/3D polyline and polyface/polygon mesh entities have vertex entities to follow.
+    DwgDb2dPolylineCP   pline2d = nullptr;
+    DwgDb3dPolylineCP   pline3d = nullptr;
+    DwgDbPolyFaceMeshCP pfmesh = nullptr;
+    DwgDbPolygonMeshCP  mesh = nullptr;
+    DwgDbObjectIteratorPtr  vertexIter;
+    if ((pline2d = DwgDb2dPolyline::Cast(entity)) != nullptr)
+        vertexIter = pline2d->GetVertexIterator ();
+    else if ((pline3d = DwgDb3dPolyline::Cast(entity)) != nullptr)
+        vertexIter = pline3d->GetVertexIterator ();
+    else if ((pfmesh = DwgDbPolyFaceMesh::Cast(entity)) != nullptr)
+        vertexIter = pfmesh->GetVertexIterator ();
+    else if ((mesh = DwgDbPolygonMesh::Cast(entity)) != nullptr)
+        vertexIter = mesh->GetVertexIterator ();
+
+    if (vertexIter.IsValid() && vertexIter->IsValid())
+        {
+        for (vertexIter->Start(); !vertexIter->Done(); vertexIter->Next())
+            {
+            DwgDbEntityPtr vertex(vertexIter->GetObjectId(), DwgDbOpenMode::ForRead);
+            if (vertex.OpenStatus() == DwgDbStatus::Success)
+                vertex->DxfOut (filer);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateBlockHash (DwgDbObjectIdCR blockId)
     {
     DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
@@ -1222,10 +1350,13 @@ BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateBlockHash (DwgDbObjectId
         return  BSIERROR;
 
     // this is a performance dragger but unfortunately we cannot use existing hashed blocks as they won't match!
-    DwgDbBlockChildIterator     iter = block->GetBlockChildIterator ();
-    for (iter.Start(); !iter.Done(); iter.Step())
+    DwgDbBlockChildIteratorPtr  iter = block->GetBlockChildIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  BSIERROR;
+
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbEntityPtr  entity(iter.GetEntityId(), DwgDbOpenMode::ForRead);
+        DwgDbEntityPtr  entity(iter->GetEntityId(), DwgDbOpenMode::ForRead);
         if (entity.IsNull())
             continue;
 
@@ -1501,7 +1632,7 @@ DwgSyncInfo::Layer DwgSyncInfo::InsertLayer(DgnSubCategoryId gcategoryId, DwgMod
     if (BE_SQLITE_DONE != layerprov.Insert(*m_dgndb))
         {
         layerprov.m_id = DgnSubCategoryId();
-        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::InconsistentData(), DwgImporter::Issue::InvalidLayer(),
+        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::InvalidLayer(),
                                   Utf8PrintfString("%s (%lld)", name.c_str(), id).c_str());
         }
 
@@ -1663,7 +1794,7 @@ DwgSyncInfo::Linetype   DwgSyncInfo::InsertLinetype (DgnStyleId lstyleId, DwgMod
     if (BE_SQLITE_DONE != linetypeProv.Insert(*m_dgndb))
         {
         linetypeProv.m_id = DgnStyleId ();
-        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::InconsistentData(), DwgImporter::Issue::LinetypeError(),
+        m_dwgImporter.ReportIssue(DwgImporter::IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::LinetypeError(),
                                   Utf8PrintfString("%s (%lld)", name.c_str(), id).c_str());
         }
 
@@ -1710,8 +1841,8 @@ DbResult DwgSyncInfo::Linetype::Update (BeSQLite::Db& db) const
     stmt.Prepare (db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Linetype) " SET DwgName=? WHERE Id=?");
 
     int col = 1;
-    stmt.BindId (col++, m_id);
     stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No);
+    stmt.BindId (col++, m_id);
 
     return stmt.Step();
     }
@@ -1741,7 +1872,7 @@ DwgSyncInfo::View DwgSyncInfo::InsertView (DgnViewId viewId, DwgDbObjectIdCR obj
     if (BE_SQLITE_DONE != vportProv.Insert(*m_dgndb))
         {
         vportProv.m_id = DgnViewId ();
-        m_dwgImporter.ReportIssueV(DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::ViewportError(), Utf8PrintfString("inserting %s (%lld)", name.c_str(), vportId).c_str());
+        m_dwgImporter.ReportIssueV(DwgImporter::IssueSeverity::Error, IssueCategory::Sync(), Issue::ViewportError(), Utf8PrintfString("inserting %s (%lld)", name.c_str(), vportId).c_str());
         }
 
     return vportProv;
@@ -1785,10 +1916,10 @@ DbResult DwgSyncInfo::View::Update (BeSQLite::Db& db) const
     stmt.Prepare (db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_View) " SET DwgObjectId=?,ViewportType=?,DwgName=? WHERE Id=?");
 
     int col = 1;
-    stmt.BindId (col++, m_id);
     stmt.BindInt64 (col++, m_dwgId);
     stmt.BindInt (col++, static_cast<int>(m_type));
     stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No);
+    stmt.BindId (col++, m_id);
 
     return stmt.Step();
     }
@@ -1892,7 +2023,7 @@ DwgSyncInfo::Material   DwgSyncInfo::InsertMaterial (RenderMaterialId id, DwgDbM
     if (BE_SQLITE_DONE != prov.Insert(*m_dgndb))
         {
         prov.m_id = RenderMaterialId ();
-        m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::MaterialError(),
+        m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, IssueCategory::Sync(), Issue::MaterialError(),
                                   Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
         }
 
@@ -1963,9 +2094,9 @@ DbResult DwgSyncInfo::Material::Update (BeSQLite::Db& db) const
     stmt.Prepare (db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Material) " SET DwgName=?,ObjectHash=? WHERE Id=?");
 
     int col = 1;
-    stmt.BindId (col++, m_id);
     stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No);
     stmt.BindBlob (col++, &m_hash, sizeof(m_hash), Statement::MakeCopy::No);
+    stmt.BindId (col++, m_id);
 
     return stmt.Step();
     }
@@ -2010,6 +2141,166 @@ DwgSyncInfo::MaterialIterator::Entry DwgSyncInfo::MaterialIterator::begin() cons
 RenderMaterialId DwgSyncInfo::MaterialIterator::Entry::GetRenderMaterialId() { return m_sql->GetValueId<RenderMaterialId>(0); }
 DwgSyncInfo::DwgFileId DwgSyncInfo::MaterialIterator::Entry::GetDwgFileId() { return DwgFileId(m_sql->GetValueInt(1)); }
 uint64_t DwgSyncInfo::MaterialIterator::Entry::GetDwgObjectId() { return m_sql->GetValueInt64(2); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgSyncInfo::FindGroup (Group& out, DwgDbObjectIdCR groupId)
+    {
+    // find group by ID (expecting ID policy to be ById).
+    CachedStatementPtr  stmt;
+    m_dgndb->GetCachedStatement(stmt, "SELECT Id,DwgName,ObjectHash FROM " SYNCINFO_ATTACH(SYNC_TABLE_Group) " WHERE DwgFileId=? AND DwgObjectId=?");
+
+    auto dwg = groupId.GetDatabase ();
+    auto fileId = DwgFileId::GetFrom (nullptr == dwg ? m_dwgImporter.GetDwgDb() : *dwg);
+    auto dwgId = groupId.ToUInt64 ();
+    int col = 1;
+    stmt->BindInt (col++, fileId.GetValue());
+    stmt->BindInt64 (col++, dwgId);
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return  false;
+
+    out.m_id = stmt->GetValueId<DgnElementId>(0);
+    out.m_fileId = fileId;
+    out.m_objectId = dwgId;
+    out.m_idPolicy = StableIdPolicy::ById;
+    out.m_name.AssignOrClear (stmt->GetValueText(1));
+    memcpy (&out.m_hash, stmt->GetValueBlob(2), sizeof(out.m_hash));
+
+    return out.IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::Group   DwgSyncInfo::InsertGroup (DgnElementId id, DwgDbGroupCR group)
+    {
+    auto dwg = group.GetDatabase ();
+    auto fileId = DwgFileId::GetFrom (dwg.IsNull() ? m_dwgImporter.GetDwgDb() : *dwg);
+
+    Group   prov (id, fileId, m_dwgImporter.GetCurrentIdPolicy(), group);
+
+    if (BE_SQLITE_DONE != prov.Insert(*m_dgndb))
+        {
+        prov.m_id = DgnElementId ();
+        m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, IssueCategory::Sync(), Issue::GroupError(),
+                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
+        }
+
+    return prov;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DwgSyncInfo::Group::Insert (BeSQLite::Db& db) const
+    {
+    if (!m_id.IsValid() || 0 == m_objectId)
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement stmt;
+    stmt.Prepare (db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_Group) " (Id,DwgFileId,DwgObjectId,DwgName,ObjectHash) VALUES (?,?,?,?,?)");
+
+    int col = 1;
+    stmt.BindId (col++, m_id);  // NativeId
+    stmt.BindInt (col++, m_fileId.GetValue());   // DWG file ID
+    if (m_idPolicy==StableIdPolicy::ById)
+        stmt.BindInt64 (col++, m_objectId); // DWG group object handle
+    else
+        stmt.BindNull (col++);
+    stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No); // DWG group name
+    stmt.BindBlob (col++, &m_hash, sizeof(m_hash), Statement::MakeCopy::No);
+
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::Group::Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy, DwgDbGroupCR group)
+    {
+    m_id = id;
+    m_fileId = fid;
+    m_idPolicy = policy;
+    m_objectId = group.GetObjectId().ToUInt64 ();
+    m_name.Assign (group.GetName().c_str());
+
+    memset (&m_hash, 0, sizeof(m_hash));
+    m_hasher.Reset ();
+
+    DwgObjectHash::HashFiler filer(m_hasher, *DwgDbObject::Cast(&group));
+    if (filer.IsValid())
+        {
+        group.DxfOut (filer);
+        m_hash = m_hasher.GetHashVal ();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DwgSyncInfo::Group::Update (BeSQLite::Db& db) const
+    {
+    if (!m_id.IsValid() || 0 == m_objectId)
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement   stmt;
+    stmt.Prepare (db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_Group) " SET DwgName=?,ObjectHash=? WHERE Id=?");
+
+    int col = 1;
+    stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No);
+    stmt.BindBlob (col++, &m_hash, sizeof(m_hash), Statement::MakeCopy::No);
+    stmt.BindId (col++, m_id);
+
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::UpdateGroup (DwgSyncInfo::Group& prov)
+    {
+    return (prov.Update(*m_dgndb) == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::DeleteGroup (DgnElementId id)
+    {
+    CachedStatementPtr stmt;
+    m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_Group) " WHERE Id=?");
+    stmt->BindId (1, id);
+    return (stmt->Step() == BE_SQLITE_DONE)? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::GroupIterator::GroupIterator(DgnDbCR db) : BeSQLite::DbTableIterator(db)
+    {
+    Utf8String sqlString = MakeSqlString ("SELECT Id,DwgFileId,DwgObjectId FROM " SYNCINFO_ATTACH(SYNC_TABLE_Group));
+    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::GroupIterator::Entry DwgSyncInfo::GroupIterator::begin() const
+    {
+    m_stmt->Reset();
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+DgnElementId DwgSyncInfo::GroupIterator::Entry::GetDgnElementId() { return m_sql->GetValueId<DgnElementId>(0); }
+DwgSyncInfo::DwgFileId DwgSyncInfo::GroupIterator::Entry::GetDwgFileId() { return DwgFileId(m_sql->GetValueInt(1)); }
+uint64_t DwgSyncInfo::GroupIterator::Entry::GetDwgObjectId() { return m_sql->GetValueInt64(2); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14

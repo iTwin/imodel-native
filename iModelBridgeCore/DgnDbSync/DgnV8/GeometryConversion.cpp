@@ -8,6 +8,8 @@
 #include "ConverterInternal.h"
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/AutoRestore.h>
+#include <GeomSerialization/GeomSerializationApi.h>
+
 
 DGNV8_BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 /*=================================================================================**//**
@@ -255,6 +257,10 @@ void Converter::ConvertCurveVector(BentleyApi::CurveVectorPtr& clone, Bentley::C
                 }
             }
         }
+#ifndef NDEBUG
+    for (auto curve : *clone)
+        BeAssert (curve.IsValid());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -384,9 +390,12 @@ void Converter::ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, 
 //#define TEST_AUXDATA_RADIAL_WAVES
 //#define TEST_AUXDATA_WAVES
 //#define TEST_AUXDATA_FILE
+//#define TEST_AUXDATA_TO_JSON
 //#define TEST_AUXDATA_CANTILEVER
 
+
 #ifdef TEST_AUXDATA
+
 PolyfaceAuxDataPtr              s_testAuxData;
 ThematicGradientSettingsPtr     s_testAuxDataSettings;
 static void getTestAuxData(Bentley::PolyfaceQueryCR polyface);
@@ -442,9 +451,11 @@ void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8
         dbText.GetStyleR().SetSize(scaledSize);
         }
     
-    // Because DgnV8 has unsupported underline (and overline) styles, never tell this hacked DB TextString to draw an underline even if it's present, and draw it manually ourselves.
+    // Because DgnV8 has unsupported underline (and overline) styles, never tell this hacked DB
+    // TextString to draw an underline even if it's present, and draw it manually ourselves.
 
-    // Internal implementation detail: A DgnV8 TextString will report 0 glyphs unless the caller performed layout with a listener that claimed to capture the glyphs.
+    // Internal implementation detail: A DgnV8 TextString will report 0 glyphs unless the caller
+    // performed layout with a listener that claimed to capture the glyphs.
     struct ShimGlyphLayoutListener : DgnV8Api::IDgnGlyphLayoutListener
         {
         virtual void _OnGlyphAnnounced(DgnV8Api::DgnGlyph&, Bentley::DPoint3d const&) override {}
@@ -471,12 +482,43 @@ void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8
 
     DgnFontStyle dbFontStyle = DgnFont::FontStyleFromBoldItalic(dbText.GetStyle().IsBold(), dbText.GetStyle().IsItalic());
 
+    // N.B. Ensure to use the TextString's font object. It took steps to resolve the font (vs. this
+    // function's local dbFont variable), and this data needs to match its exact font.
+    DgnFontCR resolvedDbFont = dbText.GetStyle().GetFont();
+
+    // In terms of a glyph ID within a TT font, PowerPlatform supports both glyph and character
+    // index, but does not currently expose what "glyph code" actually means in the public API (only
+    // DgnTrueTypeGlyph actually retains this information, which is in a CPP file). It's unclear to
+    // me in Uniscribe's documentation if setting SCRIPT_ANALYSIS::fNoGlyphIndex to FALSE
+    // necessarily forces use of glyph indices, but it's highly suggestive. PP normally sets to
+    // FALSE, except if !T_HOST.GetDgnFontManager().IsGlyphShapingEnabled() ||
+    // layoutContext.IsVertical(), so that's as good as we can get unless/until we can change PP's
+    // API to explicitly expose this information.
+    bvector<unsigned int> derivedGlyphIndices;
+    bool useDerivedGlyphIndices = false;
+    if ((DgnFontType::TrueType == resolvedDbFont.GetType())
+            && (!DgnV8Api::DgnFontManager::GetManager().IsGlyphShapingEnabled()
+                || v8Text.GetProperties().IsVertical()))
+            {
+            useDerivedGlyphIndices = true;
+            derivedGlyphIndices = ((DgnTrueTypeFontCR)resolvedDbFont).ComputeGlyphIndices(dbText.GetText().c_str(), dbText.GetStyle().IsBold(), dbText.GetStyle().IsItalic());
+            
+            // I can't image how this would differ, but I'd rather be defensive since we'll use
+            // v8Text.GetNumGlyphs as loop control below.
+            BeAssert(derivedGlyphIndices.size() == v8Text.GetNumGlyphs());
+            if (derivedGlyphIndices.size() < v8Text.GetNumGlyphs())
+                {
+                // Fill with 0's... better than crashing.
+                derivedGlyphIndices.resize(v8Text.GetNumGlyphs());
+                }
+            }
+
     for (size_t iV8Glyph = 0; iV8Glyph < v8Text.GetNumGlyphs(); ++iV8Glyph)
         {
-        // N.B. Ensure to use the TextString's font object. It took steps to resolve the font (vs. this function's local dbFont variable), and this data needs to match its exact font.
-        DgnGlyphCP dbGlyph = dbText.GetStyle().GetFont().FindGlyphCP(v8Text.GetGlyphCodes()[iV8Glyph], dbFontStyle);
-        dbText.m_glyphIds[iV8Glyph] = v8Text.GetGlyphCodes()[iV8Glyph];
-        dbText.m_glyphs[iV8Glyph] = dbGlyph;
+        DgnGlyph::T_Id resolvedGlyphId = useDerivedGlyphIndices ? derivedGlyphIndices[iV8Glyph] : v8Text.GetGlyphCodes()[iV8Glyph];
+
+        dbText.m_glyphIds[iV8Glyph] = resolvedGlyphId;
+        dbText.m_glyphs[iV8Glyph] = resolvedDbFont.FindGlyphCP(resolvedGlyphId, dbFontStyle);
         dbText.m_glyphOrigins[iV8Glyph] = DoInterop(v8Text.GetGlyphOrigins()[iV8Glyph]);
         }
 
@@ -748,6 +790,7 @@ SyncInfo::V8ModelSource     m_v8Model;
 bvector<GeometricPrimitivePtr>  m_symbolGeometry;
 bvector<Render::GeometryParams> m_symbolParams;
 bool                            m_allowMultiSymb = false;
+bool                            m_foundText = false;
 
 protected:
 
@@ -778,10 +821,71 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR primitive) override
+    {
+    BentleyApi::ISolidPrimitivePtr clone;
+
+    Converter::ConvertSolidPrimitive(clone, primitive);
+
+    GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
+
+    AddSymbolGeometry(elemGeom, false);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR surface) override
+    {
+    BentleyApi::MSBsplineSurfacePtr clone;
+
+    Converter::ConvertMSBsplineSurface(clone, surface);
+
+    GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
+
+    AddSymbolGeometry(elemGeom, false);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData, bool isFilled) override
+    {
+    BentleyApi::PolyfaceHeaderPtr clone;
+
+    Converter::ConvertPolyface(clone, meshData);
+
+    GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
+
+    AddSymbolGeometry(elemGeom, false);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMaterialAttachmentsCP attachments)
+    {
+    // Don't allow BReps in symbols...output non-BRep face geometry...
+    DgnV8Api::DgnPlatformLib::GetHost().GetSolidsKernelAdmin()._OutputBodyAsSurfaces(entity, *m_context, true, attachments);
+
+    return Bentley::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
     {
+    m_foundText = true; // Ugh, we don't have a good place to clear this...hopefully a single symbol won't contain both text and shapes...
+
     return Bentley::ERROR; // Is there any reason we shouldn't always drop symbol text?
     }
 
@@ -802,7 +906,7 @@ void AddSymbolGeometry(GeometricPrimitivePtr& geometry, bool isFilled)
     Render::GeometryParams geomParams;
     m_converter.InitGeometryParams(geomParams, m_currentDisplayParams, *m_context, true, m_v8Model);
 
-    if (isFilled && Render::FillDisplay::Never == geomParams.GetFillDisplay())
+    if (isFilled && Render::FillDisplay::Never == geomParams.GetFillDisplay() && m_foundText)
         geomParams.SetFillDisplay(Render::FillDisplay::Always); // Dropped glyph regions should always be drawn filled...
 
     m_symbolParams.push_back(geomParams);
@@ -1240,6 +1344,18 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double
 
                 Converter::ConvertPolyface(clone, *m_mesh);
                 m_geometry = GeometricPrimitive::Create(clone);
+#ifdef TEST_AUXDATA_TO_JSON
+                Utf8String      jsonString;
+                auto            jsonClone = IGeometry::Create(clone);
+
+                jsonClone->TryTransformInPlace(m_v8ToDgnDbTrans);
+                if (BentleyApi::IModelJson::TryGeometryToIModelJsonString (jsonString, *jsonClone))
+                    {
+                    FILE*       file = std::fopen("d:\\tmp\\Cantilever.json", "w");
+                    fwrite (jsonString.c_str(), 1, jsonString.size(), file);
+                    fclose(file);
+                    }
+#endif
                 }
             }
         else if (m_brep.IsValid())
@@ -2774,7 +2890,7 @@ void DoGeometrySimplification()
 
             if (nullptr == firstPathEntry)
                 firstPathEntry = &pathEntry;
-            else if (!firstPathEntry->m_v8ToDgnDbTrans.IsEqual(pathEntry.m_v8ToDgnDbTrans))
+            else if (!Converter::IsTransformEqualWithTolerance(firstPathEntry->m_v8ToDgnDbTrans,pathEntry.m_v8ToDgnDbTrans))
                 continue; // Require same V8->DgnDb transform...
             else if (!firstPathEntry->m_geomParams.IsEquivalent(pathEntry.m_geomParams))
                 continue; // Require same symbology...
@@ -2897,6 +3013,31 @@ bool AppendAsSubGraphics(DgnV8PathGeom& currPathGeom, DgnV8PathEntry& currPathEn
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsValidGraphicElement(DgnV8EhCR v8eh)
+    {
+    DgnV8Api::MSElement const& v8el = *v8eh.GetElementCP();
+
+    // Skip displayable elements marked invisible as well as non-graphic components of cells (ex. type 38/39)...
+    if (!v8el.ehdr.isGraphics || v8el.hdr.dhdr.props.b.invisible)
+        return false;
+
+    // Skip elements with invalid ranges, they would not have displayed in V8 and likely contain bad/corrupt data...
+    Bentley::DRange3d range;
+    if (!DgnV8Api::DataConvert::CheckedScanRangeToDRange3d(range, v8el.hdr.dhdr.range, v8el.hdr.dhdr.props.b.is3d))
+        return false;
+
+    if (!v8el.hdr.dhdr.props.b.is3d)
+        range.low.z = range.high.z = 0.0;
+
+    if (range.IsEmpty())
+        return false;
+
+    return true;
+    }
+
 public:
 
 /*---------------------------------------------------------------------------------**//**
@@ -2904,8 +3045,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnCategoryId targetCategoryId, DgnCode elementCode, DgnV8EhCR v8eh)
     {
-    if (!v8eh.GetElementCP()->ehdr.isGraphics || v8eh.GetElementCP()->hdr.dhdr.props.b.invisible)
-        return; // Skip displayable elements marked invisible as well as non-graphic components of cells (ex. type 38/39)...
+    if (!IsValidGraphicElement(v8eh))
+        return;
 
     bool        isValidBasis = false;
     bool        isValidBasisAndScale = false;

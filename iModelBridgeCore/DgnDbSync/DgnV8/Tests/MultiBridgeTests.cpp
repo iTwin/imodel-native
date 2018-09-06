@@ -234,4 +234,107 @@ TEST_F(MultiBridgeTests, FileSpecificDefinitions)
         */
     }
 
+static void attach(BentleyApi::BeFileNameCR masterFileName, DgnV8Api::ModelId masterModelId, BentleyApi::BeFileNameCR refFileName, WCharCP refModelName)
+    {
+    V8FileEditor v8editor;
+    v8editor.Open(masterFileName);
+    DgnV8Api::DgnModel* masterModel = nullptr;
+    v8editor.GetAndLoadModel(masterModel, masterModelId);
+    ASSERT_NE(masterModel, nullptr);
+    Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(refFileName.c_str());
+    DgnV8Api::DgnAttachment* attachment;
+    ASSERT_EQ(BentleyApi::SUCCESS, masterModel->CreateDgnAttachment(attachment, *moniker, refModelName, true));
+    attachment->SetNestDepth(99);
+    ASSERT_EQ(BentleyApi::SUCCESS, attachment->WriteToModel());
+    v8editor.Save();
+    }
+
+static void addLineTo(BentleyApi::BeFileNameCR v8FileName, DgnV8Api::ModelId modelId)
+    {
+    V8FileEditor v8editor;
+    v8editor.Open(v8FileName);
+    DgnV8ModelP v8Model;
+    v8editor.GetAndLoadModel(v8Model, modelId);
+    v8editor.AddLine(nullptr, v8Model, Bentley::DPoint3d::From(0,0,0));
+    v8editor.Save();
+    }
+
+static BentleyApi::bvector<DgnModelCPtr> getModelsByName(DgnDbR db, Utf8CP modelName)
+    {
+    BentleyApi::bvector<DgnModelCPtr> models;
+
+    auto stmt = db.GetPreparedECSqlStatement("select el.ecinstanceid from bis.element el, bis.model m WHERE (el.ecinstanceid = m.ecinstanceid) AND (el.CodeValue = ?)");
+    stmt->BindText(1, modelName, EC::IECSqlBinder::MakeCopy::No);
+    while (BentleyApi::BeSQLite::BE_SQLITE_ROW == stmt->Step())
+        {
+        auto modelId = stmt->GetValueId<DgnModelId>(0);
+        models.push_back(db.Models().GetModel(modelId));
+        }
+    return models;
+    }
+
+static int countElementsInModel(BentleyApi::Dgn::DgnModelCR model)
+    {
+    auto stmt = model.GetDgnDb().GetPreparedECSqlStatement("select COUNT(*) from bis.element WHERE model.id = ?");
+    stmt->BindId(1, model.GetModelId());
+    if (BentleyApi::BeSQLite::BE_SQLITE_ROW != stmt->Step())
+        return 0;
+    return stmt->GetValueInt(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This test verifies that a bridge will process all of its assigned documents, 
+* even if they are hidden behind reference attachments that are not assigned to it.
+* @bsimethod                                    Sam.Wilson                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiBridgeTests, Sandwich)
+    {
+    LineUpFiles(L"MultiBridgeTest.bim", L"master3d.dgn", false); 
+    
+    // TRICKY: I will not use "master3d.dgn" as my master file. 
+    //          Instead, I will make a copy of "ref3d.dgn" and call it master.dgn.
+    //          That is because "master3d.dgn" already contains a reference attachment
+    //          and ref3d.dgn does not. I want to start with a clean slate and create
+    //          all of the attachments myself.
+    
+    // Create the sandwich:
+    BentleyApi::BeFileName masterFileName, rRefFileName, mRefFileName;
+    MakeWritableCopyOf(masterFileName, GetInputFileName(L"ref3d.dgn"), L"master.dgn");
+    MakeWritableCopyOf(rRefFileName, GetInputFileName(L"ref3d.dgn"), L"rref.dgn");
+    MakeWritableCopyOf(mRefFileName, GetInputFileName(L"ref3d.dgn"), L"mref.dgn");
+
+    m_v8FileName = masterFileName;  // This is the master file that I want to use as my converter root
+
+    attach(masterFileName, 0, rRefFileName, L"");        // master -> rref
+    attach(rRefFileName,   0, mRefFileName, L"");        //           rref -> mref
+
+    // Put an element in each model
+    addLineTo(masterFileName, 0);
+    addLineTo(rRefFileName, 0);
+    addLineTo(mRefFileName, 0);
+
+    MultiBridgeTestDocumentAccessor docaccessor;
+    // m is assigned to the master file and to mref
+    docaccessor.m_assignments[L"m"].push_back(m_v8FileName);
+    docaccessor.m_assignments[L"m"].push_back(mRefFileName);
+    // r is assigned to rref
+    docaccessor.m_assignments[L"r"].push_back(rRefFileName);
+
+    DefinitionModelIds mDefs, rDefs;
+    RunBridge(mDefs, L"m", docaccessor, true);
+    RunBridge(rDefs, L"r", docaccessor, true);
+
+    auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    ASSERT_TRUE(db.IsValid());
+
+    // Each model is created in the physical partition of each bridge.
+    auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
+    auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
+    auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, rrefModels.size());
+
+    ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
+    ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
+    ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
+    }
+
 

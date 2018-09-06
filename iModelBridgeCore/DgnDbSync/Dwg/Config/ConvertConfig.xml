@@ -92,8 +92,9 @@
     </LineWeightMapping>
     <Options>
         <OptionBool name="PreferRenderableGeometry" value="false"/> <!--"true" to tell object enablers to create renderable geometry; "false" to use the active view settings. -->
-        <OptionBool name="SyncBlockChanges" value="true"/>          <!--Save & analyze DWG block contents to track changes, but with a performance penalty -->
+        <OptionBool name="SyncBlockChanges" value="false"/>         <!--Save & analyze DWG block contents to track changes, but with a performance penalty -->
         <OptionBool name="SyncDwgVersionGuid" value="false"/>       <!--Use DWG VersionGuid to tell if a file is changed. Set to "true" if AutoCAD based products are the only DWG file editors for the sake of performance. -->
         <OptionBool name="SyncAsmBodyInFull" value="false"/>        <!--Save & analyze Autodesk ShapeManager data in full to track changes, with a preformance penalty. -->
+        <OptionBool name="ConvertAsmAsParasolid" value="true"/>     <!--"true" to convert SOLID3D, BODY, RESION & SURFACE entities as Parasolid elements as many as possible; "false" to create mesh only. -->
     </Options>
 </ConvertConfig>

@@ -38,6 +38,7 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 #define SYNC_TABLE_Discards     SYNCINFO_TABLE("Discards")
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
 #define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
+#define SYNC_TABLE_Imagery      SYNCINFO_TABLE("Imagery")
 
 struct Converter;
 struct SyncInfo;
@@ -542,6 +543,29 @@ struct SyncInfo
         const_iterator end() const {return Entry (NULL, false);}
         };
 
+    struct ViewIterator : BeSQLite::DbTableIterator
+        {
+        DGNDBSYNC_EXPORT ViewIterator(DgnDbCR db, Utf8CP where);
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct ViewIterator;
+                Entry(BeSQLite::StatementP sql, bool IsValid) : DbTableIterator::Entry(sql, IsValid) {}
+
+            public:
+                DGNDBSYNC_EXPORT DgnViewId GetId();
+                DGNDBSYNC_EXPORT V8FileSyncInfoId GetV8FileSyncInfoId();
+                DGNDBSYNC_EXPORT uint64_t GetV8ElementId();
+
+                Entry const& operator* () const { return *this; }
+            };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNDBSYNC_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(NULL, false); }
+        };
+
     enum class ECSchemaMappingType
         {
         Identity = 1, //!< Mapped as is
@@ -732,7 +756,7 @@ public:
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
     DGNDBSYNC_EXPORT bool TryGetECSchema(ECN::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName) const;
     DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
-    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums) const;
+    DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const;
     //! @}
 
     //! @name NamedGroups - The index is dropped on the ElementRefersToElements table while inserting named group members.  This was to allow for fast inserts, but as a result, lookups are slow and so
@@ -758,6 +782,46 @@ public:
     //! Insertions are stored in a temporary table.  Upon completion of processing the named groups, the temp table must be merged into the SyncInfo table.
     DGNDBSYNC_EXPORT BentleyStatus FinalizeNamedGroups();
     //! @}
+
+    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process.  Will create the table if it doesn't exist
+    bool EnsureImageryTableExists();
+
+    //! Record the provenance for reality data (raster, PointCloud, ThreeMx, ScalableMesh, etc.  
+    //! @param[in] modeledElementId - ElementId that models this element.  Only one entry per elementId is allowed
+    //! @param[in] filename - Filename (or URL) to the imagery
+    //! @param[in] lastModifiedTime - Time the file was last modified
+    //! @param[in] fileSize - Size of the image file
+    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
+    //! @param[in] rdsId - Guid from the reality data server
+    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertImageryFile(DgnElementId modeledElementId, V8FileSyncInfoId filesiid, Utf8CP filename, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
+
+    //! Checks to see if the given V8File has any associated image files and if so, checks each one to see if it has changed
+    //! @param[in] fileId - SyncInfo id of the V8File
+    DGNDBSYNC_EXPORT bool ModelHasChangedImagery(V8FileSyncInfoId fileId);
+
+    //! Looks for an entry for the given modeledElementId
+    //! @param[in] modeledElementId - ElementId of the model to look for
+    //! @param[out] lastModifiedTime - last modified time of the imagery
+    //! @param[out] fileSize - size of the imagery file
+    //! @param[out] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
+    //! @param[out] rdsId - Guid from the reality data server
+    DGNDBSYNC_EXPORT bool TryFindImageryFile(DgnElementId modeledElementId, Utf8StringR filename, uint64_t& lastModifiedTime, uint64_t &fileSize, Utf8StringR etag, Utf8StringR rdsId);
+
+    //! Updates the entry for an imagery file
+    //! @param[in] modeledElementId - ElementId of the model to look for
+    //! @param[in] lastModifiedTime - last modified time of the imagery
+    //! @param[in] fileSize - size of the imagery file
+    //! @param[in] etag - Unique marker for a file that is changed by the webserver whenever the file is changed
+    //! @param[in] rdsId - Guid from the reality data server
+    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateImageryFile(DgnElementId modeledElementId, uint64_t lastModifiedTime, uint64_t fileSize, Utf8CP etag, Utf8CP rdsId);
+
+    //! Given a filename, will get the current info about the file
+    //! @param[in] filename - Path to either local file or the URL of the imagery
+    //! @param[in] currentModifiedTime - last modified time if a local file
+    //! @param[in] currentFileSize - file size of a local file
+    //! @param[in] currentEtag - Web server's unique marker for the given URL
+    DGNDBSYNC_EXPORT void GetCurrentImageryInfo(Utf8StringCR filename, uint64_t& currentLastModifiedTime, uint64_t& currentFileSize, Utf8StringR currentEtag);
+
     Converter& GetConverter() const {return m_converter;}
 
     //! Create sync info for a DgnV8 model
@@ -800,10 +864,29 @@ public:
     //! Delete mappings for all extracted graphics associated with the specified V8 element.
     DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphics(V8ElementSource const& attachment,
                                                            V8ElementSource const& originalElement);
+    //! Delete mappings for all extracted graphics associated with the specified V8 element and category.
+    DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphicsCategory(V8ElementSource const& attachment,
+                                                                   V8ElementSource const& originalElement,
+                                                                   DgnCategoryId category);
     //! Return the DrawingGraphic that was derived from the specified V8 element. 
     DGNDBSYNC_EXPORT DgnElementId FindExtractedGraphic(V8ElementSource const& attachment,
                                                        V8ElementSource const& originalElement,
                                                        DgnCategoryId categoryId);
+
+    //! Record a mapping between a DgnV8 View and a DgnDb ID
+    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo);
+
+    //! Looks to see if this view has already been converted
+    DGNDBSYNC_EXPORT bool TryFindView(DgnViewId&, double& lastModified, DgnV8ViewInfoCR viewInfo) const;
+
+    //! Removes a mapping for a view that has been deleted
+    DGNDBSYNC_EXPORT BeSQLite::DbResult DeleteView(DgnViewId viewId);
+
+    //! Updates the information for a previously recorded view mapping
+    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo);
+
+    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process
+    DGNDBSYNC_EXPORT bool ViewTableExists();
 
     //! Record sync info for a level.
     //! @param[out] info        Sync info for the level

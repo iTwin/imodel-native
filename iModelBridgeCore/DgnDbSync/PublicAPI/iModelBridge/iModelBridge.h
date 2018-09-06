@@ -490,7 +490,7 @@ struct iModelBridge
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
-
+        Utf8String   m_jobRunCorrelationId;
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -561,6 +561,8 @@ struct iModelBridge
         void SetAssetsDir(BeFileNameCR dir) {m_assetsDir=dir;}
         BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
+        void SetDrawingsDir(BeFileNameCR dir) {m_drawingsDirs = dir;}
+        void AddDrawingAndSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
         bvector<BeFileName> const& GetDrawingAndSheetFiles() const {return m_drawingAndSheetFiles;} //!< The list of files to search for drawings and sheets
         BeFileNameCR GetReportFileName() const {return m_reportFileName;} //!< Where to write a report of results and issues that occurred during the conversion. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues and logging".
         //! Once the BIM name has been set, the framework calls this to compute the report file name. This is also called automatically by Validate.
@@ -600,8 +602,10 @@ struct iModelBridge
 
         //!Get/Set the client info when talking to iModelHub or other services. 
         //!Individual bridges are supposed to set it up in its constructor so that when briefcase creation is called, appropriate ids are passed along.
-        WebServices::ClientInfoPtr GetClientInfo() const { return m_clientInfo; };
+        IMODEL_BRIDGE_EXPORT WebServices::ClientInfoPtr GetClientInfo() const;
         void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
+        
+        IMODEL_BRIDGE_EXPORT Http::IHttpHeaderProviderPtr GetDefaultHeaderProvider() const;
         };
 
     private:
@@ -623,8 +627,7 @@ struct iModelBridge
     //! Open an existing BIM for read-write, possibly doing a schema upgrade on it.
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
-    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges);
-
+    static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
     //! @param[in] db The BIM to be updated
@@ -855,6 +858,29 @@ public:
 
     //! @name Helper functions
     //! @{
+
+    //! Save changes locally if memory usage is excessive. 
+    //! This function *may* create a local savepoint in order to conserve memory.
+    //! A bridge should call SaveChangesToConserveMemory as it converts elements, perhaps even on every element that it converts.
+    //! A local savepoint will be created only when accumulated changes exceed the specified maximum.
+    //! Normally, all local savepoints are combined into a single, all-in ChangeSet that is then pushed to the iModel server.
+    //! In some cases, such as if the bridge is interrupted, the conversion process will stop at the latest savepoint.
+    //! The bridge can then resume the conversion as of that savepoint when it is called the next time.
+    //! @note This function is called automatically by iModelBridgeSyncInfoFile::ChangeDetector, and so bridges that use 
+    //! iModelBridgeSyncInfoFile and follow the recommended pattern do not need to call this function themselves.
+    //! @param db The DgnDb that is being updated.
+    //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
+    //! @param maxRowsChangedPerTxn The maximum number of rows (not bytes) that should be in a single transaction.
+    IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment = nullptr, int maxRowsChangedPerTxn = 1000);
+
+    //! Call this function periodically to save changes locally. This creates a local savepoint, and it helps to conserves memory.
+    //! A bridge should call SaveChanges at major points in the conversion process, such as after processing all changes
+    //! in a file. Normally, all local savepoints are combined into a single, all-in ChangeSet that is then pushed to the iModel server.
+    //! In some cases, such as if the bridge is interrupted, the conversion process will stop at the latest savepoint.
+    //! The bridge can then resume the conversion as of that savepoint when it is called the next time.
+    //! @param db The DgnDb that is being updated.
+    //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
+    IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChanges(DgnDbR db, Utf8CP commitComment = nullptr);
 
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);

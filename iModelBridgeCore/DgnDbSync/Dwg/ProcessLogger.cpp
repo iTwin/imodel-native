@@ -269,7 +269,7 @@ Utf8CP      DwgImporter::IssueReporter::ToString(IssueSeverity sev)
 //---------------------------------------------------------------------------------------
 void            DwgImporter::IssueReporter::ECDbIssueListener::_OnIssueReported(Utf8CP message) const
     {
-    m_issueReporter.Report (DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::Message(), message);
+    m_issueReporter.Report (DwgImporter::IssueSeverity::Error, IssueCategory::Sync(), Issue::Message(), message);
     }
 
 /*---------------------------------------------------------------------------------**//**

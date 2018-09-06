@@ -466,7 +466,7 @@ bool UpdaterChangeDetector::_ShouldSkipFile (DwgImporter& importer, DwgDbDatabas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedModelMapping const& modelMap)
+bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedModelMapping const& modelMap, DwgDbDatabaseCP xrefDwg)
     {
     if (!modelMap.IsValid())
         {
@@ -488,7 +488,7 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
     if (m_newlyDiscoveredModels.find(entryId) != m_newlyDiscoveredModels.end())
         return  false;
 
-    // model is not new, check the file of the object(for an xref it's the insert entity):
+    // model is not new, check the file of the object((for an xref it's the insert entity):
     DwgDbDatabasePtr    dwg = modelMap.GetModelInstanceId().GetDatabase ();
     if (dwg.IsNull())
         {
@@ -498,6 +498,10 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
 
     if (!this->_ShouldSkipFile(importer, *dwg))
         return false;
+
+    // for an xRef, also check the xRef DWG file, in addition to the above DWG that owns the insert entity:
+    if (nullptr != xrefDwg && !this->_ShouldSkipFile(importer, *xrefDwg))
+        return  false;
 
     // skip this model
     m_dwgModelsSkipped.insert (entryId);
@@ -667,6 +671,41 @@ void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_OnGroupSeen (DwgImporter& importer, DgnElementId groupId)
+    {
+    if (groupId.IsValid())
+        m_groupsSeen.insert (groupId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DetectDeletedGroups (DwgImporter& importer)
+    {
+    auto groupModel = importer.GetDgnDb().Models().Get<GenericGroupModel>(importer.GetGroupModelId());
+    if (!groupModel.IsValid())
+        return;
+
+    auto&   elements = importer.GetDgnDb().Elements ();
+    auto&   syncInfo = importer.GetSyncInfo ();
+
+    for (auto groupId : groupModel->MakeIterator().BuildIdSet<DgnElementId>())
+        {
+        if (m_groupsSeen.find(groupId) == m_groupsSeen.end())
+            {
+            auto group = elements.Get<DgnElement> (groupId);
+            LOG.tracev ("Delete group %s (ID=%lld)", group.IsValid() ? group->GetUserLabel() : "??", groupId.GetValue());
+            elements.Delete (groupId);
+            syncInfo.DeleteGroup (groupId);
+            }
+        }
+
+    m_groupsSeen.clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId)
@@ -721,13 +760,47 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgImporter::_DetectDeletedDocuments ()
     {
-#ifdef WIP__OnRootFilesConverted
-    For each file in your syncinfo, call IsDocumentAssignedToJob to detect if the file is still assigned to the job.
-    For each file that is no longer assigned to your job, delete the models and elements that came from that file, and
-    then remove the record of that file from your syncinfo.
+    if (!this->IsUpdating())
+        return  BSISUCCESS;
 
-    // this->_GetChangeDetector()._DetectDeletedModelsInFile (*this, this->GetDwgDb());
-#endif
+    auto& detector = this->_GetChangeDetector ();
+    auto& db = this->GetDgnDb ();
+    auto& syncInfo = this->GetSyncInfo ();  
+    DwgSyncInfo::FileIterator files(db, nullptr);
+
+    for (auto file : files)
+        {
+        // check the file GUID per PW:
+        BeGuid  docGuid;
+        auto name = file.GetUniqueName ();
+        if (docGuid.FromString(name.c_str()) == BSISUCCESS && this->GetOptions().IsDocumentAssignedToJob(name))
+            continue;
+
+        // check existence of the physical file:
+        if (BeFileName(file.GetDwgName().c_str(), true).DoesPathExist())
+            continue;
+
+        // need to delete this file - walk through all model mappings in the sync info:
+        DwgSyncInfo::ModelIterator  modelMaps(db, "DwgFileId=?");
+        modelMaps.GetStatement()->BindInt (1, file.GetSyncId().GetValue());
+        for (auto modelMap : modelMaps)
+            {
+            // delete elements in DgnModel:
+            DwgSyncInfo::ElementIterator elements(db, "DwgModelSyncInfoId=?");
+            elements.GetStatement()->BindInt(1, modelMap.GetDwgModelSyncInfoId().GetValue());
+            detector._DetectDeletedElements (*this, elements);
+
+            // delete DgnModel from db:
+            auto model = db.Models().GetModel (modelMap.GetModelId());
+            model->Delete();
+
+            // delele the model mapping from the sync info:
+            syncInfo.DeleteModel (modelMap.GetDwgModelSyncInfoId());
+            }
+        // delete the file mapping from the sync info:
+        syncInfo.DeleteFile (file.GetSyncId());
+        }
+
     return BSISUCCESS;
     }
 

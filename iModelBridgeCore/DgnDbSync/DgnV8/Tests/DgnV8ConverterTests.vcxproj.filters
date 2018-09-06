@@ -100,6 +100,15 @@
     <ClCompile Include="DrawingTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextBlockTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemTypeTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ViewTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Tests.h">

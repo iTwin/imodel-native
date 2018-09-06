@@ -112,6 +112,9 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 {
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
                     return BSIERROR;
+                if (BisConversionRule::ToPhysicalElement != childRule)
+                    if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, childRule, isBaseClassCheck ? ecClass->GetDerivedClasses() : ecClass->GetBaseClasses(), !isBaseClassCheck))
+                        return BSIERROR;
                 }
             // If a class is using the ToAspectOnly rule, all of its children must also become aspects
             else if (!isBaseClassCheck && BisConversionRule::ToAspectOnly == childRule)
@@ -125,7 +128,7 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::TransformedUnbisifiedAndIgnoreInstances))
                     return BSIERROR;
                 }
-            else if (isBaseClassCheck && BisConversionRule::ToGroup == childRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
+            else if (BisConversionRule::ToGroup == childRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
                 {
                 BisConversionRule tempRule;
                 BECN::ECClassId incomingV8ClassId;
@@ -135,13 +138,16 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                     if (BSISUCCESS != V8ECClassInfo::Update(converter, incomingV8ClassId, existingRule))
                         return BSIERROR;
                     childRule = existingRule;
+                    if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, childRule, ecClass->GetDerivedClasses(), false))
+                        return BSIERROR;
                     }
                 }
-            else if (isBaseClassCheck && BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == childRule || BisConversionRule::ToDrawingGraphic == childRule))
+            else if (BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == childRule || BisConversionRule::ToDrawingGraphic == childRule))
                 {
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
                     return BSIERROR;
-
+                if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, childRule, ecClass->GetDerivedClasses(), false))
+                    return BSIERROR;
                 }
             }
         else if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, childRule))
@@ -415,7 +421,7 @@ bool BisClassConverter::ShouldConvertECClassToMixin(BECN::ECSchemaR targetSchema
 // @bsimethod                                                 Simi.Hartstein      04/2017
 //---------------------------------------------------------------------------------------
 //static
-void BisClassConverter::FindCommonBaseClass(ECClassP &commonClass, ECClassP currentClass, ECBaseClassesList const& classes, const bvector<ECClassCP> propogationFilter)
+void BisClassConverter::FindCommonBaseClass(ECClassP &commonClass, ECClassP currentClass, ECBaseClassesList const& classes, const bvector<ECClassCP> propagationFilter)
     {
     ECClassP tempCommonClass = currentClass;
     for (const auto &secondConstraint : classes)
@@ -429,19 +435,19 @@ void BisClassConverter::FindCommonBaseClass(ECClassP &commonClass, ECClassP curr
 
         for (const auto baseClass : tempCommonClass->GetBaseClasses())
             {
-            bool shouldPropogate = false;
-            for (const auto filterClass : propogationFilter)
+            bool shouldPropagate = false;
+            for (const auto filterClass : propagationFilter)
                 {
                 if (baseClass->Is(filterClass))
                     {
-                    shouldPropogate = true;
+                    shouldPropagate = true;
                     break;
                     }
                 }
-            if (!shouldPropogate)
+            if (!shouldPropagate)
                 continue;
             
-            FindCommonBaseClass(commonClass, baseClass->GetEntityClassP(), classes, propogationFilter);
+            FindCommonBaseClass(commonClass, baseClass->GetEntityClassP(), classes, propagationFilter);
             if (commonClass != nullptr)
                 return;
             }
@@ -475,8 +481,8 @@ BentleyStatus BisClassConverter::FindAppliesToClass(BECN::ECClassP& appliesTo, S
     if (baseObject == nullptr)
         return BSIERROR;
 
-    bvector<ECClassCP> propogationFilter;
-    propogationFilter.push_back(baseObject);
+    bvector<ECClassCP> propagationFilter;
+    propagationFilter.push_back(baseObject);
 
     BECN::ECDerivedClassesList derivedClasses = mixinClass.GetDerivedClasses();
     BECN::ECDerivedClassesList searchClasses;
@@ -495,7 +501,7 @@ BentleyStatus BisClassConverter::FindAppliesToClass(BECN::ECClassP& appliesTo, S
     if (searchClasses.empty())
         appliesTo = targetSchema.GetClassP(baseObject->GetName().c_str());
     else
-        FindCommonBaseClass(appliesTo, searchClasses.front(), searchClasses, propogationFilter);
+        FindCommonBaseClass(appliesTo, searchClasses.front(), searchClasses, propagationFilter);
     
     if (appliesTo == nullptr)
         return BSIERROR;
@@ -878,6 +884,61 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
 
     for (ECClassCP ecClass : constraintsToRemove)
         constraint.RemoveClass(*ecClass->GetEntityClassCP());
+
+    constraintsToRemove.clear();
+    bvector<ECClassCP> constraintsToAdd;
+
+    if (constraint.GetIsPolymorphic())
+        {
+        bmap<Utf8String, ECN::ECSchemaP> const& contextSchemas = context.GetSchemas();
+        // In the case of flattened schemas, we have broken polymorphism so need to fix that
+        for (auto constraintClass : constraint.GetConstraintClasses())
+            {
+            ECN::ECClassP nonConstConstraint = const_cast<ECN::ECClassP>(constraintClass);
+            // Need to find a common base class between this constraint and any derived classes that were removed
+            ECN::IECInstancePtr droppedInstance = constraintClass->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldDerivedClasses");
+            if (droppedInstance.IsValid())
+                {
+                ECN::ECValue v;
+                droppedInstance->GetValue(v, "Classes");
+                if (!v.IsNull())
+                    {
+                    bvector<Utf8String> classNames;
+                    BeStringUtilities::Split(v.GetUtf8CP(), ";", classNames);
+                    bvector<ECN::ECClassCP> searchClasses;
+                    for (Utf8String className : classNames)
+                        {
+                        bvector<Utf8String> components;
+                        BeStringUtilities::Split(className.c_str(), ":", components);
+                        if (components.size() != 2)
+                            continue;
+                        bmap<Utf8String, ECN::ECSchemaP>::const_iterator iter = contextSchemas.find(components[0]);
+                        if (contextSchemas.end() != iter)
+                            {
+                            ECN::ECSchemaP droppedSchema = iter->second;
+                            ECN::ECClassP dropped = droppedSchema->GetClassP(components[1].c_str());
+                            if (nullptr != dropped)
+                                {
+                                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(dropped);
+                                searchClasses.push_back(nonConst);
+                                }
+                            }
+                        }
+                    ECN::ECEntityClassCP commonClass = nullptr;
+                    ECN::ECClass::FindCommonBaseClass(commonClass, constraintClass->GetEntityClassCP(), searchClasses);
+                    if (commonClass != nullptr)
+                        {
+                        constraintsToRemove.push_back(nonConstConstraint);
+                        constraintsToAdd.push_back(commonClass);
+                        }
+                    }
+                }
+            }
+        for (ECClassCP toRemove : constraintsToRemove)
+            constraint.RemoveClass(*toRemove->GetEntityClassCP());
+        for (ECClassCP toAdd : constraintsToAdd)
+            constraint.AddClass(*toAdd->GetEntityClassCP());
+        }
 
     if (0 == constraint.GetConstraintClasses().size())
         {

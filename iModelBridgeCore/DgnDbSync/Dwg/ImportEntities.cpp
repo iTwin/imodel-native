@@ -882,8 +882,10 @@ private:
     Transform                           m_worldToElement;
     DwgDbSpatialFilterCP                m_spatialFilter;
     bvector<BlockInfo>                  m_blockStack;
+    bvector<int64_t>                    m_parasolidBodies;
     
 public:
+// the constructor
 GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters& drawParams, DwgImporter::GeometryOptions& opts, DwgDbEntityCP ent) : m_drawParams(drawParams), m_createParams(createParams)
     {
     m_geometryOptions = &opts;
@@ -895,11 +897,22 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_currentTransform = m_baseTransform;
     m_worldToElement.InitIdentity ();
     m_spatialFilter = nullptr;
+    m_parasolidBodies.clear ();
 
     // start block stack by input entity's block
     auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase();
     auto blockId = nullptr == ent ? dwg->GetModelspaceId() : ent->GetOwnerId();
     m_blockStack.push_back (BlockInfo(blockId, L"ModelSpace", DwgSyncInfo::GetDwgFileId(*dwg)));
+    }
+
+// the destructor
+~GeometryFactory ()
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    auto nBreps = m_parasolidBodies.size ();
+    if (nBreps > 0)
+        ::PK_ENTITY_delete ((int)nBreps, reinterpret_cast<PK_ENTITY_t*>(&m_parasolidBodies.front()));
+#endif
     }
 
 DwgImporter::T_BlockGeometryMap& GetOutputGeometryMap () { return m_outputGeometryMap; }
@@ -1216,7 +1229,7 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
                 Utf8PrintfString msg("skipped a shell having face vertex count of %d [expected %d]", nVertices, maxFaceVertices);
                 if (m_entity != nullptr)
                     msg += Utf8PrintfString(" ID=%ls", m_entity->GetObjectId().ToAscii().c_str());
-                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
+                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::UnexpectedData(), Issue::Message(), msg.c_str());
                 return;
                 }
 
@@ -1297,14 +1310,14 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     if (string.IsEmpty())
         {
         Utf8PrintfString    msg ("skipped empty text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
     if (!importer.ArePointsValid(&position, 1, m_drawParams.GetSourceEntity()))
         {
         Utf8PrintfString    msg ("skipped out of range text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::InvalidRange(), msg.c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::InvalidRange(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -1313,7 +1326,7 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     if (textString.empty())
         {
         Utf8PrintfString    msg ("skipped text containing all white spaces, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -1327,6 +1340,62 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     
     // caller to set style specific data
     return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DropText (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgStringCR string, bool raw, DwgGiTextStyleCR giStyle)
+    {
+    // only drop a multibyte text using an effective bigfont.
+    auto bigfont = giStyle.GetBigFontFileName ();
+    if (string.GetLength() < 1 || string.IsAscii() || bigfont.empty())
+        return  false;
+
+    // if bigfont is used, but cannot be found by the toolkit, don't bother dropping it.
+    WString found;
+    if (DwgImportHost::GetHost()._FindFile(found, bigfont.c_str(), m_drawParams.GetDatabase(), AcadFileType::CompiledShapeFile) != DwgDbStatus::Success)
+        return  false;
+
+    // get the text size
+    DPoint2d    size;
+    ShapeTextProcessor  processor(const_cast<DwgGiTextStyleR>(giStyle), string);
+    processor.SetIsRaw (raw);
+    if (DwgDbStatus::Success != processor.GetExtents(size))
+        return  false;
+
+    // calc tolerance
+    auto    deviation = size.y != 0.0 ? size.y : size.x;
+    deviation *= 0.01;
+
+    // drop text to a collection of line strings, in font unit size:
+    bvector<DPoint3dArray>  linestrings;
+    if (DwgDbStatus::Success != processor.Drop(linestrings, deviation))
+        return  false;
+
+    // transform dropped geometry from ECS to WCS.
+    RotMatrix   rotation;
+    DwgHelper::ComputeMatrixFromXZ (rotation, xdir, normal);
+
+    // scale font size to world size:
+    if (size.y > 1.0e-5)
+        rotation.ScaleColumns (size.y, size.y, size.y);
+
+    Transform   ecs = Transform::From (rotation);
+    ecs.SetTranslation (position);
+
+    // save geometry primitives
+    for (auto linestring : linestrings)
+        {
+        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLineString (linestring);
+        if (!primitive.IsValid())
+            return false;
+
+        primitive->TransformInPlace (ecs);
+        this->AppendGeometry (*primitive.get());
+        }
+    
+    return  true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1354,7 +1423,7 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, doub
     GeometricPrimitivePtr   primitive = GeometricPrimitive::Create (dgnText);
     if (primitive.IsValid())
         this->AppendGeometry (*primitive.get());
-    // NEEDSWORK - extrude text grlyphs
+    // NEEDSWORK - extrude text glyphs
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1362,6 +1431,10 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, doub
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgStringCR string, bool raw, DwgGiTextStyleCR giStyle) override
     {
+    // try dropping multibyte text string using a bigfont:
+    if (this->DropText(position, normal, xdir, string, raw, giStyle))
+        return;
+
     Dgn::TextStringPtr  dgnText = TextString::Create ();
     if (BSISUCCESS != this->SetText(dgnText, position, normal, xdir, string))
         {
@@ -1377,7 +1450,7 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
     if (DwgDbStatus::Success != giStyle.GetFontInfo(fontInfo))
         {
         WString     fname = giStyle.GetFileName ();
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::Message(), Utf8PrintfString("no font found in text style %s - using default font", fname.c_str()).c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::MissingData(), Issue::Message(), Utf8PrintfString("no font found in text style %s - using default font", fname.c_str()).c_str());
 
         font = importer.GetDefaultFont();
         }
@@ -1575,6 +1648,11 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
         // trivial reject the entity if it is clipped away as a whole
         if (nullptr != m_spatialFilter && m_spatialFilter->IsEntityFilteredOut(*child.get()))
             return;
+
+        // give protocal extensions a chance to create their own geometry:
+        if (this->CreateBlockChildGeometry(child.get()) == BSISUCCESS)
+            return;
+
         m_drawParams.Initialize (*child.get(), &savedParams);
 
         // gradient fill causes world/viewportDraw to create mesh - remove gradient by setting the hatch as a solid fill:
@@ -1607,12 +1685,42 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
+    {
+    auto* objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
+    if (nullptr == objExt)
+        return  BSIERROR;
+
+    auto geom = objExt->_ConvertToGeometry (entity, m_drawParams.GetDwgImporter());
+    if (!geom.IsValid())
+        return  BSIERROR;
+
+    this->AppendGeometry (*geom.get());
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    // should the protocol extension create a Parasolid body, save the tag to be freed after all elements created.
+    auto brep = geom->GetAsIBRepEntity ();
+    if (brep.IsValid())
+        {
+        bool owned = false;
+        auto tag = PSolidUtil::GetEntityTag (*brep, &owned);
+        if (!owned)
+            m_parasolidBodies.push_back (tag);
+        }
+#endif
+    
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DrawBlockAttributes (DwgDbBlockReferenceCR blockRef)
     {
-    DwgDbObjectIterator iter = blockRef.GetAttributeIterator ();
-    if (!iter.IsValid())
+    DwgDbObjectIteratorPtr  iter = blockRef.GetAttributeIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSISUCCESS;
 
     // save off last DrawParameters
@@ -1620,9 +1728,9 @@ BentleyStatus   DrawBlockAttributes (DwgDbBlockReferenceCR blockRef)
     uint32_t        count = 0;
 
     // draw each and every attribute followed the block reference:
-    for (iter.Start(); !iter.Done(); iter.Next())
+    for (iter->Start(); !iter->Done(); iter->Next())
         {
-        DwgDbEntityPtr  attrib(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbEntityPtr  attrib(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (!attrib.IsNull())
             {
             DwgGiDrawablePtr    drawable = attrib->GetDrawable ();
@@ -1839,9 +1947,8 @@ void            ComputeCategory (DgnCategoryId& categoryId, DgnSubCategoryId& su
 
     if (toModel.Is3d())
         {
-        // we are in a modelspace, in the masterfile or an xref, get a spatial category and sub-category from the syncInfo:
-        categoryId = importer.FindCategoryFromSyncInfo (layerId, xrefDwg);
-        subcategoryId = importer.FindSubCategoryFromSyncInfo (layerId, xrefDwg);
+        // we are in a modelspace, of the master file or an xref file, get a spatial category and a sub-category from the syncInfo:
+        categoryId = importer.GetSpatialCategory (subcategoryId, layerId, xrefDwg);
 
         if (this->IsDrawingBlock())
             {
@@ -1908,7 +2015,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     if (!m_partModel.IsValid())
         {
         // should not occur but back it up anyway!
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "GeometryParts");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "GeometryParts");
         m_partModel = &m_importer.GetDgnDb().GetDictionaryModel ();
         }
     m_geometryMap = nullptr;
@@ -2037,7 +2144,7 @@ void    ElementFactory::ApplyBasePartScale (TransformR transform, bool invert) c
     {
     // valid only for building parts - m_basePartScale should have been set to 0 for individual elements.
     auto scale = fabs (m_basePartScale);
-    if (scale > 0.001 && fabs(scale - 1.0) > 0.001)
+    if (scale > 1.0e-10 && fabs(scale - 1.0) > 0.001)
         {
         if (invert)
             scale = 1.0 / scale;
@@ -2260,7 +2367,7 @@ BentleyStatus   ElementFactory::CreatePartElements (DwgImporter::T_SharedPartLis
     if (failed > 0)
         {
         Utf8PrintfString msg("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, parts.size(), m_elementCode.GetValueUtf8CP(), m_inputs.GetEntityId().ToUInt64());
-        m_importer.ReportError (DwgImporter::IssueCategory::VisualFidelity(), DwgImporter::Issue::Error(), msg.c_str());
+        m_importer.ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
         if (BSISUCCESS == status)
             status = BSIERROR;
         }
@@ -2385,7 +2492,7 @@ BentleyStatus   ElementFactory::CreateIndividualElements ()
     if (failed > 0)
         {
         Utf8PrintfString msg("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, total, m_elementCode.GetValueUtf8CP(), m_inputs.GetEntityId().ToUInt64());
-        m_importer.ReportError (DwgImporter::IssueCategory::VisualFidelity(), DwgImporter::Issue::Error(), msg.c_str());
+        m_importer.ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
         if (BSISUCCESS == status)
             status = BSIERROR;
         }
@@ -2422,6 +2529,7 @@ BentleyStatus   ElementFactory::CreateElement ()
         return  BSIERROR;
         }
 
+#ifdef NEED_UNIQUE_CODE_PER_ELEMENT
     if (m_results.m_importedElement.IsValid())
         {
         // a parent element has been created - set element params for children
@@ -2429,6 +2537,7 @@ BentleyStatus   ElementFactory::CreateElement ()
         DgnCode             childCode = m_importer.CreateCode (codeValue);
         m_elementParams.SetCode (childCode);
         }
+#endif  // NEED_UNIQUE_CODE_PER_ELEMENT
 
     // create a new element from current geometry builder:
     DgnElementPtr   element = m_elementHandler->Create (m_elementParams);
@@ -2539,11 +2648,11 @@ bool            DwgImporter::_SkipEmptyElement (DwgDbEntityCP entity)
     DwgDbBlockReferenceCP   blockRef = DwgDbBlockReference::Cast(entity);
     if (nullptr != blockRef)
         {
-        DwgDbObjectIterator attrIter = blockRef->GetAttributeIterator ();
-        if (attrIter.IsValid())
+        DwgDbObjectIteratorPtr  attrIter = blockRef->GetAttributeIterator ();
+        if (attrIter->IsValid() && attrIter->IsValid())
             {
-            attrIter.Start ();
-            if (!attrIter.Done())
+            attrIter->Start ();
+            if (!attrIter->Done())
                 return  false;
 
             // no variable attributes - does the block have constant attrdef's?
@@ -2586,6 +2695,10 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // prepare for import
     PrepareEntityForImport (drawParams, geomFactory, entity);
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StartSession ();
+#endif
+
     // draw entity and create geometry from it in our factory:
     try
         {
@@ -2606,6 +2719,10 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // create elements from collected geometries
     ElementFactory  elemFactory(results, inputs, createParams, *this);
     status = elemFactory.CreateElements (&geometryMap);
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PSolidKernelManager::StopSession ();
+#endif
 
     if (BSISUCCESS == status)
         m_entitiesImported++;
@@ -2680,17 +2797,18 @@ Utf8String      DwgImporter::_GetElementLabel (DwgDbEntityCR entity)
     if (label.empty())
         label.Assign (entity.GetDwgClassName().c_str());
     
-    // for a block reference, use block name:
+    // for a named block reference, use block name:
     DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(&entity);
     if (nullptr != insert)
         {
         DwgDbBlockTableRecordPtr block (insert->GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
-        if (!block.IsNull())
+        if (!block.IsNull() && !block->IsAnonymous())
             {
+            // display block name as element label:
             DwgString   blockName = block->GetName ();
             if (!blockName.IsEmpty())
                 {
-                Utf8PrintfString    insertName("%ls", blockName.c_str());
+                Utf8String  insertName(blockName.c_str());
                 label.assign (insertName.c_str());
                 }
             }
@@ -2717,8 +2835,7 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     if (model.Is3d())
         {
         // get spatial category & subcategory from the syncInfo:
-        params.m_categoryId = this->FindCategoryFromSyncInfo (layerId, xrefDwg);
-        params.m_subCategoryId = this->FindSubCategoryFromSyncInfo (layerId, xrefDwg);
+        params.m_categoryId = this->GetSpatialCategory (params.m_subCategoryId, layerId, xrefDwg);
         }
     else
         {
@@ -2742,6 +2859,7 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
 
     params.m_placementPoint = DwgHelper::DefaultPlacementPoint (ent);
 
+#ifdef NEED_UNIQUE_CODE_PER_ELEMENT
     Utf8String      codeNamespace = model.GetName ();
     Utf8String      codeValue;
     if (nullptr != desiredCode)
@@ -2749,6 +2867,10 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     else
         codeValue.Sprintf ("%s:%llx", codeNamespace.c_str(), ent.GetObjectId().ToUInt64());
     params.m_elementCode = this->CreateCode (codeValue);
+#else
+    if (nullptr != desiredCode)
+        params.m_elementCode = this->CreateCode (desiredCode);
+#endif  // NEED_UNIQUE_CODE_PER_ELEMENT
 
     return  BSISUCCESS;
     }
@@ -2885,8 +3007,8 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     if (modelspace.IsNull())
         return  BSIERROR;
 
-    DwgDbBlockChildIterator     entityIter = modelspace->GetBlockChildIterator ();
-    if (!entityIter.IsValid())
+    DwgDbBlockChildIteratorPtr  entityIter = modelspace->GetBlockChildIterator ();
+    if (!entityIter.IsValid() || !entityIter->IsValid())
         return  BSIERROR;
 
     ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, this->GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelSpace);
@@ -2897,7 +3019,11 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
         }
 
     if (this->_GetChangeDetector()._ShouldSkipModel(*this, modelMap))
-        return  BSISUCCESS;
+        {
+        // no entity change is detected in modelspace - check all xRef files attached to it:
+        if (this->ShouldSkipAllXrefs(modelMap, m_modelspaceId))
+            return  BSISUCCESS;
+        }
 
     // set modelspace as current space being processed
     m_currentspaceId = m_modelspaceId;
@@ -2993,9 +3119,9 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     else
         {
         // import entities in database order
-        for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
+        for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
             {
-            inputs.SetEntityId (entityIter.GetEntityId());
+            inputs.SetEntityId (entityIter->GetEntityId());
             this->OpenAndImportEntity (inputs);
             }
         }
@@ -3166,7 +3292,7 @@ DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results)
         }
 
     if (ret.IsValid())  // an Invalid element is acceptable and means it was purposefully discarded during import
-        LOG_ENTITY.tracev ("Inserted %s, %s", DwgImporter::IssueReporter::FmtElement(*ret).c_str(), ret->GetDisplayLabel().c_str());
+        LOG_ENTITY.tracev ("Inserted %s, %s", IssueReporter::FmtElement(*ret).c_str(), ret->GetDisplayLabel().c_str());
 
     DgnElementId    parentId = results.m_importedElement->GetElementId ();
 

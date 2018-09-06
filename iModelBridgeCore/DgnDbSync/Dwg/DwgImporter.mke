@@ -38,6 +38,7 @@ DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
                       $(DwgDbPubApi)BasicTypes.h            \
                       $(DwgPubApi)DwgSyncInfo.h             \
                       $(DwgPubApi)DwgHelper.h               \
+                      $(DwgPubApi)DwgL10N.h                 \
                       $(DwgPubApi)DwgImporter.h             \
                       $(DwgPubApi)ProtocalExtensions.h
 
@@ -88,6 +89,10 @@ $(o)ImportLights$(oext)     : $(baseDir)ImportLights.cpp $(DwgDepends) $(DgnDbSy
 
 $(o)ImportXrefs$(oext)      : $(baseDir)ImportXrefs.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)ImportBreps$(oext)      : $(baseDir)ImportBreps.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
+$(o)ImportGroups$(oext)     : $(baseDir)ImportGroups.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
@@ -135,6 +140,7 @@ LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)Raster$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnView$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ECPresentation$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)pskernel$(libext)
 
 %if $(DWGTOOLKIT) == "OpenDwg"
 

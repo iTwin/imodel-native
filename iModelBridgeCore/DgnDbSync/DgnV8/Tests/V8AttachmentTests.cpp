@@ -34,10 +34,11 @@ TEST_F(V8AttachmentTests, AttachSameFile)
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
+    size_t originalModelCount = 0;
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        originalModelCount = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size();
         }
 
     V8FileEditor v8editor;
@@ -61,7 +62,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(originalModelCount + 1, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
         DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
@@ -78,7 +79,7 @@ TEST_F(V8AttachmentTests, AttachSameFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(originalModelCount, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         auto refsSubject = GetReferencesChildSubjectOf(*GetJobHierarchySubject(*db));
         ASSERT_TRUE(refsSubject.IsValid());
         DgnCode partitionCode = InformationPartitionElement::CreateCode(*refsSubject, TESTMODELNEW);
@@ -95,10 +96,11 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", false);
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
+    size_t originalModelCount = 0;
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(10, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        originalModelCount = db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size();
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -110,7 +112,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
+        EXPECT_EQ(originalModelCount + 1, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size());
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -129,7 +131,7 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(11, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size()) << "The converter does NOT delete the attached model.";
+        EXPECT_EQ(originalModelCount + 1, db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)).BuildIdSet().size()) << "The converter does NOT delete the attached model.";
         }
     }
 
@@ -138,16 +140,22 @@ TEST_F(V8AttachmentTests, AttachDifferentFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, ElementUpdateInReferenceFile)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    int originalGeomModelCount = 0;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        originalGeomModelCount = CountGeometricModels(*db);
+        }
 
     BentleyApi::BeFileName refV8File;
     CreateAndAddV8Attachment(refV8File, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
 
-    DoConvert(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(4, CountGeometricModels(*db));
+        EXPECT_EQ(originalGeomModelCount + 1, CountGeometricModels(*db));
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -162,7 +170,7 @@ TEST_F(V8AttachmentTests, ElementUpdateInReferenceFile)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(4, CountGeometricModels(*db));
+        EXPECT_EQ(originalGeomModelCount + 1, CountGeometricModels(*db));
         }
     }
 
@@ -171,16 +179,22 @@ TEST_F(V8AttachmentTests, ElementUpdateInReferenceFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, AddAttachments)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    int originalGeomModelCount = 0;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        originalGeomModelCount = CountGeometricModels(*db);
+        }
 
     BentleyApi::BeFileName refV8File1;
     CreateAndAddV8Attachment(refV8File1, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
 
-    DoConvert(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(4, CountGeometricModels(*db));
+        EXPECT_EQ(originalGeomModelCount + 1, CountGeometricModels(*db));
         }
 
     BentleyApi::BeFileName refV8File2;
@@ -190,7 +204,7 @@ TEST_F(V8AttachmentTests, AddAttachments)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(5, CountGeometricModels(*db));
+        EXPECT_EQ(originalGeomModelCount + 2, CountGeometricModels(*db));
         }
     }
 
@@ -199,16 +213,22 @@ TEST_F(V8AttachmentTests, AddAttachments)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, DeleteAttachment)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    int originalGeomModelCount = 0;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        originalGeomModelCount = CountGeometricModels(*db);
+        }
 
     BentleyApi::BeFileName refV8File;
     CreateAndAddV8Attachment(refV8File, 1);  // Create a copy of Test3d.dgn and attach it. Note that it will have the same level table.
 
-    DoConvert(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(4, CountGeometricModels(*db));
+        EXPECT_EQ(originalGeomModelCount + 1, CountGeometricModels(*db));
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -231,7 +251,7 @@ TEST_F(V8AttachmentTests, DeleteAttachment)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(4, CountGeometricModels(*db)) << "The converter does NOT delete the attached model.";
+        EXPECT_EQ(originalGeomModelCount + 1, CountGeometricModels(*db)) << "The converter does NOT delete the attached model.";
         }
     }
 
@@ -240,7 +260,13 @@ TEST_F(V8AttachmentTests, DeleteAttachment)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(V8AttachmentTests, UnDisplayedReference)
     {
-    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", false);
+    LineUpFiles(L"DifferentFile.ibim", L"Test3d.dgn", true);
+    int originalGeomModelCount = 0;
+    if (true)
+        {
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        originalGeomModelCount = CountGeometricModels(*db);
+        }
 
     DgnV8Api::ElementId eid;
     {
@@ -267,11 +293,11 @@ TEST_F(V8AttachmentTests, UnDisplayedReference)
         v8editor.Save();
         }
 
-    DoConvert(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(3, CountGeometricModels(*db));
+        EXPECT_EQ(originalGeomModelCount, CountGeometricModels(*db));
         }
 
     //--------------------------------------------------------------------------------------------------------
@@ -293,7 +319,7 @@ TEST_F(V8AttachmentTests, UnDisplayedReference)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        EXPECT_EQ(4, CountGeometricModels(*db));
+        EXPECT_EQ(originalGeomModelCount + 1, CountGeometricModels(*db));
         }
     }
 
@@ -333,8 +359,8 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
     {
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
 
-    // Should have the default, the attachment, Streets and Satellite phisical models, and no drawing model:
-    countModels(*db, 0, 4);
+    // Should have the default, WebMercator, and the attachment
+    countModels(*db, 0, 3);
 
     // Should have 1 of each of these elements:
     countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -363,11 +389,9 @@ void V8AttachmentTests::CheckForeignReferenceOutput (int expectedElements)
 TEST_F(V8AttachmentTests, Attach3dm)
     {
     LineUpFiles(L"rhino.ibim", L"Test3d.dgn", false);
-    if (true)
-        AttachForeignReferenceFile (L"HumanHead.3dm");
+    AttachForeignReferenceFile (L"HumanHead.3dm");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (81);
+    CheckForeignReferenceOutput (81);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,11 +401,9 @@ TEST_F(V8AttachmentTests, Attach3ds)
     {
     LineUpFiles(L"3ds.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"bed.3ds");
+    AttachForeignReferenceFile (L"bed.3ds");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (13);
+    CheckForeignReferenceOutput (13);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -391,11 +413,9 @@ TEST_F(V8AttachmentTests, AttachFbx)
     {
     LineUpFiles(L"fbx.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"candles.fbx");
+    AttachForeignReferenceFile (L"candles.fbx");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (103);
+    CheckForeignReferenceOutput (103);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -405,11 +425,9 @@ TEST_F(V8AttachmentTests, AttachIfc)
     {
     LineUpFiles(L"ifc.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"roof.ifc");
+    AttachForeignReferenceFile (L"roof.ifc");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (1097);
+    CheckForeignReferenceOutput (1097);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -419,12 +437,10 @@ TEST_F(V8AttachmentTests, AttachObj)
     {
     LineUpFiles(L"obj.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"bottle.obj");
+    AttachForeignReferenceFile (L"bottle.obj");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
     // a mesh in a cell counts as 2 elements
-    if (true)
-        CheckForeignReferenceOutput (2);
+    CheckForeignReferenceOutput (2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -434,10 +450,8 @@ TEST_F(V8AttachmentTests, AttachSkp)
     {
     LineUpFiles(L"sketchup.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
-    if (true)
-        AttachForeignReferenceFile (L"Kubelis.skp");
+    AttachForeignReferenceFile (L"Kubelis.skp");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    if (true)
-        CheckForeignReferenceOutput (2);
+    CheckForeignReferenceOutput (2);
     }
 

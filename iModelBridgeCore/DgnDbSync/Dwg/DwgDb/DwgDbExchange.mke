@@ -130,6 +130,8 @@ $(o)GiDrawables$(oext)          : $(baseDir)GiDrawables.cpp $(DwgDbDepends) ${Mu
 
 $(o)ResBuf$(oext)               : $(baseDir)ResBuf.cpp $(DwgDbDepends) ${MultiCompileDepends}
 
+$(o)BrepConverter$(oext)        : $(baseDir)BrepConverter.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects          =% $(MultiCompileObjectList)
 
@@ -151,6 +153,7 @@ DLM_NOENTRY         = 1
 
 LINKER_LIBRARIES_DELAYLOADED    = $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ContextSubpartsLibs)BentleyGeom$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ContextSubpartsLibs)pskernel$(libext)
 
 %if $(DWGTOOLKIT) == "OpenDwg"
 
@@ -167,6 +170,7 @@ LINKER_LIBRARIES    + crypt32$(libext) Urlmon$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_SpatialIndex$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_AcisBuilder$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_Br$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcModelDocObj$(libext)
 
@@ -195,6 +199,7 @@ LINKER_LIBRARIES    + $(ToolkitLibs)acpal$(libext)
 %endif
 
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acISMobj$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acbr$(RealDwgSuffix)$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acgex$(RealDwgSuffix)$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
 LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acModelDocObj$(libext)

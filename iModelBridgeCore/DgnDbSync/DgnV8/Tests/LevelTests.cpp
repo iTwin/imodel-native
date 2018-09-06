@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/LevelTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -77,7 +77,7 @@ void LevelTests::TestLevelConversion(size_t numGeometricModelsExpected, size_t n
 TEST_F(LevelTests, LevelMerge1)
     {
     LineUpFiles(L"LevelMerge1.ibim", L"Test3d.dgn", false);
-    TestLevelConversion (3, 1, 1, true);
+    TestLevelConversion (2, 1, 1, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,7 +99,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent1)
     //      Default
     //  Level1
     //      Default
-    TestLevelConversion(4, 2, 2, true); // We expect the "default" level to be defined differently everywhere, but not Level1.
+    TestLevelConversion(3, 2, 2, true); // We expect the "default" level to be defined differently everywhere, but not Level1.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,7 +134,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent12)
     //  Level1
     //      Default
     //      Ref1
-    TestLevelConversion(4, 2, 3, true);
+    TestLevelConversion(3, 2, 3, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,7 +154,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyIfDifferent2)
     // Expect:
     //  Uncategorized
     //      Default
-    TestLevelConversion(5, 1, 1, true);
+    TestLevelConversion(4, 1, 1, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,7 +170,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_CopyNever)
 
     ASSERT_EQ( m_params.GetCopyLevel() , Converter::Params::CopyLevel::UseConfig ); // the config file should specify "Never"
 
-    TestLevelConversion(5, 1, 1, true);
+    TestLevelConversion(4, 1, 1, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -194,7 +194,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_Always)
 
     m_params.SetCopyLevel(Converter::Params::CopyLevel::Always);
 
-    TestLevelConversion(5, 1, 3, true);
+    TestLevelConversion(4, 1, 3, true);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
@@ -277,5 +277,5 @@ TEST_F(LevelTests, LevelMaskfromSheetAttachment_toViewAttachment)
 
     m_params.SetCopyLevel(Converter::Params::CopyLevel::IfDifferent);
 
-    TestLevelConversion(5, 4, 4, true);
+    TestLevelConversion(4, 4, 4, true);
     }

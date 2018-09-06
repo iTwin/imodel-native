@@ -160,7 +160,10 @@ DwgDbSymbolTableIterator::~DwgDbSymbolTableIterator ()
     {
 #if DWGTOOLKIT_RealDwg
     if (nullptr != m_symbolTableIterator)
+        {
         delete m_symbolTableIterator;
+        m_symbolTableIterator = nullptr;
+        }
 #endif
     }
 
@@ -189,29 +192,32 @@ DwgDbBlockChildIterator::~DwgDbBlockChildIterator ()
     {
 #if DWGTOOLKIT_RealDwg
     if (nullptr != m_blockChildIterator)
+        {
         delete m_blockChildIterator;
+        m_blockChildIterator = nullptr;
+        }
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbBlockChildIterator         DwgDbBlockTableRecord::GetBlockChildIterator () const
+DwgDbBlockChildIteratorPtr  DwgDbBlockTableRecord::GetBlockChildIterator () const
     {
 #ifdef DWGTOOLKIT_OpenDwg
-    return DwgDbBlockChildIterator (this->newIterator(true, true, false).get());
+    return new DwgDbBlockChildIterator (this->newIterator(true, true, false).get());
 #elif DWGTOOLKIT_RealDwg
     AcDbBlockTableRecordIterator*   newIterator = nullptr;
     if (Acad::eOk == this->newIterator(newIterator, true, true))
-        return DwgDbBlockChildIterator (newIterator);
-    return  DwgDbBlockChildIterator();
+        return new DwgDbBlockChildIterator (newIterator);
 #endif    
+    return  nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbObjectId    DwgDbBlockTable::GetModelspaceId () const
+DwgDbObjectId   DwgDbBlockTable::GetModelspaceId () const
     {
     return  DWGDB_CALLSDKMETHOD(T_Super::getModelSpaceId(), acdbSymUtil()->blockModelSpaceId(T_Super::database()));
     }
@@ -219,7 +225,7 @@ DwgDbObjectId    DwgDbBlockTable::GetModelspaceId () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbObjectId    DwgDbBlockTable::GetPaperspaceId () const
+DwgDbObjectId   DwgDbBlockTable::GetPaperspaceId () const
     {
     return  DWGDB_CALLSDKMETHOD(T_Super::getPaperSpaceId(), acdbSymUtil()->blockPaperSpaceId(T_Super::database()));
     }

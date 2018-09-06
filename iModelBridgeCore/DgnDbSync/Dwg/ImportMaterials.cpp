@@ -333,7 +333,7 @@ bool    MaterialFactory::FindTextureFile (BeFileNameR filename)
 
     // warn about the missing material texture file
     Utf8PrintfString    context("Material \"%s\"", m_materialName.c_str());
-    m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::FileNotFound(), Utf8String(filename).c_str(), context.c_str());
+    m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::FileNotFound(), Utf8String(filename).c_str(), context.c_str());
 
     return  false;
     }
@@ -365,7 +365,7 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
         ByteStream  textureBuffer;
         if (this->ReadRawBytes(textureBuffer, fileName) == 0)
             {
-            m_importer.ReportError (DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::MaterialError(), Utf8PrintfString("cannot read texture image from %s for material %s", utf8Name.c_str(), m_materialName.c_str()).c_str());
+            m_importer.ReportError (IssueCategory::MissingData(), Issue::MaterialError(), Utf8PrintfString("cannot read texture image from %s for material %s", utf8Name.c_str(), m_materialName.c_str()).c_str());
             return BSIERROR;
             }
     
@@ -376,7 +376,7 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
         {
         if (BSISUCCESS != this->ReadToRgba(image, fileName, inverted))
             {
-            m_importer.ReportError (DwgImporter::IssueCategory::MissingData(), DwgImporter::Issue::MaterialError(), Utf8PrintfString("cannot texture RGBA from image file %s for material %s", utf8Name.c_str(), m_materialName.c_str()).c_str());
+            m_importer.ReportError (IssueCategory::MissingData(), Issue::MaterialError(), Utf8PrintfString("cannot texture RGBA from image file %s for material %s", utf8Name.c_str(), m_materialName.c_str()).c_str());
             return BSIERROR;
             }
         
@@ -388,14 +388,14 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "DgnTexture");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "DgnTexture");
         model = &m_importer.GetDgnDb().GetDictionaryModel ();
         }
     DgnTexture      texture(DgnTexture::CreateParams(*model, utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
 
     if (texture.Insert(&status).IsNull() || DgnDbStatus::Success != status)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MaterialError(), Utf8PrintfString("can't create texture from %s for material %s", utf8Name.c_str(), m_materialName.c_str()).c_str());
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MaterialError(), Utf8PrintfString("can't create texture from %s for material %s", utf8Name.c_str(), m_materialName.c_str()).c_str());
         return static_cast<BentleyStatus>(status);
         }
 
@@ -747,7 +747,7 @@ BentleyStatus   MaterialFactory::Create (RenderMaterialId& idOut)
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "RenderMaterial");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingJobDefinitionModel(), "RenderMaterial");
         model = &m_importer.GetDgnDb().GetDictionaryModel ();
         }
 
@@ -764,7 +764,7 @@ BentleyStatus   MaterialFactory::Create (RenderMaterialId& idOut)
     // add the material to DB
     if (dgnMaterial.Insert().IsNull())
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::DiskIO(), DwgImporter::Issue::MaterialError(), Utf8PrintfString("failed adding material [%ls] into DB", m_dwgMaterial->GetName().c_str()).c_str());
+        m_importer.ReportError (IssueCategory::DiskIO(), Issue::MaterialError(), Utf8PrintfString("failed adding material [%ls] into DB", m_dwgMaterial->GetName().c_str()).c_str());
         return BSIERROR;
         }
 
@@ -785,7 +785,7 @@ BentleyStatus   MaterialFactory::Update (RenderMaterialR out)
     // add the material to DB
     if (out.Update().IsNull())
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::DiskIO(), DwgImporter::Issue::MaterialError(), Utf8PrintfString("failed adding material [%ls] into DB", m_dwgMaterial->GetName().c_str()).c_str());
+        m_importer.ReportError (IssueCategory::DiskIO(), Issue::MaterialError(), Utf8PrintfString("failed adding material [%ls] into DB", m_dwgMaterial->GetName().c_str()).c_str());
         return BSIERROR;
         }
 
@@ -864,8 +864,8 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
     if (materialTable.IsNull())
         return  BSIERROR;
 
-    DwgDbDictionaryIterator iter = materialTable->GetIterator ();
-    if (!iter.IsValid())
+    DwgDbDictionaryIteratorPtr iter = materialTable->GetIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
     
     this->SetStepName (ProgressMessage::STEP_IMPORTING_MATERIALS());
@@ -877,16 +877,16 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
     Utf8PrintfString  paletteName ("Palette-%ls", this->GetRootDwgFileName().GetFileNameAndExtension().c_str());
 
     uint32_t    count = 0;
-    for (; !iter.Done(); iter.Next())
+    for (; !iter->Done(); iter->Next())
         {
         // skip ByLayer and ByBlock materials
-        if (iter.GetObjectId() == materialByLayer || iter.GetObjectId() == materialByBlock)
+        if (iter->GetObjectId() == materialByLayer || iter->GetObjectId() == materialByBlock)
             continue;
 
-        DwgDbMaterialPtr    material(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbMaterialPtr    material(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (material.IsNull())
             {
-            this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter.GetObjectId().ToAscii()).c_str());
+            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter->GetObjectId().ToAscii()).c_str());
             continue;
             }
 

@@ -66,6 +66,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetRegAppTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetTextStyleTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetViewportTableId () const;
+    DWGDB_EXPORT DwgDbObjectId      GetGroupDictionaryId () const;
     DWGDB_EXPORT DwgString          GetFileName () const;
     DWGDB_EXPORT double             GetANGBASE () const;
     DWGDB_EXPORT bool               GetANGDIR () const;
@@ -103,6 +104,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetTEXTSTYLE () const;
     DWGDB_EXPORT bool               GetTILEMODE () const;
     DWGDB_EXPORT bool               GetVISRETAIN () const;
+    DWGDB_EXPORT DwgDbStatus        SetVISRETAIN (bool on);
     DWGDB_EXPORT bool               GetLineweightDisplay () const;
     DWGDB_EXPORT DwgDbObjectId      GetActiveUserViewportId ();         // active viewport entity in active layout
     DWGDB_EXPORT DwgDbObjectId      GetActiveModelspaceViewportId ();   // active viewport table record in modelspace

@@ -30,6 +30,7 @@
 #include <DgnPlatform/LineStyle.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+#include <DgnPlatform/DgnBrep/PSolidUtil.h>
 
 #include <Raster/RasterApi.h>
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
@@ -175,6 +176,7 @@ private:
     double                  m_elevation;
     double                  m_thickness;
     bool                    m_isClosed;
+    Transform               m_ecs;
 
 public:
     PolylineFactory ();
@@ -281,7 +283,7 @@ private:
     void ApplyViewportClipping (Sheet::ViewAttachmentR viewAttachment);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
-    bool FindEnvironmentImageFile (BeFileNameR filename) const;
+    DgnTextureId FindEnvironmentImageFile (BeFileNameCR filename) const;
     bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
 
 public:
@@ -367,6 +369,26 @@ public:
     BentleyStatus   AlignSheetToPaperOrigin (TransformR transform) const;
     static DwgDbObjectId FindOverallViewport (DwgDbBlockTableRecordCR block);
     };  // LayoutFactory
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          08/18
++===============+===============+===============+===============+===============+======*/
+struct  GroupFactory
+    {
+private:
+    DwgImporter&        m_importer;
+    DwgDbGroupCR        m_dwgGroup;
+    DwgDbObjectIdArray  m_dwgMemberIds;
+
+    DgnElementIdSet FindAllElements (DwgDbObjectIdCR objectId) const;
+    GenericGroupPtr CreateAndInsert () const;
+
+public:
+    // the constructor
+    GroupFactory (DwgImporter& importer, DwgDbGroupCR dwgGroup);
+    DgnElementPtr   Create () const;
+    BentleyStatus   Update (GenericGroupR dgnGroup) const;
+    };  // GroupFactory
 
 /*=================================================================================**//**
 * ElementFactory takes geometries collected from GeometryFactory as input, and creates

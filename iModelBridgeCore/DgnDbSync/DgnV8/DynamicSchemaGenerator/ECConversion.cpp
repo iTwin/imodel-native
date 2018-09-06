@@ -22,6 +22,32 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 using namespace BeSQLite::EC;
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
+static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
+    "BaseElementSchema",
+    "BentleyDesignLinksPersistence",
+    "BentleyDesignLinksPresetnation",
+    "BentleyDrawingLinksPersistence",
+    "DetailSymbolExtender",
+    "DgnComponentSchema",
+    "DgnContentRelationshipSchema",
+    "DgnCustomAttributes",
+    "DgnElementSchema",
+    "DgnFileSchema",
+    "DgnindexQueryschema",
+    "DgnLevelSchema",
+    "DgnModelSchema",
+    "DgnPointCloudSchema",
+    "DgnTextStyleObjSchema",
+    "DgnVisualizationObjSchema",
+    "ExtendedElementSchema",
+    "MstnPropertyFormatter",
+    "Ustn_ElementParams",
+    "DTMElement_TemplateExtender_Schema",
+    "dgn",
+    "ECDbSystem",
+    "ECDb_FileInfo"
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1237,8 +1263,6 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
     };
 
-static bool s_doFileSaveTimeCheck = true;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
@@ -1259,6 +1283,22 @@ DynamicSchemaGenerator::SchemaConversionScope::~SchemaConversionScope()
         m_converter.SetEcConversionFailed();
         if (!m_converter.m_ecConversionFailedDueToLockingError)
             m_converter.ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Error(), "Failed to transform the v8 ECSchemas to a BIS based ECSchema. Therefore EC content is not converted. See logs for details. Please try to adjust the v8 ECSchemas.");
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void RemoveDgnV8CustomAttributes(ECN::IECCustomAttributeContainerR container)
+    {
+    for (ECN::IECInstancePtr instance : container.GetCustomAttributes(false))
+        {
+        Utf8String v8SchemaName(instance->GetClass().GetSchema().GetName().c_str());
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        if (found == s_dgnV8DeliveredSchemas.end())
+            continue;
+        container.RemoveCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
+        container.RemoveSupplementedCustomAttribute(instance->GetClass().GetSchema().GetName(), instance->GetClass().GetName());
         }
     }
 
@@ -1412,6 +1452,13 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
              ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
              return BentleyApi::BSIERROR;
+             }
+         RemoveDgnV8CustomAttributes(*schema);
+         for (ECN::ECClassP ecClass : schema->GetClasses())
+             {
+             RemoveDgnV8CustomAttributes(*ecClass);
+             for (ECN::ECPropertyP ecProp : ecClass->GetProperties())
+                 RemoveDgnV8CustomAttributes(*ecProp);
              }
          }
      ECN::ECSchemaConverter::RemoveConverter(ECN::ECSchemaConverter::GetQualifiedClassName("EditorCustomAttributes", EXTEND_TYPE));
@@ -2211,6 +2258,14 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
 void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject)
     {
     bool wasFlattened = false;
+    // CopyFlattenedProperty looks in m_flattenedRefs, so we need to prepopulate that
+    ECN::ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
+    for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        ECN::ECSchemaP refSchema = it->second.get();
+        m_flattenedRefs[refSchema->GetName()] = refSchema;
+        }
+
     for (BECN::ECClassP ecClass : schema->GetClasses())
         {
         BECN::ECEntityClassP entityClass = ecClass->GetEntityClassP();
@@ -2331,29 +2386,6 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::Analyze(DgnV8Api::ElementHandl
 
     return BentleyApi::SUCCESS;
     }
-
-static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
-    "BaseElementSchema",
-    "BentleyDesignLinksPersistence",
-    "BentleyDesignLinksPresetnation",
-    "BentleyDrawingLinksPersistence",
-    "DetailSymbolExtender",
-    "DgnComponentSchema",
-    "DgnContentRelationshipSchema",
-    "DgnCustomAttributes",
-    "DgnElementSchema",
-    "DgnFileSchema",
-    "DgnindexQueryschema",
-    "DgnLevelSchema",
-    "DgnModelSchema",
-    "DgnPointCloudSchema",
-    "DgnTextStyleObjSchema",
-    "DgnVisualizationObjSchema",
-    "ExtendedElementSchema",
-    "MstnPropertyFormatter",
-    "Ustn_ElementParams",
-    "DTMElement_TemplateExtender_Schema"
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
@@ -2513,6 +2545,18 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             return BentleyApi::BSIERROR;
             }
+        Bentley::WString schemaName(schema->GetName().c_str());
+        if (DgnV8Api::ItemTypeLibrary::IsItemTypeSchema(schemaName) && !schema->IsDynamicSchema())
+            {
+            ECN::IECInstancePtr dynamicInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("DynamicSchema");
+            if (!ECN::ECSchema::IsSchemaReferenced(*schema, dynamicInstance->GetClass().GetSchema()))
+                {
+                ECN::ECClassCR dynClass = dynamicInstance->GetClass();
+                ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(&dynClass);
+                schema->AddReferencedSchema(nonConst->GetSchemaR());
+                }
+            schema->SetCustomAttribute(*dynamicInstance);
+            }
         }
 
     return BentleyApi::SUCCESS;
@@ -2634,10 +2678,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         }
 
     bvector<BECN::ECSchemaCP> constSchemas = m_schemaReadContext->GetCache().GetSchemas();
-    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
     auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->IsStandardSchema() || arg->IsSystemSchema(); });
     constSchemas.erase(removeAt, constSchemas.end());
 
+    auto removeDgn = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg)
+        {
+        Utf8String v8SchemaName = arg->GetName();
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        return (found != s_dgnV8DeliveredSchemas.end());
+        });
+
+    constSchemas.erase(removeDgn, constSchemas.end());
 //#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
     {
@@ -3121,11 +3172,13 @@ void DynamicSchemaGenerator::FinalizeECSchemaConversion()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& uniqueModels)
     {
-    bmap<Utf8String, uint32_t> syncInfoChecksums;
-    GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums);
-
     for (auto& v8Model : uniqueModels)
+        {
+        bmap<Utf8String, uint32_t> syncInfoChecksums;
+        SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8Model->GetDgnFileP());
+        GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums, v8FileId);
         CheckECSchemasForModel(*v8Model, syncInfoChecksums);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -3464,14 +3517,33 @@ BentleyStatus RootModelConverter::MakeSchemaChanges()
     {
     StopWatch timer(true);
 
-    bvector<DgnV8ModelP> modelsInFMOrder;   // models in file, modelid order - that matches the order in which the older converter processed models.
-    modelsInFMOrder.assign(m_spatialModelsInAttachmentOrder.begin(), m_spatialModelsInAttachmentOrder.end());
-    modelsInFMOrder.insert(modelsInFMOrder.end(), m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end());
+    // Get the list of all models that are assigned to this bridge.
+    bvector<DgnV8ModelP> modelsInFMOrder;
+    std::copy_if(m_spatialModelsInAttachmentOrder.begin(), m_spatialModelsInAttachmentOrder.end(), std::back_inserter(modelsInFMOrder),
+      [&](DgnV8ModelP model)
+        {
+        return IsFileAssignedToBridge(*model->GetDgnFileP());
+        });
+    std::copy_if(m_nonSpatialModelsInModelIndexOrder.begin(), m_nonSpatialModelsInModelIndexOrder.end(), std::back_inserter(modelsInFMOrder),
+      [&](DgnV8ModelP model)
+        {
+        return IsFileAssignedToBridge(*model->GetDgnFileP());
+        });
 
+    // sort the models in file, modelid order - that matches the order in which the older converter processed models.
     auto cmp = [&](DgnV8ModelP a, DgnV8ModelP b) { return IsLessInMappingOrder(a,b); };
     std::sort(modelsInFMOrder.begin(), modelsInFMOrder.end(), cmp);
 
-    auto status = T_Super::MakeSchemaChanges(m_v8Files, modelsInFMOrder);
+    // Get the list of all files (in original discovery order) that are assigned to this bridge.
+    bvector<DgnV8FileP> filesInOrder;
+    std::copy_if(m_v8Files.begin(), m_v8Files.end(), std::back_inserter(filesInOrder),
+      [&](DgnV8FileP file)
+        {
+        return IsFileAssignedToBridge(*file);
+        });
+
+    // Processed V8 schemas
+    auto status = T_Super::MakeSchemaChanges(filesInOrder, modelsInFMOrder);
 
     ConverterLogging::LogPerformance(timer, "Convert Schemas (total)");
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/PointCloudConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -125,7 +125,7 @@ PointCloud::PointCloudModelPtr CreatePointCloudModel(Utf8StringCR fileName, DgnD
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         3/2016
 //-----------------------------------------------------------------------------------------
-BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool copyPointCloud)
+BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool copyPointCloud, bool isNewElement)
     {
     //WIP_RASTER_CONVERTER need to think about 
     //  - output param.  we probably should return the created model. ElementConversionResults is not a good fit.
@@ -135,6 +135,13 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
         {
         // Point cloud import is disabled in the configuration file
         return SUCCESS;
+        }
+
+    DgnElementId existingId;
+    IChangeDetector::SearchResults changeInfo;
+    if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
+        {
+        existingId = changeInfo.GetExistingElementId();
         }
 
     DgnV8Api::IPointCloudQuery* pQuery = dynamic_cast<DgnV8Api::IPointCloudQuery*>(&v8eh.GetHandler());
@@ -172,7 +179,13 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
             }
         }
     
-    PointCloud::PointCloudModelPtr pPointCloudModel = CreatePointCloudModel(filename.GetNameUtf8(), GetDgnDb());
+    PointCloud::PointCloudModelPtr pPointCloudModel;
+    
+    if (!existingId.IsValid())
+        pPointCloudModel = CreatePointCloudModel(filename.GetNameUtf8(), GetDgnDb());
+    else
+        pPointCloudModel = GetDgnDb().Models().Get<PointCloud::PointCloudModel>(DgnModelId(existingId.GetValue()));
+
     if (pPointCloudModel.IsNull())
         {
         ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), Utf8String(filename.c_str()).c_str());
@@ -202,13 +215,35 @@ BentleyStatus SpatialConverterBase::_ConvertPointCloudElement(DgnV8EhCR v8eh, Re
     // Extract color and weight from element symbology.
     setPointCloudSymbology(*pPointCloudModel, v8eh, *this);
     
-    auto modelStatus = pPointCloudModel->Insert();
-    if (modelStatus != DgnDbStatus::Success)
+    SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8eh, GetSyncInfo(), GetCurrentIdPolicy());
+    SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(pPointCloudModel->GetModeledElementId(), v8eh, v8mm.GetV8ModelSyncInfoId(), prov);
+    if (!existingId.IsValid())
         {
-        BeAssert((DgnDbStatus::LockNotHeld != modelStatus) && "Failed to get or retain necessary locks");
-        ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), Utf8String(filename.c_str()).c_str());
-        return ERROR;
+        auto modelStatus = pPointCloudModel->Insert();
+        if (modelStatus != DgnDbStatus::Success)
+            {
+            BeAssert((DgnDbStatus::LockNotHeld != modelStatus) && "Failed to get or retain necessary locks");
+            ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), Utf8String(filename.c_str()).c_str());
+            return ERROR;
+            }
+        m_syncInfo.InsertElement(mapping);
+        _GetChangeDetector()._OnElementSeen(*this, pPointCloudModel->GetModeledElementId());
         }
+    else
+        {
+        DgnDbStatus updateStatus;
+        if (DgnDbStatus::Success != (updateStatus = pPointCloudModel->Update()))
+            {
+            BeAssert((DgnDbStatus::LockNotHeld != updateStatus) && "Failed to get or retain necessary locks");
+            ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), filename.GetNameUtf8().c_str());
+            return ERROR;
+            }
+        m_syncInfo.UpdateElement(mapping);
+        _OnElementConverted(mapping.GetElementId(), &v8eh, Converter::ChangeOperation::Update);
+        }
+    // Schedule reality model tileset creation.
+    AddModelRequiringRealityTiles(pPointCloudModel->GetModelId(), filename.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP()));
+
         
     // Display the point cloud (or not) in the DgnDb views
     DgnCategoryId category = GetSyncInfo().GetCategory(v8eh, v8mm);

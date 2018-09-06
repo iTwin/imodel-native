@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
 #include <Logging/bentleylogging.h>
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE

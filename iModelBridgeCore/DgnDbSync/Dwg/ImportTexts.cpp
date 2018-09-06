@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportTexts.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -84,19 +84,19 @@ BentleyStatus   DwgImporter::_ImportTextStyleSection ()
     if (textstyleTable.IsNull())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = textstyleTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = textstyleTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     this->SetStepName (ProgressMessage::STEP_IMPORTING_TEXTSTYLES());
 
     uint32_t    count = 0;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbTextStyleTableRecordPtr    textstyle(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbTextStyleTableRecordPtr    textstyle(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (textstyle.IsNull())
             {
-            this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CantOpenObject(), "Text style record");
+            this->ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CantOpenObject(), "Text style record");
             continue;
             }
 
@@ -486,7 +486,7 @@ static bool shouldEmbedUsedFont(DwgImporter::Config const& importConfig, DgnFont
 //---------------------------------------------------------------------------------------
 void    DwgImporter::_EmbedFonts ()
     {
-    SetStepName(DwgImporter::ProgressMessage::STEP_EMBED_FONTS());
+    SetStepName(ProgressMessage::STEP_EMBED_FONTS());
     
     // By default, embed any used fonts.
     // The converter can only reasonably care about embedding workspace fonts... otherwise anything in the DB is outside its scope.
@@ -503,7 +503,7 @@ void    DwgImporter::_EmbedFonts ()
             continue;
         
         if (BSISUCCESS != DgnFontPersistence::Db::Embed(m_dgndb->Fonts().DbFaceData(), *workingFont))
-            ReportIssueV(DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontEntry.GetType(), fontEntry.GetName());
+            ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontEntry.GetType(), fontEntry.GetName());
         
         Progress();
         }
@@ -534,7 +534,7 @@ void    DwgImporter::_EmbedFonts ()
                 continue;
 
             if (BSISUCCESS != DgnFontPersistence::Db::Embed(m_dgndb->Fonts().DbFaceData(), *workingFont))
-                ReportIssueV(DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontType, fontName);
+                ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontType, fontName);
 
             Progress();
             }

@@ -7,7 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <DgnPlatform/Render.h>
 #include <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
+#include <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
+#include <DgnDbSync/Dwg/DwgDb/DwgResBuf.h>
+#include <DgnDbSync/Dwg/DwgDb/DwgDrawables.h>
 #include <DgnDbSync/DgnDbSync.h>
 
 #define SCHEMAName_AttributeDefinitions     "DwgAttributeDefinitions"

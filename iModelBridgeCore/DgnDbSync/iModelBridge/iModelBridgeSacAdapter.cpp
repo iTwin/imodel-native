@@ -185,7 +185,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
         {
         BeSQLite::DbResult dbres;
         bool _hadDomainSchemaChanges = false;
-        db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges);
+        db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges, outputFileName);
         if (!db.IsValid())
             {
             fwprintf(stderr, L"%ls - file not found or could not be opened (error %x)\n", inputFileName.GetName(), (int)dbres);
@@ -213,7 +213,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             callCloseOnReturn.CallCloseFunctions();
 
             _hadDomainSchemaChanges = false;
-            db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges);
+            db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges, outputFileName);
             if (!db.IsValid())
                 {
                 fwprintf(stderr, L"%ls - open failed with error %x\n", inputFileName.GetName(), (int)dbres);
@@ -335,6 +335,8 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         imodelName.OverrideNameParts(L".imodel");
         CreateIModel(imodelName, briefcaseName, saparams);
         }
+
+    BentleyApi::Http::HttpClient::Uninitialize();
 
     return BSISUCCESS;
     }

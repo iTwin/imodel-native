@@ -777,10 +777,17 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
         arxEvent->addReactor (xrefReactor);
 #endif  // NDEBUG
 
-        if (IDwgDbHost::IsDxfFile(filename))
-            status = dwg->dxfIn (filename.c_str(), nullptr);
-        else
-            status = dwg->readDwgFile (filename.c_str(), acmode, convCodepage, pPassword);
+        try
+            {
+            if (IDwgDbHost::IsDxfFile(filename))
+                status = dwg->dxfIn (filename.c_str(), nullptr);
+            else
+                status = dwg->readDwgFile (filename.c_str(), acmode, convCodepage, pPassword);
+            }
+        catch (...)
+            {
+            this->_DebugPrintf (L"Exception thrown from AcDbDatabase::readDwgFile");
+            }
 
         switch (status)
             {

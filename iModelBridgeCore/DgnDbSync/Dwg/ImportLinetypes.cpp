@@ -153,7 +153,7 @@ size_t          LineStyleFactory::GetString (Utf8StringR outString, uint32_t seg
         }
     else
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::LinetypeError(), Utf8PrintfString("unsupported symbol type in linetype %s!", m_linetypeName.c_str()).c_str());
+        m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::LinetypeError(), Utf8PrintfString("unsupported symbol type in linetype %s!", m_linetypeName.c_str()).c_str());
         return  BSIERROR;
         }
 
@@ -170,7 +170,7 @@ DgnFontCP       LineStyleFactory::GetFont (DwgDbTextStyleTableRecordCR textStyle
 
     if (DwgDbStatus::Success != textStyle.GetFontInfo(fontInfo))
         {
-        m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::InconsistentData(), DwgImporter::Issue::LinetypeError(), m_linetypeName.c_str(), "can't find DWG font!");
+        m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::LinetypeError(), m_linetypeName.c_str(), "can't find DWG font!");
         dgnFont = m_importer.GetDefaultFont();
         if (nullptr == dgnFont)
             dgnFont = &DgnFontManager::GetAnyLastResortFont ();
@@ -180,7 +180,7 @@ DgnFontCP       LineStyleFactory::GetFont (DwgDbTextStyleTableRecordCR textStyle
         dgnFont = m_importer.GetDgnFontFor (fontInfo);
         if (nullptr == dgnFont)
             {
-            m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::InconsistentData(), DwgImporter::Issue::LinetypeError(), m_linetypeName.c_str(), "can't find font!");
+            m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::LinetypeError(), m_linetypeName.c_str(), "can't find font!");
             dgnFont = fontInfo.GetTypeFace().empty() ? &DgnFontManager::GetLastResortTrueTypeFont() : &DgnFontManager::GetLastResortShxFont();
             }
         }
@@ -200,7 +200,7 @@ BentleyStatus   LineStyleFactory::CreateTextString (TextStringPtr& dgnText, uint
     DwgDbTextStyleTableRecordPtr    dwgStyle(m_linetype->GetShapeStyleAt(segNo), DwgDbOpenMode::ForRead);
     if (dwgStyle.IsNull())
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantOpenObject(), Utf8PrintfString("failed opening a textstyle used in linetype[%ls]!", m_linetypeName.c_str()).c_str());
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("failed opening a textstyle used in linetype[%ls]!", m_linetypeName.c_str()).c_str());
         return  BSIERROR;
         }
 
@@ -491,7 +491,7 @@ LineStyleStatus LineStyleFactory::Create (DgnStyleId& styleId)
     {
     if (m_linetype.IsNull())
         {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingLinetype(), "??");
+        m_importer.ReportError (IssueCategory::Unknown(), Issue::MissingLinetype(), "??");
         return  LINESTYLE_STATUS_Error;
         }
 
@@ -550,7 +550,7 @@ LineStyleStatus LineStyleFactory::Create (DgnStyleId& styleId)
         // add the new style to DgnDb:
         if (BSISUCCESS != m_importer.GetDgnDb().LineStyles().Insert(styleId, m_linetypeName.c_str(), componentId, lsAttribs, scale))
             {
-            m_importer.ReportError (DwgImporter::IssueCategory::DiskIO(), DwgImporter::Issue::SaveError(), Utf8PrintfString("line style [%s]", m_linetypeName.c_str()).c_str());
+            m_importer.ReportError (IssueCategory::DiskIO(), Issue::SaveError(), Utf8PrintfString("line style [%s]", m_linetypeName.c_str()).c_str());
             status = LINESTYLE_STATUS_SQLITE_Error;
             }
         }
@@ -600,19 +600,19 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
     if (linetypeTable.IsNull())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = linetypeTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = linetypeTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     this->SetStepName (ProgressMessage::STEP_IMPORTING_LINETYPES());
 
     uint32_t    count = 0;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbLinetypeTableRecordPtr    linetype(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbLinetypeTableRecordPtr    linetype(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (linetype.IsNull())
             {
-            this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::CantOpenObject(), Utf8PrintfString("linetype ID=%ld", iter.GetRecordId().ToAscii()).c_str());
+            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("linetype ID=%ld", iter->GetRecordId().ToAscii()).c_str());
             continue;
             }
 

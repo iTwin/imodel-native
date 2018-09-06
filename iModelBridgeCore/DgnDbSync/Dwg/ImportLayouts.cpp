@@ -44,7 +44,7 @@ BentleyStatus   LayoutFactory::CalculateSheetSize (DPoint2dR sheetSize) const
     if (DwgDbStatus::Success != m_layout->GetPlotPaperSize(sheetSize))
         {
         // failed reading layout data!
-        m_importer.ReportError (DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::CantOpenObject(), Utf8PrintfString("layout %ls", m_layout->GetName().c_str()).c_str());
+        m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::CantOpenObject(), Utf8PrintfString("layout %ls", m_layout->GetName().c_str()).c_str());
         // default to 8.5 x 11.0
         sheetSize.Init (0.216, 0.279);
         return  BSIERROR;
@@ -117,11 +117,11 @@ DwgDbObjectId   LayoutFactory::FindOverallViewport (DwgDbBlockTableRecordCR bloc
     // an inactive layout does not have viewport, so we have to iterate through layout block and find the first viewport:
     DwgDbObjectId   firstViewportId;
     auto iter = block.GetBlockChildIterator ();
-    if (iter.IsValid())
+    if (iter.IsValid() || !iter->IsValid())
         {
-        for (iter.Start(); !iter.Done(); iter.Step())
+        for (iter->Start(); !iter->Done(); iter->Step())
             {
-            auto id = iter.GetEntityId ();
+            auto id = iter->GetEntityId ();
             if (id.IsValid() && id.GetDwgClass() == DwgDbViewport::SuperDesc())
                 {
                 firstViewportId = id;
@@ -223,13 +223,13 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     else
         {
         // import entities in database order:
-        DwgDbBlockChildIterator     entityIter = block.GetBlockChildIterator ();
-        if (!entityIter.IsValid())
+        DwgDbBlockChildIteratorPtr  entityIter = block.GetBlockChildIterator ();
+        if (!entityIter.IsValid() || !entityIter->IsValid())
             return  BSIERROR;
 
-        for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
+        for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
             {
-            DwgDbObjectId   id = entityIter.GetEntityId ();
+            DwgDbObjectId   id = entityIter->GetEntityId ();
             // import all entities except for the paperspace viewport itself
             if (id != overallViewportId)
                 {
@@ -248,6 +248,57 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
         m_dwgdb->SetPDSIZE (currentPDSIZE);
 
     return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgImporter::ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId)
+    {
+    // check all xRef's attached to the modelspace or a paperspace and return true if none is changed.
+    if (!this->IsUpdating())
+        return  false;
+
+    bool isModelspace = ownerSpaceId == m_modelspaceId;
+
+    // walk through all xref's we have cached
+    for (auto xref : m_loadedXrefFiles)
+        {
+        DwgDbDatabaseCP xrefDwg = nullptr;
+        if (isModelspace)
+            {
+            // lookup modelspace xref cache
+            for (auto xrefModelId : m_modelspaceXrefs)
+                {
+                if (xref.HasDgnModel(xrefModelId))
+                    {
+                    xrefDwg = xref.GetDatabaseP ();
+                    break;
+                    }
+                }
+            }
+        else
+            {
+            // lookup paperspace xref cache:
+            for (auto layoutXref : m_paperspaceXrefs)
+                {
+                if (ownerSpaceId == layoutXref.GetPaperSpaceId())
+                    {
+                    xrefDwg = xref.GetDatabaseP ();
+                    break;
+                    }
+                }
+            }
+        if (nullptr == xrefDwg)
+            continue;
+
+        // if an xref is detected to have been changed, do NOT skip the owner model:
+        if (!this->_GetChangeDetector()._ShouldSkipModel(*this, ownerModel, xrefDwg))
+            return  false;
+        }
+
+    // either no xRef is attached, or no change is detected in any xref file, we can skip the owner space.
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -307,23 +358,29 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
 
             if (changeDetector._ShouldSkipModel(*this, entry))
                 {
-                // before we skip this layout, record its viewport as seen:
-                DwgDbObjectIdArray  ids;
-                DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
-                if (layout.OpenStatus() == DwgDbStatus::Success && layout->GetViewports(ids) > 0)
-                    changeDetector._OnViewSeen (*this, this->GetSyncInfo().FindView(ids.front(), DwgSyncInfo::View::Type::PaperspaceViewport));
-                continue;
+                // no entity change is detected in this layout - check all xRef files attached to it:
+                if (this->ShouldSkipAllXrefs(entry, modelId))
+                    {
+                    // before we skip this layout, record its viewport as seen:
+                    DwgDbObjectIdArray  ids;
+                    DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
+                    if (layout.OpenStatus() == DwgDbStatus::Success && layout->GetViewports(ids) > 0)
+                        changeDetector._OnViewSeen (*this, this->GetSyncInfo().FindView(ids.front(), DwgSyncInfo::View::Type::PaperspaceViewport));
+                    continue;
+                    }
                 }
 
             // don't import an empty layout:
             auto iter = block->GetBlockChildIterator ();
-            iter.Start ();
-            if (iter.Done())
+            if (!iter.IsValid() || !iter->IsValid())
+                continue;
+            iter->Start ();
+            if (iter->Done())
                 continue;
 
             // even if the overall viewport exists, and it's the only entity in the block, the layout is treated as empty:
-            iter.Step ();
-            if (iter.Done() && !iter.GetEntityId().IsValid())
+            iter->Step ();
+            if (iter->Done() && !iter->GetEntityId().IsValid())
                 continue;
 
             DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);

@@ -72,6 +72,8 @@ $(o)DgnV8GeoCoord$(oext):  $(baseDir)DgnV8GeoCoord.cpp $(DgnDbSyncDepends) ${Mul
 
 $(o)Thumbnails$(oext):  $(baseDir)Thumbnails.cpp $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)RealityModelTilesets$(oext):  $(baseDir)RealityModelTilesets.cpp $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)ImportConfig$(oext):  $(baseDir)ImportConfig/ImportConfig.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)Converter$(oext):  $(baseDir)Converter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
@@ -187,6 +189,8 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLiteEC.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECObjects.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)Units.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
+
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnPlatform.lib
@@ -200,8 +204,11 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)ThreeMx.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)iModelBridge.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatformTools.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECPresentation.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib

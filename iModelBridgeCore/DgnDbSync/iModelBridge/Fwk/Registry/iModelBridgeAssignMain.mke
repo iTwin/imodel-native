@@ -2,7 +2,7 @@
 #
 #     $Source: iModelBridge/Fwk/Registry/iModelBridgeAssignMain.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -16,6 +16,12 @@ always:
     ~mkdir $(o)
 
 iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+dirToSearch  = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
+
+nameToDefine = __IMODEL_BRIDGE_FWK_BUILD__
+%include cdefapnd.mki
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 DLM_NAME        =% $(appName)
@@ -25,9 +31,11 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
 
-$(o)iModelBridgeAssignMain$(oext): $(baseDir)iModelBridgeAssignMain.cpp $(baseDir)iModelBridgeRegistry.h ${MultiCompileDepends}
+$(o)iModelBridgeAssignMain$(oext): $(baseDir)iModelBridgeAssignMain.cpp $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
 
-$(o)iModelBridgeRegistry$(oext): $(baseDir)iModelBridgeRegistry.cpp $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h $(baseDir)iModelBridgeRegistry.h ${MultiCompileDepends}
+$(o)iModelBridgeRegistry$(oext): $(baseDir)iModelBridgeRegistry.cpp $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
+
+$(o)iModelBridgeRegistryUtils$(oext): $(baseDir)iModelBridgeRegistryUtils.cpp $(iModelBridgeAPISrc)iModelBridgeFwkTypes.h $(iModelBridgePrivateAPISrc)iModelBridge/iModelBridgeRegistry.h ${MultiCompileDepends}
 
 $(o)cpl_spawn$(oext): $(baseDir)cpl_spawn.cpp $(baseDir)cpl_spawn.h ${MultiCompileDepends}
 

@@ -410,49 +410,41 @@ static void parseFlags(Json::Value& renderMaterials)
     renderMaterials[RENDER_MATERIAL_FlagHasExitColor                   ] = (0 != v8Flags.m_hasExitColor); 
     }
  
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Ray.Bentley     08/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap, DgnV8Api::DgnFile& v8File, bool pseudoBackgroundTransparency)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnTextureId Converter::FindOrInsertTextureImage(WCharCP inputFileName, DgnV8Api::DgnFile& v8File, bool pseudoBackgroundTransparency)
     {
-    JsonValueCR fileNameValue = textureMap[RENDER_MATERIAL_FileName];
+    // ###TODO: Couple of questions about original implementation of this function:
+    // - Don't we want to stick an invalid texture ID into our map to avoid repeatedly failing to create texture?
+    // - If a texture with the same Code already exists, don't we want to use that one instead of returning an invalid texture ID?
 
-    if (!fileNameValue.isString())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    WString fileName(fileNameValue.asCString());
-
+    WString fileName(inputFileName);
     fileName.ToLower();
     auto const& found = m_textureFileNameRemap.find(fileName);
-    if (found != m_textureFileNameRemap.end())      
-        {
-        textureMap.removeMember(RENDER_MATERIAL_FileName);
-        textureMap[RENDER_MATERIAL_TextureId] = Json::Value(found->second.GetValue());
-        return SUCCESS;
-        }
+    if (found != m_textureFileNameRemap.end())
+        return found->second;
 
+    DgnTextureId textureId;
     StatusInt status;
     auto foundFile  = DgnV8Api::MaterialManager::GetManagerR().FindTexture (fileName.c_str(), &v8File);
 
     if (foundFile.empty())
-        return ERROR;
+        return textureId;
 
     DgnDocumentMonikerPtr dgnDocMonikerPtr = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(foundFile.c_str(), nullptr);
 
     BeFileName fullPath(dgnDocMonikerPtr->ResolveFileName(&status).c_str());
     if (SUCCESS != status)
-        return ERROR;       // File can't be found.... leave as filename.
+        return textureId;       // File can't be found.... leave as filename.
 
     ByteStream textureBuffer;
     BeFile dataFile;
     if (BeFileStatus::Success != dataFile.Open(fullPath, BeFileAccess::Read))
-        return ERROR;
+        return textureId;
 
     if (BeFileStatus::Success != dataFile.ReadEntireFile(textureBuffer))
-        return ERROR;
+        return textureId;
 
     ImageSource imageSource;
 
@@ -473,7 +465,7 @@ BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap,
         if (SUCCESS != readToRgba(image, fullPath, pseudoBackgroundTransparency))
             {
             BeAssert(false);
-            return ERROR;
+            return textureId;
             }
         imageSource = ImageSource(image, ImageSource::Format::Png);
         }
@@ -481,29 +473,46 @@ BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap,
     if (!imageSource.IsValid())
         {
         BeAssert(false);
-        return ERROR;
+        return textureId;
         }
 
     Point2d size = imageSource.GetSize();
     DefinitionModelPtr definitionModel = GetJobDefinitionModel();
     if (!definitionModel.IsValid())
-        return ERROR;
+        return textureId;
 
     DgnTexture texture(DgnTexture::CreateParams(*definitionModel, Utf8String(fileName), imageSource, size.x, size.y));
     
     DgnDbStatus insertStatus = DgnDbStatus::Success;
     texture.Insert (&insertStatus);
     if (DgnDbStatus::DuplicateCode == insertStatus)
-        return ERROR; //Early exit to avoid assert when code already exists. (This happens in context of repeated DgnDbSync from bridge).
+        return textureId; //Early exit to avoid assert when code already exists. (This happens in context of repeated DgnDbSync from bridge).
 
-    DgnTextureId textureId = texture.GetTextureId();
+    textureId = texture.GetTextureId();
+    m_textureFileNameRemap[fileName] = textureId;
+    return textureId;
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     08/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap, DgnV8Api::DgnFile& v8File, bool pseudoBackgroundTransparency)
+    {
+    JsonValueCR fileNameValue = textureMap[RENDER_MATERIAL_FileName];
+
+    if (!fileNameValue.isString())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    WString fileName(fileNameValue.asCString());
+    auto textureId = FindOrInsertTextureImage(fileName.c_str(), v8File, pseudoBackgroundTransparency);
     if (!textureId.IsValid())
         return ERROR;
 
     textureMap.removeMember(RENDER_MATERIAL_FileName);
-    textureMap[RENDER_MATERIAL_TextureId] = textureId.GetValue();
-    m_textureFileNameRemap[fileName] = textureId;
+    textureMap[RENDER_MATERIAL_TextureId] = textureId.ToHexStr(); // ###INT64TOHEXSTR Was textureId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
 
     return SUCCESS;
     }

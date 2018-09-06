@@ -73,6 +73,7 @@
     <ClCompile Include="gtestmain.cpp" />
     <ClCompile Include="ImportConfigEditor.cpp" />
     <ClCompile Include="ImportConfigTests.cpp" />
+    <ClCompile Include="ItemTypeTests.cpp" />
     <ClCompile Include="LevelTests.cpp" />
     <ClCompile Include="ModelTests.cpp" />
     <ClCompile Include="NamedGroupTests.cpp" />
@@ -83,6 +84,7 @@
     <ClCompile Include="TextBlockTests.cpp" />
     <ClCompile Include="V8AttachmentTests.cpp" />
     <ClCompile Include="V8FileEditor.cpp" />
+    <ClCompile Include="ViewTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\PublicAPI\DgnDbSync\DgnDbSync.h" />

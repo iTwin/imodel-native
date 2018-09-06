@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/RasterConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -770,21 +770,28 @@ bool ComputeDepthBias(double& depthBias, DgnV8Api::Raster::DgnRaster& raster)
     return true;
     }
 
-//----------------------------------------------------------------------------------------t46
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool copyRaster)
+BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool copyRaster, bool isNewElement)
     {
     DgnModel& targetModel = v8mm.GetDgnModel();
     TransformCR dgnToBim = v8mm.GetTransform();
-    
+
+    DgnElementId existingId;
+    IChangeDetector::SearchResults changeInfo;
+    if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, v8mm) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
+        {
+        existingId = changeInfo.GetExistingElementId();
+        }
+
     if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
         {
         Utf8String filename;
         DgnV8Api::IRasterAttachmentQuery* pRasterQuery = dynamic_cast<DgnV8Api::IRasterAttachmentQuery*>(&v8eh.GetHandler());
         if (nullptr != pRasterQuery)
             filename.Assign(pRasterQuery->GetFilename(v8eh).c_str());
-            
+
         ReportIssueV(IssueSeverity::Info, IssueCategory::Filtering(), Issue::RasterFile(), nullptr, filename.c_str());
         return SUCCESS; // Raster import is disabled in the configuration file
         }
@@ -802,12 +809,12 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
 
     // In case that it wasn't called during model load.
     DgnV8Api::DgnPlatformLib::GetHost().GetRasterAttachmentAdmin()._LoadRasters(*v8eh.GetModelRef());
-    
+
     DgnV8Api::Raster::DgnRaster* rasterP = nullptr;
     mdlRaster_handleFromElementRefGet(&rasterP, v8eh.GetElementRef(), v8eh.GetModelRef());
 
     auto const& openParam = rasterP->GetOpenParams();
-    
+
     RasterFileInfo fileInfo;
     if (nullptr == rasterP || SUCCESS != mdlRaster_fileInfoGet(&fileInfo, rasterP))
         {
@@ -815,15 +822,15 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), filename.c_str());
         return ERROR;
         }
-            
+
     // Make sure we actually open the source file
-    if (fileInfo.fileStatus != SUCCESS/*RASTERFILE_STATUS_Opened*/ 
+    if (fileInfo.fileStatus != SUCCESS/*RASTERFILE_STATUS_Opened*/
         //&& fileInfo.fileStatus != 0x20 /*RASTERFILE_STATUS_InvalidPassword*/
         //&& fileInfo.fileStatus != 0x40 /*RASTERFILE_STATUS_InvalidAccessMode*/ 
         )
         {
         // Secure WMS failed to open because we need a user/password but we still want to convert them.
-        if(openParam.GetFilename().EndsWithI(L".xwms"))
+        if (openParam.GetFilename().EndsWithI(L".xwms"))
             {
             auto const& moniker = openParam.GetAttachMoniker();
             auto resolvedName(moniker.ResolveFileName());
@@ -832,9 +839,9 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
                 BeStringUtilities::Wcsncpy(fileInfo.szFilename, MAXFILELENGTH, resolvedName.c_str());
                 BeStringUtilities::Wcsncpy(fileInfo.szFileSpec, MAXFILELENGTH, resolvedName.c_str());
                 fileInfo.fileFormat = DgnV8Api::ImageFileFormat::IMAGEFILE_XWMS;
-                fileInfo.fileStatus = SUCCESS;                  
+                fileInfo.fileStatus = SUCCESS;
                 }
-            }        
+            }
         }
 
     if (fileInfo.fileStatus != SUCCESS)
@@ -845,7 +852,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         }
 
     // Write progress information to output window
-    SetTaskName (Converter::ProgressMessage::TASK_CONVERTING_RASTER(), Utf8String(fileInfo.szFilename).c_str());
+    SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_RASTER(), Utf8String(fileInfo.szFilename).c_str());
 
     DgnV8Api::IRasterAttachmentQuery* pRasterQuery = dynamic_cast<DgnV8Api::IRasterAttachmentQuery*>(&v8eh.GetHandler());
     if (nullptr == pRasterQuery)
@@ -886,10 +893,10 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             {
             // -- Set a depth bias for raster in the background plane
             double depthBias = 0.0;
-            if(ComputeDepthBias(depthBias, *rasterP))
+            if (ComputeDepthBias(depthBias, *rasterP))
                 pWmsModel->SetDepthBias(depthBias);
             pModel = pWmsModel.get();
-            }                
+            }
         }
     // -- Raster file model
     else
@@ -916,7 +923,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             {
             ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
             return ERROR;
-            }        
+            }
 
         // Compute depth bias and if required remove translation in Z.
         double depthBias = 0.0;
@@ -928,15 +935,23 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             // according to the display order.
             sourceToBim.coff[2][3] = 0.0;
             }
-            
-        // -- Raster file model creation.
-        Raster::RasterFileModelPtr pFileModel = CreateRasterFileModel(GetDgnDb(), localFilename.GetNameUtf8(), logicalName, description, &sourceToBim);
-        if (pFileModel.IsNull())
-            {
-            ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
-            return ERROR;
-            }
 
+        Raster::RasterFileModelPtr pFileModel;
+        if (!existingId.IsValid())
+            {
+            // -- Raster file model creation.
+            pFileModel = CreateRasterFileModel(GetDgnDb(), localFilename.GetNameUtf8(), logicalName, description, &sourceToBim);
+            if (pFileModel.IsNull())
+                {
+                ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
+                return ERROR;
+                }
+            }
+        else
+            {
+            pFileModel = GetDgnDb().Models().Get<Raster::RasterFileModel>(DgnModelId(existingId.GetValue()));
+            pFileModel->SetSourceToWorld(sourceToBim);
+            }
         //-- Convert clipping
         Raster::RasterClip clip;
         if (SUCCESS != ConvertV8Clips(clip, *pRasterQuery, v8eh, sourceToBim))
@@ -944,23 +959,42 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             // ignore clipping error and go on.
             }
         pFileModel->SetClip(clip);
-               
+
         // -- Set a depth bias for raster in the background plane
         if (needBias)
             pFileModel->SetDepthBias(depthBias);
-            
-        pModel = pFileModel.get();
-        }        
 
-    // -- Insert model
-    DgnDbStatus insertStatus = DgnDbStatus::Success;
-    if (DgnDbStatus::Success != (insertStatus = pModel->Insert()))
-        {
-        BeAssert((DgnDbStatus::LockNotHeld != insertStatus) && "Failed to get or retain necessary locks");
-        ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
-        return ERROR;
+        pModel = pFileModel.get();
         }
 
+    SyncInfo::ElementProvenance prov = SyncInfo::ElementProvenance(v8eh, GetSyncInfo(), GetCurrentIdPolicy());
+    SyncInfo::V8ElementMapping mapping = SyncInfo::V8ElementMapping(pModel->GetModeledElementId(), v8eh, v8mm.GetV8ModelSyncInfoId(), prov);
+    if (!existingId.IsValid())
+        {
+        // -- Insert model
+        DgnDbStatus insertStatus = DgnDbStatus::Success;
+        if (DgnDbStatus::Success != (insertStatus = pModel->Insert()))
+            {
+            BeAssert((DgnDbStatus::LockNotHeld != insertStatus) && "Failed to get or retain necessary locks");
+            ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
+            return ERROR;
+            }
+        m_syncInfo.InsertElement(mapping);
+        _GetChangeDetector()._OnElementSeen(*this, pModel->GetModeledElementId());
+        }
+    else
+        {
+        DgnDbStatus updateStatus;
+        if (DgnDbStatus::Success != (updateStatus = pModel->Update()))
+            {
+            BeAssert((DgnDbStatus::LockNotHeld != updateStatus) && "Failed to get or retain necessary locks");
+            ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), v8LocalFilename.GetNameUtf8().c_str());
+            return ERROR;
+            }
+        m_syncInfo.UpdateElement(mapping);
+        _OnElementConverted(mapping.GetElementId(), &v8eh, Converter::ChangeOperation::Update);
+
+        }
     // -- Enable display (or not) in views.    
     DgnCategoryId category = GetSyncInfo().GetCategory(v8eh, v8mm);
     for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb()))
@@ -978,8 +1012,19 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
         models.AddModel(pModel->GetModelId());
         models.Update();
         }
+    // Schedule reality model tileset creation.
+    AddModelRequiringRealityTiles(pModel->GetModelId(), v8LocalFilename.GetNameUtf8(), Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP()));
 
-    return SUCCESS;    
+    return SUCCESS;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+
+
+
+
+
+
+
+

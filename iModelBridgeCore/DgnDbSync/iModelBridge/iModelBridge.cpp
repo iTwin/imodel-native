@@ -9,7 +9,8 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
-#include <DgnPlatform/JsonUtils.h>
+#include <GeomJsonWireFormat/JsonUtils.h>
+#include <Bentley/BeNumerical.h>
 #include "iModelBridgeHelpers.h"
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -161,8 +162,6 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
-    iModelBridgeLockOutTxnMonitor prohibitTxnSave(*db);
-
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
         LOG.fatalv("Failed to populate new repository");
@@ -186,7 +185,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges)
+DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName)
     {
     // Try to open the BIM without permitting schema changes. That's the common case, and that's the only way we have
     // of detecting the case where we do have domain schema changes (by looking for an error result).
@@ -194,7 +193,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
     // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
 
     madeSchemaChanges = false;
-    auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    auto db = DgnDb::OpenDgnDb(&dbres, dbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     if (!db.IsValid())
         {
         if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
@@ -203,8 +202,8 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
         // We must do a schema upgrade.
         // Probably, the bridge registered some required domains, and they must be imported
         DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
-        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
-        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), oparams);
+        oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
+        db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
         if (!db.IsValid())
             return nullptr;
 
@@ -249,8 +248,6 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
             }
 
         _GetParams().SetJobSubjectId(jobsubj->GetElementId());
-
-        iModelBridgeLockOutTxnMonitor prohibitTxnSave(db);
 
         if (BSISUCCESS != _ConvertToBim(*jobsubj))
             {
@@ -632,7 +629,7 @@ bool iModelBridge::Params::IsFileAssignedToBridge(BeFileNameCR fn) const
     if (nullptr == m_documentPropertiesAccessor) // if there is no checker assigned, then assume that this is a standalone converter. It converts everything fed to it.
         return true;
     return m_documentPropertiesAccessor->_IsFileAssignedToBridge(fn, m_thisBridgeRegSubKey.c_str());
-	}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson              08/17
@@ -788,7 +785,9 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
     // the property on the JobSubject, so that the user and apps can see what the 
     // bridge configuration transform is.
     Transform jobSubjectTransform;
-    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans))
+    auto matrixTolerance = Angle::TinyAngle();
+    auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(jobTrans.ColumnXMagnitude());
+    if ((BSISUCCESS != JobSubjectUtils::GetTransform(jobSubjectTransform, jobSubject)) || !jobSubjectTransform.IsEqual(jobTrans, matrixTolerance, pointTolerance))
         {
         auto jobSubjectED = jobSubject.MakeCopy<Subject>();
         JobSubjectUtils::SetTransform(*jobSubjectED, jobTrans);
@@ -830,4 +829,76 @@ Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& pa
         }
     jobName = code.GetValueUtf8();
     return jobName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::IHttpHeaderProviderPtr iModelBridge::Params::GetDefaultHeaderProvider() const
+    {
+    if (m_jobRunCorrelationId.empty())
+        return nullptr;
+
+    Http::HttpRequestHeaders headers;
+    headers.SetValue("X-Correlation-ID", m_jobRunCorrelationId.c_str());
+    return Http::HttpHeaderProvider::Create(headers);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WebServices::ClientInfoPtr iModelBridge::Params::GetClientInfo() const
+    {
+    if (nullptr != m_clientInfo)
+        return m_clientInfo;
+    //Else provide a dummy default
+    static Utf8CP s_productId = "1654"; // Navigator Desktop
+    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
+    WebServices::ClientInfoPtr clientInfo = WebServices::ClientInfoPtr(
+        new WebServices::ClientInfo("Bentley-Test", BeVersion(1, 0), "{41FE7A91-A984-432D-ABCF-9B860A8D5360}", "TestDeviceId", "TestSystem", s_productId, GetDefaultHeaderProvider()));
+    return clientInfo;
+    }
+
+struct MemoryUsageAppData : DgnDb::AppData
+    {
+    int m_rowsChanged{};
+    static Key const& GetKey() { static Key s_key; return s_key; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment, int maxRowsChangedPerTxn)
+    {
+    MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
+
+    int rowsChanged = db.GetTotalModifiedRowCount();
+    if ((rowsChanged - lastCheck.m_rowsChanged) <= maxRowsChangedPerTxn)
+        return BSISUCCESS;
+
+    lastCheck.m_rowsChanged = rowsChanged;
+
+    auto status = db.SaveChanges(commitComment);
+    if (BE_SQLITE_OK != status)
+        return BSIERROR;
+
+    db.BriefcaseManager().StartBulkOperation();
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
+    {
+    MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
+
+    lastCheck.m_rowsChanged = db.GetTotalModifiedRowCount();
+
+    auto status = db.SaveChanges(commitComment);
+    if (BE_SQLITE_OK != status)
+        return BSIERROR;
+
+    db.BriefcaseManager().StartBulkOperation();
+    return BSISUCCESS;
     }

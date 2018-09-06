@@ -116,6 +116,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="Teigha"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/teigha"      Repository="bin-teigha"  />
+        <SubPart PartName="PSolid"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/psolid"      Repository="bin-psolid" />
         <SubPart PartName="GeomDlls"        PartFile="GeomLibs"                                     Repository="GeomLibs" />
         <Bindings>
             <Libs ProductDirectoryName="DwgDbLibs" Required="false">Delivery/OpenDwgImporter/$(libprefix)OpenDwgDbExchange$(libext)</Libs>
@@ -208,6 +209,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="RealDwg"         PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg" />
+        <SubPart PartName="PSolid"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/psolid"      Repository="bin-psolid" />
         <SubPart PartName="GeomDlls"        PartFile="Geomlibs"                                     Repository="GeomLibs" />
         <Bindings>
             <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
@@ -240,6 +242,7 @@
         <ProductDirectory Name="Assets"                     Path="Assets"                   RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="Assets"                     Path="Assets" LibType="static"  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="ConfigDir"                  Deliver="false" />
+        <ProductDirectory Name="DgnV8Dlls"                  Deliver="false" />
     </ProductDirectoryList>
 
 
@@ -292,6 +295,7 @@
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"                                      Repository="Bentley"/>
         <SubPart PartName="RealDwg2017"     PartFile="${SrcRoot}bsicommon/CvsPartFiles/realdwg"     Repository="bin-realdwg2017" />
+        <SubPart PartName="PSolid"          PartFile="${SrcRoot}bsicommon/CvsPartFiles/psolid"      Repository="bin-psolid" />
         <SubPart PartName="GeomDlls"        PartFile="Geomlibs"                                     Repository="GeomLibs" />
         <Bindings>
             <!-- Put the .lib file to a versioned sub-folder to avoid name collision -->
@@ -326,6 +330,7 @@
         <Bindings>
             <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/ImportXData.h</Files>
             <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/ImportXData.cpp</Files>
+            <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/SampleAffinity.cpp</Files>
             <Files ProductDirectoryName="SampleXData" Required="false">Delivery/Samples/XData/ImportXData.mke</Files>
         </Bindings>
     </Part>

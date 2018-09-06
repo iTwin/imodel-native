@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/DimensionTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -279,13 +279,13 @@ TEST_F(DimensionTests, NotetoSheet)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 2, 3);
+        countModels(*db, 2, 2);
 
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 5);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 3);
-        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle3d), 1);
+        countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_ModelSelector), 1);
 
         auto drawingele = db->Elements().Get<Drawing>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Drawing)));
         ASSERT_TRUE(drawingele.IsValid());
@@ -300,7 +300,7 @@ TEST_F(DimensionTests, NotetoSheet)
         ASSERT_EQ(1, idlist.size());
         BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic1 = db->Elements().Get<DrawingGraphic>(idlist[0]);
         ASSERT_TRUE(Dragraphic1.IsValid());
-        ASSERT_TRUE(Dragraphic1->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0, 0, 1, 0)));
+        ASSERT_TRUE(Dragraphic1->GetPlacement().GetElementBox().IsEqual(BentleyApi::ElementAlignedBox2d(0, 0, 1, 0)));
 
         Sheet::ElementCPtr sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
         ASSERT_TRUE(sheet.IsValid());

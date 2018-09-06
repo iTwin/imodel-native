@@ -29,6 +29,27 @@ bool        DwgString::StartsWithI (WCharCP suffix) const
         }
     return  true;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool        DwgString::IsAscii () const
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    auto nChars = T_Super::getLength ();
+    auto* chars = T_Super::c_str ();
+    if (nChars < 1 || nullptr == chars || 0 == chars[0])
+        return  false;
+
+    for (int i = 0; i < nChars; i++)
+        {
+        if (chars[i] < 0x20 || chars[i] > 0x7F)
+            return  false;
+        }
+    return  true;
+#elif DWGTOOLKIT_RealDwg
+    return T_Super::isAscii ();
+#endif
+    }
 int         DwgString::GetLength () const   { return DWGDB_CALLSDKMETHOD(getLength, length)(); }
 bool        DwgString::IsEmpty () const     { return DWGDB_CALLSDKMETHOD(isEmpty, isEmpty) (); }
 bool        DwgString::EqualsI (WCharCP o) const { return DWGDB_CALLSDKMETHOD(0==T_Super::iCompare, 0==T_Super::compareNoCase) (o); }
@@ -44,6 +65,7 @@ size_t      DwgString::GetBufferSize () const { return this->GetLength()*sizeof(
 DwgStringR  DwgString::operator             = (DwgStringCR str) { this->Assign(str.c_str()); return *this; }
             DwgString::operator             const wchar_t* () const { return reinterpret_cast<const wchar_t*>(DWGDB_CALLSDKMETHOD(T_Super::c_str(), T_Super::kwszPtr())); }
 DwgString::DwgString (WCharCP chars)        { this->Assign(chars); }
+DwgString::DwgString (Utf8StringCR in) : DWGDB_CALLSDKMETHOD(T_Super(in.c_str(),OdCodePageId::CP_CNT),T_Super(in.c_str(),Encoding::Utf8)) {}
 DwgString::~DwgString ()                    { ; }
 
 uint32_t    DwgCmColor::GetMRGB () const        { return static_cast<uint32_t>(T_Super::color()); }

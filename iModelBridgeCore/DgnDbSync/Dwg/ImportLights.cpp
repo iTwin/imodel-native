@@ -185,14 +185,14 @@ BentleyStatus   DwgLightExt::ConvertLightParameters (Lighting::ParametersR light
             }
         case DwgGiDrawable::DrawableType::WebLight:
             lightParams.SetType (Lighting::LightType::Point);
-            m_importer->ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("IES light %ls", m_dwgLight->GetName().c_str()).c_str());
+            m_importer->ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::Message(), Utf8PrintfString("IES light %ls", m_dwgLight->GetName().c_str()).c_str());
             break;
         case DwgGiDrawable::DrawableType::SkyBackground:
         case DwgGiDrawable::DrawableType::ImageBasedLightingBackground:
             lightParams.SetType (Lighting::LightType::SkyOpening);
             break;
         default:
-            m_importer->ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("light entity %ls", m_dwgLight->GetName().c_str()).c_str());
+            m_importer->ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::Unsupported(), Issue::Message(), Utf8PrintfString("light entity %ls", m_dwgLight->GetName().c_str()).c_str());
             return  BSIERROR;
         }
 

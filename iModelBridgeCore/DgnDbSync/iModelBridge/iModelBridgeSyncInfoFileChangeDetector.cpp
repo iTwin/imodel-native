@@ -269,8 +269,13 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
             return BentleyStatus::ERROR;
         }
 
-    return m_si.WriteResults(changeDetectorResults.GetSyncInfoRecord().GetROWID(), conversionResults, 
+    BentleyStatus sistatus = m_si.WriteResults(changeDetectorResults.GetSyncInfoRecord().GetROWID(), conversionResults, 
                              changeDetectorResults.GetSourceIdentity(), changeDetectorResults.GetCurrentState(), *this);
+
+    if (BSISUCCESS != sistatus)
+        return sistatus;
+
+    return iModelBridge::SaveChangesToConserveMemory(GetDgnDb());
     }
 
 //---------------------------------------------------------------------------------------

@@ -630,20 +630,30 @@ class SupplyBlankPassword : public DgnV8Api::DgnFileSupplyRights
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/17
+* @bsimethod                                    Abeesh.Basheer                  08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Converter::CheckCanOpenFile(BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& thisLibraryPath)
+void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath)
     {
     static std::once_flag s_initOnce;
-    std::call_once(s_initOnce, [&] 
-        {
+    std::call_once(s_initOnce, [&]
+    {
         BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
         dllDirectory.AppendToPath(L"DgnV8");
-        Converter::SetDllSearchPath(dllDirectory);
+        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
+        realdwgDirectory.AppendToPath(L"RealDwg");
+        Converter::SetDllSearchPath(dllDirectory, &realdwgDirectory);
 
-        DgnV8Api::DgnPlatformLib::Initialize (*new MinimalV8Host, true);
-        });
+        initializeV8HostConfigVars(Bentley::BeFileName(dllDirectory.c_str()), 0, nullptr);
+        DgnV8Api::DgnPlatformLib::Initialize(*new MinimalV8Host, true);
+        Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
+    });
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName)
+    {
     //  The generic V8 bridge has an affinity to any file that V8 can open.
 
     DgnV8Api::DgnFileStatus openStatus;
@@ -668,7 +678,29 @@ BentleyStatus Converter::CheckCanOpenFile(BentleyApi::BeFileName const& sourceFi
     if (DgnV8Api::DGNFILE_STATUS_Success == openStatus && !file->HasDigitalRight(DgnV8Api::DgnFile::DIGITAL_RIGHT_Export))
         openStatus = DgnV8Api::DGNFILE_ERROR_RightNotGranted;
 
-    return (SUCCESS == openStatus)? BSISUCCESS: BSIERROR;
+    if (SUCCESS != openStatus)
+        return BSIERROR;
+    
+    Bentley::WString applicationName;
+    if (SUCCESS == file->GetAuthoringProductName(applicationName))
+        {
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, applicationName.c_str());
+        affinityLevel = iModelBridge::Affinity::ExactMatch;
+        return BSISUCCESS;
+        }
+
+#ifdef USEABDFILECHECKER
+    if (dgnFile_isABDFile(file))
+        {
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"AECOsimBuildingDesigner");
+        affinityLevel = BentleyB0200::Dgn::iModelBridge::Affinity::ExactMatch;
+        return BSISUCCESS;
+        }
+#endif
+
+    affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
+    BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -688,5 +720,41 @@ void XDomain::UnRegister(XDomain& xd)
     if (i != XDomainRegistry::s_xdomains.end())
         XDomainRegistry::s_xdomains.erase(i);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr)
+    {
+    affinityLevel = BentleyB0200::Dgn::iModelBridge::Affinity::None;
+
+    BentleyB0200::BeFileName affinityLibraryPath(affinityLibraryPathStr);
+    InitializeDgnv8Platform(affinityLibraryPath);
+
+    // if no file handler recognizes this file, don't bother loading it:
+    DgnFileFormatType   format = DgnFileFormatType::Invalid;
+    if (!Bentley::dgnFileObj_validateFile(&format, nullptr, nullptr, nullptr, nullptr, nullptr, sourceFileNameStr))
+        return;
+
+    // Foreign file formats do not have authoring file info - don't load them:
+    if (format != DgnFileFormatType::V8 && format != DgnFileFormatType::V7)
+        {
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
+#ifdef USEABDFILECHECKER
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"AECOsimBuildingDesigner");
+#else
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+#endif
+        return;
+        }
+
+    BentleyB0200::BeFileName sourceFileName(sourceFileNameStr);
+    
+    if (BSISUCCESS != Converter::GetAuthoringFileInfo(buffer, bufferSize, affinityLevel, sourceFileName))
+        {
+        //Log error.
+        }
+    }
+
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

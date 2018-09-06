@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgDb/DwgDbCompileOptions.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #
@@ -100,6 +100,7 @@ ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
 
 ToolkitRoot         = $(BuildContext)VendorAPI/Realdwg$(VendorVersion)/
 ToolkitCoreInc      = $(ToolkitRoot)
+ToolkitBaseInc      = $(ToolkitCoreInc)RealDwg/Base/
 ToolkitLibs         = $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/
 
 %if defined(MSVC_VERSION)
@@ -120,6 +121,10 @@ CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -DVendorVersion=$(VendorVersion)
 #----------------------------------------------------------------------------------------
 %if defined(ToolkitCoreInc)
     cIncs + -I$(ToolkitCoreInc)
+%endif
+%if defined(ToolkitBaseInc)
+    # Needed for brep header files!
+    cIncs + -I$(ToolkitBaseInc)
 %endif
 %if defined(ToolkitDrawingInc)
     cIncs + -I$(ToolkitDrawingInc)

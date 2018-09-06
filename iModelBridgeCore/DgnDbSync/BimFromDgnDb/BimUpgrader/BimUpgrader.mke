@@ -1,0 +1,62 @@
+#----------------------------------------------------------------------
+#
+#     $Source: BimFromDgnDb/BimUpgrader/BimUpgrader.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+cdefs + -D__BIMUPGRADER_BUILD__
+%include mdl.mki
+
+appName     = BimUpgrader
+baseDir     = $(_MakeFilePath)
+
+o = $(OutputRootDir)Build/BimFromDgnDb/$(appName)/
+always:
+    ~mkdir $(o)
+
+PublicApi = $(SrcRoot)DgnDbSync/PublicApi/BimFromDgnDb/
+
+HeaderFiles = $(PublicApi)BimFromDgnDb.h $(PublicApi)BimFromDgnDbAPI.h
+
+$(o)BimUpgrader.obj: $(baseDir)BimUpgrader.cpp $(HeaderFiles) $(baseDir)BimUpgrader.h
+
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+DgnDbLibs=$(BuildContext)SubParts/DgnDbLibs/
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(o)BimUpgrader.obj
+EXE_LOPT1    = -entry:wmainCRTStartup
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnDb0601ToJson.lib
+LINKER_LIBRARIES  + $(BuildContext)Delivery/BimFromJson.lib
+LINKER_LIBRARIES  + $(BuildContext)Delivery/BimFromDgnDb.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLiteEC.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeFolly.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES  + user32.lib
+
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+
+# *** NB: Keep the name of the logging config file consistent
+$(BuildContext)Delivery/$(appName).logging.config.xml : $(baseDir)../logging.config.xml
+    $(LinkFirstDepToFirstTarget)
+
