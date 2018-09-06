@@ -36,23 +36,29 @@ struct ECPresentationResult
 private:
     ECPresentationStatus m_status;
     rapidjson::Document m_successResponse;
+    Json::Value m_jsoncppSuccessResponse;
     Utf8String m_errorMessage;
+    bool m_isJsonCppResponse;
 
 public:
     //! Create a success result with response
-    ECPresentationResult(rapidjson::Document&& successResponse) : m_status(ECPresentationStatus::Success), m_successResponse(std::move(successResponse)) {}
+    ECPresentationResult(rapidjson::Document&& successResponse) : m_status(ECPresentationStatus::Success), m_successResponse(std::move(successResponse)), m_isJsonCppResponse(false) {}
     //! Create a success result with response
-    ECPresentationResult(rapidjson::Value&& successResponse) : m_status(ECPresentationStatus::Success) {successResponse.Swap(m_successResponse);}
+    ECPresentationResult(rapidjson::Value&& successResponse) : m_status(ECPresentationStatus::Success), m_isJsonCppResponse(false) {successResponse.Swap(m_successResponse);}
+    //! Create a success result with response
+    ECPresentationResult(Json::Value&& successResponse) : m_status(ECPresentationStatus::Success), m_jsoncppSuccessResponse(std::move(successResponse)), m_isJsonCppResponse(true) {}
     //! Create a succes result with no response
-    ECPresentationResult(): m_status(ECPresentationStatus::Success) {m_successResponse.SetNull();}
+    ECPresentationResult(): m_status(ECPresentationStatus::Success), m_isJsonCppResponse(false) {m_successResponse.SetNull();}
 
     //! Create an error result
     ECPresentationResult(ECPresentationStatus errorCode, Utf8String message) : m_status(errorCode), m_errorMessage(message) {}
 
     bool IsError() const {return ECPresentationStatus::Success != m_status;}
+    bool IsJsonCppResponse() const {return m_isJsonCppResponse;}
     ECPresentationStatus GetStatus() const {return m_status;}
     Utf8StringCR GetErrorMessage() const {return m_errorMessage;}
     rapidjson::Document const& GetSuccessResponse() const {return m_successResponse;}
+    JsonValueCR GetJsonCppSuccessResponse() const {return m_jsoncppSuccessResponse;}
 };
 
 //=======================================================================================
@@ -65,9 +71,10 @@ struct ECPresentationUtils
     static ECPresentationResult SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
     static ECPresentationResult SetupLocaleDirectories(bvector<Utf8String> const&);
 
-    static ECPresentationResult AddRuleSet(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);
-    static ECPresentationResult RemoveRuleSet(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
-    static ECPresentationResult ClearRuleSets(SimpleRuleSetLocater&);
+    static ECPresentationResult GetRulesets(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
+    static ECPresentationResult AddRuleset(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);
+    static ECPresentationResult RemoveRuleset(SimpleRuleSetLocater&, Utf8StringCR ruleSetId, Utf8StringCR hash);
+    static ECPresentationResult ClearRulesets(SimpleRuleSetLocater&);
 
     static folly::Future<ECPresentationResult> GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params);
     static folly::Future<ECPresentationResult> GetRootNodes(IECPresentationManagerR, ECDbR, JsonValueCR params);
@@ -83,8 +90,8 @@ struct ECPresentationUtils
     static folly::Future<ECPresentationResult> GetNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params);
     static folly::Future<ECPresentationResult> GetFilteredNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params);
 
-    static ECPresentationResult SetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR value);
-    static ECPresentationResult GetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR settingType);
+    static ECPresentationResult SetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType, JsonValueCR value);
+    static ECPresentationResult GetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType);
 
 };
 

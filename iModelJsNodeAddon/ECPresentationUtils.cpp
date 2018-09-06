@@ -57,7 +57,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         json.AddMember("params", paramsJson, json.GetAllocator());
         return json;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -150,39 +150,39 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     void _AsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const override
         {
         fieldBaseJson.AddMember("contentClassInfo", _AsJson(nestedContentField.GetContentClass(), &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-        fieldBaseJson.AddMember("pathToPrimary", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        fieldBaseJson.AddMember("pathToPrimaryClass", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
 
         rapidjson::Value nestedFieldsJson(rapidjson::kArrayType);
         for (ContentDescriptor::Field const* nestedField : nestedContentField.GetFields())
             nestedFieldsJson.PushBack(nestedField->AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("nestedFields", nestedFieldsJson, fieldBaseJson.GetAllocator());
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::DisplayLabelField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::CalculatedPropertyField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::SystemField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::ECInstanceKeyField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void _AsJson(ContentDescriptor::ECNavigationInstanceIdField const&, RapidJsonDocumentR) const override {}
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                04/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1018,7 +1018,7 @@ private:
             {
             BeAssert(false);
             return json;
-            }    
+            }
         bvector<Byte> data;
         if (BeFileStatus::Success != file.ReadEntireFile(data))
             {
@@ -1061,7 +1061,7 @@ private:
         {
         if (m_localeDirectories.empty() || locale.empty())
             return nullptr;
-        
+
         rapidjson::Document* json = new rapidjson::Document();
         json->SetObject();
         bvector<BeFileName> filePaths = GetLocalizationFilePaths(locale, ns);
@@ -1085,7 +1085,7 @@ protected:
         size_t pos;
         if (Utf8String::npos == (pos = key.GetNextToken(ns, ":", 0)))
             return false;
-        
+
         auto localeIter = m_cache.find(locale);
         if (m_cache.end() == localeIter)
             localeIter = m_cache.Insert(locale, bmap<Utf8String, rapidjson::Document*>()).first;
@@ -1097,7 +1097,7 @@ protected:
         rapidjson::Value const* curr = namespaceIter->second;
         if (nullptr == curr)
             return false;
-        
+
         Utf8String id(key.begin() + pos, key.end());
         bvector<Utf8String> idPath;
         BeStringUtilities::Split(id.c_str(), ".", idPath);
@@ -1157,7 +1157,7 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager::Params params(connections, paths);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(params);
-    
+
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
 
@@ -1187,30 +1187,57 @@ ECPresentationResult ECPresentationUtils::SetupLocaleDirectories(bvector<Utf8Str
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationResult ECPresentationUtils::GetRulesets(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId)
+    {
+    bvector<PresentationRuleSetPtr> rulesets = locater.LocateRuleSets(rulesetId.c_str());
+    Json::Value json(Json::arrayValue);
+    for (PresentationRuleSetPtr const& ruleset : rulesets)
+        {
+        Json::Value hashedRulesetJson;
+        hashedRulesetJson["ruleset"] = ruleset->WriteToJsonValue();
+        hashedRulesetJson["hash"] = ruleset->GetHash();
+        json.append(hashedRulesetJson);
+        }
+    return ECPresentationResult(std::move(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
+ECPresentationResult ECPresentationUtils::AddRuleset(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
     {
     PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromJsonString(rulesetJsonString);
     if (ruleset.IsNull())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Failed to create rule set from serialized JSON");
     locater.AddRuleSet(*ruleset);
-    return ECPresentationResult();
+    rapidjson::Document result;
+    result.SetString(ruleset->GetHash().c_str(), result.GetAllocator());
+    return ECPresentationResult(std::move(result));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::RemoveRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR ruleSetId)
+ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& locater, Utf8StringCR rulesetId, Utf8StringCR hash)
     {
-    locater.RemoveRuleSet(ruleSetId);
-    return ECPresentationResult();
+    bvector<PresentationRuleSetPtr> rulesets = locater.LocateRuleSets(rulesetId.c_str());
+    for (PresentationRuleSetPtr const& ruleset : rulesets)
+        {
+        if (ruleset->GetHash().Equals(hash))
+            {
+            locater.RemoveRuleSet(rulesetId);
+            return ECPresentationResult(rapidjson::Value(true));
+            }
+        }
+    return ECPresentationResult(rapidjson::Value(false));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& locater)
+ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& locater)
     {
     locater.Clear();
     return ECPresentationResult();
@@ -1264,35 +1291,32 @@ static PageOptions GetPageOptions(JsonValueCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR settingType)
+ECPresentationResult ECPresentationUtils::GetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType)
     {
     rapidjson::Document response;
     IUserSettings& settings = manager.GetUserSettings().GetSettings(rulesetId);
 
-    if (settingType.Equals("bool"))
-        response.SetBool(settings.GetSettingBoolValue(settingId.c_str()));
-    else if(settingType.Equals("string"))
-        response.SetString(settings.GetSettingValue(settingId.c_str()).c_str(), response.GetAllocator());
-    else if (settingType.Equals("int"))
-        response.SetInt64(settings.GetSettingIntValue(settingId.c_str()));
-    else if (settingType.Equals("intArray"))
+    if (variableType.Equals("bool"))
+        response.SetBool(settings.GetSettingBoolValue(variableId.c_str()));
+    else if(variableType.Equals("string"))
+        response.SetString(settings.GetSettingValue(variableId.c_str()).c_str(), response.GetAllocator());
+    else if (variableType.Equals("int"))
+        response.SetInt64(settings.GetSettingIntValue(variableId.c_str()));
+    else if (variableType.Equals("int[]"))
         {
         response.SetArray();
-        bvector<int64_t> intValues = settings.GetSettingIntValues(settingId.c_str());
+        bvector<int64_t> intValues = settings.GetSettingIntValues(variableId.c_str());
         for (int64_t value : intValues)
             response.PushBack(value, response.GetAllocator());
         }
-    else if (settingType.Equals("id64Array"))
+    else if (variableType.Equals("id64"))
+        response.SetString(BeInt64Id(settings.GetSettingIntValue(variableId.c_str())).ToHexStr().c_str(), response.GetAllocator());
+    else if (variableType.Equals("id64[]"))
         {
-        bvector<int64_t> intValues = settings.GetSettingIntValues(settingId.c_str());
         response.SetArray();
-        
+        bvector<int64_t> intValues = settings.GetSettingIntValues(variableId.c_str());
         for (int64_t value : intValues)
             response.PushBack(rapidjson::Value(BeInt64Id(value).ToHexStr().c_str(), response.GetAllocator()), response.GetAllocator());
-        }
-    else if (settingType.Equals("id64"))
-        {
-        response.SetString(BeInt64Id(settings.GetSettingIntValue(settingId.c_str())).ToHexStr().c_str(), response.GetAllocator());
         }
     else
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
@@ -1302,38 +1326,30 @@ ECPresentationResult ECPresentationUtils::GetUserSetting(RulesDrivenECPresentati
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::SetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR value)
+ECPresentationResult ECPresentationUtils::SetRulesetVariableValue(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR variableId, Utf8StringCR variableType, JsonValueCR value)
     {
-    rapidjson::Document jsonObject;
-    jsonObject.Parse(value.c_str());
-    rapidjson::Value& jsonValue = jsonObject["value"];
-    if (jsonValue.IsNull())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "value");
-
-    Utf8StringCR settingType = jsonObject["type"].GetString();
     IUserSettings& settings = manager.GetUserSettings().GetSettings(rulesetId);
-
-    if (settingType.Equals("bool"))
-        settings.SetSettingBoolValue(settingId.c_str(), jsonValue.GetBool());
-    else if (settingType.Equals("string"))
-        settings.SetSettingValue(settingId.c_str(), jsonValue.GetString());
-    else if (settingType.Equals("id64"))
-        settings.SetSettingIntValue(settingId.c_str(), BeInt64Id::FromString(jsonValue.GetString()).GetValue());
-    else if (settingType.Equals("id64Array"))
+    if (variableType.Equals("bool"))
+        settings.SetSettingBoolValue(variableId.c_str(), value.asBool());
+    else if (variableType.Equals("string"))
+        settings.SetSettingValue(variableId.c_str(), value.asCString());
+    else if (variableType.Equals("id64"))
+        settings.SetSettingIntValue(variableId.c_str(), BeInt64Id::FromString(value.asCString()).GetValue());
+    else if (variableType.Equals("id64[]"))
         {
         bvector<int64_t> values;
-        for (rapidjson::SizeType i = 0; i < jsonValue.Size(); i++)
-            values.push_back(BeInt64Id::FromString(jsonValue[i].GetString()).GetValue());
-        settings.SetSettingIntValues(settingId.c_str(), values);
+        for (Json::ArrayIndex i = 0; i < value.size(); i++)
+            values.push_back(BeInt64Id::FromString(value[i].asCString()).GetValue());
+        settings.SetSettingIntValues(variableId.c_str(), values);
         }
-    else if(settingType.Equals("int"))
-        settings.SetSettingIntValue(settingId.c_str(), jsonValue.GetInt64());
-    else if (settingType.Equals("intArray"))
+    else if(variableType.Equals("int"))
+        settings.SetSettingIntValue(variableId.c_str(), value.asInt64());
+    else if (variableType.Equals("int[]"))
         {
         bvector<int64_t> values;
-        for (rapidjson::SizeType i = 0; i < jsonValue.Size(); i++)
-            values.push_back(jsonValue[i].GetInt64());
-        settings.SetSettingIntValues(settingId.c_str(), values);
+        for (Json::ArrayIndex i = 0; i < value.size(); i++)
+            values.push_back(value[i].asInt64());
+        settings.SetSettingIntValues(variableId.c_str(), values);
         }
     else
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
@@ -1394,7 +1410,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPre
                 BeAssert(false);
                 return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
                 }
-            
+
             return manager.GetChildrenCount(db, *parentNode, options)
                 .then([](size_t count)
                     {
@@ -1445,7 +1461,7 @@ folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPrese
     JsonValueCR keyArraysJson = params["paths"];
     if (!keyArraysJson.isArray())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "paths");
-    
+
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     Json::Value options = GetNavigationOptions(params).GetJson();
     for (Json::ArrayIndex x = 0; x < keyArraysJson.size(); x++)
@@ -1633,7 +1649,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "fieldName");
     if (!params.isMember("maximumValueCount"))
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "maximumValueCount");
-    
+
     IConnectionCP connection = manager.Connections().GetConnection(db);
     JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
     Json::Value options = GetContentOptions(params).GetJson();
@@ -1653,7 +1669,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDistinctValues(IECPr
                     overridenDescriptor->RemoveField(field->GetName().c_str());
                 }
             overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
-        
+
             return manager.GetContent(*overridenDescriptor, PageOptions())
                 .then([fieldName, maximumValueCount](ContentCPtr content)
                 {

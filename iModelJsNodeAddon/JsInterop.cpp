@@ -285,7 +285,7 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
         Utf8CP dbdirenv = getenv("NODE_DGNDB_DIR");
 #else
-        auto mobileDir = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory().GetNameUtf8();        
+        auto mobileDir = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName().GetNameUtf8();
         Utf8CP dbdirenv = mobileDir.c_str();
 #endif
         if (nullptr != dbdirenv)
@@ -300,7 +300,7 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
             }
             
         pathname = dbDir;
-        pathname.AppendToPath(L"../../Assets/");
+        pathname.AppendToPath(L"../Documents/");
         pathname.AppendToPath(fileOrPathname.c_str());
         }
 
