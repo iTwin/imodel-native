@@ -117,8 +117,7 @@ public:
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
     static void GetTileTree(DgnDbR db, Utf8StringCR id, Napi::Function& callback);
-    static DgnDbStatus GetTileChildren(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR parentId);
-    static DgnDbStatus GetTileContent(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId);
+    static void GetTileContent(DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
 
     static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);

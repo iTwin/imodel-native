@@ -1115,30 +1115,13 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         JsInterop::GetTileTree(GetDgnDb(), idStr, responseCallback);
         }
 
-    Napi::Value GetTileChildren(Napi::CallbackInfo const& info)
+    void GetTileContent(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_STRING(0, treeIdStr, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, tileIdStr, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(0, treeIdStr, );
+        REQUIRE_ARGUMENT_STRING(1, tileIdStr, );
+        REQUIRE_ARGUMENT_FUNCTION(2, responseCallback, );
 
-        Json::Value output;
-        auto status = JsInterop::GetTileChildren(output, GetDgnDb(), treeIdStr, tileIdStr);
-        
-        Napi::Value jsValue = NapiUtils::Convert(Env(), output);
-        return CreateBentleyReturnObject(status, jsValue);
-        }
-
-    Napi::Value GetTileContent(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_STRING(0, treeIdStr, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, tileIdStr, Env().Undefined());
-
-        Json::Value output;
-        auto status = JsInterop::GetTileContent(output, GetDgnDb(), treeIdStr, tileIdStr);
-        
-        Napi::Value jsValue = NapiUtils::Convert(Env(), output);
-        return CreateBentleyReturnObject(status, jsValue);
+        JsInterop::GetTileContent(GetDgnDb(), treeIdStr, tileIdStr, responseCallback);
         }
 
     Napi::Value InsertLinkTableRelationship(Napi::CallbackInfo const& info)
@@ -1798,7 +1781,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
             InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
-            InstanceMethod("getChildren", &NativeDgnDb::GetTileChildren),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
@@ -3498,11 +3480,72 @@ void JsInterop::GetTileTree(DgnDbR db, Utf8StringCR idStr, Napi::Function& callb
         {
         auto retval = NapiUtils::CreateBentleyReturnErrorObject(status, nullptr, Env());
         callback.Call({retval});
-        return;
         }
+    else
+        {
+        auto worker = new GetTileTreeWorker(callback, *model, treeId);
+        worker->Queue();
+        }
+    }
 
-    auto worker = new GetTileTreeWorker(callback, *model, treeId);
-    worker->Queue();
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct GetTileContentWorker : TileWorker
+{
+private:
+    Tile::ContentId m_contentId;
+
+    void Execute() final
+        {
+        auto tree = FindTileTree();
+        Tile::ContentCPtr content = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
+        if (content.IsNull())
+            {
+            m_status = DgnDbStatus::NotFound;
+            return;
+            }
+
+        m_status = DgnDbStatus::Success;
+
+        // ###TODO: Return a Uint8Array rather than base64-encoded string...
+        ByteStreamCR geometry = content->GetBytes();
+        Utf8String base64;
+        Base64Utilities::Encode(base64, geometry.GetData(), geometry.size());
+        m_result = base64;
+        }
+public:
+    GetTileContentWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId, Tile::ContentId contentId) : TileWorker(callback, model, treeId), m_contentId(contentId) { }
+
+    static DgnDbStatus ParseInputs(GeometricModelPtr& model, Tile::Tree::Id& treeId, Tile::ContentIdR contentId, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr)
+        {
+        auto status = TileWorker::ParseInputs(model, treeId, db, treeIdStr);
+        if (DgnDbStatus::Success == status && !contentId.FromString(contentIdStr.c_str()))
+            status = DgnDbStatus::InvalidId;
+
+        return status;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::GetTileContent(DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR tileIdStr, Napi::Function& callback)
+    {
+    GeometricModelPtr model;
+    Tile::Tree::Id treeId;
+    Tile::ContentId contentId;
+    DgnDbStatus status = GetTileContentWorker::ParseInputs(model, treeId, contentId, db, treeIdStr, tileIdStr);
+    if (DgnDbStatus::Success != status)
+        {
+        auto retval = NapiUtils::CreateBentleyReturnErrorObject(status, nullptr, Env());
+        callback.Call({retval});
+        }
+    else
+        {
+        auto worker = new GetTileContentWorker(callback, *model, treeId, contentId);
+        worker->Queue();
+        }
     }
 
 //=======================================================================================
