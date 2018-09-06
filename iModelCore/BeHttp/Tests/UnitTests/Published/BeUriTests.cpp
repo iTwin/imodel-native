@@ -223,3 +223,44 @@ TEST_F(BeUriTests, UnescapeString_Strings_UnescapedReturned)
     EXPECT_STREQ("/-+*", BeUri::UnescapeString("/-+*").c_str());
     EXPECT_STREQ("/-+*", BeUri::UnescapeString("%2F-%2B%2A").c_str());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                      Robert.Lukasonok                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeUriTests, Ctor_ValidPortNumberSpecified_ValidUri)
+    {
+#define EXPECT_VALID_PORT(port)              \
+do {                                         \
+BeUri uri(Utf8String("foo://bar:") + #port); \
+EXPECT_TRUE(uri.IsValid());                  \
+EXPECT_EQ(port, uri.GetPort());              \
+} while(false)
+
+    EXPECT_VALID_PORT(0);
+    EXPECT_VALID_PORT(123);
+    EXPECT_VALID_PORT(65535); // 2^16 - 1
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                      Robert.Lukasonok                08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BeUriTests, Ctor_InvalidPortNumberSpecified_InValidUri)
+    {
+#define EXPECT_INVALID_PORT(port)           \
+do {                                        \
+BeUri uri(Utf8String("foo://bar:") + port); \
+EXPECT_FALSE(uri.IsValid());                \
+EXPECT_EQ(-1, uri.GetPort());               \
+} while(false)
+
+    BeTest::SetFailOnAssert(false);
+
+    EXPECT_INVALID_PORT("-1");
+    EXPECT_INVALID_PORT("65536"); // 2^16
+    EXPECT_INVALID_PORT("4294967295"); // 2^32 - 1
+    EXPECT_INVALID_PORT("4294967296"); // 2^32
+    EXPECT_INVALID_PORT("18446744073709551615"); // 2^64 - 1
+    EXPECT_INVALID_PORT("18446744073709551616"); // 2^64
+
+    BeTest::SetFailOnAssert(true);
+    }

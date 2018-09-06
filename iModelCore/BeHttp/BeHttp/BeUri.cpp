@@ -8,6 +8,8 @@
 
 #include <BeHttp/BeUri.h>
 #include <curl/curl.h>
+
+#include <cstdint>
 #include <cstdlib>
 #include <regex>
 
@@ -66,7 +68,17 @@ BeUri::BeUri(Utf8StringCR uri)
 
     Utf8String portComponent = GetUriComponent(CAPTURE_GROUP_PORT, schemeAndAuthority);
     if (!portComponent.empty())
-        m_port = std::atoi(portComponent.c_str());
+        {
+        // std::atol return value is undefined if the converted value falls out of range of the return type.
+        int32_t port = std::atol(portComponent.c_str());
+        if (portComponent.length() > 5 || port > UINT16_MAX)
+            {
+            BeAssert(false && "BeUri: port number cannot exceed 65535.");
+            return;
+            }
+
+        m_port = port;
+        }
 
     m_scheme = GetUriComponent(CAPTURE_GROUP_SCHEME, schemeAndAuthority);
     m_userInfo = GetUriComponent(CAPTURE_GROUP_USER_INFO, schemeAndAuthority);
