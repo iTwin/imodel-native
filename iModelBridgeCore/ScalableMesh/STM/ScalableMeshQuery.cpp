@@ -2262,7 +2262,7 @@ void ScalableMeshMeshWithGraph::FindTrianglesAroundLabel(bvector<bvector<DPoint3
     MTGARRAY_END_SET_LOOP(edgeId, m_graphData)
 }
 
-static size_t s_nbIterations = 10;
+static size_t s_nbIterations = 5;
 
 void ScalableMeshMeshWithGraph::SmoothToGeometry(const GeometryGuide& source, bvector<size_t>& affectedIndices, bvector<DPoint3d>& affectedIndicesCoords, double smoothness)
 {
@@ -2325,9 +2325,28 @@ void ScalableMeshMeshWithGraph::SmoothToGeometry(const GeometryGuide& source, bv
                 avgAngleAround /= tris.size();
                 double angleToPlane = ptNorm.SmallerUnorientedAngleTo(targetNorm);
 
-                weight[p] = 1 / pow(distance, 2) * 1 / (avgAngleAround / msGeomConst_piOver2) * 1 / (angleToPlane / msGeomConst_piOver2);
+                weight[p] = (1 / pow(5*distance, 2)) * min(2.0,(1 / (avgAngleAround / (0.1*msGeomConst_piOver2))) * (1 / pow(angleToPlane / (0.1*msGeomConst_piOver2),2)));
                 if (weight[p] < 1e-4) weight[p] = 0.0;
             }
+        }
+
+        //average with neighbors
+        for (int p = 0; p < m_nbPoints; ++p)
+        {
+            double totalWt = 0;
+            size_t nSum = 0;
+            for (auto& vec : listOfFaces[p])
+            {
+                for (auto&pt : vec)
+                    if (pt != p)
+                    {
+                        totalWt += min(1.0,weight[pt]);
+                        nSum++;
+                    }
+            }
+
+            weight[p] = 0.5*(weight[p] + (totalWt / nSum));
+            if (weight[p] < 1e-4) weight[p] = 0.0;
         }
 
         //apply displacement
