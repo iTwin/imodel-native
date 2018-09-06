@@ -3397,7 +3397,6 @@ protected:
     Tile::Tree::Id m_treeId;
 
     // Outputs
-    Json::Value m_result;
     DgnDbStatus m_status;
 
     TileWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : Napi::AsyncWorker(callback), m_model(&model), m_treeId(treeId), m_status(DgnDbStatus::BadRequest) { }
@@ -3412,7 +3411,7 @@ protected:
         {
         if (DgnDbStatus::Success == m_status)
             {
-            Napi::Value jsValue = NapiUtils::Convert(Env(), m_result);
+            Napi::Value jsValue = GetResult();
             auto retval = NapiUtils::CreateBentleyReturnSuccessObject(jsValue, Env());
             Callback().MakeCallback(Receiver().Value(), {retval});
             }
@@ -3422,6 +3421,8 @@ protected:
             Callback().MakeCallback(Receiver().Value(), {retval});
             }
         }
+
+    virtual Napi::Value GetResult() = 0;
 
     Tile::TreePtr FindTileTree() { return JsInterop::FindTileTree(*m_model, m_treeId); }
 public:
@@ -3445,6 +3446,9 @@ public:
 struct GetTileTreeWorker : TileWorker
 {
 private:
+    // Output
+    Json::Value m_result;
+
     void Execute() final
         {
         auto tree = FindTileTree();
@@ -3463,6 +3467,11 @@ private:
         m_result["rootTile"]["id"]["treeId"] = tree->GetModelId().ToHexStr();
         m_result["rootTile"]["id"]["tileId"] = "0/0/0/0/1";
         JsonUtils::DRange3dToJson(m_result["rootTile"]["range"], tree->GetRange());
+        }
+
+    Napi::Value GetResult() final
+        {
+        return NapiUtils::Convert(Env(), m_result);
         }
 public:
     GetTileTreeWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : TileWorker(callback, model, treeId) { }
@@ -3494,25 +3503,28 @@ void JsInterop::GetTileTree(DgnDbR db, Utf8StringCR idStr, Napi::Function& callb
 struct GetTileContentWorker : TileWorker
 {
 private:
+    // Input
     Tile::ContentId m_contentId;
+
+    // Output
+    Tile::ContentCPtr m_result;
 
     void Execute() final
         {
         auto tree = FindTileTree();
-        Tile::ContentCPtr content = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
-        if (content.IsNull())
-            {
-            m_status = DgnDbStatus::NotFound;
-            return;
-            }
+        m_result = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
+        m_status = m_result.IsValid() ? DgnDbStatus::Success : DgnDbStatus::NotFound;
+        }
 
-        m_status = DgnDbStatus::Success;
+    Napi::Value GetResult() final
+        {
+        BeAssert(m_result.IsValid());
 
-        // ###TODO: Return a Uint8Array rather than base64-encoded string...
-        ByteStreamCR geometry = content->GetBytes();
-        Utf8String base64;
-        Base64Utilities::Encode(base64, geometry.GetData(), geometry.size());
-        m_result = base64;
+        ByteStreamCR geometry = m_result->GetBytes();
+        auto blob = Napi::Uint8Array::New(Env(), geometry.size());
+        memcpy(blob.Data(), geometry.data(), geometry.size());
+
+        return blob;
         }
 public:
     GetTileContentWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId, Tile::ContentId contentId) : TileWorker(callback, model, treeId), m_contentId(contentId) { }
