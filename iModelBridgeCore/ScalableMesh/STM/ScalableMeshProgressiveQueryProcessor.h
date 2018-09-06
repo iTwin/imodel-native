@@ -87,7 +87,7 @@ protected:
         const bset<uint64_t>&                              clipVisibilities,
         IScalableMeshPtr&                              scalableMeshPtr,
         IScalableMeshDisplayCacheManagerPtr&               displayCacheManagerPtr)
-        : m_clipVisibilities(clipVisibilities)
+:m_clipVisibilities(clipVisibilities)
     {
         m_queryId = queryId;
         m_searchingNodes.resize(nbWorkingThreads);
