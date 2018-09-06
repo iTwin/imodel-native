@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/Tile.h>
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnFontData.h>
@@ -116,7 +117,7 @@ public:
     static RepositoryStatus BriefcaseManagerStartBulkOperation(DgnDbR dgndb);
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
-    static DgnDbStatus GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id);
+    static void GetTileTree(DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static DgnDbStatus GetTileChildren(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR parentId);
     static DgnDbStatus GetTileContent(JsonValueR result, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId);
 
@@ -129,6 +130,8 @@ public:
 
     static Napi::Env& Env() { BeAssert(s_env != nullptr); return *s_env; }
     static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId; }
+
+    static Tile::TreePtr FindTileTree(GeometricModelR, Tile::Tree::Id const&);
 };
 
 //=======================================================================================

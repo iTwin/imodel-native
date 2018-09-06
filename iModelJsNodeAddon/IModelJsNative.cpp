@@ -23,6 +23,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/PerformanceLogger.h>
+#include <DgnPlatform/Tile.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -1106,16 +1107,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)status);
         }
 
-    Napi::Value GetTileTree(Napi::CallbackInfo const& info)
+    void GetTileTree(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_STRING(0, idStr, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(0, idStr, );
+        REQUIRE_ARGUMENT_FUNCTION(1, responseCallback, );
 
-        Json::Value output;
-        auto status = JsInterop::GetTileTree(output, GetDgnDb(), idStr);
-
-        Napi::Value jsValue = NapiUtils::Convert(Env(), output);
-        return CreateBentleyReturnObject(status, jsValue);
+        JsInterop::GetTileTree(GetDgnDb(), idStr, responseCallback);
         }
 
     Napi::Value GetTileChildren(Napi::CallbackInfo const& info)
@@ -3394,6 +3391,107 @@ struct SnapRequest : Napi::ObjectWrap<SnapRequest>
         s_constructor.SuppressDestruct();
         }
 };
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct TileWorker : Napi::AsyncWorker
+{
+protected:
+    // Inputs
+    GeometricModelPtr m_model;
+    Tile::Tree::Id m_treeId;
+
+    // Outputs
+    Json::Value m_result;
+    DgnDbStatus m_status;
+
+    TileWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : Napi::AsyncWorker(callback), m_model(&model), m_treeId(treeId), m_status(DgnDbStatus::BadRequest) { }
+
+    void OnError(Napi::Error const& e) override
+        {
+        auto retval = NapiUtils::CreateBentleyReturnErrorObject(1, e.Message().c_str(), Env());
+        Callback().MakeCallback(Receiver().Value(), {retval});
+        }
+
+    void OnOK() override
+        {
+        if (DgnDbStatus::Success == m_status)
+            {
+            Napi::Value jsValue = NapiUtils::Convert(Env(), m_result);
+            auto retval = NapiUtils::CreateBentleyReturnSuccessObject(jsValue, Env());
+            Callback().MakeCallback(Receiver().Value(), {retval});
+            }
+        else
+            {
+            auto retval = NapiUtils::CreateBentleyReturnErrorObject(m_status, nullptr, Env());
+            Callback().MakeCallback(Receiver().Value(), {retval});
+            }
+        }
+
+    Tile::TreePtr FindTileTree() { return JsInterop::FindTileTree(*m_model, m_treeId); }
+public:
+    static DgnDbStatus ParseInputs(GeometricModelPtr& model, Tile::Tree::Id& treeId, DgnDbR db, Utf8StringCR idStr)
+        {
+        if (!db.IsDbOpen())
+            return DgnDbStatus::NotOpen;
+
+        treeId = Tile::Tree::Id::FromString(idStr);
+        if (!treeId.IsValid())
+            return DgnDbStatus::InvalidId;
+
+        model = db.Models().Get<GeometricModel>(treeId.m_modelId);
+        return model.IsValid() ? DgnDbStatus::Success : DgnDbStatus::MissingId;
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct GetTileTreeWorker : TileWorker
+{
+private:
+    void Execute() final
+        {
+        auto tree = FindTileTree();
+        if (tree.IsNull())
+            {
+            m_status = DgnDbStatus::NotFound;
+            return;
+            }
+
+        m_status = DgnDbStatus::Success;
+        m_result = tree->ToJson();
+
+        // ###TODO: For now...remove later...
+        m_result["rootTile"]["isLeaf"] = true;
+        m_result["rootTile"]["maximumSize"] = 512;
+        m_result["rootTile"]["id"]["treeId"] = tree->GetModelId().ToHexStr();
+        m_result["rootTile"]["id"]["tileId"] = "0/0/0/0/1";
+        JsonUtils::DRange3dToJson(m_result["rootTile"]["range"], tree->GetRange());
+        }
+public:
+    GetTileTreeWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : TileWorker(callback, model, treeId) { }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::GetTileTree(DgnDbR db, Utf8StringCR idStr, Napi::Function& callback)
+    {
+    GeometricModelPtr model;
+    Tile::Tree::Id treeId;
+    DgnDbStatus status = TileWorker::ParseInputs(model, treeId, db, idStr);
+    if (DgnDbStatus::Success != status)
+        {
+        auto retval = NapiUtils::CreateBentleyReturnErrorObject(status, nullptr, Env());
+        callback.Call({retval});
+        return;
+        }
+
+    auto worker = new GetTileTreeWorker(callback, *model, treeId);
+    worker->Queue();
+    }
 
 //=======================================================================================
 // Projects the NativeECPresentationManager class into JS.

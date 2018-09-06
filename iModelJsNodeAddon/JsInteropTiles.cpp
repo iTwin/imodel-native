@@ -319,7 +319,6 @@ struct TileTreeAppData : DgnModel::AppData
 
     static Tile::TreeP FindTileTree(GeometricModelR model, Tile::Tree::Id const& id)
         {  
-
         static Key  s_key;
         auto appData = (TileTreeAppData*) model.FindOrAddAppData(s_key, [&]() { return new TileTreeAppData(); }).get();
         Utf8String  idString = id.GetPrefixString();
@@ -337,6 +336,14 @@ struct TileTreeAppData : DgnModel::AppData
 };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::TreePtr JsInterop::FindTileTree(GeometricModelR model, Tile::Tree::Id const& id)
+    {
+    return TileTreeAppData::FindTileTree(model, id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbStatus findTileTree(Tile::TreeP& tree, Utf8StringCR idStr, DgnDbR db)
@@ -351,32 +358,6 @@ static DgnDbStatus findTileTree(Tile::TreeP& tree, Utf8StringCR idStr, DgnDbR db
 
     tree = TileTreeAppData::FindTileTree(*model, treeId);
     return nullptr != tree ? DgnDbStatus::Success : DgnDbStatus::NotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR idStr)
-    {
-    Tile::TreeP tree = nullptr;
-    auto status = findTileTree(tree, idStr, db);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    BeAssert(nullptr != tree);
-    result = tree->ToJson();
-
-    // ###TODO: For now...remove later...
-    if (DgnDbStatus::Success == status)
-        {
-        result["rootTile"]["isLeaf"] = true;
-        result["rootTile"]["maximumSize"] = 512;
-        result["rootTile"]["id"]["treeId"] = tree->GetModelId().ToHexStr();
-        result["rootTile"]["id"]["tileId"] = "0/0/0/0/1";
-        JsonUtils::DRange3dToJson(result["rootTile"]["range"], tree->GetRange());
-        }
-
-    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
