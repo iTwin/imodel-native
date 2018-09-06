@@ -336,7 +336,7 @@ static DRange3d scaleSpatialRange(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree)
+bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree, uint32_t* pCount)
     {
     struct Counter : RangeIndex::Traverser
     {
@@ -355,6 +355,9 @@ bool isElementCountLessThan(uint32_t threshold, RangeIndex::Tree& tree)
 
     Counter counter(threshold);
     tree.Traverse(counter);
+    if (nullptr != pCount)
+        *pCount = counter.m_count;
+
     return counter.m_count < threshold;
     }
 
@@ -1078,11 +1081,14 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
 
     DRange3d range;
     bool populateRootTile;
+    bool rootTileEmpty;
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
         range = scaleSpatialRange(range);
-        populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
+        uint32_t nElements;
+        populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
+        rootTileEmpty = 0 == nElements;
         }
     else
         {
@@ -1095,10 +1101,10 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
             range.Extend(sheet->GetSheetExtents());
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
+        rootTileEmpty = 0 == accum.GetElementCount();
         }
     
-    // ###TODO: Use m_populateRootTile in RequestContent()...
-    populateRootTile = true;
+    auto rootTile = rootTileEmpty ? RootTile::Empty : (populateRootTile ? RootTile::Displayable : RootTile::Undisplayable);
 
     // Translate world coordinates to center of range in order to reduce precision errors
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
@@ -1116,15 +1122,15 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
     DRange3d tileRange;
     rangeTransform.Multiply(tileRange, range);
 
-    return new Tree(model, transform, tileRange, system, id, populateRootTile);
+    return new Tree(model, transform, tileRange, system, id, rootTile);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, bool populateRootTile)
+Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile)
     : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_id(id), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
-    m_populateRootTile(populateRootTile)
+    m_rootTile(rootTile)
     {
     m_range.Extend(range);
     }
@@ -1149,10 +1155,12 @@ Json::Value Tree::ToJson() const
 
     json["id"] = GetId().ToString();
     json["maxTilesToSkip"] = 1;
-    json["tileScreenSize"] = s_tileScreenSize;
     JsonUtils::TransformToJson(json["location"], GetLocation());
 
-    // ###TODO: root tile empty because m_populateRootTile == false?
+    json["rootTile"]["isLeaf"] = RootTile::Empty == m_rootTile;
+    json["rootTile"]["maximumSize"] = RootTile::Displayable == m_rootTile ? 512 : 0;
+    json["rootTile"]["contentId"] = "0/0/0/0/1";
+    JsonUtils::DRange3dToJson(json["rootTile"]["range"], GetRange());
 
     return json;
     }

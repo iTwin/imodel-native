@@ -255,6 +255,13 @@ struct Tree : RefCountedBase, NonCopyableClass
         Classifier,
     };
 
+    enum class RootTile : uint8_t
+    {
+        Empty,
+        Undisplayable,
+        Displayable,
+    };
+
     struct Id
     {
         DgnModelId m_modelId;
@@ -294,9 +301,9 @@ private:
     std::set<LoaderPtr, Loader::PtrComparator> m_activeLoads;
     Id m_id;
     bool m_is3d;
-    bool m_populateRootTile;
+    RootTile m_rootTile;
 protected:
-    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, bool populateRootTile);
+    Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Render::SystemR system, Id id, RootTile rootTile);
 
     DGNPLATFORM_EXPORT LoaderPtr CreateLoader(ContentIdCR contentId);
 public:
