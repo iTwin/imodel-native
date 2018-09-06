@@ -537,6 +537,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         virtual SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const = 0;
 
+        virtual IScalableMeshNodeEditPtr _EditNode() = 0;
+
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
 
@@ -623,6 +625,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT SMNodeViewStatus IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const;
 
+        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditNode();
+
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
 
@@ -680,6 +684,7 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
 
         virtual bvector<IScalableMeshNodeEditPtr> _EditChildrenNodes() = 0;
         virtual IScalableMeshNodeEditPtr _EditParentNode() = 0;
+        virtual void   _ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates) = 0;
 
     public:
         BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
@@ -694,6 +699,8 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodeEditPtr> EditChildrenNodes();
         BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditParentNode();
+
+        void                        ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates);
     };
 
 
@@ -961,7 +968,5 @@ struct IScalableMeshNodePlaneQueryParams  : IScalableMeshMeshQueryParams
 
         BENTLEY_SM_EXPORT static IScalableMeshNodePlaneQueryParamsPtr CreateParams();
     };
-
-
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

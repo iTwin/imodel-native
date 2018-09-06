@@ -2235,6 +2235,128 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
 #endif
     }
 
+void ScalableMeshMeshWithGraph::FindTrianglesAroundLabel(bvector<bvector<DPoint3d>>& triangles, int labelValue)
+{
+    MTGARRAY_SET_LOOP(edgeId, m_graphData)
+    {
+        int v = -1;
+        m_graphData->TryGetLabel(edgeId, 0, v);
+        if (v == labelValue)
+        {
+            MTGARRAY_VERTEX_LOOP(edgeId2, m_graphData, edgeId)
+            {
+                bvector<DPoint3d> facePts;
+                int triangle[3] = { 0 };
+                m_graphData->TryGetLabel(m_graphData->EdgeMate(edgeId2), 0, (int&)triangle[0]);
+                m_graphData->TryGetLabel(m_graphData->FSucc(m_graphData->EdgeMate(edgeId2)), 0, (int&)triangle[1]);
+                m_graphData->TryGetLabel(m_graphData->EdgeMate(m_graphData->FSucc(m_graphData->EdgeMate(edgeId2))), 0, (int&)triangle[2]);
+                facePts.push_back(m_points[triangle[0] - 1]);
+                facePts.push_back(m_points[triangle[1] - 1]);
+                facePts.push_back(m_points[triangle[2] - 1]);
+                triangles.push_back(facePts);
+            }
+        MTGARRAY_END_VERTEX_LOOP(edgeId2, m_graphData, edgeId)
+            break;
+        }
+    }
+    MTGARRAY_END_SET_LOOP(edgeId, m_graphData)
+}
+
+static size_t s_nbIterations = 10;
+
+void ScalableMeshMeshWithGraph::SmoothToGeometry(const GeometryGuide& source, bvector<size_t>& affectedIndices, bvector<DPoint3d>& affectedIndicesCoords, double smoothness)
+{
+    bvector<bool> isPointMoveable(m_nbPoints, affectedIndices.empty());
+    bvector<bool> isPointInReturnSet(m_nbPoints, false);
+    for (auto& idx : affectedIndices)
+    {
+        isPointMoveable[idx] = true;
+        isPointInReturnSet[idx] = true;
+    }
+
+    bvector<double> weight(m_nbPoints, 0.0);
+    bvector<bvector<bvector<int>>> listOfFaces(m_nbPoints);
+    for (size_t i = 0; i < (size_t)m_nbFaceIndexes; i += 3)
+    {
+        bvector<int> vec;
+        vec.push_back(m_faceIndexes[i]-1);
+        vec.push_back(m_faceIndexes[i+1]-1);
+        vec.push_back(m_faceIndexes[i+2]-1);
+        listOfFaces[m_faceIndexes[i]-1].push_back(vec);
+        listOfFaces[m_faceIndexes[i+1]-1].push_back(vec);
+        listOfFaces[m_faceIndexes[i + 2]-1].push_back(vec);
+    }
+
+    for (size_t i = 0; i < s_nbIterations; ++i)
+    {
+        //for each point, compute force of smoothing for this iteration
+        for (int p = 0; p < m_nbPoints; ++p)
+        {
+            if (isPointMoveable[p])
+            {
+                double distance = source.DistanceTo(m_points[p]);
+                DVec3d targetNorm = source.NormalAt(m_points[p]);
+
+                bvector<bvector<DPoint3d>> tris;
+                //FindTrianglesAroundLabel(tris, p + 1);
+                for (auto& vec : listOfFaces[p])
+                {
+                    bvector<DPoint3d> coords;
+                    coords.push_back(m_points[vec[0]]);
+                    coords.push_back(m_points[vec[1]]);
+                    coords.push_back(m_points[vec[2]]);
+                    tris.push_back(coords);
+                }
+                double avgAngleAround = DBL_MIN;
+                DVec3d ptNorm;
+                for (auto& tri : tris)
+                {
+                    DPlane3d faceP = DPlane3d::From3Points(tri[0], tri[1], tri[2]);
+                    DVec3d faceNorm = faceP.normal;
+                    faceNorm.Normalize();
+                    if (DBL_MIN == avgAngleAround)
+                    {
+                        ptNorm = faceNorm;
+                        avgAngleAround = 0;
+                    }
+                    else
+                        avgAngleAround += faceNorm.SmallerUnorientedAngleTo(ptNorm);
+                }
+                avgAngleAround /= tris.size();
+                double angleToPlane = ptNorm.SmallerUnorientedAngleTo(targetNorm);
+
+                weight[p] = 1 / pow(distance, 2) * 1 / (avgAngleAround / msGeomConst_piOver2) * 1 / (angleToPlane / msGeomConst_piOver2);
+                if (weight[p] < 1e-4) weight[p] = 0.0;
+            }
+        }
+
+        //apply displacement
+        for (int p = 0; p < m_nbPoints; ++p)
+        {
+            if (weight[p] > 0.0)
+            {
+                DPoint3d projectedPt = source.Project(m_points[p]);
+                DVec3d direction = DVec3d::FromStartEnd(m_points[p], projectedPt);
+                double factor = min(1.0,smoothness * abs(weight[p]));
+                direction.Scale(factor);
+                m_points[p].SumOf(m_points[p], direction);
+            }
+        }
+    }
+
+    //collect updated positions
+    for (int p = 0; p < m_nbPoints; ++p)
+        if (!isPointInReturnSet[p] && weight[p] > 0.0)
+        {
+            affectedIndices.push_back(p);
+            isPointInReturnSet[p] = true;
+        }
+
+    affectedIndicesCoords.resize(affectedIndices.size());
+    for (size_t i = 0; i < affectedIndices.size(); ++i)
+        affectedIndicesCoords[i] = m_points[affectedIndices[i]];
+}
+
 //=======================================================================================
 // @description Recomputes UVs based on interpolating coordinates within the node extent.
 //              This assumes that texture is square and covers the node entirely.
@@ -2796,6 +2918,10 @@ IScalableMeshNodePtr  IScalableMeshNode::GetParentNode() const
     return _GetParentNode();
     }
 
+IScalableMeshNodeEditPtr IScalableMeshNode::EditNode()
+    {
+    return _EditNode();
+    }
 
 bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {
@@ -2981,6 +3107,11 @@ StatusInt  IScalableMeshNodeEdit::SetResolution(float geometricResolution, float
     return _SetResolution(geometricResolution, textureResolution);
     }
 
+void   IScalableMeshNodeEdit::ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates)
+{
+    return _ReplaceIndices(posToChange, newCoordinates);
+}
+
 /*=========================IScalableMeshCachedDisplayNode===============================*/
 StatusInt IScalableMeshCachedDisplayNode::GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const
     {
@@ -3020,11 +3151,68 @@ IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_
     return ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, smP);
     }
 
+
     
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */
 /*==================================================================*/
 
+GeometryGuide::GeometryGuide(const DPlane3d& plane)
+{
+    m_type = Type::Plane;
+    m_planeDef = plane;
+}
+
+double GeometryGuide::DistanceTo(const DPoint3d& pt) const
+{
+    switch (m_type)
+    {
+    case Type::Plane:
+        return m_planeDef.Evaluate(pt);
+    default:
+        return DBL_MAX;
+    }
+}
+
+void GeometryGuide::TransformWith(const Transform& tr)
+{
+    switch (m_type)
+    {
+    case Type::Plane:
+        tr.Multiply(m_planeDef);
+        break;
+    default:
+        break;
+    }
+}
+
+DPoint3d GeometryGuide::Project(const DPoint3d& pt) const
+{
+    DPoint3d projectedPt;
+    switch (m_type)
+    {
+    case Type::Plane:
+        m_planeDef.ProjectPoint(projectedPt, pt);
+        break;
+    default:
+        break;
+    }
+    return projectedPt;
+}
+
+DVec3d GeometryGuide::NormalAt(const DPoint3d& pt) const
+{
+    DVec3d normal;
+    switch (m_type)
+    {
+    case Type::Plane:
+        normal = m_planeDef.normal;
+        break;
+    default:
+        break;
+    }
+    return normal;
+}
 
 /*==================================================================*/
 /*        TEMPLATES - DECLARATION - BEGIN                           */
