@@ -3460,13 +3460,6 @@ private:
 
         m_status = DgnDbStatus::Success;
         m_result = tree->ToJson();
-
-        // ###TODO: For now...remove later...
-        m_result["rootTile"]["isLeaf"] = true;
-        m_result["rootTile"]["maximumSize"] = 512;
-        m_result["rootTile"]["id"]["treeId"] = tree->GetModelId().ToHexStr();
-        m_result["rootTile"]["id"]["tileId"] = "0/0/0/0/1";
-        JsonUtils::DRange3dToJson(m_result["rootTile"]["range"], tree->GetRange());
         }
 
     Napi::Value GetResult() final
