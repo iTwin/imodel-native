@@ -363,6 +363,10 @@
                 Nuget\native\System.Net.Http$(shlibext)
                 Nuget\native\WebDriver$(shlibext)
             </Assemblies>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">
+                Delivery/chromedriver.exe
+                Delivery/iModelHubNativeTests.exe.config
+            </Files>
         </Bindings>
     </Part>
 
