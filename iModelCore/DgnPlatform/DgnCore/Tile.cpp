@@ -883,11 +883,13 @@ DRange3d NodeId::ComputeRange(DRange3dCR rootRange, bool is2d) const
          lowJ = 0 == m_j % 2,
          lowK = 0 == m_k % 2;
 
-    // We should never subdivide along z for 2d tiles...###TODO Use a quad-tree for 2d, not an oct-tree.
+    // 2d tiles are treated as quad-trees, not oct-trees, and never subdivide in Z.
     auto bisect = is2d ? bisectRange2d : bisectRange;
     DRange3d range = bisect(parentRange, lowI);
     range = bisect(range, lowJ);
-    range = bisect(range, lowK);
+
+    if (!is2d)
+        range = bisect(range, lowK);
 
     return range;
     }
