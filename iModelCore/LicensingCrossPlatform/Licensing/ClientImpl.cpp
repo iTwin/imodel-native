@@ -347,6 +347,8 @@ folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageCSV, Utf8Stri
 #if defined (BENTLEY_WIN32)
             std::tr2::sys::path pval(usageCSV.c_str());
             remove(pval);
+#else
+            BeFileName(usageCSV).BeDeleteFile();
 #endif
             return folly::makeFuture();
             });
