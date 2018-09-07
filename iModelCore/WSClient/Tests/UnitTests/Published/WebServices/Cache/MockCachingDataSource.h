@@ -116,7 +116,7 @@ struct MockCachingDataSource : public ICachingDataSource
         MOCK_METHOD4(SyncLocalChanges,
             AsyncTaskPtr<BatchResult>(const bset<ECInstanceKey>&, ProgressCallback, ICancellationTokenPtr, SyncOptions));
         MOCK_METHOD5(SyncCachedData,
-            AsyncTaskPtr<BatchResult>(bvector<ECInstanceKey>, bvector<IQueryProvider::Query>, bvector<IQueryProviderPtr>, ProgressCallback, ICancellationTokenPtr));
+            AsyncTaskPtr<BatchResult>(bvector<ECInstanceKey>, bvector<IQueryProvider::Query>, bvector<IQueryProviderPtr>, ProgressControlsPtr, ICancellationTokenPtr));
         MOCK_METHOD5(CacheNavigation,
             AsyncTaskPtr<BatchResult>(const bvector<ObjectId>&, const bvector<ObjectId>&, std::shared_ptr<const ISelectProvider>, ProgressCallback, ICancellationTokenPtr));
     };

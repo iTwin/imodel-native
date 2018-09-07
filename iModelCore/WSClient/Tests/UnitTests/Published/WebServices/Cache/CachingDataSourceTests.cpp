@@ -7267,6 +7267,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
 
     int progressCalled = 0;
     double expectedSyncedValues[2] = {0, 1};
+
     auto onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
@@ -7275,8 +7276,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
         EXPECT_THAT(progress.GetBytes().total, 0);
         progressCalled++;
         };
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
 
-    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
     EXPECT_THAT(progressCalled, 2);
@@ -7324,8 +7327,11 @@ TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstances_OnProgress
         progressCalled++;
         };
 
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
     auto instances = StubBVector({instanceA, instanceB, instanceC, instanceD});
-    auto result = ds->SyncCachedData(instances, bvector<IQueryProvider::Query>(), bvector<IQueryProviderPtr>(), onProgress, nullptr)->GetResult();
+    auto result = ds->SyncCachedData(instances, bvector<IQueryProvider::Query>(), bvector<IQueryProviderPtr>(), progressControls, nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
@@ -7370,8 +7376,11 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgr
         progressCalled++;
         };
 
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
     auto result = ds->SyncCachedData(StubBVector({instanceA, instanceB}), StubBVector({queryA, queryB}),
-        bvector<IQueryProviderPtr>(), onProgress, nullptr)->GetResult();
+                                     bvector<IQueryProviderPtr>(), progressControls, nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
@@ -7423,8 +7432,11 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
         progressCalled++;
         };
 
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
     auto result = ds->SyncCachedData(StubBVector({instanceA, instanceB}), bvector<IQueryProvider::Query>(),
-        StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+                                     StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
 
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
@@ -7481,7 +7493,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_THAT(result.GetValue(), IsEmpty());
     EXPECT_THAT(progressCalled, 4);
@@ -7526,7 +7541,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsQueryReturnsT
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(StubBVector(instanceKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -7576,7 +7594,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsTwoQueriesRet
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -7627,7 +7648,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -7668,7 +7692,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -7701,7 +7728,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithNoQuery_Progres
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(StubBVector(instanceAKey), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -7734,7 +7764,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstance_ProgressC
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(queryA), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(queryA), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -7780,7 +7813,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstanceThatReturn
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(queryA), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(queryA), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -7839,7 +7875,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstancesThatRetur
         progressCalled++;
         };
 
-    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), onProgress, nullptr)->GetResult();
+    auto progressControls = std::make_shared<ICachingDataSource::ProgressControls>();
+    progressControls->m_progressCallback = onProgress;
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), progressControls, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 

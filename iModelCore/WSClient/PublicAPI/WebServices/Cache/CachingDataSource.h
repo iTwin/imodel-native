@@ -321,7 +321,7 @@ struct CachingDataSource :
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ProgressCallback onProgress = nullptr,
+            ProgressControlsPtr progressControls = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) override;
 
