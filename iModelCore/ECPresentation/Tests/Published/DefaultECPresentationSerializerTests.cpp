@@ -16,21 +16,18 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 #define TEST_SCHEMA R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema" alias="test" version="9.3.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
-        <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
-
+    <ECSchema schemaName="TestSchema" alias="test" version="9.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECEnumeration typeName="TestEnum" backingTypeName="int" isStrict="True" description="" displayLabel="IntegerEnum">
-            <ECEnumerator value="1" name="A" displayLabel="A"/>
-            <ECEnumerator value="2" name="B" displayLabel="B"/>
-            <ECEnumerator value="3" name="C" displayLabel="C"/>
+            <ECEnumerator value="1" displayLabel="A" />
+            <ECEnumerator value="2" displayLabel="B" />
+            <ECEnumerator value="3" displayLabel="C" />
         </ECEnumeration>
         <ECEnumeration typeName="TestStringEnum" backingTypeName="string" isStrict="True" description="" displayLabel="StringEnum">
-            <ECEnumerator value="D" name="D" displayLabel="A" />
-            <ECEnumerator value="E" name="E" displayLabel="B" />
-            <ECEnumerator value="F" name="F" displayLabel="C" />
+            <ECEnumerator value="D" displayLabel="A" />
+            <ECEnumerator value="E" displayLabel="B" />
+            <ECEnumerator value="F" displayLabel="C" />
         </ECEnumeration>
-        <KindOfQuantity typeName="TestKOQ" displayLabel="Test" persistenceUnit="u:MM" presentationUnits="f:DefaultRealU[u:MM]" relativeError="0"/>
+        <KindOfQuantity typeName="TestKOQ" displayLabel="Test" persistenceUnit="MM(real)" relativeError="0"/>
         <ECEntityClass typeName="PropertyTestClassB">
             <ECProperty propertyName="String" typeName="string" />
         </ECEntityClass>
@@ -456,7 +453,7 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationWithKOQ)
                 "Name": "TestSchema:TestKOQ",
                 "DisplayLabel": "Test",
                 "PersistenceUnit": "MM",
-                "CurrentFormatId": "DefaultRealU[u:MM]"
+                "CurrentFormatId": "DefaultReal[u:MM]"
                 }
             },
         "RelatedClassPath": []

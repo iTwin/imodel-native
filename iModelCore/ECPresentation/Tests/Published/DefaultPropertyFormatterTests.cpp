@@ -15,27 +15,25 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 #define TEST_SCHEMA R"xml(<?xml version="1.0" encoding="UTF-8"?>
-                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                        <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
-                        <ECSchemaReference name="Units" version="01.00.00" alias="u" />
-                        <ECEntityClass typeName="TestClass">
+                    <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                        <ECClass typeName="TestClass" isDomainClass="True">
                             <ECProperty propertyName="Prop1" typeName="string" displayLabel="Custom Label" />
                             <ECProperty propertyName="Prop2" typeName="TestIntEnum" />
                             <ECProperty propertyName="Prop3" typeName="TestStringEnum" />
                             <ECProperty propertyName="Prop4" typeName="double" kindOfQuantity="Length" />
-                        </ECEntityClass>
+                        </ECClass>
                         <ECEnumeration typeName="TestIntEnum" backingTypeName="int" isStrict="true">
-                            <ECEnumerator value="0" name="Zero" displayLabel="Zero"/>
-                            <ECEnumerator value="1" name="One" displayLabel="One"/>
-                            <ECEnumerator value="2" name="Two" displayLabel="Two"/>
+                            <ECEnumerator value="0" displayLabel="Zero"/>
+                            <ECEnumerator value="1" displayLabel="One"/>
+                            <ECEnumerator value="2" displayLabel="Two"/>
                         </ECEnumeration>
                         <ECEnumeration typeName="TestStringEnum" backingTypeName="string" isStrict="true">
-                            <ECEnumerator value="zero" name="zero" displayLabel="Zero"/>
-                            <ECEnumerator value="one"  name="one"  displayLabel="One"/>
-                            <ECEnumerator value="two"  name="two"  displayLabel="Two"/>
+                            <ECEnumerator value="zero" displayLabel="Zero"/>
+                            <ECEnumerator value="one" displayLabel="One"/>
+                            <ECEnumerator value="two" displayLabel="Two"/>
                         </ECEnumeration>
-                        <KindOfQuantity typeName="Length" displayLabel="Length" persistenceUnit="u:M" relativeError="1e-6"
-                            presentationUnits="f:DefaultRealU(4)[u:FT|ft]"/>
+                        <KindOfQuantity typeName="Length" displayLabel="Length" persistenceUnit="M" relativeError="1e-6"
+                            presentationUnits="FT(real4u);M(real4u);FT(fi8);IN(real)" />
                     </ECSchema>)xml"
 
 /*=================================================================================**//**
