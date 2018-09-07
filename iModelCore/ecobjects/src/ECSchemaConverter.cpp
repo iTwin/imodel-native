@@ -1179,7 +1179,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     auto koq = prop->GetKindOfQuantity();
     if (nullptr != koq && prop->IsKindOfQuantityDefinedLocally())
         {
-        LOG.warningv("Found DisplayUnitSpecification on property %s:%s.%s with UnitSpecification defined locally. Skipping conversion since the DisplayUnitSpecificaiton was already processed.", schema.GetFullSchemaName(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
+        LOG.warningv("Found DisplayUnitSpecification on property %s:%s.%s with UnitSpecification defined locally. Skipping conversion since the DisplayUnitSpecificaiton was already processed.", schema.GetFullSchemaName().c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
         removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
