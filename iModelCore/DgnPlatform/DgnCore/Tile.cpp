@@ -865,7 +865,7 @@ NodeId NodeId::ComputeParentId() const
         return RootId();
         }
 
-    return NodeId(depth - 1, m_i >> 2, m_j >> 2, m_k >> 2);
+    return NodeId(depth - 1, m_i >> 1, m_j >> 1, m_k >> 1);
     }
 
 /*---------------------------------------------------------------------------------**//**

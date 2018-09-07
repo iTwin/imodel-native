@@ -68,6 +68,7 @@ TEST(NodeId, GrandchildNodes)
     rootRange.low = DPoint3d::From(0, 0, 0);
     rootRange.high = DPoint3d::From(400, 420, 440);
 
+    // Parent is (1, 0, 0, 0) - takes lower half of every subdivision
     // Depth 2, takes lower half of every subdivision
     NodeId lllChild(2, 0, 0, 0);
 
@@ -75,7 +76,7 @@ TEST(NodeId, GrandchildNodes)
     NodeId parent = lllChild.ComputeParentId();
     EXPECT_EQ(parent, NodeId(1, 0, 0, 0));
 
-    // COnfirm parent range
+    // Confirm parent range
     DRange3d parentRange = parent.ComputeRange(rootRange, false);
     EXPECT_TRUE(parentRange.low.IsEqual(rootRange.low));
     EXPECT_TRUE(parentRange.high.IsEqual(DPoint3d::From(200, 210, 220)));
@@ -104,6 +105,28 @@ TEST(NodeId, GrandchildNodes)
     childRange = uluChild.ComputeRange(rootRange, false);
     EXPECT_TRUE(childRange.low.IsEqual(DPoint3d::From(100, 0, 110)));
     EXPECT_TRUE(childRange.high.IsEqual(DPoint3d::From(200, 105, 220)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(NodeId, UpperGrandChildNodes)
+    {
+    DRange3d rootRange = DRange3d::From(DPoint3d::From(0, 0, 0), DPoint3d::From(400, 420, 440));
+
+    // Parent is (1, 1, 1, 1) - takes upper half of every subdivision
+    // Child takes upper half of every subdivision
+    NodeId uuuChild(2, 3, 3, 3);
+    NodeId parent = uuuChild.ComputeParentId();
+    EXPECT_EQ(parent, NodeId(1, 1, 1, 1));
+
+    DRange3d parentRange = parent.ComputeRange(rootRange, false);
+    EXPECT_TRUE(parentRange.low.IsEqual(DPoint3d::From(200, 210, 220)));
+    EXPECT_TRUE(parentRange.high.IsEqual(rootRange.high));
+
+    DRange3d childRange = uuuChild.ComputeRange(rootRange, false);
+    EXPECT_TRUE(childRange.low.IsEqual(DPoint3d::From(300, 315, 330)));
+    EXPECT_TRUE(childRange.high.IsEqual(parentRange.high));
     }
 
 /*---------------------------------------------------------------------------------**//**
