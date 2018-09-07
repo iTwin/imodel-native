@@ -11,7 +11,6 @@
 
 #include <Licensing/Licensing.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include <filesystem>
 #include <regex>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE

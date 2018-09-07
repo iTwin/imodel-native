@@ -6,6 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Utils/LogFileHelper.h>
+#if defined (BENTLEY_WIN32)
+#include <filesystem>
+#endif
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -15,7 +18,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 bvector<WString> LogFileHelper::GetLogFiles(Utf8StringCR logFilesDir)
     {
     bvector<WString> matchFileList;
-
+#if defined (BENTLEY_WIN32)
     for (std::tr2::sys::directory_iterator dir_iter(Utf8String(logFilesDir).c_str()), end; dir_iter != end; ++dir_iter)
         {
         WString pathStr = dir_iter->path().c_str();
@@ -29,6 +32,6 @@ bvector<WString> LogFileHelper::GetLogFiles(Utf8StringCR logFilesDir)
                 }
             }
         }
-
+#endif
     return matchFileList;
     }
