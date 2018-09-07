@@ -948,7 +948,7 @@ protected:
     mutable bool         m_hadError = false;
     mutable bool         m_wasAborted = false;
     bool                 m_hasLoadedWorkspaceFonts = false;
-    bool                 m_skipECContent = true;
+    bool                 m_skipECContent = false;
     bool                 m_addDebugDgnCodes = false;
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
