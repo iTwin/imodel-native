@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/UsageDb.h $
+|     $Source: Licensing/UsageDb.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -54,10 +54,13 @@ public:
     LICENSING_EXPORT BentleyStatus WriteUsageToCSVFile(BeFileNameCR path);
 
 	LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
-    LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
+	LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles(Utf8String userId);
+    LICENSING_EXPORT BentleyStatus AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken);
 	LICENSING_EXPORT BentleyStatus DeletePolicyFile(Utf8StringCR policyId);
+	LICENSING_EXPORT BentleyStatus DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId);
 
     LICENSING_EXPORT Json::Value GetPolicyFile();
+	LICENSING_EXPORT Json::Value GetPolicyFile(Utf8StringCR policyId);
 
 	LICENSING_EXPORT BentleyStatus SetOfflineGracePeriodStart(Utf8StringCR startTime);
 	LICENSING_EXPORT Utf8String GetOfflineGracePeriodStart();

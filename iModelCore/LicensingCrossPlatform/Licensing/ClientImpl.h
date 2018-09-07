@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: LicensingCrossPlatform/Licensing/ClientImpl.h $
+ |     $Source: Licensing/ClientImpl.h $
  |
  |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
@@ -124,6 +124,7 @@ public:
 
 	// clean up policies; used internally, but also used in unit tests
 	LICENSING_EXPORT void CleanUpPolicies();
+	LICENSING_EXPORT void DeleteAllOtherUserPolicies(std::shared_ptr<PolicyToken> policyToken);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

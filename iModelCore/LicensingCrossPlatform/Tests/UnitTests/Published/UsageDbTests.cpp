@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/UsageDbTests.cpp $
+|     $Source: Tests/UnitTests/Published/UsageDbTests.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -259,4 +259,30 @@ TEST_F(UsageDbTests, OfflineGracePeriod_Success)
 	EXPECT_EQ(db.GetOfflineGracePeriodStart(), testString2);
 	EXPECT_SUCCESS(db.ResetOfflineGracePeriod());
 	EXPECT_EQ(db.GetOfflineGracePeriodStart(), "");
+	}
+
+TEST_F(UsageDbTests, DeleteAllOtherUserPolicies_Success)
+	{
+	UsageDb db;
+
+	EXPECT_SUCCESS(OpenOrCreateTestDb(db));
+
+	Utf8String userId = "userA";
+	Utf8String policyIdToKeep = "3";
+	// Put in some dummy policies for user
+	db.AddOrUpdatePolicyFile("1", userId, "", "", "");
+	db.AddOrUpdatePolicyFile("2", userId, "", "", "");
+	db.AddOrUpdatePolicyFile(policyIdToKeep, userId, "", "", "");
+	// Put in a policy for a different user
+	db.AddOrUpdatePolicyFile("4", "userB", "", "", "");
+
+	// attempt to delete all other user's policies
+	db.DeleteAllOtherUserPolicyFiles(policyIdToKeep, userId);
+
+	// Ids 1-2 should no longer exist
+	ASSERT_EQ(db.GetPolicyFile("1"), Json::Value::GetNull());
+	ASSERT_EQ(db.GetPolicyFile("2"), Json::Value::GetNull());
+	// Ids 3 and 4 should still be in the database
+	ASSERT_NE(db.GetPolicyFile(policyIdToKeep), Json::Value::GetNull());
+	ASSERT_NE(db.GetPolicyFile("4"), Json::Value::GetNull());
 	}

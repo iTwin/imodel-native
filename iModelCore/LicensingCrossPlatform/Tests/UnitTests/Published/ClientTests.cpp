@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/ClientTests.cpp $
+|     $Source: Tests/UnitTests/Published/ClientTests.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -202,7 +202,7 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	auto jsonPolicyOfflineNotAllowed = DummyJsonHelper::CreatePolicyOfflineNotAllowed(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9909, "", 1, false);
 
 	// Add empty policy to make sure does not cause issues for policy searching
-	client->GetUsageDb().AddOrUpdatePolicyFile("11111111-1111-1111-1111-111111111111", "", "", "");
+	client->GetUsageDb().AddOrUpdatePolicyFile("11111111-1111-1111-1111-111111111111", "", "", "", "");
 
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValid));
 	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrial));
@@ -249,15 +249,22 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 	client->StartApplication();
 	// create expired/invalid and valid policies and add them to database
 	Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+	Utf8String userIdOther = "00000000-0000-0000-0000-000000000000";
 	auto jsonPolicyExpired1 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, 9903, "", 1, false);
 	auto jsonPolicyExpired2 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(-1), DateHelper::AddDaysToCurrentTime(7), userId, 9913, "", 1, false);
-	auto jsonPolicyValid = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false);
+	auto jsonPolicyValid = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9904, "", 1, false);
+	auto jsonPolicyValid2 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9905, "", 1, false);
+	auto jsonPolicyValid3 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userIdOther, 9906, "", 1, false);
 	auto expiredPolicyToken1 = PolicyToken::Create(jsonPolicyExpired1);
 	auto expiredPolicyToken2 = PolicyToken::Create(jsonPolicyExpired2);
 	auto validPolicyToken = PolicyToken::Create(jsonPolicyValid);
+	auto validPolicyToken2 = PolicyToken::Create(jsonPolicyValid2);
+	auto validPolicyToken3 = PolicyToken::Create(jsonPolicyValid3);
 	client->AddPolicyTokenToDb(expiredPolicyToken1);
 	client->AddPolicyTokenToDb(expiredPolicyToken2);
 	client->AddPolicyTokenToDb(validPolicyToken);
+	client->AddPolicyTokenToDb(validPolicyToken2);
+	client->AddPolicyTokenToDb(validPolicyToken3);
 	// all 3 should be located
 	ASSERT_NE(client->GetPolicyWithId(expiredPolicyToken1->GetPolicyId()),nullptr);
 	ASSERT_NE(client->GetPolicyWithId(expiredPolicyToken2->GetPolicyId()), nullptr);
@@ -268,6 +275,12 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 	ASSERT_EQ(client->GetPolicyWithId(expiredPolicyToken1->GetPolicyId()), nullptr);
 	ASSERT_EQ(client->GetPolicyWithId(expiredPolicyToken2->GetPolicyId()), nullptr);
 	ASSERT_NE(client->GetPolicyWithId(validPolicyToken->GetPolicyId()), nullptr);
+	// delete other policies for user; policies that don't match policyId for that user should be removed
+	client->DeleteAllOtherUserPolicies(validPolicyToken);
+	// provided policy and other user's policy should remain, while the other user policy should be gone
+	ASSERT_NE(client->GetPolicyWithId(validPolicyToken->GetPolicyId()), nullptr);
+	ASSERT_EQ(client->GetPolicyWithId(validPolicyToken2->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(validPolicyToken3->GetPolicyId()), nullptr);
 	}
 
 TEST_F(ClientTests, SendUsage_Success)

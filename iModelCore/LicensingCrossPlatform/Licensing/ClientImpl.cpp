@@ -11,7 +11,6 @@
 #include "Logging.h"
 #include "PolicyToken.h"
 #include "UsageDb.h"
-//#include "StringHelper.h"
 
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -126,7 +125,19 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
 
         int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
 
-        GetPolicyToken();
+        auto policyToken = GetPolicyToken();
+		// check if offline grace period should start
+		if (policyToken == nullptr)
+			{
+			if (!HasOfflineGracePeriodStarted())
+				m_usageDb->SetOfflineGracePeriodStart(Utf8String(DateHelper::TimeToString(DateHelper::GetCurrentTime()).c_str()));
+			}
+		// otherwise, check if offline grace period should be reset
+		else
+		{
+			if (HasOfflineGracePeriodStarted())
+				m_usageDb->ResetOfflineGracePeriod();
+		}
         CleanUpPolicies();
 
         PolicyHeartbeat(currentTimeUnixMs);
@@ -247,6 +258,7 @@ std::shared_ptr<PolicyToken> ClientImpl::GetPolicyToken()
     if (policyToken != nullptr)
         {
         StorePolicyTokenInUsageDb(policyToken);
+		DeleteAllOtherUserPolicies(policyToken);
         }
     
     return policyToken;
@@ -467,15 +479,10 @@ void ClientImpl::CleanUpPolicies()
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy> ClientImpl::GetPolicyWithId(Utf8StringCR policyId)
 	{
-	for (auto policy : GetPolicies())
-		{
-		if (policy->GetPolicyId().Equals(policyId))
-			{
-			return policy;
-			}
-		}
-	// if nothing found, return nullptr
-	return nullptr;
+	auto jsonpolicy = m_usageDb->GetPolicyFile(policyId);
+	if (jsonpolicy == Json::Value::GetNull())
+		return nullptr;
+	return Policy::Create(jsonpolicy);
 	}
 
 /*--------------------------------------------------------------------------------------+
@@ -499,11 +506,10 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetPolicies()
 std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
 	{
 	std::list<std::shared_ptr<Policy>> policyList;
-	// get all policies
-	auto allPolicies = GetPolicies();
-	// filter out policies that don't match userId
-	for (auto policy : allPolicies)
+	auto jsonpolicies = m_usageDb->GetPolicyFiles(m_userInfo.userId);
+	for (auto json : jsonpolicies)
 		{
+		auto policy = Policy::Create(json);
 		if (!PolicyHelper::IsValid(policy))
 			continue;
 		if (policy->GetAppliesToUserId().Equals(m_userInfo.userId))
@@ -550,9 +556,19 @@ std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductI
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ClientImpl::DeleteAllOtherUserPolicies(std::shared_ptr<PolicyToken> policyToken)
+	{
+	m_usageDb->DeleteAllOtherUserPolicyFiles(policyToken->GetPolicyId(),
+		policyToken->GetUserId());
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken)
 	{
 	m_usageDb->AddOrUpdatePolicyFile(policyToken->GetPolicyId(),
+		policyToken->GetUserId(),
 		policyToken->GetExpirationDate(),
 		policyToken->GetLastUpdateTime(),
 		policyToken->GetPolicyFile());

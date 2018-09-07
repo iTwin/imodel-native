@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/UsageDb.cpp $
+|     $Source: Licensing/UsageDb.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -73,6 +73,7 @@ BentleyStatus UsageDb::SetUpTables()
     // Create Policy table
     if (m_db.CreateTable("Policy",
                          "PolicyId NVARCHAR(20) PRIMARY KEY, "
+                         "UserId NVARCHAR(20), "
                          "ExpirationDate NVARCHAR(20), "
                          "LastUpdateTime NVARCHAR(20), "
                          "PolicyFile NVARCHAR(900)") != DbResult::BE_SQLITE_OK)
@@ -293,18 +294,50 @@ std::list<Json::Value> UsageDb::GetPolicyFiles()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
+std::list<Json::Value> UsageDb::GetPolicyFiles(Utf8String userId)
+	{
+	std::list<Json::Value> policyList;
+
+	Statement stmt;
+	if (m_db.IsDbOpen())
+		{
+		stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE UserID = ?");
+		stmt.BindText(1, userId, Statement::MakeCopy::No);
+		bool isDone = false;
+		while (!isDone)
+			{
+			DbResult result = stmt.Step();
+			if (result == DbResult::BE_SQLITE_ROW)
+				{
+				Utf8String policyUtf8 = stmt.GetValueText(0);
+				auto policyJson = Json::Reader::DoParse(policyUtf8);
+				policyList.push_back(policyJson);
+				}
+			else
+				{
+				isDone = true;
+				}
+			}
+		}
+	return policyList;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::AddOrUpdatePolicyFile(Utf8StringCR policyId, Utf8StringCR userId, Utf8StringCR expirationDate, Utf8StringCR lastUpdateTime, Json::Value policyToken)
     {
     Statement stmt;
 
     if (m_db.IsDbOpen())
         {
         Utf8String stringToken = Json::FastWriter::ToString(policyToken);
-        stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?)");
+        stmt.Prepare(m_db, "INSERT INTO Policy VALUES (?, ?, ?, ?, ?)");
         stmt.BindText(1, policyId, Statement::MakeCopy::No);
-        stmt.BindText(2, expirationDate, Statement::MakeCopy::No);
-        stmt.BindText(3, lastUpdateTime, Statement::MakeCopy::No);
-        stmt.BindText(4, stringToken, Statement::MakeCopy::No);
+		stmt.BindText(2, userId, Statement::MakeCopy::No);
+        stmt.BindText(3, expirationDate, Statement::MakeCopy::No);
+        stmt.BindText(4, lastUpdateTime, Statement::MakeCopy::No);
+        stmt.BindText(5, stringToken, Statement::MakeCopy::No);
         DbResult result = stmt.Step();
         if (result == DbResult::BE_SQLITE_DONE)
             return SUCCESS;
@@ -333,23 +366,64 @@ BentleyStatus UsageDb::DeletePolicyFile(Utf8StringCR policyId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::DeleteAllOtherUserPolicyFiles(Utf8StringCR policyId, Utf8StringCR userId)
+	{
+	Statement stmt;
+
+	if (m_db.IsDbOpen())
+		{
+		stmt.Prepare(m_db, "DELETE FROM Policy WHERE UserId = ? AND PolicyId != ?");
+		stmt.BindText(1, userId, Statement::MakeCopy::No);
+		stmt.BindText(2, policyId, Statement::MakeCopy::No);
+		DbResult result = stmt.Step();
+		if (result == DbResult::BE_SQLITE_DONE)
+			return SUCCESS;
+		}
+	return ERROR;
+	}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value UsageDb::GetPolicyFile()
     {
     Statement stmt;
 
-    stmt.Prepare(m_db, "SELECT * FROM Policy");
+    stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy");
 
     DbResult result = stmt.Step();
 
     if (result != DbResult::BE_SQLITE_ROW)
         return Json::Value::GetNull();
     
-    Utf8CP policy = stmt.GetValueText(3);
+    Utf8CP policy = stmt.GetValueText(0);
     
     auto jv = Json::Value(policy);
 
     return jv;
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value UsageDb::GetPolicyFile(Utf8StringCR policyId)
+	{
+	Statement stmt;
+
+	if (m_db.IsDbOpen())
+		{
+		stmt.Prepare(m_db, "SELECT PolicyFile FROM Policy WHERE PolicyId = ?");
+		stmt.BindText(1, policyId, Statement::MakeCopy::No);
+		DbResult result = stmt.Step();
+		if (result == DbResult::BE_SQLITE_ROW)
+			{
+			Utf8String policyUtf8 = stmt.GetValueText(0);
+			Json::Value policyJson = Json::Reader::DoParse(policyUtf8);
+			return policyJson;
+			}
+		}
+	return Json::Value::GetNull();
+	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
