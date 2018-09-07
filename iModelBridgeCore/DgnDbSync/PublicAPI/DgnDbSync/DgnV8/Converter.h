@@ -1828,7 +1828,8 @@ public:
     //! @note If you install RealDWG on a shared location, pass in an absolute path; otherwise the default \V8SDK\RealDwg\ location will be used.
     DGNDBSYNC_EXPORT static void Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, 
                                             BentleyApi::BeFileNameCR v8DllsRelativeDir, BentleyApi::BeFileNameCP realdwgAbsoluteDir, 
-                                            bool isPowerPlatformBased, int argc, WCharCP argv[]);
+                                            bool isPowerPlatformBased, int argc, WCharCP argv[],
+                                            BentleyApi::Dgn::IDmsSupport*);
     static BentleyStatus InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR realdwgDir);
     static BentleyStatus InitializeDwgSettings (Converter* v8converter);
     static void InitV8ForeignFileTypes (Converter* v8converter);

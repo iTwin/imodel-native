@@ -1305,6 +1305,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     // Stage the workspace and input file if  necessary.
     if (BSISUCCESS != SetupDmsFiles())
         return RETURN_STATUS_SERVER_ERROR;
+    //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
+    params.m_dmsSupport = m_dmsSupport;
 
     //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
@@ -1690,7 +1692,7 @@ void iModelBridgeFwk::LogStderr()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::iModelBridgeFwk()
-:m_logProvider(NULL)
+:m_logProvider(NULL), m_dmsSupport(NULL)
     {
     m_client = nullptr;
     }

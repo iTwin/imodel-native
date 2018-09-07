@@ -60,6 +60,7 @@ struct CallOnBimClose
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::Params::Params()
+    :m_dmsSupport(NULL)
     {
     m_spatialDataTransform.InitIdentity();
     }
