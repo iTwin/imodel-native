@@ -2521,6 +2521,16 @@ void IScalableMeshMeshQueryParams::SetUseAllResolutions(bool useAllResolutions)
     _SetUseAllResolutions(useAllResolutions);
     }
 
+bool IScalableMeshMeshQueryParams::GetReturnNodesWithNoMesh()
+{
+    return _GetReturnNodesWithNoMesh();
+ }
+
+void IScalableMeshMeshQueryParams::SetReturnNodesWithNoMesh(bool returnEmptyNodes)
+{
+    return _SetReturnNodesWithNoMesh(returnEmptyNodes);
+ }
+
 IScalableMeshViewDependentMeshQueryParams::IScalableMeshViewDependentMeshQueryParams()
     {
     }
@@ -3193,6 +3203,7 @@ GeometryGuide::GeometryGuide(DPoint3d center, DVec3d direction, double radius, d
     m_cylinderDir.Scale(height);
     m_cylinderRadius = radius;
     m_transformToCylinder.InitFromPlaneNormalToLine(center, height1, 3, false);
+    m_transformToCylinder.InverseOf(m_transformToCylinder);
 }
 
 double GeometryGuide::DistanceTo(const DPoint3d& pt) const
@@ -3238,7 +3249,7 @@ DPoint3d GeometryGuide::Project(const DPoint3d& pt) const
     case Type::Cylinder:
         DPoint3d cylPt = pt;
         m_transformToCylinder.Multiply(cylPt);
-        if (cylPt.z > m_cylinderDir.Magnitude())
+        /*if (cylPt.z > m_cylinderDir.Magnitude())
         {
             projectedPt.z = m_cylinderDir.Magnitude();
         }
@@ -3246,6 +3257,7 @@ DPoint3d GeometryGuide::Project(const DPoint3d& pt) const
         {
             projectedPt.z = 0;
         }
+        else*/ projectedPt.z = cylPt.z;
         cylPt.z = 0;
         cylPt.Normalize();
         cylPt.Scale(m_cylinderRadius);

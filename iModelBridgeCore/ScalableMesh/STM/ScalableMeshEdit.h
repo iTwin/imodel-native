@@ -28,6 +28,8 @@ class ScalableMeshEdit : public IScalableMeshEdit
 
         virtual void _SmoothNode(const DPlane3d& sourceGeometry, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node) override;
 
+        virtual void _SmoothNode(const DPoint3d& center, double radius, const DVec3d& direction, double height, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node) override;
+
         virtual void _Smooth(const DPlane3d& sourceGeometry) override;
 
     public:

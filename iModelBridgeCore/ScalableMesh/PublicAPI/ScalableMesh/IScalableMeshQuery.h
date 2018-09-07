@@ -728,6 +728,12 @@ struct IScalableMeshMeshQueryParams  : virtual public RefCountedBase
         virtual void _SetUseAllResolutions(bool useAllResolutions) = 0;
 
         virtual void _SetTargetPixelTolerance(double pixelTol) = 0;
+
+
+        virtual bool _GetReturnNodesWithNoMesh() = 0;
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) = 0;
+
     public:
         BENTLEY_SM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
@@ -748,6 +754,10 @@ struct IScalableMeshMeshQueryParams  : virtual public RefCountedBase
         BENTLEY_SM_EXPORT void SetUseAllResolutions(bool useAllResolutions);
 
         BENTLEY_SM_EXPORT void SetTargetPixelTolerance(double pixelTol);
+
+        BENTLEY_SM_EXPORT bool GetReturnNodesWithNoMesh();
+
+        BENTLEY_SM_EXPORT void SetReturnNodesWithNoMesh(bool returnEmptyNodes);
     };
 
 

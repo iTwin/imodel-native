@@ -87,6 +87,30 @@ void ScalableMeshEdit::_SmoothNode(const DPlane3d& sourceGeometry, const bvector
     node->EditNode()->ReplaceIndices(changedIndices, newCoordinates);
 }
 
+void ScalableMeshEdit::_SmoothNode(const DPoint3d& center, double radius, const DVec3d& direction, double height, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node)
+{
+    if (!node->IsHeaderLoaded())
+        node->LoadNodeHeader();
+
+    bvector<size_t> changedIndices;
+    if (!targetedIndices.empty())
+        changedIndices = targetedIndices;
+
+    bvector<DPoint3d> newCoordinates;
+
+    if (node->GetPointCount() < 4)
+        return;
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, true);
+    auto meshP = node->GetMesh(flags);
+    if (meshP == nullptr)
+        return;
+
+    auto geom = GeometryGuide(center,direction, radius, height);
+    dynamic_cast<ScalableMeshMeshWithGraph*>(meshP.get())->SmoothToGeometry(geom, changedIndices, newCoordinates, s_smoothness*2);
+
+    node->EditNode()->ReplaceIndices(changedIndices, newCoordinates);
+}
+
 //=======================================================================================
 // @bsimethod                                                  Elenie.Godzaridis 08/16
 //=======================================================================================
@@ -128,6 +152,12 @@ void IScalableMeshEdit::SmoothNode(const DPlane3d& sourceGeometry, IScalableMesh
 void IScalableMeshEdit::SmoothNode(const DPlane3d& sourceGeometry, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node)
 {
     return _SmoothNode(sourceGeometry, targetedIndices, node);
+}
+
+void IScalableMeshEdit::SmoothNode(const DPoint3d& center, double radius, const DVec3d& direction, double height, IScalableMeshNodePtr& node)
+{
+    bvector<size_t> targetedIndices;
+    return _SmoothNode(center, radius, direction, height, targetedIndices, node);
 }
 
 ScalableMeshEdit* ScalableMeshEdit::Create(SMMeshIndex<DPoint3d, DRange3d>* smIndex)

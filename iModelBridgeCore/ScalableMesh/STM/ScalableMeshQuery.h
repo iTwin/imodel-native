@@ -728,6 +728,16 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
         virtual void _SetLevel(size_t depth) override {};
         virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
         virtual bool _GetUseAllResolutions() override { return false; };
+
+        virtual bool _GetReturnNodesWithNoMesh()  override
+        {
+            return false;
+        }
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) override
+        {
+        }
+
         
         virtual const DPoint3d* _GetViewBox() const override
             {
@@ -864,6 +874,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         bool m_useAllResolutions;
 
         double m_pixelTolerance;
+        bool m_returnNodesWithNoMesh;
 
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
@@ -904,6 +915,15 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             {
             m_useAllResolutions = useAllResolutions;
             }
+        virtual bool _GetReturnNodesWithNoMesh()  override
+        {
+            return m_returnNodesWithNoMesh;
+        }
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) override
+        {
+            m_returnNodesWithNoMesh = returnEmptyNodes;
+         }
 
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) override
@@ -1231,6 +1251,13 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
 		}
         virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
         virtual bool _GetUseAllResolutions() override { return false; };
+        virtual bool _GetReturnNodesWithNoMesh()  override
+        {
+            return false;
+        }
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) override
+        { }
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override

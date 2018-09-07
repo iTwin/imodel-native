@@ -40,6 +40,8 @@ class IScalableMeshEdit  : public RefCountedBase
 
         virtual void _SmoothNode(const DPlane3d& sourceGeometry, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node) = 0;
 
+        virtual void _SmoothNode(const DPoint3d& center, double radius, const DVec3d& direction, double height, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node) = 0;
+
         virtual void _Smooth(const DPlane3d& sourceGeometry) = 0;
 
     public:
@@ -50,6 +52,8 @@ class IScalableMeshEdit  : public RefCountedBase
         BENTLEY_SM_EXPORT void Smooth(const DPlane3d& sourceGeometry);
 
         BENTLEY_SM_EXPORT void SmoothNode(const DPlane3d& sourceGeometry, IScalableMeshNodePtr& node);
+
+        BENTLEY_SM_EXPORT void SmoothNode(const DPoint3d& center, double radius, const DVec3d& direction, double height, IScalableMeshNodePtr& node);
 
         BENTLEY_SM_EXPORT void SmoothNode(const DPlane3d& sourceGeometry, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node);
     };

@@ -914,6 +914,7 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
     ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(
         range, scmQueryParamsPtr->GetLevel() < (size_t)-1 ? scmQueryParamsPtr->GetLevel() : m_scmIndexPtr->GetDepth(), queryExtent3d, scmQueryParamsPtr->GetUseAllResolutions(), scmQueryParamsPtr->GetTargetPixelTolerance()));
 
+    meshQueryP->SetIgnoreFaceIndexes(scmQueryParamsPtr->GetReturnNodesWithNoMesh());
     try
         {
         vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
