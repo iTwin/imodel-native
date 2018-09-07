@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__PUBLISH_SECTION_START__
 #include <DgnDbSync/Dwg/DwgDb/DwgDbDatabase.h>
 #include <DgnDbSync/Dwg/DwgDb/DwgResBuf.h>
 #include <DgnDbSync/Dwg/DwgDb/DwgDbObjects.h>
@@ -242,6 +243,7 @@ typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
 +===============+===============+===============+===============+===============+======*/
 struct DwgImporter
     {
+//__PUBLISH_SECTION_END__
     friend struct DwgBridge;
     friend struct DwgSyncInfo;
     friend struct DwgImportHost;
@@ -260,6 +262,7 @@ struct DwgImporter
     friend class DwgLightExt;
     friend class DwgBrepExt;
 
+//__PUBLISH_SECTION_START__
 public:
     //! Configuration for the conversion process
     struct Config
@@ -591,7 +594,13 @@ public:
         ResolvedModelMapping    m_modelMapping;
         
     public:
-        ElementImportInputs (DgnModelR model) : m_targetModel(model), m_spatialFilter(nullptr), m_parentEntity(nullptr) { m_transformToDgn.InitIdentity(); }
+        //! Constructor to begin building the input context for a valid target model
+        DGNDBSYNC_EXPORT ElementImportInputs (DgnModelR model);
+        //! Constructor to copy from a valid input context to a different valid target model
+        //! @param[in] model The target DgnModel in which elements created from the entity will be added
+        //! @param[in] entity The input DWG entity to be acquired by m_entity
+        //! @param[in] other The other input context to be copied
+        DGNDBSYNC_EXPORT ElementImportInputs (DgnModelR model, DwgDbEntityP entity, ElementImportInputs const& other);
         DgnModelR               GetTargetModelR () { return m_targetModel; }
         void                    SetClassId (DgnClassId id) { m_dgnClassId = id; }
         DgnClassId              GetClassId () const { return m_dgnClassId; }
@@ -938,6 +947,7 @@ protected:
     T_BlockPartsMap             m_blockPartsMap;
     T_PresentationRuleContents  m_presentationRuleContents;
 
+//__PUBLISH_SECTION_END__
 private:
     void                    InitUncategorizedCategory ();
     void                    InitBusinessKeyCodeSpec ();
@@ -954,7 +964,7 @@ private:
     Utf8String              RemapNameString (Utf8String filename, Utf8StringCR name, Utf8StringCR suffix);
     void                    OpenAndImportEntity (ElementImportInputs& inputs);
     Utf8String              ComputeModelName (Utf8StringR proposedName, BeFileNameCR baseFileName, BeFileNameCR refPath, Utf8CP inSuffix, DgnClassId modelType);
-    bool                    AddToDwgModelMap (ResolvedModelMapping const&);
+    BentleyStatus           ImportModelsFrom (DwgDbBlockTableRecordR block, SubjectCR parentSubject, bool& hasPushedReferencesSubject);
     ECN::ECObjectsStatus    AddAttrdefECClassFromBlock (ECN::ECSchemaPtr& schema, DwgDbBlockTableRecordCR block);
     void                    ImportAttributeDefinitionSchema (ECN::ECSchemaR attrdefSchema);
     void                    ImportDomainSchema (WCharCP fileName, DgnDomain& domain);
@@ -962,7 +972,6 @@ private:
     void                    CheckSameRootModelAndUnits ();
     void                    ComputeDefaultImportJobName (Utf8StringCR rootModelName);
     Utf8String              GetImportJobNamePrefix () const { return ""; }
-    ResolvedModelMapping    FindRootModelFromImportJob ();
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
     bool                    ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
@@ -971,6 +980,7 @@ private:
 
     static void             RegisterProtocalExtensions ();
 
+//__PUBLISH_SECTION_START__
 protected:
     //! @name  Miscellaneous
     //! @{
@@ -1019,23 +1029,50 @@ protected:
 
     //! @name  Creating DgnModels for DWG
     //! @{
-    // Modelspace and xRef blocks as Physical Models, layout blocks as sheet models
+    //! Modelspace and xRef blocks as Physical Models, layout blocks as sheet models
+    //! Set the geo location.  Calculate and cache units, active viewport, etc.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportSpaces ();
+    //! Walk through the block section, get or create DgnModel's from layouts and xRef attachments.
+    //! @note This is a model discovery phase.  It only creates DgnModel's.  Model filling will take place in _ImportEntitySection and _ImportLayouts, based on model mappings.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportDwgModels ();
+    //! Get or create a DgnModel for the input DWG layout/paperspace block
+    //! @param[in] block A layout/paperspace block definition
+    //! @return A ResolvedModelMapping created or retrieved for the input DWG block.  Return an invalid mapping to skip the layout.
+    DGNDBSYNC_EXPORT virtual ResolvedModelMapping _ImportLayoutModel (DwgDbBlockTableRecordCR block);
+    //! Get to create a DgnModel for the input DWG xReference attachment
+    //! @param[in] block An xRef block definition
+    //! @param[in] insertId An instance of the xRef block (aka as insert entity)
+    //! @param[in] xRefDwg The xReference file's database created by this importer via DwgXRefHolder
+    //! @return A ResolvedModelMapping created or retrieved for the input DWG block.  Return an invalid mapping to skip the xRef instance.
+    DGNDBSYNC_EXPORT virtual ResolvedModelMapping _ImportXrefModel (DwgDbBlockTableRecordCR block, DwgDbObjectIdCR insertId, DwgDbDatabaseP xRefDwg);
+    //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
+    //! @param[in] updating True for updating existing DgnDb; false for the initial creation of DgnDb.
+    DGNDBSYNC_EXPORT virtual ResolvedModelMapping _GetOrCreateRootModel (bool updating);
+    //! Set unit formats to be displayed in the DgnModel created from the input block.
+    //! @param[out] displayInfo Unit formats to be displayed in the model created from the input block
+    //! @param[in] block A modelspace, layout/paperspace, or xRef block
     DGNDBSYNC_EXPORT virtual void       _SetModelUnits (GeometricModel::Formatter& displayInfo, DwgDbBlockTableRecordCR block);
     //! Get a DgnModel from the syncInfo for updating, or create a new DgnModel for importing, from a DWG model/paperspace or an xref (when xrefInsert!=nullptr & xrefDwg!=nullptr)
-    ResolvedModelMapping                GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
-    //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
-    ResolvedModelMapping                GetOrCreateRootModel (bool updating);
+    DGNDBSYNC_EXPORT ResolvedModelMapping GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
     //! Partition the parent subject and create a DefinitionModel dedicated for GeometryParts
-    BentleyStatus                       GetOrCreateGeometryPartsModel ();
-    ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
-    ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
+    DGNDBSYNC_EXPORT BentleyStatus      GetOrCreateGeometryPartsModel ();
+    DGNDBSYNC_EXPORT ResolvedModelMapping GetRootModel () const { return  m_rootDwgModelMap; }
+    //! Retrieve model mapping from the sync info
+    DGNDBSYNC_EXPORT ResolvedModelMapping GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
+    //! Create a new model mapping and insert it to the sync info, returning the new entry
+    //! @param[in] model A DgnModel to be mapped
+    //! @param[in] block A DWG block to be mapped
+    //! @param[in] trans A tranformation for the model mapping
+    //! @param[in] xrefInsert An instance of xRef, null if not an xRef model mapping
+    //! @param[in] xrefDwg The DWG database of the xRef file, null if not an xRef model mapping
+    DGNDBSYNC_EXPORT ResolvedModelMapping CreateAndInsertModelMap (DgnModelP model, DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
+    DGNDBSYNC_EXPORT bool               AddToDwgModelMap (ResolvedModelMapping const&);
+    DGNDBSYNC_EXPORT ResolvedModelMapping FindRootModelFromImportJob ();
     //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
     DGNDBSYNC_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
     //! Find a cached DgnModel mapped from an xRef or raster attachment.
     DGNDBSYNC_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR atatchmentId, DwgSyncInfo::ModelSourceType sourceType);
-    Utf8String                          RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
+    DGNDBSYNC_EXPORT Utf8String         RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
     DGNDBSYNC_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, Utf8CP suffix = nullptr);
     DGNDBSYNC_EXPORT virtual DgnClassId _GetModelType (DwgDbBlockTableRecordCR block);
 
@@ -1352,3 +1389,4 @@ public:
 };  // UpdaterChangeDetector
 
 END_DGNDBSYNC_DWG_NAMESPACE
+//__PUBLISH_SECTION_END__

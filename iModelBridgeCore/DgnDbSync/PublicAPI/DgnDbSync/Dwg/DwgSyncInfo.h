@@ -237,13 +237,13 @@ struct DwgSyncInfo
         uint64_t                    m_instanceId;   //!< DWG object ID of a block, an xref insert or a raster image from which this model was created
 
     public:
-        DwgModelMapping ();
+        DGNDBSYNC_EXPORT DwgModelMapping ();
         //! map the modelspace or a paperspace to a DgnModel
-        DwgModelMapping (DgnModelId mid, DwgDbBlockTableRecordCR block, TransformCR trans);
+        DGNDBSYNC_EXPORT DwgModelMapping (DgnModelId mid, DwgDbBlockTableRecordCR block, TransformCR trans);
         //! map an xref insert entity to a DgnModel
-        DwgModelMapping (DgnModelId mid, DwgDbBlockReferenceCR xrefInsert, DwgDbDatabaseR xrefDwg, TransformCR trans);
+        DGNDBSYNC_EXPORT DwgModelMapping (DgnModelId mid, DwgDbBlockReferenceCR xrefInsert, DwgDbDatabaseR xrefDwg, TransformCR trans);
         //! map a raster attachment to a DgnModel
-        DwgModelMapping (DgnModelId mid, DwgDbRasterImageCR raster, TransformCR trans);
+        DGNDBSYNC_EXPORT DwgModelMapping (DgnModelId mid, DwgDbRasterImageCR raster, TransformCR trans);
 
         BeSQLite::DbResult  Insert (BeSQLite::Db&) const;
         BeSQLite::DbResult  Update (BeSQLite::Db&) const;
