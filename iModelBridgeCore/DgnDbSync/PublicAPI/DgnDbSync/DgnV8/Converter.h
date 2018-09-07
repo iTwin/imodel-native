@@ -1009,7 +1009,7 @@ public:
     virtual Params& _GetParamsR() = 0;
 
     bool SkipECContent() const {return m_skipECContent;}
-
+    void SetSkipEContent(bool val) {m_skipECContent = val;}
     //! Add a callback to be invoked by RetrieveV8ECSchemas
     //! @param v    Verifier to be invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported
     void AddSchemaImportVerifier(ISChemaImportVerifier& v) { m_schemaImportVerifiers.push_back(&v); }

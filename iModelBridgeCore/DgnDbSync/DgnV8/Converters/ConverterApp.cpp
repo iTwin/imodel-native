@@ -474,10 +474,10 @@ BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
 BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
     {
     bool skipECData = false;
-    if (m_converter.IsValid())
-        skipECData = m_converter->m_skipECContent;
+    if (nullptr != m_converter)
+        skipECData = m_converter->SkipECContent();
     m_converter.reset(new RootModelConverter(m_params));
-    m_converter->m_skipECContent = skipECData;
+    m_converter->SetSkipEContent(skipECData);
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
     return m_converter->AttachSyncInfo();
