@@ -1756,14 +1756,21 @@ class GeometryGuide
     {
         None = 0,
         Plane,
+        Cylinder,
         Qty
     };
 
     Type m_type;
     DPlane3d m_planeDef;
+    DPoint3d m_cylinderCenter;
+    DVec3d m_cylinderDir;
+    double m_cylinderRadius;
+    Transform m_transformToCylinder;
 
 public:
     GeometryGuide(const DPlane3d& plane);
+
+    GeometryGuide(DPoint3d center, DVec3d direction, double radius, double height);
 
     double DistanceTo(const DPoint3d& pt) const;
 

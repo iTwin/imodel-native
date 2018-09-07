@@ -3182,12 +3182,32 @@ GeometryGuide::GeometryGuide(const DPlane3d& plane)
     m_planeDef = plane;
 }
 
+GeometryGuide::GeometryGuide(DPoint3d center, DVec3d direction, double radius, double height)
+{
+    m_type = Type::Cylinder;
+    m_cylinderCenter = center;
+    m_cylinderDir = direction;
+    m_cylinderDir.Normalize();
+    DPoint3d height1;
+    height1.SumOf(m_cylinderCenter, m_cylinderDir);
+    m_cylinderDir.Scale(height);
+    m_cylinderRadius = radius;
+    m_transformToCylinder.InitFromPlaneNormalToLine(center, height1, 3, false);
+}
+
 double GeometryGuide::DistanceTo(const DPoint3d& pt) const
 {
     switch (m_type)
     {
     case Type::Plane:
         return m_planeDef.Evaluate(pt);
+    case Type::Cylinder:
+        DPoint3d cylPt = pt;
+        m_transformToCylinder.Multiply(cylPt);
+        if (cylPt.z >= 0 && cylPt.z <= m_cylinderDir.Magnitude())
+            return sqrt(cylPt.x*cylPt.x + cylPt.y*cylPt.y) - m_cylinderRadius;
+        else
+            return (cylPt.z > 0 ? cylPt.z - m_cylinderDir.Magnitude() : cylPt.z) + max(0.0, cylPt.x*cylPt.x + cylPt.y*cylPt.y - m_cylinderRadius*m_cylinderRadius);
     default:
         return DBL_MAX;
     }
@@ -3199,6 +3219,8 @@ void GeometryGuide::TransformWith(const Transform& tr)
     {
     case Type::Plane:
         tr.Multiply(m_planeDef);
+        break;
+    case Type::Cylinder:
         break;
     default:
         break;
@@ -3212,6 +3234,26 @@ DPoint3d GeometryGuide::Project(const DPoint3d& pt) const
     {
     case Type::Plane:
         m_planeDef.ProjectPoint(projectedPt, pt);
+        break;
+    case Type::Cylinder:
+        DPoint3d cylPt = pt;
+        m_transformToCylinder.Multiply(cylPt);
+        if (cylPt.z > m_cylinderDir.Magnitude())
+        {
+            projectedPt.z = m_cylinderDir.Magnitude();
+        }
+        else if(cylPt.z < 0)
+        {
+            projectedPt.z = 0;
+        }
+        cylPt.z = 0;
+        cylPt.Normalize();
+        cylPt.Scale(m_cylinderRadius);
+        projectedPt.x = cylPt.x;
+        projectedPt.y = cylPt.y;
+        Transform tr;
+        tr.InverseOf(m_transformToCylinder);
+        tr.Multiply(projectedPt);
         break;
     default:
         break;
@@ -3227,6 +3269,23 @@ DVec3d GeometryGuide::NormalAt(const DPoint3d& pt) const
     case Type::Plane:
         normal = m_planeDef.normal;
         break;
+    case Type::Cylinder:
+        DPoint3d cylPt = pt;
+        m_transformToCylinder.Multiply(cylPt);
+        if (cylPt.z >= 0 && cylPt.z <= m_cylinderDir.Magnitude())
+        {
+            normal = DVec3d::From(2 * cylPt.x, 2 * cylPt.y, 0);
+            Transform tr;
+            tr.InverseOf(m_transformToCylinder);
+            tr.Multiply(normal);
+        }
+        else if (cylPt.z > 0)
+            normal = m_cylinderDir;
+        else
+        {
+            normal = m_cylinderDir;
+            normal.Negate();
+        }
     default:
         break;
     }
