@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -45,18 +45,21 @@ struct SyncCachedDataTask : public CachingTaskBase
             CacheQuery() {};
             CacheQuery(IQueryProvider::Query query) : query(query) {};
             };
-        
+
     private:
-        bvector<IQueryProviderPtr>          m_queryProviders;
+        bvector<IQueryProviderPtr> m_queryProviders;
 
-        bvector<Instance>        			       m_initialInstances;
-        std::deque<std::shared_ptr<CacheQuery>>    m_queriesToCache;
-        bset<ECInstanceKey>                 m_filesToDownload;
+        bvector<Instance> m_initialInstances;
+        std::deque<std::shared_ptr<CacheQuery>> m_queriesToCache;
 
-        bset<ECInstanceKey>                     m_instancesWithQueriesProvided;
-        std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;             
+        bset<std::shared_ptr<CacheQuery>> m_queriesToReportProgress;
 
-        ICachingDataSource::ProgressCallback m_onProgress;
+        bset<ECInstanceKey> m_filesToDownload;
+
+        bset<ECInstanceKey> m_instanceQueriesPrepared;
+        std::shared_ptr<ECInstanceKeyMultiMap> m_persistentInstances;             
+
+        ICachingDataSource::ProgressControlsPtr m_progressControls;
 
         size_t m_syncedInstances = 0;
         size_t m_syncedInitialInstances = 0;
@@ -71,7 +74,7 @@ struct SyncCachedDataTask : public CachingTaskBase
         void CacheInitialInstances(CacheTransactionCR txn, const bset<Instance>& instanceKeys);
 
         void ContinueCachingQueries(CacheTransactionCR txn);
-        void PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively);
+        void PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively, bool reportProgress = true);
 
         void InvalidatePersistentInstances();
         bool IsInstancePersistent(CacheTransactionCR txn, ECInstanceKeyCR instanceKey);
@@ -89,7 +92,7 @@ struct SyncCachedDataTask : public CachingTaskBase
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ICachingDataSource::ProgressCallback onProgress,
+            ICachingDataSource::ProgressControlsPtr progressControls,
             ICancellationTokenPtr ct
             );
     };

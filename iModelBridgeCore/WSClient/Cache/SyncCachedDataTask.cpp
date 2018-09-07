@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -27,12 +27,12 @@ CachingDataSourcePtr ds,
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ICachingDataSource::ProgressCallback onProgress,
+ICachingDataSource::ProgressControlsPtr progressControls,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
-m_onProgress(onProgress ? onProgress : [] (CachingDataSource::ProgressCR) {})
+m_progressControls(progressControls ? progressControls : std::make_shared<ICachingDataSource::ProgressControls>())
     {
     for (auto& key : initialInstances)        
         m_initialInstances.push_back(Instance(key));
@@ -51,12 +51,12 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
     size_t syncedInstances = m_syncedInstances;
-    size_t totalInstances = m_instancesWithQueriesProvided.size();
+    size_t totalInstances = m_queriesToReportProgress.size();
 
     if (totalInstances == 0)
         totalInstances = m_initialInstances.size();
 
-    m_onProgress({        
+    m_progressControls->m_progressCallback({        
         progress,
         {(double) syncedInstances, (double) totalInstances},
         m_downloadBytesProgress,
@@ -201,7 +201,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         {
         if (IsTaskCanceled())
             return;
-        
+
         auto txn = m_ds->StartCacheTransaction();
         if (result.IsSuccess())
             {
@@ -218,7 +218,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
                 return;
             
             for (auto& pair : cachedInstances)
-                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively);
+                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively, m_progressControls->m_shouldReportQueryProgress(providedQuery->query));
             }
         else
             {
@@ -271,10 +271,12 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, ECInstanceKeyCR i
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively)
+void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively, bool reportProgress)
     {
-    if (m_instancesWithQueriesProvided.find(instanceKey) != m_instancesWithQueriesProvided.end())
+    if (m_instanceQueriesPrepared.find(instanceKey) != m_instanceQueriesPrepared.end())
         return;
+
+    m_instanceQueriesPrepared.insert(instanceKey);
 
     bool isPersistent = IsInstancePersistent(txn, instanceKey);
     auto instancePtr = std::make_shared<Instance>(instanceKey);
@@ -289,6 +291,9 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
                 auto cacheQueryPtr = std::make_shared<CacheQuery>(query);
                 cacheQueryPtr->instance = instancePtr;
                 instancePtr->cacheQueries.push_back(cacheQueryPtr);
+
+                if (m_progressControls->m_shouldReportQueryProgress(query))
+                    m_queriesToReportProgress.insert(cacheQueryPtr);
                 
                 m_queriesToCache.insert(m_queriesToCache.end(), cacheQueryPtr);
                 }
@@ -306,10 +311,8 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
 
     size_t instanceQueriesCount = instancePtr->cacheQueries.size();
     m_totalQueries += instanceQueriesCount;
-    if (instanceQueriesCount == 0)
+    if (instanceQueriesCount == 0 && reportProgress)
         m_syncedInstances++;
-    
-    m_instancesWithQueriesProvided.insert(instanceKey);
     }
 
 /*--------------------------------------------------------------------------------------+
