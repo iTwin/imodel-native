@@ -2904,12 +2904,24 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     ASSERT_EQ(1, contentSet.GetSize());
     
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
-    RapidJsonValueCR values = recordJson["Values"];
-    RapidJsonValueCR pointValue = values[descriptor->GetVisibleFields()[0]->GetName().c_str()];
-    EXPECT_TRUE(pointValue.IsObject());
-    EXPECT_DOUBLE_EQ(1.0, pointValue["x"].GetDouble());
-    EXPECT_DOUBLE_EQ(2.0, pointValue["y"].GetDouble());
-    EXPECT_DOUBLE_EQ(3.0, pointValue["z"].GetDouble());
+
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"(
+        {
+        "ClassH_PointProperty": {"x": 1.0, "y": 2.0, "z": 3.0}
+        })");
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+
+    rapidjson::Document expectedDisplayValues;
+    expectedDisplayValues.Parse(R"(
+        {
+        "ClassH_PointProperty": "1,2,3"
+        })");
+    EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5561,6 +5573,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     EXPECT_EQ(expectedValues1, recordJson1["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues1) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["Values"]);
+    rapidjson::Document expectedDisplayValues1;
+    expectedDisplayValues1.Parse(R"(
+        {
+        "MyClass_PointsArrayProperty": ["0,0,0", "1,1,1"]
+        })");
+    EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson1["DisplayValues"]);
     
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     rapidjson::Document expectedValues2;
@@ -5574,6 +5594,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    rapidjson::Document expectedDisplayValues2;
+    expectedDisplayValues2.Parse(R"(
+        {
+        "MyClass_PointsArrayProperty": ["3,3,3", "4,4,4", "5,5,5"]
+        })");
+    EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["DisplayValues"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -8148,15 +8176,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                    }]
                 },
             "DisplayValues": {
-                "ChildClass_IntProperty": 1,
+                "ChildClass_IntProperty": "1",
                 "ChildClass_StringProperty": "111",
-                "ChildClass_ArrayProperty": [2, 1],
+                "ChildClass_ArrayProperty": ["2", "1"],
                 "ChildClass_StructProperty": {
-                    "IntProperty": 123,
+                    "IntProperty": "123",
                     "StringProperty": "abc"
                     },
                 "ChildClass_StructArrayProperty": [{
-                   "IntProperty": 123,
+                   "IntProperty": "123",
                    "StringProperty": "abc"
                    }]
                 },
@@ -8180,18 +8208,18 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                    }]
                 },
             "DisplayValues": {
-                "ChildClass_IntProperty": 2,
+                "ChildClass_IntProperty": "2",
                 "ChildClass_StringProperty": "222",
-                "ChildClass_ArrayProperty": [3],
+                "ChildClass_ArrayProperty": ["3"],
                 "ChildClass_StructProperty": {
-                    "IntProperty": 456,
+                    "IntProperty": "456",
                     "StringProperty": "def"
                     },
                 "ChildClass_StructArrayProperty": [{
-                   "IntProperty": 456,
+                   "IntProperty": "456",
                    "StringProperty": "def"
                    },{
-                   "IntProperty": 789,
+                   "IntProperty": "789",
                    "StringProperty": "ghi"
                    }]
                 },
@@ -8319,8 +8347,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                 "ClassE_LongProperty": 111
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": 1,
-                "ClassE_LongProperty": 111
+                "ClassE_IntProperty": "1",
+                "ClassE_LongProperty": "111"
                 },
             "MergedFieldNames": []
             },{
@@ -8330,8 +8358,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                 "ClassE_LongProperty": 222
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": 2,
-                "ClassE_LongProperty": 222
+                "ClassE_IntProperty": "2",
+                "ClassE_LongProperty": "222"
                 },
             "MergedFieldNames": []
             },{
@@ -8341,8 +8369,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                 "ClassE_LongProperty": 333
                 },
             "DisplayValues": {
-                "ClassE_IntProperty": 3,
-                "ClassE_LongProperty": 333
+                "ClassE_IntProperty": "3",
+                "ClassE_LongProperty": "333"
                 },
             "MergedFieldNames": []
             }]
@@ -13056,7 +13084,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
                 "ElementMultiAspect_StringProperty": null
                 },
             "DisplayValues": {
-                "ElementMultiAspect_IntProperty": 123,
+                "ElementMultiAspect_IntProperty": "123",
                 "ElementMultiAspect_StringProperty": ""
                 },
             "MergedFieldNames": [
@@ -13186,7 +13214,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
                 "ElementMultiAspect_StringProperty": null
                 },
             "DisplayValues": {
-                "ElementMultiAspect_IntProperty": 123,
+                "ElementMultiAspect_IntProperty": "123",
                 "ElementMultiAspect_StringProperty": ""
                 },
             "MergedFieldNames": [
@@ -13354,7 +13382,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertie
                 "ElementMultiAspect_StringProperty": null
                 },
             "DisplayValues": {
-                "ElementMultiAspect_IntProperty": 123,
+                "ElementMultiAspect_IntProperty": "123",
                 "ElementMultiAspect_StringProperty": ""
                 },
             "MergedFieldNames": [
