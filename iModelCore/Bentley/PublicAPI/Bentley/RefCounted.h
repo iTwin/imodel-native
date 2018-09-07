@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/RefCounted.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,16 +30,25 @@ public:
     virtual uint32_t Release() const = 0;
 };
 
-// define this macro to catch calls to Release without matching calls to AddRef; and to catch suspiciously large reference counts
+// define this macro to catch calls to Release without matching calls to AddRef
 #if !defined NDEBUG
 #define DEBUG_REF_COUNTING
 #endif
 
+// define this macro to assert on suspiciously large reference counts which may indicate a memory leak and/or reference cycle.
+// This can produce lots of erroneous assertions for heavily-referenced types like DgnModel, RenderMaterial, etc.
+// Increase the 'reasonable' ref-count for such types by overriding _GetExcessiveRefCountThreshold()
+// #define DEBUG_EXCESSIVE_REF_COUNTS
+
 #if defined DEBUG_REF_COUNTING
     # define REFCOUNT_RELEASE_CHECK(val) BeAssert(0!=val)
-    # define REFCOUNT_EXCESSIVE_CHECK(val) BeAssert(val < _GetExcessiveRefCountThreshold() && "Unusually large number of referents to this object")
 #else
     # define REFCOUNT_RELEASE_CHECK(val)
+#endif
+
+#if defined DEBUG_EXCESSIVE_REF_COUNTS
+    # define REFCOUNT_EXCESSIVE_CHECK(val) BeAssert(val < _GetExcessiveRefCountThreshold() && "Unusually large number of referents to this object")
+#else
     # define REFCOUNT_EXCESSIVE_CHECK(val)
 #endif
 
