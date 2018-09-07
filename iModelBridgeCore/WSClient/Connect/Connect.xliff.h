@@ -18,7 +18,7 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     ALERT_UnsupportedToken,                  // =="Could not sign in with provided token."==
     ALERT_SignInFailed_ServerError,          // =="Could not connect to server. Check your network connection."==
     ALERT_SignInFailed_Message,              // =="Please enter the correct email and password."==
-    ALERT_ConnectionClientNotLoggedIn_Message,             // =="Please log in to CONNECTION Client."==
+    ALERT_ConnectionClientNotLoggedIn_Message,             // =="Please sign in to CONNECTION Client with your CONNECT organization user account."==
     ALERT_CCNotInstalledError,               // =="CONNECTION Client is not installed. Please install it and try again."==
     ALERT_CCNotRunningError,                 // =="CONNECTION Client is not running. Please run it and try again."==
     ALERT_CCInvalidCredentialsError,         // =="Invalid username or password in CONNECTION Client. Please try signing in again."==
