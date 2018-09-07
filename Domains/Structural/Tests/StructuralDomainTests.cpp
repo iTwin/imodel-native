@@ -58,7 +58,8 @@ TEST_F(StructuralDomainTestFixture, ValidateSchema)
     ECN::ECSchemaPtr refSchema = context->LocateSchema(refKey, ECN::SchemaMatchType::LatestWriteCompatible);
     ASSERT_TRUE(refSchema.IsValid());
 
-    ASSERT_TRUE(ECN::ECSchemaValidator::Validate(*refSchema));
+    ECN::ECSchemaValidator validator;
+    ASSERT_TRUE(validator.Validate(*refSchema));
     }
 
 
