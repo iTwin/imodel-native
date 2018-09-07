@@ -22,6 +22,12 @@
 #define USING_NAMESPACE_BENTLEY_DGN  using namespace BentleyApi::Dgn;
 #endif
 
+//Forward declaration for DgnDocumentManager
+namespace Bentley {
+    namespace DgnPlatform {
+        struct DgnDocumentManager;
+    }
+}
 #include <Logging/bentleylogging.h>
 
 
@@ -38,6 +44,7 @@ struct IDmsSupport
     virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i) = 0;
     virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR workspaceDir, bool isv8i) = 0;
     virtual void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) = 0;
+    virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() = 0;
     };
 
 /*---------------------------------------------------------------------------------**//**

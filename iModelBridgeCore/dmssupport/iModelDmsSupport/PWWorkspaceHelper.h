@@ -31,6 +31,7 @@ struct PWWorkspaceHelper : public IDmsSupport
         StatusInt GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker);
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i) override;
         virtual  void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) override;
+        virtual Bentley::DgnPlatform::DgnDocumentManager* _GetDgnDocumentManager() override;
     };
 
 END_BENTLEY_DGN_NAMESPACE

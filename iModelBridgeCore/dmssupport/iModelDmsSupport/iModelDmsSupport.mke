@@ -44,7 +44,11 @@ $(o)iModelDmsSupport$(oext) : $(_MakeFilePath)iModelDmsSupport.cpp $(dmsAPISrc)D
 
 $(o)PWWorkspaceHelper$(oext) : $(_MakeFilePath)PWWorkspaceHelper.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
+$(o)PWDocumentManager$(oext) : $(_MakeFilePath)PWDocumentManager.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
+
+DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
 
 #--------------------------------------------------------------------------------------
 #   Create the library
@@ -64,5 +68,5 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)PWManagedWorkspace$(stlibext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmscli$(stlibext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmsgen$(stlibext)
-
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnPlatform.lib
 %include $(sharedMki)linkLibrary.mki
