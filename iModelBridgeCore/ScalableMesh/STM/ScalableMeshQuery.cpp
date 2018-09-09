@@ -3202,7 +3202,7 @@ GeometryGuide::GeometryGuide(DPoint3d center, DVec3d direction, double radius, d
     height1.SumOf(m_cylinderCenter, m_cylinderDir);
     m_cylinderDir.Scale(height);
     m_cylinderRadius = radius;
-    m_transformToCylinder.InitFromPlaneNormalToLine(center, height1, 3, false);
+    m_transformToCylinder.InitFromPlaneNormalToLine(center, height1, 2, false);
     m_transformToCylinder.InverseOf(m_transformToCylinder);
 }
 
