@@ -1705,8 +1705,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             if (stat == BE_SQLITE_DONE)
                 stat = BE_SQLITE_OK;
             }
-
-        stat =  strDataP ? db.SaveProperty(spec, *strDataP, value, propsize, id, subId) :  db.SaveProperty(spec, value, propsize, id, subId);
         else
             stat =  strDataP ? db.SaveProperty(spec, *strDataP, value, propsize, id, subId) :  db.SaveProperty(spec, value, propsize, id, subId);
         return Napi::Number::New(Env(), (int) stat);
