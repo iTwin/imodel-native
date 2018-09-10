@@ -51,10 +51,6 @@ constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 static const Utf8String s_classifierIdPrefix("C:");
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
-static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
-#endif
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
@@ -1112,13 +1108,6 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     Transform transform = Transform::From(centroid);
 
-#if defined (BENTLEYCONFIG_PARASOLID)
-    PSolidKernelManager::StartSession();
-
-    if (s_psolidMainThreadMark.IsNull())
-        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
-#endif
-
     Transform rangeTransform;
     rangeTransform.InverseOf(transform);
     DRange3d tileRange;
@@ -1532,6 +1521,11 @@ Loader::State Loader::ReadFromCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::State Loader::ReadFromModel()
     {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    BeAssert(PSolidKernelManager::IsSessionStarted());
+    PSolidThreadUtil::WorkerThreadOuterMark outerMark;
+#endif
+
     // Generate geometry
     GeometryLoader geomLoader(*this);
     if (!geomLoader.GenerateGeometry())
