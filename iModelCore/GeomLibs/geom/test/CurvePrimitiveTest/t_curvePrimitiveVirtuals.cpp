@@ -14,6 +14,7 @@ void ExerciseVirtualsA (ICurvePrimitivePtr &curve, double splitFractionA, double
     if (!Check::True (clone.IsValid (), "Clone.IsValid ()"))
         return;
     Check::True (clone->IsSameStructure (*curve), "Clone has same structure");
+    Check::True (clone->IsSameStructureAndGeometry (*curve), "Clone has same structure and geometry");
     // Check that point and derivatives from various fraction evaluators agree ..
     DPoint3d pointA0, pointB0;
     curve->FractionToPoint (splitFractionA, pointA0);
@@ -42,11 +43,15 @@ void ExerciseVirtualsA (ICurvePrimitivePtr &curve, double splitFractionA, double
     Check::True (cloneAB->Length (lengthABClone));
     Check::True (curve->SignedDistanceBetweenFractions  (splitFractionA, splitFractionB, lengthAB));
     Check::Near (lengthAB, lengthABClone);
+    CurveLocationDetail detailAtoB, detailBtoA;
+    Check::True (curve->PointAtSignedDistanceFromFraction (splitFractionA,  lengthAB, false, detailAtoB));
+    Check::True (curve->PointAtSignedDistanceFromFraction (splitFractionB,  -lengthAB, false, detailBtoA));
+    Check::Near (splitFractionB, detailAtoB.fraction, "PointAtSignedDistance positive");
+    Check::Near (splitFractionA, detailBtoA.fraction, "PointAtSignedDistance negative");
 
     double fastLengthAB;
     Check::True (cloneAB->FastLength(fastLengthAB));
     Check::LessThanOrEqual (lengthAB, fastLengthAB);
-
 
     DPoint3d pointA10, pointB10;
     Check::True (cloneAB->GetStartEnd (pointA10, pointB10));
@@ -81,6 +86,11 @@ void ExerciseVirtualsA (ICurvePrimitivePtr &curve, double splitFractionA, double
             Check::Near (tangent0, tangent1);
             }
         }
+    
+    double fastMaxAbs = curve->FastMaxAbs ();
+    double rangeMaxAbs = range01.MaxAbs ();
+    Check::LessThanOrEqual (pointA0.MaxAbs (), fastMaxAbs);
+    Check::LessThanOrEqual (pointA0.MaxAbs (), rangeMaxAbs);
     }
 void ExerciseContentQueries (ICurvePrimitivePtr &curve)
     {
@@ -108,6 +118,102 @@ void ExerciseContentQueries (ICurvePrimitivePtr &curve)
         Check::True (dataCP != nullptr);
         auto dataP = curve->GetLineStringCP ();
         Check::True (dataP != nullptr);
+        }
+    else if (type == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve)
+        {
+        auto dataPtr = curve->GetMSBsplineCurvePtr ();
+        Check::True (dataPtr.IsValid ());
+        MSBsplineCurve bcurve;
+        bool hasBCurve = curve->GetMSBsplineCurve (bcurve);
+        Check::True (hasBCurve);
+        }
+
+    if (type != ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector)
+        {
+        Check::True (curve->IsFractionSpace ());
+        }
+
+    }
+bool CheckWithinFactor (double a, double b, double factor, char const *message)
+    {
+    return Check::LessThanOrEqual (a, factor * b, message)
+        && Check::LessThanOrEqual (b, factor * a, message);
+    }
+void ExerciseStrokeVirtuals (ICurvePrimitivePtr &curve, double fractionA, double fractionB)
+    {
+    bvector<DPoint3d> strokes;
+    auto options = IFacetOptions::CreateForCurves ();
+    curve->AddStrokes (strokes, *options, true, fractionA, fractionB);
+    auto strokeCurve = ICurvePrimitive::CreateLineString (strokes);
+    double lengthAB, lengthStrokes;
+    curve->SignedDistanceBetweenFractions (fractionA, fractionB, lengthAB);
+    strokeCurve->Length (lengthStrokes);
+    double f1 = 1.0 + Angle::SmallAngle ();
+    Check::LessThanOrEqual (lengthStrokes, f1 * lengthAB);
+    Check::LessThanOrEqual (0.95 * lengthAB, lengthStrokes);
+
+    size_t numStrokesA = curve->GetStrokeCount (*options, fractionA, fractionB);
+    size_t numPoints = strokes.size ();
+    // hm... no exact expectations, and spirals have issues . . .
+    if (curve->GetCurvePrimitiveType () != ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral)
+        CheckWithinFactor ((double)(numStrokesA + 1) , (double)numPoints, 1.5, "predicted and actual stroke counts similar");
+    }
+
+void ExercisePlaneIntersection (ICurvePrimitivePtr &curve, double fraction)
+    {
+    DPoint3d xyzA;
+    DVec3d tangentA;
+    curve->FractionToPoint (fraction, xyzA, tangentA);
+    auto plane = DPlane3d::FromOriginAndNormal (xyzA, tangentA);
+    bvector<CurveLocationDetailPair> details;
+    curve->AppendCurvePlaneIntersections (plane, details);
+    auto pair = CurveLocationDetail::ClosestPoint (details, xyzA, 1.0e-8);
+    Check::True (pair.IsValid ()  && Check::Near (xyzA, pair.Value().detailA.point));
+    }
+
+void ExerciseClosestPoint (ICurvePrimitivePtr &curve, double fraction)
+    {
+    DPoint3d xyzA;
+    DVec3d tangentA;
+    curve->FractionToPoint (fraction, xyzA, tangentA);
+    auto plane = DPlane3d::FromOriginAndNormal (xyzA, tangentA);
+    CurveLocationDetail detail;
+    if (Check::True (curve->ClosestPointBounded (xyzA, detail, false, false), "ClosestPoint"))
+        Check::Near (detail.fraction, fraction, "ClosestPoint fraction");
+    }
+
+
+void ExerciseComponentVirtuals (ICurvePrimitivePtr &curve)
+    {
+    size_t numComponents = curve->NumComponent ();
+    if (numComponents > 1)
+        {
+        double length0, length1;
+        bvector<DPoint3d> points;
+        DPoint3d xyz;
+        curve->ComponentFractionToPoint (0, 0.0, xyz);
+        points.push_back (xyz);
+        for (size_t i = 0; i < numComponents; i++)
+            {
+            double df = 0.125;
+            for (double f = df; f <= 1.0; f += df)
+                {
+                curve->ComponentFractionToPoint (0, 0.0, xyz);
+                points.push_back (xyz);
+                }
+            double breakFraction0, breakFraction1;
+            Check::True (curve->GetBreakFraction (i, breakFraction0));
+            if (i + 1 < numComponents)
+                {
+                Check::True (curve->GetBreakFraction (i + 1, breakFraction1));
+                }
+            else
+                breakFraction1 = 1.0;
+
+            }
+        curve->Length (length0);
+        length1 = PolylineOps::Length (points);
+        CheckWithinFactor (length0, length1, 1.1, "Component stroke length versus curve stroker");
         }
     }
 
@@ -150,6 +256,12 @@ void ExerciseVirtualsOffset (ICurvePrimitivePtr &curve)
 void ExerciseAllVirtuals (ICurvePrimitivePtr &curve, double splitFractionA, double splitFractionB)
     {
     ExerciseVirtualsA (curve, splitFractionA, splitFractionB);
+    ExerciseStrokeVirtuals(curve, splitFractionA, splitFractionB);
+    ExercisePlaneIntersection (curve, splitFractionA);
+    ExercisePlaneIntersection (curve, splitFractionB);
+
+    ExerciseClosestPoint (curve, splitFractionA);
+    ExerciseClosestPoint (curve, splitFractionB);
     ExerciseVirtualsOffset (curve);
     ExerciseContentQueries (curve);
     }
@@ -171,6 +283,31 @@ TEST(CurvePrimitive, ExerciseVirtuals)
                 };
     auto c2 = ICurvePrimitive::CreateLineString (points);
     ExerciseAllVirtuals (c2, 0.25, 0.8);
-
+    auto frame = Transform::FromIdentity ();
+    for (int spiralType : {
+            DSpiral2dBase::TransitionType_Clothoid,
+            DSpiral2dBase::TransitionType_Bloss,
+            DSpiral2dBase::TransitionType_Biquadratic,
+            DSpiral2dBase::TransitionType_Cosine,
+            DSpiral2dBase::TransitionType_Sine,
+            //DSpiral2dBase::TransitionType_Viennese,
+            //DSpiral2dBase::TransitionType_WeightedViennese,
+            DSpiral2dBase::TransitionType_WesternAustralian,
+            //DSpiral2dBase::TransitionType_Czech,
+            DSpiral2dBase::TransitionType_AustralianRailCorp,
+            //DSpiral2dBase::TransitionType_Italian,
+            //DSpiral2dBase::TransitionType_Polish
+            DSpiral2dBase::TransitionType_MXCubicAlongArc,
+            DSpiral2dBase::TransitionType_DirectHalfCosine,
+            DSpiral2dBase::TransitionType_ChineseCubic,
+            })
+        {
+        auto c3 = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (
+            spiralType,
+            0,0,100,1000,
+            frame, 0, 1
+            );
+        ExerciseAllVirtuals (c3, 0.25, 0.75);
+        }
     }
     

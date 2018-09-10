@@ -480,7 +480,7 @@ bool DSpiral2dAustralianRailCorp::EvaluateAtDistanceInStandardOrientation
                 double m2s2 = m * m * s * s;
                 double d3xds3 = -m2s2 * (60.0 * a1 - m2s4 * (504.0 * a2 - m2s4 * (1716.0 * a3 - m2s4 * 4080.0 * a4 )));
                 double d3yds3 = m * (6.0 * dxds + 12.0 * x * d2xds2 + 3.0 * x * x * d3xds3);
-                d2XY->Init (d3xds3, d3yds3);
+                d3XY->Init (d3xds3, d3yds3);
                 }
             }
         }
