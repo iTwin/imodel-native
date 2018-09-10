@@ -1561,7 +1561,7 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopulate, ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopulate, ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuanties, bool serializeNullValues)
     {
     ArrayKind       arrayKind = arrayProperty.GetKind();
 
@@ -1646,7 +1646,7 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueToPopu
 
             ECClassCR   structClass = structInstance->GetClass();
             StatusInt iwxStatus;
-            if (BSISUCCESS != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember(entryObj, structClass, *structInstance.get(), nullptr)))
+            if (BSISUCCESS != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember(entryObj, structClass, *structInstance.get(), nullptr, classLocator)))
                 {
                 BeAssert(false);
                 return iwxStatus;
@@ -1681,7 +1681,7 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& va
     thisAccessString.append(".");
 
     ECClassCR   structClass = structProperty.GetType();
-    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, &thisAccessString, writeFormattedQuanties, serializeNullValues);
+    WritePropertyValuesOfClassOrStructArrayMember(structObj, structClass, ecInstance, &thisAccessString, nullptr, writeFormattedQuanties, serializeNullValues);
 
     if (!structObj.empty() || serializeNullValues)
         valueToPopulate[structName.c_str()] = structObj;
@@ -1692,7 +1692,7 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value& va
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2017
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString)
+StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValue(Json::Value& valueToPopulate, StructECPropertyR structProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
     {
     return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty, ecInstance, baseAccessString, false);
     }
@@ -1702,13 +1702,13 @@ StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValue(Json::Value& valueToPop
 //---------------------------------------------------------------------------------------
 StatusInt JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString)
     {
-    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty,ecInstance, baseAccessString, true);
+    return JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(valueToPopulate, structProperty, ecInstance, baseAccessString, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                    08/2017
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR navigationProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR navigationProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuanties, bool serializeNullValues)
     {
     Utf8String navName = navigationProperty.GetName();
 
@@ -1738,8 +1738,26 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
 
     navObj[ECJsonUtilities::json_navId()] = navInfo.GetId<BeInt64Id>().ToHexStr();
 
-    if (nullptr != navInfo.GetRelationshipClass() && ECClassModifier::Sealed != navigationProperty.GetRelationshipClass()->GetClassModifier())
-        ECJsonUtilities::ClassNameToJson(navObj[ECJsonUtilities::json_navRelClassName()], *navInfo.GetRelationshipClass());
+    if (ECClassModifier::Sealed != navigationProperty.GetRelationshipClass()->GetClassModifier())
+        {
+        ECClassCP relationshipClass = navInfo.GetRelationshipClass();
+        if (nullptr == relationshipClass)
+            {
+            if (!navInfo.GetRelationshipClassId().IsValid())
+                return BSISUCCESS;
+
+            if (nullptr == classLocator)
+                return LOG.error("ECClassLocatorByClassId was not provided to locate ECClass by ECClassId."), BSIERROR;
+
+            auto const relationshipClassId = navInfo.GetRelationshipClassId();
+            relationshipClass = classLocator->LocateClass(relationshipClassId);
+
+            if (nullptr == relationshipClass)
+                return LOG.error("Failed to locate ECClass with ECClassLocatorByClassId (maybe you forgot to pass schema in it?)."), BSIERROR;
+            }
+        
+        ECJsonUtilities::ClassNameToJson(navObj[ECJsonUtilities::json_navRelClassName()], *relationshipClass);
+        }
 
     return BSISUCCESS;
     }
@@ -1747,7 +1765,7 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8String* baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuanties, bool serializeNullValues)
     {
     ECPropertyIterableCR    collection = ecClass.GetProperties(true);
     for (ECPropertyP ecProperty : collection)
@@ -1761,11 +1779,11 @@ StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Js
         if (nullptr != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
             ixwStatus = WritePrimitivePropertyValue(valueToPopulate, *primitiveProperty, ecInstance, baseAccessString, writeFormattedQuanties, serializeNullValues);
         else if (nullptr != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
-            ixwStatus = WriteArrayPropertyValue(valueToPopulate, *arrayProperty, ecInstance, baseAccessString, writeFormattedQuanties, serializeNullValues);
+            ixwStatus = WriteArrayPropertyValue(valueToPopulate, *arrayProperty, ecInstance, baseAccessString, classLocator, writeFormattedQuanties, serializeNullValues);
         else if (nullptr != (structProperty = ecProperty->GetAsStructPropertyP()))
             ixwStatus = WriteEmbeddedStructPropertyValue(valueToPopulate, *structProperty, ecInstance, baseAccessString, writeFormattedQuanties, serializeNullValues);
         else if (nullptr != (navigationProperty = ecProperty->GetAsNavigationPropertyP()))
-            ixwStatus = WriteNavigationPropertyValue(valueToPopulate, *navigationProperty, ecInstance, baseAccessString, writeFormattedQuanties, serializeNullValues);
+            ixwStatus = WriteNavigationPropertyValue(valueToPopulate, *navigationProperty, ecInstance, baseAccessString, classLocator, writeFormattedQuanties, serializeNullValues);
 
         if (BSISUCCESS != ixwStatus)
             {
@@ -1780,7 +1798,7 @@ StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Js
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool serializeNullValues)
+StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool serializeNullValues, ECClassLocatorByClassIdCP classLocator)
     {
     ECClassCR   ecClass = ecInstance.GetClass();
     ECSchemaCR  ecSchema = ecClass.GetSchema();
@@ -1795,7 +1813,7 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
         valueToPopulate[ECJSON_ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
-    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, false, serializeNullValues);
+    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, classLocator, false, serializeNullValues);
     if (status != BSISUCCESS)
         return status;
 
@@ -1810,10 +1828,10 @@ StatusInt JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopulate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECOBJECTS_EXPORT StatusInt JsonEcInstanceWriter::WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance)
+ECOBJECTS_EXPORT StatusInt JsonEcInstanceWriter::WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, ECClassLocatorByClassIdCP classLocator)
     {
     ECClassCR ecClass = ecInstance.GetClass();
-    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(valueToPopulate, ecClass, ecInstance, nullptr, true);
+    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(valueToPopulate, ecClass, ecInstance, nullptr, classLocator, true);
     if (BSISUCCESS != status)
         return status;
     valueToPopulate[ECJsonSystemNames::ClassName()] = ECJsonUtilities::FormatClassName(ecClass);
@@ -1823,7 +1841,7 @@ ECOBJECTS_EXPORT StatusInt JsonEcInstanceWriter::WriteInstanceToSchemaJson(Json:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-StatusInt     JsonEcInstanceWriter::WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId)
+StatusInt     JsonEcInstanceWriter::WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, ECClassLocatorByClassIdCP classLocator)
     {
     ECClassCR   ecClass = ecInstance.GetClass();
     ECSchemaCR  ecSchema = ecClass.GetSchema();
@@ -1838,7 +1856,7 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToPresentationJson(Json::Value&
         valueToPopulate[ECJSON_ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
-    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, true);
+    StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr, classLocator, true);
     if (status != BSISUCCESS)
         return status;
 

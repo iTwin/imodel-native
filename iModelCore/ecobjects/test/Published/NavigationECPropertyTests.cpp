@@ -35,6 +35,8 @@ struct NavigationPropertyValueTests : ECTestFixture
     void DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson);
     void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml);
     void VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized);
+    void VerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized);
+    void VerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized);
     void TestSettingNavPropLongValuesWithId(IECInstanceR instance);
     void TestSettingNavPropLongValuesWithRel(IECInstanceR instance, ECRelationshipClassCP expectedRelClass);
     void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, BeInt64Id expectedValue, ECRelationshipClassCP expectedRelClass = nullptr, ECClassId expectedRelClassId = ECClassId());
@@ -876,9 +878,26 @@ void NavigationPropertyValueTests::VerifyInstance(ECSchemaPtr schema, IECInstanc
     ASSERT_EQ(ECObjectsStatus::Success, sourceDeserialized.GetValue(intValueDes, "iProp")) << "Failed to get standard int property value after deserialization";
     ASSERT_EQ(intValue.GetInteger(), intValueDes.GetInteger()) << "Standard Int property value failed to deserialize correctly";
 
-    VerifyNavPropLongValue(sourceDeserialized, "MyTarget", BeInt64Id(42), schema->GetClassCP("DerivedRelClass")->GetRelationshipClassCP());
     VerifyNavPropLongValue(sourceDeserialized, "MyTargetNoRel", BeInt64Id(50), nullptr);
     VerifyNavPropLongValue(sourceDeserialized, "MyTargetWithRelId", BeInt64Id(42), nullptr, ECClassId((uint64_t) 25));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NavigationPropertyValueTests::VerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized)
+    {
+    VerifyInstance(schema, sourceInstance, sourceDeserialized);
+    VerifyNavPropLongValue(sourceDeserialized, "MyTarget", BeInt64Id(42), schema->GetClassCP("DerivedRelClass")->GetRelationshipClassCP());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NavigationPropertyValueTests::VerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized)
+    {
+    VerifyInstance(schema, sourceInstance, sourceDeserialized);
+    VerifyNavPropLongValue(sourceDeserialized, "MyTarget", BeInt64Id(42), nullptr, ECClassId((uint64_t) 25));
     }
 
 //---------------------------------------------------------------------------------------
@@ -891,7 +910,7 @@ void NavigationPropertyValueTests::DeserializeAndVerifyInstanceXml(ECSchemaPtr s
     InstanceReadStatus readStatus = StandaloneECInstance::ReadFromXmlString(sourceDeserialized, instanceXml.c_str(), *readContext);
     ASSERT_EQ(InstanceReadStatus::Success, readStatus) << "Failed to deserialize an instance with a nav property";
 
-    VerifyInstance(schema, sourceInstance, *sourceDeserialized);
+    VerifyInstanceXml(schema, sourceInstance, *sourceDeserialized);
     }
 
 //---------------------------------------------------------------------------------------
@@ -905,7 +924,7 @@ void NavigationPropertyValueTests::DeserializeAndVerifyInstanceJson(ECSchemaPtr 
     BentleyStatus readStatus = JsonECInstanceConverter::JsonToECInstance(*sourceDeserialized, instanceJson, classLocater);
     ASSERT_EQ(BentleyStatus::SUCCESS, readStatus);
 
-    VerifyInstance(schema, sourceInstance, *sourceDeserialized);
+    VerifyInstanceJson(schema, sourceInstance, *sourceDeserialized);
     }
 
 //---------------------------------------------------------------------------------------
@@ -987,7 +1006,8 @@ void NavigationPropertyValueTests::InstanceWithNavProp()
     DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString);
 
     Json::Value jsonValue;
-    StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
+    ECClassLocatorByClassId const classLocator(schema.get());
+    StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true, false, &classLocator);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
     DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue["Source"]);
     }
