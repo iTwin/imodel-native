@@ -200,9 +200,14 @@ TEST(NodeId, Subdivision)
     ranges.insert(rootRange);
     NodeId parentId = NodeId::RootId();
 
-    testSubdivision(rootRange, rootRange, parentId, ranges, 4);
+    static constexpr uint32_t maxDepth = 6;
+    testSubdivision(rootRange, rootRange, parentId, ranges, maxDepth);
 
-    EXPECT_EQ(ranges.size(), 1 + 8 + 64 + 512 + 4096);
+    uint64_t nTiles = 0;
+    for (uint32_t i = 0; i <= maxDepth; i++)
+        nTiles += static_cast<uint32_t>(pow(8, i));
+
+    EXPECT_EQ(ranges.size(), nTiles);
     }
 
 /*---------------------------------------------------------------------------------**//**
