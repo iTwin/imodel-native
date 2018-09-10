@@ -59,7 +59,7 @@ struct SyncCachedDataTask : public CachingTaskBase
         bset<ECInstanceKey> m_instanceQueriesPrepared;
         std::shared_ptr<ECInstanceKeyMultiMap> m_persistentInstances;             
 
-        ICachingDataSource::ProgressControlsPtr m_progressControls;
+        ICachingDataSource::ProgressHandler m_progressHandler;
 
         size_t m_syncedInstances = 0;
         size_t m_syncedInitialInstances = 0;
@@ -92,7 +92,7 @@ struct SyncCachedDataTask : public CachingTaskBase
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ICachingDataSource::ProgressControlsPtr progressControls,
+            ICachingDataSource::ProgressHandler progressHandler,
             ICancellationTokenPtr ct
             );
     };

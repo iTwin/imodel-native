@@ -71,8 +71,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         struct Progress;
 
-        struct ProgressControls;
-
         struct Error;
 
         struct KeysData;
@@ -96,7 +94,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         typedef std::function<void(ProgressCR progress)> ProgressCallback;
 
-        typedef std::shared_ptr<ProgressControls> ProgressControlsPtr;
+        struct ProgressHandler
+            {
+            public:
+                ProgressCallback progressCallback;
+                std::function<bool(const IQueryProvider::Query& query)> shouldReportQueryProgress;
+
+            public:
+                ProgressHandler() : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
+                ProgressHandler(std::nullptr_t) : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
+                ProgressHandler(ProgressCallback callback) : progressCallback(callback), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
+            };
+
+        typedef std::shared_ptr<ProgressHandler> ProgressHandlerPtr;
 
         typedef AsyncResult<void, Error>                    Result;
         typedef AsyncResult<KeysData, Error>                KeysResult;
@@ -299,7 +309,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ProgressControlsPtr progressControls = nullptr,
+            ProgressHandler progressHandler = ProgressHandler(),
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -503,21 +513,6 @@ struct ICachingDataSource::FailedObjects : public bvector<FailedObject>
                 this->insert(this->end(), failedObjects.begin(), failedObjects.end());
             return *this;
             }
-    };
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                                Petras.Sukys     09/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-
-struct ICachingDataSource::ProgressControls
-    {
-    public:
-        ProgressCallback m_progressCallback;
-        std::function<bool(const IQueryProvider::Query& query)> m_shouldReportQueryProgress;
-
-    public:
-        ProgressControls() : m_progressCallback([] (ICachingDataSource::ProgressCR) {}), m_shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
-        ProgressControls(ProgressCallback callback) : m_progressCallback(callback), m_shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
     };
 
 /*--------------------------------------------------------------------------------------+
