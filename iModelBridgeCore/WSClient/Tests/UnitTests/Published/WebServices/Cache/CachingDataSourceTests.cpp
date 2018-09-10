@@ -7363,7 +7363,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgr
 
     int progressCalled = 0;
     double expectedSyncedValues[5] = {0, 0.25, 0.50, 0.75, 1};
-    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
+    ICachingDataSource::ProgressCallback onProgress = [&] (CachingDataSource::ProgressCR progress)
         {
         EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
         EXPECT_THAT(progress.GetBytes().current, 0);
