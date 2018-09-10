@@ -1702,7 +1702,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
 
         stat =  strDataP ? db.SaveProperty(spec, *strDataP, value, propsize, id, subId) :  db.SaveProperty(spec, value, propsize, id, subId);
-
+        else
+            stat =  strDataP ? db.SaveProperty(spec, *strDataP, value, propsize, id, subId) :  db.SaveProperty(spec, value, propsize, id, subId);
         return Napi::Number::New(Env(), (int) stat);
         }
 
