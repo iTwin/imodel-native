@@ -1140,10 +1140,10 @@ protected:
     //! Should create a DgnElement if there is no geometry at all?
     DGNDBSYNC_EXPORT virtual bool           _SkipEmptyElement (DwgDbEntityCP entity);
     //! Insert imported DgnElement into DgnDb.  This method is called after _ImportEntity.
-    DgnDbStatus     InsertResults (ElementImportResults& results);
-    DgnDbStatus     UpdateResults (ElementImportResults& results, DgnElementId existingElement);
+    DGNDBSYNC_EXPORT DgnDbStatus    InsertResults (ElementImportResults& results);
+    DGNDBSYNC_EXPORT DgnDbStatus    UpdateResults (ElementImportResults& results, DgnElementId existingElement);
     //! Insert or update imported DgnElement and source DWG entity in DwgSynchInfo
-    BentleyStatus   InsertOrUpdateResultsInSyncInfo (ElementImportResults& results, IDwgChangeDetector::DetectionResults const& updatePlan, DwgDbEntityCR entity, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId);
+    DGNDBSYNC_EXPORT BentleyStatus  InsertOrUpdateResultsInSyncInfo (ElementImportResults& results, IDwgChangeDetector::DetectionResults const& updatePlan, DwgDbEntityCR entity, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId);
     //! Create a new or update an existing element from an entity based on the sync info
     BentleyStatus   ImportOrUpdateEntity (ElementImportInputs& inputs);
 
