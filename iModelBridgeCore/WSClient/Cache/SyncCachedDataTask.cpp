@@ -27,12 +27,12 @@ CachingDataSourcePtr ds,
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ICachingDataSource::ProgressControlsPtr progressControls,
+ICachingDataSource::ProgressHandler progressHandler,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
-m_progressControls(progressControls ? progressControls : std::make_shared<ICachingDataSource::ProgressControls>())
+m_progressHandler(progressHandler)
     {
     for (auto& key : initialInstances)        
         m_initialInstances.push_back(Instance(key));
@@ -56,7 +56,7 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     if (totalInstances == 0)
         totalInstances = m_initialInstances.size();
 
-    m_progressControls->m_progressCallback({        
+    m_progressHandler.progressCallback({
         progress,
         {(double) syncedInstances, (double) totalInstances},
         m_downloadBytesProgress,
@@ -218,7 +218,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
                 return;
             
             for (auto& pair : cachedInstances)
-                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively, m_progressControls->m_shouldReportQueryProgress(providedQuery->query));
+                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively, m_progressHandler.shouldReportQueryProgress(providedQuery->query));
             }
         else
             {
@@ -292,7 +292,7 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
                 cacheQueryPtr->instance = instancePtr;
                 instancePtr->cacheQueries.push_back(cacheQueryPtr);
 
-                if (m_progressControls->m_shouldReportQueryProgress(query))
+                if (m_progressHandler.shouldReportQueryProgress(query))
                     m_queriesToReportProgress.insert(cacheQueryPtr);
                 
                 m_queriesToCache.insert(m_queriesToCache.end(), cacheQueryPtr);
