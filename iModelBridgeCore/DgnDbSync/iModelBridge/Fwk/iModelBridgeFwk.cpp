@@ -201,10 +201,11 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
         L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
-        L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for correlation. This will be passed along to all dependant services and logs.\n"
+        L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-assetsDir=            (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
         L"--fwk-bridgeAssetsDir=      (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
         L"--fwk-imodelbank-url=       (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
+        L"--fwk-jobrequest-guid=      (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
         );
     }
 
@@ -416,6 +417,11 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-jobrun-guid="))
             {
             m_jobRunCorrelationId = getArgValue(argv[iArg]);
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-jobrequest-guid="))
+            {
+            m_jobRequestId = getArgValue(argv[iArg]);
             continue;
             }
 
@@ -1209,20 +1215,39 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
     {
     private:
     WString                                      m_jobRunCorrelationId;
+    WString                                      m_jobRequestId;
     NativeLogging::Provider::Log4cxxProvider*    m_provider;
+    WString                                      m_connectProjectId;
+    WString                                      m_iModelId;
     public:
-    LoggingContext(Utf8StringCR jobRunCorrelationId, NativeLogging::Provider::Log4cxxProvider* provider)
-        :m_jobRunCorrelationId(jobRunCorrelationId.c_str(), true), m_provider(provider)
+    LoggingContext(iModelBridgeFwk::JobDefArgs const& jobDef, Utf8StringCR projectId, Utf8StringCR iModelId, NativeLogging::Provider::Log4cxxProvider* provider)
+        :m_jobRunCorrelationId(jobDef.m_jobRunCorrelationId.c_str(), true), m_provider(provider), m_connectProjectId(projectId.c_str(), true), m_iModelId(iModelId.c_str(), true),
+        m_jobRequestId(jobDef.m_jobRunCorrelationId.c_str(), true)
         {
         if (NULL == m_provider)
             return;
-        m_provider->AddContext(L"CorrelationId", m_jobRunCorrelationId.c_str());
+        if (!m_jobRunCorrelationId.empty())
+            m_provider->AddContext(L"ActivityId", m_jobRunCorrelationId.c_str());
+        if (!m_jobRequestId.empty())
+            m_provider->AddContext(L"RequestId", m_jobRequestId.c_str());
+        if(!m_connectProjectId.empty())
+            m_provider->AddContext(L"ConnectProjectId", m_connectProjectId.c_str());
+        if (!m_iModelId.empty())
+            m_provider->AddContext(L"iModelId", m_iModelId.c_str());
         }
+
     ~LoggingContext()
         {
         if (NULL == m_provider)
             return;
-        m_provider->RemoveContext(L"CorrelationId");
+        if (!m_jobRequestId.empty())
+            m_provider->RemoveContext(L"RequestId");
+        if (!m_jobRunCorrelationId.empty())
+            m_provider->RemoveContext(L"ActivityId");
+        if (!m_jobRequestId.empty())
+            m_provider->RemoveContext(L"ConnectProjectId");
+        if (!m_jobRunCorrelationId.empty())
+            m_provider->RemoveContext(L"iModelId");
         }
     };
 
@@ -1237,7 +1262,17 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 	// *** Talk to Sam Wilson if you need to make a change.
 	// ***
 	// ***
-    LoggingContext logContext(m_jobEnvArgs.m_jobRunCorrelationId, m_logProvider);
+    Utf8String connectProjectId, iModelId;
+    if (m_useIModelHub && NULL != m_iModelHubArgs)
+        {
+        iModelId = m_iModelHubArgs->m_repositoryName;
+        connectProjectId = m_iModelHubArgs->m_bcsProjectId;
+        }
+    else if (NULL != m_iModelBankArgs)
+        {
+        iModelId = m_iModelBankArgs->m_iModelId;
+        }
+    LoggingContext logContext(m_jobEnvArgs, connectProjectId, iModelId, m_logProvider);
 
     DbResult dbres;
 
@@ -1305,6 +1340,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     // Stage the workspace and input file if  necessary.
     if (BSISUCCESS != SetupDmsFiles())
         return RETURN_STATUS_SERVER_ERROR;
+    //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
+    params.m_dmsSupport = m_dmsSupport;
 
     //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
@@ -1690,7 +1727,7 @@ void iModelBridgeFwk::LogStderr()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::iModelBridgeFwk()
-:m_logProvider(NULL)
+:m_logProvider(NULL), m_dmsSupport(NULL)
     {
     m_client = nullptr;
     }

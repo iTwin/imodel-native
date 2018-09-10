@@ -31,7 +31,7 @@ void ConverterTestBaseFixture::InitializeTheConverter()
 
         BentleyApi::BeFileName v8DllsRelativeDir(L"DgnV8"); // it's relative to dllDirectory
 
-        Converter::Initialize(m_params.GetLibraryDir(), m_params.GetAssetsDir(), v8DllsRelativeDir, nullptr, false, 0, nullptr);
+        Converter::Initialize(m_params.GetLibraryDir(), m_params.GetAssetsDir(), v8DllsRelativeDir, nullptr, false, 0, nullptr, nullptr);
         }
     }
 
