@@ -83,6 +83,7 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
     if (mesh.GetEdges().IsValid())
         primitiveJson["edges"] = CreateMeshEdges(*mesh.GetEdges(), mesh.Points().size(), idStr);
 
+#ifdef NOTNOW_DGNCLIENFX_AUXDATA_IMPLEMENTATION
     if (mesh.GetAuxData().m_displacementChannel.IsValid())
         {
         Json::Value     displacementValues = Json::arrayValue;
@@ -114,6 +115,7 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
             }
         primitiveJson["attributes"]["AUXPARAMS"] = std::move(paramValues);
         }
+#endif
 
     return SUCCESS;
     }

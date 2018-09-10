@@ -729,7 +729,6 @@ private:
     FeatureTable            m_featureTable;
     MeshBuilderMap          m_builderMap;
     DRange3d                m_contentRange = DRange3d::NullRange();
-    ThematicMeshBuilderPtr  m_thematicMeshBuilder;
     bool                    m_maxGeometryCountExceeded = false;
     bool                    m_didDecimate = false;
 
@@ -1819,9 +1818,6 @@ MeshGenerator::MeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options)
     SetDgnDb(loader.GetDgnDb());
     m_is3dView = loader.Is3d();
     SetViewFlags(TileContext::GetDefaultViewFlags());
-
-    // For now always create -- (use first aux channel) - ###TODO: control from UX.
-    m_thematicMeshBuilder  = new ThematicMeshBuilder("", "");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1956,9 +1952,6 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     bool                    isPlanar = tilePolyface.m_isPlanar;
     DisplayParamsCPtr       displayParams = &tilePolyface.GetDisplayParams(); 
 
-    if (m_thematicMeshBuilder.IsValid())
-        m_thematicMeshBuilder->InitThematicDisplay(*polyface, *displayParams);
-
     if (isContained)
         {                                                                                                                                          
         AddClippedPolyface(*polyface, elemId, *displayParams, edges, isPlanar);
@@ -1981,20 +1974,16 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     bool                anyContributed = false;
     uint32_t            fillColor = displayParams.GetFillColor();
     DgnDbR              db = m_loader.GetDgnDb();
-    MeshAuxData         auxData;
     uint64_t            keyElementId = m_loader.GetLoader().SeparatePrimitivesById() ? elemId.GetValue() : 0; // Create separate primitives per element if classifying.
     MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar, keyElementId);
     MeshBuilderR        builder = GetMeshBuilder(key);
 
     builder.BeginPolyface(polyface, edgeOptions);
 
-    if (m_thematicMeshBuilder.IsValid())
-        m_thematicMeshBuilder->BuildMeshAuxData(auxData, polyface, displayParams);
-
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), &auxData);
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP());
         m_contentRange.Extend(visitor->Point());
         }
 

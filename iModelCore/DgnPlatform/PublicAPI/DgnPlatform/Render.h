@@ -2363,6 +2363,7 @@ struct MeshEdges : RefCountedBase
     MeshEdges() { }
 };
 
+#ifdef UNUSED_FOR_IMODELJS
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2018
 //=======================================================================================
@@ -2399,6 +2400,14 @@ public:
             for (size_t i=0; i<m_data.size(); i++)
                 output->m_data[i]->GetValues().push_back(m_data[i]->GetValue(index));
             }
+        void AppendDataByIndex(RefCountedPtr<AuxChannel>& output, size_t index)
+            {
+            if (!output.IsValid())
+                output =  CloneWithoutData();
+
+            for (size_t i=0; i<m_data.size(); i++)
+                output->m_data[i]->GetValues().push_back(m_data[i]->GetValue(index));
+            }
         AuxChannel* CloneWithoutData()
             {
             bvector<DataPtr>    dataVector;
@@ -2421,20 +2430,8 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AuxDisplacementChannel);
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AuxParamChannel);
 DEFINE_REF_COUNTED_PTR(AuxDisplacementChannel);
 DEFINE_REF_COUNTED_PTR(AuxParamChannel);
+#endif
 
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     04/2018
-//=======================================================================================
-struct MeshAuxData 
-{
-    AuxDisplacementChannelPtr       m_displacementChannel;
-    AuxParamChannelPtr              m_paramChannel;
-
-    bool IsValid() const { return m_displacementChannel.IsValid() || m_paramChannel.IsValid(); }
-    bool IsAnimatable() const { return (m_displacementChannel.IsValid() && m_displacementChannel->IsAnimatable()) || (m_paramChannel.IsValid() && m_paramChannel->IsAnimatable()); }
-};  
-
-DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshAuxData);
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
@@ -2516,7 +2513,7 @@ struct TriMeshArgs
     FillFlags                       m_fillFlags = FillFlags::None;
     bool                            m_isPlanar = false;
     bool                            m_is2d = false;
-    MeshAuxData                     m_auxData;
+    PolyfaceAuxData::Channels       m_auxChannels;
 
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;

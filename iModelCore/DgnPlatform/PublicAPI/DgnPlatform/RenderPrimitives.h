@@ -44,7 +44,6 @@ DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
-DEFINE_REF_COUNTED_PTR(ThematicMeshBuilder);
 
 typedef bvector<Polyface>               PolyfaceList;
 typedef bvector<Strokes>                StrokesList;
@@ -401,7 +400,7 @@ private:
     mutable MeshEdgesPtr            m_edges;
     bool                            m_is2d;
     bool                            m_isPlanar;
-    MeshAuxData                     m_auxData;
+    PolyfaceAuxData::Channels       m_auxChannels;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar) { }
@@ -444,8 +443,7 @@ public:
     bool IsPlanar() const { return m_isPlanar; }
     PrimitiveType GetType() const { return m_type; }
     FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
-    MeshAuxDataCR GetAuxData() const { return m_auxData; }
-    MeshAuxDataR GetAuxData() { return m_auxData; }
+    PolyfaceAuxData::Channels GetAuxChannels() const { return m_auxChannels; }
     
 
     DGNPLATFORM_EXPORT DRange3d ComputeRange() const;
@@ -454,7 +452,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
     uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void AddAuxChannel(MeshAuxDataCR auxData, size_t index);
+    void AddAuxData(PolyfaceAuxDataCR auxData, size_t index);
 
     GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
 };
@@ -649,7 +647,7 @@ public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
-    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, MeshAuxDataCP auxData);
+    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance);
     void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance);
@@ -1031,21 +1029,6 @@ protected:
     DGNPLATFORM_EXPORT double ComputeTolerance(GeometryAccumulatorR) const;
 public:
     PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params, DgnElementId elemId=DgnElementId()) : GeometryListBuilder(system, params, elemId) { }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     03/2018
-//=======================================================================================
-struct ThematicMeshBuilder : RefCountedBase
-{
-private:
-    Utf8String          m_displacementChannel;
-    Utf8String          m_paramChannel;
-public:
-    ThematicMeshBuilder(Utf8CP displacementChannel, Utf8CP paramChannel) : m_displacementChannel(displacementChannel), m_paramChannel(paramChannel) { }
-
-    void BuildMeshAuxData(Render::MeshAuxDataR auxData, PolyfaceQueryCR mesh, Render::Primitives::DisplayParamsCR displayParams);
-    void InitThematicDisplay(PolyfaceHeaderR mesh, Render::Primitives::DisplayParamsCR displayParams);
 };
 
 END_BENTLEY_RENDER_PRIMITIVES_NAMESPACE

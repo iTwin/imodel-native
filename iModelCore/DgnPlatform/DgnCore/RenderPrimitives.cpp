@@ -1036,14 +1036,14 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    Mesh::AddAuxChannel(MeshAuxDataCR auxData, size_t index)
+void    Mesh::AddAuxData(PolyfaceAuxDataCR auxData, size_t index)
     {
-    if (auxData.m_displacementChannel.IsValid())
-        auxData.m_displacementChannel->AppendDataByIndex(m_auxData.m_displacementChannel, index);
+    if (m_auxChannels.empty())
+        for (auto& channel: auxData.GetChannels())
+            m_auxChannels.push_back(channel->CloneWithoutData());
 
-    if (auxData.m_paramChannel.IsValid())
-        auxData.m_paramChannel->AppendDataByIndex(m_auxData.m_paramChannel, index);
-        
+    for (size_t i=0; i<m_auxChannels.size(); i++)
+        m_auxChannels[i]->AppendDataByIndex(*auxData.GetChannels().at(i), index);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1264,7 +1264,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, MeshAuxDataCP auxData)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     if (visitor.Point().size() < 3)
         return;
@@ -1322,11 +1322,11 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             {
             size_t index = indices[i];
             VertexKey const& vertex = vertices[i];
-            if (nullptr != auxData && visitor.GetAuxDataCP().IsValid())
+            if (visitor.GetAuxDataCP().IsValid())
                 {
                 // No deduplication with auxData (for now...)
                 newTriangle[i] = m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
-                m_mesh->AddAuxChannel(*auxData, visitor.GetAuxDataCP()->GetIndices().at(index));
+                m_mesh->AddAuxData(*visitor.GetAuxDataCP(), index);
                 }
             else
                 {
@@ -2092,7 +2092,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), nullptr);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP());
 
             meshBuilder.EndPolyface();
             }
@@ -2618,7 +2618,7 @@ bool MeshArgs::Init(MeshCR mesh)
         }
 
     m_edges.m_polylines.Init(m_polylineEdges);
-    m_auxData = mesh.GetAuxData();
+    m_auxChannels = mesh.GetAuxChannels();
 
     return true;
     }

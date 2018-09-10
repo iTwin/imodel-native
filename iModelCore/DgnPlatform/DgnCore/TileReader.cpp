@@ -738,12 +738,12 @@ MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, Feature
     ReadColorTable(mesh->GetColorTableR(), primitiveValue);
     ReadColors(mesh->ColorsR(), primitiveValue);
     ReadFeatures(*mesh, primitiveValue);
+#ifdef NOTNOW_DGNCLIENFX_AUXDATA_IMPLEMENTATION
     mesh->GetAuxData().m_displacementChannel = ReadAuxChannel<AuxDisplacementChannel, AuxDisplacementChannel::Data, FPoint3d> (primitiveValue["attributes"]["AUXDISPLACEMENTS"]);
     mesh->GetAuxData().m_paramChannel = ReadAuxChannel<AuxParamChannel, AuxParamChannel::Data, FPoint2d> (primitiveValue["attributes"]["AUXPARAMS"]);
-
     if (mesh->GetAuxData().m_paramChannel.IsValid() && mesh->ParamsR().empty())
         mesh->ParamsR() = mesh->GetAuxData().m_paramChannel->GetData().front()->GetValues(); 
-
+#endif
     switch (primitiveType)
         {
         case Mesh::PrimitiveType::Mesh:

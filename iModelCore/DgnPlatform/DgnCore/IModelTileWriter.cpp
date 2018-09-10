@@ -196,7 +196,7 @@ struct ColorInfo
 struct VertexTable
 {
 private:
-    static void AppendColor(uint8_t*& pData, uint32_t colorValue)
+     void AppendColor(uint32_t colorValue)
         {
         ColorDef color(colorValue);
         uint8_t a = 255 - color.GetAlpha();
@@ -204,24 +204,27 @@ private:
         switch (a)
             {
             case 0:
-                *reinterpret_cast<uint32_t*>(pData) = 0;
+                *reinterpret_cast<uint32_t*>(m_pDataEnd) = 0;
                 break;
             case 255:
-                *reinterpret_cast<uint32_t*>(pData) = color.GetValue();
+                *reinterpret_cast<uint32_t*>(m_pDataEnd) = color.GetValue();
                 break;
             default:
                 {
                 double alpha = a / 255.0;
-                pData[0] = static_cast<uint8_t>(color.GetRed() * alpha + 0.5);
-                pData[1] = static_cast<uint8_t>(color.GetGreen() * alpha + 0.5);
-                pData[2] = static_cast<uint8_t>(color.GetBlue() * alpha + 0.5);
-                pData[3] = a;
+                m_pDataEnd[0] = static_cast<uint8_t>(color.GetRed() * alpha + 0.5);
+                m_pDataEnd[1] = static_cast<uint8_t>(color.GetGreen() * alpha + 0.5);
+                m_pDataEnd[2] = static_cast<uint8_t>(color.GetBlue() * alpha + 0.5);
+                m_pDataEnd[3] = a;
                 break;
                 }
             }
 
-        pData += 4;
+        m_pDataEnd += 4;
         }
+
+    uint8_t*        m_pDataEnd = nullptr;
+
 public:
     ByteStream      m_data;
     LUTDimensions   m_dimensions;
@@ -229,8 +232,15 @@ public:
     uint32_t        m_numRgbaPerVertex = 0;
     FeaturesInfo    m_features;
     ColorInfo       m_colors;
+    uint32_t        CurrSize() const { return static_cast<uint32_t> (m_pDataEnd - m_data.GetDataP()); }
 
-    template<typename T_Vertex, typename T_Args, typename T_ExtraData> void Init(T_Args const& args, T_ExtraData const& extraData)
+    void AppendData(void const* pData, size_t dataSize)
+        {
+        memcpy(m_pDataEnd, pData, dataSize);
+        m_pDataEnd += dataSize;
+        }
+
+    template<typename T_Vertex, typename T_Args, typename T_ExtraData> void Init(T_Args const& args, T_ExtraData const& extraData, uint32_t nExtraRgba = 0)
         {
         m_features = FeaturesInfo(args.m_features);
         m_colors = ColorInfo(args.m_colors);
@@ -244,79 +254,30 @@ public:
         ColorIndex const& colorIndex = args.m_colors;
         uint32_t nColors = colorIndex.IsUniform() ? 0 : colorIndex.m_numColors;
 
-        m_dimensions.Init(nVerts, nRgbaPerVert, nColors);
+        m_dimensions.Init(nVerts, nRgbaPerVert, nColors + nExtraRgba); 
         BeAssert(0 == m_dimensions.GetWidth() % nRgbaPerVert || (0 < nColors && 1 == m_dimensions.GetHeight()));
 
         m_data = ByteStream(m_dimensions.GetWidth() * m_dimensions.GetHeight() * 4);
-        uint8_t* pData = m_data.GetDataP();
+        m_pDataEnd = m_data.GetDataP();
         uint32_t vertIndex = 0;
         while (vertIndex < nVerts)
             {
             T_Vertex vertex(args, vertIndex++, extraData);
-            memcpy(pData, &vertex, sizeof(vertex));
-            pData += sizeof(vertex);
+            AppendData(&vertex, sizeof(vertex));
             }
 
         BeAssert(m_data.size() >= sizeof(T_Vertex) * nVerts + 4 * nColors);
         if (!colorIndex.IsUniform())
             {
             for (uint32_t i = 0; i < nColors; i++)
-                AppendColor(pData, colorIndex.m_nonUniform.m_colors[i]);
+                AppendColor(colorIndex.m_nonUniform.m_colors[i]);
             }
         }
 
     explicit VertexTable() { }
 };
 
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     040/2018
-//=======================================================================================
-struct AnimationLUTParams : RefCountedBase
-{
-private:
-    template<typename T_ChannelData, typename T_Range, typename T_QPoint, typename T_QParam, typename T_DPoint> static void AddChannelData(uint8_t*& pData, bvector<float>& inputs, T_QParam& qParams, T_ChannelData const& channelData)
-        {
-        T_Range     range = T_Range::NullRange();
 
-        for (auto const& data : channelData.GetData())
-            for (auto const& value : data->GetValues())
-                range.Extend(T_DPoint::From(value));
-        
-        qParams = T_QParam(range);
-
-        size_t      qSize = 4 * ((sizeof(T_QPoint) + 3) / 4), unusedSize = qSize - sizeof(T_QPoint);
-
-        for (auto const& data : channelData.GetData())
-            {
-            inputs.push_back(data->GetInput());
-
-            // Quantize and push...
-            for (auto value : data->GetValues())
-                {
-                T_QPoint quantized(value, qParams);
-                memcpy (pData, &quantized, sizeof(quantized));
-                pData += sizeof(quantized);
-                for (size_t i=0; i<unusedSize; i++)
-                    *pData++ = 0;
-                }
-            }
-        }
-public:
-    ByteStream          m_data;
-    LUTDimensions       m_dimensions;
-    uint32_t            m_numVertices = 0;
-    uint32_t            m_numParamEntries = 0;
-    bvector<float>      m_paramInputs;
-    QPoint2d::Params    m_paramQParams;
-    uint32_t            m_numDisplacementEntries = 0;
-    bvector<float>      m_displacementInputs;
-    QPoint3d::Params    m_displacementQParams;
-
-    explicit AnimationLUTParams(TriMeshArgsCR args);
-};
-
-DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AnimationLUTParams);
-DEFINE_REF_COUNTED_PTR(AnimationLUTParams);
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/17
@@ -326,14 +287,13 @@ struct MeshParams
 private:
     QPoint2d::Params InitUVParams(TriMeshArgsCR args);
 
-    template<typename VertexType> void Init(TriMeshArgsCR args)
+    template<typename VertexType> void Init(TriMeshArgsCR args, uint32_t nAuxRgba)
         {
         m_uvParams = InitUVParams(args);
-        m_lutParams.Init<VertexType>(args, m_uvParams);
+        m_lutParams.Init<VertexType>(args, m_uvParams, nAuxRgba);
         }
 public:
     VertexTable                     m_lutParams;
-    AnimationLUTParamsPtr           m_animationLUTParams;
     QPoint3d::Params                m_vertexParams;
     QPoint2d::Params                m_uvParams;
     SurfaceType                     m_type;
@@ -590,10 +550,65 @@ private:
     BentleyStatus CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr);
     BentleyStatus CreatePolyline(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
     BentleyStatus CreatePointString(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
+    Json::Value CreateMeshAuxData(VertexTable& vertexTable, PolyfaceAuxData::ChannelsCR channels, uint32_t numVertices, Utf8StringCR idString);
+
+
 public:
     IModelTileWriter(StreamBufferR streamBuffer, Tile::LoaderCR loader) : T_Super(streamBuffer, *loader.GetTree().FetchModel()), m_loader(loader) { }
 
     IModelTile::WriteStatus WriteTile(Tile::Content::MetadataCR metadata, Render::Primitives::GeometryCollectionCR geometry);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value CreateMeshAuxChannel(VertexTable& vertexTable, PolyfaceAuxChannelCR auxChannel, uint32_t numVertices)
+    {
+    size_t          blockSize = auxChannel.GetBlockSize();
+    Json::Value     inputs(Json::arrayValue);
+    T_Range         range = T_Range::NullRange();
+    LUTDimensions   lutDimensions;
+    uint32_t        nRgbaPerVertex = (sizeof(T_QPoint) + 3) / 4, nBytesPerVertex = 4 * nRgbaPerVertex, unusedSize = nBytesPerVertex - sizeof(T_QPoint);
+    uint32_t        tableOffset = vertexTable.CurrSize();
+
+    for (auto const& data : auxChannel.GetData())
+        {
+        inputs.append(data->GetInput());
+        double const* value = data->GetValues().data();
+        for (size_t i=0; i<data->GetValues().size(); i += blockSize)
+            {
+            T_DPoint const* pointValue = reinterpret_cast<T_DPoint const*> (value + i);
+            range.Extend(*pointValue);
+            }
+        }
+
+    T_QPoint::Params    qParams(range);
+    uint32_t            zero = 0;
+
+    for (auto const& data : auxChannel.GetData())
+        {
+        // Quantize and push...
+        double const* value = data->GetValues().data();
+        for (size_t i=0; i<data->GetValues().size(); i += blockSize)
+            {
+            T_DPoint const* pointValue = reinterpret_cast<T_DPoint const*> (value + i);
+            T_QPoint quantized(*pointValue, qParams);
+
+            vertexTable.AppendData(&quantized, sizeof(quantized));
+            vertexTable.AppendData(&zero, unusedSize);
+            }
+        }
+    Json::Value     channelValue(Json::objectValue);
+    channelValue["name"] = auxChannel.GetName().c_str();
+    channelValue["vertexCount"]  = numVertices;
+    channelValue["inputs"]  = std::move(inputs);
+    channelValue["numRgbaPerVertex"] = nRgbaPerVertex;
+    channelValue["dataType"] = (int) auxChannel.GetDataType();
+    channelValue["offset"] = tableOffset;
+    channelValue["params"] = CreateDecodeQuantizeValues(reinterpret_cast<double*>(&range.low), reinterpret_cast<double*>(&range.high), blockSize);
+
+
+    return channelValue;
+    }
 };
 
 END_UNNAMED_NAMESPACE
@@ -664,16 +679,19 @@ MeshParams::MeshParams(TriMeshArgsCR args, bool isClassifier) : m_vertexParams(a
             m_type = normals ? SurfaceType::Lit : SurfaceType::Unlit;
         }
 
+    uint32_t        auxRgbaPerVertex = 0;
+    for (auto const& channel : args.m_auxChannels)
+        auxRgbaPerVertex += (uint32_t) (channel->GetData().size() * ((sizeof(uint16_t) * channel->GetBlockSize() + 3) / 4));
+
+    uint32_t        nAuxRgba = auxRgbaPerVertex * args.m_numPoints;
+
     switch (m_type)
         {
-        case SurfaceType::Lit:          Init<LitMeshVertex>(args); break;
-        case SurfaceType::Textured:     Init<TexturedMeshVertex>(args); break;
-        case SurfaceType::TexturedLit:  Init<TexturedLitMeshVertex>(args); break;
-        default:                        Init<SimpleVertex>(args); break;
+        case SurfaceType::Lit:          Init<LitMeshVertex>(args, nAuxRgba); break;
+        case SurfaceType::Textured:     Init<TexturedMeshVertex>(args, nAuxRgba); break;
+        case SurfaceType::TexturedLit:  Init<TexturedLitMeshVertex>(args, nAuxRgba); break;
+        default:                        Init<SimpleVertex>(args, nAuxRgba); break;
         }
-
-    if (args.m_auxData.IsAnimatable())
-        m_animationLUTParams = new AnimationLUTParams(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -986,42 +1004,6 @@ PolylineParamsUPtr PolylineParams::Create(IndexedPolylineArgsCR args)
     return PolylineParamsUPtr(new PolylineParams(args, std::move(polyline)));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-AnimationLUTParams::AnimationLUTParams(TriMeshArgsCR args)
-    {
-    m_numVertices = args.m_numPoints;
-    auto&           displacementChannel = args.m_auxData.m_displacementChannel;
-    auto&           paramChannel = args.m_auxData.m_paramChannel;
-    
-    // If displacement and params channels both exist place parameter data after displacement.
-    if (displacementChannel.IsValid() && displacementChannel->IsAnimatable())
-        {
-        uint32_t        paramDataSize = paramChannel.IsValid() ? static_cast<uint32_t>(paramChannel->GetData().size() * m_numVertices) : 0;
-        m_dimensions.Init(m_numVertices, 2, paramDataSize, static_cast<uint32_t>(displacementChannel->GetData().size()));
-        }
-    else
-        {
-        m_dimensions.Init(m_numVertices, 1, 0, static_cast<uint32_t>(paramChannel->GetData().size()));
-        }
-
-    m_data = ByteStream(m_dimensions.GetWidth() * m_dimensions.GetHeight() * 4);
-    uint8_t* pData =m_data.GetDataP();
-
-    if (displacementChannel.IsValid())
-        {
-        m_numDisplacementEntries = static_cast<uint32_t>(displacementChannel->GetData().size());
-        AddChannelData<AuxDisplacementChannel, DRange3d, QPoint3d, QPoint3d::Params, DPoint3d> (pData, m_displacementInputs, m_displacementQParams, *displacementChannel);
-        }
-
-    if (paramChannel.IsValid())
-        {
-        m_numParamEntries = static_cast<uint32_t>(paramChannel->GetData().size());
-        AddChannelData<AuxParamChannel, DRange2d, QPoint2d, QPoint2d::Params, DPoint2d> (pData, m_paramInputs, m_paramQParams, *paramChannel);
-        }
-   
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
@@ -1063,6 +1045,37 @@ BentleyStatus IModelTileWriter::CreatePolylines(Json::Value& primitiveJson, Mesh
         return CreatePolyline(primitiveJson, args, idStr);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value IModelTileWriter::CreateMeshAuxData(VertexTable& vertexTable, PolyfaceAuxData::ChannelsCR channels, uint32_t numVertices, Utf8StringCR idStr)
+    {
+    Json::Value     auxChannels(Json::arrayValue);
+
+    for (auto const& channel : channels)
+        {
+        switch (channel->GetBlockSize())
+            {
+            case 1:
+                auxChannels.append(CreateMeshAuxChannel<DRange1d, double, QPoint1d>(vertexTable, *channel, numVertices));
+                break;
+
+            case 3:
+                auxChannels.append(CreateMeshAuxChannel<DRange3d, DPoint3d, QPoint3d>(vertexTable, *channel, numVertices));
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+            }
+        }
+    Json::Value     auxData (Json::objectValue);
+    auxData["channels"] = std::move(auxChannels);
+
+    return auxData;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1074,6 +1087,9 @@ BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR
 
     MeshParams meshParams(args, m_loader.GetTree().IsClassifier());
 
+    if (!args.m_auxChannels.empty())
+        primitiveJson["auxData"] = CreateMeshAuxData(meshParams.m_lutParams, args.m_auxChannels, args.m_numPoints, idStr);
+        
     AddVertexTable(primitiveJson, meshParams.m_lutParams, meshParams.m_vertexParams, idStr);
 
     SurfaceParams surface(args);
@@ -1089,7 +1105,7 @@ BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR
     if (args.m_edges.IsValid())
         primitiveJson["edges"] = CreateMeshEdges(args.m_edges, args, idStr);
 
-    // ###TODO: aux data displacement/params go into LUT? Were previously dispatched as vertex attributes...
+
 
     return SUCCESS;
     }
