@@ -55,7 +55,7 @@ private:
     static RevisionStatus ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken);
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
     static void RegisterOptionalDomains();
-
+    static void InitializeParasolid();
 public:
     static void GetECValuesCollectionAsJson(Json::Value &json, ECN::ECValuesCollectionCR);
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);

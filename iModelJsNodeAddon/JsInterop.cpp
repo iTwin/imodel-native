@@ -11,6 +11,10 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <DgnPlatform/FunctionalDomain.h>
 
+#if defined (BENTLEYCONFIG_PARASOLID) 
+#include <DgnPlatform/DgnBRep/PSolidUtil.h>
+#endif
+
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
 static BeFileName s_tempDir;
@@ -157,6 +161,7 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env, BeFileNameC
         DgnPlatformLib::Initialize(*new DgnPlatformHost, true);
         RegisterOptionalDomains();
         InitLogging();
+        InitializeParasolid();
         });
     }
 
@@ -174,6 +179,23 @@ void JsInterop::RegisterOptionalDomains()
 void JsInterop::InitLogging()
     {
     NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim());
+    }
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
+static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsInterop::InitializeParasolid()
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    PSolidKernelManager::StartSession();
+
+    if (s_psolidMainThreadMark.IsNull())
+        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
+#endif
     }
 
 //---------------------------------------------------------------------------------------

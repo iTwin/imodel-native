@@ -303,6 +303,7 @@ struct TileTreeAppData : DgnModel::AppData
 
     void _OnUnload(DgnModelR model) override
         {
+        BeMutexHolder lock(m_mutex);
         for (auto& tree : m_trees)
             if (tree.second.IsValid())
                 tree.second->CancelAllTileLoads();
@@ -310,10 +311,19 @@ struct TileTreeAppData : DgnModel::AppData
 
     void _OnUnloaded(DgnModelR model) override
         {
+        BeMutexHolder lock(m_mutex);
         for (auto& tree : m_trees)
             {
-            BeAssert(tree.second.IsNull() || 1 == tree.second->GetRefCount());
-            tree.second = nullptr;
+            if (tree.second.IsValid())
+                {
+                // just in case somebody request more tiles after _OnUnload()...
+                tree.second->CancelAllTileLoads();
+                // Wait for them all to finish canceling...
+                tree.second->WaitForAllLoads();
+                // No one else should be holding a pointer to tile tree any more.
+                BeAssert(1 == tree.second->GetRefCount());
+                tree.second = nullptr;
+                }
             }
         }
 
