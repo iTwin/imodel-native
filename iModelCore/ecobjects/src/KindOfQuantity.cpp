@@ -202,7 +202,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnitString.c_str());
 
     double relError = GetRelativeError();
-    xmlWriter.WriteAttribute(ECXML_RELATIVE_ERROR_ATTRIBUTE, relError);
+    xmlWriter.WriteAttribute(RELATIVE_ERROR, relError);
 
     bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
     if (presentationUnits.size() > 0)
@@ -259,7 +259,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
 
     outValue[PERSISTENCE_UNIT_ATTRIBUTE] = ECJsonUtilities::FormatUnitSetToUnitFormatJson(GetPersistenceUnit());
 
-    outValue[ECJSON_RELATIVE_ERROR_ATTRIBUTE] = GetRelativeError();
+    outValue[RELATIVE_ERROR] = GetRelativeError();
 
     bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
     if (0 != presentationUnits.size())
@@ -310,9 +310,9 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     SetPersistenceUnit(persistenceFUS);
 
     double relError;
-    if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, ECXML_RELATIVE_ERROR_ATTRIBUTE))
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, RELATIVE_ERROR))
         {
-        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), ECXML_RELATIVE_ERROR_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), RELATIVE_ERROR);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     SetRelativeError(relError);

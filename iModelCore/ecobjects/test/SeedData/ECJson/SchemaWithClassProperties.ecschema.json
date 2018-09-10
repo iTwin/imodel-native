@@ -7,10 +7,10 @@
   "properties": [
     {
       "name" : "ExamplePrimitiveProperty",
-      "propertyType" : "PrimitiveProperty",
+      "type" : "PrimitiveProperty",
       "description" : "An example primitive property.",
       "label" : "PrimitivePropertyDisplayLabel",
-      "readOnly" : true,
+      "isReadOnly" : true,
       "category" : "ExampleSchema.ExamplePropertyCategory",
       "kindOfQuantity" : "ExampleSchema.TestKindOfQuantity",
       "typeName" : "int",
@@ -20,10 +20,10 @@
     },
     {
       "name" : "ExampleEnumerationProperty",
-      "propertyType" : "PrimitiveProperty",
+      "type" : "PrimitiveProperty",
       "description" : "An example primitive enumeration property.",
       "label" : "Enumeration Property DisplayLabel",
-      "readOnly" : true,
+      "isReadOnly" : true,
       "category" : "ExampleSchema.ExamplePropertyCategory",
       "typeName" : "ExampleSchema.ExampleEnumeration",
       "extendedTypeName" : "Example_ExtendedType",
@@ -32,12 +32,12 @@
     },
     {
       "name" : "ExampleStructProperty",
-      "propertyType" : "StructProperty",
+      "type" : "StructProperty",
       "typeName" : "ExampleSchema.ExampleStructClass"
     },
     {
       "name" : "ExamplePrimitiveArrayProperty",
-      "propertyType" : "PrimitiveArrayProperty",
+      "type" : "PrimitiveArrayProperty",
       "minLength" : 3,
       "maxLength" : 50,
       "minOccurs" : 7,
@@ -45,14 +45,14 @@
     },
     {
       "name" : "ExampleStructArrayProperty",
-      "propertyType" : "StructArrayProperty",
+      "type" : "StructArrayProperty",
       "minOccurs" : 867,
       "maxOccurs" : 5309,
       "typeName" : "ExampleSchema.ExampleStructClass"
     },
     {
       "name" : "ExampleNavigationProperty",
-      "propertyType" : "NavigationProperty",
+      "type" : "NavigationProperty",
       "direction" : "backward",
       "relationshipName" : "ExampleSchema.ExampleRelationshipClass"
     }

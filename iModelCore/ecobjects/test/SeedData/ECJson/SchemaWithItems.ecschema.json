@@ -55,7 +55,7 @@
       "modifier": "sealed",
       "properties": [
         {
-          "propertyType": "PrimitiveArrayProperty",
+          "type": "PrimitiveArrayProperty",
           "name": "ExamplePrimitiveArray",
           "label": "ExPrimitiveArray",
           "typeName": "int",
@@ -106,7 +106,7 @@
         "unit": "MM",
         "format": "DefaultReal"
       },
-      "precision": 3.0,
+      "relativeError": 3.0,
       "presentationUnits": [
         {
           "unit": "IN",
@@ -124,7 +124,7 @@
     },
     "ExampleEnumeration": {
       "schemaItemType": "Enumeration",
-      "backingTypeName": "int",
+      "type": "int",
       "isStrict": true,
       "enumerators": [
         {
