@@ -58,13 +58,13 @@ struct TestFileCreator
 
     protected:
         explicit TestFileCreator(Utf8CP fileName) : m_fileName(fileName) {}
-
-        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
-        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
   
     public:
         virtual ~TestFileCreator() {}
         BentleyStatus Run();
+
+        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
+        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
     };
 
 //=======================================================================================

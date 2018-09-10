@@ -468,6 +468,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -p DgnPlatformDLL -r DgnPlatform -f DgnPlatform re DgnPlatformDLL   </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -p DgnPlatformDLL -r DgnPlatform -f DgnPlatform re DgnPlatformDLL  -c
+bb -p DgnPlatformDLL -r DgnPlatform -f DgnPlatform re DgnPlatformDLL
+</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -p DgnPlatformDLL -r DgnPlatform -f DgnPlatform re DgnPlatformDLL  -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
