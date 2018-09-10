@@ -108,14 +108,3 @@ LINKER_LIBRARIES    =  $(BeSQLiteRequiredLibs)
 
 # We support shared or static linking.
 %include $(sharedMki)linkLibrary.mki
-
-always:
-    >$(o)BeSQLiteRequiredLibs.mki
-    %if defined (CREATE_STATIC_LIBRARIES)
-    BeSQLiteRequiredLibs = $(BeSQLiteRequiredLibs)
-    %endif
-    <
-
-$(BuildContext)Delivery/mki/BeSQLiteRequiredLibs.mki : $(o)BeSQLiteRequiredLibs.mki
-    $(LinkFirstDepToFirstTarget)
-
