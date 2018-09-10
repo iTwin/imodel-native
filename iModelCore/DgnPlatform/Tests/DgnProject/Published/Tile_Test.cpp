@@ -130,6 +130,87 @@ TEST(NodeId, UpperGrandChildNodes)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ExpectSubdivision(DRange3dCR parentRange, DRange3dCR childRange, bool i, bool j, bool k)
+    {
+    double hx = parentRange.low.x + (parentRange.high.x - parentRange.low.x) * 0.5,
+           hy = parentRange.low.y + (parentRange.high.y - parentRange.low.y) * 0.5,
+           hz = parentRange.low.z + (parentRange.high.z - parentRange.low.z) * 0.5;
+    DPoint3d lo = DPoint3d::From(i ? hx : parentRange.low.x, j ? hy : parentRange.low.y, k ? hz : parentRange.low.z);
+    DPoint3d hi = DPoint3d::From(i ? parentRange.high.x : hx, j ? parentRange.high.y : hy, k ? parentRange.high.z : hz);
+    EXPECT_TRUE(childRange.low.IsEqual(lo));
+    EXPECT_TRUE(childRange.high.IsEqual(hi));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+struct EqualRange
+{
+    bool operator()(DRange3dCR lhs, DRange3dCR rhs) const
+        {
+        if (lhs.low.x != rhs.low.x) return lhs.low.x < rhs.low.x;
+        if (lhs.low.y != rhs.low.y) return lhs.low.y < rhs.low.y;
+        if (lhs.low.z != rhs.low.z) return lhs.low.z < rhs.low.z;
+        if (lhs.high.x != rhs.high.x) return lhs.high.x < rhs.high.x;
+        if (lhs.high.y != rhs.high.y) return lhs.high.y < rhs.high.y;
+        if (lhs.high.z != rhs.high.z) return lhs.high.z < rhs.high.z;
+        return false;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void testSubdivision(DRange3dCR rootRange, DRange3d parentRange, NodeId parentId, bset<DRange3d, EqualRange>& ranges, uint32_t maxDepth)
+    {
+    for (uint32_t i = 0; i < 2; i++)
+        {
+        for (uint32_t j = 0; j < 2; j++)
+            {
+            for (uint32_t k = 0; k < 2; k++)
+                {
+                bool bI = i != 0, bJ = j != 0, bK = k != 0;
+                NodeId childId = parentId.ComputeChildId(bI, bJ, bK);
+                DRange3d childRange = childId.ComputeRange(rootRange, false);
+                ExpectSubdivision(parentRange, childRange, bI, bJ, bK);
+                auto inserted = ranges.insert(childRange);
+                EXPECT_TRUE(inserted.second);
+
+                NodeId parentId2 = childId.ComputeParentId();
+                EXPECT_EQ(parentId, parentId2);
+                DRange3d parentRange2 = parentId.ComputeRange(rootRange, false);
+                EXPECT_TRUE(parentRange.IsEqual(parentRange2));
+
+                if (childId.GetDepth() < maxDepth)
+                    testSubdivision(rootRange, childRange, childId, ranges, maxDepth);
+                }
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(NodeId, Subdivision)
+    {
+    DRange3d rootRange = DRange3d::From(DPoint3d::From(0, 0, 0), DPoint3d::From(480, 440, 400));
+    bset<DRange3d, EqualRange> ranges;
+    ranges.insert(rootRange);
+    NodeId parentId = NodeId::RootId();
+
+    static constexpr uint32_t maxDepth = 6;
+    testSubdivision(rootRange, rootRange, parentId, ranges, maxDepth);
+
+    uint64_t nTiles = 0;
+    for (uint32_t i = 0; i <= maxDepth; i++)
+        nTiles += static_cast<uint32_t>(pow(8, i));
+
+    EXPECT_EQ(ranges.size(), nTiles);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(ContentId, ToFromString)

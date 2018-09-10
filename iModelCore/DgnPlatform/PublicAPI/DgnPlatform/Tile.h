@@ -99,6 +99,7 @@ public:
     bool operator<(NodeIdCR rhs) const { return Compare(*this, rhs) < 0; }
 
     DGNPLATFORM_EXPORT NodeId ComputeParentId() const;
+    NodeId ComputeChildId(bool i, bool j, bool k) { return NodeId(m_depth + 1, m_i * 2 + (i ? 1 : 0), m_j * 2 + (j ? 1 : 0), m_k * 2 + (k ? 1 : 0)); }
     DGNPLATFORM_EXPORT DRange3d ComputeRange(DRange3dCR rootRange, bool is2d) const;
 };
 
