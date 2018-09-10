@@ -22,7 +22,7 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         static const size_t s_vec90EndIndex = 2;
         static const size_t s_endIndex = 3;
 
-        DVec3d m_normal;
+        DPlane3d m_workingPlane;
         double m_sweep;
 
         bool DidSweepDirectionChange(double newSweep) const;
@@ -39,7 +39,7 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         void UpdateSweep(DPoint3dCR start, DPoint3dCR center, DPoint3dCR end);
         double GetSweep() const { return m_sweep; }
 
-        EllipseManipulationStrategy() : T_Super(), m_sweep(0), m_normal(DVec3d::From(0, 0, 0)) {}
+        EllipseManipulationStrategy() : T_Super(), m_sweep(0), m_workingPlane(DPlane3d::FromOriginAndNormal(DPoint3d::From(0, 0, 0), DVec3d::From(0, 0, 0))) {}
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
@@ -52,7 +52,9 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _OnKeyPointsChanged() override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, DVec3d const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, DPlane3d const& value) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, DVec3d& value) const override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, DPlane3d& value) const override;
         using T_Super::_SetProperty;
         using T_Super::_TryGetProperty;
 
@@ -67,6 +69,7 @@ struct EllipseManipulationStrategy : public CurvePrimitiveManipulationStrategy
         static EllipseManipulationStrategyPtr Create() { return new EllipseManipulationStrategy(); }
 
         static constexpr Utf8CP prop_Normal() { return "Normal"; }
+        static constexpr Utf8CP prop_WorkingPlane() { return "WorkingPlane"; }
     };
 
 END_BUILDING_SHARED_NAMESPACE
