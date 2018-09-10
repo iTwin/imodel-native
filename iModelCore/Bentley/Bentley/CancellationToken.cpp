@@ -138,3 +138,85 @@ void MergeCancellationToken::Register (std::weak_ptr<ICancellationListener> list
             token->Register (listener);
         }
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Petras.Sukys           08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ConjunctiveCancellationToken::ConjunctiveCancellationToken(const bvector<ICancellationTokenPtr>& tokens) : m_tokens(tokens)
+    {
+    auto internalListener = std::weak_ptr<SimpleCancellationListener>(std::make_shared<SimpleCancellationListener>([=]
+        {
+        this->InternalOnCancelled();
+        }));
+
+    for (auto& token : m_tokens)
+        token->Register(internalListener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Petras.Sukys           08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ConjunctiveCancellationToken::~ConjunctiveCancellationToken() {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Petras.Sukys           08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ConjunctiveCancellationTokenPtr ConjunctiveCancellationToken::Create(const bvector<ICancellationTokenPtr>& tokens)
+    {
+    return std::make_shared<ConjunctiveCancellationToken>(tokens);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Petras.Sukys           08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ConjunctiveCancellationTokenPtr ConjunctiveCancellationToken::Create(ICancellationTokenPtr left, ICancellationTokenPtr right)
+    {
+    bvector<ICancellationTokenPtr> tokens;
+    tokens.push_back(left);
+    tokens.push_back(right);
+    return std::make_shared<ConjunctiveCancellationToken>(tokens);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Petras.Sukys           08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConjunctiveCancellationToken::IsCanceled()
+    {
+    for (auto& token : m_tokens)
+        {
+        if (token && !token->IsCanceled())
+            return false;
+        }
+
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Petras.Sukys           08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConjunctiveCancellationToken::Register(std::weak_ptr<ICancellationListener> listener)
+    {
+    if (IsCanceled())
+        {
+        auto listenerPtr = listener.lock();
+        if (listenerPtr)
+            listenerPtr->OnCanceled();
+        }
+
+    m_listeners.push_back(listener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             Petras.Sukys           08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConjunctiveCancellationToken::InternalOnCancelled()
+    {
+    if (!IsCanceled())
+        return;
+    for (auto& listenerWearkPtr : m_listeners)
+        {
+        auto listenerPtr = listenerWearkPtr.lock();
+        if (listenerPtr)
+            listenerPtr->OnCanceled();
+        }
+    }

@@ -357,6 +357,9 @@
     <ClInclude Include="PublicAPI\Bentley\CancellationToken.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\Bentley\Tasks\AsyncTaskFollyAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tasks\AsyncError.cpp">
@@ -500,6 +503,9 @@
     <ClCompile Include="BeJpeg\BeJpeg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Bentley\CancellationToken.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".hgignore" />
@@ -515,6 +521,7 @@
     <None Include="PublicAPI\PublicApi.mke" />
     <None Include="BeXml\bexml.mke" />
     <None Include="BeJpeg\BeJpeg.mke" />
+    <None Include="Bentley\nonport\BeSystemInfoMacOS.mm" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Bentley.PartFile.xml" />

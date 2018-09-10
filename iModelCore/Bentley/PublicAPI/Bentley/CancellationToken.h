@@ -110,4 +110,33 @@ struct MergeCancellationToken : ICancellationToken
         BENTLEYDLL_EXPORT virtual void Register(std::weak_ptr<ICancellationListener> listener) override;
     };
 
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                               Petras.Sukys          08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef std::shared_ptr<struct ConjunctiveCancellationToken> ConjunctiveCancellationTokenPtr;
+struct ConjunctiveCancellationToken : ICancellationToken
+    {
+    private:
+        bvector <ICancellationTokenPtr> m_tokens;
+        bvector<std::weak_ptr<ICancellationListener>> m_listeners;
+
+    private:
+        void InternalOnCancelled();
+
+    public:
+        //! Cancellation token that combines multiple tokens in a conjunctive logic.
+        ConjunctiveCancellationToken(const bvector<ICancellationTokenPtr>& tokens);
+        virtual ~ConjunctiveCancellationToken();
+
+        //! Create token that will be cancelled if and only if all of the supplied tokens gets cancelled
+        BENTLEYDLL_EXPORT static ConjunctiveCancellationTokenPtr Create(const bvector<ICancellationTokenPtr>& tokens);
+        //! Create token that will be cancelled if and only if all of the supplied tokens gets cancelled
+        BENTLEYDLL_EXPORT static ConjunctiveCancellationTokenPtr Create(ICancellationTokenPtr ct1, ICancellationTokenPtr ct2);
+
+        //! Check if token is cancelled. Returs true if and only if all the underlying tokens are cancelled.
+        BENTLEYDLL_EXPORT virtual bool IsCanceled() override;
+        //! Register custom listener for cancellation event
+        BENTLEYDLL_EXPORT virtual void Register(std::weak_ptr<ICancellationListener> listener) override;
+    };
+
 END_BENTLEY_NAMESPACE
