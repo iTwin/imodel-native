@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlPrepareTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -222,6 +222,10 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT p.ECInstanceId,p.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND meta.ClassHasAllBaseClasses.SourceECInstanceId=p.ECClassId AND meta.ClassHasAllBaseClasses.TargetECInstanceId = 500"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT ECSqlTest.P.ECInstanceId,ECSqlTest.P.ECClassId FROM ecsql.P p, meta.ClassHasAllBaseClasses WHERE I=? AND ECDbMeta.ClassHasAllBaseClasses.SourceECInstanceId=ECSqlTest.P.ECClassId AND ECDbMeta.ClassHasAllBaseClasses.TargetECInstanceId = 500")) << "If alias is specified, it must be used in other expressions";
+
+    //use column aliases which need to be escaped
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 AS [/Length/], 2 AS [/Width/] FROM ecsql.PSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (SELECT 1 AS [/Length/], 2 AS [/Width/] FROM ecsql.PSA)"));
     }
 
 //---------------------------------------------------------------------------------------

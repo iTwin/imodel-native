@@ -2655,21 +2655,35 @@ TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
     selStmt.Reset();
     selStmt.ClearBindings();
 
-    //Bind as hex
+    // Bind as hex
+    // Note: SQLite cannot compare numbers to hex string literals:
+    // Assume there is a row with ECInstanceId 0x111:
+    // WHERE ECInstanceId='0x111' will not match 
+    // WHERE ECInstanceId=0x111 will match 
+    
+    // Run a plain SQLite statement to verify that SQLite behaves like this:
+    {
+    Statement sqliteStmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqliteStmt.Prepare(m_ecdb, "select cast(0x2 as number), cast('0x2' as number)"));
+    ASSERT_EQ(BE_SQLITE_ROW, sqliteStmt.Step());
+    ASSERT_EQ(2, sqliteStmt.GetValueInt(0)) << "Hex decimal can be converted to number | " << sqliteStmt.GetSql();
+    ASSERT_EQ(0, sqliteStmt.GetValueInt(1)) << "Hex string cannot be converted to number | " << sqliteStmt.GetSql();
+    }
+
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, childId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind ECInstanceId as hex string | " << selStmt.GetECSql() << " | SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind ECInstanceId as hex string | " << selStmt.GetECSql() << " | SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Parent.Id=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, parentId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind Parent.Id as hex string | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind Parent.Id as hex string | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE IntProp=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1,"0x64", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind hex string to IntProp | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind hex string to IntProp | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE IntProp=?"));
@@ -2679,7 +2693,7 @@ TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Int64Prop=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, "0x64", IECSqlBinder::MakeCopy::No)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind hex string to Int64Prop | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind hex string to Int64Prop | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Int64Prop=?"));
@@ -3097,84 +3111,95 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArrayWithDifferentTypes)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BindPrimArrayWithOutOfBoundsLength)
+TEST_F(ECSqlStatementTestFixture, ConstrainedArrayProps)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 10));
+    ASSERT_EQ(SUCCESS, SetupECDb("ConstrainedArrayProps.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                       <ECEntityClass typeName="Foo">
+                                                            <ECArrayProperty propertyName="PrimArray" typeName="int" minOccurs="5" maxOccurs="10" />
+                                                            <ECStructArrayProperty propertyName="StructArray" typeName="MyStruct" minOccurs="5" maxOccurs="10"/>
+                                                        </ECEntityClass>
+                                                       <ECStructClass typeName="MyStruct">
+                                                            <ECProperty propertyName="Code" typeName="int"/>
+                                                        </ECStructClass>
+                                                    </ECSchema>)xml")));
+
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.ABounded (Prim_Array_Bounded) VALUES(?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.Foo(PrimArray,StructArray) VALUES(?,?)"));
 
-    auto bindArrayValues = [&statement] (int count)
+    auto bindArrayValues = [&statement] (ECInstanceKey& key, Nullable<int> const& count)
         {
         statement.Reset();
         statement.ClearBindings();
 
-        IECSqlBinder& arrayBinder = statement.GetBinder(1);
-        for (int i = 0; i < count; i++)
+        IECSqlBinder& primArrayBinder = statement.GetBinder(1);
+        IECSqlBinder& structArrayBinder = statement.GetBinder(2);
+        if (count == nullptr)
             {
-            if (ECSqlStatus::Success != arrayBinder.AddArrayElement().BindInt(i))
+            if (ECSqlStatus::Success != primArrayBinder.BindNull())
+                return BE_SQLITE_ERROR;
+
+            if (ECSqlStatus::Success != structArrayBinder.BindNull())
                 return BE_SQLITE_ERROR;
             }
+        else
+            {
+            for (int i = 0; i < count.Value(); i++)
+                {
+                if (ECSqlStatus::Success != primArrayBinder.AddArrayElement().BindInt(i))
+                    return BE_SQLITE_ERROR;
 
-        return statement.Step();
+                if (ECSqlStatus::Success != structArrayBinder.AddArrayElement()["Code"].BindInt(i))
+                    return BE_SQLITE_ERROR;
+                }
+            }
+
+        return statement.Step(key);
         };
 
     //first: array size to bind. second: Expected to succeed
-    const std::vector<std::pair<int, bool>> testArrayCounts = {{ 0, false }, { 2, false }, { 5, true }, { 7, true }, { 10, true },
+    const std::vector<std::pair<Nullable<int>, bool>> testArrayCounts = {
+            {nullptr, true}, // -> binds null
+            { 0, true }, // -> does not bind anything which amounts to binding null
+            { 2, false }, { 5, true }, { 7, true }, { 10, true },
             { 20, true }}; //Bug in ECObjects: ignores maxoccurs and always interprets it as unbounded.
 
-    for (auto const& testArrayCountItem : testArrayCounts)
+    for (std::pair<Nullable<int>, bool> const& testArrayCountItem : testArrayCounts)
         {
-        const int testArrayCount = testArrayCountItem.first;
+        Nullable<int> const& testArrayCount = testArrayCountItem.first;
         const bool expectedToSucceed = testArrayCountItem.second;
-        const DbResult stepStat = bindArrayValues(testArrayCount);
-        if (expectedToSucceed)
-            ASSERT_EQ(BE_SQLITE_DONE, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10";
+        ECInstanceKey key;
+        const DbResult stepStat = bindArrayValues(key, testArrayCount);
+        Utf8String assertMessage;
+        if (testArrayCount == nullptr)
+            assertMessage = "Binding null to array is expected to succeed for array parameter with minOccurs=5 and maxOccurs=10";
         else
-            ASSERT_EQ(BE_SQLITE_ERROR, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
-        }
-    }
+            assertMessage.Sprintf("Binding array of length %d is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10", testArrayCount.Value());
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Krischan.Eberle                 03/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BindStructArrayWithOutOfBoundsLength)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 10));
-
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.ABounded (PStruct_Array_Bounded) VALUES(?)"));
-
-    auto bindArrayValues = [&statement] (int count)
-        {
-        statement.Reset();
-        statement.ClearBindings();
-
-        IECSqlBinder& arrayBinder = statement.GetBinder(1);
-        for (int i = 0; i < count; i++)
+        if (expectedToSucceed)
             {
-            if (ECSqlStatus::Success != arrayBinder.AddArrayElement()["i"].BindInt(i))
-                return BE_SQLITE_ERROR;
+            ASSERT_EQ(BE_SQLITE_DONE, stepStat) << assertMessage;
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT PrimArray,StructArray FROM ts.FOO WHERE ECInstanceId=?"));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            if (testArrayCount == nullptr || testArrayCount == 0)
+                {
+                ASSERT_TRUE(stmt.IsValueNull(0)) << assertMessage;
+                ASSERT_EQ(0, stmt.GetValue(0).GetArrayLength()) << assertMessage;
+                ASSERT_TRUE(stmt.IsValueNull(1)) << assertMessage;
+                ASSERT_EQ(0, stmt.GetValue(1).GetArrayLength()) << assertMessage;
+                }
+            else
+                {
+                ASSERT_EQ(testArrayCount.Value(), stmt.GetValue(0).GetArrayLength()) << assertMessage;
+                ASSERT_EQ(testArrayCount.Value(), stmt.GetValue(1).GetArrayLength()) << assertMessage;
+                }
             }
-
-        return statement.Step();
-        };
-
-    //first: array size to bind. second: Expected to succeed
-    const std::vector<std::pair<int, bool>> testArrayCounts = {{0, false}, {2, false}, {5, true}, {7, true}, {10, true},
-    {20, true}}; //Bug in ECObjects: ignores maxoccurs and always interprets it as unbounded.
-
-    for (auto const& testArrayCountItem : testArrayCounts)
-        {
-        const int testArrayCount = testArrayCountItem.first;
-        const bool expectedToSucceed = testArrayCountItem.second;
-        const DbResult stepStat = bindArrayValues(testArrayCount);
-        if (expectedToSucceed)
-            ASSERT_EQ(BE_SQLITE_DONE, stepStat) << "Binding array of length " << testArrayCount << " is expected to succceed for array parameter with minOccurs=5 and maxOccurs=10.";
         else
-            ASSERT_EQ(BE_SQLITE_ERROR, stepStat) << "Binding array of length " << testArrayCount << " is expected to fail for array parameter with minOccurs=5 and maxOccurs=10";
+            ASSERT_EQ(BE_SQLITE_ERROR, stepStat) << assertMessage;
         }
     }
 

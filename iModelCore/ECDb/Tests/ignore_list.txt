@@ -9,9 +9,6 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
-#TFS 929408
-ECSqlStatementTestFixture.BindToNumericProps
-
 JsonUpdaterTests.Options
 
     # TFS#901857
