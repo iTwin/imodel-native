@@ -393,7 +393,7 @@ protected:
 
         if (!m_doNotSort)
             {
-            static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
+            static Utf8PrintfString sortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
              
             bvector<Utf8CP> sortingAliases;
             sortingAliases.push_back(ECClassGroupingNodesQueryContract::DisplayLabelFieldName);
@@ -446,7 +446,7 @@ protected:
 
         if (!m_doNotSort)
             {
-            static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
+            static Utf8PrintfString sortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, DisplayLabelGroupingNodesQueryContract::DisplayLabelFieldName);
             complexQuery->OrderBy(sortedDisplayLabel.c_str());
             }
 
@@ -574,7 +574,7 @@ protected:
 
         if (!m_doNotSort)
             {
-            static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
+            static Utf8PrintfString sortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
              
             bvector<Utf8CP> sortingAliases;
             sortingAliases.push_back(BaseECClassGroupingNodesQueryContract::DisplayLabelFieldName);
@@ -818,18 +818,18 @@ protected:
                                 orderByClause.append(FUNCTION_NAME_GetECEnumerationValue).append("('").append(enumeration->GetSchema().GetName()).append("',");
                                 orderByClause.append("'").append(enumeration->GetName()).append("',");
                                 }
-                            orderByClause.append("(").append(ECPropertyGroupingNodesQueryContract::GroupingValueFieldName).append(")");
+                            orderByClause.append(QueryHelpers::Wrap(ECPropertyGroupingNodesQueryContract::GroupingValueFieldName));
                             if (nullptr != enumeration)
                                 orderByClause.append(")");
                             orderByClause.append(")");
                             }
                         else
-                            orderByClause = ECPropertyGroupingNodesQueryContract::GroupingValueFieldName;
+                            orderByClause = QueryHelpers::Wrap(ECPropertyGroupingNodesQueryContract::GroupingValueFieldName);
                         query = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*query, {ECPropertyGroupingNodesQueryContract::GroupingValueFieldName});
                         break;
                         }
                 case PropertyGroupingValue::DisplayLabel:
-                    orderByClause = Utf8PrintfString("%s(%s)", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName);
+                    orderByClause = Utf8PrintfString("%s([%s])", FUNCTION_NAME_GetSortingValue, ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName);
                     query = QueryBuilderHelpers::CreateNestedQueryIfNecessary(*query, {ECPropertyGroupingNodesQueryContract::DisplayLabelFieldName});
                     break;
                 default:
@@ -1781,7 +1781,7 @@ protected:
         if (labelSortedUnion.IsValid())
             {
             // create a single label-sorted query
-            static Utf8PrintfString sortedDisplayLabel("%s(%s)", FUNCTION_NAME_GetSortingValue, ECInstanceNodesQueryContract::DisplayLabelFieldName);
+            static Utf8PrintfString sortedDisplayLabel("%s([%s])", FUNCTION_NAME_GetSortingValue, ECInstanceNodesQueryContract::DisplayLabelFieldName);
             
             bvector<Utf8CP> aliases;
             aliases.push_back(ECInstanceNodesQueryContract::DisplayLabelFieldName);
@@ -2950,7 +2950,7 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     return queryContext->GetQueries();
     }
 
-#define SEARCH_QUERY_INJECTION      ", ECInstanceId AS " SEARCH_QUERY_FIELD_ECInstanceId ", ECClassId AS " SEARCH_QUERY_FIELD_ECClassId
+#define SEARCH_QUERY_INJECTION      ", ECInstanceId AS [" SEARCH_QUERY_FIELD_ECInstanceId "], ECClassId AS [" SEARCH_QUERY_FIELD_ECClassId "]"
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
 +===============+===============+===============+===============+===============+======*/
@@ -3118,17 +3118,17 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
                 }
 
             ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
-            query->SelectContract(*contract, "searchQuery");
-            query->From(*StringNavigationQuery::Create(searchQuery), "searchQuery");
+            query->SelectContract(*contract, SEARCH_QUERY_Alias);
+            query->From(*StringNavigationQuery::Create(searchQuery), SEARCH_QUERY_Alias);
 
             if (groupingResolver.IsGroupedByClass())
                 {
-                query->Where(Utf8PrintfString("[searchQuery].[%s] = ?", SEARCH_QUERY_FIELD_ECClassId).c_str(),
+                query->Where(Utf8PrintfString("[" SEARCH_QUERY_Alias "].[%s] = ?", SEARCH_QUERY_FIELD_ECClassId).c_str(),
                     {new BoundQueryId(groupingResolver.GetGroupingClass()->GetId())});
                 }
             else if (!info.GetSelectPolymorphically())
                 {
-                query->Where(Utf8PrintfString("[searchQuery].[%s] = ?", SEARCH_QUERY_FIELD_ECClassId).c_str(),
+                query->Where(Utf8PrintfString("[" SEARCH_QUERY_Alias "].[%s] = ?", SEARCH_QUERY_FIELD_ECClassId).c_str(),
                     {new BoundQueryId(info.GetSelectClass()->GetId())});
                 }
 

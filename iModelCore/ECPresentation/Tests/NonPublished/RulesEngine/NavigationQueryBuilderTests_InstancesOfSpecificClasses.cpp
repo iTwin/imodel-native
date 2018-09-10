@@ -226,7 +226,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter)
     {    
-    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.DisplayLabel = 2", "Basic1:Class1A,Class1B", false);
+    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Name = 2", "Basic1:Class1A,Class1B", false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
@@ -264,7 +264,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     {
     IGNORE_BE_ASSERT();
 
-    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.DisplayLabel = parent.DisplayLabel", "Basic1:Class1A", false);
+    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Name = parent.Name", "Basic1:Class1A", false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
     ASSERT_EQ(1, queries.size());
 
@@ -285,7 +285,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic2", "Class2"));
     m_nodesCache.Cache(*parentNode, false);
 
-    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.DisplayLabel = parent.Name", "Basic1:Class1A", false);
+    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Name = parent.Name", "Basic1:Class1A", false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
@@ -310,7 +310,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     parentNode->SetParentNodeId(grandparentNode->GetNodeId());
     m_nodesCache.Cache(*parentNode, false);
 
-    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.DisplayLabel = parent.parent.Name", "Basic1:Class1A", false);
+    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Name = parent.parent.Name", "Basic1:Class1A", false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 
@@ -336,7 +336,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
     m_nodesCache.Cache(*parentNode, false);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, 
-        "this.DisplayLabel = parent.parent.Name OR this.DisplayLabel = parent.Name", "Basic1:Class1A", false);
+        "this.Name = parent.parent.Name OR this.Name = parent.Name", "Basic1:Class1A", false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
     ASSERT_EQ(1, queries.size());
 

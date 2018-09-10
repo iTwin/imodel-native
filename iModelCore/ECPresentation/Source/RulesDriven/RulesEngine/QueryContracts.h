@@ -62,11 +62,13 @@ public:
     void       SetPrefixOverride(Utf8String prefix) {m_prefixOverride = prefix;}
     Utf8String GetSelectClause(Utf8CP prefix = nullptr, bool useFieldNames = false) const {return _GetSelectClause(m_prefixOverride.empty() ? prefix : m_prefixOverride.c_str(), useFieldNames);}
 
-    bool IsPresentationQueryContractSimpleField() {return nullptr != _AsPresentationQueryContractSimpleField();}
+    bool IsPresentationQueryContractSimpleField() const {return nullptr != AsPresentationQueryContractSimpleField();}
     PresentationQueryContractSimpleField* AsPresentationQueryContractSimpleField() {return _AsPresentationQueryContractSimpleField();}
+    PresentationQueryContractSimpleField const* AsPresentationQueryContractSimpleField() const {return const_cast<PresentationQueryContractField*>(this)->_AsPresentationQueryContractSimpleField();}
 
-    bool IsPresentationQueryContractFunctionField() {return nullptr != _AsPresentationQueryContractFunctionField();}
-    RefCountedPtr<PresentationQueryContractFunctionField> AsPresentationQueryContractFunctionField() {return _AsPresentationQueryContractFunctionField();}
+    bool IsPresentationQueryContractFunctionField() const {return nullptr != AsPresentationQueryContractFunctionField();}
+    PresentationQueryContractFunctionField* AsPresentationQueryContractFunctionField() {return _AsPresentationQueryContractFunctionField();}
+    PresentationQueryContractFunctionField const* AsPresentationQueryContractFunctionField() const {return const_cast<PresentationQueryContractField*>(this)->_AsPresentationQueryContractFunctionField();}
 };
 
 /*=================================================================================**//**
@@ -101,10 +103,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryContractFunctionField : Presenta
 {
 private:
     Utf8String m_functionName;
-    bvector<RefCountedPtr<PresentationQueryContractField>> m_parameters;
+    bvector<RefCountedPtr<PresentationQueryContractField const>> m_parameters;
 
 protected:
-    PresentationQueryContractFunctionField(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField>> const& parameters, bool allowsPrefix, 
+    PresentationQueryContractFunctionField(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField const>> const& parameters, bool allowsPrefix, 
         bool isAggregateField, FieldVisibility fieldVisibility) 
         : PresentationQueryContractField(name, allowsPrefix, isAggregateField, fieldVisibility), m_functionName(functionName), m_parameters(parameters)
         {}
@@ -112,14 +114,14 @@ protected:
     PresentationQueryContractFunctionField* _AsPresentationQueryContractFunctionField() override {return this;}
 
 public:
-    static RefCountedPtr<PresentationQueryContractFunctionField> Create(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField>> const& functionParameters, bool allowsPrefix = true, 
+    static RefCountedPtr<PresentationQueryContractFunctionField> Create(Utf8CP name, Utf8CP functionName, bvector<RefCountedPtr<PresentationQueryContractField const>> const& functionParameters, bool allowsPrefix = true, 
         bool isAggregateField = false, FieldVisibility fieldVisibility = FieldVisibility::Both)
         {
         return new PresentationQueryContractFunctionField(name, functionName, functionParameters, allowsPrefix, isAggregateField, fieldVisibility);
         }
 
-    bvector<RefCountedPtr<PresentationQueryContractField>>& GetFunctionParametersR() {return m_parameters;}
-    bvector<RefCountedPtr<PresentationQueryContractField>> const& GetFunctionParameters() const {return m_parameters;}
+    bvector<RefCountedPtr<PresentationQueryContractField const>>& GetFunctionParameters() {return m_parameters;}
+    bvector<RefCountedPtr<PresentationQueryContractField const>> const& GetFunctionParameters() const {return m_parameters;}
 };
 
 /*=================================================================================**//**
@@ -245,7 +247,7 @@ private:
     
 private:
     ECPRESENTATION_EXPORT ECInstanceNodesQueryContract(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
-    static RefCountedPtr<PresentationQueryContractFunctionField> CreateDisplayLabelField(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
+    RefCountedPtr<PresentationQueryContractFunctionField> CreateDisplayLabelField(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&) const;
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::ECInstanceNodes;}
@@ -332,7 +334,7 @@ private:
 
 private:
     ECPRESENTATION_EXPORT DisplayLabelGroupingNodesQueryContract(ECClassCP, bool, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
-    static RefCountedPtr<PresentationQueryContractFunctionField> CreateDisplayLabelField(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
+    RefCountedPtr<PresentationQueryContractFunctionField> CreateDisplayLabelField(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&) const;
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::DisplayLabelGroupingNodes;}
@@ -411,28 +413,26 @@ private:
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecClassIdField;
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecPropertyClassIdField;
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecPropertyNameField;
-    RefCountedPtr<PresentationQueryContractDynamicField> m_displayLabelField;
+    RefCountedPtr<PresentationQueryContractField> m_displayLabelField;
     RefCountedPtr<PresentationQueryContractDynamicField> m_imageIdField;
     RefCountedPtr<PresentationQueryContractField> m_groupingValueField;
     RefCountedPtr<PresentationQueryContractDynamicField> m_groupingValuesField;
     RefCountedPtr<PresentationQueryContractSimpleField> m_isRangeField;
     RefCountedPtr<PresentationQueryContractFunctionField> m_groupedInstanceIdsField;
-    Utf8String m_ecInstanceFieldName;
     ECClassCP m_foreignKeyClass;
     Utf8String m_groupingPropertyClassAlias;
 
 private:
     ECPRESENTATION_EXPORT ECPropertyGroupingNodesQueryContract(ECClassCR, ECPropertyCR, Utf8String, PropertyGroupCR, ECClassCP);
     static Utf8String GetGroupingValueClause(ECPropertyCR);
-    Utf8String GetDisplayLabelClause(Utf8CP);
-    Utf8String GetImageIdClause(Utf8CP);
-    Utf8String GetGroupingValuesClause(Utf8CP);
-    Utf8String GetPropertyValueClause(Utf8CP);
+    RefCountedPtr<PresentationQueryContractField> CreateDisplayLabelField() const;
+    Utf8String GetImageIdClause(Utf8CP) const;
+    Utf8String GetGroupingValuesClause(Utf8CP) const;
+    Utf8String GetPropertyValueClause(Utf8CP) const;
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::PropertyGroupingNodes;}
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
-    ECPRESENTATION_EXPORT void _SetECClassIdFieldName(Utf8CP name) override;
     ECPRESENTATION_EXPORT void _SetECInstanceIdFieldName(Utf8CP name) override;
 
 public:
@@ -469,8 +469,8 @@ public:
 struct ContentQueryContract : PresentationQueryContract
 {
 public:
+    ECPRESENTATION_EXPORT static Utf8CP ContractIdFieldName;
     ECPRESENTATION_EXPORT static Utf8CP ECInstanceKeysFieldName;
-    ECPRESENTATION_EXPORT static Utf8CP DisplayLabelFieldName;
 
 private:
     PresentationQueryContractFieldPtr m_ecInstanceKeysField;
@@ -483,7 +483,7 @@ private:
 
 private:
     ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&, bvector<RelatedClass> const&, bool);
-    PresentationQueryContractFunctionField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const* field) const;
+    PresentationQueryContractFunctionField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const& field) const;
     PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&, bool) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(ContentDescriptor::ECInstanceKeyField const&, bool isMerging) const;

@@ -22,13 +22,13 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 #define SCHEMA_BASIC_1  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"                                                                                            \
                         "<ECSchema schemaName=\"Basic1\" alias=\"b1\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"              \
                         "    <ECEntityClass typeName=\"Class1A\">"                                                                                              \
-                        "        <ECProperty propertyName=\"DisplayLabel\" typeName=\"int\" />"                                                                 \
+                        "        <ECProperty propertyName=\"Name\" typeName=\"int\" />"                                                                        \
                         "    </ECEntityClass>"                                                                                                                  \
                         "    <ECEntityClass typeName=\"Class1B\">"                                                                                              \
-                        "        <ECProperty propertyName=\"DisplayLabel\" typeName=\"double\" />"                                                              \
+                        "        <ECProperty propertyName=\"Name\" typeName=\"double\" />"                                                                     \
                         "    </ECEntityClass>"                                                                                                                  \
                         "    <ECEntityClass typeName=\"Class2\">"                                                                                               \
-                        "        <ECProperty propertyName=\"DisplayLabel\" typeName=\"int\" />"                                                                 \
+                        "        <ECProperty propertyName=\"Name\" typeName=\"int\" />"                                                                        \
                         "        <ECProperty propertyName=\"CategorizedProperty\" typeName=\"int\" category=\"CategoryName\" />"                                \
                         "    </ECEntityClass>"                                                                                                                  \
                         "    <PropertyCategory typeName=\"CategoryName\" displayLabel=\"Category Label\" description=\"Category description\" priority=\"1\" />"\
@@ -128,9 +128,9 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
                         "</ECSchema>"
 
 #define SEARCH_NODE_QUERY "SELECT MyID, IntProperty FROM [RulesEngineTest].[Widget] WHERE [Widget].[ECInstanceId] > 0"
-#define SEARCH_NODE_QUERY_PROCESSED "SELECT MyID, IntProperty, ECInstanceId AS " \
-                                    SEARCH_QUERY_FIELD_ECInstanceId ", ECClassId AS " \
-                                    SEARCH_QUERY_FIELD_ECClassId " FROM [RulesEngineTest].[Widget] WHERE [Widget].[ECInstanceId] > 0"
+#define SEARCH_NODE_QUERY_PROCESSED "SELECT MyID, IntProperty, ECInstanceId AS [" \
+                                    SEARCH_QUERY_FIELD_ECInstanceId "], ECClassId AS [" \
+                                    SEARCH_QUERY_FIELD_ECClassId "] FROM [RulesEngineTest].[Widget] WHERE [Widget].[ECInstanceId] > 0"
 
 #define TABLE_ALIAS(prefix, ecclass, counter) \
     Utf8PrintfString("%s_%s_%s_%d", prefix, ecclass.GetSchema().GetAlias().c_str(), ecclass.GetName().c_str(), counter).c_str()

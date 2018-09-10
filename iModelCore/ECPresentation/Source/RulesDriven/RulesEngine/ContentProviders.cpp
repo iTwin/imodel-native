@@ -370,6 +370,10 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                 else if (MergeContent(contentValues, contentDisplayValues, instanceValues, GetContext().GetLocalizationProvider(), GetContext().GetLocale()))
                     {
                     // if detected different values during merge, stop
+                    if (item.GetValues().HasMember(fieldName))
+                        item.GetValues()[fieldName].Swap(contentValues);
+                    if (item.GetDisplayValues().HasMember(fieldName))
+                        item.GetDisplayValues()[fieldName].Swap(contentDisplayValues);
                     item.GetMergedFieldNames().push_back(fieldName);
                     break;
                     }
@@ -414,12 +418,16 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
 
         if (item.GetDisplayValues().HasMember(fieldName) || item.GetValues().HasMember(fieldName))
             {
-            RapidJsonValueR values = item.GetValues()[fieldName];
-            RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
-            bool areValuesDifferent = MergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues,
-                GetContext().GetLocalizationProvider(), GetContext().GetLocale());
-            if (areValuesDifferent)
-                item.GetMergedFieldNames().push_back(fieldName);
+            if (item.GetMergedFieldNames().end() == std::find(item.GetMergedFieldNames().begin(), item.GetMergedFieldNames().end(), fieldName))
+                {
+                // note: only need to do this if the field is not yet set as merged
+                RapidJsonValueR values = item.GetValues()[fieldName];
+                RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
+                bool areValuesDifferent = MergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues,
+                    GetContext().GetLocalizationProvider(), GetContext().GetLocale());
+                if (areValuesDifferent)
+                    item.GetMergedFieldNames().push_back(fieldName);
+                }
             }
         else
             {

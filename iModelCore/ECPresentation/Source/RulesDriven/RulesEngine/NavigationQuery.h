@@ -197,6 +197,17 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                08/2018
++===============+===============+===============+===============+===============+======*/
+struct QueryHelpers
+    {
+    static bool IsFunction(Utf8StringCR clause);
+    static bool IsLiteral(Utf8StringCR clause);
+    static bool IsWrapped(Utf8StringCR clause);
+    static Utf8String Wrap(Utf8StringCR clause);
+    };
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryBase : RefCountedBase
@@ -352,7 +363,7 @@ private:
     static void Select(Utf8StringR, Utf8CP clause, bool append);
     static void SelectString(Utf8StringR, Utf8CP str, Utf8CP alias = nullptr, bool append = true);
     ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, ECPropertyCR prop, Utf8CP alias = nullptr, bool append = true);
-    ECPRESENTATION_EXPORT static void SelectProperty(Utf8StringR, Utf8CP className, Utf8CP propertyName, Utf8CP alias = nullptr, bool append = true);
+    ECPRESENTATION_EXPORT static void SelectField(Utf8StringR, Utf8StringCR clause, Utf8CP alias = nullptr, bool append = true);
 
 protected:
     ComplexPresentationQuery() : m_limit(nullptr), m_offset(nullptr), m_isSelectAll(false) {}

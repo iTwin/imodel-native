@@ -578,6 +578,7 @@ ContentDescriptor::Field::TypeDescription const& ContentDescriptor::Field::GetTy
     return *m_type;
     }
 
+const Utf8CP ContentDescriptor::DisplayLabelField::NAME = "/DisplayLabel/";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -864,7 +865,7 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECInstanceKeyFie
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentDescriptor::ECInstanceKeyField::RecalculateName()
     {
-    Utf8String name = "key";
+    Utf8String name("/key/");
     bset<Utf8String> uniqueAliases;
     for (ECPropertiesField const* field : m_keyFields)
         {
@@ -876,7 +877,9 @@ void ContentDescriptor::ECInstanceKeyField::RecalculateName()
             if (prop.GetProperty().GetIsNavigation())
                 continue;
 
-            name.append("_").append(prop.GetPrefix());
+            if (!uniqueAliases.empty())
+                name.append("_");
+            name.append(prop.GetPrefix());
             uniqueAliases.insert(prop.GetPrefix());
             }
         }
@@ -945,6 +948,20 @@ bool ContentDescriptor::ECNavigationInstanceIdField::_Equals(Field const& other)
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECNavigationInstanceIdField::_CreateTypeDescription() const
     {
     return new PrimitiveTypeDescription("ECInstanceId");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR ContentDescriptor::ECNavigationInstanceIdField::_GetName() const 
+    {
+    if (SystemField::_GetName().empty())
+        {
+        Utf8String name("/id/");
+        name.append(m_propertyField->GetName());
+        const_cast<ECNavigationInstanceIdField*>(this)->SetName(name);
+        }
+    return SystemField::_GetName();
     }
 
 /*---------------------------------------------------------------------------------**//**

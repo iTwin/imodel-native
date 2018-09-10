@@ -592,6 +592,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     //===================================================================================
     struct DisplayLabelField : Field
     {
+        ECPRESENTATION_EXPORT static const Utf8CP NAME;
+
     private:
         int m_priority;
         bmap<ECClassCP, bvector<ECPropertyCP>> m_labelProperties;
@@ -610,7 +612,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] label The label of this field.
         //! @param[in] priority Field priority.
         DisplayLabelField(Utf8String label, int priority = Property::DEFAULT_PRIORITY) 
-            : Field(Category::GetDefaultCategory(), "DisplayLabel", label), m_priority(priority)
+            : Field(Category::GetDefaultCategory(), NAME, label), m_priority(priority)
             {}
 
         //! Set the priority for this field.
@@ -881,6 +883,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Field* _Clone() const override {return new ECNavigationInstanceIdField(*this);}
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
+        ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
         ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const&) override;
         ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;

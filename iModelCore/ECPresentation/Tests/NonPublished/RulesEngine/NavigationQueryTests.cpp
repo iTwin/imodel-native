@@ -63,7 +63,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_ForwardRelat
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
-        " INNER JOIN [sc2].[Class2] target_alias ON [target_alias].[C1].[Id] = [Class1].[ECInstanceId]");
+        " INNER JOIN [sc2].[Class2] [target_alias] ON [target_alias].[C1].[Id] = [Class1].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -86,7 +86,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_BackwardRela
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
-        " INNER JOIN [sc2].[Class1] target_alias ON [target_alias].[ECInstanceId] = [Class2].[C1].[Id]");
+        " INNER JOIN [sc2].[Class1] [target_alias] ON [target_alias].[ECInstanceId] = [Class2].[C1].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -107,8 +107,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
     query->Join(RelatedClass(entity, entity, relationship, true, "target", nullptr, true, false));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] source"
-        " INNER JOIN [sc3].[Class1] target ON [target].[Parent].[Id] = [source].[ECInstanceId]");
+        " FROM [sc3].[Class1] [source]"
+        " INNER JOIN [sc3].[Class1] [target] ON [target].[Parent].[Id] = [source].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -129,8 +129,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
     query->Join(RelatedClass(entity, entity, relationship, false, "source", nullptr, true, false));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] target"
-        " INNER JOIN [sc3].[Class1] source ON [source].[ECInstanceId] = [target].[Parent].[Id]");
+        " FROM [sc3].[Class1] [target]"
+        " INNER JOIN [sc3].[Class1] [source] ON [source].[ECInstanceId] = [target].[Parent].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -159,8 +159,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses)
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
-        " INNER JOIN [sc2].[Class2] target_alias1 ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
-        " INNER JOIN [sc2].[Class3] target_alias2 ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
+        " INNER JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
+        " INNER JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -193,8 +193,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_MultipleClauses_DoesntInc
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
-        " INNER JOIN [sc2].[Class2] target_alias1 ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
-        " INNER JOIN [sc2].[Class3] target_alias2 ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
+        " INNER JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
+        " INNER JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -216,8 +216,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_UsesAliases)
     query->Join(RelatedClass(class1, class2, relationship1, true, "Class2Alias", "", true, false));
 
     Utf8String expected(
-        " FROM [sc2].[Class1] Class1Alias"
-        " INNER JOIN [sc2].[Class2] Class2Alias ON [Class2Alias].[C1].[Id] = [Class1Alias].[ECInstanceId]");
+        " FROM [sc2].[Class1] [Class1Alias]"
+        " INNER JOIN [sc2].[Class2] [Class2Alias] ON [Class2Alias].[C1].[Id] = [Class1Alias].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -239,8 +239,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_BackwardNavigation
     query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias", nullptr, true, false));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] Class1Alias"
-        " INNER JOIN [sc3].[Class2] Class2Alias ON [Class2Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
+        " FROM [sc3].[Class1] [Class1Alias]"
+        " INNER JOIN [sc3].[Class2] [Class2Alias] ON [Class2Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -262,8 +262,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_BackwardNavigatio
     query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias", nullptr, true, false));
 
     Utf8String expected(
-        " FROM [sc3].[Class2] Class2Alias"
-        " INNER JOIN [sc3].[Class1] Class1Alias ON [Class1Alias].[ECInstanceId] = [Class2Alias].[Parent].[Id]");
+        " FROM [sc3].[Class2] [Class2Alias]"
+        " INNER JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class2Alias].[Parent].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -285,8 +285,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_ForwardNavigation
     query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias", nullptr, true, false));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] Class1Alias"
-        " INNER JOIN [sc3].[Class3] Class3Alias ON [Class3Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
+        " FROM [sc3].[Class1] [Class1Alias]"
+        " INNER JOIN [sc3].[Class3] [Class3Alias] ON [Class3Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -308,8 +308,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_ForwardNavigationP
     query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias", nullptr, true, false));
 
     Utf8String expected(
-        " FROM [sc3].[Class3] Class3Alias"
-        " INNER JOIN [sc3].[Class1] Class1Alias ON [Class1Alias].[ECInstanceId] = [Class3Alias].[Parent].[Id]");
+        " FROM [sc3].[Class3] [Class3Alias]"
+        " INNER JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class3Alias].[Parent].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -332,7 +332,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_ForwardRelat
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
-        " LEFT JOIN [sc2].[Class2] target_alias ON [target_alias].[C1].[Id] = [Class1].[ECInstanceId]");
+        " LEFT JOIN [sc2].[Class2] [target_alias] ON [target_alias].[C1].[Id] = [Class1].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -355,7 +355,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_BackwardRela
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
-        " LEFT JOIN [sc2].[Class1] target_alias ON [target_alias].[ECInstanceId] = [Class2].[C1].[Id]");
+        " LEFT JOIN [sc2].[Class1] [target_alias] ON [target_alias].[ECInstanceId] = [Class2].[C1].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -376,8 +376,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
     query->Join(RelatedClass(entity, entity, relationship, true, "target"));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] source"
-        " LEFT JOIN [sc3].[Class1] target ON [target].[Parent].[Id] = [source].[ECInstanceId]");
+        " FROM [sc3].[Class1] [source]"
+        " LEFT JOIN [sc3].[Class1] [target] ON [target].[Parent].[Id] = [source].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -398,8 +398,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
     query->Join(RelatedClass(entity, entity, relationship, false, "source"));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] target"
-        " LEFT JOIN [sc3].[Class1] source ON [source].[ECInstanceId] = [target].[Parent].[Id]");
+        " FROM [sc3].[Class1] [target]"
+        " LEFT JOIN [sc3].[Class1] [source] ON [source].[ECInstanceId] = [target].[Parent].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -428,8 +428,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses)
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
-        " LEFT JOIN [sc2].[Class2] target_alias1 ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
-        " LEFT JOIN [sc2].[Class3] target_alias2 ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
+        " LEFT JOIN [sc2].[Class2] [target_alias1] ON [target_alias1].[C1].[Id] = [Class1].[ECInstanceId]"
+        " LEFT JOIN [sc2].[Class3] [target_alias2] ON [target_alias2].[ECInstanceId] = [target_alias1].[C3].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -474,10 +474,10 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_MultipleClauses_DoesntInc
     query->Join(sprocketRelationshipPath, true);
 
     Utf8String expected(
-        " FROM ONLY [RET].[Widget] this"
-        " LEFT JOIN [RET].[WidgetHasGadget] relationship_alias1 ON [this].[ECInstanceId] = [relationship_alias1].[SourceECInstanceId] AND [this].[ECClassId] = [relationship_alias1].[SourceECClassId]"
-        " LEFT JOIN [RET].[Gadget] target_alias1 ON [target_alias1].[ECInstanceId] = [relationship_alias1].[TargetECInstanceId] AND [target_alias1].[ECClassId] = [relationship_alias1].[TargetECClassId]"
-        " LEFT JOIN [RET].[Sprocket] target_alias2 ON [target_alias2].[Gadget].[Id] = [relationship_alias1].[TargetECInstanceId]");
+        " FROM ONLY [RET].[Widget] [this]"
+        " LEFT JOIN [RET].[WidgetHasGadget] [relationship_alias1] ON [this].[ECInstanceId] = [relationship_alias1].[SourceECInstanceId] AND [this].[ECClassId] = [relationship_alias1].[SourceECClassId]"
+        " LEFT JOIN [RET].[Gadget] [target_alias1] ON [target_alias1].[ECInstanceId] = [relationship_alias1].[TargetECInstanceId] AND [target_alias1].[ECClassId] = [relationship_alias1].[TargetECClassId]"
+        " LEFT JOIN [RET].[Sprocket] [target_alias2] ON [target_alias2].[Gadget].[Id] = [relationship_alias1].[TargetECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     m_schemaContext->RemoveSchemaLocater(*schemaLocater);
@@ -500,8 +500,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_UsesAliases)
     query->Join(RelatedClass(class1, class2, relationship1, true, "Class2Alias", "RelationshipAlias"));
 
     Utf8String expected(
-        " FROM [sc2].[Class1] Class1Alias"
-        " LEFT JOIN [sc2].[Class2] Class2Alias ON [Class2Alias].[C1].[Id] = [Class1Alias].[ECInstanceId]");
+        " FROM [sc2].[Class1] [Class1Alias]"
+        " LEFT JOIN [sc2].[Class2] [Class2Alias] ON [Class2Alias].[C1].[Id] = [Class1Alias].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -523,8 +523,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_BackwardNavigation
     query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias"));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] Class1Alias"
-        " LEFT JOIN [sc3].[Class2] Class2Alias ON [Class2Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
+        " FROM [sc3].[Class1] [Class1Alias]"
+        " LEFT JOIN [sc3].[Class2] [Class2Alias] ON [Class2Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -546,8 +546,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_BackwardNavigatio
     query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias"));
 
     Utf8String expected(
-        " FROM [sc3].[Class2] Class2Alias"
-        " LEFT JOIN [sc3].[Class1] Class1Alias ON [Class1Alias].[ECInstanceId] = [Class2Alias].[Parent].[Id]");
+        " FROM [sc3].[Class2] [Class2Alias]"
+        " LEFT JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class2Alias].[Parent].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -569,8 +569,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_ForwardNavigation
     query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias"));
 
     Utf8String expected(
-        " FROM [sc3].[Class1] Class1Alias"
-        " LEFT JOIN [sc3].[Class3] Class3Alias ON [Class3Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
+        " FROM [sc3].[Class1] [Class1Alias]"
+        " LEFT JOIN [sc3].[Class3] [Class3Alias] ON [Class3Alias].[Parent].[Id] = [Class1Alias].[ECInstanceId]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -592,8 +592,8 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_ForwardNavigationP
     query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias"));
 
     Utf8String expected(
-        " FROM [sc3].[Class3] Class3Alias"
-        " LEFT JOIN [sc3].[Class1] Class1Alias ON [Class1Alias].[ECInstanceId] = [Class3Alias].[Parent].[Id]");
+        " FROM [sc3].[Class3] [Class3Alias]"
+        " LEFT JOIN [sc3].[Class1] [Class1Alias] ON [Class1Alias].[ECInstanceId] = [Class3Alias].[Parent].[Id]");
     Utf8String str = query->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -662,12 +662,12 @@ TEST_F(ComplexNavigationQueryTests, SelectAllDoesntIncludeInternalFieldsInOuterQ
     outerQuery->GroupByContract(*contract);
 
     Utf8String expected(
-        "SELECT GeneralField, GetOuterField() AS [OuterField], GetAggregateField() AS [AggregateField] "
+        "SELECT [GeneralField], GetOuterField() AS [OuterField], GetAggregateField() AS [AggregateField] "
         "FROM ("
         "SELECT GetGeneralField() AS [GeneralField], GetInternalField() AS [InternalField] "
             "FROM [b2].[Class2]"
         ") "
-        "GROUP BY GeneralField");
+        "GROUP BY [GeneralField]");
     Utf8String str = outerQuery->ToString();
     ASSERT_STREQ(expected.c_str(), str.c_str());
     }
@@ -683,7 +683,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingUniqueValues_GroupsByField
     query->GroupByContract(*contract);
 
     ASSERT_FALSE(contract->IsAggregating());
-    ASSERT_STREQ(" GROUP BY DistinctField", query->ToString().c_str());
+    ASSERT_STREQ(" GROUP BY [DistinctField]", query->ToString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -699,7 +699,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingUniqueValues_GroupsByGroup
     query->GroupByContract(*contract);
 
     ASSERT_FALSE(contract->IsAggregating());
-    ASSERT_STREQ(" GROUP BY GroupingClause", query->ToString().c_str());
+    ASSERT_STREQ(" GROUP BY [GroupingClause]", query->ToString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -732,7 +732,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingAggregateField_AggregateFi
     ASSERT_TRUE(contract->IsAggregating());
     Utf8String expected(
         "SELECT GetGeneralField() AS [GeneralField], GetAggregateField() AS [AggregateField]"
-        " GROUP BY GeneralField");
+        " GROUP BY [GeneralField]");
     ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
     }
 
@@ -753,6 +753,6 @@ TEST_F(ComplexNavigationQueryTests, ToString_SelectingMultipleAggregateFields_Ag
     ASSERT_TRUE(contract->IsAggregating());
     Utf8String expected(
         "SELECT GetGeneralField1() AS [GeneralField1], GetGeneralField2() AS [GeneralField2], GetAggregateField1() AS [AggregateField1], GetAggregateField2() AS [AggregateField2]"
-        " GROUP BY GeneralField1, GeneralField2");
+        " GROUP BY [GeneralField1], [GeneralField2]");
     ASSERT_STREQ(expected.c_str(), query->ToString().c_str());
     }

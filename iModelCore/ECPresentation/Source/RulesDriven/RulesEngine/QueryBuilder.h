@@ -23,8 +23,9 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define RULES_ENGINE_LOCAL_STATE_NAMESPACE                  "RulesEngine"
 #define RULES_ENGINE_ACTIVE_GROUPS_LOCAL_STATE_NAMESPACE    RULES_ENGINE_LOCAL_STATE_NAMESPACE "_ActiveGroups"
 
-#define SEARCH_QUERY_FIELD_ECInstanceId "RulesEngine_ECInstanceId"
-#define SEARCH_QUERY_FIELD_ECClassId    "RulesEngine_ECClassId"
+#define SEARCH_QUERY_Alias              "/search/"
+#define SEARCH_QUERY_FIELD_ECInstanceId "/ECInstanceId/"
+#define SEARCH_QUERY_FIELD_ECClassId    "/ECClassId/"
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
