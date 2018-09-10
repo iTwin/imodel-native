@@ -6,7 +6,7 @@
     <!-- Label overrides -->
     <InstanceLabelOverride ClassName='BisCore:Element' PropertyNames='UserLabel,CodeValue' OnlyIfNotHandled='true' Priority='100' />
     <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")' 
-                   Label='this.GetRelatedValue("BisCore:ModelModelsElement", "Forward", "BisCore:Element", "UserLabel")'
+                   Label='this.GetRelatedDisplayLabel("BisCore:ModelModelsElement", "Forward", "BisCore:Element")'
                    OnlyIfNotHandled='true' Priority='100' />
     
     <!-- ImageId overrides -->
@@ -33,6 +33,14 @@
     <ContentModifier ClassName="SpatialLocationElement" SchemaName="BisCore">
         <RelatedProperties RelationshipClassNames='BisCore:SpatialLocationIsOfType' RelatedClassNames='BisCore:SpatialLocationType'
                            RequiredDirection='Forward' IsPolymorphic='True' />
+    </ContentModifier>
+    <ContentModifier ClassName="DrawingGraphic" SchemaName="BisCore">
+        <RelatedProperties RelationshipClassNames="BisCore:DrawingGraphicRepresentsElement" RelatedClassNames="BisCore:Element" 
+                           RequiredDirection="Forward" IsPolymorphic="True" />
+    </ContentModifier>
+    <ContentModifier ClassName="GraphicalElement3d" SchemaName="BisCore">
+        <RelatedProperties RelationshipClassNames="BisCore:GraphicalElement3dRepresentsElement" RelatedClassNames="BisCore:Element"
+                           RequiredDirection="Forward" IsPolymorphic="True" />
     </ContentModifier>
 
     <!-- Content: Property display -->

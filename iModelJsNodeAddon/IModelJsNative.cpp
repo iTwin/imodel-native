@@ -1274,6 +1274,13 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)stat);
         }
 
+    Napi::Value ImportFunctionalSchema(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        DbResult result = JsInterop::ImportFunctionalSchema(GetDgnDb());
+        return Napi::Number::New(Env(), (int)result);
+        }
+
     void CloseDgnDb(Napi::CallbackInfo const& info)
         {
         CloseDgnDb();
@@ -1676,13 +1683,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         uint64_t subId = propsJson[JsInterop::json_subId()].asUInt64();
 
         DbResult stat;
-        Napi::Value blobVal = info[2];
         Utf8String strbuf;
         Utf8StringCP strDataP = nullptr;
         void const* value = nullptr;
         uint32_t propsize = 0;
 
-        Napi::Value strVal = info[1];
         if (info[1].IsString())
             {
             strbuf = info[1].ToString().Utf8Value().c_str();
@@ -1784,6 +1789,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
+			InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
