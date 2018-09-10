@@ -222,7 +222,7 @@ static void clipContentRangeToTileRange(DRange3dR content, DRange3dCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DRange3d bisectRange2d(DRange3dCR range, bool takeLow)
+static DRange3d bisectRange2d(DRange3dCR range, bool takeUpper)
     {
     DVec3d diag = range.DiagonalVector();
     DRange3d subRange = range;
@@ -232,12 +232,12 @@ static DRange3d bisectRange2d(DRange3dCR range, bool takeLow)
     if (diag.x > diag.y)
         {
         bisect = (range.low.x + range.high.x) / 2.0;
-        replace = takeLow ? &subRange.high.x : &subRange.low.x;
+        replace = takeUpper ? &subRange.high.x : &subRange.low.x;
         }
     else
         {
         bisect = (range.low.y + range.high.y) / 2.0;
-        replace = takeLow ? &subRange.high.y : &subRange.low.y;
+        replace = takeUpper ? &subRange.high.y : &subRange.low.y;
         }
 
     *replace = bisect;
@@ -247,7 +247,7 @@ static DRange3d bisectRange2d(DRange3dCR range, bool takeLow)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DRange3d bisectRange(DRange3dCR range, bool takeLow)
+static DRange3d bisectRange(DRange3dCR range, bool takeUpper)
     {
     DVec3d diag = range.DiagonalVector();
     DRange3d subRange = range;
@@ -257,17 +257,17 @@ static DRange3d bisectRange(DRange3dCR range, bool takeLow)
     if (diag.x > diag.y && diag.x > diag.z)
         {
         bisect = (range.low.x + range.high.x) / 2.0;
-        replace = takeLow ? &subRange.high.x : &subRange.low.x;
+        replace = takeUpper ? &subRange.high.x : &subRange.low.x;
         }
     else if (diag.y > diag.z)
         {
         bisect = (range.low.y + range.high.y) / 2.0;
-        replace = takeLow ? &subRange.high.y : &subRange.low.y;
+        replace = takeUpper ? &subRange.high.y : &subRange.low.y;
         }
     else
         {
         bisect = (range.low.z + range.high.z) / 2.0;
-        replace = takeLow ? &subRange.high.z : &subRange.low.z;
+        replace = takeUpper ? &subRange.high.z : &subRange.low.z;
         }
 
     *replace = bisect;
