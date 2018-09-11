@@ -44,7 +44,7 @@ BentleyStatus ORDBridge::_Initialize(int argc, WCharCP argv[])
         return BentleyStatus::ERROR;
         }
 
-    DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv);
+    DgnDbSync::DgnV8::Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv, nullptr);
     AppendCifSdkToDllSearchPath(_GetParams().GetLibraryDir());
 
     // Initialize Cif SDK
