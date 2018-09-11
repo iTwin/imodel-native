@@ -188,6 +188,8 @@ if __name__ == '__main__':
         packageVersion = pvf.read()
     packageVersion = packageVersion.strip()
 
+    print("Generating packages with version " + packageVersion)
+
     addonDir = os.path.join(productdir, 'Addon')
     if not os.path.basename(productdir).startswith('imodel-bank') or not os.path.exists(addonDir):
         print '*** ' + productdir + ' does not appear to be the path to an imodel-bank product directory';
