@@ -1082,7 +1082,11 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
     bool rootTileEmpty;
     if (model.Is3dModel())
         {
-        range = model.GetDgnDb().GeoLocation().GetProjectExtents();
+        // NB: We used to use project extents. For read-only scenarios, that's problematic when multiple models exist because:
+        // - if a model occupies a small fraction of the extents, we must subdivide its tile tree excessively before we reach useful geometry; and
+        // - some models contain junk elements in far orbit which blow out the project extents resulting in same problem - constrain that only to those models.
+        // Classifiers are applied to all models (currently...) so they use project extents.
+        range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryModelRange();
         range = scaleSpatialRange(range);
         uint32_t nElements;
         populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
