@@ -62,8 +62,8 @@ void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvec
             if (updatedMinVal == updatedMaxVal)
                 continue;
             DPoint3d firstVal = it->first;
-            assert(polylines[updatedMinVal].front().IsEqual(it->first) || polylines[updatedMinVal].back().IsEqual(it->first));
-            assert(polylines[updatedMaxVal].front().IsEqual(it->first) || polylines[updatedMaxVal].back().IsEqual(it->first));
+           // assert(polylines[updatedMinVal].front().IsEqual(it->first) || polylines[updatedMinVal].back().IsEqual(it->first));
+           // assert(polylines[updatedMaxVal].front().IsEqual(it->first) || polylines[updatedMaxVal].back().IsEqual(it->first));
 
             size_t posToAppendSeg = polylines[updatedMinVal].front() == it->first ? 0 : polylines[updatedMinVal].size();
             bool reverseSeg = (posToAppendSeg == 0 && !polylines[updatedMaxVal].back().IsEqual(it->first)) || (posToAppendSeg != 0 && !polylines[updatedMaxVal].front().IsEqual(it->first));

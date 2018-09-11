@@ -328,6 +328,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
             ret->m_includeUnbalancedLeafs = m_includeUnbalancedLeafs;
             return ret;
         }
+
+        void SetIgnoreFaceIndexes(bool ignoreIndexes)
+        {
+            m_ignoreFaceIndexes = ignoreIndexes;
+        }
 };     
 
 /*

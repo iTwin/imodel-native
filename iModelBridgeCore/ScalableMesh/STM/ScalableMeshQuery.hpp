@@ -914,6 +914,7 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
     ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(
         range, scmQueryParamsPtr->GetLevel() < (size_t)-1 ? scmQueryParamsPtr->GetLevel() : m_scmIndexPtr->GetDepth(), queryExtent3d, scmQueryParamsPtr->GetUseAllResolutions(), scmQueryParamsPtr->GetTargetPixelTolerance()));
 
+    meshQueryP->SetIgnoreFaceIndexes(scmQueryParamsPtr->GetReturnNodesWithNoMesh());
     try
         {
         vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
@@ -1875,6 +1876,13 @@ template <class POINT> void ScalableMeshNode<POINT>::_GetResolutions(float& geom
 
     meshNode->GetResolution(geometricResolution, textureResolution);    
     }
+
+template <class POINT> IScalableMeshNodeEditPtr ScalableMeshNode<POINT>::_EditNode()
+{
+    LOAD_NODE
+
+    return new ScalableMeshNodeEdit<POINT>(m_node);
+}
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMesh(IScalableMeshMeshFlagsPtr& flags) const
     {        
@@ -3587,6 +3595,23 @@ template <class POINT> void ScalableMeshNodeEdit<POINT>::_LoadHeader() const
     return m_node->Load();    
     }
 
+
+template <class POINT> void   ScalableMeshNodeEdit<POINT>::_ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates)
+{
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    for(auto& pos : posToChange)
+        if (meshNode->m_nodeHeader.m_nbFaceIndexes <= pos)
+            return;
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
+    for (size_t i = 0; i < posToChange.size(); ++i)
+    {
+        const_cast<DPoint3d&>((*pointsPtr)[posToChange[i]]) = newCoordinates[i];
+    }
+    pointsPtr->SetDirty(true);
+
+    meshNode->SetDirty(true);
+}
 
 template <class POINT> ScalableMeshNodeWithReprojection<POINT>::ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const GeoCoords::Reprojection& reproject)
     :ScalableMeshNode<POINT>(nodePtr), m_reprojectFunction(reproject)
