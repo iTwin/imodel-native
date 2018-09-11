@@ -1088,8 +1088,8 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         // Classifiers are applied to all models (currently...) so they use project extents.
         range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryModelRange();
         range = scaleSpatialRange(range);
-        uint32_t nElements;
-        populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
+        uint32_t nElements = 0;
+        populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
         rootTileEmpty = 0 == nElements;
         }
     else
@@ -1112,10 +1112,13 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     Transform transform = Transform::From(centroid);
 
-    Transform rangeTransform;
-    rangeTransform.InverseOf(transform);
-    DRange3d tileRange;
-    rangeTransform.Multiply(tileRange, range);
+    DRange3d tileRange = range;
+    if (!range.IsNull())
+        {
+        Transform rangeTransform;
+        rangeTransform.InverseOf(transform);
+        rangeTransform.Multiply(tileRange, range);
+        }
 
     return new Tree(model, transform, tileRange, system, id, rootTile);
     }
@@ -1127,7 +1130,8 @@ Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Rende
     : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_id(id), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
     m_rootTile(rootTile)
     {
-    m_range.Extend(range);
+    if (!range.IsNull())
+        m_range.Extend(range);
     }
 
 /*---------------------------------------------------------------------------------**//**
