@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECInstanceUpdaterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -191,7 +191,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     ASSERT_EQ(SUCCESS, newLastMod.ToJulianDay(newLastModJdMsec));
 
     uint64_t timeSpan = newLastModJdMsec - firstLastModJdMsec;
-    ASSERT_GT(timeSpan, 1000) << "New LastMod must be at least 1 second later than old LastMod as test was paused for 1 sec before updating";
+    ASSERT_GT(timeSpan, 100) << "New LastMod must be later than old LastMod. Just test that it is a bit older (versus the exact difference) to keep the test robust.";
     }
 
 //---------------------------------------------------------------------------------------
