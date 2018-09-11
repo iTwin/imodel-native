@@ -28,6 +28,7 @@ struct PWWorkspaceHelper : public IDmsSupport
         PWWorkspaceHelper(DmsSession& session);
         ~PWWorkspaceHelper();
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i) override;
+        StatusInt GetFileName(WString fileName, int folderId, int documentId);
         StatusInt GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker);
         virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i) override;
         virtual  void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) override;
