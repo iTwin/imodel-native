@@ -15,10 +15,6 @@
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
-#if defined (BENTLEY_WIN32)
-#include <filesystem>
-#endif
-
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -344,12 +340,8 @@ folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageCSV, Utf8Stri
                 throw HttpError(response);
                 }
 
-#if defined (BENTLEY_WIN32)
-            std::tr2::sys::path pval(usageCSV.c_str());
-            remove(pval);
-#else
             BeFileName(usageCSV).BeDeleteFile();
-#endif
+
             return folly::makeFuture();
             });
         });
