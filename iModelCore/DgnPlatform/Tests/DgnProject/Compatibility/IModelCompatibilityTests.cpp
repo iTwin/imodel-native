@@ -575,11 +575,7 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             assertReferencedUnitsAndFormatsSchema(testDb, koq2->GetSchema());
 
             bvector<ECSchemaCP> schemas = testDb.GetDb().Schemas().GetSchemas(true);
-            const bool fileSupportsUnitsAndFormats = testDb.SupportsFeature(ECDbFeature::UnitsAndFormats);
-            if (fileSupportsUnitsAndFormats)
-                ASSERT_EQ(11, schemas.size()) << testDb.GetDescription();
-            else
-                ASSERT_EQ(9, schemas.size()) << testDb.GetDescription();
+            ASSERT_EQ(11, schemas.size()) << testDb.GetDescription();
 
             bool containsUnitsSchema = false, containsFormatsSchema = false;
             for (ECSchemaCP schema : schemas)
@@ -589,8 +585,8 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
                 if (schema->GetName().Equals("Formats"))
                     containsFormatsSchema = true;
                 }
-            ASSERT_EQ(fileSupportsUnitsAndFormats, containsUnitsSchema) << testDb.GetDescription();
-            ASSERT_EQ(fileSupportsUnitsAndFormats, containsFormatsSchema) << testDb.GetDescription();
+            ASSERT_TRUE(containsUnitsSchema) << testDb.GetDescription();
+            ASSERT_TRUE(containsFormatsSchema) << testDb.GetDescription();
 
             testDb.GetDb().ClearECDbCache();
             }
