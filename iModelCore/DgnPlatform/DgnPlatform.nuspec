@@ -18,11 +18,11 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="DgnPlatformB02.dll"                      target="lib\native\DgnPlatformB02.dll" />
+        <file src="DgnPlatformM02.dll"                      target="lib\native\DgnPlatformM02.dll" />
         <file src="libs\DgnPlatform.lib"                    target="lib\native\DgnPlatform.lib" />
-        <file src="BaseGeoCoordB02.dll"                     target="lib\native\BaseGeoCoordB02.dll" />
+        <file src="BaseGeoCoordM02.dll"                     target="lib\native\BaseGeoCoordM02.dll" />
         <file src="libs\BaseGeoCoord.lib"                   target="lib\native\BaseGeoCoord.lib" />
-        <file src="BeFollyB02.dll"                          target="lib\native\BeFollyB02.dll" />
+        <file src="BeFollyM02.dll"                          target="lib\native\BeFollyM02.dll" />
         <file src="libs\BeFolly.lib"                        target="lib\native\BeFolly.lib" />
         <file src="freetype2B02.dll"                        target="lib\native\freetype2B02.dll" />
         <file src="libs\freetype2.lib"                      target="lib\native\freetype2.lib" />
