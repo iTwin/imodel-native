@@ -155,7 +155,7 @@ bool SMSQLiteFile::UpdateDatabase()
     m_database->GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
     assert(stmtTest != nullptr);
     stmtTest->Step();
-#ifndef VANCOUVER_API
+//#ifndef VANCOUVER_API
     BESQL_VERSION_STRUCT databaseSchema(GET_VALUE_STR(stmtTest,0));
 
     for (size_t i = 0; i < GetNumberOfReleasedSchemas()- 1; ++i)
@@ -180,7 +180,7 @@ bool SMSQLiteFile::UpdateDatabase()
 #ifndef VANCOUVER_API
         stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
 #else
-        stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
+        stmt->BindText(1, versonJson, MAKE_COPY_YES);
 #endif
         DbResult status = stmt->Step();
         if (status == BE_SQLITE_DONE) 
@@ -188,7 +188,7 @@ bool SMSQLiteFile::UpdateDatabase()
             return true;
             }
         }
-    #endif
+ //   #endif
     assert(!"ERROR - Unknown database schema version");
     return true; //for now, allow opening more recent versions
     }
@@ -213,6 +213,8 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 #ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
 #else
+    Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
+    result = m_database->IsProfileVersionUpToDate(params);
     if (result == BE_SQLITE_SCHEMA)
 #endif     
         {
@@ -220,8 +222,9 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
 #ifndef VANCOUVER_API
         openParamUpdate.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+#else
+        m_database->CloseDb();
 #endif
-
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
         assert(result == BE_SQLITE_OK);
