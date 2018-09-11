@@ -29,13 +29,14 @@ struct TestDb
     {
 protected:
     TestFile const& m_testFile;
-    BeSQLite::ProfileState::Age m_age;
+    Nullable<BeSQLite::ProfileState::Age> m_age;
 
 private:
     virtual ECDbR _GetDb() const = 0;
     virtual DbResult _Open() = 0;
     virtual void _Close() = 0;
     virtual ECDb::OpenParams const& _GetOpenParams() const = 0;
+    virtual Utf8String _OpenParamsToString() const = 0;
 
 protected:
     explicit TestDb(TestFile const& testFile) : m_testFile(testFile) {}
@@ -50,7 +51,7 @@ protected:
     DbResult Open();
     void Close() { _Close(); }
 
-    BeSQLite::ProfileState::Age GetAge() const { return m_age; }
+    BeSQLite::ProfileState::Age GetAge() const { BeAssert(m_age != nullptr); return m_age.Value(); }
     bool IsUpgraded() const { return GetOpenParams().GetProfileUpgradeOptions() == ECDb::ProfileUpgradeOptions::Upgrade; }
     TestFile const& GetTestFile() const { return m_testFile; }
     ECDbR GetDb() const { return _GetDb(); }
@@ -127,6 +128,8 @@ private:
         }
 
     ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
+    Utf8String _OpenParamsToString() const override;
+
 public:
     TestECDb(TestFile const& testFile, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::Readonly)): TestDb(testFile), m_openParams(openParams) {}
     ~TestECDb() { _Close(); }
@@ -184,6 +187,7 @@ struct TestIModel final : TestDb
             }
 
         ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
+        Utf8String _OpenParamsToString() const override;
 
     public:
         TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}

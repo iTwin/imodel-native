@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include <DgnPlatform/DgnCoreAPI.h>
+#include <DgnPlatform/FunctionalDomain.h>
 #include "Profiles.h"
 #include "TestIModelCreators.h"
 #include "TestDb.h"
@@ -1354,6 +1356,41 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
                         FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
                         break;
                 }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, DomainSchemaImport)
+    {
+    // Required::Yes forces schema import/upgrade
+    ASSERT_EQ(SUCCESS, DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
+
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const DbResult openStat = testDb.Open();
+            DgnDb::OpenParams const& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (params.IsReadonly() || params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
+                {
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeRequired, openStat) << testDb.GetDescription();
+                continue;
+                }
+
+            if (testFile.GetAge() == ProfileState::Age::Newer)
+                {
+                //schema import not possible in newer files
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
+                continue;
+                }
+
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
             }
         }
     }
