@@ -74,8 +74,7 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
 
         BentleyApi::BeFileName portableFileName(portableName);
         BentleyApi::WString refFileName =  portableFileName.GetFileNameAndExtension();
-        WString folderIdStr, refFolderName;
-        folderIdStr.Sprintf(L"%d", folderId);
+        WString refFolderName;
         refFolderName.Sprintf(L"%d_%d", folderId, documentId);
 
         BentleyApi::BeFileName fullRefFileName;
@@ -90,7 +89,8 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
             while (!parentDir.empty())
                 {
                 BentleyApi::WString dirName = parentDir.GetFileNameWithoutExtension();
-                if (dirName.StartsWith(folderIdStr.c_str()))
+                int cfolderId, cdocId;
+                if (2== swscanf(dirName.c_str(), L"%d_%d", &cfolderId, &cdocId))
                     { 
                     parentDir.PopDir();
                     parentDir.AppendToPath(refFolderName.c_str());
