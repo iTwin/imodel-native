@@ -19,7 +19,7 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Delivery\WebServicesCacheB02.dll"                          target="lib\native\WebServicesCacheB02.dll" />
+        <file src="Delivery\WebServicesCacheM02.dll"                          target="lib\native\WebServicesCacheM02.dll" />
         <file src="Delivery\WebServicesCache.lib"                             target="lib\native\WebServicesCache.lib" />
 
         <file src="Delivery\ECSchemas\WSClient\Cache\*"                       target="Assets\ECSchemas\WSClient\Cache" />
