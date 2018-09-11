@@ -485,7 +485,7 @@ int threadId)
     QueryProcessor::QueryProcessor()
         {        
 #ifndef DEACTIVATE_THREADING
-        m_numWorkingThreads = std::thread::hardware_concurrency() - 2;
+        m_numWorkingThreads = std::min((int)16, (int)(std::thread::hardware_concurrency() - 2));
         m_numWorkingThreads = max(1, m_numWorkingThreads);
 #else
         m_numWorkingThreads = 1;        
@@ -1077,7 +1077,7 @@ class NewQueryStartingNodeProcessor
             {
             
 #ifndef DEACTIVATE_THREADING
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;       
+            m_numWorkingThreads = std::min((int)16, (int)(std::thread::hardware_concurrency() - 2));
             m_numWorkingThreads = max(1, m_numWorkingThreads);
 #else
             m_numWorkingThreads = 1;            

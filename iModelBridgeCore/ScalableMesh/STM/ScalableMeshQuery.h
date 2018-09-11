@@ -58,6 +58,7 @@ typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 struct ScalableMeshExtentQuery;
 typedef RefCountedPtr<ScalableMeshExtentQuery> ScalableMeshExtentQueryPtr;
+class GeometryGuide;
 
 /*==================================================================*/
 /*        QUERY PARAMETERS IMPLEMENTATION SECTION - START           */
@@ -536,8 +537,6 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
     private : 
         DVec3d m_viewNormal;
-        mutable size_t    m_nbFaceIndexes;
-        int32_t*    m_faceIndexes;
         size_t    m_normalCount;
         DVec3d*   m_pNormal;
         int32_t*    m_pNormalIndex;
@@ -554,6 +553,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
         DPoint3d* m_points;
         size_t    m_nbPoints;
 		Transform m_transform;
+        mutable size_t    m_nbFaceIndexes;
+        int32_t*    m_faceIndexes;
 
         virtual const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* _GetPolyfaceQuery() const override;
 
@@ -674,7 +675,11 @@ class ScalableMeshMeshWithGraph : public ScalableMeshMesh
 
         virtual ~ScalableMeshMeshWithGraph();
 
+        void FindTrianglesAroundLabel(bvector<bvector<DPoint3d>>& triangles, int labelValue);
+
     public:
+
+        void SmoothToGeometry(const GeometryGuide& source, bvector<size_t>& affectedIndices, bvector<DPoint3d>& affectedIndicesCoords, double smoothness);
 
         static ScalableMeshMeshWithGraphPtr Create(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex);
         static ScalableMeshMeshWithGraphPtr Create(MTGGraph* pGraph, bool is3d);
@@ -725,6 +730,16 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
         virtual void _SetLevel(size_t depth) override {};
         virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
         virtual bool _GetUseAllResolutions() override { return false; };
+
+        virtual bool _GetReturnNodesWithNoMesh()  override
+        {
+            return false;
+        }
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) override
+        {
+        }
+
         
         virtual const DPoint3d* _GetViewBox() const override
             {
@@ -877,6 +892,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
         bool m_useAllResolutions;
 
         double m_pixelTolerance;
+        bool m_returnNodesWithNoMesh;
 
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
             {
@@ -917,6 +933,15 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             {
             m_useAllResolutions = useAllResolutions;
             }
+        virtual bool _GetReturnNodesWithNoMesh()  override
+        {
+            return m_returnNodesWithNoMesh;
+        }
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) override
+        {
+            m_returnNodesWithNoMesh = returnEmptyNodes;
+         }
 
         virtual void _SetGCS(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr) override
@@ -1244,6 +1269,13 @@ struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryPara
 		}
         virtual void _SetUseAllResolutions(bool useAllResolutions) override {};
         virtual bool _GetUseAllResolutions() override { return false; };
+        virtual bool _GetReturnNodesWithNoMesh()  override
+        {
+            return false;
+        }
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) override
+        { }
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_sourceGCSPtr;
         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr m_targetGCSPtr;
         virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr _GetSourceGCS() override
@@ -1432,6 +1464,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 		virtual void _ClearCachedData() override;
 
         SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const override;
+
+        virtual IScalableMeshNodeEditPtr _EditNode() override;
 
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
@@ -1720,6 +1754,8 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual bvector<IScalableMeshNodeEditPtr> _EditChildrenNodes() override;
         virtual IScalableMeshNodeEditPtr _EditParentNode() override;
 
+        virtual void   _ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates) override;
+
     public:
         BENTLEY_SM_EXPORT ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
         BENTLEY_SM_EXPORT ScalableMeshNodeEdit() {};
@@ -1758,7 +1794,37 @@ template <class POINT> int BuildQueryObject(
         IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
         IScalableMesh*                                                        smP);
 
+//This class encapsulates various geometry elements to provide a unified interface for e.g. distance.
+class GeometryGuide
+{
+    enum Type
+    {
+        None = 0,
+        Plane,
+        Cylinder,
+        Qty
+    };
 
+    Type m_type;
+    DPlane3d m_planeDef;
+    DPoint3d m_cylinderCenter;
+    DVec3d m_cylinderDir;
+    double m_cylinderRadius;
+    Transform m_transformToCylinder;
+
+public:
+    GeometryGuide(const DPlane3d& plane);
+
+    GeometryGuide(DPoint3d center, DVec3d direction, double radius, double height);
+
+    double DistanceTo(const DPoint3d& pt) const;
+
+    void TransformWith(const Transform& tr);
+
+    DPoint3d Project(const DPoint3d& pt) const;
+
+    DVec3d NormalAt(const DPoint3d& pt) const;
+};
 
 //#include "ScalableMeshPointQuery.hpp"
 
