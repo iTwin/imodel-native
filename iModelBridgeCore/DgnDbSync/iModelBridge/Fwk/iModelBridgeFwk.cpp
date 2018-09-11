@@ -1062,6 +1062,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     params.ParseJsonArgs(m_jobEnvArgs.m_argsJson, true);
     params.m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
+    //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
+    params.m_dmsSupport = m_dmsSupport;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1340,8 +1342,6 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     // Stage the workspace and input file if  necessary.
     if (BSISUCCESS != SetupDmsFiles())
         return RETURN_STATUS_SERVER_ERROR;
-    //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
-    params.m_dmsSupport = m_dmsSupport;
 
     //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
