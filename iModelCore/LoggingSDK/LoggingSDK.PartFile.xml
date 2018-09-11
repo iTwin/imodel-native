@@ -17,7 +17,7 @@
         <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
     </Part>
 
-    <Part Name="LoggingNativeLog4cxx" BentleyBuildMakeFile="src/native/log4cxx/log4cxx.mke" ApiNumber="B02">
+    <Part Name="LoggingNativeLog4cxx" BentleyBuildMakeFile="src/native/log4cxx/log4cxx.mke" ApiNumber="M02">
         <SubPart LibType="Static" PartName="Log4Cxx" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BentleyApi" />
         <!-- Cannot use libsmtp in DgnDb due to licensing concerns. -->
@@ -36,20 +36,20 @@
         <SubPart PartName="LoggingNativeLog4cxx" />
     </Part>
 
-    <Part Name="LoggingManagedInterface" BentleyBuildMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="B02" OnlyPlatforms="x64">
+    <Part Name="LoggingManagedInterface" BentleyBuildMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="M02" OnlyPlatforms="x64">
         <Bindings>
             <Assemblies>Delivery\Bentley.logging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedConsole" BentleyBuildMakeFile="src\managed\console\console.mke" ExcludeLibType="Static" ApiNumber="B02">
+    <Part Name="LoggingManagedConsole" BentleyBuildMakeFile="src\managed\console\console.mke" ExcludeLibType="Static" ApiNumber="M02">
         <SubPart PartName="LoggingManagedLog4net"/>
         <Bindings>
             <Assemblies>Delivery\Bentley.Logging.console$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedLog4net" BentleyBuildMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static" ApiNumber="B02">
+    <Part Name="LoggingManagedLog4net" BentleyBuildMakeFile="src\managed\log4net\log4net.mke" ExcludeLibType="Static" ApiNumber="M02">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <NuGetPackage>log4net</NuGetPackage>
         <SubPart PartName="LoggingManagedInterface"/>
@@ -61,7 +61,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedInterop" BentleyBuildMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="B02" OnlyPlatforms="x64">
+    <Part Name="LoggingManagedInterop" BentleyBuildMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="M02" OnlyPlatforms="x64">
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>

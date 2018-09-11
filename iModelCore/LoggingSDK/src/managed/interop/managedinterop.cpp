@@ -2,7 +2,7 @@
 |
 |     $Source: src/managed/interop/managedinterop.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,7 +10,7 @@
 #ifdef USE_VANCOUVER_LOGGING
 #using <Bentley.logging-2.0.dll>
 #else
-#using <Bentley.loggingB02.dll>
+#using <Bentley.loggingM02.dll>
 #endif
 
 namespace ManagedApi = ::Bentley::Logging;
