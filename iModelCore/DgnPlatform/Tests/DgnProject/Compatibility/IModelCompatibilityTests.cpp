@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include <DgnPlatform/DgnCoreAPI.h>
+#include <DgnPlatform/FunctionalDomain.h>
 #include "Profiles.h"
 #include "TestIModelCreators.h"
 #include "TestDb.h"
@@ -496,16 +498,13 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
 
     auto assertReferencedUnitsAndFormatsSchema = [] (TestIModel const& testDb, ECSchemaCR koqSchema)
         {
-        const bool fileSupportsUnitsAndFormats = testDb.SupportsFeature(ECDbFeature::UnitsAndFormats);
         auto it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Units", 1, 0), ECN::SchemaMatchType::Identical);
-        ASSERT_EQ(fileSupportsUnitsAndFormats, it != koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
-        if (fileSupportsUnitsAndFormats)
-            ASSERT_TRUE(it->second->HasId()) << testDb.GetDescription();
+        ASSERT_FALSE(it == koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
+        ASSERT_EQ(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats), it->second->HasId()) << testDb.GetDescription();
 
         it = koqSchema.GetReferencedSchemas().Find(SchemaKey("Formats", 1, 0), ECN::SchemaMatchType::Identical);
-        ASSERT_EQ(fileSupportsUnitsAndFormats, it != koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
-        if (fileSupportsUnitsAndFormats)
-            ASSERT_TRUE(it->second->HasId()) << testDb.GetDescription();
+        ASSERT_FALSE(it == koqSchema.GetReferencedSchemas().end()) << testDb.GetDescription();
+        ASSERT_EQ(testDb.SupportsFeature(ECDbFeature::UnitsAndFormats), it->second->HasId()) << testDb.GetDescription();
         };
 
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EC31KOQS))
@@ -521,9 +520,11 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
             //load KOQs with empty cache
             KindOfQuantityCP koq1 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq1Name);
             ASSERT_TRUE(koq1 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq1, "TestSchema", koq1Name, nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
 
             KindOfQuantityCP koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             testDb.GetDb().ClearECDbCache();
 
             //load KOQs after schema stub was loaded (but without elements)
@@ -531,9 +532,11 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
 
             koq1 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq1Name);
             ASSERT_TRUE(koq1 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq1, "TestSchema", koq1Name, nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
 
             koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             testDb.GetDb().ClearECDbCache();
 
             //load KOQs after schema was fully loaded
@@ -541,42 +544,49 @@ TEST_F(IModelCompatibilityTestFixture, SchemaManager_EC31KindOfQuantities)
 
             koq1 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq1Name);
             ASSERT_TRUE(koq1 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq1, "TestSchema", koq1Name, nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
 
             koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             testDb.GetDb().ClearECDbCache();
 
             //load KOQs after all schema stubs were loaded (no elements)
             testDb.GetDb().Schemas().GetSchemas(false);
             koq1 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq1Name);
             ASSERT_TRUE(koq1 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq1, "TestSchema", koq1Name, nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
 
             koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             testDb.GetDb().ClearECDbCache();
 
             //load KOQs after all schema were fully loaded
             testDb.GetDb().Schemas().GetSchemas(true);
             koq1 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq1Name);
             ASSERT_TRUE(koq1 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq1, "TestSchema", koq1Name, nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
 
             koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             testDb.GetDb().ClearECDbCache();
 
-            //Load schema elements after a KOQ was loaded (for 4.0.0.1 files, temporary schemas are expected to be deserialized now.
-            //This must ignore the temporary schema references as they don't have a schema id).
+            //Load schema elements after a KOQ was loaded (and the temporary schemas were deserialized)
+            //This must ignore the temporary schema references as they don't have a schema id
             koq1 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq1Name);
             ASSERT_TRUE(koq1 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq1, "TestSchema", koq1Name, nullptr, nullptr, "u:M", JsonValue(R"json(["f:AmerFI"])json"), 0.7);
             assertReferencedUnitsAndFormatsSchema(testDb, koq1->GetSchema());
 
             koq2 = testDb.GetDb().Schemas().GetKindOfQuantity("TestSchema", koq2Name);
             ASSERT_TRUE(koq2 != nullptr) << testDb.GetDescription();
+            testDb.AssertKindOfQuantity(*koq2, "TestSchema", koq2Name, nullptr, nullptr, "u:SQ_FT", JsonValue(R"json(["f:DefaultRealU(4)[u:SQ_FT]"])json"), 1.0);
             assertReferencedUnitsAndFormatsSchema(testDb, koq2->GetSchema());
 
             bvector<ECSchemaCP> schemas = testDb.GetDb().Schemas().GetSchemas(true);
             ASSERT_EQ(11, schemas.size()) << testDb.GetDescription();
-
             bool containsUnitsSchema = false, containsFormatsSchema = false;
             for (ECSchemaCP schema : schemas)
                 {
@@ -1619,3 +1629,30 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
         }
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, DomainSchemaImport)
+    {
+    // Required::Yes forces schema import/upgrade
+    ASSERT_EQ(SUCCESS, DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
+
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const DbResult openStat = testDb.Open();
+            DgnDb::OpenParams const& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (params.IsReadonly() || params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
+                {
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeRequired, openStat) << testDb.GetDescription();
+                continue;
+                }
+
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            }
+        }
+    }

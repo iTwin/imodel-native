@@ -854,19 +854,13 @@ DbResult TestDb::Open()
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String TestDb::GetDescription() const
     {
-    Utf8CP openModeStr = nullptr;
-    if (GetOpenParams().m_openMode == Db::OpenMode::Readonly)
-        openModeStr = "read-only";
-    else
-        {
-        if (GetOpenParams().m_profileUpgradeOptions == Db::ProfileUpgradeOptions::Upgrade)
-            openModeStr = "read-write with upgrade";
-        else
-            openModeStr = "read-write w/o upgrade";
-        }
+    Utf8String openModeStr = _OpenParamsToString();
+
+    if (m_age == nullptr)
+        return Utf8PrintfString("Open mode: %s | %s", openModeStr.c_str(), GetTestFile().ToString().c_str());
 
     Utf8CP ageStr = nullptr;
-    switch (m_age)
+    switch (m_age.Value())
         {
             case ProfileState::Age::Older:
                 ageStr = "older";
@@ -882,7 +876,7 @@ Utf8String TestDb::GetDescription() const
                 return Utf8String("Error: Unhandled ProfileState::Age enum value");
         }
 
-    return Utf8PrintfString("Open mode: %s | Age: %s | %s", openModeStr, ageStr, GetTestFile().ToString().c_str());
+    return Utf8PrintfString("Open mode: %s | Age: %s | %s", openModeStr.c_str(), ageStr, GetTestFile().ToString().c_str());
     }
 
 //***************************** TestECDb ********************************************
@@ -926,7 +920,7 @@ TestECDb::Iterable TestECDb::GetPermutationsFor(TestFile const& testFile)
 void TestECDb::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_ecdb.IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (m_age)
+    switch (GetAge())
         {
             case ProfileState::Age::UpToDate:
                 EXPECT_TRUE(m_ecdb.CheckProfileVersion().IsUpToDate()) << GetDescription();
@@ -945,6 +939,19 @@ void TestECDb::AssertProfileVersion() const
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String TestECDb::_OpenParamsToString() const
+    {
+    if (GetOpenParams().m_openMode == Db::OpenMode::Readonly)
+        return "read-only";
+
+    if (GetOpenParams().m_profileUpgradeOptions == Db::ProfileUpgradeOptions::Upgrade)
+        return "read-write with profile upgrade";
+
+    return "read-write w/o profile upgrade";
+    }
 
 //***************************** TestIModel ********************************************
 
@@ -975,7 +982,7 @@ DbResult TestIModel::_Open()
 //static
 TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
     {
-    std::vector<DgnDb::OpenParams> testParams {DgnDb::OpenParams(DgnDb::OpenMode::Readonly), DgnDb::OpenParams(ECDb::OpenMode::ReadWrite)};
+    std::vector<DgnDb::OpenParams> testParams {DgnDb::OpenParams(DgnDb::OpenMode::Readonly), DgnDb::OpenParams(ECDb::OpenMode::ReadWrite), DgnDb::OpenParams(ECDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, Dgn::SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)};
     if (testFile.GetAge() == ProfileState::Age::Older)
         {
         DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite);
@@ -992,7 +999,7 @@ TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
 void TestIModel::AssertProfileVersion() const
     {
     ASSERT_TRUE(m_dgndb != nullptr && m_dgndb->IsDbOpen()) << "AssertProfileVersion must be called on open file";
-    switch (m_age)
+    switch (GetAge())
         {
             case ProfileState::Age::UpToDate:
                 EXPECT_TRUE(m_dgndb->CheckProfileVersion().IsUpToDate()) << GetDescription();
@@ -1009,4 +1016,22 @@ void TestIModel::AssertProfileVersion() const
             default:
                 FAIL() << "Unhandled ProfileState::Age enum value";
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String TestIModel::_OpenParamsToString() const
+    {
+    if (m_openParams.m_openMode == Db::OpenMode::Readonly)
+        return "read-only";
+
+    Utf8String str("read-write");
+    if (m_openParams.m_profileUpgradeOptions == Db::ProfileUpgradeOptions::Upgrade)
+        str.append(", with profile upgrade");
+
+    if (m_openParams.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() == SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
+        str.append(", with domain schema upgrade");
+
+    return str;
     }
