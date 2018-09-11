@@ -179,6 +179,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 
@@ -254,6 +255,7 @@ void DataSourceAccountCURL::setupCertificateAuthorities(CURL* curl)
     if (!certificateAuthoritiesUrl.empty())
         {
         curl_easy_setopt(curl, CURLOPT_CAINFO, certificateAuthoritiesUrl.c_str());
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
         }
     }
@@ -295,6 +297,7 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const
     curl_easy_setopt(curl, CURLOPT_URL,        utf8URL.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
     //curl_easy_setopt(curl, CURLOPT_HEADEROPT,  CURLHEADER_SEPARATE); // This is for connections with a proxy
+    //curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
     curl_easy_setopt(curl, CURLOPT_UPLOAD,           1L);
@@ -466,6 +469,7 @@ DataSourceAccountCURL::CURLHandle * DataSourceAccountCURL::CURLHandleManager::cr
 
     //curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // Only for proxy servers
     //curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
+    //curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
     //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
