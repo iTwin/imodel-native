@@ -12,23 +12,23 @@
         <language>en-US</language>
     </metadata>
     <files>
-        <file src="ECObjectsB02.dll"                            target="lib\native\ECObjectsB02.dll" />
+        <file src="ECObjectsM02.dll"                            target="lib\native\ECObjectsM02.dll" />
         <file src="libs\ECObjects.lib"                          target="lib\native\ECObjects.lib" />
         <file src="BeIcu4cB02.dll"                              target="lib\native\BeIcu4cB02.dll" />
         <file src="libs\BeIcu4c.lib"                            target="lib\native\BeIcu4c.lib" />
         <file src="BeLibxml2B02.dll"                            target="lib\native\BeLibxml2B02.dll" />
         <file src="libs\BeLibxml2.lib"                          target="lib\native\BeLibxml2.lib" />
-        <file src="BentleyB02.dll"                              target="lib\native\BentleyB02.dll" />
+        <file src="BentleyM02.dll"                              target="lib\native\BentleyM02.dll" />
         <file src="libs\Bentley.lib"                            target="lib\native\Bentley.lib" />
-        <file src="BentleyGeomB02.dll"                          target="lib\native\BentleyGeomB02.dll" />
+        <file src="BentleyGeomM02.dll"                          target="lib\native\BentleyGeomM02.dll" />
         <file src="libs\BentleyGeom.lib"                        target="lib\native\BentleyGeom.lib" />
-        <file src="BentleyGeomSerializationB02.dll"             target="lib\native\BentleyGeomSerializationB02.dll" />
+        <file src="BentleyGeomSerializationM02.dll"             target="lib\native\BentleyGeomSerializationM02.dll" />
         <file src="libs\BentleyGeomSerialization.lib"           target="lib\native\BentleyGeomSerialization.lib" />
-        <file src="bentleylog4cxxB02.dll"                       target="lib\native\bentleylog4cxxB02.dll" />
+        <file src="bentleylog4cxxM02.dll"                       target="lib\native\bentleylog4cxxM02.dll" />
         <file src="libs\bentleylog4cxx.lib"                     target="lib\native\bentleylog4cxx.lib" />
-        <file src="BeXmlB02.dll"                                target="lib\native\BeXmlB02.dll" />
+        <file src="BeXmlM02.dll"                                target="lib\native\BeXmlM02.dll" />
         <file src="libs\BeXml.lib"                              target="lib\native\BeXml.lib" />
-        <file src="UnitsB02.dll"                                target="lib\native\UnitsB02.dll" />
+        <file src="UnitsM02.dll"                                target="lib\native\UnitsM02.dll" />
         <file src="libs\Units.lib"                              target="lib\native\Units.lib" />
         <file src="libs\BeJsonCpp.lib"                          target="lib\native\BeJsonCpp.lib" />
 
