@@ -51,7 +51,7 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
     size_t syncedInstances = m_syncedInstances;
-    size_t totalInstances = m_queriesToReportProgress.size();
+    size_t totalInstances = m_instancesToReportProgress.size();
 
     if (totalInstances == 0)
         totalInstances = m_initialInstances.size();
@@ -278,6 +278,9 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
 
     m_instanceQueriesPrepared.insert(instanceKey);
 
+    if (reportProgress)
+        m_instancesToReportProgress.insert(instanceKey);
+
     bool isPersistent = IsInstancePersistent(txn, instanceKey);
     auto instancePtr = std::make_shared<Instance>(instanceKey);
 
@@ -292,9 +295,6 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
                 cacheQueryPtr->instance = instancePtr;
                 instancePtr->cacheQueries.push_back(cacheQueryPtr);
 
-                if (m_progressHandler.shouldReportQueryProgress(query))
-                    m_queriesToReportProgress.insert(cacheQueryPtr);
-                
                 m_queriesToCache.insert(m_queriesToCache.end(), cacheQueryPtr);
                 }
             }
