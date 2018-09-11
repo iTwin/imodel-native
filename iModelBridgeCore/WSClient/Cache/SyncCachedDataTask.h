@@ -52,7 +52,7 @@ struct SyncCachedDataTask : public CachingTaskBase
         bvector<Instance> m_initialInstances;
         std::deque<std::shared_ptr<CacheQuery>> m_queriesToCache;
 
-        bset<std::shared_ptr<CacheQuery>> m_queriesToReportProgress;
+        bset<ECInstanceKey> m_instancesToReportProgress;
 
         bset<ECInstanceKey> m_filesToDownload;
 

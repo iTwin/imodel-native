@@ -6614,6 +6614,86 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSupplied_CachesIniti
     EXPECT_THAT(result.GetValue(), IsEmpty());
     }
 
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSupplied_ProgressHandlerParameterInvoked)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto ds = CreateMockedCachingDataSource(client, cache);
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    IQueryProvider::Query query(CachedResponseKey(StubECInstanceKey(11, 22), "Foo"), std::make_shared<WSQuery>("Schema", "Class"));
+
+    EXPECT_CALL(*cache, ReadResponseCacheTag(query.key, _)).WillOnce(Return("TestTag"));
+    EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(CacheStatus::OK));
+
+    auto newInstanceKey = StubECInstanceKey(33, 44);
+    auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
+    EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(DoAll(SetArgReferee<1>(responseKeys), Return(CacheStatus::OK)));
+
+    EXPECT_CALL(*provider, GetQueries(_, newInstanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, newInstanceKey, _)).WillOnce(Return(false));
+
+    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+
+    ICachingDataSource::ProgressHandler progressHandler;
+
+    progressHandler.progressCallback = [] (ICachingDataSource::ProgressCR) {};
+    progressHandler.shouldReportQueryProgress = [] (const IQueryProvider::Query& query)
+        {
+        EXPECT_EQ(query.key.GetName(), "Foo");
+        return true;
+        };
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), progressHandler, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), IsEmpty());
+    }
+
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedFilteringAllQueryProgress_ProgressNotSentForInstance)
+    {
+    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
+    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
+    auto ds = CreateMockedCachingDataSource(client, cache);
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    IQueryProvider::Query query(CachedResponseKey(StubECInstanceKey(11, 22), "Foo"), std::make_shared<WSQuery>("Schema", "Class"));
+
+    EXPECT_CALL(*cache, ReadResponseCacheTag(query.key, _)).WillOnce(Return("TestTag"));
+    EXPECT_CALL(*client, SendQueryRequest(*query.query, Utf8String("TestTag"), _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(*cache, CacheResponse(query.key, _, _, Pointee(*query.query), _, _)).WillOnce(Return(CacheStatus::OK));
+
+    auto newInstanceKey = StubECInstanceKey(33, 44);
+    auto responseKeys = StubECInstanceKeyMultiMap({newInstanceKey});
+    EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(DoAll(SetArgReferee<1>(responseKeys), Return(CacheStatus::OK)));
+
+    EXPECT_CALL(*provider, GetQueries(_, newInstanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, DoUpdateFile(_, newInstanceKey, _)).WillOnce(Return(false));
+
+    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+
+    ICachingDataSource::ProgressHandler progressHandler;
+    ICachingDataSource::Progress expectedProgress[] = {
+            {0, {0, 0}}, {1, {0, 0}}
+        };
+    uint16_t index = 0;
+    progressHandler.progressCallback = [&] (ICachingDataSource::ProgressCR progress)
+        {
+        EXPECT_PROGRESS_EQ(expectedProgress[index], progress);
+        index++;
+        };
+    progressHandler.shouldReportQueryProgress = [] (const IQueryProvider::Query& query)
+        {
+        EXPECT_EQ(query.key.GetName(), "Foo");
+        return false;
+        };
+
+    auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), progressHandler, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), IsEmpty());
+    EXPECT_EQ(2, index);
+    }
+
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesWithSyncRecursivelyFalseSupplied_CachesInitialQueriesAndOnlyCallsDoUpdateFileFromProviders)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
