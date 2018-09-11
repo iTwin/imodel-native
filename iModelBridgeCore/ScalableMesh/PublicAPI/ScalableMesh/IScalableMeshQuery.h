@@ -783,7 +783,13 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
 
         virtual bool            _ShouldLoadContours() const = 0;
 
+        virtual double          _GetMajorContourInterval() const = 0;
+
+        virtual double          _GetMinorContourInterval() const = 0;
+
         virtual void            _SetLoadContours(bool loadContours) = 0;
+
+        virtual void            _SetContourInterval(double major, double minor) = 0;
                                                   
     public : 
 
@@ -803,6 +809,10 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
         bool                IsProgressiveDisplay() const;
 
         bool                ShouldLoadContours() const;
+
+        double              GetMajorContourInterval() const;
+
+        double              GetMinorContourInterval() const;
     
         
         BENTLEY_SM_EXPORT void      SetViewBox(const DPoint3d viewBox[]);        
@@ -822,6 +832,8 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
         BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();
 
         BENTLEY_SM_EXPORT void      SetLoadContours(bool loadContours);
+
+        BENTLEY_SM_EXPORT void      SetContourInterval(double major, double minor);
     };
 
 

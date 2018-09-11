@@ -711,6 +711,8 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
         double   m_maxPixelError;
         double   m_rootToViewMatrix[4][4];
         bool m_loadContours;
+        double m_majorContourInterval;
+        double m_minorContourInterval;
         
 
         //NEEDS_WORK_SM : Only one of those is likely required
@@ -833,6 +835,22 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             {
             m_loadContours = loadContours;
             }
+
+        virtual double          _GetMajorContourInterval() const override
+        {
+            return m_majorContourInterval;
+        }
+
+        virtual double          _GetMinorContourInterval() const override
+        {
+            return m_minorContourInterval;
+        }
+
+        virtual void            _SetContourInterval(double major, double minor) override
+        {
+            m_minorContourInterval = minor;
+            m_majorContourInterval = major;
+        }
         
     public : 
 

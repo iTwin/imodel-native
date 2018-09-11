@@ -563,10 +563,14 @@ int threadId)
         targetedQuery->SetCollectCallback(new std::function<void(IScalableMeshCachedDisplayNodePtr&,size_t)>(std::bind(
             [](ProcessingQuery<DPoint3d, Extent3dType>* progressiveQueryP, IScalableMeshCachedDisplayNodePtr& meshNodePtr, size_t threadInd)
         {
-            if (!progressiveQueryP->m_isCancel)
+            if (!progressiveQueryP->m_isCancel && !progressiveQueryP->m_foundMeshNodes.empty())
             {
+                progressiveQueryP->m_foundMeshNodeMutexes[threadInd].lock();
                 progressiveQueryP->m_foundMeshNodes[threadInd].push_back(meshNodePtr);
+                progressiveQueryP->m_foundMeshNodeMutexes[threadInd].unlock();
+                progressiveQueryP->m_toLoadNodeMutexes[threadInd].lock();
                 progressiveQueryP->m_toLoadNodes[threadInd].push_back(dynamic_cast<ScalableMeshNode<DPoint3d>*>(meshNodePtr.get())->GetNodePtr());
+                progressiveQueryP->m_toLoadNodeMutexes[threadInd].unlock();
             }
         }, processingQueryPtr.get(), std::placeholders::_1, std::placeholders::_2
             )));
@@ -639,8 +643,8 @@ int threadId)
 
         do
         {
-            toCancelQueryPtr = nullptr;
             m_processingQueriesMutex.lock();
+            toCancelQueryPtr = nullptr;
 
             ProcessingQueryList::iterator queryIter(m_processingQueries.begin());
             ProcessingQueryList::iterator queryIterEnd(m_processingQueries.end());
@@ -1344,7 +1348,7 @@ void ScalableMeshProgressiveQueryEngine::SortOverviews(bvector<IScalableMeshCach
     std::sort(overviews.begin(), overviews.end(), OverviewScore);
 }
     
-void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
+void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, IScalableMeshViewDependentMeshQueryParamsPtr queryParam)
     {
     static int s_maxLevel = 2;
        
@@ -1443,7 +1447,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     s_queryProcessor.AddQuery(newQuery.m_queryId, queryObjectP, searchingNodes, toLoadNodes, newQuery.m_loadTexture, m_activeClips, newQuery.m_meshToQuery, m_displayCacheManagerPtr);
 #endif
 
-    GetQueryPlanner(newQuery)->AddQueriesInPlan(*nextQueryOrQueries, queryObjectP, s_queryProcessor);
+    GetQueryPlanner(newQuery)->AddQueriesInPlan(*nextQueryOrQueries, queryObjectP, s_queryProcessor, queryParam, newQuery);
     delete nextQueryOrQueries;
     }
 
@@ -1515,7 +1519,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
 
     assert(queryObjectP != 0);
       
-    StartNewQuery(requestedQuery, queryObjectP, startingNodes);
+    StartNewQuery(requestedQuery, queryObjectP, startingNodes, queryParam);
 
     m_requestedQueries.push_back(requestedQuery);
 
@@ -1722,7 +1726,16 @@ bool ScalableMeshProgressiveQueryEngine::_IsQueryComplete(int queryId)
         if (query.m_queryId == queryId)
         {
             requestedQueryP = &query;
-            break;
+            {
+                if (!requestedQueryP->m_isQueryCompleted)
+                {
+                    //NEEDS_WORK_SM_PROGRESSIVE : Should have auto notification
+                    requestedQueryP->m_isQueryCompleted = s_queryProcessor.IsQueryComplete(queryId);
+                }
+
+                isQueryComplete = requestedQueryP->m_isQueryCompleted;
+            }
+            //break;
         }
     }
 
@@ -1730,7 +1743,7 @@ bool ScalableMeshProgressiveQueryEngine::_IsQueryComplete(int queryId)
     {
         isQueryComplete = true;
     }
-    else
+ /*   else
     {
         if (!requestedQueryP->m_isQueryCompleted)
         {
@@ -1739,7 +1752,7 @@ bool ScalableMeshProgressiveQueryEngine::_IsQueryComplete(int queryId)
         }
 
         isQueryComplete = requestedQueryP->m_isQueryCompleted;
-    }
+    }*/
 
     return isQueryComplete;
     }

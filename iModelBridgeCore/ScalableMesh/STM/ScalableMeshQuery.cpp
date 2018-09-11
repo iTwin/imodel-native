@@ -2458,6 +2458,21 @@ void IScalableMeshViewDependentMeshQueryParams::SetViewClipVector(ClipVectorPtr&
     _SetViewClipVector(viewClipVector);
     }
 
+void IScalableMeshViewDependentMeshQueryParams::SetContourInterval(double major, double minor)
+    {
+    _SetContourInterval(major, minor);
+    }
+
+double IScalableMeshViewDependentMeshQueryParams::GetMajorContourInterval() const
+    {
+    return _GetMajorContourInterval();
+    }
+
+double IScalableMeshViewDependentMeshQueryParams::GetMinorContourInterval() const
+    {
+    return _GetMinorContourInterval();
+    }
+
 IScalableMeshViewDependentMeshQueryParamsPtr IScalableMeshViewDependentMeshQueryParams::CreateParams()
     {
     return new ScalableMeshViewDependentMeshQueryParams();
