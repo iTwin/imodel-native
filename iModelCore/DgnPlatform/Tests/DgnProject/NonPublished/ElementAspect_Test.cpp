@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementAspect_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -496,6 +496,72 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
         auto maspectWithHandler1 = maspectclassWithHandler->GetDefaultStandaloneEnabler()->CreateInstance();
         maspectWithHandler1->SetValue("TestMultiAspectProperty", ECN::ECValue("foo"));  
         ASSERT_NE(DgnDbStatus::Success, DgnElement::GenericMultiAspect::AddAspect(*editEl, *maspectWithHandler1));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementAspectTests, PolymorphicUniqueAspects)
+    {
+    SetupSeedProject();
+    m_db->Schemas().CreateClassViewsInDb();
+    ECN::ECClassCP baseClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "TestUniqueAspectNoHandler");
+    ECN::ECClassCP d1Class = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "TestUniqueAspectNoHandlerD1");
+    ECN::ECClassCP d2Class = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "TestUniqueAspectNoHandlerD2");
+    ASSERT_TRUE(nullptr != baseClass);
+    ASSERT_TRUE(nullptr != d1Class);
+    ASSERT_TRUE(nullptr != d2Class);
+
+    TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+    tempEl = tempEl->Insert()->MakeCopy<TestElement>();
+
+    if (true)
+        {
+        // Put an instance of TestUniqueAspectNoHandlerD1 on the element.
+        auto d1 = d1Class->GetDefaultStandaloneEnabler()->CreateInstance();
+        const Utf8CP d1PropertyValue = "D1 property value 1";
+        d1->SetValue("D1", ECN::ECValue(d1PropertyValue));
+
+        ASSERT_EQ(nullptr, DgnElement::GenericUniqueAspect::GetAspect(*tempEl, *baseClass));
+        ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericUniqueAspect::SetAspect(*tempEl, *d1, baseClass));
+
+        auto d1Found = DgnElement::GenericUniqueAspect::GetAspect(*tempEl, *baseClass); // get it while it's cached in memory
+        ASSERT_TRUE(d1Found != nullptr);
+        ASSERT_STREQ(d1Found->GetClass().GetFullName(), d1->GetClass().GetFullName());
+        ECN::ECValue value;
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, d1Found->GetValue(value, "D1"));
+        ASSERT_STREQ(value.GetUtf8CP(), d1PropertyValue);
+
+        tempEl = tempEl->Update()->MakeCopy<TestElement>();  // clears the aspect cache
+        d1Found = DgnElement::GenericUniqueAspect::GetAspect(*tempEl, *baseClass); // get the aspect from the db
+        ASSERT_TRUE(d1Found != nullptr);
+        ASSERT_STREQ(d1Found->GetClass().GetFullName(), d1->GetClass().GetFullName());
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, d1Found->GetValue(value, "D1"));
+        ASSERT_STREQ(value.GetUtf8CP(), d1PropertyValue);
+        }
+
+    if (true)
+        {
+        // Replace the d1 aspect with a d2 aspect
+        auto d2 = d2Class->GetDefaultStandaloneEnabler()->CreateInstance();
+        const Utf8CP d2PropertyValue = "D2 property value 2";
+        d2->SetValue("D2", ECN::ECValue(d2PropertyValue));
+
+        ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericUniqueAspect::SetAspect(*tempEl, *d2, baseClass));
+        auto d2Found = DgnElement::GenericUniqueAspect::GetAspect(*tempEl, *baseClass); // get it while it's cached in memory
+        ASSERT_TRUE(d2Found != nullptr);
+        ASSERT_STREQ(d2Found->GetClass().GetFullName(), d2->GetClass().GetFullName());
+        ECN::ECValue value;
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, d2Found->GetValue(value, "D2")); 
+        ASSERT_STREQ(value.GetUtf8CP(), d2PropertyValue);
+        
+        tempEl = tempEl->Update()->MakeCopy<TestElement>();  // clears the aspect cache
+        d2Found = DgnElement::GenericUniqueAspect::GetAspect(*tempEl, *baseClass); // get the aspect from the db
+        ASSERT_TRUE(d2Found != nullptr);
+        ASSERT_STREQ(d2Found->GetClass().GetFullName(), d2->GetClass().GetFullName());
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, d2Found->GetValue(value, "D2")); 
+        ASSERT_STREQ(value.GetUtf8CP(), d2PropertyValue);
         }
     }
 

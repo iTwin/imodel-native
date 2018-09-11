@@ -1651,6 +1651,13 @@ TEST_F(IModelCompatibilityTestFixture, DomainSchemaImport)
                 continue;
                 }
 
+            if (testFile.GetAge() == ProfileState::Age::Newer)
+                {
+                //schema import not possible in newer files
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
+                continue;
+                }
+
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             }
