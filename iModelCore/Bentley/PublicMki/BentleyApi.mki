@@ -2,7 +2,7 @@
 #
 #     $Source: PublicMki/BentleyApi.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 #   Note: the macros in this file should be consistent with the values in BentleyApi.h
@@ -11,4 +11,4 @@
 #----------------------------------------------------------------------------------------
 #   Useful for version-specific names.
 #----------------------------------------------------------------------------------------
-BENTLEY_API_NAME = B0200
+BENTLEY_API_NAME = M0200

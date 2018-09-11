@@ -4,7 +4,7 @@
               xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
               >
 
-    <Part Name="google_v8-Windows" BentleyBuildMakeFile="google_v8_prewire.mke" OnlyPlatforms="x64" ApiNumber="B02">
+    <Part Name="google_v8-Windows" BentleyBuildMakeFile="google_v8_prewire.mke" OnlyPlatforms="x64" ApiNumber="M02">
         <SdkSource>google_v8_winx64</SdkSource>
         <Bindings>
             <Assemblies>Delivery/$(libprefix)v8$(ApiNumber)$(shlibext)</Assemblies>

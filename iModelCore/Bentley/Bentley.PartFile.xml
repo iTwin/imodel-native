@@ -34,7 +34,7 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="B02" BMakeOptions="+dTMP_BUILD_STATIC">
+    <Part Name="BentleyDll" BentleyBuildMakeFile="Bentley.mke" ApiNumber="M02" BMakeOptions="+dTMP_BUILD_STATIC">
         <SubPart PartName="Base"/>
         <SubPart PartName="Icu" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="LoggingNative" />
@@ -185,7 +185,7 @@
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=Bentley -dTEST_COLLECTION_PRODUCT=Bentley-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -217,7 +217,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeJpeg" BentleyBuildMakeFile="BeJpeg/BeJpeg.mke" ApiNumber="B02">
+    <Part Name="BeJpeg" BentleyBuildMakeFile="BeJpeg/BeJpeg.mke" ApiNumber="M02">
         <SubPart PartName="BentleyDll"/>
         <SubPart LibType="Static" PartName="JpegTurbo" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
@@ -227,7 +227,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeXml" BentleyBuildMakeFile="BeXml/bexml.mke" ApiNumber="B02">
+    <Part Name="BeXml" BentleyBuildMakeFile="BeXml/bexml.mke" ApiNumber="M02">
         <SubPart PartName="BentleyDll"/>
         <SubPart PartName="LibXml2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
@@ -237,7 +237,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke" ApiNumber="B02">
+    <Part Name="BeRapidJson" BentleyBuildMakeFile="BeRapidJson/BeRapidJson.mke" ApiNumber="M02">
         <SubPart PartName="RapidJson" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <PublicAPI Domain="BeRapidJson"/>

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Bentley.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -165,7 +165,7 @@
       #define BENTLEY_NAMESPACE_NAME BentleyApi
   #else
       // The actual version-specific namespace name from a code/type perspective
-      #define BENTLEY_NAMESPACE_NAME BentleyB0200
+      #define BENTLEY_NAMESPACE_NAME BentleyM0200
   #endif
 
   #define BEGIN_BENTLEY_NAMESPACE namespace BENTLEY_NAMESPACE_NAME {
