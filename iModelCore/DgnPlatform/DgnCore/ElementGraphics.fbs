@@ -3,7 +3,7 @@
 //  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //--------------------------------------------------------------------------------------
 
-namespace BentleyB0200.Dgn.FB;
+namespace BentleyM0200.Dgn.FB;
 
 //=======================================================================================
 // @bsiclass                                                    
