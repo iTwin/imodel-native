@@ -18,7 +18,7 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Delivery\ECPresentationB02.dll"  target="lib\native\ECPresentationB02.dll" />
+        <file src="Delivery\ECPresentationM02.dll"  target="lib\native\ECPresentationM02.dll" />
         <file src="Delivery\ECPresentation.lib"     target="lib\native\ECPresentation.lib" />
         <file src="Delivery\PublishedAPI\**\*"      target="include" />
     </files>
