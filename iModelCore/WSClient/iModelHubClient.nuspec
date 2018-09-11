@@ -17,7 +17,7 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Delivery\iModelHubClientB02.dll"                 target="lib\native\iModelHubClientB02.dll" />
+        <file src="Delivery\iModelHubClientM02.dll"                 target="lib\native\iModelHubClientM02.dll" />
         <file src="Delivery\iModelHubClient.lib"                    target="lib\native\iModelHubClient.lib" />
 
         <file src="Delivery\PublishedAPI\**WebServices\iModelHub\"  target="include" />

@@ -18,19 +18,19 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Delivery\WebServicesClientB02.dll"               target="lib\native\WebServicesClientB02.dll" />
+        <file src="Delivery\WebServicesClientM02.dll"               target="lib\native\WebServicesClientM02.dll" />
         <file src="Delivery\WebServicesClient.lib"                  target="lib\native\WebServicesClient.lib" />
-        <file src="SubParts\Assemblies\BeCurlB02.dll"               target="lib\native\BeCurlB02.dll" />
+        <file src="SubParts\Assemblies\BeCurlM02.dll"               target="lib\native\BeCurlM02.dll" />
         <file src="SubParts\libs\BeCurl.lib"                        target="lib\native\BeCurl.lib" />
-        <file src="SubParts\Assemblies\BentleyB02.dll"              target="lib\native\BentleyB02.dll" />
+        <file src="SubParts\Assemblies\BentleyM02.dll"              target="lib\native\BentleyM02.dll" />
         <file src="SubParts\libs\Bentley.lib"                       target="lib\native\Bentley.lib" />
-        <file src="SubParts\Assemblies\BeHttpB02.dll"               target="lib\native\BeHttpB02.dll" />
+        <file src="SubParts\Assemblies\BeHttpM02.dll"               target="lib\native\BeHttpM02.dll" />
         <file src="SubParts\libs\BeHttp.lib"                        target="lib\native\BeHttp.lib" />
-        <file src="SubParts\Assemblies\BeFollyB02.dll"              target="lib\native\BeFollyB02.dll" />
+        <file src="SubParts\Assemblies\BeFollyM02.dll"              target="lib\native\BeFollyM02.dll" />
         <file src="SubParts\libs\BeFolly.lib"                       target="lib\native\BeFolly.lib" />
-        <file src="SubParts\Assemblies\BeXmlB02.dll"                target="lib\native\BeXmlB02.dll" />
+        <file src="SubParts\Assemblies\BeXmlM02.dll"                target="lib\native\BeXmlM02.dll" />
         <file src="SubParts\libs\BeXml.lib"                         target="lib\native\BeXml.lib" />
-        <file src="SubParts\Assemblies\BeSecurityB02.dll"           target="lib\native\BeSecurityB02.dll" />
+        <file src="SubParts\Assemblies\BeSecurityM02.dll"           target="lib\native\BeSecurityM02.dll" />
         <file src="SubParts\libs\BeSecurity.lib"                    target="lib\native\BeSecurity.lib" />
         <file src="SubParts\Assemblies\BeLibxml2B02.dll"            target="lib\native\BeLibxml2B02.dll" />
         <file src="SubParts\libs\BeLibxml2.lib"                     target="lib\native\BeLibxml2.lib" />
