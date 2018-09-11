@@ -26,7 +26,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECPresentation-Library" BentleyBuildMakeFile="ECPresentation.mke" ApiNumber="B02">
+    <Part Name="ECPresentation-Library" BentleyBuildMakeFile="ECPresentation.mke" ApiNumber="M02">
         <SubPart PartName="ECPresentation-PublicAPI" />
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
@@ -360,7 +360,7 @@
         </Bindings>
     </Part>
     <!-- UWP -->
-    <Part Name="UwpTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="WinRT*" ApiNumber="B02">
+    <Part Name="UwpTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="WinRT*" ApiNumber="M02">
         <SubProduct ProductName="ECPresentation-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
