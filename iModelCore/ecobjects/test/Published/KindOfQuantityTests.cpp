@@ -501,6 +501,78 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Joseph.Urbano    09/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, VerifyDescriptorCacheIsAccurate)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true)));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema(true)));
+    
+    KindOfQuantityP koq;
+    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
+    EC_EXPECT_SUCCESS(koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+
+    auto cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("M", cache.first.c_str());
+
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    EXPECT_TRUE(cache.second.empty());
+
+    // change persistence unit
+    EC_EXPECT_SUCCESS(koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+
+    cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("CM", cache.first.c_str());
+
+    // add presentation formats
+    EC_EXPECT_SUCCESS(koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+    EC_EXPECT_SUCCESS(koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("MM")));
+
+    cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("CM", cache.first.c_str());
+    EXPECT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_EQ(2, cache.second.size());
+
+    EXPECT_STRCASEEQ("CM(real)", cache.second[0].c_str());
+    EXPECT_STRCASEEQ("MM(real)", cache.second[1].c_str());
+
+    // add default presentation format
+    EC_EXPECT_SUCCESS(koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+
+    cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("CM", cache.first.c_str());
+    EXPECT_EQ(3, koq->GetPresentationFormats().size());
+    ASSERT_EQ(3, cache.second.size());
+
+    EXPECT_STRCASEEQ("M(realu)", cache.second[0].c_str());
+    EXPECT_STRCASEEQ("CM(real)", cache.second[1].c_str());
+    EXPECT_STRCASEEQ("MM(real)", cache.second[2].c_str());
+
+    // remove presentation format
+    koq->RemovePresentationFormat(koq->GetPresentationFormats().at(1));
+
+    cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("CM", cache.first.c_str());
+    EXPECT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_EQ(2, cache.second.size());
+
+    EXPECT_STRCASEEQ("M(realu)", cache.second[0].c_str());
+    EXPECT_STRCASEEQ("MM(real)", cache.second[1].c_str());
+
+    // remove all presentation formats
+    koq->RemoveAllPresentationFormats();
+
+    cache = koq->GetDescriptorCache();
+    EXPECT_STRCASEEQ("CM", cache.first.c_str());
+
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    ASSERT_TRUE(cache.second.empty());
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                 04/2018
 //--------------------------------------------------------------------------------------

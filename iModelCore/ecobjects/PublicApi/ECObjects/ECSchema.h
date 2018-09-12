@@ -1407,7 +1407,8 @@ private:
     mutable Utf8String m_fullName; //cached nsprefix:name representation
     ECValidatedName m_validatedName; //wraps name and displaylabel
     Utf8String m_description;
-    bpair<Utf8String, bvector<Utf8String>> m_descriptorCache;
+    mutable bpair<Utf8String, bvector<Utf8String>> m_descriptorCache;
+    mutable bool m_descriptorCacheValid = false;
 
     //! Unit used for persistence. Will be formatted with a default format if no formats are provided.
     ECUnitCP m_persistenceUnit;
@@ -1444,8 +1445,11 @@ private:
     ECOBJECTS_EXPORT static bool ValidatePresentationFormat(Utf8StringCR formatString, ECUnitCP persistenceUnit, ECSchemaCR formats, ECSchemaCR units);
     ECOBJECTS_EXPORT static ECObjectsStatus TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCP koqSchema = nullptr);
 
+    ECOBJECTS_EXPORT void ValidateDescriptorCache() const;
+    ECOBJECTS_EXPORT ECObjectsStatus FormatToFUSDescriptor(Utf8StringR outFUSDescriptor, NamedFormatCR format) const;
+
 public:
-    const bpair<Utf8String, bvector<Utf8String>>& GetDescriptorCache() const {return m_descriptorCache;} //!< Get the cache of FUS descriptors
+    const bpair<Utf8String, bvector<Utf8String>>& GetDescriptorCache() const { ValidateDescriptorCache(); return m_descriptorCache;} //!< Get the cache of FUS descriptors
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
     void SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; } //!< Intended to be called by ECDb or a similar system
@@ -1526,8 +1530,12 @@ public:
 
     //!< Removes the specified presentation format.
     void RemovePresentationFormat(NamedFormatCR presentationFormat)
-        {m_presentationFormats.erase(std::remove_if(m_presentationFormats.begin(), m_presentationFormats.end(), [&](NamedFormatCR format) {return format.IsIdentical(presentationFormat);}));}
-    void RemoveAllPresentationFormats() {m_presentationFormats.clear();} //!< Removes all presentation formats.
+        {
+        m_presentationFormats.erase(std::remove_if(m_presentationFormats.begin(), m_presentationFormats.end(), [&](NamedFormatCR format) {return format.IsIdentical(presentationFormat);}));
+        m_descriptorCacheValid = false;
+        }
+
+    void RemoveAllPresentationFormats() {m_presentationFormats.clear(); m_descriptorCacheValid = false;} //!< Removes all presentation formats.
 
     //! Returns the Phenomenon supported by this KindOfQuantity.
     //!
@@ -1543,6 +1551,7 @@ public:
     //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert
     //! the persistence unit to a new unit name. If the persistence FUS has a format, it will be added to the end of the
     //! formatString that is returned. This method also caches the FUS descriptors within the koq
+    //! Note: This method completely overwrites the Units and Formats of the KindOfQuantity if successful.
     //!
     //! @param[out] persFUS         The descriptor for the persistence FUS that is of the format for the old FUS descriptor,
     //!                             format: {unitName}({formatName}), where the format part is optional.

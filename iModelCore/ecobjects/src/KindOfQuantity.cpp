@@ -124,6 +124,8 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
             }
         }
     m_persistenceUnit = &unit;
+    m_descriptorCacheValid = false;
+
     return ECObjectsStatus::Success;
     }
 
@@ -181,7 +183,6 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
     if (presentationUnits.size() > 0)
         {
         Utf8String presentationUnitString;
-        Utf8String presUnit;
         bool first = true;
         for(NamedFormatCR format : presentationUnits)
             {
@@ -193,40 +194,12 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 
             if(ecXmlVersion < ECVersion::V3_2)
                 {
-                if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorUnit())
-                    {
-                    LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
+                Utf8String fusDescriptor;
+                if(ECObjectsStatus::Success != FormatToFUSDescriptor(fusDescriptor, format))
                     continue;
-                    }
-                auto hasValidName = getUnitNameFromVersion((ECUnitCP)format.GetCompositeSpec()->GetMajorUnit(), presUnit);
-                if(!hasValidName)
-                    {
-                    LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
-                    continue;
-                    }
-                SchemaKey key("Formats", 1, 0, 0);
-                if (!format.GetParentFormat()->GetSchema().GetSchemaKey().Matches(key, SchemaMatchType::Latest))
-                    {
-                    LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it is not a standard format", GetFullName().c_str());
-                    continue;
-                    }
-                bvector<Utf8String> tokens;
-                BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
-                BeAssert(tokens.size() > 0);
-                Utf8String split = tokens[0];
-                Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + split).c_str());
-                mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
-                if (nullptr == mapped)
-                    {
-                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetQualifiedFormatString(GetSchema()).c_str(), GetFullName().c_str());
-                    continue;
-                    }
                 if (!first)
                     presentationUnitString += ";";
-                presentationUnitString += presUnit;
-                presentationUnitString += "(";
-                presentationUnitString += mapped;
-                presentationUnitString += ")";
+                presentationUnitString += fusDescriptor;
                 first = false;
                 }
             else
@@ -608,6 +581,8 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
     else
         m_presentationFormats.push_back(nfp);
 
+    m_descriptorCacheValid = false;
+
     return ECObjectsStatus::Success;
     }
 
@@ -907,6 +882,7 @@ ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector
 
     auto persUnitCP = GetSchema().LookupUnit(persUnit.c_str());
     SetPersistenceUnit(*persUnitCP);
+    m_descriptorCacheValid = false;
 
     // lookup units on this KoQs schema. All references must be already added.
     const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
@@ -926,6 +902,7 @@ ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector
         return GetSchema().LookupFormat((alias + ":" + name).c_str());
         };
 
+    RemoveAllPresentationFormats();
     for (const auto& pres : formatStrings)
         {
         if (ECObjectsStatus::Success != AddPresentationFormatByString(pres, formatLookerUpper, unitLookerUpper))
@@ -939,6 +916,7 @@ ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector
         {
         m_descriptorCache.second.push_back(pres);
         }
+    m_descriptorCacheValid = true;
 
     return ECObjectsStatus::Success;
     }
@@ -1056,6 +1034,87 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
 
     unitName = "u:" + unqualifiedPers;
     return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Joseph.Urbano                   09/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::FormatToFUSDescriptor(Utf8StringR outFUSDescriptor, NamedFormatCR format) const
+    {
+    outFUSDescriptor = "";
+
+    if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorUnit())
+        {
+        LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    ECUnitCP unit = (ECUnitCP)format.GetCompositeSpec()->GetMajorUnit();
+    auto ecName = Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+    if (nullptr == ecName)
+        {
+        LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    Utf8String presUnit = ecName;
+
+    SchemaKey key("Formats", 1, 0, 0);
+    if (!format.GetParentFormat()->GetSchema().GetSchemaKey().Matches(key, SchemaMatchType::Latest))
+        {
+        LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it is not a standard format", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
+    BeAssert(tokens.size() > 0);
+    Utf8String split = tokens[0];
+    Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + split).c_str());
+    mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
+    if (nullptr == mapped)
+        {
+        LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetQualifiedFormatString(GetSchema()).c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    Utf8String presentationUnitString;
+    outFUSDescriptor += presUnit;
+    outFUSDescriptor += "(";
+    outFUSDescriptor += mapped;
+    outFUSDescriptor += ")";
+    
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Joseph.Urbano                   09/2018
+//--------------------------------------------------------------------------------------
+void KindOfQuantity::ValidateDescriptorCache() const
+    {
+    if (m_descriptorCacheValid)
+        return;
+
+    m_descriptorCache.first.clear();
+    m_descriptorCache.second.clear();
+
+    ECUnitCP unit = GetPersistenceUnit();
+    if(nullptr == unit)
+        {
+        LOG.errorv("Persistence unit not found on KindOfQuantity '%s' while validating the FUS descriptor cache", GetFullName().c_str());
+        return;
+        } 
+
+    auto newName = Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+    if (nullptr != newName)
+        m_descriptorCache.first = newName;
+
+    for (NamedFormatCR format : GetPresentationFormats())
+        {
+        Utf8String fusDescriptor;
+        if(ECObjectsStatus::Success != FormatToFUSDescriptor(fusDescriptor, format))
+            continue;
+        m_descriptorCache.second.push_back(fusDescriptor);
+        }
+
+    m_descriptorCacheValid = true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
