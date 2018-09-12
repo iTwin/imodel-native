@@ -70,7 +70,7 @@
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublishedApi" />
-        <SubPart PartName="FollyShim"/>
+        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
@@ -81,12 +81,6 @@
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="Bentley/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
-    </Part>
-
-    <!-- Dependency only used within tests -->
-    <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <Part Name="FollyShim">
-        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
     </Part>
 
     <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate -->
