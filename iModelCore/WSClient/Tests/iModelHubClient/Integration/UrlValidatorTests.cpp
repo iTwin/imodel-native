@@ -21,8 +21,45 @@ class UrlValidatorTests : public WSClientBaseTest
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Daniel.Bednarczyk                08/27
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool lineIsValid(Utf8String line)
+    { 
+    // 1) Ensure every line has a scope
+    std::regex scopeRegex(R"(Scope)", std::regex::ECMAScript);
+    std::cmatch scopeMatches;
+    std::regex_search(line.c_str(), scopeMatches, scopeRegex);
+
+    if (scopeMatches.empty())
+        return false;
+
+    // 2) Ensure there is exactly one logging category per line
+    std::regex catRegex(R"(TRACE|DEBUG|INFO|WARNING|ERROR|FATAL)", std::regex::ECMAScript);
+    std::cmatch catMatches;
+
+    int catCount = 0;
+    while (regex_search(line.c_str(), catMatches, catRegex))
+        {
+        if (!catMatches.empty())
+            {
+            catCount++;
+            line = catMatches.suffix().str().c_str();
+            }
+        }
+
+    if (catCount != 1)
+        return false;
+
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Daniel.Bednarczyk                08/27
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String extractUrl(Utf8String url)
     {
+    // Simultaneous threads writing to the log file can corrupt some lines, so check for malformatted data
+    if (!lineIsValid(url))
+        return Utf8String("");
+
     // Match imodelhubapi URLs (dev and qa)
     std::regex regex(R"(> HTTP #(\d+) (\w+) https://(dev|qa)-imodelhubapi.bentley.com/s?v(\d+).(\d+)/Repositories/(iModel|Project)--\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/)", std::regex::ECMAScript);
     std::cmatch matches;
@@ -113,17 +150,17 @@ bset<Utf8String> loadUrlFile(Utf8String path, Utf8String(*callback)(Utf8String))
     if (BeFileStatus::Success != file.ReadEntireFile(byteStream))
         return urls;
 
-    Utf8String whitelistContents((Utf8CP) byteStream.GetData(), byteStream.GetSize());
+    Utf8String contents((Utf8CP) byteStream.GetData(), byteStream.GetSize());
     file.Close();
 
     // Split file contents into lines
-    bvector<Utf8String> whitelistLines;
-    BeStringUtilities::Split(whitelistContents.c_str(), "\n", whitelistLines);
+    bvector<Utf8String> lines;
+    BeStringUtilities::Split(contents.c_str(), "\n", lines);
 
     // Populate set
-    for (int i = 0; i < whitelistLines.size(); i++)
+    for (int i = 0; i < lines.size(); i++)
         {
-        Utf8String line = whitelistLines[i];
+        Utf8String line = lines[i];
 
         if (callback != nullptr)
             line = callback(line);
@@ -169,10 +206,9 @@ TEST(UrlValidator, WhitelistCheck)
 
         bool urlIsWhitelisted = true;
         if (findResult == whitelistURLs.end())
-            {
             urlIsWhitelisted = false;
-            }
-        ASSERT_TRUE(urlIsWhitelisted) << "The URL " << url.key() << " is not whitelisted (see whitelist.txt)";
+
+        ASSERT_TRUE(urlIsWhitelisted) << "The URL \"" << url.key() << "\" is not whitelisted (see whitelist.txt)";
         }
     }
 
