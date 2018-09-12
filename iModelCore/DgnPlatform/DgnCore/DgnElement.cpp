@@ -1943,6 +1943,9 @@ DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*thi
 //---------------------------------------------------------------------------------------
 DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member, int priority)
     {
+    if (!group.GetElementId().IsValid() || !member.GetElementId().IsValid())
+        return DgnDbStatus::InvalidId; // elements must be inserted to form link table relationship
+
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) 
         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)", group.GetDgnDb().GetECCrudWriteToken());
@@ -2102,6 +2105,23 @@ DgnClassId  DgnElement::Aspect::GetECClassId(DgnDbR db) const
 ECClassCP DgnElement::Aspect::GetECClass(DgnDbR db) const
     {
     return db.Schemas().GetClass(_GetECSchemaName(), _GetECClassName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP DgnElement::Aspect::GetKeyECClass(DgnDbR db) const
+    {
+    return db.Schemas().GetClass(_GetKeyECSchemaName(), _GetKeyECClassName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassId DgnElement::Aspect::GetKeyECClassId(DgnDbR db) const
+    {
+    auto cls = GetKeyECClass(db);
+    return cls ? cls->GetId() : ECClassId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2415,7 +2435,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Find(DgnElementCR el, ECClas
 void DgnElement::UniqueAspect::SetAspect(DgnElementR el, UniqueAspect& newAspect)
     {
     SetAspect0(el, newAspect);
-    BeAssert(nullptr != Find(el, *newAspect.GetECClass(el.GetDgnDb())));
+    BeAssert(nullptr != Find(el, *newAspect.GetKeyECClass(el.GetDgnDb())));
     newAspect.m_changeType = ChangeType::Write;
     }
 
@@ -2534,7 +2554,7 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite:
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE Element.Id=?", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str(), writeToken);
 
     if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
         return DgnDbStatus::WriteError;
@@ -2549,9 +2569,8 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el, BeSQLite:
 ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
     // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
-    DgnClassId classId = GetECClassId(el.GetDgnDb());
 
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE Element.Id=?", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId, ECClassId FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str());
     if (stmt == nullptr)
         {
         BeAssert(stmt != nullptr);
@@ -2565,7 +2584,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
         return ECInstanceKey();
 
     // And we know the ID. See if such an instance actually exists.
-    return ECInstanceKey(classId, stmt->GetValueId<ECInstanceId>(0));
+    return ECInstanceKey(stmt->GetValueId<ECClassId>(1), stmt->GetValueId<ECInstanceId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4104,17 +4123,54 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::GenericUniqueAspect::SetKeyClass(ECN::ECClassCP keyClass)
+    {
+    if (keyClass != nullptr)
+        {
+        m_key_ecclassName = keyClass->GetName();
+        m_key_ecschemaName = keyClass->GetSchema().GetName();
+        }
+    else
+        {
+        m_key_ecclassName = m_ecclassName;
+        m_key_ecschemaName = m_ecschemaName;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericUniqueAspect::QueryAndSetActualClass(DgnElementCR el)
+    {
+    ECClassId actualClassId;
+    if (DgnDbStatus::Success != QueryActualClass(actualClassId, el, m_ecschemaName.c_str(), m_ecclassName.c_str()))
+        return DgnDbStatus::NotFound;
+    auto actualClass = el.GetDgnDb().Schemas().GetClass(actualClassId);
+    if (nullptr == actualClass)
+        return DgnDbStatus::NotFound;
+    m_key_ecschemaName = m_ecschemaName;
+    m_key_ecclassName = m_ecclassName;
+    m_ecschemaName = actualClass->GetSchema().GetName();
+    m_ecclassName = actualClass->GetName();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECInstanceR instance)
+DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECInstanceR instance, ECClassCP keyClass)
     {
     BeAssert(!el.IsPersistent());
 
     if (hasHandler(instance.GetClass()))
         return DgnDbStatus::MissingHandler;
     auto newAspect = new GenericUniqueAspect(instance);
-    GenericUniqueAspect* currentAspect = dynamic_cast<GenericUniqueAspect*>(T_Super::GetAspectP(el,instance.GetClass()));
-    if (nullptr != currentAspect)
+    newAspect->SetKeyClass(keyClass);
+    auto& db = el.GetDgnDb();
+    GenericUniqueAspect* currentAspect = dynamic_cast<GenericUniqueAspect*>(T_Super::GetAspectP(el, *newAspect->GetKeyECClass(db)));
+    if ((nullptr != currentAspect) && (currentAspect->GetECClass(db) == &instance.GetClass()))
         newAspect->m_instanceId = currentAspect->m_instanceId;
     T_Super::SetAspect(el, *newAspect);
     return DgnDbStatus::Success;
@@ -4123,8 +4179,25 @@ DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::UniqueAspect::QueryActualClass(ECClassId& classId, Dgn::DgnElementCR el, Utf8CP schemaName, Utf8CP className)
+    {
+    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECClassId FROM [%s].[%s] WHERE Element.Id=?", schemaName, className).c_str());
+    if (!stmt.IsValid())
+        return DgnDbStatus::BadSchema;
+    stmt->BindId(1, el.GetElementId());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::NotFound;
+    classId = stmt->GetValueId<ECClassId>(0);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::GenericUniqueAspect::_LoadProperties(Dgn::DgnElementCR el)
     {
+    QueryAndSetActualClass(el);
+
     auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE Element.Id=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
     if (!stmt.IsValid())
         return DgnDbStatus::BadSchema;

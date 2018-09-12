@@ -720,12 +720,14 @@ struct DgnGeoLocation : NonCopyableClass
 {
     BE_JSON_NAME(globalOrigin);
     BE_JSON_NAME(ecefLocation);
+    BE_JSON_NAME(initialProjectCenter);
 
 private:
     friend struct DgnDb;
     DgnDbR  m_dgndb;
     mutable AxisAlignedBox3d m_extent;
     DPoint3d m_globalOrigin;
+    DPoint3d m_initialProjectCenter;
     mutable EcefLocation m_ecefLocation;
     mutable bool m_hasCheckedForGCS = false;
     mutable DgnGCS* m_gcs = nullptr;
@@ -783,6 +785,10 @@ public:
 
     //! Get the EcefLocation for this iModel. May not be valid if iModel is not geolocated.
     DGNPLATFORM_EXPORT EcefLocation GetEcefLocation() const;
+
+    //! Get the intial center of the project.  This is set only when the project is created and is not 
+    //! updated when the project extents are altered.
+    DPoint3dCR GetInitialProjectCenter() const { return m_initialProjectCenter; }
 
     //! Set the EcefLocation for this iModel.
     void SetEcefLocation(EcefLocation const& location) const {m_ecefLocation = location;}

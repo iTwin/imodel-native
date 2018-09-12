@@ -51,10 +51,6 @@ constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 static const Utf8String s_classifierIdPrefix("C:");
 
-#if defined (BENTLEYCONFIG_PARASOLID) 
-static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
-#endif
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
@@ -1085,10 +1081,14 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
     bool rootTileEmpty;
     if (model.Is3dModel())
         {
-        range = model.GetDgnDb().GeoLocation().GetProjectExtents();
+        // NB: We used to use project extents. For read-only scenarios, that's problematic when multiple models exist because:
+        // - if a model occupies a small fraction of the extents, we must subdivide its tile tree excessively before we reach useful geometry; and
+        // - some models contain junk elements in far orbit which blow out the project extents resulting in same problem - constrain that only to those models.
+        // Classifiers are applied to all models (currently...) so they use project extents.
+        range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryModelRange();
         range = scaleSpatialRange(range);
-        uint32_t nElements;
-        populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
+        uint32_t nElements = 0;
+        populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
         rootTileEmpty = 0 == nElements;
         }
     else
@@ -1111,17 +1111,13 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     Transform transform = Transform::From(centroid);
 
-#if defined (BENTLEYCONFIG_PARASOLID)
-    PSolidKernelManager::StartSession();
-
-    if (s_psolidMainThreadMark.IsNull())
-        s_psolidMainThreadMark = new PSolidThreadUtil::MainThreadMark();
-#endif
-
-    Transform rangeTransform;
-    rangeTransform.InverseOf(transform);
-    DRange3d tileRange;
-    rangeTransform.Multiply(tileRange, range);
+    DRange3d tileRange = range;
+    if (!range.IsNull())
+        {
+        Transform rangeTransform;
+        rangeTransform.InverseOf(transform);
+        rangeTransform.Multiply(tileRange, range);
+        }
 
     return new Tree(model, transform, tileRange, system, id, rootTile);
     }
@@ -1133,7 +1129,8 @@ Tree::Tree(GeometricModelCR model, TransformCR location, DRange3dCR range, Rende
     : m_db(model.GetDgnDb()), m_location(location), m_renderSystem(system), m_id(id), m_is3d(model.Is3d()), m_cache(TileCacheAppData::Get(model.GetDgnDb())),
     m_rootTile(rootTile)
     {
-    m_range.Extend(range);
+    if (!range.IsNull())
+        m_range.Extend(range);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1531,6 +1528,11 @@ Loader::State Loader::ReadFromCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::State Loader::ReadFromModel()
     {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    BeAssert(PSolidKernelManager::IsSessionStarted());
+    PSolidThreadUtil::WorkerThreadOuterMark outerMark;
+#endif
+
     // Generate geometry
     GeometryLoader geomLoader(*this);
     if (!geomLoader.GenerateGeometry())

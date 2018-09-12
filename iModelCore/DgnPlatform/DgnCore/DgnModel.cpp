@@ -1581,7 +1581,17 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
 AxisAlignedBox3d GeometricModel::_QueryModelRange() const
     {
     auto rangeIndex = GetRangeIndex();
-    return rangeIndex ? AxisAlignedBox3d(rangeIndex->GetExtents().ToRange3d()) : AxisAlignedBox3d();
+    if (nullptr == rangeIndex)
+        return AxisAlignedBox3d();
+
+    auto fbox = rangeIndex->GetExtents();
+
+    // NB: FBox::ToRange3d() creates from two points, which will turn a null range into the largest range possible...
+    // Even if it didn't, AxisAlignedBox3d(DRange3dCR) ctor does the same thing given a null range...
+    if (fbox.IsNull())
+        return AxisAlignedBox3d();
+
+    return AxisAlignedBox3d(fbox.ToRange3d());
     }
 
 /*---------------------------------------------------------------------------------**//**

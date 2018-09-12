@@ -220,7 +220,7 @@ BentleyStatus RenderingAsset::Relocate(DgnImportContext& context)
     if (!newId.IsValid())
         return ERROR;
 
-    GetValueR(RENDER_MATERIAL_Map)[RENDER_MATERIAL_TextureId] = newId.GetValue();
+    GetValueR(RENDER_MATERIAL_Map)[RENDER_MATERIAL_TextureId] = newId.ToHexStr(); // ###INT64TOHEXSTR Was newId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
     return SUCCESS;
     }
 

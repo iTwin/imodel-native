@@ -555,6 +555,9 @@ public:
     //! Tell the TxnManager to stop tracking changes to instances of the specified ECRelationship class.
     //! @see BeginTrackingRelationship
     DGNPLATFORM_EXPORT DgnDbStatus EndTrackingRelationship(ECN::ECClassCR relClass);
+
+    //! @private
+    DGNPLATFORM_EXPORT void DumpTxns(bool verbose) const;
 };
 
 //=======================================================================================

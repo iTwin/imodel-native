@@ -2147,41 +2147,54 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR context) const
+void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR context, bool isWorldCoords) const
     {
     MeshList            meshes = ToMeshes(options, tolerance, context);
     MeshGraphicArgs     args;
 
-    // All of the meshes are quantized to the same range.
-    // If that range is small relative to the distance from the origin, quantization errors can produce display artifacts.
-    // Remove the translation from the quantization parameters and add it to the transform.
-    GraphicBranch branch;
-    DPoint3d qorigin;
-    QPoint3d::Params qparams;
-    for (auto const& mesh : meshes)
+    // Not really a point in translating for view coords, though shouldn't actually matter except #stupidviewcliptools assign nonsense Z to view overlays. (TFS#930451)
+    if (!isWorldCoords)
         {
-        auto& verts = mesh->VertsR();
-        if (branch.m_entries.empty())
+        for (auto const& mesh : meshes)
             {
-            qparams = verts.GetParams();
-            qorigin = qparams.origin;
-            qparams.origin.Zero();
+            auto graphic = mesh->GetGraphics(args, GetSystem(), GetDgnDb());
+            if (graphic.IsValid())
+                graphics.push_back(graphic);
             }
-        else
-            {
-            BeAssert(verts.GetParams().origin.AlmostEqual(qorigin));
-            BeAssert(verts.GetParams().scale.AlmostEqual(qparams.scale));
-            }
-
-        verts.SetParams(qparams);
-
-        auto graphic = mesh->GetGraphics(args, GetSystem(), GetDgnDb());
-        if (graphic.IsValid())
-            branch.Add(*graphic);
         }
+    else
+        {
+        // All of the meshes are quantized to the same range.
+        // If that range is small relative to the distance from the origin, quantization errors can produce display artifacts.
+        // Remove the translation from the quantization parameters and add it to the transform.
+        GraphicBranch branch;
+        DPoint3d qorigin;
+        QPoint3d::Params qparams;
+        for (auto const& mesh : meshes)
+            {
+            auto& verts = mesh->VertsR();
+            if (branch.m_entries.empty())
+                {
+                qparams = verts.GetParams();
+                qorigin = qparams.origin;
+                qparams.origin.Zero();
+                }
+            else
+                {
+                BeAssert(verts.GetParams().origin.AlmostEqual(qorigin));
+                BeAssert(verts.GetParams().scale.AlmostEqual(qparams.scale));
+                }
 
-    if (!branch.m_entries.empty())
-        graphics.push_back(GetSystem()._CreateBranch(std::move(branch), GetDgnDb(), Transform::From(qorigin), nullptr));
+            verts.SetParams(qparams);
+
+            auto graphic = mesh->GetGraphics(args, GetSystem(), GetDgnDb());
+            if (graphic.IsValid())
+                branch.Add(*graphic);
+            }
+
+        if (!branch.m_entries.empty())
+            graphics.push_back(GetSystem()._CreateBranch(std::move(branch), GetDgnDb(), Transform::From(qorigin), nullptr));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3271,7 +3284,7 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
         GeometryOptions options(GetCreateParams());
         PrimitiveBuilderContext context(*this);
         double tolerance = ComputeTolerance(accum);
-        accum.SaveToGraphicList(m_primitives, options, tolerance, context);
+        accum.SaveToGraphicList(m_primitives, options, tolerance, context, !GetCreateParams().IsViewCoordinates());
         }
 
     if (1 != m_primitives.size())

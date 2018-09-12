@@ -794,6 +794,7 @@ public:
 
         DgnDbStatus InsertThis(DgnElementCR el);
         Utf8String  GetFullEcSqlClassName() {return Utf8String(_GetECSchemaName()).append(".").append(_GetECClassName());}
+        Utf8String  GetFullEcSqlKeyClassName() {return Utf8String(_GetKeyECSchemaName()).append(".").append(_GetKeyECClassName());}
 
         DGNPLATFORM_EXPORT Aspect();
 
@@ -802,6 +803,12 @@ public:
 
         //! The subclass must implement this method to return the name of the class that defines the aspect.
         virtual Utf8CP _GetECClassName() const {return BIS_CLASS_ElementAspect;}
+
+        //! The subclass must implement this method to return the name of the schema that defines the key for the aspect.
+        virtual Utf8CP _GetKeyECSchemaName() const {return _GetECSchemaName();}
+
+        //! The subclass must implement this method to return the name of the class that defines the key for the aspect.
+        virtual Utf8CP _GetKeyECClassName() const {return _GetECClassName();}
 
         //! The subclass must implement this method to return the name of the superclass
         virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
@@ -842,6 +849,7 @@ public:
         BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
 
         Utf8CP GetECClassName() const {return _GetECClassName();}
+        Utf8CP GetKeyECClassName() const {return _GetKeyECClassName();}
         Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
 
         //! Prepare to delete this aspect.
@@ -853,6 +861,9 @@ public:
 
         //! Get the ECClass for this aspect
         DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass(DgnDbR) const;
+
+        DGNPLATFORM_EXPORT ECN::ECClassCP GetKeyECClass(DgnDbR) const;
+        DGNPLATFORM_EXPORT ECN::ECClassId GetKeyECClassId(DgnDbR) const;
 
         //! Get the value of a property by name from this aspect
         DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const {return _GetPropertyValue(value, propertyName, arrayIndex);}
@@ -992,7 +1003,7 @@ public:
         DEFINE_T_SUPER(Aspect)
     protected:
         static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)&cls;}
-        Key& GetKey(DgnDbR db) {return GetKey(*GetECClass(db));}
+        Key& GetKey(DgnDbR db) {return GetKey(*GetKeyECClass(db));}
         static UniqueAspect* Find(DgnElementCR, ECN::ECClassCR);
         static RefCountedPtr<DgnElement::UniqueAspect> Load0(DgnElementCR, DgnClassId); // Loads *but does not call AddAppData*
         static UniqueAspect* Load(DgnElementCR, DgnClassId);
@@ -1000,6 +1011,7 @@ public:
         static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override final;
+        DgnDbStatus QueryActualClass(ECN::ECClassId& classId, Dgn::DgnElementCR el, Utf8CP schemaName, Utf8CP className);
 
     public:
         //! The reason why GenerateGeometricPrimitive is being called
@@ -1054,15 +1066,21 @@ public:
         ECN::IECInstancePtr m_instance;
         Utf8String m_ecclassName;
         Utf8String m_ecschemaName;
+        Utf8String m_key_ecclassName;
+        Utf8String m_key_ecschemaName;
 
         Utf8CP _GetECSchemaName() const override {return m_ecschemaName.c_str();}
+        Utf8CP _GetKeyECSchemaName() const override {return m_key_ecschemaName.c_str();}
         Utf8CP _GetECClassName() const override {return m_ecclassName.c_str();}
+        Utf8CP _GetKeyECClassName() const override {return m_key_ecclassName.c_str();}
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+        void SetKeyClass(ECN::ECClassCP keyClass);
+        DgnDbStatus QueryAndSetActualClass(DgnElementCR);
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
         DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const&) const override;
         DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const&) override;
-        GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName()) {}
+        GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName()) { m_key_ecclassName = m_ecclassName; m_key_ecschemaName = m_ecschemaName; }
         GenericUniqueAspect(ECN::IECInstanceR inst) : m_instance(&inst),  m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName()) {}
 
      public:
@@ -1070,8 +1088,10 @@ public:
         //! Schedule a generic unique aspect to be inserted or updated on the specified element.
         //! @param el   The host element
         //! @param instance The instance that holds the properties of the aspect that are to be written
+        //! @param keyClass Optional. To support polymorphism, specify a base class as the keyClass when setting an aspect that is an instance of some class derived from it. Then, you will 
+        //! be able to pass the base class to GetAspect and get the stored aspect, regardless of what particular derived class it happens to be.
         //! @return non-zero error status if the specified aspect cannot be set
-        DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR instance);
+        DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR instance, ECN::ECClassCP keyClass = nullptr);
 
         //! Get the specified type of generic unique aspect, if any, from an element.
         //! @param el   The host element

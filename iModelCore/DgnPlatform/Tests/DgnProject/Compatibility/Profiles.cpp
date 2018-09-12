@@ -87,7 +87,7 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(BeFileNameCR rootFolder,
     WString extension = testFileName.GetExtension();
     WString fileNameWithoutExt = testFileName.GetFileNameWithoutExtension();
     WString fileNamePattern(fileNameWithoutExt);
-    fileNamePattern.append(L"*.").append(extension);
+    fileNamePattern.append(L".*").append(extension);
     return GetAllVersionsOfTestFile(rootFolder, fileNamePattern, logFoundFiles);
     }
 

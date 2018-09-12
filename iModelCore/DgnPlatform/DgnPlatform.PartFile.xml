@@ -48,8 +48,8 @@
         <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
     </Part>
 
-    <!-- NOTE: IModel02 uses "C02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
-    <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
+    <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
+    <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="FollyShim" />
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -623,7 +623,7 @@
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>

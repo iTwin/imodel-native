@@ -14,6 +14,7 @@
 #include <PSolid/parasolid_debug.h>
 #include <PSolid/frustrum_ifails.h>
 #include <DgnPlatform/SolidKernel.h>
+#include <Bentley/BeThreadLocalStorage.h>
 
 #define PKI_ENTITY_ID_ATTRIB_NAME       "BSI_EntityId"
 #define PKI_USERDATA_ATTRIB_NAME        "BSI_UserData"

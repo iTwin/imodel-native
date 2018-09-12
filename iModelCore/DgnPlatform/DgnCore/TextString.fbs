@@ -1,9 +1,9 @@
 //--------------------------------------------------------------------------------------
 //     $Source: DgnCore/TextString.fbs $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //--------------------------------------------------------------------------------------
 
-namespace BentleyB0200.Dgn.FB;
+namespace BentleyM0200.Dgn.FB;
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2015

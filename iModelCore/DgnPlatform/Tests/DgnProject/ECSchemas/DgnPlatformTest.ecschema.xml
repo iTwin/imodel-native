@@ -180,6 +180,14 @@
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
         <ECProperty propertyName="Length" typeName="double"/>
     </ECEntityClass>
+    <ECEntityClass typeName="TestUniqueAspectNoHandlerD1">
+        <BaseClass>TestUniqueAspectNoHandler</BaseClass>
+        <ECProperty propertyName="D1" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestUniqueAspectNoHandlerD2">
+        <BaseClass>TestUniqueAspectNoHandler</BaseClass>
+        <ECProperty propertyName="D2" typeName="string"/>
+    </ECEntityClass>
     <ECEntityClass typeName="TestMultiAspectNoHandler">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
