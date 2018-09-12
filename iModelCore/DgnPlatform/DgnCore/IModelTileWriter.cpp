@@ -584,7 +584,7 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
             }
         }
 
-    T_QPoint::Params    qParams(range);
+    typename T_QPoint::Params    qParams(range);
     uint32_t            zero = 0;
     
     Json::Value     channelValue(Json::objectValue);

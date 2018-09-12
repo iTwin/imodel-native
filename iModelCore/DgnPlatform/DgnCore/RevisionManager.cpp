@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <ECDb/ChangeIterator.h>
 #include <folly/ProducerConsumerQueue.h>
+#include <thread>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
