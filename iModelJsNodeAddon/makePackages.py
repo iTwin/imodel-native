@@ -23,7 +23,9 @@ def publishPackage(packagedir, doPublish, tag):
         print packagedir;
         return;
 
-    pubcmd = 'npm publish ' + packagedir;
+    pubcmd = 'npm publish '
+    pubcmd += '--@bentley:registry=https://bentley.jfrog.io/bentley/api/npm/staging/ '
+    pubcmd += packagedir
 
     if tag != None:
         pubcmd = pubcmd + ' --tag ' + tag;
