@@ -1093,6 +1093,41 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Vilius.Kazlauskas              09/2018
+//---------------------------------------------------------------------------------------
+StatusTaskPtr Client::UpdateiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::UpdateiModel";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    if (iModelInfo.GetId().empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel id.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelId));
+        }
+
+    Json::Value iModelJson = iModelCreationJson(iModelInfo.GetName(), iModelInfo.GetDescription());
+    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
+
+    return client->SendUpdateObjectRequestWithOptions(ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelInfo.GetId()),
+                                               iModelJson[ServerSchema::Instance][ServerSchema::Properties], nullptr, BeFileName(), nullptr,
+                                               nullptr, cancellationToken)
+        ->Then<StatusResult>([=] (const WSUpdateObjectResult& result)
+        {
+        if (!result.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return StatusResult::Error(result.GetError());
+            }
+
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Success.");
+        return StatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             07/2016
 //---------------------------------------------------------------------------------------
 StatusTaskPtr Client::DeleteiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken) const
