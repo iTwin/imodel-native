@@ -181,6 +181,13 @@ public:
                                                          bool waitForInitialized = true, Http::Request::ProgressCallbackCR  callback = nullptr, 
                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Update exsiting iModel's name and/or description on the server
+    //! @param[in] projectId Project Id to connect to.
+    //! @param[in] iModelInfo Information of iModel to be updated.
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo,
+                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Delete a iModel from server
     //! @param[in] projectId Project Id to connect to.
     //! @param[in] iModelInfo Information of iModel to be deleted. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
