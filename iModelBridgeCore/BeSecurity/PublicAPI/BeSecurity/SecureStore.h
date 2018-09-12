@@ -35,11 +35,6 @@ struct ISecureStore : public ICipher
         virtual ~ISecureStore () {};
         virtual void SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value) = 0;
         virtual Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) = 0;
-
-        //! DEPRECATED!
-        virtual Utf8String LegacyLoadValue (Utf8CP nameSpace, Utf8CP key) { return nullptr; };
-        //! DEPRECATED!
-        virtual void LegacyClearValue(Utf8CP nameSpace, Utf8CP key) {};
     };
 
 /*--------------------------------------------------------------------------------------+
