@@ -18,6 +18,7 @@
     <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp" />
     <ClCompile Include="Profiles.cpp" />
     <ClCompile Include="TestDb.cpp" />
+    <ClCompile Include="TestDomain.cpp" />
     <ClCompile Include="TestIModelCreators.cpp" />
     <ClCompile Include="ECDbCompatibilityTests.cpp" />
     <ClCompile Include="TestECDbCreators.cpp" />
@@ -28,6 +29,7 @@
     <ClInclude Include="iModelHubMock\iModelHubMock.h" />
     <ClInclude Include="Profiles.h" />
     <ClInclude Include="TestDb.h" />
+    <ClInclude Include="TestDomain.h" />
     <ClInclude Include="TestIModelCreators.h" />
     <ClInclude Include="TestECDbCreators.h" />
   </ItemGroup>
@@ -35,6 +37,9 @@
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prewire.mke" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>

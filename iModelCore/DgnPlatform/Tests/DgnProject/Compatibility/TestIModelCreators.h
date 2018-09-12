@@ -28,6 +28,7 @@
 #define TESTIMODEL_EC31KOQS_SCHEMAUPGRADE "ec31koqs_schemaupgrade.bim"
 #define TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE "ec32enums_schemaupgrade.bim"
 #define TESTIMODEL_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.bim"
+#define TESTIMODEL_TESTDOMAIN "testdomain.bim"
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
                               std::make_shared<EC31EnumsTestIModelCreator>(), \
@@ -39,7 +40,8 @@
                               std::make_shared<EC32KoqsTestIModelCreator>(), \
                               std::make_shared<EC31KoqsSchemaUpgradeTestIModelCreator>(), \
                               std::make_shared<EC32KoqsSchemaUpgradeTestIModelCreator>(), \
-                              std::make_shared<EC32UnitsTestIModelCreator>()}
+                              std::make_shared<EC32UnitsTestIModelCreator>(), \
+                              std::make_shared<TestDomainTestIModelCreator>()}
 
 
 //======================================================================================
@@ -370,7 +372,6 @@ struct EC32EnumsSchemaUpgradeTestIModelCreator final : TestIModelCreator
             if (bim == nullptr)
                 return ERROR;
 
-            // ECObjects downgrades an EC3.2 file to EC3.1 during deserialization
             return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                                          <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
@@ -457,4 +458,16 @@ struct EC32UnitsTestIModelCreator final : TestIModelCreator
     public:
         EC32UnitsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32UNITS) {}
         ~EC32UnitsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct TestDomainTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override;
+    public:
+        TestDomainTestIModelCreator() : TestIModelCreator(TESTIMODEL_TESTDOMAIN) {}
+        ~TestDomainTestIModelCreator() {}
     };

@@ -11,6 +11,7 @@
     <ClCompile Include="iModelHubMock\iModelHubMock.cpp" />
     <ClCompile Include="iModelHubMock\iModelHubMockTests.cpp" />
     <ClCompile Include="TestDb.cpp" />
+    <ClCompile Include="TestDomain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
@@ -23,5 +24,9 @@
     <ClInclude Include="Profiles.h" />
     <ClInclude Include="iModelHubMock\iModelHubMock.h" />
     <ClInclude Include="TestDb.h" />
+    <ClInclude Include="TestDomain.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prewire.mke" />
   </ItemGroup>
 </Project>

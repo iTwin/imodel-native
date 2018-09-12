@@ -988,6 +988,10 @@ TestIModel::Iterable TestIModel::GetPermutationsFor(TestFile const& testFile)
         DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite);
         params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
         testParams.push_back(params);
+
+        params = DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
+        params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
+        testParams.push_back(params);
         }
 
     return Iterable(testFile, testParams);

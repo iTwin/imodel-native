@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "TestIModelCreators.h"
 #include "Profiles.h"
+#include "TestDomain.h"
 
 USING_NAMESPACE_BENTLEY_EC
 //---------------------------------------------------------------------------------------
@@ -107,7 +108,7 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
             return ERROR;
             }
 
-        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite);
+        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
         params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
         DgnDbPtr bim = nullptr;
         DbResult stat = BE_SQLITE_OK;
@@ -168,5 +169,27 @@ BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
             return ERROR;
             }
         }
+    return SUCCESS;
+    }
+
+
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus TestDomainTestIModelCreator::_Create()
+    {
+    if (SUCCESS != IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 0), DgnDomain::Required::No, DgnDomain::Readonly::No))
+        return ERROR;
+
+    DgnDbPtr bim = CreateNewTestFile(m_fileName);
+    if (bim == nullptr)
+        return ERROR;
+
+    if (SchemaStatus::Success != IModelEvolutionTestsDomain::GetDomain().ImportSchema(*bim))
+        return ERROR;
+
+    bim->SaveChanges();
     return SUCCESS;
     }
