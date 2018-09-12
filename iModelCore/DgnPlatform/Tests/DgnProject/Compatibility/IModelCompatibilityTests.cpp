@@ -1728,9 +1728,9 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 continue;
                 }
 
-            if (testFile.GetAge() != ProfileState::Age::UpToDate && params.GetProfileUpgradeOptions() != Db::ProfileUpgradeOptions::Upgrade)
+            if (testFile.GetAge() == ProfileState::Age::Newer)
                 {
-                //schema import not possible in newer or older files
+                //schema import not possible in newer files
                 ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
                 continue;
                 }
