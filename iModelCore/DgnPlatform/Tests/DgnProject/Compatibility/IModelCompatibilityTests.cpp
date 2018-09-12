@@ -1441,13 +1441,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
             const DbResult openStat = testDb.Open();
             DgnDb::OpenParams const& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
 
-            if (testFile.GetAge() == ProfileState::Age::Newer)
-                {
-                //schema import not possible in newer files
-                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
-                continue;
-                }
-
             if (params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
                 {
                 //opens but schema is not upgraded
