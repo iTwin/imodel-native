@@ -674,6 +674,14 @@ void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
             continue;
             }
 
+        // Don't bother asking server to reserve codes not managed by iModelHub
+        CodeSpecCPtr codeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(code.GetCodeSpecId());
+        if (!codeSpec.IsValid() || !codeSpec->IsManagedWithDgnDb())
+            {
+            iter = codes.erase(iter);
+            continue;
+            }
+
         stmt->BindId(CodeColumn::CodeSpec+1, code.GetCodeSpecId());
         stmt->BindText(CodeColumn::Scope+1, code.GetScopeString(), Statement::MakeCopy::No);
         stmt->BindText(CodeColumn::Value+1, code.GetValueUtf8(), Statement::MakeCopy::No);
