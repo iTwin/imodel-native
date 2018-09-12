@@ -7,16 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
-#include    <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgResBuf.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbObjects.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbEntities.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbSymbolTables.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbDatabase.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgRxObjects.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDrawables.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbHost.h>
+#include    <Dwg/DwgDb/DwgDbCommon.h>
+#include    <Dwg/DwgDb/BasicTypes.h>
+#include    <Dwg/DwgDb/DwgResBuf.h>
+#include    <Dwg/DwgDb/DwgDbObjects.h>
+#include    <Dwg/DwgDb/DwgDbEntities.h>
+#include    <Dwg/DwgDb/DwgDbSymbolTables.h>
+#include    <Dwg/DwgDb/DwgDbDatabase.h>
+#include    <Dwg/DwgDb/DwgRxObjects.h>
+#include    <Dwg/DwgDb/DwgDrawables.h>
+#include    <Dwg/DwgDb/DwgDbHost.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
 

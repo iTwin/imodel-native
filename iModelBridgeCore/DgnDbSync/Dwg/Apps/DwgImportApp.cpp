@@ -2,10 +2,10 @@
 |
 |     $Source: Dwg/Apps/DwgImportApp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnDbSync/Dwg/DwgBridge.h>
+#include <Dwg/DwgBridge.h>
 
 struct DwgBridgeApp : DwgBridge
 {

@@ -11,7 +11,7 @@
 struct XPathDeleter {void operator()(xmlXPathObject* x) { xmlXPathFreeObject(x); }};
 typedef std::unique_ptr<xmlXPathObject,XPathDeleter> XPathObjectPtr;
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Bern.McCarty    12/2012
@@ -314,4 +314,4 @@ BentleyStatus DwgImporter::Config::EvaluateXPath(Utf8StringR value, Utf8CP xpath
 
 BeXmlDom* DwgImporter::Config::GetDom() const {return m_instanceDom.get();}
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

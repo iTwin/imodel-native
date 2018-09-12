@@ -9,9 +9,6 @@
     %include mdl.mki
 %endif
 
-DgnDbSyncPubApi     = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/
-DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
-
 %if $(DWGTOOLKIT) == "OpenDwg"
 
     ## Toolkit dirs
@@ -52,7 +49,7 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
     %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
 %endif  # DWGTOOLKIT
 
-CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -D__DWGIMPORTER_BUILD__
 
 %if defined (DLM_API_NUMBER)
     CCompOpts + -DDLM_API_NUMBER=\"$(DLM_API_NUMBER)\"

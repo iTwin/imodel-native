@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Samples/ListProp/ListProperty.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,19 +18,19 @@
 #endif
 #endif  // DWGTOOLKIT_RealDwg
 
-#include <DgnDbSync/Dwg/DwgBridge.h>
-#include <DgnDbSync/Dwg/DwgHelper.h>
+#include <Dwg/DwgBridge.h>
+#include <Dwg/DwgHelper.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 // Use DwgImporter logging to trace import and to report issues
 #define LOG                     (*NativeLogging::LoggingManager::GetLogger(L"DwgImporter"))
 
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 //=======================================================================================
 //
@@ -65,4 +65,4 @@ struct ListPropertySample : public DwgBridge
     DwgImporter*    _CreateDwgImporter () override;
     };  // ListPropertySample
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

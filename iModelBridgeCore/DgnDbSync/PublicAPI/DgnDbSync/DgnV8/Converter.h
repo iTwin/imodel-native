@@ -948,7 +948,7 @@ protected:
     mutable bool         m_hadError = false;
     mutable bool         m_wasAborted = false;
     bool                 m_hasLoadedWorkspaceFonts = false;
-    bool                 m_skipECContent = true;
+    bool                 m_skipECContent = false;
     bool                 m_addDebugDgnCodes = false;
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
@@ -1009,7 +1009,7 @@ public:
     virtual Params& _GetParamsR() = 0;
 
     bool SkipECContent() const {return m_skipECContent;}
-
+    void SetSkipEContent(bool val) {m_skipECContent = val;}
     //! Add a callback to be invoked by RetrieveV8ECSchemas
     //! @param v    Verifier to be invoked by RetrieveV8ECSchemas to determine whether a given schema should be imported
     void AddSchemaImportVerifier(ISChemaImportVerifier& v) { m_schemaImportVerifiers.push_back(&v); }
@@ -1828,7 +1828,8 @@ public:
     //! @note If you install RealDWG on a shared location, pass in an absolute path; otherwise the default \V8SDK\RealDwg\ location will be used.
     DGNDBSYNC_EXPORT static void Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, 
                                             BentleyApi::BeFileNameCR v8DllsRelativeDir, BentleyApi::BeFileNameCP realdwgAbsoluteDir, 
-                                            bool isPowerPlatformBased, int argc, WCharCP argv[]);
+                                            bool isPowerPlatformBased, int argc, WCharCP argv[],
+                                            BentleyApi::Dgn::IDmsSupport*);
     static BentleyStatus InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR realdwgDir);
     static BentleyStatus InitializeDwgSettings (Converter* v8converter);
     static void InitV8ForeignFileTypes (Converter* v8converter);

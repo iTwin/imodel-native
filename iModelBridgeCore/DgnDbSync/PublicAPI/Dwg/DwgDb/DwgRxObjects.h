@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgRxObjects.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgRxObjects.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
+#include    <Dwg/DwgDb/DwgDbCommon.h>
 
 
 // Protocal Extension Class name

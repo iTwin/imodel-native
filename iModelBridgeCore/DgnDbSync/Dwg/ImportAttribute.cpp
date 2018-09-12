@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
 
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_DWG
 
 // Invalid property names taken from SchemaValidator::ValidPropertyRule::ValidatePropertyName:
 #ifndef ECDBSYS_PROPALIAS_Id

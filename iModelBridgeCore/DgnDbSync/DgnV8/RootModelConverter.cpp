@@ -1306,14 +1306,29 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
     //                  references that belong to other bridges.
     bvector<ResolvedModelMapping> mappingsToRemove;
     bvector<BentleyApi::Dgn::DgnModelPtr> keepAlive;
+    DgnV8ModelP rootModel = GetRootModelP();
     for (auto& modelMapping : m_v8ModelMappings)
         {
         if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
             {
             BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
             keepAlive.push_back(mref);
-            mref->Delete();
-            GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
+            
+            DgnElementId partition = mref->GetModeledElementId();
+            DgnElementCPtr element = GetDgnDb().Elements().GetElement(partition);
+            bool isRootModel = &modelMapping.GetV8Model() == rootModel;
+            if (!isRootModel)
+                {
+                mref->Delete();
+                GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
+                if (element.IsValid())
+                    element->Delete();
+                }
+            else
+                {
+                mref->SetIsPrivate(true);
+                mref->Update();
+                }
             mappingsToRemove.push_back(modelMapping);
 
             Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());

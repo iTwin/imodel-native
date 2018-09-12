@@ -7,6 +7,7 @@
     <!-- ........................................................................................................................................ -->
 
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="B02">
+        <SubPart PartName="iModelDmsSupport" Repository="DmsSupport" PartFile="iModelDmsSupport"/>
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="PublicAPI" />

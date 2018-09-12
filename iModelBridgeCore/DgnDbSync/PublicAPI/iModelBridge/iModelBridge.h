@@ -16,6 +16,7 @@
 #include <DgnView/DgnViewLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <WebServices/Client/ClientInfo.h>
+#include <iModelDmsSupport/iModelDmsSupport.h>
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -491,6 +492,8 @@ struct iModelBridge
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
+        IDmsSupport* m_dmsSupport;
+
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -587,7 +590,8 @@ struct iModelBridge
         DgnElementId GetJobSubjectId() const {return m_jobSubjectId;} //!< Identifies the job Subject element
         bool DoDetectDeletedModelsAndElements() const {return m_doDetectDeletedModelsAndElements;}
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
-
+        void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
+        IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
 	    IMODEL_BRIDGE_EXPORT bool IsDocumentAssignedToJob(Utf8StringCR docId) const;

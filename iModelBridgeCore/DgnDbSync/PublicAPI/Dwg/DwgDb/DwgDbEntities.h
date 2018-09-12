@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbEntities.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgDbEntities.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbObjects.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDrawables.h>
+#include    <Dwg/DwgDb/DwgDbObjects.h>
+#include    <Dwg/DwgDb/DwgDrawables.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
 #include    <Teigha/Drawing/Include/Entities.h>
@@ -86,7 +86,7 @@ BEGIN_DWGDB_NAMESPACE
     /*! Is this a planar entity? */                                                     \
     DWGDB_EXPORT bool               IsPlanar () const;                                  \
     /*! Drop the entity to none database-resident entities. Caller responsible for freeing them. */ \
-    DWGDB_EXPORT DwgDbStatus        Explode (DwgDbObjectPArrayR entities) const;         \
+    DWGDB_EXPORT DwgDbStatus        Explode (DwgDbObjectPArrayR entities) const;        \
     /*! Transform the entity by the input matrix. */                                    \
     DWGDB_EXPORT DwgDbStatus TransformBy (TransformCR matrix);                          \
     /*! Set a new color, using DwgCmColor, for the entity. */                           \

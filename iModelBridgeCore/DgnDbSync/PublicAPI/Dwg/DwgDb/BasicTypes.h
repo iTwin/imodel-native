@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/BasicTypes.h $
+|     $Source: PublicAPI/Dwg/DwgDb/BasicTypes.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
+#include    <Dwg/DwgDb/DwgDbCommon.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
 #include    <Teigha/Kernel/Include/SmartPtr.h>

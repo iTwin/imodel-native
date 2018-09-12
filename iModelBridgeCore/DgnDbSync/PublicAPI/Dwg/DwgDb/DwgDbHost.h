@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbHost.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgDbHost.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnDbSync/Dwg/DwgDb/DwgDbDatabase.h>
+#include <Dwg/DwgDb/DwgDbDatabase.h>
 
 BEGIN_DWGDB_NAMESPACE
 

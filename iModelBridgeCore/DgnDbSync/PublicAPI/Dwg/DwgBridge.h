@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgBridge.h $
+|     $Source: PublicAPI/Dwg/DwgBridge.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,14 +18,14 @@
 #endif
 #endif
 
-#include <DgnDbSync/Dwg/DwgImporter.h>
+#include <Dwg/DwgImporter.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
 
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
@@ -39,30 +39,30 @@ private:
 
 protected:
     // Instantiate a new DwgImporter - consumer to override with a customer importer:
-    DGNDBSYNC_EXPORT virtual DwgImporter* _CreateDwgImporter ();
+    DWG_EXPORT virtual DwgImporter* _CreateDwgImporter ();
 
     // iModelBridge overrides
-    DGNDBSYNC_EXPORT WString        _SupplySqlangRelPath () override;
-    DGNDBSYNC_EXPORT BentleyStatus   _Initialize (int argc, WCharCP argv[]) override;
-    DGNDBSYNC_EXPORT Dgn::SubjectCPtr _InitializeJob () override;
-    DGNDBSYNC_EXPORT Dgn::SubjectCPtr _FindJob () override;
-    DGNDBSYNC_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
+    DWG_EXPORT WString        _SupplySqlangRelPath () override;
+    DWG_EXPORT BentleyStatus   _Initialize (int argc, WCharCP argv[]) override;
+    DWG_EXPORT Dgn::SubjectCPtr _InitializeJob () override;
+    DWG_EXPORT Dgn::SubjectCPtr _FindJob () override;
+    DWG_EXPORT BentleyStatus  _ConvertToBim (Dgn::SubjectCR jobSubject) override;
     //! Default implementation walks through DWG block section and create the DwgAttributeDefinitions schema.
-    DGNDBSYNC_EXPORT BentleyStatus  _MakeSchemaChanges () override;
-    DGNDBSYNC_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
-    DGNDBSYNC_EXPORT void           _OnCloseBim (BentleyStatus) override;
-    DGNDBSYNC_EXPORT BentleyStatus  _OpenSource () override;
-    DGNDBSYNC_EXPORT void           _CloseSource (BentleyStatus) override;
-    DGNDBSYNC_EXPORT void           _DeleteSyncInfo () override;
-    DGNDBSYNC_EXPORT BentleyStatus  _DetectDeletedDocuments() override;
-    DGNDBSYNC_EXPORT void           _PrintUsage () override;
+    DWG_EXPORT BentleyStatus  _MakeSchemaChanges () override;
+    DWG_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
+    DWG_EXPORT void           _OnCloseBim (BentleyStatus) override;
+    DWG_EXPORT BentleyStatus  _OpenSource () override;
+    DWG_EXPORT void           _CloseSource (BentleyStatus) override;
+    DWG_EXPORT void           _DeleteSyncInfo () override;
+    DWG_EXPORT BentleyStatus  _DetectDeletedDocuments() override;
+    DWG_EXPORT void           _PrintUsage () override;
     iModelBridge::Params&           _GetParams () override { return m_options; }
-    DGNDBSYNC_EXPORT CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;
-    DGNDBSYNC_EXPORT void           _Terminate (BentleyStatus convertStatus) override;
+    DWG_EXPORT CmdLineArgStatus _ParseCommandLineArg (int iArg, int argc, WCharCP argv[]) override;
+    DWG_EXPORT void           _Terminate (BentleyStatus convertStatus) override;
 
 public:
-    DGNDBSYNC_EXPORT BentleyStatus  RunAsStandaloneExe (int argc, WCharCP argv[]);
-    DGNDBSYNC_EXPORT DwgImporter::Options&  GetImportOptions () { return m_options; }
+    DWG_EXPORT BentleyStatus  RunAsStandaloneExe (int argc, WCharCP argv[]);
+    DWG_EXPORT DwgImporter::Options&  GetImportOptions () { return m_options; }
 
 private:
     // local class methods
@@ -72,7 +72,7 @@ private:
     void    CreateSyncInfoIfAbsent ();
 };  // DwgBridge
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE
 
 
 // Supply DwgBridge to and register it for iModelBridge Framework

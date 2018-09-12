@@ -25,10 +25,10 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 USING_NAMESPACE_IMAGEPP
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 static const double     s_finishExponent = 0.016;
 static const double     s_finishFactor = 2.5;
@@ -104,7 +104,9 @@ public:
     // update existing material from DWG
     BentleyStatus       Update (RenderMaterialR out);
     }; // MaterialFactory
-END_DGNDBSYNC_DWG_NAMESPACE
+
+END_DWG_NAMESPACE
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16

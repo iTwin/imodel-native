@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ImporterTests.h"
 
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 ImporterTestsHost   ImporterTests::s_testsHost;
 WString             ImporterTests::s_dwgBridgeRegistryKey;

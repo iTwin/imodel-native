@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 static bset<Utf8String> s_loggedFileNames;
 
@@ -763,6 +763,14 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
     if (!this->IsUpdating())
         return  BSISUCCESS;
 
+    // this is called after the process is done, so, setup change detector again:
+    bool detectorPresent = this->_HaveChangeDetector ();
+    if (!detectorPresent)
+        {
+        this->_SetChangeDetector (true);
+        this->_GetChangeDetector()._Prepare (*this);
+        }
+
     auto& detector = this->_GetChangeDetector ();
     auto& db = this->GetDgnDb ();
     auto& syncInfo = this->GetSyncInfo ();  
@@ -801,7 +809,10 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
         syncInfo.DeleteFile (file.GetSyncId());
         }
 
+    if (!detectorPresent)
+        detector._Cleanup (*this);
+
     return BSISUCCESS;
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

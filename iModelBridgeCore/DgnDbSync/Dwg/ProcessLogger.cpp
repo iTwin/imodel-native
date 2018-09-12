@@ -12,7 +12,7 @@
 
 #define LOG_ISSUES
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -426,4 +426,4 @@ DgnProgressMeterR   DwgImporter::GetProgressMeter () const
     return  nullptr == hostProgressMeter ? s_nopProgressMeter : *hostProgressMeter;
     }
  
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

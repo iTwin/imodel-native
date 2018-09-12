@@ -132,14 +132,34 @@ protected:
     RasterAttachmentAdmin&  _SupplyRasterAttachmentAdmin() override { return DgnV8Api::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin(); }
     GraphicsAdmin&          _SupplyGraphicsAdmin() override {return *new NulGraphics;}
     DgnAttachmentAdmin&     _SupplyDgnAttachmentAdmin() override {return *new ConverterDgnAttachmentAdmin();}
-
+    DgnDocumentManager&     _SupplyDocumentManager() override;
 
     // Overrides for DgnV8Api::DgnViewLib::Host
     virtual void                    _SupplyProductName (Bentley::WStringR name) override {name.assign(L"DgnV8Converter");}
     virtual DgnV8Api::IViewManager& _SupplyViewManager() override {return *new V8ViewManager(*this); }
+
+    IDmsSupport*    m_dmsSupport;
+    public:
+    ConverterV8Host(IDmsSupport* dmsSupport)
+        :m_dmsSupport(dmsSupport)
+        {}
     }; 
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8Api::DgnDocumentManager& ConverterV8Host::_SupplyDocumentManager()
+    {
+    DgnV8Api::DgnDocumentManager* mgr = NULL;
+    if (NULL != m_dmsSupport)
+        mgr = m_dmsSupport->_GetDgnDocumentManager();
+    
+    if (NULL != mgr)
+        return *mgr;
+    
+    return *new DgnV8Api::DgnDocumentManager();
+    }
 static DgnV8Api::MacroConfigurationAdmin* s_macros;
 
 /*---------------------------------------------------------------------------------**//**
@@ -537,7 +557,7 @@ struct CifSheetExaggeratedViewHandlerStandin : DgnV8Api::ViewHandler
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
-                           BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[])
+                           BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[], BentleyApi::Dgn::IDmsSupport* dmsSupport)
     {
     if (!isPowerPlatformBased)
         {
@@ -561,7 +581,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi
         Bentley::BeFileName dllDirectoryV8(dllDirectory.c_str());
         initializeV8HostConfigVars(dllDirectoryV8, argc, argv);
 
-        DgnV8Api::DgnViewLib::Initialize (*new ConverterV8Host, true);
+        DgnV8Api::DgnViewLib::Initialize (*new ConverterV8Host(dmsSupport), true);
         DgnV8Api::Raster::RasterCoreLib::Initialize (*new DgnV8Api::Raster::RasterCoreLib::Host());    
 
         DgnV8Api::ITxnManager::GetManager().SetCurrentTxn(*new ConverterV8Txn);

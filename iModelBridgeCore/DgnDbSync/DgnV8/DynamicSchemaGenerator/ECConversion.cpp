@@ -1440,7 +1440,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
      bvector<BECN::ECSchemaP> schemas;
      m_schemaReadContext->GetCache().GetSchemas(schemas);
      bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group", 
-         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi", "PDMx_Base", "TUAS"};
+         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals",
+         "Electrical_RCM", "pid_ansi", "PDMx_Base", "TUAS", "HS2", "BMHDesigner"};
      bool needsFlattening = false;
      // It is possible that a schema will refer to one of the above schemas that needs flattening.  In such a situation, the reference needs to be updated to the flattened ref.  There is no
      // easy way to replace a referenced schema.  Therefore, if one of the schemas in the set needs to be flattened, we just flatten everything which automatically updates the references.
