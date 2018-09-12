@@ -203,18 +203,21 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         m_database->CloseDb();
 #ifndef VANCOUVER_API
     if (openShareable)
-    {
+        {
         result = m_database->OpenShared(filename, openReadOnly, true);
-    }
+        }
     else
 #endif
-    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
+        result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
 
 #ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
 #else
-    Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
-    result = m_database->IsProfileVersionUpToDate(params);
+    if (result != BE_SQLITE_ERROR_FileNotFound)
+        {
+        Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
+        result = m_database->IsProfileVersionUpToDate(params);
+        }
     if (result == BE_SQLITE_SCHEMA)
 #endif     
         {
