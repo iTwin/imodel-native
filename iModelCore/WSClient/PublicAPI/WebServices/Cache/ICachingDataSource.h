@@ -68,7 +68,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         struct RetrieveOptions;
 
         struct SelectProvider;
-        
+
         struct Progress;
 
         struct Error;
@@ -93,7 +93,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         typedef const FailedObjects& FailedObjectsCR;             
 
         typedef std::function<void(ProgressCR progress)> ProgressCallback;
-        
+
+        struct ProgressHandler
+            {
+            public:
+                ProgressCallback progressCallback;
+                std::function<bool(const IQueryProvider::Query& query)> shouldReportQueryProgress;
+
+            public:
+                ProgressHandler() : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
+                ProgressHandler(std::nullptr_t) : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
+                ProgressHandler(ProgressCallback callback) : progressCallback(callback), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
+            };
+
+        typedef std::shared_ptr<ProgressHandler> ProgressHandlerPtr;
+
         typedef AsyncResult<void, Error>                    Result;
         typedef AsyncResult<KeysData, Error>                KeysResult;
         typedef AsyncResult<ObjectsData, Error>             ObjectsResult;
@@ -295,7 +309,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ProgressCallback onProgress = nullptr,
+            ProgressHandler progressHandler = ProgressHandler(),
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
