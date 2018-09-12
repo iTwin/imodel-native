@@ -226,12 +226,15 @@ private:
     uint8_t*        m_pDataEnd = nullptr;
 
 public:
-    ByteStream      m_data;
-    LUTDimensions   m_dimensions;
-    uint32_t        m_numVertices = 0;
-    uint32_t        m_numRgbaPerVertex = 0;
-    FeaturesInfo    m_features;
-    ColorInfo       m_colors;
+
+    ByteStream              m_data;
+    LUTDimensions           m_dimensions;
+    uint32_t                m_numVertices = 0;
+    uint32_t                m_numRgbaPerVertex = 0;
+    FeaturesInfo            m_features;
+    ColorInfo               m_colors;
+    Json::Value             m_auxDisplacements;
+    Json::Value             m_auxParams;
     uint32_t        CurrSize() const { return static_cast<uint32_t> (m_pDataEnd - m_data.GetDataP()); }
 
     void AppendData(void const* pData, size_t dataSize)
@@ -550,7 +553,7 @@ private:
     BentleyStatus CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr);
     BentleyStatus CreatePolyline(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
     BentleyStatus CreatePointString(Json::Value& primitiveJson, IndexedPolylineArgsCR args, Utf8StringCR idStr);
-    Json::Value CreateMeshAuxData(VertexTable& vertexTable, PolyfaceAuxData::ChannelsCR channels, uint32_t numVertices, Utf8StringCR idString);
+    void CreateVertexTableAuxChannels(VertexTable& vertexTable, PolyfaceAuxData::ChannelsCR channels, uint32_t numVertices, Utf8StringCR idString);
 
 
 public:
@@ -561,18 +564,18 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value CreateMeshAuxChannel(VertexTable& vertexTable, PolyfaceAuxChannelCR auxChannel, uint32_t numVertices)
+template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value CreateVertexTableAuxChannel(VertexTable& vertexTable, PolyfaceAuxChannelCR auxChannel, uint32_t numVertices)
     {
-    size_t          blockSize = auxChannel.GetBlockSize();
-    Json::Value     inputs(Json::arrayValue);
-    T_Range         range = T_Range::NullRange();
-    LUTDimensions   lutDimensions;
-    uint32_t        nRgbaPerVertex = (sizeof(T_QPoint) + 3) / 4, nBytesPerVertex = 4 * nRgbaPerVertex, unusedSize = nBytesPerVertex - sizeof(T_QPoint);
-    uint32_t        tableOffset = vertexTable.CurrSize();
+    size_t                  blockSize = auxChannel.GetBlockSize();
+    Json::Value             inputs(Json::arrayValue);
+    T_Range                 range = T_Range::NullRange();
+    LUTDimensions           lutDimensions;
+    uint32_t                nRgbaPerVertex = (sizeof(T_QPoint) + 3) / 4, nBytesPerVertex = 4 * nRgbaPerVertex, unusedSize = nBytesPerVertex - sizeof(T_QPoint);
+    Json::Value             inputValues(Json::arrayValue);
 
     for (auto const& data : auxChannel.GetData())
         {
-        inputs.append(data->GetInput());
+        inputValues.append(data->GetInput());
         double const* value = data->GetValues().data();
         for (size_t i=0; i<data->GetValues().size(); i += blockSize)
             {
@@ -583,7 +586,29 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
 
     T_QPoint::Params    qParams(range);
     uint32_t            zero = 0;
+    
+    Json::Value     channelValue(Json::objectValue);
+        
+    channelValue["index"] = vertexTable.CurrSize() / 4;
+    channelValue["numRgbaPerVertex"] = nRgbaPerVertex;
+    channelValue["name"] = auxChannel.GetName();
+    channelValue["type"] = (int) auxChannel.GetDataType();
 
+    Json::Value     qOrigin(Json::arrayValue), qScale(Json::arrayValue);
+    double const*   pOrigin = (double*) (&qParams.origin);
+    double const*   pScale = (double*) (&qParams.scale);
+
+    for (size_t i=0; i<blockSize; i++)
+        {
+        qOrigin.append(*pOrigin++);
+
+        double  scale = *pScale++;
+        qScale.append(0.0 == scale ? 0.0 : (1.0 / scale));
+        }
+    channelValue["qOrigin"] = std::move(qOrigin);
+    channelValue["qScale"] = std::move(qScale);
+    channelValue["inputs"] = std::move(inputValues);
+        
     for (auto const& data : auxChannel.GetData())
         {
         // Quantize and push...
@@ -597,16 +622,6 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
             vertexTable.AppendData(&zero, unusedSize);
             }
         }
-    Json::Value     channelValue(Json::objectValue);
-    channelValue["name"] = auxChannel.GetName().c_str();
-    channelValue["vertexCount"]  = numVertices;
-    channelValue["inputs"]  = std::move(inputs);
-    channelValue["numRgbaPerVertex"] = nRgbaPerVertex;
-    channelValue["dataType"] = (int) auxChannel.GetDataType();
-    channelValue["offset"] = tableOffset;
-    channelValue["params"] = CreateDecodeQuantizeValues(reinterpret_cast<double*>(&range.low), reinterpret_cast<double*>(&range.high), blockSize);
-
-
     return channelValue;
     }
 };
@@ -1049,20 +1064,21 @@ BentleyStatus IModelTileWriter::CreatePolylines(Json::Value& primitiveJson, Mesh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value IModelTileWriter::CreateMeshAuxData(VertexTable& vertexTable, PolyfaceAuxData::ChannelsCR channels, uint32_t numVertices, Utf8StringCR idStr)
+void IModelTileWriter::CreateVertexTableAuxChannels(VertexTable& vertexTable, PolyfaceAuxData::ChannelsCR channels, uint32_t numVertices, Utf8StringCR idStr)
     {
-    Json::Value     auxChannels(Json::arrayValue);
+    BeAssert (!channels.empty());
+    Json::Value     displacementChannels(Json::arrayValue), paramChannels(Json::arrayValue);
 
     for (auto const& channel : channels)
         {
         switch (channel->GetBlockSize())
             {
             case 1:
-                auxChannels.append(CreateMeshAuxChannel<DRange1d, double, QPoint1d>(vertexTable, *channel, numVertices));
+                paramChannels.append(CreateVertexTableAuxChannel<DRange1d, double, QPoint1d>(vertexTable, *channel, numVertices));
                 break;
 
             case 3:
-                auxChannels.append(CreateMeshAuxChannel<DRange3d, DPoint3d, QPoint3d>(vertexTable, *channel, numVertices));
+                displacementChannels.append(CreateVertexTableAuxChannel<DRange3d, DPoint3d, QPoint3d>(vertexTable, *channel, numVertices));
                 break;
 
             default:
@@ -1070,10 +1086,12 @@ Json::Value IModelTileWriter::CreateMeshAuxData(VertexTable& vertexTable, Polyfa
                 break;
             }
         }
-    Json::Value     auxData (Json::objectValue);
-    auxData["channels"] = std::move(auxChannels);
+    if (displacementChannels.size() > 0)
+        vertexTable.m_auxDisplacements = std::move(displacementChannels);
 
-    return auxData;
+    if (paramChannels.size() > 0)
+        vertexTable.m_auxParams = std::move(paramChannels);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1088,7 +1106,7 @@ BentleyStatus IModelTileWriter::CreateTriMesh(Json::Value& primitiveJson, MeshCR
     MeshParams meshParams(args, m_loader.GetTree().IsClassifier());
 
     if (!args.m_auxChannels.empty())
-        primitiveJson["auxData"] = CreateMeshAuxData(meshParams.m_lutParams, args.m_auxChannels, args.m_numPoints, idStr);
+        CreateVertexTableAuxChannels(meshParams.m_lutParams, args.m_auxChannels, args.m_numPoints, idStr);
         
     AddVertexTable(primitiveJson, meshParams.m_lutParams, meshParams.m_vertexParams, idStr);
 
@@ -1199,6 +1217,13 @@ void IModelTileWriter::AddVertexTable(Json::Value& primitiveJson, VertexTable co
     primitiveJson["vertices"]["width"] = table.m_dimensions.GetWidth();
     primitiveJson["vertices"]["height"] = table.m_dimensions.GetHeight();
     primitiveJson["vertices"]["numRgbaPerVertex"] = table.m_numRgbaPerVertex;
+
+    if (!table.m_auxDisplacements.isNull())
+        primitiveJson["vertices"]["auxDisplacements"] = table.m_auxDisplacements;
+        
+    
+    if (!table.m_auxParams.isNull())
+        primitiveJson["vertices"]["auxParams"] = table.m_auxParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
