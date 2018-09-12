@@ -149,7 +149,7 @@ const BESQL_VERSION_STRUCT* SMSQLiteFile::GetListOfReleasedVersions() { return s
 double* SMSQLiteFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdate; }
 std::function<void(BeSQLite::Db*)>* SMSQLiteFile::GetFunctionsForAutomaticUpdate() { return s_databaseUpdateFunctions; }
 
-bool SMSQLiteFile::UpdateDatabase()
+DbResult SMSQLiteFile::UpdateDatabase()
     {         
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
@@ -172,6 +172,9 @@ bool SMSQLiteFile::UpdateDatabase()
             std::cout << "Update to version " << databaseSchema.ToString() << " took " << time << "s" << std::endl;
             }
         }
+
+    DbResult status = BE_SQLITE_DONE;
+
     if (databaseSchema.CompareTo(GetCurrentVersion()) == 0)
         {
         CachedStatementPtr stmt;
@@ -182,15 +185,24 @@ bool SMSQLiteFile::UpdateDatabase()
 #else
         stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
 #endif
-        DbResult status = stmt->Step();
+        status = stmt->Step();
         if (status == BE_SQLITE_DONE) 
             {
-            return true;
+            m_database->SaveChanges();
+            return status;
             }
         }
+    
     #endif
-    assert(!"ERROR - Unknown database schema version");
-    return true; //for now, allow opening more recent versions
+
+#ifndef NDEBUG
+    if (status != BE_SQLITE_DONE && status != BE_SQLITE_READONLY)
+        {
+        assert(!"ERROR - Unknown database schema version");
+        }
+#endif
+
+    return status; //for now, allow opening more recent versions
     }
 
 
@@ -224,28 +236,29 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
-        assert(result == BE_SQLITE_OK);
-
-        if (result == BE_SQLITE_OK)
-        {
-#ifdef VANCOUVER_API		
-            UpdateDatabase();
-#endif			
-
+        if (result != BE_SQLITE_OK)
+            {
             m_database->CloseDb();
-        }
+            return false;
+            }
+
+#ifdef VANCOUVER_API
+        UpdateDatabase();
+#endif
+        m_database->CloseDb();
+
 
 #ifndef VANCOUVER_API
         if (openShareable)
-        {
+            {
             m_database->OpenShared(filename, openReadOnly, true);
-        }
+            }
         else
 #endif
-        result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
+            result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
-    m_isShared = openShareable;
 
+    m_isShared = openShareable;
 
     if (openShareable)
         {
@@ -284,7 +297,13 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
 
     result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly, openShareable, type);
     // need to check version file ?
-    status = result ? 1 : 0;
+    status = result ? SUCCESS : ERROR;
+
+    if (status != SUCCESS)
+        {
+        smSQLiteFile = nullptr;
+        }
+
     return smSQLiteFile;
     }
 
