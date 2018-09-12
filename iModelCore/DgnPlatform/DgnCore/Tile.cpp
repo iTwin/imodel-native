@@ -48,7 +48,7 @@ constexpr double s_minToleranceRatioMultiplier = 2.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
-constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
+// unused - constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 static const Utf8String s_classifierIdPrefix("C:");
 
 //=======================================================================================
