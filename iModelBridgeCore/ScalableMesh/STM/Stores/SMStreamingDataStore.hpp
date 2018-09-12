@@ -1738,7 +1738,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                 if (child.isMember("SMHeader") && child["SMHeader"].isMember("id"))
                     header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
                 else
+                    {
+                    assert(child.isMember("SMRootID"));
                     header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMRootID"].asUInt());
+                    }
                 }
             header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
             }

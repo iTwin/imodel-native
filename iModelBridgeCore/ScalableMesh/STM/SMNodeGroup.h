@@ -1305,7 +1305,6 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(SMIndexNodeHeade
             Json::Value& parentJSON = *pi_pParentGroup->m_tileTreeMap[pi_parentHeader.m_id.m_integerID];
             Json::Value& correspondingChildJSON = parentJSON["children"][(Json::Value::ArrayIndex)childJSONIndex];
             assert(correspondingChildJSON.isMember("boundingVolume"));
-            correspondingChildJSON["SMRootID"] = pi_childHeader.m_id.m_integerID;
             }
         }
     }
