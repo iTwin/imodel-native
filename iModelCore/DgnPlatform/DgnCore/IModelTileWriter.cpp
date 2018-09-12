@@ -590,7 +590,6 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
     Json::Value     channelValue(Json::objectValue);
         
     channelValue["index"] = vertexTable.CurrSize() / 4;
-    channelValue["numRgbaPerVertex"] = nRgbaPerVertex;
     channelValue["name"] = auxChannel.GetName();
     channelValue["type"] = (int) auxChannel.GetDataType();
 
@@ -598,12 +597,22 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
     double const*   pOrigin = (double*) (&qParams.origin);
     double const*   pScale = (double*) (&qParams.scale);
 
-    for (size_t i=0; i<blockSize; i++)
-        {
-        qOrigin.append(*pOrigin++);
 
-        double  scale = *pScale++;
-        qScale.append(0.0 == scale ? 0.0 : (1.0 / scale));
+    if (1 == blockSize)
+        {
+        qOrigin.append(0.0);
+        qScale.append(1.0 / Quantization::RangeScale());
+        }
+    else
+        {
+
+        for (size_t i=0; i<blockSize; i++)
+            {
+            qOrigin.append(*pOrigin++);
+
+            double  scale = *pScale++;
+            qScale.append(0.0 == scale ? 0.0 : (1.0 / scale));
+            }
         }
     channelValue["qOrigin"] = std::move(qOrigin);
     channelValue["qScale"] = std::move(qScale);
