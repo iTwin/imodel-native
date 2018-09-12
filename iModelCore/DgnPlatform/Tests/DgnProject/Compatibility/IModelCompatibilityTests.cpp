@@ -1797,14 +1797,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
                 continue;
                 }
 
-            // cannot use testDb.GetAge as this only works if the file was successfully opened - which it didn't here
-            if (testFile.GetAge() == ProfileState::Age::Older && params.GetProfileUpgradeOptions() != Db::ProfileUpgradeOptions::Upgrade)
-                {
-                // open params indicates to do schema upgrade. But EC32 schemas cannot be imported into older files.
-                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
-                continue;
-                }
-
             //opens and upgrades the schema
             EXPECT_TRUE(testDb.GetAge() == ProfileState::Age::UpToDate) << testDb.GetDescription();
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
