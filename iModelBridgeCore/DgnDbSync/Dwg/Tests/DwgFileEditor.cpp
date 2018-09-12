@@ -8,7 +8,7 @@
 #include "DwgFileEditor.h"
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 USING_NAMESPACE_DWGDB
 
 /*---------------------------------------------------------------------------------**//**

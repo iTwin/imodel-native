@@ -20,7 +20,7 @@
     </Part>
 
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. -->
-    <Part Name="PublicAPI" BentleyBuildMakeFile="DgnDbSync.prewire.mke" BMakeOptions="+dPUBLICAPI_DgnV8">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="DgnDbSync.prewire.mke">
         <Bindings>
             <PublicAPI Domain="DgnDbSync" />
         </Bindings>

@@ -8,7 +8,7 @@
 #include "DwgImportInternal.h"
 
 #undef LOG
-#define LOG (*LoggingManager::GetLogger(L"DgnDbSync"))
+#define LOG (*LoggingManager::GetLogger(L"DwgImporter"))
 
 #define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {SetLastError(rc); return BSIERROR;}}
 #define MUSTBEOK(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_OK)
@@ -20,7 +20,7 @@
 #define MUSTBEROWRC(stmt) MUSTBEDBRESULTRC(stmt,BE_SQLITE_ROW)
 #define MUSTBEDONERC(stmt) MUSTBEDBRESULTRC(stmt,BE_SQLITE_DONE)
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 /*---------------------------------------------------------------------------------------
 SyncInfo versions:
@@ -2512,4 +2512,4 @@ DwgSyncInfo::~DwgSyncInfo ()
         m_dgndb->DetachDb (SYNCINFO_ATTACH_ALIAS);
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

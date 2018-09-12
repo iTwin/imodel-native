@@ -10,7 +10,7 @@
 
 typedef bvector<DwgDbHandle>    T_EntityHandles;
 
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/18

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 static bset<Utf8String> s_loggedFileNames;
 
@@ -815,4 +815,4 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
     return BSISUCCESS;
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

@@ -9,14 +9,14 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 #define PREFIX_LineCode         "LC-"
 #define PREFIX_LinePoint        "LP-"
 #define PREFIX_PointSymbol      "Symbol"
 
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          08/16
@@ -649,4 +649,4 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
     return  BSISUCCESS;
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

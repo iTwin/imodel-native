@@ -18,9 +18,9 @@
 #endif
 #endif  // DWGTOOLKIT_RealDwg
 
-#include <DgnDbSync/Dwg/DwgImporter.h>
-#include <DgnDbSync/Dwg/DwgHelper.h>
-#include <DgnDbSync/Dwg/DwgBridge.h>
+#include <Dwg/DwgImporter.h>
+#include <Dwg/DwgHelper.h>
+#include <Dwg/DwgBridge.h>
 
 // _ImportGroup will demonstrate how to create a GenericGroup element.
 #include <DgnPlatform/GenericDomain.h>
@@ -28,12 +28,12 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 // Use DwgImporter logging to trace import and to report issues
 #define LOG                     (*NativeLogging::LoggingManager::GetLogger(L"DwgImporter"))
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 //=======================================================================================
 // This is the core class of the sample code: it lets DwgImporter convert DWG data by 
@@ -156,4 +156,4 @@ public:
     DwgImporter*    _CreateDwgImporter () override;
     };  // ImportXDataSample
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/ProtocalExtensions.h $
+|     $Source: PublicAPI/Dwg/ProtocalExtensions.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,17 +8,17 @@
 //__PUBLISH_SECTION_START__
 #pragma once
 
-#include <DgnDbSync/Dwg/DwgDb/DwgRxObjects.h>
+#include <Dwg/DwgDb/DwgRxObjects.h>
 
 USING_NAMESPACE_DWGDB
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 #ifdef DWGTOOLKIT_OpenDwg
 
 #define DWG_PROTOCALEXT_DECLARE_MEMBERS(_className_)                                    \
-    DGNDBSYNC_EXPORT static void            _className_::RxInit ();                     \
-    DGNDBSYNC_EXPORT static OdRxObjectPtr   _className_::CreateObject();
+    DWG_EXPORT static void            _className_::RxInit ();                           \
+    DWG_EXPORT static OdRxObjectPtr   _className_::CreateObject();
 
 #define DWG_PROTOCALEXT_DEFINE_MEMBERS(_className_)                                     \
     void            _className_::RxInit () { _className_::rxInit(); }                   \
@@ -28,8 +28,8 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 #elif DWGTOOLKIT_RealDwg
 
 #define DWG_PROTOCALEXT_DECLARE_MEMBERS(_className_)                                    \
-    DGNDBSYNC_EXPORT static void            _className_::RxInit () {;}                  \
-    DGNDBSYNC_EXPORT static DwgRxObjectP    _className_::CreateObject();
+    DWG_EXPORT static void            _className_::RxInit () {;}                        \
+    DWG_EXPORT static DwgRxObjectP    _className_::CreateObject();
 
 #define DWG_PROTOCALEXT_DEFINE_MEMBERS(_className_)                                     \
     DwgRxObjectP        _className_::CreateObject() { return new _className_(); }       \
@@ -67,20 +67,20 @@ public:
         m_resultantModel = nullptr;
         }
 
-    DGNDBSYNC_EXPORT DgnModelR          GetModel () { return  m_elementInputs.GetTargetModelR(); }
-    DGNDBSYNC_EXPORT DwgDbEntityCR      GetEntity () const { return m_elementInputs.GetEntity(); }
-    DGNDBSYNC_EXPORT DwgDbEntityPtr&    GetEntityPtrR () { return m_elementInputs.GetEntityPtrR(); }
-    DGNDBSYNC_EXPORT TransformCR        GetTransform () const { return m_elementInputs.GetTransform(); }
-    DGNDBSYNC_EXPORT void               SetTransform (TransformCR toDgn) { m_elementInputs.SetTransform(toDgn); }
-    DGNDBSYNC_EXPORT DgnClassId         GetDgnClassId () const { return m_elementInputs.GetClassId(); }
-    DGNDBSYNC_EXPORT void               SetDgnClassId (DgnClassId id) { m_elementInputs.SetClassId(id); }
-    DGNDBSYNC_EXPORT ElementResultsCR   GetElementResults () const { return m_elementResults; }
-    DGNDBSYNC_EXPORT ElementResultsR    GetElementResultsR () { return m_elementResults; }
-    DGNDBSYNC_EXPORT void               SetElementResultsR (ElementResultsR results) { m_elementResults = results; }
-    DGNDBSYNC_EXPORT ElementInputsCR    GetElementInputs () const { return m_elementInputs; }
-    DGNDBSYNC_EXPORT ElementInputsR     GetElementInputsR () { return m_elementInputs; }
-    DGNDBSYNC_EXPORT DgnModelP          GetResultantModel () const { return m_resultantModel; }
-    DGNDBSYNC_EXPORT void               SetResultantModel (DgnModelP outModel) { m_resultantModel = outModel; }
+    DWG_EXPORT DgnModelR          GetModel () { return  m_elementInputs.GetTargetModelR(); }
+    DWG_EXPORT DwgDbEntityCR      GetEntity () const { return m_elementInputs.GetEntity(); }
+    DWG_EXPORT DwgDbEntityPtr&    GetEntityPtrR () { return m_elementInputs.GetEntityPtrR(); }
+    DWG_EXPORT TransformCR        GetTransform () const { return m_elementInputs.GetTransform(); }
+    DWG_EXPORT void               SetTransform (TransformCR toDgn) { m_elementInputs.SetTransform(toDgn); }
+    DWG_EXPORT DgnClassId         GetDgnClassId () const { return m_elementInputs.GetClassId(); }
+    DWG_EXPORT void               SetDgnClassId (DgnClassId id) { m_elementInputs.SetClassId(id); }
+    DWG_EXPORT ElementResultsCR   GetElementResults () const { return m_elementResults; }
+    DWG_EXPORT ElementResultsR    GetElementResultsR () { return m_elementResults; }
+    DWG_EXPORT void               SetElementResultsR (ElementResultsR results) { m_elementResults = results; }
+    DWG_EXPORT ElementInputsCR    GetElementInputs () const { return m_elementInputs; }
+    DWG_EXPORT ElementInputsR     GetElementInputsR () { return m_elementInputs; }
+    DWG_EXPORT DgnModelP          GetResultantModel () const { return m_resultantModel; }
+    DWG_EXPORT void               SetResultantModel (DgnModelP outModel) { m_resultantModel = outModel; }
     };  // ProtocalExtensionContext
 
 
@@ -93,16 +93,16 @@ public:
     DEFINE_T_SUPER (DwgRxObject)
     DWGRX_DECLARE_MEMBERS (DwgProtocalExtension)
 
-    DGNDBSYNC_EXPORT static DWG_TypeP(RxClass)      Desc ();
-    DGNDBSYNC_EXPORT static DwgProtocalExtension*   Cast (DWG_TypeCP(RxObject) obj);
-    DGNDBSYNC_EXPORT static void                    RxInit ();
+    DWG_EXPORT static DWG_TypeP(RxClass)      Desc ();
+    DWG_EXPORT static DwgProtocalExtension*   Cast (DWG_TypeCP(RxObject) obj);
+    DWG_EXPORT static void                    RxInit ();
 
     //! Must implement this method to either create a new or update an existing element from the input entity.
     //! This method is called only when an entity is in the modelspace or a paperspace.
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) = 0;
+    DWG_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) = 0;
     //! Optional method to create a geometry from an entity in a block.
     //! This method is called only when an entity is in a block definition.
-    DGNDBSYNC_EXPORT virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) { return nullptr; }
+    DWG_EXPORT virtual GeometricPrimitivePtr _ConvertToGeometry (DwgDbEntityCP entity, DwgImporter& importer) { return nullptr; }
     };  // DwgProtocalExtension
 
 /*=================================================================================**//**
@@ -226,5 +226,5 @@ private:
     };  // DwgBrep
 
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE
 //__PUBLISH_SECTION_END__

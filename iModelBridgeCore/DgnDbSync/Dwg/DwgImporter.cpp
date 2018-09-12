@@ -8,8 +8,9 @@
 #include    "DwgImportInternal.h"
 
 USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 static const Utf8CP                 s_codeSpecName = "DWG";    // TBD: One authority per DWG file?
 

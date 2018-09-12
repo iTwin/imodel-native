@@ -10,9 +10,8 @@
 appName             = ImportXData
 baseDir             = $(_MakeFilePath)
 DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
-DgnDbSyncPubAPI     = $(DgnDbSyncRootDir)PublicAPI/DgnDbSync/
 DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
-DwgPublicAPI        = $(DgnDbSyncPubAPI)Dwg/
+DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
 DwgVendorAPI        = $(BuildContext)VendorAPI/$(DWGTOOLKIT)$(VendorVersion)/
 DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/
 
@@ -23,7 +22,7 @@ always:
 ImportXDataDepends  = $(baseDir)ImportXData.h                   \
                       $(DwgPublicAPI)DwgBridge.h                \
                       $(DwgPublicAPI)DwgImporter.h              \
-                      $(DgnDbSyncPubAPI)DgnDbSync.h
+                      $(DwgPublicAPI)DwgHelper.h
 
 ### Pass $(DWGTOOLKIT) to compiler
 CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -I$(DwgVendorAPI)

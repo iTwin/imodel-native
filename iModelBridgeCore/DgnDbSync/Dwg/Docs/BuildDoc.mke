@@ -8,7 +8,7 @@
 %include mdl.mki
 
 baseDir         = $(_MakeFilePath)
-publicDwgApi    = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/Dwg/
+publicDwgApi    = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/
 
 # Config with RealDWG (i.e. AcDb prefix will appear in the API references)
 BENTLEY_DOXYGEN_CONFIG  = $(baseDir)realdwgimporter-doxygen.cfg

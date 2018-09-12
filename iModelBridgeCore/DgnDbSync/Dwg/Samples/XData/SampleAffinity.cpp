@@ -7,14 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatform.h>
 #include <iModelBridge/iModelBridge.h>
-#include <DgnDbSync/Dwg/DwgHelper.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgDbHost.h>
+#include <Dwg/DwgImporter.h>
+#include <Dwg/DwgHelper.h>
+#include <Dwg/DwgDb/DwgDbHost.h>
 
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
-
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 /*=================================================================================**//**
 * A simple & separate DwgDbHost enough for the affinity calculation in this sample code.
@@ -53,7 +53,7 @@ AffinityHost&  AffinityHost::GetHost ()
     return  *s_affinityHostInstance;
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE
 
 
 

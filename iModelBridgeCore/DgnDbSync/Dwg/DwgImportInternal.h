@@ -36,19 +36,20 @@
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
-#include <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
-#include <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgResBuf.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgDbDatabase.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgDbObjects.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgDbEntities.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgDbSymbolTables.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgDrawables.h>
-#include <DgnDbSync/Dwg/DwgDb/DwgDbHost.h>
-#include <DgnDbSync/Dwg/DwgImporter.h>
-#include <DgnDbSync/Dwg/DwgSyncInfo.h>
-#include <DgnDbSync/Dwg/DwgHelper.h>
-#include <DgnDbSync/Dwg/ProtocalExtensions.h>
+#include <Dwg/DwgDb/DwgDbCommon.h>
+#include <Dwg/DwgDb/BasicTypes.h>
+#include <Dwg/DwgDb/DwgResBuf.h>
+#include <Dwg/DwgDb/DwgDbDatabase.h>
+#include <Dwg/DwgDb/DwgDbObjects.h>
+#include <Dwg/DwgDb/DwgDbEntities.h>
+#include <Dwg/DwgDb/DwgDbSymbolTables.h>
+#include <Dwg/DwgDb/DwgDrawables.h>
+#include <Dwg/DwgDb/DwgDbHost.h>
+#include <Dwg/DwgImporter.h>
+#include <Dwg/DwgSyncInfo.h>
+#include <Dwg/DwgHelper.h>
+#include <Dwg/ProtocalExtensions.h>
+#include <Dwg/DwgL10N.h>
 
 #include <Logging/BentleyLogging.h>
 
@@ -79,10 +80,9 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_BENTLEY_LOGGING
-USING_NAMESPACE_DGNDBSYNC
 USING_NAMESPACE_DWGDB
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          02/16
@@ -155,7 +155,7 @@ public:
     void                    Initialize (DwgImporter& importer);
     void                    NewProgressMeter ();
 
-    DGNDBSYNC_EXPORT static DwgImportHost& GetHost ();
+    DWG_EXPORT static DwgImportHost& GetHost ();
 };  // DwgImportHost
 
 /*=================================================================================**//**
@@ -451,4 +451,4 @@ public:
     BentleyStatus   CreateElements (DwgImporter::T_BlockGeometryMap const* geometryMap);
     };  // ElementFactory
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

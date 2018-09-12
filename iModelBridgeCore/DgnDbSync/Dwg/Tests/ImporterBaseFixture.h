@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ImporterTests.h"
-#include <DgnDbSync/Dwg/DwgImporter.h>
+#include <Dwg/DwgImporter.h>
 
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                    Sam.Wilson                      04/15

@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/Apps/DwgImportExe.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -16,17 +16,15 @@
 appName             = DwgImporter
 baseDir             = $(_MakeFilePath)
 DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
-DgnDbSyncPubAPI     = $(DgnDbSyncRootDir)PublicAPI/DgnDbSync/
 DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
-DwgPublicAPI        = $(DgnDbSyncPubAPI)Dwg/
+DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
 
 o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/Apps/
 always:
     ~mkdir $(o)
 
 DwgImportAppDepends = $(DwgPublicAPI)DwgBridge.h                \
-                      $(DwgPublicAPI)DwgImporter.h              \
-                      $(DgnDbSyncPubAPI)DgnDbSync.h
+                      $(DwgPublicAPI)DwgImporter.h
 
 CompileOptionsMki   = $(DwgRootDir)DwgCompileOptions.mki
 %include $(CompileOptionsMki)

@@ -26,9 +26,9 @@
     </Product>
 
     <!-- Bind PublicAPI for DwgConverter into BuildContext/PublicAPI. -->
-    <Part Name="PublicAPI" BentleyBuildMakeFile="DgnDbSync.prewire.mke" BMakeOptions="+dPUBLICAPI_Dwg">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="Dwg/prewire.mke">
         <Bindings>
-            <PublicAPI Domain="DgnDbSync" />
+            <PublicAPI Domain="Dwg" />
         </Bindings>
     </Part>
 
@@ -375,7 +375,7 @@
             <Files ProductDirectoryName="Assets" Required="false">Delivery/DwgImporterTests.logging.config.xml</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="false">Delivery/DwgImporterTests_en-US.sqlang.db3</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore" Required="false">Delivery/ignore_list.txt</Files>
-            <Directory SourceName="Delivery/DgnDbSyncTestData"  SubPartDirectory="TestData"  ProductDirectoryName="DgnDbSync_TestData" Required="false"/>
+            <Directory SourceName="Delivery/ImportTestData"  SubPartDirectory="TestData"  ProductDirectoryName="ImportTestData" Required="false"/>
         </Bindings>
     </Part>
     
@@ -383,7 +383,7 @@
         <ProductDirectory Name="DwgImporterTestsExe"            Path=""/>
         <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
         <ProductDirectory Name="DgnV8ConverterSeedData"         Path="SeedData"/>
-        <ProductDirectory Name="DgnDbSync_TestData"             Path="TestData"/>
+        <ProductDirectory Name="ImportTestData"                 Path="TestData"/>
         <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
     </ProductDirectoryList>
 

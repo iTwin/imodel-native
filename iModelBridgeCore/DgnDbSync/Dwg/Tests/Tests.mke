@@ -39,7 +39,7 @@ BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 TestsHeaders = $(baseDir)Tests.h $(baseDir)ImporterBaseFixture.h $(baseDir)ImporterTests.h $(baseDir)ImportConfigeditor.h $(baseDir)ImporterCommandBuilder.h
 
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
-o = $(OutputRootDir)build/DgnDbSync/$(programName)/
+o = $(OutputRootDir)build/Dwg/$(programName)/
 
 always:
     !~@mkdir $(o)
@@ -106,7 +106,7 @@ $(BuildContext)Delivery/ImporterTestsConfig.xml : $(baseDir)../Config/ConvertCon
 $(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/DgnDbSyncTestData/ : $(baseDir)data/
+$(BuildContext)Delivery/ImportTestData/ : $(baseDir)data/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 # Create the sqlang database

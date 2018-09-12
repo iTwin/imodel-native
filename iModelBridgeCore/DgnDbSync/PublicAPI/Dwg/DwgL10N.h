@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgL10N.h $
+|     $Source: PublicAPI/Dwg/DwgL10N.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,9 +8,9 @@
 #pragma once
 
 #include <iModelBridge/iModelBridge.h>
-#include <DgnDbSync/DgnDbSync.h>
+#include <Dwg/DwgImporter.h>
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 //! Categories for issues
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (IssueCategory, dwg_issueCategory)
@@ -138,4 +138,4 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (DataStrings, dwg_dataStrings)
     L10N_STRING(Subject)                    // =="Subject"==
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

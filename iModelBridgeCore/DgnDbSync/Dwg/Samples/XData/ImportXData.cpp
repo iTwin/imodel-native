@@ -23,7 +23,7 @@
     m_element.SetUserProperties (uniqueName.c_str(), adhocProp);
 
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 //=======================================================================================
 // A helper class that adds an Adhoc property at a time to an input DgnElement. It tracks
@@ -536,7 +536,7 @@ L"\
 ");
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE
 
 
 /*---------------------------------------------------------------------------------**//**

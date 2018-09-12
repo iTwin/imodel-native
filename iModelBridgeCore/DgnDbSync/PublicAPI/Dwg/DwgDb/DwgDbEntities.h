@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbEntities.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgDbEntities.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbObjects.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDrawables.h>
+#include    <Dwg/DwgDb/DwgDbObjects.h>
+#include    <Dwg/DwgDb/DwgDrawables.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
 #include    <Teigha/Drawing/Include/Entities.h>

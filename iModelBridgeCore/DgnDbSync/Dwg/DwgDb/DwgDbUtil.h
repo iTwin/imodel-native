@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
+#include <Dwg/DwgDb/DwgDbCommon.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB

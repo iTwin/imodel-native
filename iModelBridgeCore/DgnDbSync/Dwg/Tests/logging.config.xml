@@ -79,10 +79,6 @@
     </category>
 
     <!-- 
-    <category name="DgnDbSync">
-        <priority value="all"/>
-    </category>
-    
     <category name="ECDb">
         <priority value="all"/>
     </category>

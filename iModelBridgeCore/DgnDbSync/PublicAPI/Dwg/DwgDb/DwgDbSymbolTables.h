@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbSymbolTables.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgDbSymbolTables.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
-#include    <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
+#include    <Dwg/DwgDb/DwgDbCommon.h>
+#include    <Dwg/DwgDb/BasicTypes.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
 #include    <Teigha/Drawing/Include/Tables.h>

@@ -8,7 +8,7 @@
 %include mdl.mki
 
 baseDir             = $(_MakeFilePath)
-DwgPubApi           = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/Dwg/
+DwgPubApi           = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/
 DwgDbPubApi         = $(DwgPubApi)PublicAPI/
 ContextDeliveryDir  = $(BuildContext)Delivery/
 
