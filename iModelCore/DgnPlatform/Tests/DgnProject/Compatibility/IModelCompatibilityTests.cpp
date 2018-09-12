@@ -1716,15 +1716,14 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 continue;
                 }
 
-            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
-            testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
-
-            EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
-
             if (params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
                 {
                 //opens but schema is not upgraded
+                ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+                testDb.AssertProfileVersion();
+                testDb.AssertLoadSchemas();
+
+                EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 ECSqlStatement stmt;
                 EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
@@ -1733,6 +1732,13 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 {{"Material0", ECValue(0), "Wood"},
                 {"Material1", ECValue(1), "Plastic"},
                 {"Material2", ECValue(2), "Metal"}});
+                continue;
+                }
+
+            if (testFile.GetAge() != ProfileState::Age::UpToDate && params.GetProfileUpgradeOptions() != Db::ProfileUpgradeOptions::Upgrade)
+                {
+                //schema import not possible in newer or older files
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
                 continue;
                 }
 
@@ -1773,13 +1779,6 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
             const DbResult openStat = testDb.Open();
             DgnDb::OpenParams const& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
 
-            if (testFile.GetAge() == ProfileState::Age::Newer)
-                {
-                //schema import not possible in newer files
-                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
-                continue;
-                }
-
             if (params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
                 {
                 //opens but schema is not upgraded
@@ -1795,6 +1794,13 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
                 {{"Material0", ECValue(0), "Wood"},
                 {"Material1", ECValue(1), "Plastic"},
                 {"Material2", ECValue(2), "Metal"}});
+                continue;
+                }
+
+            if (testFile.GetAge() != ProfileState::Age::UpToDate && params.GetProfileUpgradeOptions() != Db::ProfileUpgradeOptions::Upgrade)
+                {
+                //schema import not possible in newer or older files
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
                 continue;
                 }
 
