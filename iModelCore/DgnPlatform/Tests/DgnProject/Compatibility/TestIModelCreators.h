@@ -28,6 +28,7 @@
 #define TESTIMODEL_EC31KOQS_SCHEMAUPGRADE "ec31koqs_schemaupgrade.bim"
 #define TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE "ec32enums_schemaupgrade.bim"
 #define TESTIMODEL_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.bim"
+#define TESTIMODEL_TESTDOMAIN "testdomain.bim"
 
 #define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>(), \
                               std::make_shared<EC32EnumsTestIModelCreator>(), \
@@ -36,7 +37,8 @@
                               std::make_shared<EC31KoqsTestIModelCreator>(), \
                               std::make_shared<EC31EnumsSchemaUpgradeTestIModelCreator>(), \
                               std::make_shared<EC31KoqsSchemaUpgradeTestIModelCreator>(), \
-                              std::make_shared<EC32EnumsSchemaUpgradeTestIModelCreator>()}
+                              std::make_shared<EC32EnumsSchemaUpgradeTestIModelCreator>(),\
+                              std::make_shared<TestDomainTestIModelCreator>()}
 
 
 //======================================================================================
@@ -347,4 +349,16 @@ struct EC32EnumsSchemaUpgradeTestIModelCreator final : TestIModelCreator
     public:
         EC32EnumsSchemaUpgradeTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC32ENUMS_SCHEMAUPGRADE) {}
         ~EC32EnumsSchemaUpgradeTestIModelCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct TestDomainTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override;
+    public:
+        TestDomainTestIModelCreator() : TestIModelCreator(TESTIMODEL_TESTDOMAIN) {}
+        ~TestDomainTestIModelCreator() {}
     };

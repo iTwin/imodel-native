@@ -12,6 +12,7 @@
 #include "Profiles.h"
 #include "TestIModelCreators.h"
 #include "TestDb.h"
+#include "TestDomain.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -1363,11 +1364,9 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaUpgrade_Koqs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      09/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IModelCompatibilityTestFixture, DomainSchemaImport)
+TEST_F(IModelCompatibilityTestFixture, AddDomain)
     {
-    // Required::Yes forces schema import/upgrade
     ASSERT_EQ(SUCCESS, DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
-
     for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
         for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
@@ -1391,6 +1390,160 @@ TEST_F(IModelCompatibilityTestFixture, DomainSchemaImport)
 
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+            EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema("Functional")) << testDb.GetDescription();
+            EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("Functional")) << testDb.GetDescription();
             }
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, OpenDomainIModel)
+    {
+    ASSERT_EQ(SUCCESS, IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 0), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_TESTDOMAIN))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
+            EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
+            stmt.Finalize();
+            testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true, 
+                {{ECValue(0), "Wood"},
+                 {ECValue(1), "Plastic"},
+                 {ECValue(2), "Metal"}});
+            }
+        }
+    IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
+    {
+    // bump up domain schema version to trigger upgrade
+    ASSERT_EQ(SUCCESS, IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 1), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_TESTDOMAIN))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const DbResult openStat = testDb.Open();
+            DgnDb::OpenParams const& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (testFile.GetAge() == ProfileState::Age::Newer)
+                {
+                //schema import not possible in newer files
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
+                continue;
+                }
+
+            if (params.IsReadonly() || params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
+                {
+                //opens but schema is not upgraded
+                ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+                testDb.AssertProfileVersion();
+                testDb.AssertLoadSchemas();
+
+                EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
+                EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
+                ECSqlStatement stmt;
+                EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
+                stmt.Finalize();
+                testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+                {{ECValue(0), "Wood"},
+                {ECValue(1), "Plastic"},
+                {ECValue(2), "Metal"}});
+                continue;
+                }
+
+            // opens and upgrades the schema
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+            EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
+            EXPECT_EQ(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,NickName,Material FROM me.Toy")) << testDb.GetDescription();
+            stmt.Finalize();
+            testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+            {{ECValue(0), "Wood"},
+            {ECValue(1), "Plastic"},
+            {ECValue(2), "Metal"},
+            {ECValue(3), "Mix"}});
+            }
+        }
+
+    IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
+    {
+    // bump up domain schema version to trigger upgrade
+    ASSERT_EQ(SUCCESS, IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 2), DgnDomain::Required::Yes, DgnDomain::Readonly::No));
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_TESTDOMAIN))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const DbResult openStat = testDb.Open();
+            DgnDb::OpenParams const& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (testFile.GetAge() == ProfileState::Age::Newer)
+                {
+                //schema import not possible in newer files
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
+                continue;
+                }
+
+            if (params.IsReadonly() || params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
+                {
+                //opens but schema is not upgraded
+                ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+                testDb.AssertProfileVersion();
+                testDb.AssertLoadSchemas();
+
+                EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
+                EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
+                ECSqlStatement stmt;
+                EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
+                stmt.Finalize();
+                testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+                {{ECValue(0), "Wood"},
+                {ECValue(1), "Plastic"},
+                {ECValue(2), "Metal"}});
+                continue;
+                }
+
+            //opens and upgrades the schema
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+            EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
+            EXPECT_EQ(SchemaVersion(1, 0, 2), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
+            ECSqlStatement stmt;
+            EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,NickName,Material FROM me.Toy")) << testDb.GetDescription();
+            stmt.Finalize();
+            testDb.AssertEnum(TESTDOMAIN_NAME, "Material", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+            {{ECValue(0), "Wood"},
+            {ECValue(1), "Plastic"},
+            {ECValue(2), "Metal"},
+            {ECValue(3), "Mix"}});
+            }
+        }
+
+    IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
     }

@@ -71,7 +71,6 @@ struct TestECDbCreator : TestFileCreator
 
     public:
         virtual ~TestECDbCreator() {}
-
     };
 
 //======================================================================================
@@ -87,7 +86,7 @@ struct EmptyTestECDbCreator final : TestECDbCreator
             }
 
     public:
-        explicit EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
+        EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
         ~EmptyTestECDbCreator() {}
     };
 

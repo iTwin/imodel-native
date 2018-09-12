@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "TestIModelCreators.h"
 #include "Profiles.h"
+#include "TestDomain.h"
 
 USING_NAMESPACE_BENTLEY_EC
 //---------------------------------------------------------------------------------------
@@ -121,5 +122,26 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
         LOG.infov("Created new upgraded test file '%s'.", targetPath.GetNameUtf8().c_str());
         }
 
+    return SUCCESS;
+    }
+
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus TestDomainTestIModelCreator::_Create()
+    {
+    if (SUCCESS != IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 0), DgnDomain::Required::No, DgnDomain::Readonly::No))
+        return ERROR;
+
+    DgnDbPtr bim = CreateNewTestFile(m_fileName);
+    if (bim == nullptr)
+        return ERROR;
+
+    if (SchemaStatus::Success != IModelEvolutionTestsDomain::GetDomain().ImportSchema(*bim))
+        return ERROR;
+
+    bim->SaveChanges();
     return SUCCESS;
     }
