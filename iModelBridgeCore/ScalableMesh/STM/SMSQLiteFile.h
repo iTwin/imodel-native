@@ -261,6 +261,6 @@ private:
     const std::string m_sSourceTable = "SMSources";
 
 
-    bool UpdateDatabase();
+    DbResult UpdateDatabase();
 
 };
