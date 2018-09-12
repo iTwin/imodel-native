@@ -1733,9 +1733,14 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     m_basePath = clipFileBase;
     m_smPtr = IScalableMesh::GetFor(smFilename, Utf8String(clipFileBase.c_str()), false, true);
-
+    
     if (!m_smPtr.IsValid())
-        return;    
+        {        
+        if (Utf8String::IsNullOrEmpty(m_properties.m_fileId.c_str()))
+            m_properties.m_fileId = Utf8String(smFilename);
+
+        return;
+        }
 
     //if (m_smPtr->IsTerrain())
         {
