@@ -42,16 +42,10 @@
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_0_226"/>
     </Part>
 
-    <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <!-- Note: On imodel02 branch, DgnPlatform uses only a single header-only API from folly (ProducerConsumerQueue.h) -->
-    <Part Name="FollyShim" ExcludePlatforms="Linux*">
-        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
-    </Part>
-
     <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="FollyShim" />
+        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="ECDbLibrary"         PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
