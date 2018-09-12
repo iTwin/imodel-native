@@ -1680,10 +1680,6 @@ TEST_F(IModelCompatibilityTestFixture, OpenDomainIModel)
             ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            // Original ECXML version is only persisted for 4.0.0.2 files
-            if (testDb.GetAge() == BeSQLite::ProfileState::Age::UpToDate && testDb.GetOpenParams().GetProfileUpgradeOptions() != Db::ProfileUpgradeOptions::Upgrade)
-                EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
-
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
             ECSqlStatement stmt;
@@ -1720,14 +1716,15 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 continue;
                 }
 
-            if (params.IsReadonly() || params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
+
+            if (params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
                 {
                 //opens but schema is not upgraded
-                ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
-                testDb.AssertProfileVersion();
-                testDb.AssertLoadSchemas();
-
-                EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 ECSqlStatement stmt;
                 EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
@@ -1740,15 +1737,11 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModel)
                 }
 
             // opens and upgrades the schema
-            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
-            testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
             // As the schema was upgraded, it should have set the original ECXML version, even if it originally
             // was a 4.0.0.1 file.
             if (testDb.GetAge() == BeSQLite::ProfileState::Age::UpToDate)
                 EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
 
-            EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,NickName,Material FROM me.Toy")) << testDb.GetDescription();
@@ -1787,14 +1780,13 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
                 continue;
                 }
 
-            if (params.IsReadonly() || params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
+            if (params.GetSchemaUpgradeOptions().GetDomainUpgradeOptions() != SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade)
                 {
                 //opens but schema is not upgraded
                 ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
                 testDb.AssertProfileVersion();
                 testDb.AssertLoadSchemas();
 
-                EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 EXPECT_EQ(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
                 ECSqlStatement stmt;
                 EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,Material FROM me.Toy")) << testDb.GetDescription();
@@ -1806,14 +1798,22 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
                 continue;
                 }
 
+            // cannot use testDb.GetAge as this only works if the file was successfully opened - which it didn't here
+            if (testFile.GetAge() == ProfileState::Age::Older && params.GetProfileUpgradeOptions() != Db::ProfileUpgradeOptions::Upgrade)
+                {
+                // open params indicates to do schema upgrade. But EC32 schemas cannot be imported into older files.
+                ASSERT_EQ(BE_SQLITE_ERROR_SchemaUpgradeFailed, openStat) << testDb.GetDescription();
+                continue;
+                }
+
             //opens and upgrades the schema
+            EXPECT_TRUE(testDb.GetAge() == ProfileState::Age::UpToDate) << testDb.GetDescription();
             ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
             testDb.AssertProfileVersion();
             testDb.AssertLoadSchemas();
-            if (testDb.GetAge() == BeSQLite::ProfileState::Age::UpToDate)
-                EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
 
             EXPECT_TRUE(testDb.GetDb().Schemas().ContainsSchema(TESTDOMAIN_NAME)) << testDb.GetDescription();
+            EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
             EXPECT_EQ(SchemaVersion(1, 0, 2), testDb.GetSchemaVersion(TESTDOMAIN_NAME)) << testDb.GetDescription();
             ECSqlStatement stmt;
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Name,NickName,Material FROM me.Toy")) << testDb.GetDescription();
