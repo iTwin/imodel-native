@@ -26,7 +26,7 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     ALERT_CCNotAcceptedEulaError,            // =="EULA not accepted. Please try signing in again."==
     ALERT_CCUnableToStartAppError,           // =="Unable to start CONNECTION Client. Please contact your administrator."==
     ALERT_CCApiObsoleteError,                // =="Incompatible CONNECTION Client version. Install compatible CONNECTION Client version or contact your administrator."==
-    ALERT_CCServiceUnavailableError,         // =="Service unavailable. Please check you internet connection."==
+    ALERT_CCServiceUnavailableError,         // =="Service unavailable. Please check your internet connection."==
     ALERT_CCUserNotAffiliatedError,          // =="The account you use in the CONNECTION Client must be affiliated with your CONNECT organization. Please contact your administrator."==
     ALERT_CCUnknownError,                    // =="Unknown error communicating with CONNECTION Client. Please contact your administrator."==
     };
