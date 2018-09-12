@@ -238,6 +238,10 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
         }
 
     // RULE: Entity classes within the same schema should not have the same display label
+
+    // skip this rule for dynamic schemas; show it only as a warning
+    bool isDynamicSchema = schema.IsDynamicSchema();
+
     bvector<ECClassCP> entityClasses;
     for (ECClassCP ecClass : schema.GetClasses())
         {
@@ -247,8 +251,18 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
                 {
                 if (ecClass->GetDisplayLabel().EqualsIAscii(prevClass->GetDisplayLabel()))
                     {
-                    LOG.errorv("Failed to validate '%s'. Entity classes '%s' and '%s' have the same display label '%s'",
-                               schema.GetFullSchemaName().c_str(), prevClass->GetFullName(), ecClass->GetFullName(), ecClass->GetDisplayLabel().c_str());
+                    Utf8String errMsg;
+                    errMsg.Sprintf("Failed to validate '%s'. Entity classes '%s' and '%s' have the same display label '%s'",
+                        schema.GetFullSchemaName().c_str(), prevClass->GetFullName(), ecClass->GetFullName(), ecClass->GetDisplayLabel().c_str());
+
+                    // make this a warning for dynamic schemas
+                    if (isDynamicSchema)
+                        {
+                        LOG.warning(errMsg.c_str());
+                        continue;
+                        }
+
+                    LOG.error(errMsg.c_str());
                     status = ECObjectsStatus::Error;
                     }
                 }
@@ -279,6 +293,10 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
         }
 
     // RULE: No properties can have the same display label and category
+
+    // skip this rule for dynamic schemas; only show as a warning
+    bool isDynamicSchema = ecClass.GetSchema().IsDynamicSchema();
+
     bvector<ECPropertyP> propertiesList;
     for (ECPropertyP prop : ecClass.GetProperties(true))
         {
@@ -292,18 +310,34 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                 PropertyCategoryCP prevCategory = prevProp->GetCategory();
                 if (prevCategory == nullptr && category == nullptr) // neither have defined category
                     {
-                    LOG.errorv("Class '%s' has properties '%s' and '%s' with the same display label '%s'",
-                               ecClass.GetFullName(), prevProp->GetName().c_str(), prop->GetName().c_str(), displayLabel.c_str());
-                    status = ECObjectsStatus::Error;
+                    Utf8String errMsg;
+                    errMsg.Sprintf("Class '%s' has properties '%s' and '%s' with the same display label '%s'",
+                        ecClass.GetFullName(), prevProp->GetName().c_str(), prop->GetName().c_str(), displayLabel.c_str());
+
+                    if (!isDynamicSchema)
+                        {
+                        LOG.error(errMsg.c_str());
+                        status = ECObjectsStatus::Error;
+                        }
+                    else
+                        LOG.warning(errMsg.c_str());
                     }
 
                 if (prevCategory == nullptr || category == nullptr)
                     continue;
                 if (prevCategory->GetFullName().EqualsIAscii(category->GetFullName()))
                     {
-                    LOG.errorv("Class '%s' has properties '%s' and '%s' with the same display label '%s' and category '%s'",
+                    Utf8String errMsg;
+                    errMsg.Sprintf("Class '%s' has properties '%s' and '%s' with the same display label '%s' and category '%s'",
                                ecClass.GetFullName(), prop->GetName().c_str(), prevProp->GetName().c_str(), displayLabel.c_str(), category->GetFullName().c_str());
-                    status = ECObjectsStatus::Error;
+
+                    if (!isDynamicSchema)
+                        {
+                        LOG.error(errMsg.c_str());
+                        status = ECObjectsStatus::Error;
+                        }
+                    else
+                        LOG.warning(errMsg.c_str());
                     }
                 }
             }

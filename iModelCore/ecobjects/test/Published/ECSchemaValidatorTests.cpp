@@ -1792,21 +1792,22 @@ TEST_F(SchemaValidatorTests, DiamondPatternInheritedProperty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, EntityClassesMayNotHaveTheSameDisplayLabel)
     {
+    {
     ECSchemaPtr bisSchema;
     ECEntityClassP bisEntity;
     ECSchemaPtr schema;
     ECEntityClassP entity0;
     ECEntityClassP entity1;
 
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "E0"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "E1"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisEntity));
-
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    EC_ASSERT_SUCCESS(bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*bisSchema));
+    EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity0, "E0"));
+    EC_ASSERT_SUCCESS(entity0->AddBaseClass(*bisEntity));
+    EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity1, "E1"));
+    EC_ASSERT_SUCCESS(entity1->AddBaseClass(*bisEntity));
+    
     ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as no display labels are defined";
 
     ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("E0"));
@@ -1819,6 +1820,44 @@ TEST_F(SchemaValidatorTests, EntityClassesMayNotHaveTheSameDisplayLabel)
     ASSERT_EQ(ECObjectsStatus::Success, entity0->SetDisplayLabel("DuplicateLabel"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("DuplicateLabel"));
     ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as defined display labels are the same";
+    }
+
+    // Dynamic schemas currently have an exception to this rule for the iModelBridge workflow.
+    {
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0;
+    ECEntityClassP entity1;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    EC_ASSERT_SUCCESS(bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*bisSchema));
+    EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity0, "E0"));
+    EC_ASSERT_SUCCESS(entity0->AddBaseClass(*bisEntity));
+    EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity1, "E1"));
+    EC_ASSERT_SUCCESS(entity1->AddBaseClass(*bisEntity));
+
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema()));
+    
+    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass("DynamicSchema");
+    StandaloneECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    schema->SetCustomAttribute(*dynamicSchemaInstance.get());
+    ASSERT_TRUE(schema->IsDynamicSchema());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as no display labels are defined";
+
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("E0"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since this is a dynamic schema";
+
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->SetDisplayLabel("Entity0"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("Entity1"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as defined display labels are different";
+
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->SetDisplayLabel("DuplicateLabel"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("DuplicateLabel"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since this is a dynamic schema";
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1836,38 +1875,82 @@ TEST_F(SchemaValidatorTests, PropertiesMayNotHaveTheSameDisplayLabelAndCategory)
     PropertyCategoryP cat1;
     PropertyCategoryP cat2;
 
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity, "Entity"));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(cat1, "category1"));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(cat2, "category2"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*bisEntity));
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    EC_ASSERT_SUCCESS(bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
 
-    ASSERT_EQ(ECObjectsStatus::Success, entity->CreatePrimitiveProperty(prop1, "P1"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity->CreatePrimitiveProperty(prop2, "P2"));
+    {
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*bisSchema));
+    EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity, "Entity"));
+    EC_ASSERT_SUCCESS(schema->CreatePropertyCategory(cat1, "category1"));
+    EC_ASSERT_SUCCESS(schema->CreatePropertyCategory(cat2, "category2"));
+    EC_ASSERT_SUCCESS(entity->AddBaseClass(*bisEntity));
+
+    EC_ASSERT_SUCCESS(entity->CreatePrimitiveProperty(prop1, "P1"));
+    EC_ASSERT_SUCCESS(entity->CreatePrimitiveProperty(prop2, "P2"));
     ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with different names so validation should succeed";
 
-    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetDisplayLabel("P1"));
+    EC_ASSERT_SUCCESS(prop2->SetDisplayLabel("P1"));
     ASSERT_FALSE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and no defined category so validation should fail";
 
-    ASSERT_EQ(ECObjectsStatus::Success, prop1->SetDisplayLabel("Property1"));
-    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetDisplayLabel("Property2"));
+    EC_ASSERT_SUCCESS(prop1->SetDisplayLabel("Property1"));
+    EC_ASSERT_SUCCESS(prop2->SetDisplayLabel("Property2"));
     ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with different display labels so validation should succeed";
 
-    ASSERT_EQ(ECObjectsStatus::Success, prop1->SetDisplayLabel("DuplicateLabel"));
-    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetDisplayLabel("DuplicateLabel"));
+    EC_ASSERT_SUCCESS(prop1->SetDisplayLabel("DuplicateLabel"));
+    EC_ASSERT_SUCCESS(prop2->SetDisplayLabel("DuplicateLabel"));
     ASSERT_FALSE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and no defined category so validation should fail";
 
-    ASSERT_EQ(ECObjectsStatus::Success, prop1->SetCategory(cat1));
+    EC_ASSERT_SUCCESS(prop1->SetCategory(cat1));
     ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label but different categories so validation should succeed";
 
-    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetCategory(cat1));
+    EC_ASSERT_SUCCESS(prop2->SetCategory(cat1));
     ASSERT_FALSE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and category so validation should fail";
 
-    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetCategory(cat2));
+    EC_ASSERT_SUCCESS(prop2->SetCategory(cat2));
     ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label but different categories so validation should succeed";
+    }
+
+    // Dynamic schemas currently have an exception to this rule for the iModelBridge workflow.
+    {
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*bisSchema));
+    EC_ASSERT_SUCCESS(schema->CreateEntityClass(entity, "Entity"));
+    EC_ASSERT_SUCCESS(schema->CreatePropertyCategory(cat1, "category1"));
+    EC_ASSERT_SUCCESS(schema->CreatePropertyCategory(cat2, "category2"));
+    EC_ASSERT_SUCCESS(entity->AddBaseClass(*bisEntity));
+
+    EC_ASSERT_SUCCESS(schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema()));
+
+    ECClassCP dynamicSchemaClass = CoreCustomAttributeHelper::GetClass("DynamicSchema");
+    StandaloneECInstancePtr dynamicSchemaInstance = dynamicSchemaClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    schema->SetCustomAttribute(*dynamicSchemaInstance.get());
+    ASSERT_TRUE(schema->IsDynamicSchema());
+
+    EC_ASSERT_SUCCESS(entity->CreatePrimitiveProperty(prop1, "P1"));
+    EC_ASSERT_SUCCESS(entity->CreatePrimitiveProperty(prop2, "P2"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with different names so validation should succeed";
+
+    EC_ASSERT_SUCCESS(prop2->SetDisplayLabel("P1"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and no defined category so validation should fail";
+
+    EC_ASSERT_SUCCESS(prop1->SetDisplayLabel("Property1"));
+    EC_ASSERT_SUCCESS(prop2->SetDisplayLabel("Property2"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with different display labels so validation should succeed";
+
+    EC_ASSERT_SUCCESS(prop1->SetDisplayLabel("DuplicateLabel"));
+    EC_ASSERT_SUCCESS(prop2->SetDisplayLabel("DuplicateLabel"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and no defined category so validation should fail";
+
+    EC_ASSERT_SUCCESS(prop1->SetCategory(cat1));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label but different categories so validation should succeed";
+
+    EC_ASSERT_SUCCESS(prop2->SetCategory(cat1));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and category so validation should fail";
+
+    EC_ASSERT_SUCCESS(prop2->SetCategory(cat2));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label but different categories so validation should succeed";
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**
