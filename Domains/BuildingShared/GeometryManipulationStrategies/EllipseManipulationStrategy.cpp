@@ -23,7 +23,7 @@ ICurvePrimitivePtr EllipseManipulationStrategy::_FinishPrimitive() const
     DPoint3d start = GetStart();
     DPoint3d center = GetCenter();
     if (keyPoints.size() == 2)
-        return ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(center, m_normal, center.Distance(start)));
+        return ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(center, m_workingPlane.normal, center.Distance(start)));
 
     DVec3d vec0 = GetVec0();
     DVec3d vec90 = GetVec90();
@@ -150,8 +150,8 @@ double EllipseManipulationStrategy::CalculateSweep
     {
     DVec3d vec0 = DVec3d::FromStartEnd(center, start);
     DVec3d endVec = DVec3d::FromStartEnd(center, end);
-    BeAssert(!DoubleOps::AlmostEqual(m_normal.Magnitude(), 0));
-    return vec0.SignedAngleTo(endVec, m_normal);
+    BeAssert(!DoubleOps::AlmostEqual(m_workingPlane.normal.Magnitude(), 0));
+    return vec0.SignedAngleTo(endVec, m_workingPlane.normal);
     }
 
 //--------------------------------------------------------------------------------------
@@ -164,12 +164,12 @@ void EllipseManipulationStrategy::UpdateSweep
     DPoint3dCR end
 )
     {
-    if (m_normal.IsZero())
+    if (m_workingPlane.normal.IsZero())
         {
         _SetProperty(prop_Normal(), DVec3d::FromCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, end)));
         }
 
-    if (m_normal.IsZero())
+    if (m_workingPlane.normal.IsZero())
         return;
 
     double sweep = CalculateSweep(start, center, end);
@@ -317,9 +317,26 @@ void EllipseManipulationStrategy::_SetProperty
         {
         DVec3d tmpVec = value;
         if (!DoubleOps::AlmostEqual(tmpVec.Normalize(), 0))
-            m_normal = tmpVec;
+            m_workingPlane.normal = tmpVec;
         else
-            m_normal.Zero();
+            m_workingPlane.normal.Zero();
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                09/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void EllipseManipulationStrategy::_SetProperty
+(
+    Utf8CP key,
+    DPlane3d const& value
+)
+    {
+    T_Super::_SetProperty(key, value);
+
+    if (0 == strcmp(prop_WorkingPlane(), key))
+        {
+        m_workingPlane = value;
         }
     }
 
@@ -334,11 +351,29 @@ BentleyStatus EllipseManipulationStrategy::_TryGetProperty
     {
     if (0 == strcmp(prop_Normal(), key))
         {
-        if (!DoubleOps::AlmostEqual(m_normal.Magnitude(), 0))
+        if (!DoubleOps::AlmostEqual(m_workingPlane.normal.Magnitude(), 0))
             {
-            value = m_normal;
+            value = m_workingPlane.normal;
             return BentleyStatus::SUCCESS;
             }
+        }
+
+    return T_Super::_TryGetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                09/2018
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus EllipseManipulationStrategy::_TryGetProperty
+(
+    Utf8CP key,
+    DPlane3d& value
+) const
+    {
+    if (0 == strcmp(prop_WorkingPlane(), key))
+        {
+        value = m_workingPlane;
+        return BentleyStatus::SUCCESS;
         }
 
     return T_Super::_TryGetProperty(key, value);

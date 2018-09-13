@@ -398,7 +398,8 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishConstructionGeometry)
 
     DVec3d normal;
     DVec3d expectedNormal = DVec3d::From(0, 0, 1);
-    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    DPlane3d plane = DPlane3d::FromOriginAndNormal(DPoint3d::From(0, 0, 0), expectedNormal);
+    sut->SetProperty(ArcPlacementStrategy::prop_WorkingPlane(), plane);
     ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
 
     ASSERT_TRUE(sut->FinishConstructionGeometry().empty());

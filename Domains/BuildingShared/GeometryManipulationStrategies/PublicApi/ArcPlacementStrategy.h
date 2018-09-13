@@ -109,6 +109,7 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
 
     public:
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }
+        static constexpr Utf8CP prop_WorkingPlane() { return EllipseManipulationStrategy::prop_WorkingPlane(); }
 
         static constexpr Utf8CP prop_UseSweep() { return ArcManipulationStrategy::prop_UseSweep(); }
         static constexpr Utf8CP prop_Sweep() { return ArcManipulationStrategy::prop_Sweep(); }
