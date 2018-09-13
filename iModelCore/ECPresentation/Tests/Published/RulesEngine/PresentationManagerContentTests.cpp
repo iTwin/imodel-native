@@ -11785,7 +11785,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     {
     // set up data set
     ECClassCP elementClass = GetClass("Element");
-    ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
+    // unused - ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
     ECClassCP aspectAClass = GetClass("MyAspectA");
     ECClassCP aspectBClass = GetClass("MyAspectB");
     ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
