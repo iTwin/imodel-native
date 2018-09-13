@@ -26,17 +26,54 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    NSString* html = @"<!DOCTYPE html>"
+    "<html lang='en' xmlns='http://www.w3.org/1999/xhtml'>"
+    "<head>"
+    "    <meta charset='utf-8' />"
+    "    <title></title>"
+    "    <style>"
+    "        .wrapper {"
+    "            text-align: center;"
+    "        }"
+    "        .button {"
+    "            position: absolute;"
+    "            top: 40%;"
+    "            background-color: green;"
+    "            padding: 15px 24px;"
+    "            text-decoration: none;"
+    "            border: none;"
+    "            color: ghostwhite;"
+    "        }"
+    "    </style>"
+    "</head>"
+    "<body>"
+    "    <div class='wrapper'>"
+    "        <button id='launchApp' class='button'>Launch Application</button>"
+    "    </div>"
+    "    <script type='text/javascript'>"
+    "        document.getElementById('launchApp').onclick = function () {"
+    "            location.href = '$URL';"
+    "        };"
+    "    </script>"
+    "</body>"
+    "</html>";
+    
+    
     auto& gateway = BentleyApi::iModelJs::ServicesTier::MobileGateway::GetInstance();
     
     NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
     NSString *frontEndIndexPath = [appFolderPath stringByAppendingPathComponent:@"Assets/public/index.html"];
     
     NSURL* url = [NSURL fileURLWithPath:frontEndIndexPath];
+    NSURL* url2 = [NSURL fileURLWithPath:appFolderPath];
     NSString* fragment = [NSString stringWithFormat:@"#%u", gateway.GetPort()];
     url = [NSURL URLWithString:fragment relativeToURL:url];
     
     NSURLRequest* request = [NSURLRequest requestWithURL:url];
-    [self.webView loadRequest:request];
+
+    NSString *bootstrapHtml = [html stringByReplacingOccurrencesOfString: @"$URL" withString:[[request URL] absoluteString]];
+    
+    [self.webView loadHTMLString:bootstrapHtml baseURL:url2];
 }
 
 

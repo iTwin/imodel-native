@@ -34,7 +34,7 @@ extern void imodeljs_addon_setMobileTempDir(Utf8CP d);
     NSString *documentsDirectory = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/sample_documents"];
     if (![[NSFileManager defaultManager] fileExistsAtPath:documentsDirectory isDirectory:NULL])
         {
-        NSString *sampleDocuments = [appFolderPath stringByAppendingPathComponent:@"Assets/assets/sample_documents"];
+            NSString *sampleDocuments = [appFolderPath stringByAppendingPathComponent:@"Assets/assets/sample_documents"];
         NSError *copyError = nil;
         if (![[NSFileManager defaultManager] copyItemAtPath:sampleDocuments toPath:documentsDirectory error:&copyError])
             {
@@ -43,15 +43,26 @@ extern void imodeljs_addon_setMobileTempDir(Utf8CP d);
         }
     
     while (!m_host->IsReady()) { ; }
-    _xmlHttpRequest = [XMLHttpRequest new];
+    
     JSGlobalContextRef jsGlobalContext = JSContextGetGlobalContext(m_host->GetContext());
     JSContext* ctx =[JSContext contextWithJSGlobalContextRef:jsGlobalContext];
+    // Setup xmlhttprequest for jscore
+    _xmlHttpRequest = [XMLHttpRequest new];
     [_xmlHttpRequest extend:ctx];
+    _windowTimers = [WTWindowTimers new];
+    [_windowTimers extend:ctx];
+    
+
+    //[ctx evaluateScript:jsTemp];
+    // [ctx :@"setTimeout(function(){ alert(\"Hello\"); }, 3000);"];
     m_host->PostToEventLoop([]()
         {
+        NSString *jsTemp = [NSString stringWithFormat:@"imodeljsMobile.knownLocations.tempDir='%@'", NSTemporaryDirectory()];
         auto& runtime = ServicesTier::Host::GetInstance().GetJsRuntime();
-
-        NSString* backendJsPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Assets/MobileMain.js"];
+        runtime.EvaluateScript (jsTemp.UTF8String);
+            
+            
+        NSString* backendJsPath = [[ [NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Assets/main.js"];
         NSString* backendJs = [NSString stringWithContentsOfFile:backendJsPath encoding:NSUTF8StringEncoding error:NULL];
         auto evaluated = runtime.EvaluateScript (backendJs.UTF8String,
                         [NSURL fileURLWithPath:backendJsPath].absoluteString.UTF8String);

@@ -363,7 +363,7 @@ Utf8CP Utilities::SimpleInitScript()
     self.location = {};
 
     // mocha expects the global 'setTimeout' and 'clearTimeout' functions to be defined.
-
+    /* Affan: timer funtion define in objective c
     function setTimeout(func, delay, param1, param2, param3, param4, param5, param6, param7, param8, param9, param10) {
       var timer = new IModelJsTimer(
             (delay || 0),
@@ -380,6 +380,7 @@ Utf8CP Utilities::SimpleInitScript()
         timer.stop();  // cancels the timer and tells native code to release its reference.
       }
     }
+    */
  
    (function (params) {
 

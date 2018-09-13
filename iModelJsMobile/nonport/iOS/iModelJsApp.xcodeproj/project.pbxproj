@@ -17,6 +17,7 @@
 		26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0BF2076B63F0031769D /* LaunchScreen.storyboard */; };
 		26E6C0C42076B63F0031769D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0C32076B63F0031769D /* main.m */; };
 		26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E6C0CB2076B8200031769D /* WebKit.framework */; };
+		4153DBBB2138250200F4A0D2 /* WindowTimers.m in Sources */ = {isa = PBXBuildFile; fileRef = 4153DBBA2138250200F4A0D2 /* WindowTimers.m */; };
 		4161BC4721078B69001830CF /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC2521078B67001830CF /* libiModelJs.a */; };
 		4161BC4821078B69001830CF /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC2621078B67001830CF /* libBeCsmapStatic.a */; };
 		4161BC4921078B69001830CF /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC2721078B67001830CF /* libBeOpenSSL.a */; };
@@ -51,9 +52,9 @@
 		4161BC6621078B69001830CF /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC4421078B69001830CF /* libDgnPlatform.a */; };
 		4161BC6721078B69001830CF /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC4521078B69001830CF /* libBentley.a */; };
 		4161BC6821078B69001830CF /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4161BC4621078B69001830CF /* libBeLibJpegTurbo.a */; };
-		41999A85211CB34000489006 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 41999A82211CB34000489006 /* Info.plist */; };
 		41999A86211CB34000489006 /* XMLHTTPRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 41999A84211CB34000489006 /* XMLHTTPRequest.m */; };
 		41999A89211CD90500489006 /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41999A88211CD90400489006 /* Utilities.cpp */; };
+		41A020B02149C8B70032F633 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0C22076B63F0031769D /* Info.plist */; };
 		41A8E09A211245DB00B3FB1E /* iModelJsApp.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 41A8E0982112444000B3FB1E /* iModelJsApp.xcconfig */; };
 /* End PBXBuildFile section */
 
@@ -73,6 +74,8 @@
 		26E6C0C32076B63F0031769D /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		26E6C0CB2076B8200031769D /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		3B3F6FD1208FBF4A00F27DF1 /* JsInterop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
+		4153DBB92138250200F4A0D2 /* WindowTimers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WindowTimers.h; sourceTree = "<group>"; };
+		4153DBBA2138250200F4A0D2 /* WindowTimers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WindowTimers.m; sourceTree = "<group>"; };
 		4161BC1020FE83D4001830CF /* ServicesTierHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../ServicesTierHost.cpp; sourceTree = "<group>"; };
 		4161BC1120FE83D4001830CF /* ServicesTierNodeHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierNodeHost.cpp; path = ../../ServicesTierNodeHost.cpp; sourceTree = "<group>"; };
 		4161BC1220FE83D4001830CF /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
@@ -132,7 +135,6 @@
 		4161BC6B210A117E001830CF /* iModelJsUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
 		4161BC6C210A117E001830CF /* iModelJsApp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
 		4161BC70210A6B60001830CF /* getaddrinfo.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = getaddrinfo.c; path = ../../../thirdparty/libuv/src/win/getaddrinfo.c; sourceTree = "<group>"; };
-		41999A82211CB34000489006 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		41999A83211CB34000489006 /* XMLHTTPRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XMLHTTPRequest.h; sourceTree = "<group>"; };
 		41999A84211CB34000489006 /* XMLHTTPRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XMLHTTPRequest.m; sourceTree = "<group>"; };
 		41999A87211CC44300489006 /* iModelJsInternal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = iModelJsInternal.h; path = ../../iModelJsInternal.h; sourceTree = "<group>"; };
@@ -196,6 +198,7 @@
 		26E6C0A82076B63E0031769D = {
 			isa = PBXGroup;
 			children = (
+				4153DBB82138250200F4A0D2 /* WindowTimers */,
 				41999A81211CB34000489006 /* XMLHTTPRequest */,
 				4161BC1820FE83E5001830CF /* Src */,
 				26E6C0B32076B63E0031769D /* iModelJsApp */,
@@ -275,6 +278,16 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		4153DBB82138250200F4A0D2 /* WindowTimers */ = {
+			isa = PBXGroup;
+			children = (
+				4153DBB92138250200F4A0D2 /* WindowTimers.h */,
+				4153DBBA2138250200F4A0D2 /* WindowTimers.m */,
+			);
+			name = WindowTimers;
+			path = iModelJsApp/WindowTimers;
+			sourceTree = "<group>";
+		};
 		4161BC1820FE83E5001830CF /* Src */ = {
 			isa = PBXGroup;
 			children = (
@@ -316,7 +329,6 @@
 		41999A81211CB34000489006 /* XMLHTTPRequest */ = {
 			isa = PBXGroup;
 			children = (
-				41999A82211CB34000489006 /* Info.plist */,
 				41999A83211CB34000489006 /* XMLHTTPRequest.h */,
 				41999A84211CB34000489006 /* XMLHTTPRequest.m */,
 			);
@@ -385,7 +397,7 @@
 				26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */,
 				26E6C0BE2076B63F0031769D /* Assets.xcassets in Resources */,
 				26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */,
-				41999A85211CB34000489006 /* Info.plist in Resources */,
+				41A020B02149C8B70032F633 /* Info.plist in Resources */,
 				41A8E09A211245DB00B3FB1E /* iModelJsApp.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -417,6 +429,7 @@
 				26E6C0B92076B63E0031769D /* ViewController.mm in Sources */,
 				41999A86211CB34000489006 /* XMLHTTPRequest.m in Sources */,
 				26E6C0C42076B63F0031769D /* main.m in Sources */,
+				4153DBBB2138250200F4A0D2 /* WindowTimers.m in Sources */,
 				26E6C0B62076B63E0031769D /* AppDelegate.mm in Sources */,
 				41999A89211CD90500489006 /* Utilities.cpp in Sources */,
 			);

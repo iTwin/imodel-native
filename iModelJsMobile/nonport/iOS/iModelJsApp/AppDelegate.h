@@ -8,9 +8,11 @@
 
 #import <UIKit/UIKit.h>
 #import "XMLHTTPRequest.h"
+#import "WindowTimers.h"
 @interface AppDelegate : UIResponder <UIApplicationDelegate>
 
 @property (strong, nonatomic) UIWindow *window;
 @property (nonatomic) XMLHttpRequest *xmlHttpRequest;
+@property (nonatomic) WTWindowTimers *windowTimers;
 @end
 
