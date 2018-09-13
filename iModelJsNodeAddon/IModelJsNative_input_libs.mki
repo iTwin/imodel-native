@@ -9,7 +9,7 @@
 
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBaseGeoCoord.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCsmapStatic.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCurl.a
+#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCurl.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeFolly.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeHttp.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeIcu4c.a
@@ -20,7 +20,7 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibxml2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentley.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeom.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeomSerialization.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeOpenSSL.a
+#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeOpenSSL.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBePng.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLite.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLiteEC.a
