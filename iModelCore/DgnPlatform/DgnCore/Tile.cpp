@@ -31,8 +31,11 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 //  - Change magic number from 'dgnT' to 'iMdl' to reflect this change
 #define TABLE_NAME_TileTree "TileTree5"
 
-// Second version: Same primary key as tile data table.
-#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime2"
+// Obsolete versions of table storing tile data creation time
+#define TABLE_NAME_TileTreeCreateTime2 "TileTreeCreateTime2"
+
+// Second version: Previous version retained "FileName" column which should have been renamed to "TileId"
+#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime3"
 
 #define COLUMN_TileTree_TileId TABLE_NAME_TileTree ".TileId"
 #define COLUMN_TileTreeCreateTime_TileId TABLE_NAME_TileTreeCreateTime ".TileId"
@@ -895,25 +898,28 @@ DRange3d NodeId::ComputeRange(DRange3dCR rootRange, bool is2d) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Cache::_Prepare() const 
     {
-    // When current tables were TileTreeCreateTime2 and TileTree3, we changed the file extension from .TileCache to .Tiles
-    // So we will never encounter an existing .Tiles file containing previous versions of those tables.
-    if (m_db.TableExists(TABLE_NAME_TileTree))
+    bool haveDataTable = m_db.TableExists(TABLE_NAME_TileTree);
+    bool haveTimeTable = m_db.TableExists(TABLE_NAME_TileTreeCreateTime);
+
+    auto deleteFromTable = [&](Utf8CP tableName)
+        {
+        Utf8String sql("DELETE FROM ");
+        sql.append(tableName);
+        CachedStatementPtr stmt;
+        m_db.GetCachedStatement(stmt, sql.c_str());
+        if (stmt.IsNull() || BE_SQLITE_DONE != stmt->Step())
+            {
+            BeAssert(false && "Failed to delete tile cache table contents");
+            }
+        };
+            
+    if (haveDataTable && haveTimeTable)
         {
         if (!ValidateData())
             {
             // The db schema is current, but the binary data format is not. Discard it.
-            CachedStatementPtr stmt;
-            m_db.GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime);
-            if (BE_SQLITE_DONE != stmt->Step())
-                {
-                BeAssert(false && "Failed to delete contents of TileTreeCreateTime table");
-                }
-
-            m_db.GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree);
-            if (BE_SQLITE_DONE != stmt->Step())
-                {
-                BeAssert(false && "Failed to delete contents of TileTree table");
-                }
+            deleteFromTable(TABLE_NAME_TileTree);
+            deleteFromTable(TABLE_NAME_TileTreeCreateTime);
             }
 
         return SUCCESS;
@@ -922,13 +928,20 @@ BentleyStatus Cache::_Prepare() const
     // Drop leftover tables from previous versions
     m_db.DropTableIfExists(TABLE_NAME_TileTree3);
     m_db.DropTableIfExists(TABLE_NAME_TileTree4);
+    m_db.DropTableIfExists(TABLE_NAME_TileTreeCreateTime2);
 
-    // Create the tables
-    if (!m_db.TableExists(TABLE_NAME_TileTreeCreateTime) && BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "TileId CHAR PRIMARY KEY,Created BIGINT"))
+    // Create the tables; or clear them if they already exist.
+    if (haveTimeTable)
+        deleteFromTable(TABLE_NAME_TileTreeCreateTime);
+    else if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "TileId CHAR PRIMARY KEY,Created BIGINT"))
+        return ERROR;
+        
+    if (haveDataTable)
+        deleteFromTable(TABLE_NAME_TileTree);
+    else if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTree, "TileId CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT TEXT"))
         return ERROR;
 
-    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
-        "TileId CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT TEXT") ? SUCCESS : ERROR;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
