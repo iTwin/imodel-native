@@ -2924,7 +2924,7 @@ ICancellationTokenPtr cancellationToken
     auto status = SetCodeSequencesJsonRequestToChangeSet(codeSequence, 0, 1, CodeSequence::Type::Maximum, *changeset, 
                                                          WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, 
+        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::OperationFailed, 
                                                                                       ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
 
     return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
@@ -2948,7 +2948,7 @@ ICancellationTokenPtr cancellationToken
     auto status = SetCodeSequencesJsonRequestToChangeSet(codeSequence, startIndex, incrementBy, CodeSequence::Type::NextAvailable, *changeset, 
                                                          WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, 
+        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::OperationFailed, 
                                                                                       ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
 
     return QueryCodeNextAvailableInternal(changeset, cancellationToken);
