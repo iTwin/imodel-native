@@ -11,11 +11,11 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBaseGeoCoord.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCsmapStatic.a
 #THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCurl.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeFolly.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeHttp.a
+#THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeHttp.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeIcu4c.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJpeg.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJsonCpp.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibJpegTurbo.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJpeg.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibxml2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentley.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeom.a
@@ -27,12 +27,13 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLiteEC.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeXml.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeZlib.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libDgnPlatform.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECPresentation.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECObjects.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECPresentation.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
+
 %if defined (BENTLEYCONFIG_PARASOLID)
     THIN_ARCHIVE_INPUTS + $(ContextSubPartsLibs)libpskernel.a
 #%else
