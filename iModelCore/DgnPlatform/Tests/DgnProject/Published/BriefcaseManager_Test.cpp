@@ -2453,6 +2453,13 @@ TEST_F(CodesManagerTest, PlantScenario)
     EXPECT_TRUE(nozzleCodeSpec->IsParentElementScope());
     EXPECT_TRUE(nozzleCodeSpec->GetScope().IsFederationGuidRequired());
 
+    CodeSpecPtr externalCodeSpec = CodeSpec::Create(db, "CodesManagerTest.External", CodeScopeSpec::CreateRepositoryScope(CodeScopeSpec::ScopeRequirement::FederationGuid));
+    EXPECT_TRUE(externalCodeSpec.IsValid());
+    externalCodeSpec->SetIsManagedWithDgnDb(false); // indicates these codes are managed externally (not by iModelHub with the DgnDb)
+    EXPECT_EQ(DgnDbStatus::Success, externalCodeSpec->Insert());
+    EXPECT_TRUE(externalCodeSpec->IsRepositoryScope());
+    EXPECT_FALSE(externalCodeSpec->IsManagedWithDgnDb());
+
     db.SaveChanges("1");
 
     BeGuid unitGuid(true);
@@ -2629,6 +2636,33 @@ TEST_F(CodesManagerTest, PlantScenario)
     for (DgnCodeInfo const& codeState : usedCodeStates)
         {
         EXPECT_TRUE(codeState.IsUsed());
+        }
+
+    DgnCode externalCode1 = externalCodeSpec->CreateCode("External1");
+    DgnCode externalCode2 = externalCodeSpec->CreateCode("External2");
+    DgnCode externalCode3 = externalCodeSpec->CreateCode("External3");
+
+    DgnCodeSet reservedExternalCodes;
+    reservedExternalCodes.insert(externalCode1);
+    reservedExternalCodes.insert(externalCode2);
+    reservedExternalCodes.insert(externalCode3);
+    IBriefcaseManager::Response response(db.BriefcaseManager().ReserveCodes(reservedExternalCodes, ResponseOptions::CodeState));
+    EXPECT_EQ(RepositoryStatus::Success, response.Result());
+    EXPECT_TRUE(reservedExternalCodes.empty()) << "Expect external codes to be culled from request";
+
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCode(DgnCode())); // ReserveCode returns Success on invalid Code
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().ReserveCode(externalCode1)); // Therefore, it should also return Success for an external code (even though it wasn't actually reserved)
+
+    DgnCodeInfoSet externalCodeStates;
+    DgnCodeSet externalCodes;
+    externalCodes.insert(externalCode1);
+    externalCodes.insert(externalCode2);
+    externalCodes.insert(externalCode3);
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().QueryCodeStates(externalCodeStates, externalCodes));
+    EXPECT_EQ(externalCodes.size(), externalCodeStates.size());
+    for (DgnCodeInfoCR codeState : externalCodeStates)
+        {
+        EXPECT_TRUE(codeState.IsAvailable()); // External codes are not known to iModelHub
         }
     }
 
