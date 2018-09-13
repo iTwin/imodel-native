@@ -234,6 +234,7 @@ public:
     FeaturesInfo            m_features;
     ColorInfo               m_colors;
     Json::Value             m_auxDisplacements;
+    Json::Value             m_auxNormals;
     Json::Value             m_auxParams;
     uint32_t        CurrSize() const { return static_cast<uint32_t> (m_pDataEnd - m_data.GetDataP()); }
 
@@ -569,7 +570,6 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
     size_t                  blockSize = auxChannel.GetBlockSize();
     Json::Value             inputs(Json::arrayValue);
     T_Range                 range = T_Range::NullRange();
-    LUTDimensions           lutDimensions;
     uint32_t                nRgbaPerVertex = (sizeof(T_QPoint) + 3) / 4, nBytesPerVertex = 4 * nRgbaPerVertex, unusedSize = nBytesPerVertex - sizeof(T_QPoint);
     Json::Value             inputValues(Json::arrayValue);
 
@@ -596,7 +596,6 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
     Json::Value     qOrigin(Json::arrayValue), qScale(Json::arrayValue);
     double const*   pOrigin = (double*) (&qParams.origin);
     double const*   pScale = (double*) (&qParams.scale);
-
 
     if (1 == blockSize)
         {
@@ -633,7 +632,44 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
         }
     return channelValue;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ Json::Value CreateVertexTableAuxNormalChannel(VertexTable& vertexTable, PolyfaceAuxChannelCR auxChannel, uint32_t numVertices)
+    {
+    Json::Value             inputs(Json::arrayValue);
+    Json::Value             inputValues(Json::arrayValue);
+    uint32_t                zero = 0;
+
+    for (auto const& data : auxChannel.GetData())
+        inputValues.append(data->GetInput());
+    
+    Json::Value     channelValue(Json::objectValue);
+        
+    channelValue["index"] = vertexTable.CurrSize() / 4;                   
+    channelValue["name"] = auxChannel.GetName();
+    channelValue["type"] = (int) auxChannel.GetDataType();
+    channelValue["inputs"] = std::move(inputValues);
+        
+    for (auto const& data : auxChannel.GetData())
+        {
+        // Quantize and push...
+        double const* value = data->GetValues().data();
+        for (size_t i=0; i<data->GetValues().size(); i += 3)
+            {
+            DVec3d          normal = DVec3d::From(value[i], value[i+1], value[i+2]);
+            normal.Normalize();
+            uint16_t        encodedNormal = OctEncodedNormal::From(normal).Value();
+
+            vertexTable.AppendData(&encodedNormal, sizeof(encodedNormal)); 
+            vertexTable.AppendData(&zero, 2);
+            }
+        }
+    return channelValue;
+    }
 };
+
 
 END_UNNAMED_NAMESPACE
 
@@ -1076,22 +1112,23 @@ BentleyStatus IModelTileWriter::CreatePolylines(Json::Value& primitiveJson, Mesh
 void IModelTileWriter::CreateVertexTableAuxChannels(VertexTable& vertexTable, PolyfaceAuxData::ChannelsCR channels, uint32_t numVertices, Utf8StringCR idStr)
     {
     BeAssert (!channels.empty());
-    Json::Value     displacementChannels(Json::arrayValue), paramChannels(Json::arrayValue);
+    Json::Value     displacementChannels(Json::arrayValue), paramChannels(Json::arrayValue), normalChannels(Json::arrayValue);
 
     for (auto const& channel : channels)
         {
-        switch (channel->GetBlockSize())
+        switch (channel->GetDataType())
             {
-            case 1:
+            case PolyfaceAuxChannel::DataType::Scalar:
+            case PolyfaceAuxChannel::DataType::Distance:
                 paramChannels.append(CreateVertexTableAuxChannel<DRange1d, double, QPoint1d>(vertexTable, *channel, numVertices));
                 break;
 
-            case 3:
+            case PolyfaceAuxChannel::DataType::Vector:
                 displacementChannels.append(CreateVertexTableAuxChannel<DRange3d, DPoint3d, QPoint3d>(vertexTable, *channel, numVertices));
                 break;
 
-            default:
-                BeAssert(false);
+            case PolyfaceAuxChannel::DataType::Covector:
+                normalChannels.append(CreateVertexTableAuxNormalChannel(vertexTable, *channel, numVertices));
                 break;
             }
         }
@@ -1101,6 +1138,8 @@ void IModelTileWriter::CreateVertexTableAuxChannels(VertexTable& vertexTable, Po
     if (paramChannels.size() > 0)
         vertexTable.m_auxParams = std::move(paramChannels);
 
+    if (normalChannels.size() > 0)
+        vertexTable.m_auxNormals = std::move(normalChannels);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1231,6 +1270,9 @@ void IModelTileWriter::AddVertexTable(Json::Value& primitiveJson, VertexTable co
         primitiveJson["vertices"]["auxDisplacements"] = table.m_auxDisplacements;
         
     
+    if (!table.m_auxNormals.isNull())
+        primitiveJson["vertices"]["auxNormals"] = table.m_auxNormals;
+
     if (!table.m_auxParams.isNull())
         primitiveJson["vertices"]["auxParams"] = table.m_auxParams;
     }
