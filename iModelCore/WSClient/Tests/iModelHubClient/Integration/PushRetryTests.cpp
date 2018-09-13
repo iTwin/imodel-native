@@ -301,7 +301,7 @@ TEST_F(PushRetryTests, DownloadedChangeSetInvalid)
                                 "\"className\" : \"AccessKey\","
                                 "\"properties\" : {"
                                     "\"UploadUrl\": \"\","
-                                    "\"DownloadUrl\" : \"DownloadUrl\""
+                                    "\"DownloadUrl\" : \"http://download.url\""
                                 "},"
                                 "\"eTag\" : \"GDZV8h4lHbFl9QQEPaMCf4WLZVE=\""
                         "},"

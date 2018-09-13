@@ -48,7 +48,7 @@ Response SuccessResponse(RequestCR request)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Response CreatedResponse(RequestCR request)
     {
-    return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\", \"relationshipInstances\": [{\"relatedInstance\": {\"schemaName\": \"iModelScope\",\"className\": \"AccessKey\",\"properties\": {\"UploadUrl\": \"uploadUrl\",\"DownloadUrl\": \"downloadUrl\"}}}]}}}");
+    return StubHttpResponse(HttpStatus::Created, "{\"changedInstance\": {\"instanceAfterChange\": {\"instanceId\": \"instanceId\", \"relationshipInstances\": [{\"relatedInstance\": {\"schemaName\": \"iModelScope\",\"className\": \"AccessKey\",\"properties\": {\"UploadUrl\": \"http://upload.url\",\"DownloadUrl\": \"http://download.url\"}}}]}}}");
     }
 
 /*--------------------------------------------------------------------------------------+
