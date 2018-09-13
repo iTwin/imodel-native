@@ -22,10 +22,8 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_InvalidiModelConnection)           // =="iModel connection is not specified."==
     L10N_STRING(MESSAGE_InvalidChangeSet)                  // =="ChangeSet id is not specified."==
 
-    //User definition errors
+    //User errors
     L10N_STRING(MESSAGE_UserDoesNotExist)                  // =="User could not be found."==
-    L10N_STRING(MESSAGE_UserServerError)                   // =="Internal server error has occured. More than one user found."==
-
     //iModel errors
     L10N_STRING(MESSAGE_SeedFileNotFound)                  // =="Could not find uninitialized seed file."==
     L10N_STRING(MESSAGE_iModelIsNotInitialized)            // =="iModel is not initialized."==
