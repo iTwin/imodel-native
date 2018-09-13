@@ -8,7 +8,6 @@ WebsiteSeedFileTests.CreateSeedFile
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
 SeedFileTests.ReplaceWithoutLockediModel
-CodesTests.ExternalCodesPushTest
 
 #----------------------------------------------------------------------------------------
 #   Tests that require seed file replacement
