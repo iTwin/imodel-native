@@ -24,7 +24,7 @@ BE_JSON_NAME(extendedType)
 BE_JSON_NAME(federationGuid)
 BE_JSON_NAME(isCustomHandled)
 BE_JSON_NAME(isCustomHandledOrphan);
-BE_JSON_NAME(kindOfQuantity)
+// unused - BE_JSON_NAME(kindOfQuantity)
 BE_JSON_NAME(maxOccurs)
 BE_JSON_NAME(maximumLength)
 BE_JSON_NAME(maximumValue)
