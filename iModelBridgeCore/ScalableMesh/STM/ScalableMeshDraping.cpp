@@ -150,6 +150,7 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
     bvector<bool> skipNode(inputNodes.size(), false);
 
     bmap<int64_t,bset<int64_t>> parents;
+    bmap<int64_t, bset<size_t>> children;
     size_t minLevel = INT_MAX;
     size_t maxLevel = 0;
 
@@ -162,13 +163,17 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
         {
             nodeIter = nodeIter->GetParentNode();
             parents[nodeIter->GetLevel()].insert(nodeIter->GetNodeId());
+            children[nodeIter->GetNodeId()].insert(&node - inputNodes.data());
         }
     }
 
     for (auto&node : inputNodes)
     {
         if (parents[node->GetLevel()].count(node->GetNodeId()) > 0)
-            skipNode[&node - inputNodes.data()] = true;
+        {
+            for (auto&index : children[node->GetNodeId()])
+                skipNode[index] = true;
+        }
     }
 
     for (size_t segment = 0; segment < m_numPointsOnPolyline - 1; segment++)
