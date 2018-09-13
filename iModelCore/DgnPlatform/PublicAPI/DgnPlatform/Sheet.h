@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/ViewDefinition.h>
-#include <DgnPlatform/PickContext.h>
 
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
 #define BIS_CLASS_ViewAttachment "ViewAttachment"
@@ -180,7 +179,7 @@ protected:
     DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR updated) const override {return DgnDbStatus::InvalidParent;}
-    
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment));}
     static Placement2d ComputePlacement(DgnDbR db, DgnViewId viewId, DPoint2dCR origin, double scale);
     static double ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedBox2dCR);
@@ -224,7 +223,7 @@ public:
     double GetScale() const { return m_jsonProperties[json_scale()].asDouble(0.0); }
     void SetScale(double scale) { m_jsonProperties[json_scale()] = scale; }
 
-    //! Get the clip to be applied to this attachment, if any. 
+    //! Get the clip to be applied to this attachment, if any.
     //! @return a clip vector or an invalid ptr if the attachment is not clipped.
     //! @see SetClip
     DGNPLATFORM_EXPORT ClipVectorPtr GetClip() const;

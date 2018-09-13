@@ -18,7 +18,6 @@
 #include "ColorUtil.h"
 #include "ElementHandler.h"
 #include "ElementGeometry.h"
-#include "HitDetail.h"
 #include "IAuxCoordSys.h"
 #include "TxnManager.h"
 #include "RevisionManager.h"

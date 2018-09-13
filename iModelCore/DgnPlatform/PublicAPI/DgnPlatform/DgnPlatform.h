@@ -19,7 +19,7 @@
 #include "ExportMacros.h"
 #include <Geom/GeomApi.h>
 #include <Bentley/NonCopyableClass.h>
-#include <Bentley/bvector.h>                                                          
+#include <Bentley/bvector.h>
 #include "DgnPlatform.r.h"
 #include "DgnPlatformErrors.h"
 #include "DgnHost.h"
@@ -698,13 +698,6 @@ enum AngleModeVals
     ANGLE_MODE_Bearing       = 2,
 };
 
-enum class HitDetailType
-{
-    Hit          = 1,
-    Snap         = 2,
-    Intersection = 3,
-};
-
 enum DitherModes
 {
     DITHERMODE_Pattern              = 0,
@@ -897,7 +890,7 @@ enum class SelectionScope
     {
     Element = 0,         //!< Single Element Selection
     Assembly = 1,        //!< Select all members of parent Assembly
-    TopAssembly = 2,     //!< Select all members of top-most parent Assembly 
+    TopAssembly = 2,     //!< Select all members of top-most parent Assembly
     Category = 3,        //!< All elements that match Category of selected element
     Model = 4,           //!< All elements in same model as selected element
     };

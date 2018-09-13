@@ -8,10 +8,69 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "HitDetail.h"
-#include "NullContext.h"
-
 BEGIN_BENTLEY_DGN_NAMESPACE
+
+//=======================================================================================
+//! What was being tested to generate this hit. This is not the element or
+//! GeometricPrimitive that generated the Hit, it's an indication of whether it's an
+//! edge or interior hit.
+//=======================================================================================
+enum class HitGeomType
+{
+    None           = 0,
+    Point          = 1,
+    Segment        = 2,
+    Curve          = 3,
+    Arc            = 4,
+    Surface        = 5,
+};
+
+//=======================================================================================
+//! Indicates whether the GeometricPrimitive that generated the hit was a wire,
+//! surface, or solid.
+//=======================================================================================
+enum class HitParentGeomType
+{
+    None           = 0,
+    Wire           = 1,
+    Sheet          = 2,
+    Solid          = 3,
+    Mesh           = 4,
+    Text           = 5,
+};
+
+//=======================================================================================
+// @bsiclass                                                      KeithBentley    04/01
+//=======================================================================================
+enum KeypointType
+{
+    KEYPOINT_TYPE_Nearest         = 0,
+    KEYPOINT_TYPE_Keypoint        = 1,
+    KEYPOINT_TYPE_Midpoint        = 2,
+    KEYPOINT_TYPE_Center          = 3,
+    KEYPOINT_TYPE_Origin          = 4,
+    KEYPOINT_TYPE_Bisector        = 5,
+    KEYPOINT_TYPE_Intersection    = 6,
+    KEYPOINT_TYPE_Tangent         = 7,
+    KEYPOINT_TYPE_Tangentpoint    = 8,
+    KEYPOINT_TYPE_Perpendicular   = 9,
+    KEYPOINT_TYPE_Perpendicularpt = 10,
+    KEYPOINT_TYPE_Parallel        = 11,
+    KEYPOINT_TYPE_Point           = 12,
+    KEYPOINT_TYPE_PointOn         = 13,
+    KEYPOINT_TYPE_Unknown         = 14,
+    KEYPOINT_TYPE_Custom          = 15,
+};
+
+//=======================================================================================
+// @bsiclass                                                      Keith.Bentley   10/04
+//=======================================================================================
+enum SnapHeat
+{
+    SNAP_HEAT_None       = 0,
+    SNAP_HEAT_NotInRange = 1,   // "of interest", but out of range
+    SNAP_HEAT_InRange    = 2,
+};
 
 //=======================================================================================
 //! Interface to be used when snapping.
