@@ -287,7 +287,7 @@ static bool isTemporaryError(Error error)
         case Error::Id::AnotherUserPushing:
         case Error::Id::PullIsRequired:
         case Error::Id::DatabaseTemporarilyLocked:
-        case Error::Id::iModelHubOperationFailed:
+        case Error::Id::OperationFailed:
             return true;
         }
     return false;
