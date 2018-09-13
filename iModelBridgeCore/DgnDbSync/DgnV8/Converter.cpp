@@ -2706,7 +2706,7 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
 
     RecordConversionResultsInSyncInfo(conversionResults, v8eh, v8mm, csearch);
 
-    if (BSISUCCESS != iModelBridge::SaveChangesToConserveMemory(GetDgnDb()))
+    if (BSISUCCESS != iModelBridge::SaveChangesToConserveMemory(GetDgnDb(), nullptr, 100000))
         {
         OnFatalError(IssueCategory::DiskIO(), Issue::Error(), "SavePoint failed");
         }
