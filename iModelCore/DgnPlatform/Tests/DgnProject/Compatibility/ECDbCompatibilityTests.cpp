@@ -883,23 +883,27 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithEC32Reference)
             BeFileName ecdbStandardSchemasFolder(ECSchemaReadContext::GetHostAssetsDirectory());
             ecdbStandardSchemasFolder.AppendToPath(L"ECSchemas");
             ecdbStandardSchemasFolder.AppendToPath(L"ECDb");
-            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchemas(testDb.GetDb(), {
+                    SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="BaseSchema" alias="bs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                         <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
-                        <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf" />
+                        <ECEntityClass typeName="MyBaseClass">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00.00">
+                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                </ClassMap>
+                            </ECCustomAttributes>
+                            <ECProperty propertyName="Code" typeName="int" />
+                        </ECEntityClass>
+                     </ECSchema>)xml"),
+                    SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="BaseSchema" version="01.00.00" alias="bs" />
                         <ECEntityClass typeName="Foo">
-                                <ECCustomAttributes>
-                                    <ClassMap xmlns="ECDbMap.02.00.00">
-                                        <MapStrategy>TablePerHierarchy</MapStrategy>
-                                    </ClassMap>
-                                </ECCustomAttributes>
+                            <BaseClass>bs:MyBaseClass</BaseClass>
                                 <ECProperty propertyName="Code" typeName="int" />
                                 <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
                                 <ECProperty propertyName="Status" typeName="StatusEnum" />
-                        </ECEntityClass>
-                        <ECEntityClass typeName="MyFileInfo">
-                            <BaseClass>ecdbf:FileInfo</BaseClass>
-                            <ECProperty propertyName="Path" typeName="string" />
                         </ECEntityClass>
                         <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
@@ -909,7 +913,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithEC32Reference)
                             <ECEnumerator value="1"/>
                             <ECEnumerator value="2"/>
                         </ECEnumeration>
-                     </ECSchema>)xml"), {ecdbStandardSchemasFolder});
+                     </ECSchema>)xml")}, {ecdbStandardSchemasFolder});
             ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
             const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
             switch (testDb.GetAge())
@@ -924,7 +928,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithEC32Reference)
 
                     EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << testDb.GetDescription();
                     EXPECT_EQ(JsonValue("[{\"cnt\": 2}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef WHERE Name IN ('Units','Formats')")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
-                    EXPECT_EQ(JsonValue("[{\"cnt\": 4}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
+                    EXPECT_EQ(JsonValue("[{\"cnt\": 3}]"), testDb.ExecuteECSqlSelect("SELECT count(*) cnt FROM meta.ECSchemaDef s JOIN meta.SchemaHasSchemaReferences ref ON s.ECInstanceId=ref.SourceECInstanceId WHERE s.Name='TestSchema'")) << "When importing into 4.0.0.1 file, units and formats schema must not be persisted. | " << testDb.GetDescription();
 
                     ECInstanceKey fooKey;
                     ECSqlStatement stmt;
@@ -1013,6 +1017,66 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
                      </ECSchema>)xml", ctx) ? SUCCESS : ERROR;
         };
 
+    auto assertSchemaImport = [] (TestECDb& testDb, ECSchemaReadContext& ctx, Utf8CP scenario)
+        {
+        ScopedDisableFailOnAssertion disableFailOnAssert;
+        ECSchemaPtr schema = nullptr;
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                        <ECSchemaReference name="ECDbFileInfo" version="02.00.00" alias="ecdbf" />
+                        <ECEntityClass typeName="Foo">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Code" typeName="int" />
+                                <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                <ECProperty propertyName="Status" typeName="StatusEnum" />
+                        </ECEntityClass>
+                        <ECEntityClass typeName="MyFileInfo">
+                            <BaseClass>ecdbf:FileInfo</BaseClass>
+                            <ECProperty propertyName="Path" typeName="string" />
+                        </ECEntityClass>
+                        <KindOfQuantity typeName="ANGLE" displayLabel="Angle" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(real2u);ARC_DEG(dms)" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="SQ.M(DefaultReal)" presentationUnits="SQ.M(real4u);SQ.FT(real4u)" relativeError="0.0001"/>
+                        <KindOfQuantity typeName="TEMPERATURE" displayLabel="Temperature" persistenceUnit="K(DefaultReal)" presentationUnits="CELSIUS(real4u);FAHRENHEIT(real4u);K(real4u)" relativeError="0.01"/>
+                        <ECEnumeration typeName="StatusEnum" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                            <ECEnumerator value="0"/>
+                            <ECEnumerator value="1"/>
+                            <ECEnumerator value="2"/>
+                        </ECEnumeration>
+                     </ECSchema>)xml", ctx)) << scenario << " | " << testDb.GetDescription();
+
+        BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx.GetCache().GetSchemas());
+        switch (testDb.GetAge())
+            {
+                case ProfileState::Age::Older:
+                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    break;
+                case ProfileState::Age::UpToDate:
+                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
+                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    break;
+                case ProfileState::Age::Newer:
+                    EXPECT_EQ(ERROR, schemaImportStat) << scenario << " | " << testDb.GetDescription();
+                    break;
+                default:
+                    FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
+                    break;
+            }
+        };
+
     for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
         {
         for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
@@ -1028,118 +1092,26 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
             Utf8CP scenario = "Read context with ECDb schema locater";
             ECN::ECSchemaReadContextPtr ctx = ECN::ECSchemaReadContext::CreateContext();
             ctx->AddSchemaLocater(testDb.GetDb().GetSchemaLocater());
-
-            ASSERT_EQ(SUCCESS, deserializeSchema(*ctx)) << scenario << " | " << testDb.GetDescription();
-            BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::Older:
-                        ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    case ProfileState::Age::UpToDate:
-                        ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    case ProfileState::Age::Newer:
-                        EXPECT_EQ(ERROR, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
-
+            assertSchemaImport(testDb, *ctx, scenario);
 
             scenario = "Read context with ECDb schema locater and ECDb schema assets folder";
             ctx = ECN::ECSchemaReadContext::CreateContext();
             ctx->AddSchemaLocater(testDb.GetDb().GetSchemaLocater());
             ctx->AddSchemaPath(ecdbSchemaAssetsDir);
 
-            ASSERT_EQ(SUCCESS, deserializeSchema(*ctx)) << scenario << " | " << testDb.GetDescription();
-            schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::Older:
-                        ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    case ProfileState::Age::UpToDate:
-                        ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    case ProfileState::Age::Newer:
-                        EXPECT_EQ(ERROR, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
+            assertSchemaImport(testDb, *ctx, scenario);
 
             scenario = "Read context with ECDb schema assets folder and ECDb as final schema locater";
             ctx = ECN::ECSchemaReadContext::CreateContext();
             ctx->AddSchemaPath(ecdbSchemaAssetsDir);
             ctx->SetFinalSchemaLocater(testDb.GetDb().GetSchemaLocater());
 
-            ASSERT_EQ(SUCCESS, deserializeSchema(*ctx)) << scenario << " | " << testDb.GetDescription();
-            schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::UpToDate:
-                        ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    case ProfileState::Age::Older: // schema import fails because schema locate will prefer ECDb schemas from disk which are 3.2 though
-                    case ProfileState::Age::Newer:
-                        EXPECT_EQ(ERROR, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
+            assertSchemaImport(testDb, *ctx, scenario);
 
             scenario = "Read context with only ECDb schema assets folder";
             ctx = ECN::ECSchemaReadContext::CreateContext();
             ctx->AddSchemaPath(ecdbSchemaAssetsDir);
-            ASSERT_EQ(SUCCESS, deserializeSchema(*ctx)) << scenario << " | " << testDb.GetDescription();
-            schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas());
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::UpToDate:
-                        ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                        EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    case ProfileState::Age::Older: // schema import fails because schema locate will prefer ECDb schemas from disk which are 3.2 though
-                    case ProfileState::Age::Newer:
-                        EXPECT_EQ(ERROR, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                        break;
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
+            assertSchemaImport(testDb, *ctx, scenario);
             }
         }
     }
