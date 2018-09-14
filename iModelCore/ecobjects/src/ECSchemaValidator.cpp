@@ -173,8 +173,8 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
         status = ECObjectsStatus::Error;
         }
 
-    // RULE: The schema's written version must be the lastest ECVersion.
-    if (!schema.OriginalECXmlVersionAtLeast(ECVersion::Latest))
+    // RULE: The schema's written version must be at least EC3.1.
+    if (!schema.OriginalECXmlVersionAtLeast(ECVersion::V3_1))
         {
         LOG.errorv("Schema ECXML Version is not the latest ECVersion, %s", ECSchema::GetECVersionString(ECVersion::Latest));
         status = ECObjectsStatus::Error;

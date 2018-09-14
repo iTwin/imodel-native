@@ -1556,7 +1556,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kyle.Abramowitz   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaCreationTest, CreatingASchemaWithLatestECVersionSetsOriginalXmlVersionToLatest)
+TEST_F(SchemaCreationTest, CreatingASchemaWithLatestECVersionSetsOriginalXmlVersionTo31)
     {
     ECSchemaPtr testSchema;
     uint32_t    latestMajor;
@@ -1567,8 +1567,8 @@ TEST_F(SchemaCreationTest, CreatingASchemaWithLatestECVersionSetsOriginalXmlVers
     ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
     ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2, ECVersion::Latest);
     
-    EXPECT_EQ(latestMajor, testSchema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(latestMinor, testSchema->GetOriginalECXmlVersionMinor());
+    EXPECT_EQ(3, testSchema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, testSchema->GetOriginalECXmlVersionMinor());
 
     ECSchema::ParseECVersion(testSchemaMajor, testSchemaMinor, testSchema->GetECVersion());
     EXPECT_EQ(latestMajor, testSchemaMajor);
@@ -1586,7 +1586,7 @@ TEST_F(SchemaCreationTest, CreatingASchemaWithOldVersionStillSetsLatestOriginalX
     uint32_t    testSchemaMajor;
     uint32_t    testSchemaMinor;
 
-    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
+    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::V3_1);
     ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2, ECVersion::V3_0);
 
     EXPECT_EQ(latestMajor, testSchema->GetOriginalECXmlVersionMajor());
@@ -2340,7 +2340,7 @@ TEST_F(SchemaVersionTest, ChangeOriginalECXmlVersion)
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
     EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
-    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMinor());
+    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
     ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(2, 0));
     EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
     EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());

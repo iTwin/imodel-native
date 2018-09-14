@@ -114,7 +114,7 @@ TEST_F(SchemaCopyTest, CopiedSchemaShouldAlwaysHaveOriginalXmlVersionSetToLatest
 
     EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::Latest));
     CopySchema();
-    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::Latest);
+    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::V3_1);
     EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
     EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
 
