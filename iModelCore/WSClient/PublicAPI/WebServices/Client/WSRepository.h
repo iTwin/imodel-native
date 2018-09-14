@@ -27,6 +27,7 @@ struct WSRepository
         Utf8String m_serverUrl;
         BeVersion  m_pluginVersion;
         BeVersion  m_serviceVersion;
+        uint64_t   m_maxUploadSize;
 
     public:
         WSCLIENT_EXPORT WSRepository();
@@ -40,6 +41,7 @@ struct WSRepository
         WSCLIENT_EXPORT Utf8StringCR GetServerUrl() const;
         WSCLIENT_EXPORT BeVersionCR GetPluginVersion() const;
         WSCLIENT_EXPORT BeVersionCR GetServiceVersion() const;
+        WSCLIENT_EXPORT uint64_t GetMaxUploadSize() const;
 
         WSCLIENT_EXPORT void SetId(Utf8String id);
         WSCLIENT_EXPORT void SetLocation(Utf8String location);
@@ -49,6 +51,7 @@ struct WSRepository
         WSCLIENT_EXPORT void SetServerUrl(Utf8String url);
         WSCLIENT_EXPORT void SetPluginVersion(BeVersion version);
         WSCLIENT_EXPORT void SetServiceVersion(BeVersion version);
+        WSCLIENT_EXPORT void SetMaxUploadSize(uint64_t maxUploadSize);
 
         //! Check if WSRepository contains minimum information required - server URL and repository ID
         WSCLIENT_EXPORT bool IsValid() const;

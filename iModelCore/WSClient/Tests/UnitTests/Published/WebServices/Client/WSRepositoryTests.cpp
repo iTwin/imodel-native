@@ -33,6 +33,7 @@ TEST_F(WSRepositoryTests, Ctor_Default_EmptyValues)
     EXPECT_EQ("", repo.GetLocation());
     EXPECT_EQ("", repo.GetPluginId());
     EXPECT_EQ("", repo.GetServerUrl());
+	EXPECT_EQ(0, repo.GetMaxUploadSize());
     EXPECT_EQ(BeVersion(), repo.GetPluginVersion());
     }
 
@@ -50,6 +51,7 @@ TEST_F(WSRepositoryTests, Ctor_FormSerialized_HasSameValues)
     src.SetServerUrl("F");
     src.SetPluginVersion(BeVersion(1, 2, 3, 4));
     src.SetServiceVersion(BeVersion(5, 6, 7, 8));
+    src.SetMaxUploadSize(9);
 
     WSRepository repo(src.ToString());
     EXPECT_TRUE(repo.IsValid());
@@ -62,4 +64,5 @@ TEST_F(WSRepositoryTests, Ctor_FormSerialized_HasSameValues)
     EXPECT_EQ("F", repo.GetServerUrl());
     EXPECT_EQ(BeVersion(1, 2, 3, 4), repo.GetPluginVersion());
     EXPECT_EQ(BeVersion(5, 6, 7, 8), repo.GetServiceVersion());
+    EXPECT_EQ(9, repo.GetMaxUploadSize());
     }
