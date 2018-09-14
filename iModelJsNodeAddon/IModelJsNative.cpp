@@ -3456,6 +3456,7 @@ private:
 
     void Execute() final
         {
+        JsInterop::GetLogger().debugv("GetTileTreeWorker::Execute: %s", m_treeId.ToString().c_str());
         auto tree = FindTileTree();
         if (tree.IsNull())
             {
@@ -3472,7 +3473,14 @@ private:
         return NapiUtils::Convert(Env(), m_result);
         }
 public:
-    GetTileTreeWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : TileWorker(callback, model, treeId) { }
+    GetTileTreeWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : TileWorker(callback, model, treeId)
+        {
+        JsInterop::GetLogger().debugv("GetTileTreeWorker ctor: %s", m_treeId.ToString().c_str());
+        }
+    ~GetTileTreeWorker()
+        {
+        JsInterop::GetLogger().debugv("GetTileTreeWorker dtor: %s", m_treeId.ToString().c_str());
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -3509,6 +3517,7 @@ private:
 
     void Execute() final
         {
+        JsInterop::GetLogger().debugv("GetTileContentWorker::Execute: %s", m_contentId.ToString().c_str());
         auto tree = FindTileTree();
         m_result = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
         m_status = m_result.IsValid() ? DgnDbStatus::Success : DgnDbStatus::NotFound;
@@ -3525,7 +3534,15 @@ private:
         return blob;
         }
 public:
-    GetTileContentWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId, Tile::ContentId contentId) : TileWorker(callback, model, treeId), m_contentId(contentId) { }
+    GetTileContentWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId, Tile::ContentId contentId) : TileWorker(callback, model, treeId), m_contentId(contentId)
+        {
+        JsInterop::GetLogger().debugv("GetTileContentWorker ctor: %s", m_contentId.ToString().c_str());
+        }
+
+    ~GetTileContentWorker()
+        {
+        JsInterop::GetLogger().debugv("GetTileContentWorker dtor: %s", m_contentId.ToString().c_str());
+        }
 
     static DgnDbStatus ParseInputs(GeometricModelPtr& model, Tile::Tree::Id& treeId, Tile::ContentIdR contentId, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr)
         {
