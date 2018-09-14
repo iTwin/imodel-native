@@ -21,33 +21,58 @@ struct SchemaWriter final
         struct Context final
             {
         public:
-            //! When importing EC3.1 schemas into EC3.1 files, ECObjects deserializes the EC3.2 units and formats schema
-            //! as in-memory the schema will be an EC3.2 one. ECDb, however, must not persist these temporarily deserialized units and formats schemas.
+            //! When importing EC3.1 schemas into EC3.1 files, ECDb has to ignore 
+            //!     * EC3.2 units and formats schema which get deserialized automatically by ECObjects
+            //!     * ECDb schemas that were accidentally deserialized from disk (and therefore are EC3.2) schemas.
+            //! The latter is really a bug in client code and should be fixed in the client. ECDb can safely ignore
+            //! them though so helps client code to not fail.
             //! This helper helps the respective schema writer code to ignore those schemas
-            struct LegacyUnitsHelper final
+            struct LegacySchemaImportHelper final
                 {
+                public:
+                    enum class Action
+                    {
+                    Import,
+                    Ignore,
+                    UseExisting
+                    };
+
                 private:
-                    ECN::ECSchemaCP m_unitsSchema = nullptr;
-                    ECN::ECSchemaCP m_formatsSchema = nullptr;
+                    bset<Utf8CP, CompareIUtf8Ascii> m_ignoredSchemaNames;
+                    bset<Utf8CP, CompareIUtf8Ascii> m_ecdbSchemaNames;
 
                 public:
-                    LegacyUnitsHelper() {}
-                    void Preprocess(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in)
+                    LegacySchemaImportHelper() : m_ecdbSchemaNames(ProfileManager::GetECDbSchemaNames())
+                        {
+                        m_ignoredSchemaNames.insert("Units");
+                        m_ignoredSchemaNames.insert("Formats");
+                        }
+
+                    void RemoveSchemasToSkip(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in)
                         {
                         for (ECN::ECSchemaCP schema : in)
                             {
-                            if (schema->GetName().EqualsIAscii("Units") && schema->GetVersionRead() == 1 && schema->GetVersionWrite() == 0 && schema->GetVersionMinor() == 0)
-                                m_unitsSchema = schema;
-                            else if (schema->GetName().EqualsIAscii("Formats") && schema->GetVersionRead() == 1 && schema->GetVersionWrite() == 0 && schema->GetVersionMinor() == 0)
-                                m_formatsSchema = schema;
-                            else
+                            if (!schema->OriginalECXmlVersionGreaterThan(ECN::ECVersion::V3_1))
+                                {
+                                out.push_back(schema);
+                                continue;
+                                }
+
+                            if (GetImportAction(schema->GetSchemaKey()) == Action::Import)
                                 out.push_back(schema);
                             }
                         }
 
-                    void ClearCache() { m_unitsSchema = nullptr; m_formatsSchema = nullptr; }
-                    bool IgnoreSchema(ECN::ECSchemaCR schema) const { return (m_unitsSchema != nullptr && &schema == m_unitsSchema) || (m_formatsSchema != nullptr && &schema == m_formatsSchema); }
-                    bool IgnoreSchema(ECN::SchemaKeyCR schemaKey) const { return (m_unitsSchema != nullptr && schemaKey.CompareByName(m_unitsSchema->GetName()) == 0 && schemaKey.CompareByVersion(m_unitsSchema->GetSchemaKey()) == 0) || (m_formatsSchema != nullptr && schemaKey.CompareByName(m_formatsSchema->GetName()) == 0 && schemaKey.CompareByVersion(m_formatsSchema->GetSchemaKey()) == 0); }
+                    Action GetImportAction(ECN::SchemaKeyCR schemaKey) const
+                        {
+                        if (m_ignoredSchemaNames.find(schemaKey.GetName().c_str()) != m_ignoredSchemaNames.end())
+                            return Action::Ignore;
+
+                        if (m_ecdbSchemaNames.find(schemaKey.GetName().c_str()) != m_ecdbSchemaNames.end())
+                            return Action::UseExisting;
+
+                        return Action::Import;
+                        }
                 };
 
         private:
@@ -60,7 +85,7 @@ struct SchemaWriter final
             ECN::CustomAttributeValidator m_schemaUpgradeCustomAttributeValidator;
 
             bool m_ec32AvailableInFile = true;
-            LegacyUnitsHelper m_legacyUnitsHelper;
+            LegacySchemaImportHelper m_legacyHelper;
 
             static bvector<ECN::ECSchemaCP> FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const&);
             static void FindAllSchemasInGraph(bmap<ECN::SchemaKey, ECN::ECSchemaCP, ECN::SchemaKeyLessThan<ECN::SchemaMatchType::Exact>>&, ECN::ECSchemaCP);
@@ -78,7 +103,7 @@ struct SchemaWriter final
 
             BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
 
-            void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); m_legacyUnitsHelper.ClearCache(); GetECDb().ClearECDbCache(); }
+            void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); GetECDb().ClearECDbCache(); }
             SchemaImportContext& ImportCtx() const { return m_importCtx; }
             bvector<ECN::ECSchemaCP> const& GetSchemasToImport() const { return m_schemasToImport; }
             bvector<ECN::ECSchemaCP>& GetSchemasToImportR() { return m_schemasToImport; }
@@ -98,7 +123,7 @@ struct SchemaWriter final
             ECN::CustomAttributeValidator const& GetSchemaUpgradeCustomAttributeValidator() const { return m_schemaUpgradeCustomAttributeValidator; }
             IssueReporter const& Issues() const { return GetECDb().GetImpl().Issues(); }
 
-            LegacyUnitsHelper& LegacyUnitsHelper() { return m_legacyUnitsHelper; }
+            LegacySchemaImportHelper& LegacySchemaImportHelper() { return m_legacyHelper; }
             };
 
     private:

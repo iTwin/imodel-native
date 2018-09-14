@@ -219,8 +219,12 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(Context& ctx, ECSchemaC
     for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : references)
         {
         ECSchemaCP reference = kvPair.second.get();
-        if (!ctx.IsEC32AvailableInFile() && ctx.LegacyUnitsHelper().IgnoreSchema(*reference))
-            continue;
+        if (!ctx.IsEC32AvailableInFile())
+            {
+            Context::LegacySchemaImportHelper::Action importAction = ctx.LegacySchemaImportHelper().GetImportAction(reference->GetSchemaKey());
+            if (importAction == Context::LegacySchemaImportHelper::Action::Ignore)
+                continue;
+            }
 
         ECSchemaId referenceId = SchemaPersistenceHelper::GetSchemaId(ctx.GetECDb(), DbTableSpace::Main(), reference->GetName().c_str(), SchemaLookupMode::ByName);
         if (!referenceId.IsValid())
@@ -2501,21 +2505,17 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReference
                 return ERROR;
                 }
 
-            if (!ctx.IsEC32AvailableInFile() && ctx.LegacyUnitsHelper().IgnoreSchema(newRef))
+            Nullable<Context::LegacySchemaImportHelper::Action> legacyImportAction;
+            if (!ctx.IsEC32AvailableInFile())
+                legacyImportAction = ctx.LegacySchemaImportHelper().GetImportAction(newRef);
+
+            if (legacyImportAction == Context::LegacySchemaImportHelper::Action::Ignore)
                 continue;
 
             //Ensure schema exist
             if (!SchemaPersistenceHelper::TryGetSchemaKey(existingRef, ctx.GetECDb(), DbTableSpace::Main(), newRef.GetName().c_str()))
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s does not exist in the file.",
-                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            //Schema must exist with that or greater version
-            if (!existingRef.Matches(newRef, SchemaMatchType::LatestWriteCompatible))
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
                                           oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
                 return ERROR;
                 }
@@ -3940,7 +3940,6 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (schemaChange.OriginalECXmlVersionMinor().IsChanged())
             {
             uint32_t newVal = schemaChange.OriginalECXmlVersionMinor().GetNew().Value();
-
             //if the higher digits have changed, minor version may be decremented
             if (!originalVersionMajorHasChanged && schemaChange.OriginalECXmlVersionMinor().GetOld().Value() > newVal)
                 {
@@ -3948,7 +3947,6 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
                                      oldSchema.GetName().c_str());
                 return ERROR;
                 }
-
             updateBuilder.AddSetExp("OriginalECXmlVersionMinor", newVal);
             }
         }
@@ -4232,7 +4230,7 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
     if (IsEC32AvailableInFile())
         out.insert(out.begin(), sortedSchemas.begin(), sortedSchemas.end());
     else
-        m_legacyUnitsHelper.Preprocess(out, sortedSchemas);
+        m_legacyHelper.RemoveSchemasToSkip(out, sortedSchemas);
 
     return SchemaValidator::ValidateSchemas(ImportCtx(), Issues(), out) ? SUCCESS : ERROR;
     }
