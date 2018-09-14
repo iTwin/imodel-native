@@ -32,6 +32,7 @@ private:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IImageAllocator
     {
+    virtual ~IImageAllocator() {}
     virtual Byte*        _AllocMemory(size_t memorySize) = 0;
     virtual void         _FreeMemory(Byte* pMem) = 0;
     };
