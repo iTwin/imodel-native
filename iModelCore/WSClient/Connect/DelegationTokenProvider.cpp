@@ -101,28 +101,20 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool upd
     auto finalResult = std::make_shared<SamlTokenResult>();
     return m_tokenRetrieveTask.GetTask([=]()->AsyncTaskPtr<SamlTokenResult>
         {
-// Don't log "sensitive" information in production builds.
-#if !defined(PRG)
         LOG.infov("Requesting '%s' delegation token", m_rpUri.c_str());
-#endif
+
         SamlTokenPtr parentToken = dynamic_pointer_cast<SamlToken>(m_parentTokenProvider->GetToken());
         if (nullptr == parentToken)
             {
-// Don't log "sensitive" information in production builds.
-#if !defined(PRG)
             LOG.errorv("Base token not found for '%s' delegation token", m_rpUri.c_str());
-#endif
             return CreateCompletedAsyncTask(SamlTokenResult::Error({}));
             }
 
         return m_client->RequestToken(*parentToken, m_rpUri, m_tokenRequestLifetime)
             ->Then<SamlTokenResult>([=] (SamlTokenResult result)
             {
-// Don't log "sensitive" information in production builds.
-#if !defined(PRG)
             if (result.IsSuccess())
                 LOG.infov("Received '%s' delegation token lifetime %d minutes", m_rpUri.c_str(), result.GetValue()->GetLifetime());
-#endif
             return result;
             });
         })
