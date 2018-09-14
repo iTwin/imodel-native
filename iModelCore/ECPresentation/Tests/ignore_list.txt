@@ -10,3 +10,13 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
+
+QueryBasedSpecificationNodesProviderTests.ReturnsChildIfGroupingRuleDoesntHaveCreateGroupForSingleItemFlag
+
+    # VSTS#33897
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/14/2018
+    # 2018-09-14 05:00:23,203 ERROR [0x00000dc8] ECObjects.ECExpressions.Evaluate - ValueSymbol::_GetValue: StructRequired (this.MyID)
+    # 2018-09-14 05:00:23,203 ERROR [0x00000dc8] ECObjects.ECExpressions.Evaluate - ECExpressionsHelper::EvaluateECExpression: Could not get node value
+    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\QueryBasedSpecificationNodesProviderTests.cpp(257): error:       Expected: "ECInstanceNode"
+    # To be equal to: node->GetType().c_str()
+    # Which is: "ECClassGroupingNode"
