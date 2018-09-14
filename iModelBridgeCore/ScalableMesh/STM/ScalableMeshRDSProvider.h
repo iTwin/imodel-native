@@ -44,7 +44,8 @@ private:
     Utf8String m_PWCSMeshGuid;
     AzureConnection m_AzureConnection;
 
-    void        InitializeRealityDataService();
+    static void InitializeRealityDataService(const Utf8String& projectID);
+
     bool        IsTokenExpired();
     void        UpdateToken();   
     Utf8String  GetRootDocumentName();    
@@ -64,6 +65,7 @@ protected:
 public:
 
     static Utf8String GetBuddiUrl();
+    static bool IsHostedByRDS(const Utf8String& projectGuid, const Utf8String& url);
 
     explicit ScalableMeshRDSProvider(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid);
     virtual ~ScalableMeshRDSProvider();
