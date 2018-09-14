@@ -1990,8 +1990,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         }
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2525,7 +2523,7 @@ bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, I
 
     // We need to stroke if either the stroke length or width exceeds tolerance...
     ILineStyleCP        lineStyle;
-    double              maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
+    double              maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : lsSymb.GetScale() * std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
     constexpr double    s_strokeLineStylePixels = 5.0;      // Stroke if max dimension exceeds 5 pixels.
 
     if (maxDimension > s_strokeLineStylePixels * GetFacetOptions().GetChordTolerance())
@@ -2536,7 +2534,7 @@ bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, I
 
     return false;
     }
-
+                                          
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/

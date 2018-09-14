@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ModelSpatialClassifier.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -39,15 +39,15 @@ Json::Value ModelSpatialClassifier::ToJson() const
 
     value["flags"] = m_flags.ToJson();
     value["expand"] = m_expandDistance;
-    value["modelId"] = m_modelId.GetValue(); 
+    value["modelId"] = m_modelId.ToHexStr(); 
     value["name"] = m_name;
     value["isActive"] = m_isActive;
 
     if (m_categoryId.IsValid())
-        value["categoryId"] = m_categoryId.GetValue();
+        value["categoryId"] = m_categoryId.ToHexStr();
 
     if (m_elementId.IsValid())
-        value["m_elementId"] = m_elementId.GetValue();
+        value["elementId"] = m_elementId.ToHexStr();
 
     return value;
     }
