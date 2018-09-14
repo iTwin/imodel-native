@@ -308,7 +308,7 @@ struct TileTreeAppData : DgnModel::AppData
             {
             if (tree.second.IsValid())
                 {
-                JsInterop::GetLogger().debugv("Canceling all tile loads for %s", tree.second->GetId().ToString().c_str());
+                // JsInterop::GetLogger().debugv("Canceling all tile loads for %s", tree.second->GetId().ToString().c_str());
                 tree.second->CancelAllTileLoads();
                 }
             }
@@ -321,7 +321,7 @@ struct TileTreeAppData : DgnModel::AppData
             {
             if (tree.second.IsValid())
                 {
-                JsInterop::GetLogger().debugv("Waiting for all tile loads for %s", tree.second->GetId().ToString().c_str());
+                // JsInterop::GetLogger().debugv("Waiting for all tile loads for %s", tree.second->GetId().ToString().c_str());
                 // just in case somebody request more tiles after _OnUnload()...
                 tree.second->CancelAllTileLoads();
                 // Wait for them all to finish canceling...

@@ -22,6 +22,8 @@
 #include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
+#include <Bentley/CancellationToken.h>
+#include <Bentley/BeAtomic.h>
 #include <Bentley/PerformanceLogger.h>
 #include <DgnPlatform/Tile.h>
 
@@ -699,6 +701,26 @@ struct NativeBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NativeBriefcase
 //=======================================================================================
 struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     {
+    // Cancellation token associated with the currently-open DgnDb.
+    // The 'cancelled' flag i set on the main thread when the DgnDb is being closed.
+    // The token can be passed into functions which create async workers and stored on those
+    // workers such that it can be checked for cancellation in the worker's Execute() function to
+    // trivially exit if the DgnDb was closed in the interim.
+    struct CancellationToken : ICancellationToken
+    {
+    private:
+        BeAtomic<bool> m_canceled;
+    public:
+        bool IsCanceled() final { return m_canceled.load(); }
+        void Register(std::weak_ptr<ICancellationListener>) final { }
+
+        void Cancel()
+            {
+            // JsInterop::GetLogger().debugv("Setting cancellation token");
+            m_canceled.store(true);
+            }
+    };
+
     struct NativeAppData : Db::AppData
         {
         NativeDgnDb& m_addonDb;
@@ -725,6 +747,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Dgn::DgnDbPtr m_dgndb;
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
+    std::shared_ptr<CancellationToken> m_cancellationToken;
 
     NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
     ~NativeDgnDb() {CloseDgnDb();}
@@ -734,6 +757,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (!m_dgndb.IsValid())
             return;
 
+        BeAssert(nullptr != m_cancellationToken);
+        m_cancellationToken->Cancel();
+        m_cancellationToken = nullptr;
+
         TearDownPresentationManager();
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
@@ -742,17 +769,18 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb = nullptr;
         }
 
-    void OnDgnDbOpened(DgnDbP dgndb)
+    void OnDgnDbOpened(DgnDbR dgndb)
         {
-        if (nullptr == dgndb)
-            CloseDgnDb();
+        BeAssert(m_dgndb.IsNull());
 
-        m_dgndb = dgndb;
+        m_dgndb = &dgndb;
 
         SetupPresentationManager();
         NativeAppData::Add(*this);
         m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
+
+        m_cancellationToken = std::make_shared<CancellationToken>();
         }
 
     static NativeDgnDb* From(DgnDbR db)
@@ -816,7 +844,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         DgnDbPtr db;
         DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
         if (BE_SQLITE_OK == status)
-            OnDgnDbOpened(db.get());
+            OnDgnDbOpened(*db);
 
         return Napi::Number::New(Env(), (int)status);
         }
@@ -829,7 +857,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         DbResult status;
         DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
         if (db.IsValid())
-            OnDgnDbOpened(db.get());
+            OnDgnDbOpened(*db);
 
         return Napi::Number::New(Env(), (int)status);
         }
@@ -939,7 +967,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         DgnDbPtr db;
         DbResult result = JsInterop::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
         if (BE_SQLITE_OK == result)
-            OnDgnDbOpened(db.get());
+            OnDgnDbOpened(*db);
         else
             status = RevisionStatus::ApplyError;
 
@@ -1112,7 +1140,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(0, idStr, );
         REQUIRE_ARGUMENT_FUNCTION(1, responseCallback, );
 
-        JsInterop::GetTileTree(GetDgnDb(), idStr, responseCallback);
+        JsInterop::GetTileTree(m_cancellationToken, GetDgnDb(), idStr, responseCallback);
         }
 
     void GetTileContent(Napi::CallbackInfo const& info)
@@ -1121,7 +1149,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(1, tileIdStr, );
         REQUIRE_ARGUMENT_FUNCTION(2, responseCallback, );
 
-        JsInterop::GetTileContent(GetDgnDb(), treeIdStr, tileIdStr, responseCallback);
+        JsInterop::GetTileContent(m_cancellationToken, GetDgnDb(), treeIdStr, tileIdStr, responseCallback);
         }
 
     Napi::Value InsertLinkTableRelationship(Napi::CallbackInfo const& info)
@@ -3400,11 +3428,16 @@ protected:
     // Inputs
     GeometricModelPtr m_model;
     Tile::Tree::Id m_treeId;
+    ICancellationTokenPtr m_cancellationToken;
 
     // Outputs
     DgnDbStatus m_status;
 
-    TileWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : Napi::AsyncWorker(callback), m_model(&model), m_treeId(treeId), m_status(DgnDbStatus::BadRequest) { }
+    TileWorker(ICancellationTokenPtr cancellationToken, Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId)
+        : Napi::AsyncWorker(callback), m_model(&model), m_treeId(treeId), m_cancellationToken(cancellationToken), m_status(DgnDbStatus::BadRequest)
+        {
+        BeAssert(nullptr != m_cancellationToken);
+        }
 
     void OnError(Napi::Error const& e) override
         {
@@ -3430,6 +3463,16 @@ protected:
     virtual Napi::Value GetResult() = 0;
 
     Tile::TreePtr FindTileTree() { return JsInterop::FindTileTree(*m_model, m_treeId); }
+    bool IsCanceled() const { return nullptr != m_cancellationToken && m_cancellationToken->IsCanceled(); }
+
+    bool PreExecute()
+        {
+        if (!IsCanceled())
+            return true;
+
+        m_status = DgnDbStatus::NotOpen;
+        return false;
+        }
 public:
     static DgnDbStatus ParseInputs(GeometricModelPtr& model, Tile::Tree::Id& treeId, DgnDbR db, Utf8StringCR idStr)
         {
@@ -3456,7 +3499,10 @@ private:
 
     void Execute() final
         {
-        JsInterop::GetLogger().debugv("GetTileTreeWorker::Execute: %s", m_treeId.ToString().c_str());
+        if (!PreExecute())
+            return;
+
+        // JsInterop::GetLogger().debugv("GetTileTreeWorker::Execute: %s", m_treeId.ToString().c_str());
         auto tree = FindTileTree();
         if (tree.IsNull())
             {
@@ -3473,20 +3519,20 @@ private:
         return NapiUtils::Convert(Env(), m_result);
         }
 public:
-    GetTileTreeWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : TileWorker(callback, model, treeId)
+    GetTileTreeWorker(ICancellationTokenPtr cancel, Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId) : TileWorker(cancel, callback, model, treeId)
         {
-        JsInterop::GetLogger().debugv("GetTileTreeWorker ctor: %s", m_treeId.ToString().c_str());
+        // JsInterop::GetLogger().debugv("GetTileTreeWorker ctor: %s", m_treeId.ToString().c_str());
         }
     ~GetTileTreeWorker()
         {
-        JsInterop::GetLogger().debugv("GetTileTreeWorker dtor: %s", m_treeId.ToString().c_str());
+        // JsInterop::GetLogger().debugv("GetTileTreeWorker dtor: %s", m_treeId.ToString().c_str());
         }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::GetTileTree(DgnDbR db, Utf8StringCR idStr, Napi::Function& callback)
+void JsInterop::GetTileTree(ICancellationTokenPtr cancel, DgnDbR db, Utf8StringCR idStr, Napi::Function& callback)
     {
     GeometricModelPtr model;
     Tile::Tree::Id treeId;
@@ -3498,7 +3544,7 @@ void JsInterop::GetTileTree(DgnDbR db, Utf8StringCR idStr, Napi::Function& callb
         }
     else
         {
-        auto worker = new GetTileTreeWorker(callback, *model, treeId);
+        auto worker = new GetTileTreeWorker(cancel, callback, *model, treeId);
         worker->Queue();
         }
     }
@@ -3517,7 +3563,10 @@ private:
 
     void Execute() final
         {
-        JsInterop::GetLogger().debugv("GetTileContentWorker::Execute: %s", m_contentId.ToString().c_str());
+        if (!PreExecute())
+            return;
+
+        // JsInterop::GetLogger().debugv("GetTileContentWorker::Execute: %s %s", m_treeId.ToString().c_str(), m_contentId.ToString().c_str());
         auto tree = FindTileTree();
         m_result = tree.IsValid() ? tree->RequestContent(m_contentId) : nullptr;
         m_status = m_result.IsValid() ? DgnDbStatus::Success : DgnDbStatus::NotFound;
@@ -3534,14 +3583,15 @@ private:
         return blob;
         }
 public:
-    GetTileContentWorker(Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId, Tile::ContentId contentId) : TileWorker(callback, model, treeId), m_contentId(contentId)
+    GetTileContentWorker(ICancellationTokenPtr cancel, Napi::Function& callback, GeometricModelR model, Tile::Tree::Id treeId, Tile::ContentId contentId)
+        : TileWorker(cancel, callback, model, treeId), m_contentId(contentId)
         {
-        JsInterop::GetLogger().debugv("GetTileContentWorker ctor: %s", m_contentId.ToString().c_str());
+        // JsInterop::GetLogger().debugv("GetTileContentWorker ctor: %s %s", m_treeId.ToString().c_str(), m_contentId.ToString().c_str());
         }
 
     ~GetTileContentWorker()
         {
-        JsInterop::GetLogger().debugv("GetTileContentWorker dtor: %s", m_contentId.ToString().c_str());
+        // JsInterop::GetLogger().debugv("GetTileContentWorker dtor: %s %s", m_treeId.ToString().c_str(), m_contentId.ToString().c_str());
         }
 
     static DgnDbStatus ParseInputs(GeometricModelPtr& model, Tile::Tree::Id& treeId, Tile::ContentIdR contentId, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR contentIdStr)
@@ -3557,7 +3607,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::GetTileContent(DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR tileIdStr, Napi::Function& callback)
+void JsInterop::GetTileContent(ICancellationTokenPtr cancel, DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR tileIdStr, Napi::Function& callback)
     {
     GeometricModelPtr model;
     Tile::Tree::Id treeId;
@@ -3570,7 +3620,7 @@ void JsInterop::GetTileContent(DgnDbR db, Utf8StringCR treeIdStr, Utf8StringCR t
         }
     else
         {
-        auto worker = new GetTileContentWorker(callback, *model, treeId, contentId);
+        auto worker = new GetTileContentWorker(cancel, callback, *model, treeId, contentId);
         worker->Queue();
         }
     }

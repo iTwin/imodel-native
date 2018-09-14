@@ -15,6 +15,7 @@
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnFontData.h>
 #include <Bentley/BeThread.h>
+#include <Bentley/CancellationToken.h>
 #include <node-addon-api/napi.h>
 
 USING_NAMESPACE_BENTLEY
@@ -118,8 +119,8 @@ public:
     static RepositoryStatus BriefcaseManagerStartBulkOperation(DgnDbR dgndb);
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
-    static void GetTileTree(DgnDbR db, Utf8StringCR id, Napi::Function& callback);
-    static void GetTileContent(DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
+    static void GetTileTree(ICancellationTokenPtr, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
+    static void GetTileContent(ICancellationTokenPtr, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
 
     static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
