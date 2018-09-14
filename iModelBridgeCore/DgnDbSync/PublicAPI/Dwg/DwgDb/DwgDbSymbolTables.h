@@ -206,6 +206,7 @@ public:
     DWGDB_EXPORT DwgDbStatus                OpenSpatialIndex (DwgDbSpatialIndexPtr& indexOut, DwgDbOpenMode mode) const;
     DWGDB_EXPORT DwgDbStatus                OpenSortentsTable (DwgDbSortentsTablePtr& sortentsOut, DwgDbOpenMode mode);
     DWGDB_EXPORT DwgDbObjectId              AppendEntity (DwgDbEntityR entity);
+    DWGDB_EXPORT DwgDbStatus                ComputeRange (DRange3dR out);
     };  // DwgDbBlockTableRecord
 DWGDB_DEFINE_OBJECTPTR (BlockTableRecord)
 

@@ -564,6 +564,7 @@ public:
         WString             m_prefixInRootFile;
         DwgDbObjectId       m_blockIdInRootFile;
         DgnModelIdSet       m_dgnModels;
+        DRange3d            m_computedRange;
 
     public:
         DwgXRefHolder () : m_xrefDatabase() { }
@@ -582,6 +583,10 @@ public:
         bool            HasDgnModel (DgnModelId id) const { return m_dgnModels.Contains(id); }
         void            AddDgnModel (DgnModelId id) { m_dgnModels.insert(id); }
         DgnModelIdSet&  GetDgnModelsR () { return m_dgnModels; }
+        //! Set a computed range for xRef's modelspace
+        void            SetComputedRange (DRange3dCR range) { m_computedRange = range; }
+        //! Get the computed range for xRef's modelspace
+        DRange3dCR      GetComputedRange () const { return m_computedRange; }
         };  // DwgXRefHolder
     typedef bvector<DwgXRefHolder>    T_LoadedXRefFiles;
 
@@ -621,6 +626,7 @@ public:
         //! @param[in] entity The input DWG entity to be acquired by m_entity
         //! @param[in] other The other input context to be copied
         DWG_EXPORT ElementImportInputs (DgnModelR model, DwgDbEntityP entity, ElementImportInputs const& other);
+        DgnModelCR              GetTargetModel () const { return m_targetModel; }
         DgnModelR               GetTargetModelR () { return m_targetModel; }
         void                    SetClassId (DgnClassId id) { m_dgnClassId = id; }
         DgnClassId              GetClassId () const { return m_dgnClassId; }
@@ -1004,19 +1010,19 @@ private:
 protected:
     //! @name  Miscellaneous
     //! @{
-    DWG_EXPORT virtual void       _BeginImport ();
-    DWG_EXPORT virtual void       _FinishImport ();
-    virtual void                        _OnFatalError() { m_wasAborted = true; }
-    virtual GeometryOptions&            _GetCurrentGeometryOptions () { return m_currentGeometryOptions; }
-    DWG_EXPORT virtual bool       _ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr);
-    BeFileNameCR                        GetRootDwgFileName () const { return m_rootFileName; }
-    DWG_EXPORT bool               ValidateDwgFile (BeFileNameCR dwgdxfName);
+    DWG_EXPORT virtual void _BeginImport ();
+    DWG_EXPORT virtual void _FinishImport ();
+    virtual void            _OnFatalError() { m_wasAborted = true; }
+    virtual GeometryOptions&    _GetCurrentGeometryOptions () { return m_currentGeometryOptions; }
+    DWG_EXPORT virtual bool _ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr);
+    BeFileNameCR            GetRootDwgFileName () const { return m_rootFileName; }
+    DWG_EXPORT bool         ValidateDwgFile (BeFileNameCR dwgdxfName);
 
     //! @name  Change-Detection
     //! @{
-    DWG_EXPORT  virtual void      _SetChangeDetector (bool updating);
-    virtual IDwgChangeDetector&         _GetChangeDetector () { return *m_changeDetector; }
-    virtual bool                        _HaveChangeDetector () { return nullptr != m_changeDetector; }
+    DWG_EXPORT  virtual void    _SetChangeDetector (bool updating);
+    virtual IDwgChangeDetector& _GetChangeDetector () { return *m_changeDetector; }
+    virtual bool                _HaveChangeDetector () { return nullptr != m_changeDetector; }
     DWG_EXPORT virtual BentleyStatus _DetectDeletedDocuments();
 
     //! @name The ImportJob
@@ -1088,10 +1094,10 @@ protected:
     DWG_EXPORT ResolvedModelMapping CreateAndInsertModelMap (DgnModelP model, DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
     DWG_EXPORT bool               AddToDwgModelMap (ResolvedModelMapping const&);
     DWG_EXPORT ResolvedModelMapping FindRootModelFromImportJob ();
-    //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
+    //! Find a cached DgnModel mapped from a DWG "model", with matching transformation.  Only search the cached map, no attempt to search in the syncInfo.
     DWG_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType source);
-    //! Find a cached DgnModel mapped from an xRef or raster attachment.
-    DWG_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR atatchmentId, DwgSyncInfo::ModelSourceType sourceType);
+    //! Find a cached DgnModel mapped from a DWG "model", ignoring transformation. Only search the cached map, no attempt to search in the syncInfo.
+    DWG_EXPORT ResolvedModelMapping FindModel (DwgDbObjectIdCR dwgModelId, DwgSyncInfo::ModelSourceType sourceType);
     DWG_EXPORT Utf8String         RemapModelName (Utf8StringCR name, BeFileNameCR, Utf8StringCR suffix);
     DWG_EXPORT virtual Utf8String _ComputeModelName (DwgDbBlockTableRecordCR block, Utf8CP suffix = nullptr);
     DWG_EXPORT virtual DgnClassId _GetModelType (DwgDbBlockTableRecordCR block);
@@ -1125,19 +1131,19 @@ protected:
     //! @name  Importing line type table
     //! @{
     // The line type section contains all line types used in a DWG file
-    DWG_EXPORT virtual BentleyStatus          _ImportLineTypeSection ();
-    DWG_EXPORT virtual LineStyleStatus        _ImportLineType (DwgDbLinetypeTableRecordPtr& ltype);
-    DWG_EXPORT virtual BentleyStatus          _OnUpdateLineType (DgnStyleId&, DwgDbLinetypeTableRecordCR);
+    DWG_EXPORT virtual BentleyStatus    _ImportLineTypeSection ();
+    DWG_EXPORT virtual LineStyleStatus  _ImportLineType (DwgDbLinetypeTableRecordPtr& ltype);
+    DWG_EXPORT virtual BentleyStatus    _OnUpdateLineType (DgnStyleId&, DwgDbLinetypeTableRecordCR);
 
     //! @name  Importing materials
     //! @{
     // The materials dictionay contains all materials used in a DWG file
-    DWG_EXPORT virtual BentleyStatus          _ImportMaterialSection ();
-    DWG_EXPORT virtual BentleyStatus          _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
-    DWG_EXPORT virtual BentleyStatus          _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
+    DWG_EXPORT virtual BentleyStatus    _ImportMaterialSection ();
+    DWG_EXPORT virtual BentleyStatus    _ImportMaterial (DwgDbMaterialPtr& material, Utf8StringCR paletteName, Utf8StringCR materialName);
+    DWG_EXPORT virtual BentleyStatus    _OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial);
     //! Search material paths specified in the Config file.  If a match found, replace the file name.
-    DWG_EXPORT virtual bool                   _FindTextureFile (BeFileNameR filename) const;
-    DWG_EXPORT bvector<BeFileName> const&     GetMaterialSearchPaths () const { return m_materialSearchPaths; }
+    DWG_EXPORT virtual bool             _FindTextureFile (BeFileNameR filename) const;
+    DWG_EXPORT bvector<BeFileName> const& GetMaterialSearchPaths () const { return m_materialSearchPaths; }
 
     //! @name  Importing entities
     //! @{
@@ -1199,25 +1205,25 @@ protected:
 
     //! @name Options and configs
     //! @{
-    virtual void                        _OnConfigurationRead (BeXmlDomR configDom) {}
-    void                                ParseConfigurationFile (T_Utf8StringVectorR userObjectEnablers);
-    BentleyStatus                       SearchForMatchingRule (ImportRule& entryOut, Utf8StringCR modelName, BeFileNameCR baseFilename);
-    virtual Utf8String                  _GetFontSearchPaths() const { return m_config.GetXPathString("/ConvertConfig/Fonts/@searchPaths", ""); }
-    WorkingFonts const&                 GetLoadedFonts () const { return m_loadedFonts; }
+    virtual void        _OnConfigurationRead (BeXmlDomR configDom) {}
+    void                ParseConfigurationFile (T_Utf8StringVectorR userObjectEnablers);
+    BentleyStatus       SearchForMatchingRule (ImportRule& entryOut, Utf8StringCR modelName, BeFileNameCR baseFilename);
+    virtual Utf8String  _GetFontSearchPaths() const { return m_config.GetXPathString("/ConvertConfig/Fonts/@searchPaths", ""); }
+    WorkingFonts const& GetLoadedFonts () const { return m_loadedFonts; }
 
     //! @name Error and Progress Reporting
     //! @{
-    DWG_EXPORT virtual void       _ReportIssue (IssueSeverity, IssueCategory::StringId, Utf8CP message, Utf8CP context);
-    void                                ReportDbFileStatus (BeSQLite::DbResult fileStatus, BeFileNameCR projectFileName);
-    void                                AddTasks (int32_t n);
-    DWG_EXPORT void               SetStepName (ProgressMessage::StringId, ...);
-    DWG_EXPORT void               SetTaskName (ProgressMessage::StringId, ...);
+    DWG_EXPORT virtual void _ReportIssue (IssueSeverity, IssueCategory::StringId, Utf8CP message, Utf8CP context);
+    void                ReportDbFileStatus (BeSQLite::DbResult fileStatus, BeFileNameCR projectFileName);
+    void                AddTasks (int32_t n);
+    DWG_EXPORT void     SetStepName (ProgressMessage::StringId, ...);
+    DWG_EXPORT void     SetTaskName (ProgressMessage::StringId, ...);
 
     //! @name DWG-DgnDb sync info
     //! @{
     DWG_EXPORT virtual DwgSyncInfo::DwgFileId _AddFileInSyncInfo (DwgDbDatabaseR, StableIdPolicy);
     DWG_EXPORT virtual StableIdPolicy         _GetDwgFileIdPolicy () const;
-    DwgSyncInfo::DwgFileId              GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
+    DwgSyncInfo::DwgFileId  GetDwgFileId (DwgDbDatabaseR, bool setIfNotExist = true);
 
     //! @name  Product installations
     //! @{
@@ -1240,85 +1246,90 @@ public:
     DWG_EXPORT ImportJobCreateStatus InitializeJob (Utf8CP comment=nullptr, DwgSyncInfo::ImportJob::Type = DwgSyncInfo::ImportJob::Type::RootModels);
     DWG_EXPORT ImportJobLoadStatus FindJob ();
     DWG_EXPORT ResolvedImportJob const& GetImportJob () const { return m_importJob; }
-    DWG_EXPORT BentleyStatus      AttachSyncInfo ();
-    DwgSyncInfo&                        GetSyncInfo () { return m_syncInfo; }
-    DWG_EXPORT bool               ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr) { return _ArePointsValid(checkPoints, numPoints, entity); }
-    DgnFontCP                           GetDgnFontFor (DwgFontInfoCR fontInfo);
-    DgnFontCP                           GetDefaultFont () const { return m_defaultFont.get(); }
-    AnnotationTextStyleId               GetDefaultTextStyleId () const { return m_defaultTextstyleId; }
-    bool                                GetFallbackFontPathForShape (BeFileNameR filename) const;
-    DWG_EXPORT void               SetFallbackFontPathForShape (BeFileNameCR filename);
-    bool                                GetFallbackFontPathForText (BeFileNameR outName, DgnFontType type) const;
-    DWG_EXPORT void               SetFallbackFontPathForText (BeFileNameCR inName, DgnFontType fontType);
+    DWG_EXPORT BentleyStatus    AttachSyncInfo ();
+    DwgSyncInfo&                GetSyncInfo () { return m_syncInfo; }
+    DWG_EXPORT bool             ArePointsValid (DPoint3dCP checkPoints, size_t numPoints, DwgDbEntityCP entity = nullptr) { return _ArePointsValid(checkPoints, numPoints, entity); }
+    DgnFontCP                   GetDgnFontFor (DwgFontInfoCR fontInfo);
+    DgnFontCP                   GetDefaultFont () const { return m_defaultFont.get(); }
+    AnnotationTextStyleId       GetDefaultTextStyleId () const { return m_defaultTextstyleId; }
+    bool                        GetFallbackFontPathForShape (BeFileNameR filename) const;
+    DWG_EXPORT void             SetFallbackFontPathForShape (BeFileNameCR filename);
+    bool                        GetFallbackFontPathForText (BeFileNameR outName, DgnFontType type) const;
+    DWG_EXPORT void             SetFallbackFontPathForText (BeFileNameCR inName, DgnFontType fontType);
     //! @return The root transform information.
     DWG_EXPORT RootTransformInfo const& GetRootTransformInfo () const { return m_rootTransformInfo; }
     //! @return True, if the root transform has been changed from previous import; false, otherwise.
     //! @note This happens when iModelBridge changes its spatial transformation for the same import job.
-    DWG_EXPORT bool               HasRootTransformChanged () const { return m_rootTransformInfo.HasChanged(); }
+    DWG_EXPORT bool             HasRootTransformChanged () const { return m_rootTransformInfo.HasChanged(); }
     //! @return Current root transform.
-    TransformCR                         GetRootTransform () const { return m_rootTransformInfo.GetRootTransform(); }
-    DWG_EXPORT double             GetScaleToMeters () const;
-    DwgDbObjectId                       GetCurrentViewportId () { return m_currentGeometryOptions.GetViewportId(); }
-    DwgDbObjectIdCR                     GetCurrentSpaceId () const { return m_currentspaceId; }
-    DwgDbObjectIdCR                     GetModelSpaceId () const { return m_modelspaceId; }
-    StandardUnit                        GetModelSpaceUnits () const { return m_modelspaceUnits; }
-    DgnStyleId                          GetDgnLineStyleFor (DwgDbObjectIdCR ltypeId);
-    DgnElementId                        GetDgnTextStyleFor (DwgDbObjectIdCR tstyleId);
-    RenderMaterialId                    GetDgnMaterialFor (DwgDbObjectIdCR materialId);
-    DgnTextureId                        GetDgnMaterialTextureFor (Utf8StringCR fileName);
-    T_MaterialIdMap&                    GetImportedDgnMaterials () { return m_importedMaterials; }
-    void                                AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
-    ECN::ECSchemaCP                     GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
-    bool                                GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
+    TransformCR                 GetRootTransform () const { return m_rootTransformInfo.GetRootTransform(); }
+    DWG_EXPORT double           GetScaleToMeters () const;
+    DwgDbObjectId               GetCurrentViewportId () { return m_currentGeometryOptions.GetViewportId(); }
+    DwgDbObjectIdCR             GetCurrentSpaceId () const { return m_currentspaceId; }
+    DwgDbObjectIdCR             GetModelSpaceId () const { return m_modelspaceId; }
+    StandardUnit                GetModelSpaceUnits () const { return m_modelspaceUnits; }
+    DgnStyleId                  GetDgnLineStyleFor (DwgDbObjectIdCR ltypeId);
+    DgnElementId                GetDgnTextStyleFor (DwgDbObjectIdCR tstyleId);
+    RenderMaterialId            GetDgnMaterialFor (DwgDbObjectIdCR materialId);
+    DgnTextureId                GetDgnMaterialTextureFor (Utf8StringCR fileName);
+    T_MaterialIdMap&            GetImportedDgnMaterials () { return m_importedMaterials; }
+    void                        AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);
+    ECN::ECSchemaCP             GetAttributeDefinitionSchema () { return m_attributeDefinitionSchema; }
+    bool                        GetConstantAttrdefIdsFor (DwgDbObjectIdArray& ids, DwgDbObjectIdCR blockId);
     //! Get a spatial category and/or a sub-category for a modelspace entity layer. The syncInfo is read in and cached for fast retrieval.
-    DgnCategoryId                       GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
+    DgnCategoryId               GetSpatialCategory (DgnSubCategoryId& subCategoryId, DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     //! Get a drawing category for paperspace entity layer. If the category not already exists, a new one will be created.
-    DgnCategoryId                       GetOrAddDrawingCategory (DgnSubCategoryId& subCategory, DwgDbObjectIdCR layerId, DwgDbObjectIdCR viewportId, DgnModelCR model, DwgDbDatabaseP xrefDwg = nullptr);
-    DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
+    //! @param[out] subCategory A sub-category found or created from inputs
+    //! @param[in] layerId A DWG layer from which the sub-category is queried
+    //! @param[in] viewportId A DWG viewport for which the sub-category is needed
+    //! @param[in] model A DgnDb model into elements using the sub-category will be inserted
+    //! @param[in] xrefDwg A DWG file in which a source entity is to be imported using the sub-category.  Null if in master file.
+    DgnCategoryId               GetOrAddDrawingCategory (DgnSubCategoryId& subCategory, DwgDbObjectIdCR layerId, DwgDbObjectIdCR viewportId, DgnModelCR model, DwgDbDatabaseP xrefDwg = nullptr);
+    DgnSubCategoryId            InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     //! Get the block-geometry map that caches imported geometries.
-    T_BlockPartsMap&                    GetBlockPartsR () { return m_blockPartsMap; }
+    T_BlockPartsMap&            GetBlockPartsR () { return m_blockPartsMap; }
     //! Get the DefinitionModel that stores GeometryParts
-    DefinitionModelPtr                  GetGeometryPartsModel () { return m_geometryPartsModel; }
+    DefinitionModelPtr          GetGeometryPartsModel () { return m_geometryPartsModel; }
     //! Get/create the DefinitionModel that stores all other job specific definitions, expcept for GeometryParts.
-    DefinitionModelPtr                  GetOrCreateJobDefinitionModel ();
+    DefinitionModelPtr          GetOrCreateJobDefinitionModel ();
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
-    DWG_EXPORT BentleyStatus      MakeSchemaChanges ();
+    DWG_EXPORT BentleyStatus    MakeSchemaChanges ();
 
     //! Call this once before working with DwgImporter, after initializing DgnDb's DgnPlatformLib
     //! @param toolkitDir Installed RealDWG or OpenDWG folder; default to the same folder as the EXE.
-    DWG_EXPORT static void        Initialize (BentleyApi::BeFileNameCP toolkitDir = nullptr);
-    DWG_EXPORT static void        TerminateDwgHost ();
-    DWG_EXPORT BentleyStatus      OpenDwgFile (BeFileNameCR dwgdxfName);
-    DWG_EXPORT void               SetDgnDb (DgnDbR bim) const { m_dgndb = &bim; }
-    DWG_EXPORT DgnDbR             GetDgnDb () const { return *m_dgndb; }
-    DWG_EXPORT DwgDbDatabaseR     GetDwgDb () { return *m_dwgdb.get(); }
-    DWG_EXPORT BentleyStatus      Process ();
-    DWG_EXPORT void               Progress ();
-    DWG_EXPORT DgnModelId         CreateModel (DwgDbBlockTableRecordCR block, Utf8CP modelName, DgnClassId classId);
-    DWG_EXPORT void               ReportError (IssueCategory::StringId, Issue::StringId, Utf8CP details);
-    void                                ReportError (IssueCategory::StringId category, Issue::StringId issue, WCharCP details) {ReportError(category,issue,Utf8String(details).c_str());}
-    DWG_EXPORT void               ReportIssueV (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP context, ...);
-    DWG_EXPORT void               ReportIssue (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details, Utf8CP context = nullptr);
-    DWG_EXPORT void               ReportSyncInfoIssue (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
-    DWG_EXPORT BentleyStatus      OnFatalError (IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::ProgramExits(), ...);
-    DWG_EXPORT bool               WasAborted () const { return m_wasAborted; }
-    DgnProgressMeterR                   GetProgressMeter() const;
-    DWG_EXPORT MessageCenter&     GetMessageCenter () { return m_messageCenter; }
-    DWG_EXPORT Options const&     GetOptions () const { return m_options; }
-    DWG_EXPORT DgnCategoryId      GetUncategorizedCategory () const { return m_uncategorizedCategoryId; }
-    DWG_EXPORT CodeSpecId         GetBusinessKeyCodeSpec () const { return m_businessKeyCodeSpecId; }
-    StableIdPolicy                      GetCurrentIdPolicy () const { return m_currIdPolicy; }
-    DwgXRefHolder&                      GetCurrentXRefHolder () { return m_currentXref; }
-    DwgXRefHolder*                      FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock);
-    DwgDbDatabaseP                      FindLoadedXRef (BeFileNameCR path);
+    DWG_EXPORT static void      Initialize (BentleyApi::BeFileNameCP toolkitDir = nullptr);
+    DWG_EXPORT static void      TerminateDwgHost ();
+    DWG_EXPORT BentleyStatus    OpenDwgFile (BeFileNameCR dwgdxfName);
+    DWG_EXPORT void             SetDgnDb (DgnDbR bim) const { m_dgndb = &bim; }
+    DWG_EXPORT DgnDbR           GetDgnDb () const { return *m_dgndb; }
+    DWG_EXPORT DwgDbDatabaseR   GetDwgDb () { return *m_dwgdb.get(); }
+    DWG_EXPORT BentleyStatus    Process ();
+    DWG_EXPORT void             Progress ();
+    DWG_EXPORT DgnModelId       CreateModel (DwgDbBlockTableRecordCR block, Utf8CP modelName, DgnClassId classId);
+    DWG_EXPORT void             ReportError (IssueCategory::StringId, Issue::StringId, Utf8CP details);
+    void                        ReportError (IssueCategory::StringId category, Issue::StringId issue, WCharCP details) {ReportError(category,issue,Utf8String(details).c_str());}
+    DWG_EXPORT void             ReportIssueV (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP context, ...);
+    DWG_EXPORT void             ReportIssue (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details, Utf8CP context = nullptr);
+    DWG_EXPORT void             ReportSyncInfoIssue (IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
+    DWG_EXPORT BentleyStatus    OnFatalError (IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::ProgramExits(), ...);
+    DWG_EXPORT bool             WasAborted () const { return m_wasAborted; }
+    DgnProgressMeterR           GetProgressMeter() const;
+    DWG_EXPORT MessageCenter&   GetMessageCenter () { return m_messageCenter; }
+    DWG_EXPORT Options const&   GetOptions () const { return m_options; }
+    DWG_EXPORT DgnCategoryId    GetUncategorizedCategory () const { return m_uncategorizedCategoryId; }
+    DWG_EXPORT CodeSpecId       GetBusinessKeyCodeSpec () const { return m_businessKeyCodeSpecId; }
+    StableIdPolicy              GetCurrentIdPolicy () const { return m_currIdPolicy; }
+    DwgXRefHolder&              GetCurrentXRefHolder () { return m_currentXref; }
+    DwgXRefHolder*              FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock, bool createIfNotFound = false);
+    DwgDbDatabaseP              FindLoadedXRef (BeFileNameCR path);
     //! Import a database-resident entity
-    DWG_EXPORT BentleyStatus      ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
+    DWG_EXPORT BentleyStatus    ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a none database-resident entity in a desired block (must be a valid block)
-    DWG_EXPORT BentleyStatus      ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId, Utf8StringCR desiredCode);
-    DWG_EXPORT DgnCode            CreateCode (Utf8StringCR value) const;
-    DWG_EXPORT uint32_t           GetEntitiesImported () const { return m_entitiesImported; }
-    DWG_EXPORT DgnModelId         GetGroupModelId () const { return m_groupModelId; }
+    DWG_EXPORT BentleyStatus    ImportNewEntity (ElementImportResults& results, ElementImportInputs& inputs, DwgDbObjectIdCR desiredOwnerId, Utf8StringCR desiredCode);
+    DWG_EXPORT DgnCode          CreateCode (Utf8StringCR value) const;
+    DWG_EXPORT uint32_t         GetEntitiesImported () const { return m_entitiesImported; }
+    DWG_EXPORT DgnModelId       GetGroupModelId () const { return m_groupModelId; }
     
     };  // DwgImporter
 
