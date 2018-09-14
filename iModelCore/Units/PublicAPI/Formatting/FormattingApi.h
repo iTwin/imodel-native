@@ -1116,15 +1116,15 @@ private:
     Utf8String m_paramName;
     ParameterCategory m_category;
     ParameterCode m_paramCode;
-    ParameterDataType m_paramType;
-    int m_intValue;            // for binary flags and other integer values
+    // unused - ParameterDataType m_paramType;
+    // unused - int m_intValue;            // for binary flags and other integer values
 
 public:
     FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, ParameterDataType type) :
-        m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(type), m_intValue(0) {}
+        m_paramName(name), m_category(cat), m_paramCode(code)/*, unused m_paramType(type), m_intValue(0)*/ {}
 
     FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, int bitFlag):
-        m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(ParameterDataType::BitFlag), m_intValue(bitFlag) {}
+        m_paramName(name), m_category(cat), m_paramCode(code)/*, unused m_paramType(ParameterDataType::BitFlag), m_intValue(bitFlag)*/ {}
 
     Utf8StringCR GetName() { return m_paramName; }
     int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
