@@ -10,17 +10,23 @@
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 #include <BeHttp/ProxyHttpHandler.h>
 
-#define HEADER_SkipToken                "SkipToken"
-#define HEADER_MasAllowRedirect         "Mas-Allow-Redirect"
-#define HEADER_MasFileAccessUrlType     "Mas-File-Access-Url-Type"
-#define HEADER_MasUploadConfirmationId  "Mas-Upload-Confirmation-Id"
-#define HEADER_MasFileETag              "Mas-File-ETag"
-#define HEADER_MasServerHeader          "Mas-Server"
+#define HEADER_SkipToken                   "SkipToken"
+#define HEADER_MasAllowRedirect            "Mas-Allow-Redirect"
+#define HEADER_MasFileAccessUrlType        "Mas-File-Access-Url-Type"
+#define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
+#define HEADER_MasFileETag                 "Mas-File-ETag"
+#define HEADER_MasServerHeader             "Mas-Server"
 
-#define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
-#define VALUE_True                      "true"
+#define VALUE_FileAccessUrlType_Azure      "AzureBlobSasUrl"
+#define VALUE_True                         "true"
 
-#define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
+#define WARNING_UrlLengthLimitations       "<Warning> Url length might be problematic as it is longer than expected"
+
+#define SCHEMA_Policies                    "Policies"
+#define CLASS_PolicyAssertion              "PolicyAssertion"
+#define INSTANCE_PersistenceFileBackable   "Persistence.FileBackable"
+#define INSTANCE_PersistenceStreamBackable "Persistence.StreamBackable"
+#define PROPERTY_AdhocProperties           "AdhocProperties"
 
 const BeVersion WebApiV2::s_maxTestedWebApi(2, 8);
 
@@ -54,6 +60,61 @@ bool WebApiV2::IsSupported(WSInfoCR info)
         return false;
 
     return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMaxUploadSize) const
+    {
+    auto policiesJson = std::make_shared<rapidjson::Document>();
+    policiesJson->Parse<0>(response.GetBody().AsString().c_str());
+
+    auto reader = CreateJsonInstancesReader();
+    WSObjectsReader::Instances instances = reader->ReadInstances(policiesJson);
+
+    if (instances.IsEmpty())
+        {
+        LOG.error("GetMaxUploadSize: Response was empty");
+        return defaultMaxUploadSize;
+        }
+
+    WSObjectsReader::Instance instance = reader->GetInstance(0);
+    if (!instance.IsValid() ||
+        !instance.GetObjectId().schemaName.Equals(SCHEMA_Policies) ||
+        !instance.GetObjectId().className.Equals(CLASS_PolicyAssertion))
+        {
+        LOG.errorv("GetMaxUploadSize: Expected '%s' schema and '%s' class. Actually it was: '%s' schema and '%s' class", SCHEMA_Policies, CLASS_PolicyAssertion,
+                   instance.GetObjectId().schemaName, instance.GetObjectId().className);
+        return defaultMaxUploadSize;
+        }
+
+    if(!instance.GetObjectId().GetRemoteId().Equals(INSTANCE_PersistenceFileBackable) &&
+       !instance.GetObjectId().GetRemoteId().Equals(INSTANCE_PersistenceStreamBackable))
+        {
+        LOG.errorv("GetMaxUploadSize: InstanceId was expected to be '%s' or '%s'. Actually it was: '%s'", INSTANCE_PersistenceFileBackable,
+                   INSTANCE_PersistenceStreamBackable, instance.GetObjectId().GetRemoteId());
+        return defaultMaxUploadSize;
+        }
+
+    if (!instance.GetProperties().HasMember(PROPERTY_AdhocProperties) ||
+        !instance.GetProperties()[PROPERTY_AdhocProperties].IsArray())
+        {
+        LOG.error("GetMaxUploadSize: AdhocProperties did not exist in the response");
+        return defaultMaxUploadSize;
+        }
+
+    auto adhocProperties = instance.GetProperties()[PROPERTY_AdhocProperties].GetArray();
+
+    for (auto itr = adhocProperties.Begin(); itr != adhocProperties.End(); ++itr)
+        {
+        auto adhocPropertyName = GetNullableString((*itr), "Name");
+        if (adhocPropertyName.Equals("MaxUploadSize"))
+            return BeRapidJsonUtilities::UInt64FromValue((*itr)["Value"], defaultMaxUploadSize);
+        }
+
+    LOG.error("GetMaxUploadSize: MaxUploadSize property did not exist in the response");
+    return defaultMaxUploadSize;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -185,6 +246,23 @@ Utf8String WebApiV2::CreateSelectPropertiesQuery(const bset<Utf8String>& propert
         query.Sprintf("$select=%s", value.c_str());
 
     return query;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+Http::Request WebApiV2::CreateGetRepositoryRequest() const
+    {
+    WSQuery query(SCHEMA_Policies, CLASS_PolicyAssertion);
+    query.SetFilter("Supported+eq+true");
+
+    std::deque<ObjectId> queryIds;
+    queryIds.push_back(ObjectId(SCHEMA_Policies, CLASS_PolicyAssertion, INSTANCE_PersistenceFileBackable));
+    queryIds.push_back(ObjectId(SCHEMA_Policies, CLASS_PolicyAssertion, INSTANCE_PersistenceStreamBackable));
+    query.AddFilterIdsIn(queryIds);
+
+    query.SetTop(1);
+    return CreateQueryRequest(query);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -347,21 +425,24 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
 AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
     {
     auto repository = WSRepositoryClient::ParseRepositoryUrl(GetUrl("/"));
+
+    const uint64_t defaultMaxUploadSize = 0;
+    repository.SetMaxUploadSize(defaultMaxUploadSize);
+
     if (!repository.IsValid())
         return CreateCompletedAsyncTask(WSRepositoryResult::Error(WSError::CreateServerNotSupportedError()));
 
     if (GetMaxWebApiVersion() < BeVersion(2, 7))
         return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
 
-    WSQuery query("Policies", "PolicyAssertion");
-    query.SetTop(1); //TODO:: add aditional options to add to repository info
-    Http::Request request = CreateQueryRequest(query);
+    Http::Request request = CreateGetRepositoryRequest();
     request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoryResult>([=] (Http::Response& response) mutable
         {
         if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
             return WSRepositoryResult::Error(response);
 
+        repository.SetMaxUploadSize(GetMaxUploadSize(response, defaultMaxUploadSize));
         repository.SetPluginVersion(GetRepositoryPluginVersion(response, m_configuration->GetPersistenceProviderId()));
         return WSRepositoryResult::Success(repository);
         });

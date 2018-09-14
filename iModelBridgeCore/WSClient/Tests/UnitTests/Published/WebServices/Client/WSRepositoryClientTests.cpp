@@ -24,10 +24,19 @@ using namespace ::testing;
 using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-#define HEADER_MasFileETag          "Mas-File-ETag"
-#define HEADER_MasConnectionInfo    "Mas-Connection-Info"
-#define HEADER_MasFileAccessUrlType "Mas-File-Access-Url-Type"
-#define HEADER_Location             "Location"
+#define HEADER_MasFileETag                 "Mas-File-ETag"
+#define HEADER_MasConnectionInfo           "Mas-Connection-Info"
+#define HEADER_MasFileAccessUrlType        "Mas-File-Access-Url-Type"
+#define HEADER_Location                    "Location"
+
+#define INSTANCE_PersistenceFileBackable   "Persistence.FileBackable"
+#define INSTANCE_PersistenceStreamBackable "Persistence.StreamBackable"
+
+enum class VersionType
+    {
+    WebApi,
+    Service
+    };
 
 void WSRepositoryClientTests::SetUp()
     {
@@ -39,6 +48,70 @@ void WSRepositoryClientTests::TearDown()
     {
     ServerInfoProvider::InvalidateAllInfo();
     BaseMockHttpHandlerTest::TearDown();
+    }
+
+Utf8String StubGetMaxUploadSizeResponseBody(uint64_t maxUploadSize, Utf8String instanceId = INSTANCE_PersistenceFileBackable)
+    {
+    Utf8String maxUploadSizeProperty = maxUploadSize > 0 ? Utf8PrintfString(R"(,
+        {
+        "Name": "MaxUploadSize",
+        "Value": "%i",
+        "Type": 2
+        })", maxUploadSize)
+        : Utf8String();
+
+    return Utf8PrintfString(R"({
+        "instances": [
+            {
+            "instanceId": "%s",
+            "schemaName": "Policies",
+            "className": "PolicyAssertion",
+            "properties" :
+                {
+                "Supported": true,
+                "AdhocProperties": [
+                    {
+                    "Name": "SupportsWrite",
+                    "Value": "True",
+                    "Type": 5
+                    }
+                    %s
+                ]
+                }
+            }]
+        })", instanceId, maxUploadSizeProperty);
+    }
+
+void AddMaxUploadSizeRequestUrlSubPath(Utf8StringR unescapedPath)
+    {
+    Utf8String subPath = "/Policies/PolicyAssertion?$filter=(Supported+eq+true)+and+$id+in+['Persistence.FileBackable','Persistence.StreamBackable']&$top=1";
+    unescapedPath.append(subPath);
+
+    BeUri escapedUri(unescapedPath);
+    unescapedPath = escapedUri.ToString();
+    }
+
+void TestGetMaxUploadSize(shared_ptr<MockHttpHandler> handlerPtr, BeVersion webApiVersion, Utf8String responseBody, uint64_t expectedMaxUploadSize)
+    {
+    MockHttpHandler& handler = (*handlerPtr);
+
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, handlerPtr);
+
+    handler.ExpectRequests(2);
+    handler.ForRequest(1, StubWSInfoHttpResponseWebApi(webApiVersion));
+    handler.ForRequest(2, [=] (Http::RequestCR request)
+        {
+        Utf8String expectedUri = Utf8PrintfString("https://srv.com/ws/v%s/Repositories/testPluginId--locationId", webApiVersion.ToMajorMinorString());
+        AddMaxUploadSizeRequestUrlSubPath(expectedUri);
+        EXPECT_STRCASEEQ(expectedUri.c_str(), request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::OK, responseBody);
+        });
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ(expectedMaxUploadSize, repository.GetMaxUploadSize());
     }
 
 Json::Value StubWSObjectCreationJson()
@@ -133,6 +206,23 @@ TEST_F(WSRepositoryClientTests, GetInfo_WithServiceVersionAndWebApi20ResponseIsO
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi20Response_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ(0, repository.GetMaxUploadSize());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
@@ -145,7 +235,9 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAnd
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
-        EXPECT_STRCASEEQ("https://srv.com/ws/v2.8/Repositories/testPluginId--locationId/Policies/PolicyAssertion?$top=1", request.GetUrl().c_str());
+        Utf8String expectedUri = "https://srv.com/ws/v2.8/Repositories/testPluginId--locationId";
+        AddMaxUploadSizeRequestUrlSubPath(expectedUri);
+        EXPECT_STRCASEEQ(expectedUri.c_str(), request.GetUrl().c_str());
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         return StubHttpResponse(HttpStatus::OK, "", headers);
         });
@@ -162,6 +254,43 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAnd
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithFileBackableSupported_ReturnsRepositoryInfoWithMaxUploadSize)
+    {
+    uint64_t maxUploadSize = rand();
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 8}, StubGetMaxUploadSizeResponseBody(maxUploadSize, INSTANCE_PersistenceFileBackable), maxUploadSize);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithStreamBackableSupported_ReturnsRepositoryInfoWithMaxUploadSize)
+    {
+    uint64_t maxUploadSize = rand();
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 8}, StubGetMaxUploadSizeResponseBody(maxUploadSize, INSTANCE_PersistenceStreamBackable), maxUploadSize);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithFileUploadIsNotSupported_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+    {
+    Utf8String responseBody = Utf8PrintfString(R"({
+            "instances": []
+        })");
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 8}, responseBody, 0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi27ResponseIsOkWithoutMaxUploadSize_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+    {
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 7}, StubGetMaxUploadSizeResponseBody(0), 0);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WithServiceVersionAndWebApi28ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
@@ -174,7 +303,9 @@ TEST_F(WSRepositoryClientTests, GetInfo_WithServiceVersionAndWebApi28ResponseIsO
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
-        EXPECT_STRCASEEQ("https://srv.com/ws/sv4.2/Repositories/testPluginId--locationId/Policies/PolicyAssertion?$top=1", request.GetUrl().c_str());
+        Utf8String expectedUri = "https://srv.com/ws/sv4.2/Repositories/testPluginId--locationId";
+        AddMaxUploadSizeRequestUrlSubPath(expectedUri);
+        EXPECT_STRCASEEQ(expectedUri.c_str(), request.GetUrl().c_str());
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         return StubHttpResponse(HttpStatus::OK, "", headers);
         });

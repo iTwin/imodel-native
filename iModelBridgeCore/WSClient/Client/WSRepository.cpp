@@ -15,11 +15,12 @@
 #define INFO_Serialized_ServerUrl               "serverUrl"
 #define INFO_Serialized_PluginVersion           "pluginVersion"
 #define INFO_Serialized_ServiceVersion          "serviceVersion"
+#define INFO_Serialized_MaxUploadSize           "maxUploadSize"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSRepository::WSRepository() {}
+WSRepository::WSRepository() : m_maxUploadSize(0) {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas   05/2018
@@ -38,6 +39,7 @@ WSRepository::WSRepository(Utf8StringCR serialized) : WSRepository()
     m_serverUrl = json[INFO_Serialized_ServerUrl].asString();
     m_pluginVersion = BeVersion(json[INFO_Serialized_PluginVersion].asString().c_str());
     m_serviceVersion = BeVersion(json[INFO_Serialized_ServiceVersion].asString().c_str());
+    m_maxUploadSize = json[INFO_Serialized_MaxUploadSize].asUInt64();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -169,6 +171,22 @@ void WSRepository::SetServiceVersion(BeVersion version)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t WSRepository::GetMaxUploadSize() const
+    {
+    return m_maxUploadSize;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepository::SetMaxUploadSize(uint64_t maxUploadSize)
+    {
+    m_maxUploadSize = maxUploadSize;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Vilius.Kazlauskas    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSRepository::IsValid() const
@@ -194,5 +212,6 @@ Utf8String WSRepository::ToString() const
     json[INFO_Serialized_ServerUrl] = m_serverUrl;
     json[INFO_Serialized_PluginVersion] = m_pluginVersion.ToString();
     json[INFO_Serialized_ServiceVersion] = m_serviceVersion.ToString();
+    json[INFO_Serialized_MaxUploadSize] = m_maxUploadSize;
     return Json::FastWriter::ToString(json);
     }
