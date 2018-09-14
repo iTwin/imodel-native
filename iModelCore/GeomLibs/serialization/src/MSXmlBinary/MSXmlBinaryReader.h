@@ -71,7 +71,7 @@ struct MSXmlBinaryReader : public IBeXmlReader
                 bool m_canGetAttribute;
                 bool m_canMoveToElement;
                 bool m_hasContent;
-                bool m_isEmptyElement;
+                // unused - bool m_isEmptyElement;
                 Utf8String m_localName;
                 ValueHandle m_value;
                 bool m_exitScope;

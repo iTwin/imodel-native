@@ -516,7 +516,7 @@ int MSXmlBinaryReader::ReadMultiByteUInt31()
 
     }
 
-MSXmlBinaryReader::XmlNode::XmlNode(XmlNodeType nodeType, Byte* buffer, uint32_t nodeFlags) : m_value(buffer), m_nodeType(nodeType), m_isEmptyElement(false)
+MSXmlBinaryReader::XmlNode::XmlNode(XmlNodeType nodeType, Byte* buffer, uint32_t nodeFlags) : m_value(buffer), m_nodeType(nodeType)/*, unused m_isEmptyElement(false)*/
     {
     m_hasContent = ((nodeFlags & (uint32_t) XmlNodeFlags::HasContent) != 0);
     m_hasValue = ((nodeFlags & (uint32_t) XmlNodeFlags::HasValue) != 0);
