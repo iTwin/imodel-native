@@ -85,7 +85,7 @@ uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMa
         !instance.GetObjectId().className.Equals(CLASS_PolicyAssertion))
         {
         LOG.errorv("GetMaxUploadSize: Expected '%s' schema and '%s' class. Actually it was: '%s' schema and '%s' class", SCHEMA_Policies, CLASS_PolicyAssertion,
-                   instance.GetObjectId().schemaName, instance.GetObjectId().className);
+                   instance.GetObjectId().schemaName.c_str(), instance.GetObjectId().className.c_str());
         return defaultMaxUploadSize;
         }
 
@@ -93,7 +93,7 @@ uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMa
        !instance.GetObjectId().GetRemoteId().Equals(INSTANCE_PersistenceStreamBackable))
         {
         LOG.errorv("GetMaxUploadSize: InstanceId was expected to be '%s' or '%s'. Actually it was: '%s'", INSTANCE_PersistenceFileBackable,
-                   INSTANCE_PersistenceStreamBackable, instance.GetObjectId().GetRemoteId());
+                   INSTANCE_PersistenceStreamBackable, instance.GetObjectId().GetRemoteId().c_str());
         return defaultMaxUploadSize;
         }
 
