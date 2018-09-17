@@ -237,7 +237,6 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
 
         if (m_xrefDatabase.IsValid())
             {
-            m_xrefDatabase->closeInput (false);
             // the nested block name should be propagated into the root file
             m_prefixInRootFile = xrefBlock.GetName().GetWCharCP ();
             m_blockIdInRootFile = xrefBlock.GetObjectId ();
