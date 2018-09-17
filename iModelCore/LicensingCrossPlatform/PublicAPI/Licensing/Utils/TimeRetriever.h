@@ -43,6 +43,8 @@ public:
         {
         return BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         }
+
+    virtual ~TimeRetriever() {}
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

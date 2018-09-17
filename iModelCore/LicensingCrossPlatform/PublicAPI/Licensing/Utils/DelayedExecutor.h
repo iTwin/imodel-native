@@ -68,6 +68,8 @@ public:
 
     //! Future will be completed after specified time. Time can be slightly bigger due to system lags.
     LICENSING_EXPORT virtual folly::Future<folly::Unit> Delayed(uint64_t ms) override;
+
+    virtual ~DelayedExecutor() {}
 };
 
 END_BENTLEY_LICENSING_NAMESPACE
