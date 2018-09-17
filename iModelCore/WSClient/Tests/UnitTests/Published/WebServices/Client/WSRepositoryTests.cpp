@@ -33,7 +33,7 @@ TEST_F(WSRepositoryTests, Ctor_Default_EmptyValues)
     EXPECT_EQ("", repo.GetLocation());
     EXPECT_EQ("", repo.GetPluginId());
     EXPECT_EQ("", repo.GetServerUrl());
-	EXPECT_EQ(0, repo.GetMaxUploadSize());
+    EXPECT_EQ(0, repo.GetMaxUploadSize());
     EXPECT_EQ(BeVersion(), repo.GetPluginVersion());
     }
 
