@@ -74,7 +74,7 @@ struct QueryPlanner
 public:
     virtual QueryPlan* CreatePlanForNextQuery(IScalableMeshDisplayCacheManagerPtr& displayCacheManager, bset<uint64_t>& activeClips) const;
     virtual void FetchOverviewsAndPlanNextQuery(RequestedQuery& query, QueryPlan& nextQueryPlan, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, size_t& currentInd, ProducedNodeContainer<DPoint3d, Extent3dType>& nodesToSearch, ProducedNodeContainer<DPoint3d, Extent3dType>& foundNodes) const;
-    virtual void AddQueriesInPlan(QueryPlan& nextQueryPlan, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, QueryProcessor& queryProcessor) const;
+    virtual void AddQueriesInPlan(QueryPlan& nextQueryPlan, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, QueryProcessor& queryProcessor, IScalableMeshViewDependentMeshQueryParamsPtr viewParams, RequestedQuery& query) const;
 };
 
 void ComputeOverviewSearchToLoadNodes(RequestedQuery&                                            newQuery,

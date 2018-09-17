@@ -71,7 +71,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
         void UpdatePreloadOverview();
         void PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh);
-        void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
+        void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes, IScalableMeshViewDependentMeshQueryParamsPtr queryParam);
 
         void SortOverviews(bvector<IScalableMeshCachedDisplayNodePtr>& overviews, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP);
     protected:                                        

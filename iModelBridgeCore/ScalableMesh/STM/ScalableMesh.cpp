@@ -47,7 +47,6 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshVolume.h"
 
 #include "Edits/ClipRegistry.h"
-#include "Stores/SMStreamingDataStore.h"
 
 #include <Vu/VuApi.h>
 #include <Vu/vupoly.fdf>
@@ -1152,19 +1151,19 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         ISMDataStoreTypePtr<Extent3dType> dataStore;
         if (!isSingleFile)
             {
-            SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr stream_settings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(m_path);
+            m_streamingSettings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(m_path);
 
-            if (!stream_settings->IsValid())
+            if (!m_streamingSettings->IsValid())
                 return ERROR;
-            if (stream_settings->IsDataFromRDS())
-                m_smRDSProvider = IScalableMeshRDSProvider::Create(stream_settings->GetUtf8ProjectID(), stream_settings->GetUtf8GUID());
-            m_isCesium3DTiles = stream_settings->IsCesium3DTiles();
-            m_isFromStubFile = stream_settings->IsStubFile();
+            if (m_streamingSettings->IsDataFromRDS())
+                m_smRDSProvider = IScalableMeshRDSProvider::Create(m_streamingSettings->GetUtf8ProjectID(), m_streamingSettings->GetUtf8GUID());
+            m_isCesium3DTiles = m_streamingSettings->IsCesium3DTiles();
+            m_isFromStubFile = m_streamingSettings->IsStubFile();
 
 #ifndef VANCOUVER_API                                       
-            dataStore = new SMStreamingStore<Extent3dType>(stream_settings, m_smRDSProvider);
+            dataStore = new SMStreamingStore<Extent3dType>(m_streamingSettings, m_smRDSProvider);
 #else
-            dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings, m_smRDSProvider);
+            dataStore = SMStreamingStore<Extent3dType>::Create(m_streamingSettings, m_smRDSProvider);
 #endif
 
             m_scmIndexPtr = new MeshIndexType(dataStore,
@@ -3533,7 +3532,20 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 	if (targetModel == nullptr) return ERROR; //something is wrong with the reference;
     auto& modelInfo = targetModel->GetModelInfo();
     
-    if (targetCS == nullptr || !gcs.HasGeoRef())
+    if (targetCS == nullptr && this->IsCesium3DTiles() && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
+        {
+        // Fall back on the GCS saved in the SM metadata for Cesium tilesets
+        auto ecefGCS = m_sourceGCS;
+        if (!LoadGCSFrom(m_streamingSettings->GetGCSString()))
+            return BSIERROR; // Error loading layer gcs
+
+                             // Reproject data using this new GCS
+        auto newGCS = m_sourceGCS;
+        std::swap(m_sourceGCS, ecefGCS);
+        DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnModel));
+        return this->_Reproject(newDgnGcsPtr.get(), dgnModel);
+        }
+    else if (targetCS == nullptr || !gcs.HasGeoRef())
         {
         BaseGCSPtr targetGcs(BaseGCS::CreateGCS());
                 
