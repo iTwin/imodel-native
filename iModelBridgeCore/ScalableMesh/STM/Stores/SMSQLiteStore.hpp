@@ -1078,6 +1078,10 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 			memcpy(&dataCount, pi_uncompressedPacket.GetBufferAddress(), sizeof(uint64_t));
 			assert(dataCount > 0);
 
+#ifdef SCALABLEMESH_POOL_LIMITATIONS
+            size_t diffsetSize = 0;
+#endif
+
 			while (offset + 1 < (uint64_t)uncompressedSize && *((int32_t*)&pi_uncompressedPacket.GetBufferAddress()[offset]) > 0 && ct < dataCount)
 			{
 				//The pooled vectors don't initialize the memory they allocate. For complex datatypes with some logic in the constructor (like bvector),
@@ -1090,9 +1094,17 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 				offset += sizeOfCurrentSerializedSet;
 				offset = ceil(((float)offset / sizeof(int32_t))) * sizeof(int32_t);
 				++ct;
+#ifdef SCALABLEMESH_POOL_LIMITATIONS				
+                diffsetSize += sizeof(DifferenceSet);
+#endif				
 			}
 
+
+#ifdef SCALABLEMESH_POOL_LIMITATIONS
+			return uncompressedSize + diffsetSize;
+#else
 			return uncompressedSize;
+#endif						
 		}
 	}
 
