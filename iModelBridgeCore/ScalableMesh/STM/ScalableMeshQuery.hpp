@@ -2883,6 +2883,10 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
     LOAD_NODE
 
     bvector<IScalableMeshNodePtr> neighbors;
+
+    if (!(relativePosX >= -1 && relativePosX <= 1 && relativePosY >= -1 && relativePosY <= 1 && relativePosZ >= -1 && relativePosZ <= 1))
+        return neighbors;
+
     size_t neighborInd = 0;
     //see HGFSpatialIndex.hpp for node neighbor relations
     if (relativePosZ == -1) neighborInd += 8;
