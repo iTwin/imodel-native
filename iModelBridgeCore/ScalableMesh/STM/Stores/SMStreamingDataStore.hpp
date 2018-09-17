@@ -541,7 +541,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->DeclareRoot();
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
-        m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID);
+        if (nullptr == m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID))
+            return 0;
         Json::Value* masterJSONPtr = nullptr;
         if ((masterJSONPtr = m_CesiumGroup->GetSMMasterHeaderInfo()) != nullptr)
             {
@@ -561,10 +562,6 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 Utf8String wktString = masterJSON["GCS"].asString();
                 m_settings->SetGCSString(wktString);
                 }
-            }
-        else
-            {
-            return 0;
             }
 #endif
         //Utf8String wkt;
