@@ -81,7 +81,7 @@ struct WSCacheState : public IECDbSchemaChangeListener
     public:
         WSCacheState(const WSCacheState&) = delete;
         WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment);
-        ~WSCacheState();
+        virtual ~WSCacheState();
 
         virtual void OnSchemaChanged() override; // IECDbSchemaChangeListener
         void ClearRuntimeCaches();
