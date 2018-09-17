@@ -111,7 +111,7 @@ DgnGlyph::RasterStatus DgnTrueTypeGlyph::_GetRaster(Render::ImageR img) const
         if (FT_Err_Ok != FT_Set_Pixel_Sizes(ftFace, m_face.GetPixelScale(), 0))
             BeAssert(false);
 
-        img = Render::Image(outputWidth, outputHeight, std::move(bytes), Render::Image::Format::Rgba);
+        img = Render::Image::FromResizedImage(64, 64, Render::Image(outputWidth, outputHeight, std::move(bytes), Render::Image::Format::Rgba));
         return RasterStatus::Success;
         });
     }
