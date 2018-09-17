@@ -7913,7 +7913,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
             if (!m_dataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader)))
                 {
                 HASSERT(!"Error in store master header!");
-                throw;
+                throw runtime_error("Error in store master header!");
                 }
             }
 

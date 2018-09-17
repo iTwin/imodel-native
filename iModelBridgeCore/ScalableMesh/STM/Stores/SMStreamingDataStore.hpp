@@ -417,6 +417,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::Close()
             
 template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+    if (indexHeader->m_isCesiumFormat) return false;
     if (indexHeader != NULL && indexHeader->m_rootNodeBlockID.IsValid())
         {
         Json::Value masterHeader;
@@ -560,6 +561,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 Utf8String wktString = masterJSON["GCS"].asString();
                 m_settings->SetGCSString(wktString);
                 }
+            }
+        else
+            {
+            return 0;
             }
 #endif
         //Utf8String wkt;
