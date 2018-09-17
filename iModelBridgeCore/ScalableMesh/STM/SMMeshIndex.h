@@ -206,47 +206,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const;
         
-    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM()
-        {
-        std::lock_guard<std::mutex> lock(m_dtmLock); //don't want to add item twice
-        RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> poolMemItemPtr;
-
-
-        if (!SMMemoryPool::GetInstance()->GetItem<BcDTMPtr>(poolMemItemPtr, m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex))
-            {
-            RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(
-#ifndef VANCOUVER_API   
-                new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
-#else
-            SMMemoryPoolGenericBlobItem<BcDTMPtr>::CreateItem(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
-#endif
-);
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
-            m_dtmPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_dtmPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemItemPtr = storedMemoryPoolItem.get();
-
-            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
-            IScalableMeshNodePtr nodeP(
-#ifndef VANCOUVER_API
-                new ScalableMeshNode<POINT>(nodePtr)
-#else
-                ScalableMeshNode<POINT>::CreateItem(nodePtr)
-#endif
-                );
-            auto meshP = nodeP->GetMesh(flags);
-            if (meshP != nullptr)
-                {
-                auto ptrP = storedMemoryPoolItem->EditData();
-                if (ptrP == nullptr) storedMemoryPoolItem->SetData(new BcDTMPtr(BcDTM::Create()));
-                meshP->GetAsBcDTM(*storedMemoryPoolItem->EditData());
-                }
-            }
-
-        return poolMemItemPtr;
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM();
+        
     /**----------------------------------------------------------------------------
     Returns the 2.5d mesher used for meshing the points
 
