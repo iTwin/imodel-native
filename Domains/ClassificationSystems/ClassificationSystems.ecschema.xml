@@ -50,26 +50,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ClassificationSystemHasClassifications" modifier="Sealed" strength="embedding" description="a relationship to map Classificationsystem to its Classifications">
-        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="ClassificationSystem"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="Classification"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ClassificationSystemHasClassificationGroups" modifier="Sealed" strength="embedding" description="a relationship to map Classificationsystem to its ClassificationGroups">
-        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="ClassificationSystem"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="ClassificationGroup"/>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ClassificationGroupGroupsClassifications" modifier="None" strength="referencing" description="a relationship to map Classification to its group">
         <BaseClass>bis:ElementGroupsMembers</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="false">
