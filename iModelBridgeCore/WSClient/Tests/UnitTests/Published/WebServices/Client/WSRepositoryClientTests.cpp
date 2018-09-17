@@ -79,7 +79,7 @@ Utf8String StubGetMaxUploadSizeResponseBody(uint64_t maxUploadSize, Utf8String i
                 ]
                 }
             }]
-        })", instanceId, maxUploadSizeProperty);
+        })", instanceId.c_str(), maxUploadSizeProperty.c_str());
     }
 
 void AddMaxUploadSizeRequestUrlSubPath(Utf8StringR unescapedPath)
@@ -101,7 +101,7 @@ void TestGetMaxUploadSize(shared_ptr<MockHttpHandler> handlerPtr, BeVersion webA
     handler.ForRequest(1, StubWSInfoHttpResponseWebApi(webApiVersion));
     handler.ForRequest(2, [=] (Http::RequestCR request)
         {
-        Utf8String expectedUri = Utf8PrintfString("https://srv.com/ws/v%s/Repositories/testPluginId--locationId", webApiVersion.ToMajorMinorString());
+        Utf8String expectedUri = Utf8PrintfString("https://srv.com/ws/v%s/Repositories/testPluginId--locationId", webApiVersion.ToMajorMinorString().c_str());
         AddMaxUploadSizeRequestUrlSubPath(expectedUri);
         EXPECT_STRCASEEQ(expectedUri.c_str(), request.GetUrl().c_str());
         return StubHttpResponse(HttpStatus::OK, responseBody);
