@@ -348,6 +348,7 @@ public:
     void SetPaperspace (DwgDbObjectIdCR id) { m_paperspaceId = id; }
     void SetXrefModel (DgnModelP model) { m_xrefModel = model; }
     void SetXrefTransform (TransformCR trans) { m_xrefTransform = trans; }
+    void SetXrefRange (DRange3dCR range) { m_xrefRange = range; }
     BentleyStatus ConvertToBim (DwgImporter::ElementImportResults&, DwgImporter::ElementImportInputs&);
     };  // LayoutXrefFactory
 

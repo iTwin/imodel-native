@@ -408,7 +408,7 @@ ResolvedModelMapping    DwgImporter::GetModelFromSyncInfo (DwgDbObjectIdCR id, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType sourceType)
     {
-    // find cached model mapping by DWG model object ID
+    // find cached model mapping by DWG model object ID, matching transform, and source type
     ResolvedModelMapping    unresolved (dwgModelId);
 
     auto    range = m_dwgModelMap.equal_range (unresolved);
@@ -425,10 +425,10 @@ ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, Trans
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR attachmentId, DwgSyncInfo::ModelSourceType sourceType)
+ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, DwgSyncInfo::ModelSourceType sourceType)
     {
-    // find cached model mapping by an xRef or raster attachment ID:
-    ResolvedModelMapping    unresolved (attachmentId);
+    // find cached model mapping by DWG model ID & source type only, ignoring transform
+    ResolvedModelMapping    unresolved (dwgModelId);
 
     auto    range = m_dwgModelMap.equal_range (unresolved);
     for (auto modelMap = range.first; modelMap != range.second; ++modelMap)

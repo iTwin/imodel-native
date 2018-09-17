@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/Render.h>
 #include <Dwg/DwgDb/DwgDbCommon.h>
 #include <Dwg/DwgDb/BasicTypes.h>
@@ -30,6 +31,9 @@ BEGIN_DWG_NAMESPACE
 
 struct DwgHelper : BentleyApi::NonCopyableClass
     {
+private:
+    DwgHelper () {}
+public:
     DWG_EXPORT static StandardUnit     GetStandardUnitFromDwgUnit (DwgDbUnits const& dwgUnit);
     DWG_EXPORT static StandardUnit     GetStandardUnitFromUnitName (Utf8StringCR stringIn);
     DWG_EXPORT static AnglePrecision   GetAngularUnits (AngleMode* angleMode, int16_t dwgAUPREC);
@@ -72,6 +76,7 @@ struct DwgHelper : BentleyApi::NonCopyableClass
     DWG_EXPORT static bool             CanOpenForWrite (BeFileNameCR path);
     DWG_EXPORT static uint32_t         GetDwgImporterVersion ();
     DWG_EXPORT static bool             GetTransformForSharedParts (TransformP out, double* uniformScale, TransformCR inTrans);
+    DWG_EXPORT static Utf8String       CompareSubcatAppearance (DgnSubCategory::Appearance const& a1, DgnSubCategory::Appearance const& a2);
     };  // DwgHelper
 
 END_DWG_NAMESPACE

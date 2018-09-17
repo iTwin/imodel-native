@@ -33,6 +33,8 @@ DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
         return  layerId;
 
     auto& masterDwg = m_importer.GetDwgDb ();
+    if (&masterDwg == m_xrefDwg)
+        return  layerId;
 
     DwgDbObjectId               effectiveLayerId;
     DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
@@ -435,6 +437,7 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
     if (categoryId.IsValid())
         {
         // a drawing category found - check sub-category:
+        DgnSubCategory::Appearance lastAppearance;
         subCategoryId.Invalidate ();
 
         for (auto entry : DgnSubCategory::MakeIterator(db, categoryId))
@@ -446,11 +449,15 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
                 subCategoryId = subcategory->GetSubCategoryId ();
                 break;
                 }
+            lastAppearance = subcategory->GetAppearance ();
             }
 
         if (!subCategoryId.IsValid())
             {
             // no matching sub-category found - add a new one for the desired appearance:
+            Utf8String suffix = DwgHelper::CompareSubcatAppearance (lastAppearance, appear);
+            if (!suffix.empty())
+                name += suffix;
             DgnSubCategory  newSubcat (DgnSubCategory::CreateParams(db, categoryId, name, appear));
             if (newSubcat.Insert().IsValid())
                 subCategoryId = newSubcat.GetSubCategoryId ();
