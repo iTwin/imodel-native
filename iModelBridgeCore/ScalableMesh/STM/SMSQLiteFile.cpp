@@ -222,42 +222,44 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 #endif
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
+    if (result != BE_SQLITE_ERROR_FileNotFound)
+        {
 #ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
 #else
-    if (result == BE_SQLITE_SCHEMA)
+        if (result == BE_SQLITE_SCHEMA)
 #endif     
-        {
-        Db::OpenParams openParamUpdate(READWRITE);
+            {
+            Db::OpenParams openParamUpdate(READWRITE);
 
 #ifndef VANCOUVER_API
-        openParamUpdate.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+            openParamUpdate.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
 #endif
 
-        result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
+            result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
-        if (result != BE_SQLITE_OK)
-            {
-            m_database->CloseDb();
-            return false;
-            }
+            if (result != BE_SQLITE_OK)
+                {
+                m_database->CloseDb();
+                return false;
+                }
 
 #ifdef VANCOUVER_API
-        UpdateDatabase();
+            UpdateDatabase();
 #endif
-        m_database->CloseDb();
+            m_database->CloseDb();
 
 
 #ifndef VANCOUVER_API
-        if (openShareable)
-            {
-            m_database->OpenShared(filename, openReadOnly, true);
-            }
-        else
+            if (openShareable)
+                {
+                m_database->OpenShared(filename, openReadOnly, true);
+                }
+            else
 #endif
-            result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
-        }
-
+                result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
+                }
+            }
     m_isShared = openShareable;
 
     if (openShareable)
@@ -268,13 +270,13 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     return result == BE_SQLITE_OK;
     }
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, bool openShareable, SQLDatabaseType type)
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool createSisterIfMissing, bool openReadOnly, bool openShareable, SQLDatabaseType type)
     {
     Utf8String utf8FileName(filename);        
     return Open(utf8FileName.c_str(), openReadOnly, openShareable, type);
     }
 
-SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, bool openShareable, SQLDatabaseType type)
+SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, bool createSisterIfMissing, bool openShareable, SQLDatabaseType type)
     {
     bool result;
     SMSQLiteFilePtr smSQLiteFile;
@@ -298,6 +300,27 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
     result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly, openShareable, type);
     // need to check version file ?
     status = result ? SUCCESS : ERROR;
+
+    if (status == ERROR)
+        {
+        if (createSisterIfMissing)
+            {
+#ifndef VANCOUVER_API
+            BeFileName path(filename);
+            if (!path.GetDirectoryName().DoesPathExist())
+                BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+#else
+            BeFileName path(filename.GetWCharCP());
+            BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
+            if (!BeFileName::DoesPathExist(dirname))
+                BeFileName::CreateNewDirectory(dirname.GetWCharCP());
+#endif
+            result = smSQLiteFile->Create(Utf8String(filename.c_str()).c_str(), SQLDatabaseType::SM_DIFFSETS_FILE);
+            BeAssert(result == true); // Failed to create sister file
+
+            status = result ? SUCCESS : ERROR;
+            }
+        }
 
     if (status != SUCCESS)
         {
@@ -461,6 +484,9 @@ DbResult SMSQLiteFile::CreateTables()
 
     DbResult result;
     result = m_database->CreateNewDb(filename);
+
+    if (result == BE_SQLITE_ERROR_AlreadyOpen) 
+        return true;
 
     assert(result == BE_SQLITE_OK);
 
