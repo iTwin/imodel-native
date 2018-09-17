@@ -65,29 +65,47 @@
     if ([data isKindOfClass:[NSString class]]) {
         request.HTTPBody = [((NSString *) data) dataUsingEncoding:NSUTF8StringEncoding];
     }
+
     [request setHTTPMethod:_httpMethod];
 
     __block __weak XMLHttpRequest *weakSelf = self;
 
     id completionHandler = ^(NSData *receivedData, NSURLResponse *response, NSError *error) {
-        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) response;
-        weakSelf.readyState = @(XMLHttpRequestDONE); // TODO
-        weakSelf.status = @(httpResponse.statusCode);
-        weakSelf.statusText = [NSString stringWithFormat:@"%ld",httpResponse.statusCode];
-        weakSelf.responseText = [[NSString alloc] initWithData:receivedData
-                                                  encoding:NSUTF8StringEncoding];
+        if (error != nil) { //bailout on error
+            if (weakSelf.onerror != nil) {
+                [weakSelf.onerror callWithArguments:@[]];
+            }
+        } else {
+            NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) response;
+            weakSelf.readyState = @(XMLHttpRequestDONE); // TODO
+            weakSelf.status = @(httpResponse.statusCode);
+            weakSelf.statusText = [NSString stringWithFormat:@"%ld",httpResponse.statusCode];
+            weakSelf.responseText = [[NSString alloc] initWithData:receivedData
+                                                      encoding:NSUTF8StringEncoding];
 
-        weakSelf.responseType = @"";
-        weakSelf.response = weakSelf.responseText;
-        
-        [weakSelf setAllResponseHeaders:[httpResponse allHeaderFields]];
-        if (weakSelf.onreadystatechange != nil) {
-            [weakSelf.onreadystatechange callWithArguments:@[]];
+            weakSelf.responseType = @"";
+            weakSelf.response = weakSelf.responseText;
+            
+            [weakSelf setAllResponseHeaders:[httpResponse allHeaderFields]];
+            
+            if (weakSelf.onreadystatechange != nil) {
+                [weakSelf.onreadystatechange callWithArguments:@[]];
+            }
+            
+            if (weakSelf.onload != nil) {
+                [weakSelf.onload callWithArguments:@[]];
+            }
         }
     };
+    
     NSURLSessionDataTask *task = [_urlSession dataTaskWithRequest:request
-                                                completionHandler:completionHandler];
+                                            completionHandler:completionHandler];
     [task resume];
+
+}
+
+- (void)abort {
+    //[_urlSession invalidateAndCancel];
 }
 
 - (void)setRequestHeader:(NSString *)name :(NSString *)value {

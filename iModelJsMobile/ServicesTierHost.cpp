@@ -266,7 +266,7 @@ struct IModelJsFs : Napi::ObjectWrap<IModelJsFs>
             files.push_back(Utf8String(entryName.c_str()));
             }
 
-        auto dirs = Napi::TypedArrayOf<Napi::String>::New(info.Env(), files.size());
+        auto dirs = Napi::Array::New(info.Env(), files.size());
         int i=0;
         for (auto const& fn : files)
             dirs[i++] = Napi::String::New(info.Env(), fn.c_str());
