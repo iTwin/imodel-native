@@ -30,6 +30,8 @@ template<typename R>
 struct AsyncTaskRunnerFactory : public IAsyncTaskRunnerFactory
     {
     public:
+        virtual ~AsyncTaskRunnerFactory() {}
+        
         /*--------------------------------------------------------------------------------------+
         * @bsimethod                                      
         +---------------+---------------+---------------+---------------+---------------+------*/
