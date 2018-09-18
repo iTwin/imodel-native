@@ -3,6 +3,9 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="DeliverPublicAPI.mke">
+        <Bindings>
+            <PublicAPI Domain="Licensing"/>
+        </Bindings>
     </Part>
 
     <Part Name="LicensingNativeLib" BentleyBuildMakeFile="Licensing.mke" >
