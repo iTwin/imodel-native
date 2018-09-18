@@ -276,11 +276,11 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
         {
         switch (status)
             {
-            case BentleyB0200::ECN::ECObjectsStatus::NamedItemAlreadyExists:
+            case ECObjectsStatus::NamedItemAlreadyExists:
                 return "Named item already exists";
-            case BentleyB0200::ECN::ECObjectsStatus::DataTypeMismatch:
+            case ECObjectsStatus::DataTypeMismatch:
                 return "Datatype mismatch";
-            case BentleyB0200::ECN::ECObjectsStatus::InvalidName:
+            case ECObjectsStatus::InvalidName:
                 return "Invalid name";
             default:
                 return "Error creating enumerator.";
