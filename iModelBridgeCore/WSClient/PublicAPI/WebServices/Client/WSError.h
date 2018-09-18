@@ -16,6 +16,7 @@
 #include <Bentley/Tasks/AsyncError.h>
 #include <iostream>
 #include <BeRapidJson/BeRapidJson.h>
+#include <WebServices/Azure/AzureError.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -124,6 +125,8 @@ struct WSError : public AsyncError
         WSCLIENT_EXPORT WSError(RapidJsonValueCR jsonError);
         //! Handle generic HttpError, unknow error will map to Id::Unknown
         WSCLIENT_EXPORT WSError(HttpErrorCR httpError);
+        //! Handle generic AzureError, unknown error will map to Id:Unknown
+        WSCLIENT_EXPORT WSError(AzureErrorCR azureError);
         //! Do not use in production code, this is for testing purposes only.
         //! Create error with WSError::Status::ReceivedError and specified Id.
         WSCLIENT_EXPORT WSError(Id errorId);

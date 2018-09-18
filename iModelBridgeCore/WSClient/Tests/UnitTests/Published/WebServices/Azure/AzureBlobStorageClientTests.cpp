@@ -8,9 +8,12 @@
 #include "AzureBlobStorageClientTests.h"
 
 #include <WebServices/Azure/AzureBlobStorageClient.h>
+#include <BeHttp/HttpHeaders.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_TASKS
+
+const Utf8String s_errorResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>TestCode</Code><Message>TestMessage</Message></Error>";
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
@@ -22,12 +25,14 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ServerReturnsError_Return
     GetHandler().ExpectRequests(1);
     GetHandler().ForFirstRequest([=] (Http::RequestCR request)
         {
-        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        return StubHttpResponse(HttpStatus::BadRequest, s_errorResponse, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
         });
 
     auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", StubFilePath())->GetResult();
     ASSERT_FALSE(result.IsSuccess());
-    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
+    EXPECT_EQ(HttpStatus::BadRequest, result.GetError().GetHttpStatus());
+    EXPECT_EQ("TestMessage", result.GetError().GetMessage());
+    EXPECT_EQ("TestCode", result.GetError().GetCode());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -65,12 +70,14 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_Ret
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
-        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        return StubHttpResponse(HttpStatus::BadRequest, s_errorResponse, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
         });
 
     auto result = client->SendUpdateFileRequest("https://test/foo", StubFile())->GetResult();
     ASSERT_FALSE(result.IsSuccess());
-    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
+    EXPECT_EQ(HttpStatus::BadRequest, result.GetError().GetHttpStatus());
+    EXPECT_EQ("TestMessage", result.GetError().GetMessage());
+    EXPECT_EQ("TestCode", result.GetError().GetCode());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -195,4 +202,5 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_R
     BeFileName filePath = StubFileWithSize(chunkSize * 3 - 200); // two 4MB chunks and one smaller.
     auto result = client->SendUpdateFileRequest("https://test/foo", filePath)->GetResult();
     ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ("Http error: 400", result.GetError().GetDescription());
     }

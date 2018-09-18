@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "../Client/WebServicesClient.h"
-#include <BeHttp/HttpError.h>
+#include <WebServices/Azure/AzureError.h>
 #include <BeHttp/HttpResponse.h>
 #include <Bentley/Tasks/AsyncResult.h>
 
@@ -18,7 +18,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_HTTP
 
 typedef std::shared_ptr<struct EventServiceClient> EventServiceClientPtr;
-typedef AsyncResult<Http::Response, HttpError> EventServiceResult;
+typedef AsyncResult<Http::Response, AzureError> EventServiceResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016

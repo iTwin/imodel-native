@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <WebServices/Client/WSClient.h>
 #include <WebServices/iModelHub/Common.h>
+#include <WebServices/Azure/AzureError.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 struct Error : public Tasks::AsyncError
@@ -139,7 +140,7 @@ public:
     IMODELHUBCLIENT_EXPORT Error(WebServices::WSErrorCR error);
     IMODELHUBCLIENT_EXPORT Error(Dgn::RevisionStatus const& status);
 
-    IMODELHUBCLIENT_EXPORT Error(Http::HttpErrorCR error);
+    IMODELHUBCLIENT_EXPORT Error(WebServices::AzureErrorCR azureError);
 
     JsonValueCR GetExtendedData() const {return m_wsError ? m_wsError->GetData() : Json::Value::GetNull();}
     Error::Id GetId() const {return m_id;}

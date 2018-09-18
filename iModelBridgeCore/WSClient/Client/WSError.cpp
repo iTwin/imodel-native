@@ -11,6 +11,7 @@
 #include <WebServices/Connect/ImsClient.h>
 #include <BeHttp/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
+#include <WebServices/Azure/AzureError.h>
 
 #include "WSError.xliff.h"
 
@@ -226,6 +227,21 @@ WSError::WSError(HttpErrorCR httpError) : WSError()
         }
 
     SetStatusReceivedError(httpError, Id::Unknown, nullptr, nullptr, nullptr);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                     Karolis.Dziedzelis              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::WSError(AzureErrorCR azureError) : WSError()
+    {
+    if (!azureError.IsValid())
+        return;
+
+    auto errorId = WSError::Id::Unknown;
+    if (XML_Azure_BlobNotFound == azureError.GetCode())
+        errorId = WSError::Id::FileNotFound;
+
+    SetStatusReceivedError(azureError, errorId, azureError.GetMessage(), nullptr, nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+
