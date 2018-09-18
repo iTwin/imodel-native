@@ -56,6 +56,25 @@ struct BeCGIModelJsonValueWriter
         return result;
         }
 
+    Json::Value toJson (DPoint4dCR point, bool compact)
+        {
+        if (compact)
+            {
+            auto result = Json::Value();
+            result.append (Json::Value(point.x));
+            result.append (Json::Value(point.y));
+            result.append (Json::Value(point.z));
+            result.append (Json::Value(point.w));
+            return result;
+            }
+        auto result = Json::Value ();
+        result["x"] = point.x;
+        result["y"] = point.y;
+        result["z"] = point.z;
+        result["w"] = point.w;
+        return result;
+        }
+
     Json::Value toJson (DPoint2dCR point, bool compact)
         {
         if (compact)
@@ -91,6 +110,14 @@ struct BeCGIModelJsonValueWriter
         }
 
     Json::Value toJson(bvector<DPoint3d> const &points)
+        {
+        Json::Value jsonArray;
+        for (auto &xyz : points)
+            jsonArray.append (toJson (xyz, m_packArrays));
+        return jsonArray;
+        }
+
+    Json::Value toJson(bvector<DPoint4d> const &points)
         {
         Json::Value jsonArray;
         for (auto &xyz : points)
@@ -495,7 +522,7 @@ Json::Value RotationalSweepToJson (ISolidPrimitiveCR sp)
  }
 }
 #endif
-
+// AUXDATA -- DO NOT MERGE TO CONNECT
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      04/2018
 +--------------------------------------------------------------------------------------*/
@@ -644,11 +671,21 @@ Json::Value CurvePrimitiveToJson (ICurvePrimitiveCR cp)
     if (bcurve != nullptr)
         {
         Json::Value value;  
-        bvector<DPoint3d> poles;
         bvector<double>knots;
-        bcurve->GetPoles (poles);
+
         bcurve->GetKnots (knots);   
-        value["points"] = toJson (poles);
+        if (bcurve->HasWeights ())
+            {
+            bvector<DPoint4d> poles4d;
+            bcurve->GetPoles4d (poles4d);
+            value["points"] = toJson (poles4d);
+            }
+        else
+            {
+            bvector<DPoint3d> poles;
+            bcurve->GetPoles (poles);
+            value["points"] = toJson (poles);
+            }
         value["order"] = Json::Value (bcurve->GetOrder ());
         value["knots"] = toJson (knots);
         value["closed"] = Json::Value (bcurve->IsClosed ());
