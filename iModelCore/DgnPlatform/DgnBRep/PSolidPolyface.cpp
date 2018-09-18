@@ -55,7 +55,7 @@ private:
     MTGMask m_edgeSeedMask;
     MTGMask m_vertexSeedMask;
 
-    int m_numNode;
+    //unused - int m_numNode;
     int m_numExteriorFace;
     bool    m_bClosed;
     double  m_volume;
