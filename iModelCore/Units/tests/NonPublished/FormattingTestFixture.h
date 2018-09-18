@@ -50,7 +50,7 @@ struct FormattingTestFixture
 		static void CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat);
         static void DecomposeString(Utf8CP str, bool revers);
 		static size_t ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, bvector<Utf8CP>* parts, Utf8Char div);
-		static Utf8String ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim);
+		static Utf8String ExtractTokenValue(WCharCP line, WCharCP token, WCharCP delim);
 		static size_t FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8Char div);
 		static int FindLastDividerPos(Utf8CP txt, Utf8Char div);
         static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);

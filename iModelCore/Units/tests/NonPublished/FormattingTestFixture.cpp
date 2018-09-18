@@ -524,15 +524,15 @@ Utf8String FormattingTestFixture::GetStringSignature(Utf8CP str)
 
 
 
-Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim)
+Utf8String FormattingTestFixture::ExtractTokenValue(WCharCP line, WCharCP token, WCharCP delim)
     {
 #define ETV_BUFLEN 256
-    wchar_t* tokPtr = wcsstr(line, token);
+    WCharCP tokPtr = wcsstr(line, token);
     Utf8String tokVal8 = "";
     if (nullptr == tokPtr)
         return tokVal8;
     size_t tokLen = wcslen(token);
-    wchar_t* endPtr = wcsstr (tokPtr + tokLen, delim);
+    WCharCP endPtr = wcsstr (tokPtr + tokLen, delim);
     if (nullptr == endPtr)
         return tokVal8;
 
@@ -564,7 +564,7 @@ bool FormattingTestFixture::ValidateSchemaUnitNames(char* schemaPath, Utf8CP tok
 
     wchar_t locW[VSN_BUFLEN + 2];// , unitName[VSN_BUFLEN + 2], className[VSN_BUFLEN + 2];
     memset(locW, 0, sizeof(locW));
-    wchar_t* tokSymb = L"<";
+    WCharCP tokSymb = L"<";
     Utf8String tokVal8;
     BEU::UnitCP unitP, oldP;
     int count = 0;
