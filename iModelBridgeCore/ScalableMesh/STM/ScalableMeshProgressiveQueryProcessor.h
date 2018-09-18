@@ -21,7 +21,9 @@ private:
     ProducedNodeContainer<POINT, EXTENT>*            m_foundNodesP;
     atomic<bool>                                     m_stopQuery;
     bool                                             m_loadTexture;
+    bool m_invertClip;
     int                                              m_threadId;
+    const bset<uint64_t>& m_activeClips;
 
 
 
@@ -29,14 +31,18 @@ private:
         ISMPointIndexQuery<POINT, EXTENT>*      queryObject,
         StopQueryCallbackFP                     stopQueryCallbackFP,
         bool                                    loadTexture,
+        bool invertClip,
         ProducedNodeContainer<POINT, EXTENT>*   foundNodesP,
-        int                                     threadId)
+        int                                     threadId,
+        const bset<uint64_t>& activeClips)
+        :m_activeClips(activeClips)
     {
         m_queryNode = queryNode;
         m_pQueryObject = queryObject;
         m_stopQueryCallbackFP = stopQueryCallbackFP;
         m_stopQuery = false;
         m_loadTexture = loadTexture;
+        m_invertClip = invertClip;
         m_threadId = threadId;
         m_foundNodesP = foundNodesP;
     }
@@ -65,10 +71,12 @@ public:
         ISMPointIndexQuery<POINT, EXTENT>*      queryObject,
         StopQueryCallbackFP                     stopQueryCallbackFP,
         bool                                    loadTexture,
+        bool invertClip,
         ProducedNodeContainer<POINT, EXTENT>*   foundNodesP,
-        int                                     threadId)
+        int                                     threadId,
+        const bset<uint64_t>& activeClips)
     {
-        return new NodeQueryProcessor(queryNode, queryObject, stopQueryCallbackFP, loadTexture, foundNodesP, threadId);
+        return new NodeQueryProcessor(queryNode, queryObject, stopQueryCallbackFP, loadTexture, invertClip, foundNodesP, threadId, activeClips);
     }
 };
 

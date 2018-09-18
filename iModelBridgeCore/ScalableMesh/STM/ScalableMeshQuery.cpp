@@ -3043,6 +3043,11 @@ bool IScalableMeshNode::HasClip(uint64_t clipId) const
     return _HasClip(clipId);
     }
 
+bool IScalableMeshNode::HasAnyClip() const
+{
+    return _HasAnyClip();
+}
+
 bool IScalableMeshNode::IsClippingUpToDate() const
     {
     return _IsClippingUpToDate();

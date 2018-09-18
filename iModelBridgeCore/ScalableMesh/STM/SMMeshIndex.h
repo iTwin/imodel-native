@@ -345,6 +345,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
 #endif
 
+    bool HasAnyClip();
+
     bool HasClip(uint64_t clipId);
 
     bool IsClippingUpToDate();

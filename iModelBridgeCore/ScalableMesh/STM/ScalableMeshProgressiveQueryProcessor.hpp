@@ -58,11 +58,11 @@ template <class POINT, class EXTENT>  void ProcessingQuery<POINT,EXTENT>::Run(si
 
         if (doPreLoad)
         {
-            m_nodeQueryProcessors[threadInd] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, m_queryObjectP, 0, m_loadTexture, &producedFoundNodes, threadInd);
+            m_nodeQueryProcessors[threadInd] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, m_queryObjectP, 0, m_loadTexture, m_scalableMeshPtr->ShouldInvertClips(), &producedFoundNodes, threadInd, m_clipVisibilities);
         }
         else
         {
-            m_nodeQueryProcessors[threadInd] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, m_queryObjectP, 0, m_loadTexture, &m_producedFoundNodes, threadInd);
+            m_nodeQueryProcessors[threadInd] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, m_queryObjectP, 0, m_loadTexture, m_scalableMeshPtr->ShouldInvertClips(), &m_producedFoundNodes, threadInd, m_clipVisibilities);
         }
         m_nodeQueryProcessorMutexes[threadInd].unlock();
 

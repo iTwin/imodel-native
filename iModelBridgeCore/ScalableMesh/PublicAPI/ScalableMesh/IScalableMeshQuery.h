@@ -521,6 +521,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         virtual bool _HasClip(uint64_t id) const = 0;
 
+        virtual bool _HasAnyClip() const =0;
+
         virtual bool _IsClippingUpToDate() const = 0;
 
         virtual bool _IsDataUpToDate() const = 0;
@@ -592,6 +594,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
         bool     ModifyClip(uint64_t id,bool isVisible=true) const;
 
         bool     DeleteClip(uint64_t id, bool isVisible=true) const;
+
+        BENTLEY_SM_EXPORT bool HasAnyClip() const;
 
         BENTLEY_SM_EXPORT DRange3d GetNodeExtent() const;
 
