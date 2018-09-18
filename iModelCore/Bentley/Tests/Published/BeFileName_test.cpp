@@ -114,7 +114,7 @@ TEST (BeFileNameTests, BeFileNameSetNameUtf8)
     
 #if defined (_WIN32)
     //Added a few tests where a befilename constructed from utf8 string was misbehaving.
-    char *filePathUtf8 = "\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn";
+    CharCP filePathUtf8 = "\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn";
     BeFileName fromFileNameString(filePathUtf8, true);
     ASSERT_TRUE(0 == wcscmp(L"\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn", fromFileNameString.c_str()));
     //Test to make sure quoted file name path works correctly.
