@@ -81,6 +81,7 @@ private:
     double m_expansion; // NB: will be used in future?
     DRange3d m_range;
 
+    bool CompressMeshQuantization() const final { return true; }
     bool SeparatePrimitivesById() const final { return true; }
     PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const final;
     bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const final;
@@ -2136,7 +2137,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
+* @bsimethod                                                    Paul.Connelly   02/17                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
@@ -2203,6 +2204,10 @@ MeshList MeshGenerator::GetMeshes()
 
     // Do not allow vertices outside of this tile's range to expand its content range
     clipContentRangeToTileRange(m_contentRange, GetTileRange());
+
+    if (m_loader.GetLoader().CompressMeshQuantization())
+        for (auto& mesh : meshes)
+            mesh->CompressVertexQuantization();
 
     meshes.m_features = std::move(m_featureTable);
 

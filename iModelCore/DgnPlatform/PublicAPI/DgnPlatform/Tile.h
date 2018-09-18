@@ -232,7 +232,9 @@ public:
 
     virtual PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const { return &pf; }
     virtual bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const { return false; }
-    virtual bool SeparatePrimitivesById() const { return false; }
+    virtual bool CompressMeshQuantization() const { return false; }       // If true a separate primitive will be created for each element ID.  ...Classifiers.
+    virtual bool SeparatePrimitivesById() const { return false; }        // If true the quantization of each mesh will be compressed to include only the mesh (not tile) range.  ...Classifiers;
+
 
     struct PtrComparator
     {

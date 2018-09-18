@@ -437,6 +437,7 @@ public:
     void                            SetFeatureIndices (bvector<uint32_t>&& indices) { m_features.SetIndices(std::move(indices)); }
     bvector<uint32_t> const&        GetFeatureIndices() const { return m_features.m_indices; }
     bool                            GetUniformFeatureIndex(uint32_t& index) const { if (!m_features.m_initialized || !m_features.m_indices.empty()) return false; index = m_features.m_uniform; return true; }
+    void                            CompressVertexQuantization();
 
     bool IsEmpty() const { return m_triangles.Empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }

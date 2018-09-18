@@ -916,7 +916,6 @@ struct ThematicGradientSettings : RefCountedBase
 
     private:
     uint32_t        m_stepCount = 10;
-    double          m_margin = .05;
     ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
     Mode            m_mode = Mode::Smooth;
     ColorScheme     m_colorScheme = ColorScheme::BlueRed;
@@ -927,8 +926,6 @@ struct ThematicGradientSettings : RefCountedBase
                     ThematicGradientSettings(DRange1dCR range, ColorScheme colorScheme = ColorScheme::BlueRed, Mode mode = Mode::Smooth) : m_range(range), m_colorScheme(colorScheme), m_mode(mode) { }
     Json::Value     ToJson() const;
     void            FromJson(Json::Value const& value);
-    double          GetMargin() const { return m_margin; }
-    void            SetMargin(double margin) { m_margin = margin; }
     uint32_t        GetStepCount() const { return m_stepCount; }
     void            SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
     ColorDef        GetMarginColor() const { return m_marginColor; }
@@ -939,6 +936,7 @@ struct ThematicGradientSettings : RefCountedBase
     void            SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
     DRange1dCR      GetRange() const { return m_range; }
     void            SetRange(DRange1dCR range) { m_range = range; }
+    static double   GetMargin() { return .01; }
 
     bool operator==(ThematicGradientSettings const& rhs) const;
     bool operator<(ThematicGradientSettings const& rhs) const;

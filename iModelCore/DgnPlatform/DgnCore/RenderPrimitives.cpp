@@ -933,6 +933,45 @@ DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::CompressVertexQuantization()
+    {
+    QPoint3d        min(0xffff, 0xffff, 0xffff), max(0, 0, 0), initialMin = min, initialMax = max;
+
+    for (auto& vert : m_verts)
+        {
+        if (vert.x < min.x)
+            min.x = vert.x;
+
+        if (vert.x > max.x)
+            max.x = vert.x;
+
+        if (vert.y < min.y)
+            min.y = vert.y;
+
+        if (vert.y > max.y)
+            max.y = vert.y;
+
+        if (vert.z < min.z)
+            min.z = vert.z;
+
+        if (vert.z > max.z)
+            max.z = vert.z;
+        }
+
+    if (min.x == 0 && min.y == 0 && min.z == 0 && max.x == 0xffff && max.y == 0xffff && max.z == 0xffff)
+        return;     // No compression possible.
+
+    DRange3d    newRange;
+
+    newRange.low = min.Unquantize(m_verts.GetParams());
+    newRange.high = max.Unquantize(m_verts.GetParams());
+
+    m_verts.Requantize(QPoint3d::Params(newRange));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DVec3d Mesh::GetTriangleNormal(TriangleCR triangle) const
