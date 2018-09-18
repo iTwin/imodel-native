@@ -672,12 +672,13 @@ struct Polyface
     PolyfaceHeaderPtr   m_polyface;
     bool                m_displayEdges = true;
     bool                m_isPlanar = false;
+    Image*              m_glyphImage;
 
-    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false)
-        : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar) { }
+    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false, Image* glyphImage=nullptr)
+        : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar), m_glyphImage(glyphImage) { }
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
-    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar); }
+    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar, m_glyphImage); }
     DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
 };
 
