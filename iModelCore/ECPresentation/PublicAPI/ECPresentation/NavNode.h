@@ -468,15 +468,40 @@ public:
 //=======================================================================================
 //! A struct that defines a single step in the nodes path.
 //! @ingroup GROUP_Presentation_Navigation
-// @bsiclass                                    Grigas.Petraitis                12/2016
+// @bsiclass                                    Elonas.Seviakovas               09/2018
 //=======================================================================================
 struct NodesPathElement
 {
+    //=======================================================================================
+    //! A simple struct to store data related to NodesPathElement filtering
+    //! @ingroup GROUP_Presentation_Navigation
+    // @bsiclass                                    Elonas.Seviakovas               09/2018
+    //=======================================================================================
+    struct FilteringData {
+    private:
+        uint16_t m_occurances = 0;
+        uint64_t m_childrenOccurances = 0;
+
+    public:
+        //! Set how many times filterWord occured in node label
+        void SetOccurances(uint16_t occurances) { m_occurances = occurances;}
+
+        //! Get how many times filterWord occured in node label
+        uint16_t GetOccurances() const {return m_occurances;}
+
+        //! Set how many times filterWord occured in all of node's children
+        void SetChildrenOccurances(uint64_t occurances) { m_childrenOccurances = occurances; }
+
+        //! Get how many times filterWord occured in all of node's children
+        uint64_t GetChildrenOccurances() const { return m_childrenOccurances; }
+    };
+
 private:
     NavNodeCPtr m_node;
     size_t m_index;
     bool m_isMarked;
     bvector<NodesPathElement> m_children;
+    FilteringData m_filteringData;
 
 public:
     //! Constructor. Creates an invalid object.
@@ -502,6 +527,10 @@ public:
 
     //! Is this path element marked.
     bool IsMarked() const {return m_isMarked;}
+
+    //! Get data related to node hierarchy filtering
+    FilteringData& GetFilteringData() {return m_filteringData;}
+    FilteringData const& GetFilteringData() const {return m_filteringData;}
 
     //! Serialize this object to JSON.
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
