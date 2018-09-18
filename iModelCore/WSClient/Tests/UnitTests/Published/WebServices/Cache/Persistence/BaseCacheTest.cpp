@@ -296,7 +296,7 @@ BeFileName BaseCacheTest::GetTestSchemaPath()
     return testSchemaPath;
     }
 
-std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache(CacheEnvironment targetEnvironment)
+std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache(CacheEnvironment targetEnvironment, IFileManagerPtr fileManager)
     {
     // Prepare seed files
     if (!s_seedCacheFolderPath.DoesPathExist())
@@ -311,13 +311,13 @@ std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache(CacheEnvironment ta
     EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath));
 
     // Open target cache
-    auto cache = std::make_shared<DataSourceCache>();
+    auto cache = std::make_shared<DataSourceCache>(fileManager);
     cache->Open(s_targetCachePath, targetEnvironment);
     EXPECT_FALSE(nullptr == cache);
     return cache;
     }
 
-std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(Utf8StringCR fileName)
+std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(Utf8StringCR fileName, IFileManagerPtr fileManager)
     {
     BeFileName filePath(":memory:");
     filePath = GetTestsTempDir().AppendToPath(BeFileName(fileName));
@@ -325,12 +325,12 @@ std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(Utf8StringCR fil
     if (filePath.DoesPathExist())
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(filePath));
 
-    return CreateTestCache(filePath, StubCacheEnvironemnt());
+    return CreateTestCache(filePath, StubCacheEnvironemnt(), fileManager);
     }
 
-std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(BeFileName filePath, CacheEnvironment environment)
+std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(BeFileName filePath, CacheEnvironment environment, IFileManagerPtr fileManager)
     {
-    auto cache = std::make_shared<DataSourceCache>();
+    auto cache = std::make_shared<DataSourceCache>(fileManager);
     EXPECT_EQ(SUCCESS, cache->Create(filePath, environment));
     EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2()}));
     return cache;

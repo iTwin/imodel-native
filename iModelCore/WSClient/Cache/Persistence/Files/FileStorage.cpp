@@ -24,9 +24,11 @@ FileStorage::FileStorage
 (
 ECDbAdapter& dbAdapter,
 WebServices::ECSqlStatementCache& statementCache,
-CacheEnvironmentCR environment
+CacheEnvironmentCR environment,
+IFileManager& fileManager
 ) :
-m_environment(environment)
+m_environment(environment),
+m_fileManager(fileManager)
     {
     ECClassCP sequenceClass = dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_Sequence);
     ECPropertyCP nameIndexProperty = sequenceClass->GetPropertyP(CLASS_Sequence_PROPERTY_LastCachedFileIndex);
@@ -396,20 +398,14 @@ CacheStatus FileStorage::RemoveStoredFile(FileInfoCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CacheStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath) const
+CacheStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath)
     {
     if (filePath.empty())
         return CacheStatus::OK;
 
-    if (filePath.DoesPathExist() && BeFileNameStatus::Success != BeFileName::BeDeleteFile(filePath))
-        {
-        BeFile file;
-        if (BeFileStatus::AccessViolationError == file.Open(filePath, BeFileAccess::ReadWrite))
-            return CacheStatus::FileLocked;
-
-        BeAssert(false);
-        return CacheStatus::Error;
-        }
+    auto removeStatus = RemoveFile(filePath);
+    if (CacheStatus::OK != removeStatus)
+        return removeStatus;
 
     // Check if new file is in same folder
     if (nullptr != newFilePath && newFilePath->GetDirectoryName() == filePath.GetDirectoryName())
@@ -431,6 +427,25 @@ CacheStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache locat
         }
 
     return CacheStatus::OK;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+CacheStatus FileStorage::RemoveFile(BeFileNameCR filePath)
+    {
+    if (!filePath.DoesPathExist())
+        return CacheStatus::OK;
+
+    auto deletionStatus = m_fileManager.DeleteFile(filePath);
+    if (BeFileNameStatus::Success == deletionStatus)
+        return CacheStatus::OK;
+
+    if (BeFileNameStatus::AccessViolation == deletionStatus)
+        return CacheStatus::FileLocked;
+
+    BeAssert(false);
+    return CacheStatus::Error;
     }
 
 /*--------------------------------------------------------------------------------------+

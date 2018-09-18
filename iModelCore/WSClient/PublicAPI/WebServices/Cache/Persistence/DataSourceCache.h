@@ -15,6 +15,7 @@
 //    BeSQLiteLib::Initialize (tempDir) override;
 
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
+#include <WebServices/Cache/Persistence/FileManager.h>
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ObservableECDb.h>
 
@@ -28,6 +29,7 @@ struct DataSourceCache : public IDataSourceCache
     {
     private:
         ObservableECDb m_db;
+        IFileManagerPtr m_fileManager;
         std::shared_ptr<struct WSCacheState> m_state;
 
     private:
@@ -47,7 +49,7 @@ struct DataSourceCache : public IDataSourceCache
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Misc
         //--------------------------------------------------------------------------------------------------------------------------------+
-        WSCACHE_EXPORT DataSourceCache();
+        WSCACHE_EXPORT DataSourceCache(IFileManagerPtr fileManager = nullptr);
         WSCACHE_EXPORT virtual ~DataSourceCache();
 
         WSCACHE_EXPORT BentleyStatus Create
