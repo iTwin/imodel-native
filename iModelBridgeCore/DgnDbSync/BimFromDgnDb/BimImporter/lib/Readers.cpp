@@ -2981,6 +2981,34 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus EmbeddedFileReader::_Read(Json::Value& fileData)
+    {
+    bvector<Byte> blob;
+    if (ERROR == ECJsonUtilities::JsonToBinary(blob, fileData["data"]))
+        {
+        GetLogger().warning("Failed to read encoded embedded file data.");
+        return ERROR;
+        }
+
+    DbResult dbres = GetDgnDb()->EmbeddedFiles().AddEntry(fileData["name"].asCString(), fileData["type"].asCString(), nullptr);
+    if (BE_SQLITE_OK != dbres)
+        {
+        GetLogger().warning("Failed to create entry for embedded file.");
+        return ERROR;
+        }
+
+    dbres = GetDgnDb()->EmbeddedFiles().Save(blob.data(), blob.size(), fileData["name"].asCString());
+    if (BE_SQLITE_OK != dbres)
+        {
+        GetLogger().warningv("Failed to write data for embedded file %s.", fileData["name"].asCString());
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus TextAnnotationDataReader::_Read(Json::Value& object)
