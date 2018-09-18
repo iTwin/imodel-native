@@ -812,6 +812,14 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
 
         json.AddMember("children", childrenJson, json.GetAllocator());
 
+        rapidjson::Value filteringData;
+        filteringData.SetObject();
+
+        filteringData.AddMember("occurances", navNodesPathElement.GetFilteringData().GetOccurances(), json.GetAllocator());
+        filteringData.AddMember("childrenOccurances", navNodesPathElement.GetFilteringData().GetChildrenOccurances(), json.GetAllocator());
+
+        json.AddMember("filteringData", filteringData, json.GetAllocator());
+
         return json;
         }
 
