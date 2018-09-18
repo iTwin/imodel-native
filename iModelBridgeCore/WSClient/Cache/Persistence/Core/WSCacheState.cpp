@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/WSCacheState.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,10 +20,13 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSCacheState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys) :
+WSCacheState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys, IFileManager& fileManager) :
 dbAdapter(db),
+
 statementCache(db),
 environment(environment),
+
+fileManager(fileManager),
 
 objectInfoManager(dbAdapter, statementCache, hierarchyManager),
 relationshipInfoManager(dbAdapter, statementCache, hierarchyManager),
@@ -34,7 +37,7 @@ rootManager(dbAdapter, statementCache, instanceCacheHelper, hierarchyManager, ob
 responseManager(dbAdapter, statementCache, hierarchyManager, relationshipInfoManager, objectInfoManager),
 navigationBaseManager(dbAdapter, statementCache),
 changeInfoManager(dbAdapter, statementCache, hierarchyManager, objectInfoManager, relationshipInfoManager, fileInfoManager),
-fileStorage(dbAdapter, statementCache, environment),
+fileStorage(dbAdapter, statementCache, environment, fileManager),
 changeManager(dbAdapter, instanceCacheHelper, hierarchyManager, responseManager, objectInfoManager, relationshipInfoManager,
 fileInfoManager, changeInfoManager, fileStorage, rootManager, syncKeys),
 
@@ -57,8 +60,9 @@ ECSchemaCP WSCacheState::Core::GetCacheSchema()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSCacheState::WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment) :
+WSCacheState::WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment, IFileManager& fileManager) :
 m_db(db),
+m_fileManager(fileManager),
 m_environment(environment)
     {
     m_db.RegisterSchemaChangeListener(this);
@@ -105,5 +109,5 @@ WSCacheState::Core& WSCacheState::GetCore()
 +--------------------------------------------------------------------------------------*/
 void WSCacheState::ResetCore()
     {
-    m_core = std::make_shared<Core>(m_db, m_environment, m_activeSyncKeys);
+    m_core = std::make_shared<Core>(m_db, m_environment, m_activeSyncKeys, m_fileManager);
     }
