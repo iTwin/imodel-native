@@ -2,6 +2,11 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
+  <Part Name="imodel-bank.Dev" PrgOutputDir="imodelbankaddon">
+    <SubPart PartName="iModelCorePRG" PartFile="iModelCore" Repository="DgnPlatform"/>
+    <SubPart PartName="MakePackages"/>
+  </Part>
+
   <Part Name="MakePackages" BentleyBuildMakeFile="makePackages.mke" OnlyPlatforms="x64,linuxX64,MacOSx64" PrgOutputDir="imodel-bank">
     <SubProduct ProductName="imodel-bank"/>
   </Part>
