@@ -495,19 +495,51 @@ static bmap<uint64_t, bvector<NavNodeCPtr>>::iterator CreateHierarchy(IECPresent
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                09/2017
+* @bsimethod                                    Elonas.Seviakovas               09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static NodesPathElement GetPath(NavNodeCR root, bmap<uint64_t, bvector<NavNodeCPtr>> const& hierarchy, size_t index)
+static uint16_t CountFilterTextOccurances(NavNodeCR node, Utf8CP lowerFilterText)
     {
+    if (Utf8String::IsNullOrEmpty(lowerFilterText))
+        return 0;
+
+    uint16_t occurances = 0;
+    Utf8String lowerLabel(node.GetLabel().ToLower());
+    size_t position = lowerLabel.find(lowerFilterText, 0);
+    while (position != Utf8String::npos) 
+        {
+        occurances++;
+        position = lowerLabel.find(lowerFilterText, position + 1);
+        }
+    return occurances;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Elonas.Seviakovas               09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static NodesPathElement GetPath(
+    NavNodeCR root, bmap<uint64_t, bvector<NavNodeCPtr>> const& hierarchy, size_t index, Utf8CP lowerFilterText, uint64_t& totalFilterOccurances)
+    {
+    uint16_t currentNodeOccurances = CountFilterTextOccurances(root, lowerFilterText);
+    uint64_t totalChildrenOccurances = 0;
+
     NodesPathElement node(root, index);
     auto iter = hierarchy.find(root.GetNodeId());
     for (size_t i = 0; i < iter->second.size(); i++)
-        node.GetChildren().push_back(GetPath(*iter->second[i], hierarchy, i));
+        {
+        uint64_t branchChildrenOccurances = 0;
+        node.GetChildren().push_back(GetPath(*iter->second[i], hierarchy, i, lowerFilterText, branchChildrenOccurances));
+        totalChildrenOccurances += branchChildrenOccurances;
+        }
+
+    node.GetFilteringData().SetOccurances(currentNodeOccurances);
+    node.GetFilteringData().SetChildrenOccurances(totalChildrenOccurances);
+
+    totalFilterOccurances = totalChildrenOccurances + currentNodeOccurances;
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                09/2017
+* @bsimethod                                    Aidas.Vaiksnoras                09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNodesPaths(ECDbCR db, Utf8CP filterText, JsonValueCR options)
     {
@@ -517,7 +549,8 @@ folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNode
         BeAssert(false && "Unknown connection");
         return bvector<NodesPathElement>();
         }
-    return _GetFilteredNodes(*connection, filterText, options).then([&](bvector<NavNodeCPtr> filteredNodes)
+
+    return _GetFilteredNodes(*connection, filterText, options).then([&, filterText = Utf8String(filterText).ToLower()](bvector<NavNodeCPtr> filteredNodes)
         {
         bvector<NavNodeCPtr> roots;
         bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy;
@@ -527,7 +560,10 @@ folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNode
         size_t index = 0;
         bvector<NodesPathElement> paths;
         for (NavNodeCPtr const& root : roots)
-            paths.push_back(GetPath(*root, hierarchy, index++));
+            {
+            uint64_t totalOccurances = 0;
+            paths.push_back(GetPath(*root, hierarchy, index++, filterText.c_str(), totalOccurances));
+            }
 
         return paths;
         });

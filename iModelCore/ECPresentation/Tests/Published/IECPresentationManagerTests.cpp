@@ -748,3 +748,39 @@ TEST_F(IECPresentationManagerTests, GetFilteredNodesPaths)
     ASSERT_EQ(1, paths[0].GetChildren()[1].GetChildren()[1].GetChildren().size());
     EXPECT_EQ(7, paths[0].GetChildren()[1].GetChildren()[1].GetChildren()[0].GetNode()->GetNodeId());
     }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Elonas.Seviakovas               09/2018
+//---------------------------------------------------------------------------------------
+TEST_F(IECPresentationManagerTests, GetFilteredNodesPaths_CountFilterTextOccurances)
+    {
+    TestNavNodePtr nodeP = CreateTreeNode(1, nullptr);
+    nodeP->SetLabel("Some label with dgn");
+    TestNavNodePtr nodeC1 = CreateTreeNode(2, nodeP);
+    nodeC1->SetLabel("dgn in the front");
+    TestNavNodePtr nodeC2 = CreateTreeNode(3, nodeP);
+    nodeC2->SetLabel("Capital DgN and second _dgn");
+
+    Hierarchy hierarchy;
+    hierarchy[nullptr].push_back(nodeP);
+    hierarchy[nodeP].push_back(nodeC1);
+    hierarchy[nodeP].push_back(nodeC2);
+    m_manager->SetHierarchy(hierarchy);
+
+    m_manager->SetGetFilteredNodesPathsHandler([&](IConnectionCR, Utf8CP filterText, JsonValueCR options)
+    {
+        bvector<NavNodeCPtr> nodelist;
+        nodelist.push_back(nodeP);
+        nodelist.push_back(nodeC1);
+        nodelist.push_back(nodeC2);
+        return nodelist;
+    });
+
+    bvector<NodesPathElement> paths = m_manager->GetFilteredNodesPaths(s_project->GetECDb(), "dGn", Json::Value()).get();
+
+    EXPECT_EQ(1, paths[0].GetFilteringData().GetOccurances());
+    EXPECT_EQ(3, paths[0].GetFilteringData().GetChildrenOccurances());
+
+    EXPECT_EQ(1, paths[0].GetChildren()[0].GetFilteringData().GetOccurances());
+    EXPECT_EQ(2, paths[0].GetChildren()[1].GetFilteringData().GetOccurances());
+    }
