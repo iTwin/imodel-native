@@ -3469,12 +3469,13 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
 
         if (gen.DidEcConversionFailDueToLockingError())
             return BSIERROR;    // This is a re-try-able failure, not a fatal error that should stop the conversion
+        m_hadAnyChanges |= gen.GetAnyImported();
         }
 
     if (WasAborted())
         return BSIERROR;
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
 
     // Let handler extensions import schemas
     importHandlerExtensionsSchema(*this);
@@ -3482,7 +3483,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
     if (WasAborted())
         return BSIERROR;
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         {
@@ -3495,7 +3496,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
     if (WasAborted())
         return BSIERROR;
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
 
     // This shouldn't be dependent on importing schemas.  Sometimes you want class views for just the basic Bis classes.
     if (GetConfig().GetOptionValueBool("CreateECClassViews", true))
@@ -3507,7 +3508,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
             }
         }
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
     return BSISUCCESS;
     }
 

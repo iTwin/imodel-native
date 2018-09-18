@@ -901,7 +901,7 @@ TEST_F(ModelTests, MultipleRootFiles)
     db = nullptr;
 
     m_v8FileName = root2;
-    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
     db = OpenExistingDgnDb(m_dgnDbFileName);
     EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel)));
     EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
@@ -927,7 +927,7 @@ TEST_F(ModelTests, MultipleRootFiles)
 
     //      update, starting from root2. Verify that it does NOT import commonRefFile
     m_v8FileName = root2;
-    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
     db = OpenExistingDgnDb(m_dgnDbFileName);
     EXPECT_EQ(3, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel))) << "No additional spatial models expected";
     EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel))) << "No additional drawings expected";

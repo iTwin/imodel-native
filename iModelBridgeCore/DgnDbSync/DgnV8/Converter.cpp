@@ -1994,7 +1994,7 @@ BentleyStatus Converter::GetECContentOfElement(V8ElementECContent& content, DgnV
                                 v8Model != nullptr ? IssueReporter::FmtModel(*v8Model).c_str() : "nullptr");
 
                 ReportIssue(IssueSeverity::Warning, IssueCategory::Sync(), Issue::Message(), warning.c_str());
-                return BentleyApi::SUCCESS;
+                continue;
                 }
 
             if (BisConversionRuleHelper::IsSecondaryInstance(conversionRule) || V8ElementSecondaryECClassInfo::TryFind(GetDgnDb(), v8eh, v8ClassName))
@@ -2710,6 +2710,7 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         {
         OnFatalError(IssueCategory::DiskIO(), Issue::Error(), "SavePoint failed");
         }
+    m_hadAnyChanges = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3700,6 +3701,15 @@ bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, Transf
     auto matrixTolerance = Angle::TinyAngle();
     auto pointTolerance = 10 * BentleyApi::BeNumerical::NextafterDelta(rhs.ColumnXMagnitude());
     return lhs.IsEqual(rhs, matrixTolerance, pointTolerance);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void Converter::CheckForAndSaveChanges()
+    {
+    m_hadAnyChanges |= m_dgndb->Txns().HasChanges();
+    m_dgndb->SaveChanges();
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
