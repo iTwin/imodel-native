@@ -39,6 +39,9 @@ bool SpawnProcessWin32 (char *command, DWORD &returnCode)
     si.cb = sizeof(si);
     ZeroMemory( &pi, sizeof(pi) );
 
+    // Check exit code
+    DWORD dwExitCode = 0;
+
     // Start the child process.
     if( !CreateProcessA (NULL,      // No module name (use command line).
                          command,    // Command line.
@@ -59,9 +62,6 @@ bool SpawnProcessWin32 (char *command, DWORD &returnCode)
 
     // Wait until child process exits.
     WaitForSingleObject (pi.hProcess, INFINITE);
-
-    // Check exit code
-    DWORD dwExitCode = 0;
 
     GetExitCodeProcess (pi.hProcess, &dwExitCode);
 
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
         spawnRet = SpawnProcessWin32(strCommand, retCode);
 
         //first snapshot
-        CharP log1Name = "\\FirstSnapshot.log";
+        CharCP log1Name = "\\FirstSnapshot.log";
         currentDirectory.AppendUtf8(log1Name);
 
         BeStringUtilities::WCharToUtf8(pathSnapshot1, currentDirectory.c_str());
@@ -536,8 +536,8 @@ int main(int argc, char **argv)
         outdirName.PopDir();
         WString currentDirectory2(outdirName.GetName());
         WString currentDirectory3(outdirName.GetName());
-        CharP log2Name = "\\SecondSnapshot.log";
-        CharP logComparisonName = "";
+        CharCP log2Name = "\\SecondSnapshot.log";
+        CharCP logComparisonName = "";
 
         CharCP testName = getTestName(no, args);
         Utf8String utf8Str(testName);
