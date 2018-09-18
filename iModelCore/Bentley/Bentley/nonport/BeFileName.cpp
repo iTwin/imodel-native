@@ -1405,6 +1405,9 @@ BeFileNameStatus BeFileName::BeDeleteFile(WCharCP fileNameP)
         {
         ::SetFileAttributesW (fileNameFixed.c_str(), wasAttributes.dwFileAttributes);   // restore original attributes
 
+        if (ERROR_SHARING_VIOLATION == GetLastError())
+            return BeFileNameStatus::AccessViolation;
+
         return BeFileNameStatus::CantDeleteFile;
         }
     return BeFileNameStatus::Success;

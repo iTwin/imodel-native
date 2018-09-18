@@ -2378,3 +2378,25 @@ TEST(BeFileNameTests, CombineFileNames)
     BeFileName  expectedPath(L"/dir1/dir2/file.txt/D:/dir1/dir2_1/temp.txt/D:/dir1/dir21/temp.dat/E:/dir1/dir2_1/knight.bat");
     EXPECT_STREQ(expectedPath.GetNameUtf8().c_str(), bf.GetNameUtf8().c_str()) << expectedPath.GetNameUtf8().c_str();
     }
+
+#if defined (_WIN32) // Cannot reproduce file lock within same process on UNIX-based systems
+//---------------------------------------------------------------------------------------
+// @betest                                     			Vincas.Razma   				09/18
+//---------------------------------------------------------------------------------------
+TEST(BeFileNameTests, BeDeleteFile_LockedFile_ReturnsAccessViolationError)
+    {
+    BeFileName fileName;
+    BeTest::GetHost().GetOutputRoot(fileName);
+    fileName.AppendToPath(L"LockedFile");
+    ASSERT_FALSE(fileName.DoesPathExist());
+
+    BeFile lockedFile;
+    ASSERT_EQ(BeFileStatus::Success, lockedFile.Create(fileName.c_str()));
+
+    EXPECT_EQ(BeFileNameStatus::AccessViolation, fileName.BeDeleteFile());
+
+    EXPECT_TRUE(fileName.DoesPathExist());
+    lockedFile.Close();
+    EXPECT_EQ(BeFileNameStatus::Success, fileName.BeDeleteFile());
+    }
+#endif
