@@ -739,9 +739,7 @@ TEST (CurveOffset, RebarReduceCCW)
         CurveVector::ReduceToCCWAreas (
             *changeType (
                 Saved (
-                    FirstCurveInJson (
-                        L"D:\\tmp\\CappedA.dgnjs"
-                    )
+                    RebarCurve ()
                 ),
                 CurveVector::BoundaryType::BOUNDARY_TYPE_Outer
             )
@@ -755,9 +753,7 @@ TEST (CurveOffset, RebarDoubleSide)
     {
     Saved (
         DoubleSidedOffset (
-            FirstCurveInJson (
-                L"D:\\tmp\\centerA.dgnjs"
-            ),
+            RebarCurve (),
             80
         ).Curve ()
     );
@@ -778,9 +774,7 @@ TEST (CurveOffset, RebarUnion)
 
     Saved (
         OffsetOnebyOne (
-            FirstCurveInJson (
-                L"D:\\tmp\\centerA.dgnjs"
-            ),
+            RebarCurve (),
             offset
         ).Curve()
     );
