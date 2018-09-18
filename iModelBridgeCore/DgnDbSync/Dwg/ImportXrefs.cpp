@@ -49,7 +49,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
     // save currentXref before recurse into a nested xref:
     DwgXRefHolder   savedCurrentXref = m_currentXref;
 
-    auto found = this->FindXRefHolder (*xrefBlock);
+    auto found = this->FindXRefHolder (*xrefBlock, true);
     if (found != nullptr)
         {
         // this xref has been previously loaded - set it as current:
@@ -114,6 +114,9 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
             modelMap.SetTransform (xtrans);
             modelMap.GetMapping().Update (this->GetDgnDb());
             }
+
+        // cache the new model in the xref holder:
+        m_currentXref.AddDgnModel (model->GetModelId());
         }
 
     // and or update the loaded xref cache:
@@ -183,6 +186,7 @@ BentleyStatus   DwgImporter::_ImportXReference (ElementImportResults& results, E
         factory.SetXrefDatabase (m_currentXref.GetDatabaseP());
         factory.SetXrefModel (model);
         factory.SetXrefTransform (xtrans);
+        factory.SetXrefRange (m_currentXref.GetComputedRange());
         factory.ConvertToBim (results, inputs);
         }
     
@@ -238,6 +242,14 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
             m_blockIdInRootFile = xrefBlock.GetObjectId ();
             // will add DgnModels resolved from xref inserts
             m_dgnModels.clear ();
+            // compute modelspace range
+            DwgDbBlockTableRecordPtr xmodel(m_xrefDatabase->GetModelspaceId(), DwgDbOpenMode::ForRead);
+            if (xmodel.OpenStatus() != DwgDbStatus::Success || xmodel->ComputeRange(m_computedRange) != DwgDbStatus::Success)
+                {
+                // WIP: a file containing nothing but an xRef attachment would fall here...
+                m_computedRange.InitFrom (m_xrefDatabase->GetEXTMIN(), m_xrefDatabase->GetEXTMAX());
+                host._DebugPrintf (L"not extents found in file %s!", m_resolvedPath.c_str());
+                }
             return  BSISUCCESS;
             }
 
@@ -249,6 +261,7 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
     m_prefixInRootFile.clear ();
     m_blockIdInRootFile.SetNull ();
     m_dgnModels.clear ();
+    m_computedRange.Init ();
 
     return  BSIERROR;
     }
@@ -275,7 +288,7 @@ DwgDbDatabaseP  DwgImporter::FindLoadedXRef (BeFileNameCR path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock)
+DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock, bool createIfNotFound)
     {
     // find an entry in m_loadedXrefFiles by either blockId or saved file name:
     struct FindXrefPredicate
@@ -332,7 +345,24 @@ DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR
 
     FindXrefPredicate  pred (xrefBlock, this->GetRootDwgFileName());
     auto found = std::find_if (m_loadedXrefFiles.begin(), m_loadedXrefFiles.end(), pred);
-    return found == m_loadedXrefFiles.end() ? nullptr : found;
+    if (found != m_loadedXrefFiles.end())
+        return  found;
+
+    // if the caller does not request for creating a new xRef holder, we are done.
+    if (!createIfNotFound)
+        return  nullptr;
+
+    // create a new one - when an overlaid nested xRef block is not updated(i.e. missing) in the master file, we'd hit this.
+    DwgXRefHolder   xref(xrefBlock, *this);
+    if (xref.IsValid())
+        {
+        // add the new xref in local cache, as well as in the syncInfo:
+        m_loadedXrefFiles.push_back (xref);
+        this->_AddFileInSyncInfo (xref.GetDatabaseR(), this->_GetDwgFileIdPolicy());
+        return  &m_loadedXrefFiles.back ();
+        }
+
+    return  nullptr;
     }
 
 
@@ -547,7 +577,8 @@ BentleyStatus   LayoutXrefFactory::ComputeSpatialView ()
 
     auto range = spatialModel->QueryModelRange ();
 
-    if (nullptr != m_xrefDwg)
+    // DWG's EXTMIN and EXTMAX are not reliable - best to be computed, cached and set prior to reaching here:
+    if (nullptr != m_xrefDwg && m_xrefRange.IsNull())
         m_xrefRange.InitFrom (m_xrefDwg->GetEXTMIN(),  m_xrefDwg->GetEXTMAX());
 
     DwgDbSpatialFilterPtr   filter;
@@ -709,7 +740,8 @@ BentleyStatus   LayoutXrefFactory::CreateViewAttachment (DgnModelR sheetModel)
     DgnSubCategoryId    subCategoryId;
     DwgDbObjectId   layerId = m_xrefInsert.GetLayerId ();
     DwgDbObjectId   layoutViewportId = m_importer._GetCurrentGeometryOptions().GetViewportId ();
-    DgnCategoryId   categoryId = m_importer.GetOrAddDrawingCategory (subCategoryId, layerId, layoutViewportId, sheetModel);
+    // the xrefDwg used to resolve layer is the owner DWG in which the input xRef is inserted, as opposed to the source DWG of the inserted xRef.
+    DgnCategoryId   categoryId = m_importer.GetOrAddDrawingCategory (subCategoryId, layerId, layoutViewportId, sheetModel, layerId.GetDatabase());
 
     // will compute placement in update method:
     Placement2d placeHolder(DPoint2d::FromZero(), AngleInDegrees(), ElementAlignedBox2d(0,0,1,1));
@@ -738,8 +770,14 @@ BentleyStatus   LayoutXrefFactory::ConvertToBim (DwgImporter::ElementImportResul
     m_viewName.Sprintf ("%s%s", LayoutXrefFactory::GetSpatialViewNamePrefix(), m_xrefModel->GetName().c_str());
 
     // current target model should be a sheet model:
-    auto& sheetModel = inputs.GetTargetModelR ();
-    BeAssert (sheetModel.IsSheetModel());
+    DgnModelP sheetModel = &inputs.GetTargetModelR ();
+    if (!sheetModel->IsSheetModel())
+        {
+        // a nested xRef in current paperspace, get the paperspace model:
+        auto modelMap = m_importer.FindModel (m_importer.GetCurrentSpaceId(), DwgSyncInfo::ModelSourceType::PaperSpace);
+        if (!modelMap.IsValid() || (sheetModel = modelMap.GetModel()) == nullptr || !sheetModel->IsSheetModel())
+            return  BSIERROR;
+        }
 
     if (m_importer.IsUpdating())
         {
@@ -774,7 +812,7 @@ BentleyStatus   LayoutXrefFactory::ConvertToBim (DwgImporter::ElementImportResul
     if (!hasSpatialView)
         this->CreateSpatialView ();
     if (!hasViewAttachment)
-        this->CreateViewAttachment (sheetModel);
+        this->CreateViewAttachment (*sheetModel);
 
     if (!m_viewAttachment.IsValid())
         return  BSIERROR;

@@ -487,6 +487,26 @@ DwgDbStatus     DwgDbBlockTableRecord::OpenSortentsTable (DwgDbSortentsTablePtr&
     return  status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbBlockTableRecord::ComputeRange (DRange3dR out)
+    {
+    DwgDbStatus status = DwgDbStatus::ObjectNotOpenYet;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdGeExtents3d blockExtents;
+    status = ToDwgDbStatus (T_Super::getGeomExtents(blockExtents));
+
+#elif DWGTOOLKIT_RealDwg
+    AcDbExtents blockExtents;
+    status = ToDwgDbStatus (blockExtents.addBlockExt(this));
+#endif
+
+    if (status == DwgDbStatus::Success)
+        out = Util::DRange3dFrom (blockExtents);
+    return  status;
+    }
+
 bool           DwgDbViewportTableRecord::IsGridEnabled () const { return T_Super::gridEnabled(); }
 bool           DwgDbViewportTableRecord::IsUcsIconEnabled () const { return T_Super::iconEnabled(); }
 bool           DwgDbViewportTableRecord::IsFrontClipEnabled () const { return T_Super::frontClipEnabled(); }
