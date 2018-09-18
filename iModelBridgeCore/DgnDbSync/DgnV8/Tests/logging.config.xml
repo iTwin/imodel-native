@@ -62,7 +62,7 @@
      explicitly specifed in a category node.
 -->
 
-    <root>                            
+    <root>
         <priority value="fatal" />
         <appender-ref ref="Console"/>
         <!--appender-ref ref="OutputDebugStringAppender" /-->
