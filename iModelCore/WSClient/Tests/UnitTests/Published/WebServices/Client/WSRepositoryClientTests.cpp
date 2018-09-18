@@ -2760,6 +2760,51 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndAzureUploadFails_ParsesError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {HEADER_Location, "https://foozure.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
+                {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
+        });
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
+        Utf8CP body = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>BlobNotFound</Code><Message>TestMessage</Message></Error>";
+        return StubHttpResponse(HttpStatus::NotFound, body, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
+        });
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::OK);
+        });
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    ASSERT_FALSE(response.IsSuccess());
+    EXPECT_EQ(WSError::Id::FileNotFound, response.GetError().GetId());
+    EXPECT_EQ("TestMessage", response.GetError().GetMessage());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectWithoutConfirmationIdAndAzureUploadSuccessful_DoesNotSendConfirmationToServer)

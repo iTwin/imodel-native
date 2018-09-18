@@ -248,9 +248,8 @@ StatusTaskPtr iModelConnection::AzureFileUpload(BeFileNameCR filePath, FileAcces
         {
         if (!result.IsSuccess())
             {
-            HttpError error(result.GetError());
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
-            return StatusResult::Error(Error(error));
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            return StatusResult::Error(result.GetError());
             }
 
         return StatusResult::Success();
@@ -1698,9 +1697,8 @@ CodeCallbackFunction*               codesCallback
 #endif
                 if (!result.IsSuccess())
                     {
-                    HttpError error(result.GetError());
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
-                    finalResult->SetError(Error(error));
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                    finalResult->SetError(result.GetError());
                     return;
                     }
 

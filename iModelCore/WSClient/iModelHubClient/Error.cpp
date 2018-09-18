@@ -181,11 +181,11 @@ Error::Error(RevisionStatus const& status)
         }
     }
 
-Error::Error(HttpErrorCR error)
+Error::Error(AzureErrorCR azureError)
     {
     m_id = Id::AzureError;
-    m_message = error.AsyncError::GetMessage();
-    m_description = error.AsyncError::GetDescription();
+    m_message = azureError.GetCode();
+    m_description = azureError.GetMessage();
     }
 
 Utf8StringCR Error::GetDefaultMessage(Error::Id id)
