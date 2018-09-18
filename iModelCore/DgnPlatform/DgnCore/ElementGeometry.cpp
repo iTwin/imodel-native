@@ -2152,7 +2152,6 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                         auto    fbThematicSettings = ppfb->thematicSettings();
 
                         thematicSettings->SetStepCount(fbThematicSettings->stepCount());
-                        thematicSettings->SetMargin(fbThematicSettings->margin());
                         thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
                         thematicSettings->SetMode((ThematicGradientSettings::Mode) fbThematicSettings->mode());
                         thematicSettings->SetColorScheme((ThematicGradientSettings::ColorScheme) fbThematicSettings->colorScheme());
@@ -4381,7 +4380,6 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                             auto    fbThematicSettings = ppfb->thematicSettings();
 
                             thematicSettings->SetStepCount(fbThematicSettings->stepCount());
-                            thematicSettings->SetMargin(fbThematicSettings->margin());
                             thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
                             thematicSettings->SetMode((ThematicGradientSettings::Mode) fbThematicSettings->mode());
                             thematicSettings->SetColorScheme((ThematicGradientSettings::ColorScheme) fbThematicSettings->colorScheme());

@@ -449,7 +449,6 @@ Json::Value     ThematicGradientSettings::ToJson () const
 
     value["mode"] = (uint32_t) GetMode();
     value["stepCount"] = GetStepCount();
-    value["margin"] = GetMargin();
     value["marginColor"] = GetMarginColor().GetValue();
     value["colorScheme"] = (uint32_t) GetColorScheme();
     value["rangeLow"] = GetRange().low;
@@ -464,7 +463,6 @@ Json::Value     ThematicGradientSettings::ToJson () const
 void     ThematicGradientSettings ::FromJson (Json::Value const& value) 
     {
     m_stepCount = value["stepCount"].asUInt();
-    m_margin = value["margin"].asDouble();
     m_marginColor = ColorDef(value["marginColor"].asUInt());
     m_mode = (Mode) value["mode"].asUInt();
     m_colorScheme = (ColorScheme) value["colorScheme"].asUInt();
@@ -523,7 +521,6 @@ bool ThematicGradientSettings::operator==(ThematicGradientSettingsCR rhs) const
         return true;
 
     return m_stepCount      == rhs.m_stepCount &&
-           m_margin         == rhs.m_margin &&
            m_marginColor    == rhs.m_marginColor &&
            m_mode           == rhs.m_mode &&
            m_colorScheme    == rhs.m_colorScheme &&
@@ -541,9 +538,6 @@ bool ThematicGradientSettings::operator<(ThematicGradientSettingsCR rhs) const
 
     if (m_stepCount != rhs.m_stepCount)
         return m_stepCount < rhs.m_stepCount;
-
-    if (m_margin != rhs.m_margin)
-        return m_margin < rhs.m_margin;
 
     if (m_marginColor.GetValue() != rhs.m_marginColor.GetValue())
         return m_marginColor.GetValue() != rhs.m_marginColor.GetValue();
