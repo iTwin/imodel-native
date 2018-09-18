@@ -597,21 +597,12 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
     double const*   pOrigin = (double*) (&qParams.origin);
     double const*   pScale = (double*) (&qParams.scale);
 
-    if (1 == blockSize)
+    for (size_t i=0; i<blockSize; i++)
         {
-        qOrigin.append(0.0);
-        qScale.append(1.0 / Quantization::RangeScale());
-        }
-    else
-        {
+        qOrigin.append(*pOrigin++);
 
-        for (size_t i=0; i<blockSize; i++)
-            {
-            qOrigin.append(*pOrigin++);
-
-            double  scale = *pScale++;
-            qScale.append(0.0 == scale ? 0.0 : (1.0 / scale));
-            }
+        double  scale = *pScale++;
+        qScale.append(0.0 == scale ? 0.0 : (1.0 / scale));
         }
     channelValue["qOrigin"] = std::move(qOrigin);
     channelValue["qScale"] = std::move(qScale);
