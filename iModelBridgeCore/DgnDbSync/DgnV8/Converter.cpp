@@ -3436,8 +3436,10 @@ void Converter::EmbedFilesInSource(BeFileNameCR rootFileName)
             if (UNEXPECTED_CONDITION(FAILED(hr)) || UNEXPECTED_CONDITION(numBytesRead != extraFileStreamStat.cbSize.QuadPart))
                 continue;
 
+            BentleyApi::Utf8String typeName(BeFileName::GetExtension((*fileIter)->GetFileName()).c_str());
+
             // Make the stub for the DB embedded file (no API to directly import a buffer).
-            DbResult dbres = m_dgndb->EmbeddedFiles().AddEntry(fileName.c_str(), "ExtraFile", NULL);
+            DbResult dbres = m_dgndb->EmbeddedFiles().AddEntry(fileName.c_str(), typeName.c_str(), NULL);
             if (UNEXPECTED_CONDITION(BE_SQLITE_OK != dbres))
                 continue;
 
