@@ -8,6 +8,7 @@
 #include "ConverterInternal.h"
 #include <RealityPlatformTools/SimpleRDSApi.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
+#include "DgnPlatform/WebMercator.h"
 
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -18,6 +19,38 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 BE_JSON_NAME(tilesetUrl)
 BE_JSON_NAME(tilesetToDbTransform)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::GenerateWebMercatorModel()
+    {
+    LinkModelPtr rdsModel = GetDgnDb().GetRealityDataSourcesModel();
+    Utf8String name("Bing Aerial");
+    DgnCode code = CodeSpec::CreateCode(BIS_CODESPEC_LinkElement, *rdsModel->GetModeledElement(), name);
+    DgnElementId existing = GetDgnDb().Elements().QueryElementIdByCode(code);
+    if (existing.IsValid())
+        return SUCCESS;
+
+    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*rdsModel, nullptr, "Bing Aerial");
+    if (!aerialLink.IsValid() ||  !aerialLink->Insert().IsValid())
+        return ERROR;
+
+    // set up the Bing Aerial map properties Json.
+    BentleyApi::Json::Value jsonParameters;
+    jsonParameters[WebMercator::WebMercatorModel::json_providerName()] = WebMercator::BingImageryProvider::prop_BingProvider();
+    jsonParameters[WebMercator::WebMercatorModel::json_groundBias()] = -1.0;
+    jsonParameters[WebMercator::WebMercatorModel::json_transparency()] = 0.0;
+    BentleyApi::Json::Value& bingAerialJson = jsonParameters[WebMercator::WebMercatorModel::json_providerData()];
+
+    bingAerialJson[WebMercator::WebMercatorModel::json_mapType()] = (int) WebMercator::MapType::Aerial;
+    WebMercator::WebMercatorModel::CreateParams createParams (GetDgnDb(), aerialLink->GetElementId(), jsonParameters);
+
+    WebMercator::WebMercatorModelPtr model = new WebMercator::WebMercatorModel (createParams);
+    DgnDbStatus insertStatus = model->Insert();
+    BeAssert (DgnDbStatus::Success == insertStatus);
+    return DgnDbStatus::Success == insertStatus ? SUCCESS : ERROR;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018

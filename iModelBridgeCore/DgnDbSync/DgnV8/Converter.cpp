@@ -1601,6 +1601,14 @@ void Converter::ValidateJob()
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool createSpatialMapForDgnClientFx()
+    {
+    Bentley::WString configVar;
+    return (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP"))
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
@@ -1633,8 +1641,11 @@ void Converter::OnCreateComplete()
     GenerateRealityModelTilesets();
     ConverterLogging::LogPerformance(timer, "Creating reality model tilesets");
 
+    if (createSpatialMapForDgnClientFx() && nullptr != m_dgndb->GeoLocation().GetDgnGCS() && !IsUpdating())
+        GenerateWebMercatorModel();
+
     GetDgnDb().SaveSettings();
-    }
+    }   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
