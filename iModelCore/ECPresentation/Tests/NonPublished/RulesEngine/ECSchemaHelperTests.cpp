@@ -654,7 +654,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
     ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
     ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
-    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
     ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
 
     IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
@@ -664,6 +664,52 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
         rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), nullptr);
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsRelatedInstanceClasses_WhenRelatedClassIsNotSpecified)
+    {
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
+    // ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
+
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, "", RelatedClassPath(), nullptr);
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class2, result[0][0].GetTargetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsRelatedInstanceClasses_WhenRelationshipIsNotSpecified)
+    {
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1")->GetEntityClassCP();
+    ECEntityClassCP baseof2and3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "BaseOf2and3")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class3")->GetEntityClassCP();
+    ECRelationshipClassCP rel = s_project->GetECDb().Schemas().GetClass("SchemaComplex", "Class1HasClass2And3")->GetRelationshipClassCP();
+
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
+        "", ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class2, result[0][0].GetTargetClass());

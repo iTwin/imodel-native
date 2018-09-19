@@ -452,8 +452,8 @@ TEST_F(DefaultECPresentationSerializerTests, PropertySerializationWithKOQ)
             "KindOfQuantity": {
                 "Name": "TestSchema:TestKOQ",
                 "DisplayLabel": "Test",
-                "PersistenceUnit": "MM(real)",
-                "CurrentFusId": "MM(real)"
+                "PersistenceUnit": "MM",
+                "CurrentFormatId": "DefaultReal[u:MM]"
                 }
             },
         "RelatedClassPath": []
