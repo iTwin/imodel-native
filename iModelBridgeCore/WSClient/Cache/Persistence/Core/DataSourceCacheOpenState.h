@@ -72,7 +72,7 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
 
     public:
         DataSourceCacheOpenState(ObservableECDb& db, CacheEnvironmentCR environment);
-        ~DataSourceCacheOpenState();
+        virtual ~DataSourceCacheOpenState();
 
         virtual void OnSchemaChanged() override; // IECDbSchemaChangeListener
         void ClearRuntimeCaches();

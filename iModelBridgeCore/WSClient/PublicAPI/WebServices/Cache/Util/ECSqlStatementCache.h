@@ -35,7 +35,7 @@ struct ECSqlStatementCache : IECDbSchemaChangeListener
 
     public:
         WSCACHE_EXPORT ECSqlStatementCache(ObservableECDb& ecDb);
-        WSCACHE_EXPORT ~ECSqlStatementCache();
+        WSCACHE_EXPORT virtual ~ECSqlStatementCache();
 
         //! Automatically react to schema change on ECDb and clear statement cache.
         WSCACHE_EXPORT void OnSchemaChanged() override; // IECDbSchemaChangeListener
