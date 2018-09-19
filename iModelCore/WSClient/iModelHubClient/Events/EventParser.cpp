@@ -29,7 +29,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
     bool isSuccess = false;
     switch (eventType)
         {
-        case BentleyB0200::iModel::Hub::Event::LockEvent:
+        case BentleyM0200::iModel::Hub::Event::LockEvent:
             {
             if (
                 data.isMember(Event::EventTopic) &&
@@ -44,7 +44,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
                 isSuccess = true;
             break;
             }
-        case BentleyB0200::iModel::Hub::Event::ChangeSetPostPushEvent:
+        case BentleyM0200::iModel::Hub::Event::ChangeSetPostPushEvent:
             {
             if (
                 data.isMember(Event::EventTopic) &&
@@ -56,7 +56,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
                 isSuccess = true;
             break;
             }
-        case BentleyB0200::iModel::Hub::Event::ChangeSetPrePushEvent:
+        case BentleyM0200::iModel::Hub::Event::ChangeSetPrePushEvent:
             {
             if (
                 data.isMember(Event::EventTopic) &&
@@ -65,7 +65,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
                 isSuccess = true;
             break;
             }
-        case BentleyB0200::iModel::Hub::Event::CodeEvent:
+        case BentleyM0200::iModel::Hub::Event::CodeEvent:
             {
             if (
                 data.isMember(Event::EventTopic) &&
@@ -80,8 +80,8 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
                 isSuccess = true;
             break;
             }
-        case BentleyB0200::iModel::Hub::Event::AllLocksDeletedEvent:
-        case BentleyB0200::iModel::Hub::Event::AllCodesDeletedEvent:
+        case BentleyM0200::iModel::Hub::Event::AllLocksDeletedEvent:
+        case BentleyM0200::iModel::Hub::Event::AllCodesDeletedEvent:
             {
             if (
                 data.isMember(Event::EventTopic) &&
@@ -94,7 +94,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
                 isSuccess = true;
             break;
             }
-        case BentleyB0200::iModel::Hub::Event::VersionEvent:
+        case BentleyM0200::iModel::Hub::Event::VersionEvent:
             {
             if (
                 data.isMember(Event::EventTopic) &&
@@ -106,7 +106,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event:
                 isSuccess = true;
             break;
             }
-        case BentleyB0200::iModel::Hub::Event::UnknownEventType:
+        case BentleyM0200::iModel::Hub::Event::UnknownEventType:
         default:
             {
             break;

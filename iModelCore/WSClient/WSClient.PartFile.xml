@@ -68,7 +68,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
+    <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
         <SubPart PartName="WebServicesClient-PublicAPI" />
         <SubPart PartName="BentleyDesktopClientCCApi"     PartFile="SdkSources"  Repository="bsicommon" />
         <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
@@ -120,7 +120,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="FakeServer-Library"  BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
+    <Part Name="FakeServer-Library"  BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnPlatformDLL"              PartFile="DgnPlatform"    	Repository="DgnPlatform"/>
         <Bindings>
@@ -162,7 +162,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
+    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WSClientLibrarySubParts"/>
         <Bindings>
@@ -233,7 +233,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="iModelHubClient-Library" BentleyBuildMakeFile="iModelHubClientLib.mke"  ApiNumber="B02" ExcludePlatforms="Android*">
+    <Part Name="iModelHubClient-Library" BentleyBuildMakeFile="iModelHubClientLib.mke"  ApiNumber="M02" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
@@ -393,7 +393,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
+    <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="M02">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="BeSecurity"                    PartFile="BeSecurity"       Repository="BeSecurity" />
         <SubPart PartName="ECDb"                          PartFile="ECDb"             Repository="ECDb" />
@@ -747,7 +747,7 @@
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=WSClient -dTEST_COLLECTION_PRODUCT=WSClient-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="WSClient-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
