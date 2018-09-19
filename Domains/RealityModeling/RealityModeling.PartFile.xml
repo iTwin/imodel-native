@@ -20,7 +20,6 @@
         <SubPart PartName="Core"         PartFile="TerrainModelDgnDb"      Repository="TerrainModel" />
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"         Repository="DgnPlatform" />
         <SubPart PartName="ScalableMesh"    PartFile="ScalableMesh"        Repository="ScalableMesh" />
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"          Repository="DgnDisplay" />
 
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(ApiNumber)$(shlibext)</Assemblies>
