@@ -2518,7 +2518,6 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportEmbeddedFiles()
 
     DbEmbeddedFileTable::Iterator iter = embeddedFileTable.MakeIterator();
 
-    DbEmbeddedFileTable::Iterator::Entry file = iter.begin();
     for (auto const& file : iter)
         {
         bvector<Byte> buffer;
