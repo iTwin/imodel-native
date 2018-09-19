@@ -2,7 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="B02">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="M02">
         <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="OpenSSL" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"            PartFile="BeSQLite"         Repository="BeSQLite"/>
@@ -30,7 +30,7 @@
         <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
     </Part>
 
-    <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="B02">
+    <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttpLibrary-Curl"/>
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley"/>
@@ -338,7 +338,7 @@
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=BeHttp -dTEST_COLLECTION_PRODUCT=BeHttp-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="BeHttp-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
