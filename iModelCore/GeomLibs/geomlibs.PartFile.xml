@@ -38,7 +38,7 @@
     </Part>
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="GeomDlls" BentleyBuildMakeFile="geom/build/BentleyGeom/BentleyGeom.mke" ApiNumber="B02">
+    <Part Name="GeomDlls" BentleyBuildMakeFile="geom/build/BentleyGeom/BentleyGeom.mke" ApiNumber="M02">
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="PublicAPI" />
@@ -48,7 +48,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="GeomlibsSerialization" BentleyBuildMakeFile="serialization/src/serialization.mke" ApiNumber="B02">
+    <Part Name="GeomlibsSerialization" BentleyBuildMakeFile="serialization/src/serialization.mke" ApiNumber="M02">
         <SubPart PartName="GeomDlls"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
@@ -62,7 +62,7 @@
 
 
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="GeomDllA" BentleyBuildMakeFile="geom/build/BentleyGeomA/BentleyGeomA.mke" ApiNumber="B02">
+    <Part Name="GeomDllA" BentleyBuildMakeFile="geom/build/BentleyGeomA/BentleyGeomA.mke" ApiNumber="M02">
         <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName= "PublicAPI" />
         <Bindings>
@@ -270,7 +270,7 @@
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=GeomLibs -dTEST_COLLECTION_PRODUCT=GeomLibs-Tests"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="GeomLibs-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>

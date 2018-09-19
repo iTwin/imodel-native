@@ -19,9 +19,17 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 struct BeCGIModelJsonValueReader
     {
 private:
+    Transform m_transform;
+public:
+    BeCGIModelJsonValueReader ()
+        {
+        m_transform = Transform::FromIdentity ();
+        }
+private:
 // Return true if value is an entirely numeric array.
-// Also transfer up to numNeeded double to values[].  Fill tail of values[] with 0.
-bool derefNumericArray (JsonValueCR value, size_t numNeeded, double values[])
+// Also transfer up to maxNeeded double to values[].  Fill tail of values[] with 0.
+// Return true if at least minNeeded were received.
+bool derefNumericArray (JsonValueCR value, size_t minNeeded, size_t maxNeeded, double values[])
     {
     // Json::FastWriter fastWriter;
     // auto string = fastWriter.write(value);
@@ -32,12 +40,12 @@ bool derefNumericArray (JsonValueCR value, size_t numNeeded, double values[])
         {
         if (!value[i].isNumeric ())
             return false;
-        if (numOut < numNeeded)
+        if (numOut < maxNeeded)
             values[numOut++] = value[i].asDouble ();
         }
-    for (uint32_t i = numOut; i < numNeeded; i++)
+    for (uint32_t i = numOut; i < maxNeeded; i++)
         values[i] = 0;
-    return true;
+    return numOut >= minNeeded;
     }
 
 // number ==> degrees
@@ -105,7 +113,7 @@ bool derefNumeric (JsonValueCR source, char const *name, double &value, double d
 
 ValidatedDouble derefValidatedDouble (JsonValueCR source, char const *name, ValidatedDouble const &defaultValue)
     {
-    // unused - auto value = defaultValue;
+    auto value = defaultValue;
     auto jsonValue = source[name];
     if (jsonValue.isNumeric ())
         return ValidatedDouble (jsonValue.asDouble (), true);
@@ -131,7 +139,7 @@ bool tryValueToXYZ (JsonValueCR value, DPoint3dR xyz)
     {
     double xyzArray[3];
     bool stat = false;
-    if (derefNumericArray (value, 3, xyzArray))
+    if (derefNumericArray (value, 2, 3, xyzArray))
         {
         xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
         stat = true;
@@ -155,9 +163,27 @@ bool tryValueToBVectorDPoint3d (JsonValueCR value, bvector<DPoint3d> &data)
         {
         for (uint32_t i = 0; i < value.size (); i++)
             {
-            if (!derefNumericArray (value[i], 3, xyzArray))
+            if (!derefNumericArray (value[i], 2, 3, xyzArray))
                 return false;
             data.push_back (DPoint3d::FromArray (xyzArray));
+            }
+        return true;
+        }
+    return true;
+    }
+
+bool tryValueToBVectorDPoint3dAndWeght (JsonValueCR value, bvector<DPoint3d> &data, bvector<double> &weights)
+    {
+    data.clear ();
+    double xyzArray[4];
+    if (value.isArray ())
+        {
+        for (uint32_t i = 0; i < value.size (); i++)
+            {
+            if (!derefNumericArray (value[i], 4, 4, xyzArray))
+                return false;
+            data.push_back (DPoint3d::FromArray (xyzArray));
+            weights.push_back (xyzArray[3]);
             }
         return true;
         }
@@ -172,7 +198,7 @@ bool tryValueToBVectorDVec3d (JsonValueCR value, bvector<DVec3d> &data)
         {
         for (uint32_t i = 0; i < value.size (); i++)
             {
-            if (!derefNumericArray (value[i], 3, xyzArray))
+            if (!derefNumericArray (value[i], 2, 3, xyzArray))
                 return false;
             data.push_back (DVec3d::FromArray (xyzArray));
             }
@@ -190,7 +216,7 @@ bool tryValueToBVectorDPoint2d (JsonValueCR value, bvector<DPoint2d> &data)
         {
         for (uint32_t i = 0; i < value.size (); i++)
             {
-            if (!derefNumericArray (value[i], 2, xyzArray))
+            if (!derefNumericArray (value[i], 2, 2, xyzArray))
                 return false;
             data.push_back (DPoint2d::FromArray (xyzArray));
             }
@@ -218,14 +244,14 @@ bool tryValueGridToBVectorDPoint3d (JsonValueCR value, bvector<DPoint3d> &data, 
                     {
                     if (row[j].size () == 3)
                         {
-                        if (!derefNumericArray (row[j], 3, xyzArray))
+                        if (!derefNumericArray (row[j], 2, 3, xyzArray))
                             return false;
                         data.push_back (DPoint3d::FromArray (xyzArray));
                         // weight.push_back (1.0);
                         }
                     else if (row[j].size () == 4)
                         {
-                        if (!derefNumericArray (row[j], 4, xyzArray))
+                        if (!derefNumericArray (row[j], 4, 4, xyzArray))
                             return false;
                         data.push_back (DPoint3d::FromArray (xyzArray));
                         weight.push_back (xyzArray[3]);
@@ -383,7 +409,24 @@ bool tryValueToBsplineCurve (JsonValueCR value, ICurvePrimitivePtr &result)
         {
         bvector<DPoint3d> poles;
         bvector<double> knots;
-        if (tryValueToBVectorDPoint3d (value["points"], poles)
+        bvector<double> weights;
+        if (tryValueToBVectorDPoint3dAndWeght (value["points"], poles, weights)
+            && value["order"].isIntegral ()
+            && tryValueToBVectorDouble (value["knots"], knots)
+            )
+            {
+            auto order = value["order"].asInt ();
+            bool closed  = value["closed"].isNull () ? false : value["closed"].asBool ();
+            auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
+                    poles, &weights, &knots,
+                    (int)order, closed);
+            if (bcurve.IsValid ())
+                {
+                result = ICurvePrimitive::CreateBsplineCurve (bcurve);
+                return true;
+                }
+            }
+        else if (tryValueToBVectorDPoint3d (value["points"], poles)
             && value["order"].isIntegral ()
             && tryValueToBVectorDouble (value["knots"], knots)
             )
@@ -399,6 +442,7 @@ bool tryValueToBsplineCurve (JsonValueCR value, ICurvePrimitivePtr &result)
                 return true;
                 }
             }
+
         }
     return false;
     }
@@ -646,7 +690,7 @@ bool tryValueToRuledSweep (JsonValueCR value, ISolidPrimitivePtr &result)
         }
     return false;
     }
-
+// AUXDATA -- DO NOT PORT THIS TO CONNECT
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      04/2018
 +--------------------------------------------------------------------------------------*/
@@ -920,6 +964,28 @@ ISolidPrimitivePtr tryValueToSolidPrimitive (JsonValueCR value)
     return nullptr;
     }
 
+
+bool tryValueToAction (JsonValueCR value)
+    {
+    DVec3d vector;
+    if (tryValueToXYZ (value["moveOrigin"], vector))
+        {
+        m_transform = Transform::From (vector) * m_transform;
+        return true;
+        }
+    else if (tryValueToXYZ (value["setOrigin"], vector))
+        {
+        m_transform = Transform::From(vector);
+        return true;
+        }
+    return false;
+    }
+IGeometryPtr ApplyState (IGeometryPtr &geometry)
+    {
+    if (!m_transform.IsIdentity () && geometry.IsValid ())
+        geometry->TryTransformInPlace (m_transform);
+    return geometry;
+    }
 IGeometryPtr tryValueToIGeometry (JsonValueCR value)
     {
     if (value.isObject ())
@@ -939,10 +1005,11 @@ IGeometryPtr tryValueToIGeometry (JsonValueCR value)
         PolyfaceHeaderPtr pf = tryValueToPolyfaceHeader(value);
         if (pf.IsValid ())
             return IGeometry::Create (pf);
+        if (tryValueToAction (value))
+            return nullptr;     // not an error, just nothing to return.
         }
     return nullptr;
     }
-
 
 
 public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry)
@@ -952,7 +1019,7 @@ public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry)
         {
         auto result = tryValueToIGeometry (source);
         if (result.IsValid ())
-            geometry.push_back (result);
+            geometry.push_back (ApplyState (result));
         }
     else if (source.isArray ())
         {
@@ -962,7 +1029,7 @@ public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry)
             {
             auto member = tryValueToIGeometry (source[i]);
             if (member.IsValid ())
-                geometry.push_back (member);    
+                geometry.push_back (ApplyState (member));    
             }
         }
     return geometry.size () > 0;
