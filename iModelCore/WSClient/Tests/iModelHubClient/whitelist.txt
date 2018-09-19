@@ -5,6 +5,7 @@ ProjectScope/BackdoorAPILRPJob/MergeJob--********-****-****-****-************
 ProjectScope/LargeThumbnail/********-****-****-****-************/$file
 ProjectScope/SmallThumbnail/********-****-****-****-************/$file
 ProjectScope/iModel
+ProjectScope/iModel/********-****-****-****-************
 ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*
 ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*&$filter=$id+eq+'********-****-****-****-************'
 ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*&$filter=Initialized+eq+true
