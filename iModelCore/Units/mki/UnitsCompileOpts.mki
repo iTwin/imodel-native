@@ -2,10 +2,10 @@
 #
 #     $Source: mki/UnitsCompileOpts.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-nameToDefine    = __UNITS_BUILD__
+nameToDefine = __UNITS_BUILD__
 %include cdefapnd.mki
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.

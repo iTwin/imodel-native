@@ -26,35 +26,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include=".\src\ConstantDefinitions.cpp">
-      <Filter>Source Files\Units</Filter>
-    </ClCompile>
-    <ClCompile Include=".\src\PhenomenonDefinitions.cpp">
-      <Filter>Source Files\Units</Filter>
-    </ClCompile>
-    <ClCompile Include=".\src\Quantity.cpp">
-      <Filter>Source Files\Units</Filter>
-    </ClCompile>
     <ClCompile Include="src\SymbolicExpression.cpp">
-      <Filter>Source Files\Units</Filter>
-    </ClCompile>
-    <ClCompile Include=".\src\UnitDefinitions.cpp">
-      <Filter>Source Files\Units</Filter>
-    </ClCompile>
-    <ClCompile Include=".\src\UnitRegistry.cpp">
       <Filter>Source Files\Units</Filter>
     </ClCompile>
     <ClCompile Include="src\UnitsPCH.cpp">
       <Filter>Source Files\Units</Filter>
-    </ClCompile>
-    <ClCompile Include=".\src\UnitTypes.cpp">
-      <Filter>Source Files\Units</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Formatting\FormatQuantity.cpp">
-      <Filter>Source Files\Formatting</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Formatting\Formatting.cpp">
-      <Filter>Source Files\Formatting</Filter>
     </ClCompile>
     <ClCompile Include="src\Formatting\FormatUtils.cpp">
       <Filter>Source Files\Formatting</Filter>
@@ -62,7 +38,40 @@
     <ClCompile Include="src\Formatting\FormatParsing.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="src\Formatting\FormattingIO.cpp">
+    <ClCompile Include="src\UnitNameMappings.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ConstantDefinitions.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PhenomenonDefinitions.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Quantity.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitDefinitions.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitRegistry.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTypes.cpp">
+      <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\NumericFormatUtils.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\CompositeValueSpec.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\NumericFormatSpec.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\Format.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\FormatMappings.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
     <ClCompile Include="src\Formatting\FormatMappings.cpp">
@@ -70,43 +79,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include=".\mki\Units.mki">
-      <Filter>Make Files</Filter>
-    </None>
-    <None Include=".\mki\UnitsCompileOpts.mki">
-      <Filter>Make Files</Filter>
-    </None>
-    <None Include=".\Units.mke">
-      <Filter>Make Files</Filter>
-    </None>
+    <None Include="mki\Units.mki" />
+    <None Include="mki\UnitsCompileOpts.mki" />
+    <None Include="Units.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PublicAPI\Formatting\FormattingDefinitions.h">
+    <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
-    <ClInclude Include=".\PublicAPI\Units\Quantity.h">
-      <Filter>Header Files\Units</Filter>
+    <ClInclude Include="PrivateAPI\Formatting\NumericFormatUtils.h">
+      <Filter>Header Files\Formatting</Filter>
     </ClInclude>
-    <ClInclude Include=".\src\StandardNames.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include="src\SymbolicExpression.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include=".\PublicAPI\Units\UnitRegistry.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include=".\PublicAPI\Units\Units.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include=".\src\UnitsNativeLogging.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include="src\UnitsPCH.h">
-      <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include=".\PublicAPI\Units\UnitTypes.h">
-      <Filter>Header Files\Units</Filter>
+    <ClInclude Include="PublicAPI\Formatting\FormattingDefinitions.h">
+      <Filter>Header Files\Formatting</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\Formatting\FormattingApi.h">
       <Filter>Header Files\Formatting</Filter>
@@ -114,7 +99,40 @@
     <ClInclude Include="PublicAPI\Formatting\FormattingEnum.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\Formatting\FormattingParsing.h">
+    <ClInclude Include="src\UnitsPCH.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\Units.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Units\StandardNames.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Units\SymbolicExpression.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Units\StandardDefinitions.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\UnitNameMappings.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\UnitTypes.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\Quantity.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\UnitRegistry.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UnitsNativeLogging.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Units\UnitsContext.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Formatting\AliasMappings.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\Formatting\AliasMappings.h">

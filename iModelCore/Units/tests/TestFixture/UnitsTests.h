@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/NonPublished/UnitsTests.h $
+|  $Source: tests/TestFixture/UnitsTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,6 +13,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 #include <Units/Units.h>
+#include <Units/UnitRegistry.h>
 
 #define BEGIN_UNITS_UNITTESTS_NAMESPACE BEGIN_BENTLEY_UNITS_NAMESPACE namespace Tests {
 #define END_UNITS_UNITTESTS_NAMESPACE } END_BENTLEY_UNITS_NAMESPACE

@@ -7,39 +7,45 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include=".\src\ConstantDefinitions.cpp" />
-    <ClCompile Include=".\src\PhenomenonDefinitions.cpp" />
-    <ClCompile Include=".\src\Quantity.cpp" />
-    <ClCompile Include=".\src\UnitDefinitions.cpp" />
-    <ClCompile Include=".\src\UnitRegistry.cpp" />
-    <ClCompile Include=".\src\UnitTypes.cpp" />
-    <ClCompile Include="src\Formatting\FormatMappings.cpp" />
+    <ClCompile Include="src\ConstantDefinitions.cpp" />
+    <ClCompile Include="src\Formatting\Format.cpp" />
+    <ClCompile Include="src\Formatting\NumericFormatSpec.cpp" />
+    <ClCompile Include="src\Formatting\NumericFormatUtils.cpp" />
+    <ClCompile Include="src\PhenomenonDefinitions.cpp" />
+    <ClCompile Include="src\Quantity.cpp" />
+    <ClCompile Include="src\UnitDefinitions.cpp" />
+    <ClCompile Include="src\UnitNameMappings.cpp" />
+    <ClCompile Include="src\UnitRegistry.cpp" />
+    <ClCompile Include="src\UnitTypes.cpp" />
     <ClCompile Include="src\Formatting\FormatParsing.cpp" />
-    <ClCompile Include="src\Formatting\FormatQuantity.cpp" />
-    <ClCompile Include="src\Formatting\Formatting.cpp" />
-    <ClCompile Include="src\Formatting\FormattingIO.cpp" />
+    <ClCompile Include="src\Formatting\CompositeValueSpec.cpp" />
+    <ClCompile Include="src\Formatting\FormatMappings.cpp" />
     <ClCompile Include="src\Formatting\FormatUtils.cpp" />
     <ClCompile Include="src\SymbolicExpression.cpp" />
     <ClCompile Include="src\UnitsPCH.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".\mki\Units.mki" />
-    <None Include=".\mki\UnitsCompileOpts.mki" />
-    <None Include=".\Units.mke" />
+    <None Include="mki\Units.mki" />
+    <None Include="mki\UnitsCompileOpts.mki" />
+    <None Include="Units.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include=".\PublicAPI\Units\Quantity.h" />
-    <ClInclude Include=".\PublicAPI\Units\UnitRegistry.h" />
-    <ClInclude Include=".\PublicAPI\Units\Units.h" />
-    <ClInclude Include=".\PublicAPI\Units\UnitTypes.h" />
-    <ClInclude Include=".\src\StandardNames.h" />
-    <ClInclude Include=".\src\UnitsNativeLogging.h" />
+    <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h" />
+    <ClInclude Include="PrivateAPI\Formatting\NumericFormatUtils.h" />
+    <ClInclude Include="PrivateAPI\Units\StandardDefinitions.h" />
     <ClInclude Include="PublicAPI\Formatting\AliasMappings.h" />
+    <ClInclude Include="PublicAPI\Units\Quantity.h" />
+    <ClInclude Include="PublicAPI\Units\UnitNameMappings.h" />
+    <ClInclude Include="PublicAPI\Units\UnitRegistry.h" />
+    <ClInclude Include="PrivateAPI\Units\StandardNames.h" />
+    <ClInclude Include="PrivateAPI\Units\SymbolicExpression.h" />
+    <ClInclude Include="PublicAPI\Units\Units.h" />
+    <ClInclude Include="PublicAPI\Units\UnitsContext.h" />
+    <ClInclude Include="PublicAPI\Units\UnitTypes.h" />
+    <ClInclude Include="src\UnitsNativeLogging.h" />
     <ClInclude Include="PublicAPI\Formatting\FormattingApi.h" />
     <ClInclude Include="PublicAPI\Formatting\FormattingDefinitions.h" />
     <ClInclude Include="PublicAPI\Formatting\FormattingEnum.h" />
-    <ClInclude Include="PublicAPI\Formatting\FormattingParsing.h" />
-    <ClInclude Include="src\SymbolicExpression.h" />
     <ClInclude Include="src\UnitsPCH.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

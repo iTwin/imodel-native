@@ -1,9 +1,11 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-#UnitsTests.UnitsMapping
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-UnitsTests.TestEveryUnitIsAddedToItsPhenomenon  # Fails on Android - notified Colin
+
+FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
+FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
+FormatParsingSetTest.CompositeFormats_IGNORED

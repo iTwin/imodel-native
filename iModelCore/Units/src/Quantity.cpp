@@ -7,13 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include <complex>      // for std::abs
+#include <complex> // for std::abs
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              David Fox-Rabinovitz     12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-    static double absMax(double a, double b)
+static double absMax(double a, double b)
     {
     a = fabs(a);
     b = fabs(b);
@@ -33,9 +34,6 @@ static double relDiff(double a, double b)
         return diff / max;
     return 0.0;
     }
-END_BENTLEY_UNITS_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_UNITS
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
@@ -46,42 +44,9 @@ static almost_equal(const T x, const T y, int ulp)
     // the machine epsilon has to be scaled to the magnitude of the values used
     // and multiplied by the desired precision in ULPs (units in the last place)
     return std::abs(x - y) < std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp
-        // unless the result is subnormal            
+        // unless the result is subnormal
         || std::abs(x - y) < std::numeric_limits<T>::min();
     }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-//QuantityCP Quantity::Create (double magnitude, Utf8CP unitName)
-//    {
-//    auto unit = UnitRegistry::Instance().LookupUnit(unitName);
-//    if (nullptr == unit)
-//        return nullptr;
-//
-//    return new Quantity (magnitude, unit);
-//    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                             David Fox-Rabinovitz     02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-//QuantityCP Quantity::Create (double magnitude, UnitCP unit)
-//    {
-//    return Quantity (magnitude, unit);
-//    }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Quantity::Quantity (double magnitude, UnitCR unit)
-    {
-    m_unit = &unit;
-    m_magnitude = magnitude;
-    m_tolerance = 1000;
-    }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
@@ -92,28 +57,6 @@ Quantity::Quantity(QuantityCR rhs)
     m_magnitude = rhs.m_magnitude;
     m_tolerance = rhs.m_tolerance;
     }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-//BentleyStatus Quantity::ConvertTo(Utf8CP unitName, double& value) const
-//    {
-//    auto newUnit = UnitRegistry::Instance().LookupUnit(unitName);
-//    if (nullptr == newUnit)
-//        return ERROR;
-//
-//    if (m_unit == newUnit)
-//        {
-//        value = m_magnitude;
-//        return SUCCESS;
-//        }
-//
-//    value = m_unit->Convert(m_magnitude, newUnit);
-//    if (value == 0.0)
-//        return ERROR;
-//
-//    return SUCCESS;
-//    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                               David.Fox-Rabinovitz     02/17
@@ -129,8 +72,6 @@ BentleyStatus Quantity::ConvertTo(UnitCP unit, double& value) const
     UnitsProblemCode prob = m_unit->Convert(value, m_magnitude, unit);
     if (prob != UnitsProblemCode::NoProblem)
         return ERROR;
-   /* if (value == 0.0)
-        return ERROR;*/
 
     return SUCCESS;
     }
@@ -152,21 +93,6 @@ UnitsProblemCode Quantity::GetConvertedMagnitude(double& value, UnitCP unit) con
     return m_unit->Convert(value, m_magnitude, unit);
     }
 
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-//QuantityCP Quantity::ConvertTo(Utf8CP unitName) const
-//    {
-//    double newValue;
-//    UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName);
-//    if (nullptr == unit || SUCCESS != ConvertTo(unit, newValue))
-//        return nullptr;
-//
-//    return  Quantity(newValue, unit);
-//    }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                            David.Fox-Rabinovitz     02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -174,11 +100,11 @@ Quantity Quantity::ConvertTo(UnitCP unit) const
     {
     double newValue;
     if (nullptr == unit)
-        return *this;  // returning  the current Quantity (without conversion)
+        return *this; // returning the current Quantity (without conversion)
 
     UnitsProblemCode prob = GetConvertedMagnitude(newValue, unit);
     if(UnitsProblemCode::NoProblem != prob)
-        return Quantity();     // when impossible to convert - return invalid quantity
+        return Quantity(); // when impossible to convert - return invalid quantity
 
     return Quantity(newValue, *unit);
     }
@@ -189,12 +115,11 @@ Quantity Quantity::ConvertTo(UnitCP unit) const
 bool Quantity::AlmostEqual (QuantityCR rhs) const
     {
     if (IsNullQuantity() || rhs.IsNullQuantity())
-        {
         return false;
-        }
+
     if (m_unit == rhs.m_unit && almost_equal(m_magnitude, rhs.m_magnitude, m_tolerance))
         return true;
-    
+
     if (m_unit == rhs.m_unit)
         return false;
 
@@ -202,8 +127,7 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
     if (SUCCESS != ConvertTo(rhs.m_unit, temp))
         return false;
 
-    bool ae = almost_equal(temp, rhs.m_magnitude, m_tolerance);
-    return ae; //almost_equal(temp, rhs.m_magnitude, m_tolerance);
+    return almost_equal(temp, rhs.m_magnitude, m_tolerance);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -212,9 +136,8 @@ bool Quantity::AlmostEqual (QuantityCR rhs) const
 bool Quantity::IsClose(QuantityCR rhs, double tolerance) const
     {
     if (IsNullQuantity() || rhs.IsNullQuantity() || GetPhenomenon() != rhs.GetPhenomenon())
-        {
         return false;
-        }
+
     double temp;
     if (SUCCESS != ConvertTo(rhs.m_unit, temp))
         return false;
@@ -225,7 +148,7 @@ bool Quantity::IsClose(QuantityCR rhs, double tolerance) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Quantity::AlmostLessThan (QuantityCR rhs) const   // SignificantlyLess(
+bool Quantity::AlmostLessThan (QuantityCR rhs) const
     {
     if (AlmostEqual(rhs))
         return false;
@@ -250,22 +173,6 @@ bool Quantity::AlmostGreaterThan (QuantityCR rhs) const
         return false;
 
     return m_magnitude > convertedValue;
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Quantity::AlmostGreaterThanOrEqual(QuantityCR rhs) const
-    {
-    return this->AlmostEqual(rhs) || this->AlmostGreaterThan(rhs);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Quantity::AlmostLessThanOrEqual (QuantityCR rhs) const
-    {
-    return this->AlmostEqual(rhs) || this->AlmostLessThan(rhs);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -312,7 +219,7 @@ Quantity Quantity::Add(QuantityCR rhs) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity Quantity::Subtract(QuantityCR rhs) const 
+Quantity Quantity::Subtract(QuantityCR rhs) const
     {
     double convertedValue;
     if (SUCCESS != rhs.ConvertTo(m_unit, convertedValue))
@@ -322,17 +229,4 @@ Quantity Quantity::Subtract(QuantityCR rhs) const
     return  Quantity(newValue, *m_unit);
     }
 
-bool Quantity::IsNullQuantity() const 
-    { 
-    bool stat = (0.0 == m_magnitude && nullptr == m_unit);
-    return stat; // (0.0 == m_magnitude && nullptr == m_unit);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                             David.Fox-Rabinovitz     12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Quantity::ToDebugText() const
-    {
-    Utf8PrintfString txt("%f %s", m_magnitude, m_unit->GetName());
-    return(txt);
-    }
+END_BENTLEY_UNITS_NAMESPACE

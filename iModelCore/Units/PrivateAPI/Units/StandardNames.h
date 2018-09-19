@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/StandardNames.h $
+|     $Source: PrivateAPI/Units/StandardNames.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,10 +19,7 @@ static Utf8CP const SI = "SI";
 static Utf8CP const CGS = "CGS";
 static Utf8CP const METRIC = "METRIC";
 static Utf8CP const IMPERIAL = "IMPERIAL";
-//static Utf8CP const PHYSICS = "PHYSICS";
 static Utf8CP const CHEMISTRY = "CHEMISTRY";
-//static Utf8CP const THERMODYNAMICS = "THERMODYNAMICS";
-//static Utf8CP const ASTRONOMY = "ASTRONOMY";
 static Utf8CP const MARITIME = "MARITIME";
 static Utf8CP const USSURVEY = "USSURVEY";
 static Utf8CP const TYPOGRAPHY = "TYPOGRAPHY";
@@ -35,11 +32,10 @@ static Utf8CP const INTERNATIONAL = "INTERNATIONAL";
 static Utf8CP const USCUSTOM = "USCUSTOM";
 static Utf8CP const BRITISH = "BRITISH";
 static Utf8CP const JAPANESE = "JAPANESE";
-//static Utf8CP const HISTORICAL = "HISTORICAL";
 static Utf8CP const STATISTICS = "STATISTICS";
-//static Utf8CP const BENTLEY = "BENTLEY";
 static Utf8CP const CUSTOMARY = "CUSTOMARY";
 static Utf8CP const FINANCE = "FINANCE";
+static Utf8CP const CURRENCY = "CURRENCY";
 static Utf8CP const CONSTANT = "CONSTANT";
 static Utf8CP const DUMMY = "DUMMY";
 
@@ -51,7 +47,7 @@ static Utf8CP const TEMPERATURE_CHANGE = "TEMPERATURE_CHANGE";
 static Utf8CP const CURRENT = "CURRENT";
 static Utf8CP const MOLE = "MOLE";
 static Utf8CP const LUMINOSITY = "LUMINOSITY";
-static Utf8CP const ONE = "ONE";
+static Utf8CP const NUMBER = "NUMBER";
 static Utf8CP const ANGLE = "ANGLE";
 static Utf8CP const SOLIDANGLE = "SOLIDANGLE";
 
@@ -59,16 +55,13 @@ static Utf8CP const APPARENT_POWER = "APPARENT_POWER";
 static Utf8CP const AREA = "AREA";
 static Utf8CP const VOLUME = "VOLUME";
 static Utf8CP const VELOCITY = "VELOCITY";
-static Utf8CP const MOMENTUM = "MOMENTUM";
 static Utf8CP const ANGULAR_VELOCITY = "ANGULAR_VELOCITY";
 static Utf8CP const ACCELERATION = "ACCELERATION";
-static Utf8CP const ANGULAR_ACCELERATION = "ANGULAR_ACCELERATION";
 static Utf8CP const FORCE = "FORCE";
 static Utf8CP const PRESSURE = "PRESSURE";
 static Utf8CP const FORCE_DENSITY = "FORCE_DENSITY";
 static Utf8CP const PRESSURE_GRADIENT = "PRESSURE_GRADIENT";
 static Utf8CP const TORQUE = "TORQUE";
-static Utf8CP const MOMENT_INERTIA = "MOMENT_INERTIA";
 static Utf8CP const AREA_MOMENT_INERTIA = "AREA_MOMENT_INERTIA";
 static Utf8CP const MASS_RATIO = "MASS_RATIO";
 static Utf8CP const DENSITY = "DENSITY";
@@ -86,11 +79,6 @@ static Utf8CP const DYNAMIC_VISCOSITY = "DYNAMIC_VISCOSITY";
 static Utf8CP const KINEMATIC_VISCOSITY = "KINEMATIC_VISCOSITY";
 static Utf8CP const ELECTRIC_CHARGE = "ELECTRIC_CHARGE";
 static Utf8CP const ELECTRIC_POTENTIAL = "ELECTRIC_POTENTIAL";
-static Utf8CP const ELECTRIC_RESISTANCE = "ELECTRIC_RESISTANCE";
-static Utf8CP const CAPACITANCE = "CAPACITANCE";
-static Utf8CP const MAGNETIC_FLUX = "MAGNETIC_FLUX";
-static Utf8CP const MAGNETIC_FLUX_DENSITY = "MAGNETIC_FLUX_DENSITY";
-static Utf8CP const INDUCTANCE = "INDUCTANCE";
 static Utf8CP const LUMINOUS_FLUX = "LUMINOUS_FLUX";
 static Utf8CP const ILLUMINANCE = "ILLUMINANCE";
 static Utf8CP const RADIATION = "RADIATION";
@@ -105,10 +93,8 @@ static Utf8CP const THERMAL_RESISTANCE = "THERMAL_RESISTANCE";
 static Utf8CP const TEMPERATURE_GRADIENT = "TEMPERATURE_GRADIENT";
 static Utf8CP const MOLAR_VOLUME = "MOLAR_VOLUME";
 static Utf8CP const MOLAR_CONCENTRATION = "MOLAR_CONCENTRATION";
-//static Utf8CP const FINANCE = "FINANCE";
 static Utf8CP const SLOPE = "SLOPE";
 static Utf8CP const GRAVCONSTANT = "GRAVCONSTANT";
-static Utf8CP const THREAD_PITCH = "THREAD_PITCH";
 static Utf8CP const HEAT_TRANSFER = "HEAT_TRANSFER";
 static Utf8CP const HEAT_FLUX_DENSITY = "HEAT_FLUX_DENSITY";
 static Utf8CP const TORSIONAL_WARPING_CONSTANT = "TORSIONAL_WARPING_CONSTANT";
@@ -118,14 +104,14 @@ static Utf8CP const LINEAR_LOAD = "LINEAR_LOAD";
 static Utf8CP const AREA_LOAD = "AREA_LOAD";
 static Utf8CP const ENERGY_DENSITY = "ENERGY_DENSITY";
 static Utf8CP const SPECIFIC_ENERGY = "SPECIFIC_ENERGY";
-static Utf8CP const HEATING_VALUE_MOLE = "HEATING_VALUE_MOLE";
 static Utf8CP const SPECIFIC_HEAT_CAPACITY = "SPECIFIC_HEAT_CAPACITY";
 static Utf8CP const SPECIFIC_HEAT_CAPACITY_MOLAR = "SPECIFIC_HEAT_CAPACITY_MOLAR";
 static Utf8CP const ROTATIONAL_SPRING_CONSTANT = "ROTATIONAL_SPRING_CONSTANT";
 static Utf8CP const LINEAR_ROTATIONAL_SPRING_CONSTANT = "LINEAR_ROTATIONAL_SPRING_CONSTANT";
 static Utf8CP const PERCENTAGE = "PERCENTAGE";
-static Utf8CP const LINEAR_COST = "LINEAR_COST";
 static Utf8CP const LINEAR_RATE = "LINEAR_RATE";
+static Utf8CP const LENGTH_RATIO = "LENGTH_RATIO";
+static Utf8CP const METRIC_PREFIX = "METRIC_PREFIX";
 
 static Utf8CP const LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION = "LINEAR_COEFFICIENT_OF_THERMAL_EXPANSION";
 static Utf8CP const AREA_COEFFICIENT_OF_THERMAL_EXPANSION = "AREA_COEFFICIENT_OF_THERMAL_EXPANSION";
@@ -135,27 +121,6 @@ static Utf8CP const VOLUME_RATIO = "VOLUME_RATIO";
 
 //static Utf8CP const ACTION = "ACTION";
 static Utf8CP const TBD = "TBD";
-
-
-struct BasePhenomena
-{
-private:
-    BasePhenomena();
-
-public:
-    static const Utf8Char Length = 'L';
-    static const Utf8Char Mass = 'M';
-    static const Utf8Char Time = 'T';
-    static const Utf8Char Temperature = 'K';
-    static const Utf8Char TemperatureChange = 'D';
-    static const Utf8Char ElectricCurrent = 'I';
-    static const Utf8Char Mole = 'N';
-    static const Utf8Char Luminosity = 'J';
-    static const Utf8Char PlaneAngle = 'A';
-    static const Utf8Char SolidAngle = 'S';
-    static const Utf8Char Finance = '$';
-    static const Utf8Char Capita = 'X';
-    static const Utf8Char Ratio = 'R';
-};
+static Utf8CP const EMPTY_STRING = "";
 
 END_BENTLEY_UNITS_NAMESPACE

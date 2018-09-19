@@ -9,13 +9,13 @@
     %return
 %endif
 
-__Units_mki__           = 1
+__Units_mki__ = 1
 
-OutUnits                    = $(OutBuildDir)Units/
-buildDir                    = $(OutECObjects)
+OutUnits = $(OutBuildDir)Units/
+buildDir = $(OutUnits)
 
 %if !defined (programName)
-    programName             = $(ASSEMBLY_NAME)
+    programName = $(ASSEMBLY_NAME)
 %endif
 
 o                           = $(PartBuildDir)
@@ -24,14 +24,13 @@ always:
     !~@mkdir $(o)
 
 # Including DefaultToolSet.mki is a noop if a toolset is already selected but, if not, it provides a default.
-#
 %include DefaultToolSet.mki
 
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
-unitsPublicAPISrc       = $(SrcRoot)Units/PublicAPI/Units/
 unitsSrc                = $(SrcRoot)Units/
+unitsPublicAPISrc       = $(unitsSrc)PublicAPI/Units/
 
 #-----------------------------------------------------------------------
 # Configure Google Test macros
@@ -43,6 +42,3 @@ GUnitTestDir            = $(BuildContext)SubParts/google_gtest/
 # Configure includes
 #-----------------------------------------------------------------------
 PublicApiIncludes       + -I$(unitsPublicAPISrc)
-
-
-

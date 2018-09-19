@@ -1,109 +1,26 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/NonPublished/UnitsTests.cpp $
+|  $Source: tests/Published/UnitConversionTests.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "UnitsTestFixture.h"
-#include <fstream>
+#include "../TestFixture/UnitsTestFixture.h"
+
 #include <sstream>
 #include <Bentley/BeNumerical.h>
-#include <Bentley/md5.h>
 
-using namespace BentleyApi::Units;
+USING_NAMESPACE_BENTLEY_UNITS
+
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
-void WriteLine(BeFile& file, Utf8CP line = nullptr)
-    {
-    Utf8String finalLine;
-    if (Utf8String::IsNullOrEmpty(line))
-        {
-        finalLine.assign("\r\n");
-        }
-    else
-        {
-        finalLine.Sprintf("%s\r\n", line);
-        }
-
-    uint32_t bytesToWrite = static_cast<uint32_t>(finalLine.SizeInBytes() - 1); //not safe, but our line will not exceed 32bits.
-    uint32_t bytesWritten;
-    EXPECT_EQ(file.Write(&bytesWritten, finalLine.c_str(), bytesToWrite), BeFileStatus::Success);
-    }
-
-
-void WriteToFile(Utf8CP fileName, bvector<bpair<Utf8String, Utf8String>> lines)
-    {
-    BeFile file;
-    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    for (auto line : lines)
-        {
-        Utf8PrintfString formatted("%s,%s", line.first.c_str(), line.second.c_str());
-        WriteLine(file, formatted.c_str());
-        }
-
-    file.Close();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Basanta.Kharel                 12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-struct UnitsTests : UnitsTestFixture
-    {
-    typedef std::function<void(bvector<Utf8String>&)> CSVLineProcessor;
-
-    static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp, 
-                                   bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bvector<bpair<Utf8String, Utf8String>>& handledUnits,
-                                   bool useLegacyNames = false, bool showDetailLogs = false);
+struct UnitConversionTests : UnitsTestFixture
+{
+    static bool TestUnitConversion(double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp,
+                                    bvector<Utf8String>& loadErrors, bvector<Utf8String>& conversionErrors, bvector<bpair<Utf8String, Utf8String>>& handledUnits,
+                                    bool useLegacyNames = false, bool showDetailLogs = false, UnitsProblemCode expectCode = UnitsProblemCode::NoProblem);
     static void TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits);
-
-    static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped)
-        {
-        UnitCP uom = LocateUOM(unitName, true);
-        if (nullptr != uom)
-            return uom->GetName();
-
-        notMapped.insert(unitName);
-        return "NULL";
-        }
-
-
-
-    static UnitCP LocateUOM(Utf8CP unitName, bool useLegacyNames)
-        {
-        if (useLegacyNames)
-            return UnitRegistry::Instance().LookupUnitUsingOldName(unitName);
-        
-        return UnitRegistry::Instance().LookupUnit(unitName);
-        }
-
-    static void GetMapping(WCharCP file, bmap<Utf8String, Utf8String>& unitNameMap, bset<Utf8String>& notMapped)
-        {
-        auto lineProcessor = [&unitNameMap, &notMapped] (bvector<Utf8String>& tokens)
-            {
-            Utf8String newName1 = ParseUOM(tokens[1].begin(), notMapped);
-            Utf8String newName2 = ParseUOM(tokens[3].begin(), notMapped);
-            unitNameMap[tokens[1]] = newName1;
-            unitNameMap[tokens[3]] = newName2;
-            };
-
-        ReadConversionCsvFile(file, lineProcessor);
-        }
-
-    static void ReadConversionCsvFile(WCharCP file, CSVLineProcessor lineProcessor)
-        {
-        Utf8String path = UnitsTestFixture::GetConversionDataPath(file);
-        std::ifstream ifs(path.begin(), std::ifstream::in);
-        std::string line;
-
-        while (std::getline(ifs, line))
-            {
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(line.c_str(), ",", tokens);
-            lineProcessor(tokens);
-            }
-        }
 
     static double GetDouble(Utf8StringR doubleVal)
         {
@@ -112,33 +29,27 @@ struct UnitsTests : UnitsTestFixture
         iss >> convertedVal;
         return convertedVal;
         }
-    
+
     static int GetInt(Utf8CP intValue)
         {
         int value = 0;
         BE_STRING_UTILITIES_UTF8_SSCANF(intValue, "%d", &value);
         return value;
         }
-    };
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
-static almost_equal(const T x, const T y, int ulp)
+};
+
+static Utf8CP UnitsProblemCodeToString(UnitsProblemCode code)
     {
-    // the machine epsilon has to be scaled to the magnitude of the values used
-    // and multiplied by the desired precision in ULPs (units in the last place)
-    return fabs(x - y) < std::numeric_limits<T>::epsilon() * fabs(x + y) * ulp
-        // unless the result is subnormal
-        || fabs(x - y) < std::numeric_limits<T>::min();
+    return UnitsProblemCode::NoProblem == code ? "NoProblem" :
+        UnitsProblemCode::InvalidUnitName == code ? "InvalidUnitName" : UnitsProblemCode::UncomparableUnits == code ? "UncomparableUnits" : "InvertingZero";
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsiclass                                     Basanta.Kharel                 12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp, 
+bool UnitConversionTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double expectedVal, Utf8CP targetUnitName, int ulp,
                                      bvector<Utf8String>& missingUnits, bvector<Utf8String>& conversionErrors, bvector<bpair<Utf8String,Utf8String>>& handledUnits,
-                                     bool useLegacyNames, bool showDetailLogs)
+                                     bool useLegacyNames, bool showDetailLogs, UnitsProblemCode expectedCode)
     {
     //if either units are not in the library conversion is not possible
     //UnitsMapping test checks if all units are there and fails when a unit is not found
@@ -166,31 +77,35 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         NativeLogging::LoggingConfig::SetSeverity("Performance", NativeLogging::SEVERITY::LOG_TRACE);
         }
 
-    PERFORMANCELOG.debugv("About to try to convert %.16g %s to %s", fromVal, fromUnit->GetName(), targetUnit->GetName());
+    PERFORMANCELOG.debugv("About to try to convert %.16g %s to %s", fromVal, fromUnit->GetName().c_str(), targetUnit->GetName().c_str());
 
     double convertedVal;
-    fromUnit->Convert(convertedVal, fromVal, targetUnit);
-
-    //QuantityP q = SimpleQuantity(fromVal, fromUnitName);
-    //if (nullptr == q)
-    //    {
-    //    Utf8PrintfString error("%s with Value %lf", fromUnitName, fromVal);
-    //    loadErrors.push_back(error);
-    //    return;
-    //    }
-
-    //double convertedVal = q->Value(targetUnitName);
-    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %.17g  Actual: %.17g", fromUnit->GetName(), targetUnit->GetName(), expectedVal, convertedVal);
-    //if (fabs(convertedVal - expectedVal) > tolerance)
-    if(!almost_equal<double>(expectedVal, convertedVal, ulp))
+    UnitsProblemCode actualCode = fromUnit->Convert(convertedVal, fromVal, targetUnit);
+    if (UnitsProblemCode::NoProblem != actualCode)
         {
-        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s). Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n", 
-                                       fromUnitName, fromUnit->GetName(), targetUnitName, targetUnit->GetName(), fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal)/expectedVal, ulp);
+        PERFORMANCELOG.debugv("Failed to convert from %s to %s because %s", fromUnit->GetName().c_str(), targetUnit->GetName().c_str(), UnitsProblemCodeToString(actualCode));
+        }
+
+    if (expectedCode != actualCode)
+        {
+        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s) returned unexpected code.  Expected: %s  Actual:  %s.", 
+                                       fromUnitName, fromUnit->GetName().c_str(), targetUnitName, targetUnit->GetName().c_str(),
+                                       UnitsProblemCodeToString(expectedCode), UnitsProblemCodeToString(actualCode));
+        EXPECT_EQ(expectedCode, actualCode) << formattedText;
+        conversionErrors.push_back(formattedText);
+        }
+
+    PERFORMANCELOG.debugv("Converted %s to %s.  Expected: %.17g  Actual: %.17g", fromUnit->GetName().c_str(), targetUnit->GetName().c_str(), expectedVal, convertedVal);
+
+    if (!almost_equal<double>(expectedVal, convertedVal, ulp))
+        {
+        Utf8PrintfString formattedText("Conversion from %s (%s) to %s (%s). Input: %.17g \nOutput:   %.17g \nExpected: %.17g \nDiff:     %.17g   Diff/Exp: %.17g   ULP: %d\n",
+                                        fromUnitName, fromUnit->GetName().c_str(), targetUnitName, targetUnit->GetName().c_str(), fromVal, convertedVal, expectedVal, convertedVal - expectedVal, (convertedVal - expectedVal) / expectedVal, ulp);
         conversionErrors.push_back(formattedText);
         EXPECT_FALSE(true) << formattedText;
         }
     EXPECT_FALSE(BeNumerical::BeIsnan(convertedVal) || !BeNumerical::BeFinite(convertedVal)) << "Conversion from " << fromUnitName << " to " << targetUnitName << " resulted in an invalid number";
-    //EXPECT_NEAR(expectedVal, convertedVal, tolerance)<<  "Conversion from "<< fromUnitName << " to " << targetUnitName <<". Input : " << fromVal << ", Output : " << convertedVal << ", ExpectedOutput : " << expectedVal << " Tolerance : " << tolerance<< "\n";
+
     handledUnits.push_back(make_bpair(fromUnit->GetName(), targetUnit->GetName()));
     if (showDetailLogs)
         {
@@ -200,50 +115,48 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
     return true;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (UnitsTests, UnitsMapping)
+void UnitConversionTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits)
     {
-    bmap<Utf8String, Utf8String> unitNameMap;
-    bset<Utf8String> notMapped;
-    GetMapping(L"unitcomparisondata.csv", unitNameMap, notMapped);
-    GetMapping(L"complex.csv", unitNameMap, notMapped);
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    bvector<bpair<Utf8String, Utf8String>> handledUnits;
 
-    //output of oldUnit, newUnit mapping
-    Utf8String mapOldtoNew = UnitsTestFixture::GetOutputDataPath(L"mapOldtoNew.csv");
-
-    Utf8String guess= "";
-    for (auto i : notMapped)
+    int numberConversions = 0;
+    int numberWhereUnitsFound = 0;
+    auto lineProcessor = [&loadErrors, &conversionErrors, &numberConversions, &numberWhereUnitsFound, &handledUnits] (bvector<Utf8String>& tokens)
         {
-        guess += i + ", ";
-        }
+        ++numberConversions;
+        //passing 10000 to tolerance instead of the csv value
+        if (TestUnitConversion(GetDouble(tokens[2]), tokens[3].c_str(), GetDouble(tokens[0]), tokens[1].c_str(), GetInt(tokens[4].c_str()), loadErrors, conversionErrors, handledUnits, true))
+            ++numberWhereUnitsFound;
+        };
 
-    EXPECT_EQ (97, notMapped.size() ) << guess;
+    WString fileNameLong(fileName, BentleyCharEncoding::Utf8);
+    ReadConversionCsvFile(fileNameLong.c_str(), lineProcessor);
 
-    //Test that all mappings do not use synonmyms
-    for(const auto& i : unitNameMap)
-        {
-        if (i.second.Equals("NULL"))
-            continue;
-        UnitCP unit = UnitRegistry::Instance().LookupUnit(i.second.c_str());
-        ASSERT_NE(nullptr, unit) << "Couldn't find unit with name " << i.second.c_str();
-        EXPECT_STREQ(i.second.c_str(), unit->GetName()) << "Mapping for old unit '" << i.first.c_str() << "' uses a synonmym";
-        }
+    Utf8PrintfString loadErrorString("%s - Attempted %d conversions, error loading :\n", fileName, numberConversions);
+
+    for (auto const& val : loadErrors)
+        loadErrorString.append(val + "\n");
+
+    EXPECT_EQ(expectedMissingUnits, loadErrors.size()) << loadErrorString;
+
+    Utf8PrintfString conversionErrorString("%s - Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of %d missing units, error Converting :\n",
+                                            fileName, numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), numberConversions - numberWhereUnitsFound, loadErrors.size());
+
+    for (auto const& val : conversionErrors)
+        conversionErrorString.append(val + "\n");
+
+    EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
+
+    Utf8String outputfile = UnitsTestFixture::GetOutputDataPath(outputFileName);
+    WriteToFile(outputfile.c_str(), handledUnits);
     }
 
-// TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
-//TEST_F(UnitsTests, TestConversionsThatShouldFail)
-//    {
-//    bvector<Utf8String> loadErrors;
-//    bvector<Utf8String> conversionErrors;
-//    TestUnitConversion(1.0, "JOULE", 1.0, "NEWTON_METRE", 1000, loadErrors, conversionErrors);
-//    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, TestTemperatureConversions)
+TEST_F(UnitConversionTests, TestTemperatureConversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -346,7 +259,7 @@ TEST_F(UnitsTests, TestTemperatureConversions)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, TestBasicConversion)
+TEST_F(UnitConversionTests, TestBasicConversion)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -388,13 +301,13 @@ TEST_F(UnitsTests, TestBasicConversion)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, TestInvertedSlopeUnits)
+TEST_F(UnitConversionTests, TestInvertedSlopeUnits)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
     bvector<bpair<Utf8String, Utf8String>> handledUnits;
     TestUnitConversion(42.42, "HORIZONTAL/VERTICAL", 1.0 / 42.42, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0.0, "HORIZONTAL/VERTICAL", 0.0, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0.0, "HORIZONTAL/VERTICAL", 0.0, "VERTICAL/HORIZONTAL", 1, loadErrors, conversionErrors, handledUnits, false, false, UnitsProblemCode::InvertingZero);
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestInvertedSlopeUnits_handledUnits.csv");
@@ -426,7 +339,7 @@ TEST_F(UnitsTests, TestInvertedSlopeUnits)
 * @bsimethod                            Robert.Schili                              03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 //This test is an open pot to add conversion tests which don't deserve their own method
-TEST_F(UnitsTests, TestMiscConversions)
+TEST_F(UnitConversionTests, TestMiscConversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -569,10 +482,6 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(42.42, "CUB.M/(SQ.M*SEC)", 42.42 * 60.0 * 60.0 * 24.0, "CUB.M/(SQ.M*DAY)", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42.42, "CUB.FT/(SQ.FT*SEC)", 42.42 * 0.3048, "CUB.M/(SQ.M*SEC)", 1, loadErrors, conversionErrors, handledUnits);
 
-    //Thread Pitch
-    TestUnitConversion(42.42, "CM/REVOLUTION", 42.42e-2, "M/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42.42, "FT/REVOLUTION", 42.42 * 0.3048 * 100.0, "CM/REVOLUTION", 1, loadErrors, conversionErrors, handledUnits);
-
     //Time
     TestUnitConversion(1.0, "WEEK", 7.0, "DAY", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(14.0, "DAY", 2.0, "WEEK", 1, loadErrors, conversionErrors, handledUnits);
@@ -622,38 +531,9 @@ TEST_F(UnitsTests, TestMiscConversions)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                 03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
-    {
-    bvector<PhenomenonCP> allPhenomena;
-    UnitRegistry::Instance().AllPhenomena(allPhenomena);
-    for (auto const& phenomenon : allPhenomena)
-        {
-        PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName(), phenomenon->GetPhenomenonSignature().c_str());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                 03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, PhenomenonAndUnitSignaturesMatch)
-    {
-    bvector<PhenomenonCP> allPhenomena;
-    UnitRegistry::Instance().AllPhenomena(allPhenomena);
-    for (auto const& phenomenon : allPhenomena)
-        {
-        for (auto const& unit : phenomenon->GetUnits())
-            {
-            EXPECT_TRUE(phenomenon->IsCompatible(*unit)) << "The unit " << unit->GetName() << " is not dimensionally compatible with the phenomenon it belongs to: " << phenomenon->GetName();
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, USCustomaryLengths)
+TEST_F(UnitConversionTests, USCustomaryLengths)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -680,7 +560,7 @@ TEST_F(UnitsTests, USCustomaryLengths)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                 03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, UsSurveyLengths)
+TEST_F(UnitConversionTests, UsSurveyLengths)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -722,7 +602,7 @@ TEST_F(UnitsTests, UsSurveyLengths)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, USCustomaryAreas)
+TEST_F(UnitConversionTests, USCustomaryAreas)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -752,7 +632,7 @@ TEST_F(UnitsTests, USCustomaryAreas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, USSurveyAreas)
+TEST_F(UnitConversionTests, USSurveyAreas)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -794,7 +674,7 @@ TEST_F(UnitsTests, USSurveyAreas)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                 02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, UnitsConversions_Complex)
+TEST_F(UnitConversionTests, UnitsConversions_Complex)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -937,135 +817,32 @@ TEST_F(UnitsTests, UnitsConversions_Complex)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
-void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outputFileName, int expectedMissingUnits)
-    {
-    bvector<Utf8String> loadErrors;
-    bvector<Utf8String> conversionErrors;
-    bvector<bpair<Utf8String, Utf8String>> handledUnits;
-
-    int numberConversions = 0;
-    int numberWhereUnitsFound = 0;
-    auto lineProcessor = [&loadErrors, &conversionErrors, &numberConversions, &numberWhereUnitsFound, &handledUnits] (bvector<Utf8String>& tokens)
-        {
-        ++numberConversions;
-        //passing 10000 to tolerance instead of the csv value
-        if (TestUnitConversion(GetDouble(tokens[2]), tokens[3].c_str(), GetDouble(tokens[0]), tokens[1].c_str(), GetInt(tokens[4].c_str()), loadErrors, conversionErrors, handledUnits, true))
-            ++numberWhereUnitsFound;
-        };
-
-    WString fileNameLong(fileName, BentleyCharEncoding::Utf8);
-    ReadConversionCsvFile(fileNameLong.c_str(), lineProcessor);
-
-    Utf8PrintfString loadErrorString("%s - Attempted %d conversions, error loading :\n", fileName, numberConversions);
-
-    for (auto const& val : loadErrors)
-        loadErrorString.append(val + "\n");
-
-    EXPECT_EQ(expectedMissingUnits, loadErrors.size()) << loadErrorString;
-
-    Utf8PrintfString conversionErrorString("%s - Total number of conversions %d, units found for %d, %d passed, %d failed, %d skipped because of %d missing units, error Converting :\n",
-                                            fileName, numberConversions, numberWhereUnitsFound, numberWhereUnitsFound - conversionErrors.size(), conversionErrors.size(), numberConversions - numberWhereUnitsFound, loadErrors.size());
-
-    for (auto const& val : conversionErrors)
-        conversionErrorString.append(val + "\n");
-
-    EXPECT_EQ(0, conversionErrors.size()) << conversionErrorString;
-
-    Utf8String outputfile = UnitsTestFixture::GetOutputDataPath(outputFileName);
-    WriteToFile(outputfile.c_str(), handledUnits);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
+TEST_F(UnitConversionTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
-    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 103);
+    TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 112);
     // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
     // Down to 103 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
+    // Up to 112 because THREAD_PITCH units removed ... units came from old system but Phen doesn't match units.
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, UnitsConversion)
+TEST_F(UnitConversionTests, UnitsConversion)
     {
-    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 90);
+    TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 99);
     // went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
     // Down to 90 with addition of: LITRE_PER_KILOMETRE_SQUARED_PER_SECOND, VOLT_AMPERE, KILOVOLT_AMPERE and MEGAVOLT_AMPERE
-    }
-
-void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
-    {
-    for (auto const& unitName : unitNames)
-        {
-        auto unit = hub.LookupUnit(unitName.c_str());
-        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
-        }
-    }
-
-//void ReadFile(Utf8CP path, std::function<void(Utf8CP)> lineProcessor)
-//    {
-//    std::ifstream ifs(path, std::ifstream::in);
-//    std::string line;
-//
-//    while (std::getline(ifs, line))
-//        {
-//        lineProcessor(line.c_str());
-//        }
-//    }
-//
-//TEST_F(UnitsTests, MergeListsOfUnits)
-//    {
-//    bvector<Utf8String> unitsList;
-//    auto merger = [&unitsList] (Utf8CP token)
-//        {
-//        auto it = find(unitsList.begin(), unitsList.end(), token);
-//        if (it == unitsList.end())
-//            unitsList.push_back(token);
-//        };
-//
-//    ReadFile("C:\\Source\\GraphiteTestData\\Second pass units lists\\units.txt.bak", merger);
-//    ReadFile("C:\\Source\\GraphiteTestData\\Second pass units lists\\allowableUnits.txt", merger);
-//    ReadFile("C:\\Source\\DgnDb0601Dev_1\\src\\Units\\test\\ConversionData\\NeededUnits.csv", merger);
-//
-//    sort(unitsList.begin(), unitsList.end());
-//
-//    ofstream fileStream("C:\\NeededUnits.csv", ofstream::out);
-//    for (auto const& unit : unitsList)
-//        fileStream << unit.c_str() << endl;
-//    fileStream.close();
-//    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                 02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
-    {
-    UnitRegistry& hub = UnitRegistry::Instance();
-    bvector<UnitCP> allUnits;
-    hub.AllUnits(allUnits);
-    for (auto const& unit : allUnits)
-        {
-        PhenomenonCP unitPhenomenon = unit->GetPhenomenon();
-        ASSERT_NE(nullptr, unitPhenomenon) << "Unit " << unit->GetName() << " does not have phenomenon";
-        auto it = find_if(unitPhenomenon->GetUnits().begin(), unitPhenomenon->GetUnits().end(),
-                       [&unit] (UnitCP unitInPhenomenon) { return 0 == strcmp(unitInPhenomenon->GetName(), unit->GetName()); });
-        
-        T_Utf8StringVector unitNames;
-        if (unitPhenomenon->GetUnits().end() == it)
-            {
-            for (auto const& phenUnit : unitPhenomenon->GetUnits())
-                unitNames.push_back(phenUnit->GetName());
-            }
-        ASSERT_NE(unitPhenomenon->GetUnits().end(), it) << "Unit " << unit->GetName() << " is not registered with it's phenomenon: " << unitPhenomenon->GetName() << "Registered units are: " << BeStringUtilities::Join(unitNames, ", ");
-        }
+    // Up to 99 because THREAD_PITCH units removed ... units came from old system but Phen doesn't match units.
     }
 
 //---------------------------------------------------------------------------------------//
 // @bsimethod                            Colin.Kerr                                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsTests, ApparentPower_Conversions)
+TEST_F(UnitConversionTests, ApparentPower_Conversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -1084,7 +861,7 @@ TEST_F(UnitsTests, ApparentPower_Conversions)
 //---------------------------------------------------------------------------------------//
 // @bsimethod                            Colin.Kerr                                  09/17
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsTests, VolumeRatio_Conversions)
+TEST_F(UnitConversionTests, VolumeRatio_Conversions)
     {
     bvector<Utf8String> loadErrors;
     bvector<Utf8String> conversionErrors;
@@ -1100,481 +877,49 @@ TEST_F(UnitsTests, VolumeRatio_Conversions)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+double pi = 3.1415926535897932;
 //---------------------------------------------------------------------------------------//
-// @bsimethod                            Colin.Kerr                                  11/17
+// @bsimethod                            Colin.Kerr                                  02/18
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsTests, DummmyUnitsAreNotConvertableToAnyOtherUnit)
+TEST_F(UnitConversionTests, AngularVelocity_Conversions)
     {
-    UnitCP bananaDummy = UnitRegistry::Instance().AddDummyUnit("BANANA");
-    UnitCP appleDummy = UnitRegistry::Instance().AddDummyUnit("APPLE");
-    UnitCP inchReal = UnitRegistry::Instance().LookupUnit("IN");
-    UnitCP percentReal = UnitRegistry::Instance().LookupUnit("PERCENT");
-    UnitCP oneReal = UnitRegistry::Instance().LookupUnit("ONE");
+    bvector<Utf8String> loadErrors;
+    bvector<Utf8String> conversionErrors;
+    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+    TestUnitConversion(1.0, "RAD/SEC", 60.0, "RAD/MIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RAD/MIN", 60.0, "RAD/HR", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RAD/HR", 1.0 / (2.0 * pi * 60.0 * 60.0), "RPS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RPS", 60.0, "RPM", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RPM", 60.0, "RPH", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "RPH", 360.0 / (60.0 * 60.0), "DEG/SEC", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "DEG/SEC", 60.0, "DEG/MIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(1.0, "DEG/MIN", 60.0, "DEG/HR", 1, loadErrors, conversionErrors, handledUnits);
 
-    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, appleDummy));
-    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, oneReal));
-    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, inchReal));
-    EXPECT_FALSE(Unit::AreCompatible(appleDummy, percentReal));
-    double converted;
-    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, bananaDummy->Convert(converted, 42.42, appleDummy));
-    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, bananaDummy->Convert(converted, 42.42, oneReal));
-    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, oneReal->Convert(converted, 42.42, appleDummy));
-    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, appleDummy->Convert(converted, 42.42, inchReal));
-    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, appleDummy->Convert(converted, 42.42, percentReal));
-    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, percentReal->Convert(converted, 42.42, bananaDummy));
+    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"TestUsCustomaryLengths_handledUnits.csv");
+    WriteToFile(fileName.c_str(), handledUnits);
     }
 
-void LookUpUnitWithCaseDifferences(Utf8CP exactName, Utf8CP caseIncorrectName)
-    {
-    UnitCP caseIncorrect = UnitRegistry::Instance().LookupUnit(caseIncorrectName);
-    ASSERT_NE(nullptr, caseIncorrect) << caseIncorrectName;
-    UnitCP exact = UnitRegistry::Instance().LookupUnit(exactName);
-    ASSERT_NE(nullptr, exact) << exactName;
-    ASSERT_TRUE(Unit::AreEqual(caseIncorrect, exact));
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                            Colin.Kerr                                  09/17
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsTests, UnitsLookupIsCaseInsensitive)
-    {
-    LookUpUnitWithCaseDifferences("IN", "in");
-    LookUpUnitWithCaseDifferences("FT", "ft");
-    LookUpUnitWithCaseDifferences("ARC_DEG", "arc_DeG");
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                            Colin.Kerr                                  09/17
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(UnitsTests, CannotAddUnitWhichOnlyDiffersByCaseFromExistingUnit)
-    {
-    ASSERT_EQ(nullptr, UnitRegistry::Instance().AddUnit("LENGTH", "USCUSTOM", "in", "MM", 25.4));
-    ASSERT_EQ(nullptr, UnitRegistry::Instance().AddUnit("LENGTH", "USCUSTOM", "In", "MM", 25.4));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                  03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, AllUnitsNeededForFirstReleaseExist)
-    {
-    bvector<Utf8String> missingUnits;
-    bvector<Utf8String> foundUnits;
-    bvector<Utf8String> foundMappedUnits;
-    auto lineProcessor = [&missingUnits, &foundUnits, &foundMappedUnits] (bvector<Utf8String>& lines)
-        {
-        for (auto const& unitName : lines)
-            {
-            UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
-            if (nullptr != unit)
-                {
-                foundUnits.push_back(unitName);
-                continue;
-                }
-
-            unit = UnitRegistry::Instance().LookupUnitUsingOldName(unitName.c_str());
-            if (nullptr != unit)
-                {
-                foundMappedUnits.push_back(unitName);
-                continue;
-                }
-
-            missingUnits.push_back(unitName);
-            }
-        };
-
-    ReadConversionCsvFile(L"NeededUnits.csv", lineProcessor);
-
-    if (missingUnits.size() != 0)
-        {
-        Utf8String missingString = BeStringUtilities::Join(missingUnits, ", ");
-        EXPECT_EQ(0, missingUnits.size()) << "Some needed units were not found\n" << missingString.c_str();
-        }
-    ASSERT_NE(0, foundUnits.size()) << "No units were found";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Robert.Schili                              03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
-    {
-    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"AllUnitsByPhenomenon.csv");
-    BeFile file;
-    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-
-    Utf8String fileName2 = UnitsTestFixture::GetOutputDataPath(L"AllUnitNamesFlat.csv");
-    BeFile file2;
-    EXPECT_EQ(file2.Create(fileName2, true), BeFileStatus::Success);
-
-    bvector<PhenomenonCP> phenomena;
-    UnitRegistry::Instance().AllPhenomena(phenomena);
-
-    WriteLine(file, "Name,Unit System,Sub Components,Signature,ParsedDefinition");
-
-    for (auto const& phenomenon : phenomena)
-        {
-        if (phenomenon->GetUnits().size() == 0)
-            continue;
-
-        WriteLine(file, "-Phenomenon-");
-        Utf8PrintfString line("%s,,%s,%s", phenomenon->GetName(), phenomenon->GetDefinition(), phenomenon->GetPhenomenonSignature().c_str());
-        WriteLine(file, line.c_str());
-
-        WriteLine(file);
-        
-        for (auto const& unit : phenomenon->GetUnits())
-            {
-            if (unit->IsConstant())
-                continue;
-
-            Utf8String parsedExpression = unit->GetParsedUnitExpression();
-            line.Sprintf("%s,%s,%s,%s,%s", unit->GetName(), unit->GetUnitSystem(), unit->GetDefinition(), unit->GetUnitSignature().c_str(), parsedExpression.c_str());
-
-            WriteLine(file, line.c_str());
-
-            WriteLine(file2, unit->GetName());
-            }
-
-        WriteLine(file);
-        }
-
-    file.Close();
-    file2.Close();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                 03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, UnitNamesByReferencedComponents)
-    {
-    bmap<Utf8String, bvector<Utf8String>> unitNamesByReferencedComponent;
-    bvector<UnitCP> allUnits;
-    UnitRegistry::Instance().AllUnits(allUnits);
-    for (auto const& unit : allUnits)
-        {
-        bvector<Utf8String> symbols;
-        BeStringUtilities::Split(unit->GetDefinition(), "*", symbols);
-        for (auto const& symbol : symbols)
-            {
-            auto index = symbol.find('(');
-            Utf8String unitName;
-            if (index < symbol.length())
-                unitName = symbol.substr(0, index).c_str();
-            else
-                unitName = symbol.c_str();
-
-            unitName.ReplaceAll("[", "");
-            unitName.ReplaceAll("]", "");
-
-            UnitCP subUnit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
-            ASSERT_NE(nullptr, subUnit) << "Could not find subunit: " << unitName;
-
-            auto it = unitNamesByReferencedComponent.find(unitName);
-            if (it == unitNamesByReferencedComponent.end())
-                {
-                bvector<Utf8String> unitsWhichReferenceSubUnit;
-                unitsWhichReferenceSubUnit.push_back(unit->GetName());
-                unitNamesByReferencedComponent.Insert(unitName, unitsWhichReferenceSubUnit);
-                }
-            else
-                {
-                it->second.push_back(unit->GetName());
-                }
-            }
-        }
-
-    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"UnitNamesByReferencedComponents.csv");
-    BeFile file;
-    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    for (auto const& unitsWhichRefUnit : unitNamesByReferencedComponent)
-        {
-        WriteLine(file, unitsWhichRefUnit.first.c_str());
-        for (auto const& unit : unitsWhichRefUnit.second)
-            {
-            Utf8PrintfString unitString("    %s", unit.c_str());
-            WriteLine(file, unitString.c_str());
-            }
-        }
-    WriteLine(file);
-    file.Close();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                  03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
-    {
-    bvector<UnitCP> allUnits;
-    UnitRegistry::Instance().AllUnits(allUnits);
-    for (auto const& unit : allUnits)
-        {
-        bvector<Utf8String> symbols;
-        BeStringUtilities::Split(unit->GetDefinition(), "*", symbols);
-        for (auto const& symbol : symbols)
-            {
-            auto index = symbol.find('(');
-            Utf8String unitName;
-            if (index < symbol.length())
-                unitName = symbol.substr(0, index).c_str();
-            else
-                unitName = symbol.c_str();
-
-            unitName.ReplaceAll("[", "");
-            unitName.ReplaceAll("]", "");
-
-            UnitCP subUnit = UnitRegistry::Instance().LookupUnit(unitName.c_str());
-            ASSERT_NE(nullptr, subUnit) << "Could not find subunit: " << unitName;
-            EXPECT_STREQ(unitName.c_str(), subUnit->GetName()) << "The Unit " << unit->GetName() << " has sub unit " << unitName << " in it's definition which is a Synonym for " << subUnit->GetName();
-            }
-        }
-    }
-
-struct UnitsPerformanceTests : UnitsTests {};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsPerformanceTests, InitUnitsHub)
-    {
-    UnitRegistry::Clear();
-    StopWatch timer("Init Units Hub", false);
-    timer.Start();
-    UnitRegistry& hub = UnitRegistry::Instance();
-    timer.Stop();
-    bvector<Utf8String> allUnitNames;
-    hub.AllUnitNames(allUnitNames, false);
-
-    PERFORMANCELOG.errorv("Time to load Units Hub with %lu units: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                               07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
-    {
-    StopWatch timer("Get every unit by name", false);
-    UnitRegistry::Clear();
-    bvector<Utf8String> allUnitNames;
-    timer.Start();
-    UnitRegistry::Instance().AllUnitNames(allUnitNames, false);
-    timer.Stop();
-    PERFORMANCELOG.errorv("Time to get all %lu primary unit names: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-    
-    timer.Start();
-    GetUnitsByName(UnitRegistry::Instance(), allUnitNames);
-    timer.Stop();
-    PERFORMANCELOG.errorv("Time to get %lu units by name: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-
-    UnitRegistry::Clear();
-    allUnitNames.clear();
-    timer.Start();
-    UnitRegistry::Instance().AllUnitNames(allUnitNames, true);
-    timer.Stop();
-    PERFORMANCELOG.errorv("Time to get all %lu primary unit names and synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-
-    timer.Start();
-    GetUnitsByName(UnitRegistry::Instance(), allUnitNames);
-    timer.Stop();
-    PERFORMANCELOG.errorv("Time to get %lu units by name including using synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                               07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
-    {
-    StopWatch timer("Evaluate every unit", false);
-    UnitRegistry::Clear();
-    UnitRegistry& hub = UnitRegistry::Instance();
-    bvector<PhenomenonCP> allPhenomena;
-    hub.AllPhenomena(allPhenomena);
-
-
-    int numConversions = 0;
-    timer.Start();
-    for (auto const& phenomenon : allPhenomena)
-        {
-        if (!phenomenon->HasUnits())
-            continue;
-        UnitCP firstUnit = *phenomenon->GetUnits().begin();
-        for (auto const& unit : phenomenon->GetUnits())
-            {
-            double converted;
-            firstUnit->Convert(converted, 42, unit);
-            ASSERT_FALSE(BeNumerical::BeIsnan(converted)) << "Generated conversion factor is invalid from " << firstUnit->GetName() << " to " << unit->GetName();
-            ++numConversions;
-            }
-        }
-    timer.Stop();
-    PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
-    }
-
-//#define CREATE_XLIFF
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                               07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
-    {
-    bmap<Utf8String, Utf8String> labels;
-    bvector<Utf8String> missingUnits;
-
-#ifdef CREATE_XLIFF
-    Utf8String l10nfileName = "c:\\UnitLabels_xliff.xml";
-    BeFile l10nfile;
-    EXPECT_EQ(l10nfile.Create(l10nfileName, true), BeFileStatus::Success);
-
-    WriteLine(l10nfile, R"*(
-<?xml version='1.0' encoding='UTF-8'?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-strict.xsd">
-  <!--XLIFF document generated by Bentley Systems, Incorporated.-->
-  <file datatype="plaintext" original="Units.xliff.h" source-language="en">
-    <body>
-      <group resname="units_labels">
-)*");
-
-    auto lineProcessor = [&labels, &missingUnits, &l10nfile] (bvector<Utf8String>& tokens)
-#else
-    auto lineProcessor = [&labels, &missingUnits] (bvector<Utf8String>& tokens)
-#endif
-        {
-        UnitCP unit = LocateUOM(tokens[0].c_str(), true);
-        if (unit == nullptr)
-            {
-            missingUnits.push_back(tokens[0]);
-            return;
-            }
-
-#ifdef CREATE_XLIFF
-        MD5 md5;
-        Utf8PrintfString resname("%s:%s", unit->GetPhenomenon()->GetName(), unit->GetName());
-        Utf8PrintfString line1("<trans-unit id=\"LABEL_%s\" resname=\"LABEL_%s\">", md5(resname).c_str(), md5(resname).c_str());
-        WriteLine(l10nfile, line1.c_str());
-        Utf8PrintfString line2("<source xml:space=\"preserve\">%s</source>", tokens[1].c_str());
-        WriteLine(l10nfile, line2.c_str());
-        Utf8PrintfString line3("<note>%s</note>", resname.c_str());
-        WriteLine(l10nfile, line3.c_str());
-        WriteLine(l10nfile, "</trans-unit>");
-        Utf8PrintfString line4("<trans-unit id=\"DESCRIPTION_%s\" resname=\"DESCRIPTION_%s\">", md5(resname).c_str(), md5(resname).c_str());
-        WriteLine(l10nfile, line4.c_str());
-        Utf8PrintfString line5("<source xml:space=\"preserve\">%s</source>", tokens[1].c_str());
-        WriteLine(l10nfile, line5.c_str());
-        Utf8PrintfString line6("<note>%s</note>", resname.c_str());
-        WriteLine(l10nfile, line6.c_str());
-        WriteLine(l10nfile, "</trans-unit>");
-#endif
-
-        labels[unit->GetName()] = Utf8PrintfString("%s,%s", tokens[1].c_str(), tokens[2].c_str());
-        };
-
-    ReadConversionCsvFile(L"oldunitlabels.csv", lineProcessor);
-
-#ifdef CREATE_XLIFF
-    WriteLine(l10nfile, R"*(
-      </group>
-    </body>
-  </file>
-</xliff>
-)*");
-
-    l10nfile.Close();
-#endif
-
-    Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"NewUnitLabelsByName.csv");
-    BeFile file;
-    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    for (auto const& s : labels)
-        {
-        Utf8PrintfString line("%s,%s", s.first.c_str(), s.second.c_str());
-        WriteLine(file, line.c_str());
-        }
-
-    file.Close();
-
-    if (missingUnits.size() > 0)
-        {
-        fileName = UnitsTestFixture::GetOutputDataPath(L"OldUnitLabelsNotUsedInNewSystem.txt");
-        EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-        for (auto const& s : missingUnits)
-            {
-            WriteLine(file, s.c_str());
-            }
-
-        file.Close();
-        }
-
-    bvector<Utf8String> allUnitNames;
-    UnitRegistry::Instance().AllUnitNames(allUnitNames, false);
-    bvector<Utf8String> missingLabels;
-    for (auto const& name : allUnitNames)
-        {
-        if (labels.end() == labels.find(name))
-            missingLabels.push_back(name);
-        }
-
-    fileName = UnitsTestFixture::GetOutputDataPath(L"UnitsWithoutDisplayLabel.csv");
-    EXPECT_EQ(file.Create(fileName, true), BeFileStatus::Success);
-    for (auto const& s : missingLabels)
-        {
-        WriteLine(file, s.c_str());
-        }
-
-    file.Close();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitsTests, AllNewNamesMapToECNames)
-    {
-    UnitRegistry::Instance().Clear();
-    bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "M/RAD", "M/REVOLUTION", "MM/RAD", "MM/REVOLUTION"};
-    bvector<Utf8String> names;
-    UnitRegistry::Instance().AllUnitNames(names, false);
-
-    bool ignore = false;
-    for(auto const& name: names)
-        {
-        for(auto const& i : ignoredNames)
-            {
-            if(i.EqualsI(name))
-                { 
-                ignore=true;
-                break;
-                }
-            }
-        if(!ignore)
-            { 
-            Utf8String mapped;
-            UnitRegistry::Instance().TryGetECNameFromNewName(name.c_str(),mapped);
-            EXPECT_FALSE(mapped.empty()) << "Unit with new Name " << name.c_str() << " not mapped to an ec Name";
-            auto newUnit = UnitRegistry::Instance().LookupUnit(name.c_str());
-            Utf8String roundtrippedName;
-            UnitRegistry::Instance().TryGetNewNameFromECName(mapped.c_str(), roundtrippedName);
-            EXPECT_FALSE(roundtrippedName.empty()) << "Can't get name from ecname for unit " << mapped.c_str();
-            auto ecUnit = UnitRegistry::Instance().LookupUnit(roundtrippedName.c_str());
-            EXPECT_NE(nullptr, ecUnit) << "Failed to look up unit with roundtripped name " << roundtrippedName.c_str();
-            if(roundtrippedName.EqualsI("CAPITA") || roundtrippedName.EqualsI("KIPF") || roundtrippedName.EqualsI("N/SQ.MM"))
-                continue;
-            EXPECT_EQ(newUnit, ecUnit) << "Failed to find " << roundtrippedName.c_str();
-            }
-        ignore=false;
-        }
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            Colin.Kerr                               07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-//TEST_F(UnitsPerformanceTests, ConvertManyValues)
+//TEST_F(UnitConversionTests, Money_Conversions)
 //    {
-//    StopWatch timer("Do Many Conversions", false);
-//    UnitRegistry::Clear();
-//    UnitCP unitA = UnitRegistry::Instance().LookupUnit("CUB.M/(SQ.M*DAY)");
-//    UnitCP unitB = UnitRegistry::Instance().LookupUnit("CUB.FT/(ACRE*SEC)");
-//
-//    int numTimes = 1000000;
-//    timer.Start();
-//    for (int i = 0; i < numTimes; ++i)
-//        unitA->Convert(42.42, unitB);
-//    timer.Stop();
-//    PERFORMANCELOG.errorv("Time to covert between %s and %s %d times: %.15g", unitA->GetName(), unitB->GetName(), numTimes, timer.GetElapsedSeconds());
+//    bvector<Utf8String> loadErrors;
+//    bvector<Utf8String> conversionErrors;
+//    bvector<bpair<Utf8String, Utf8String>> handledUnits;
+//    TestUnitConversion(1.0, "US$", 0.0, "Euro", 1, loadErrors, conversionErrors, handledUnits, false, false, UnitsProblemCode::UncomparableUnits);
+//    TestUnitConversion(1.0, "Euro", 0.0, "US$", 1, loadErrors, conversionErrors, handledUnits, false, false, UnitsProblemCode::UncomparableUnits);
+//    TestUnitConversion(1.0, "US$", 1.0, "US$", 1, loadErrors, conversionErrors, handledUnits);
+//    TestUnitConversion(1.0, "Euro", 1.0, "Euro", 1, loadErrors, conversionErrors, handledUnits);
+//    ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
+//    ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
+//    }
+
+// TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
+//TEST_F(UnitConversionTests, TestConversionsThatShouldFail)
+//    {
+//    bvector<Utf8String> loadErrors;
+//    bvector<Utf8String> conversionErrors;
+//    TestUnitConversion(1.0, "JOULE", 1.0, "NEWTON_METRE", 1000, loadErrors, conversionErrors);
 //    }
 
 END_UNITS_UNITTESTS_NAMESPACE
