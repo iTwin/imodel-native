@@ -14,7 +14,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="Core" BentleyBuildMakeFile="core\coreDgnDb.mke" ApiNumber="B02">
+    <Part Name="Core" BentleyBuildMakeFile="core\coreDgnDb.mke" ApiNumber="M02">
         <SubPart PartName="HeaderFiles"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>
@@ -23,7 +23,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="CoreStatic" BentleyBuildMakeFile="Core/coreDgnDb.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
+    <Part Name="CoreStatic" BentleyBuildMakeFile="Core/coreDgnDb.mke" ApiNumber="M02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
         <SubPart PartName="HeaderFiles" LibType="Static"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" LibType="Static"/>
         <Bindings>
@@ -35,7 +35,7 @@
         <SubPart PartName="Core" />
     </Part>
 
-    <Part Name="Formats" BentleyBuildMakeFile="formats\formatsDgnDb.mke" ApiNumber="B02">
+    <Part Name="Formats" BentleyBuildMakeFile="formats\formatsDgnDb.mke" ApiNumber="M02">
         <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
         <SubPart PartName="Core" />
         <SubPart PartName="inroadstmDgnDb" />
@@ -49,7 +49,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="AutomaticGroundDetection" BentleyBuildMakeFile="AutomaticGroundDetection\AutomaticGroundDetectionDgnDb.mke" ApiNumber="B02">      
+    <Part Name="AutomaticGroundDetection" BentleyBuildMakeFile="AutomaticGroundDetection\AutomaticGroundDetectionDgnDb.mke" ApiNumber="M02">      
       <SubPart PartName="Core" />
       <SubPart PartName="Formats" />      
       <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
