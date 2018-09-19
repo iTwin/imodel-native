@@ -650,6 +650,7 @@ bb -ax64 -p ScalableMeshCreator  -f  ScalableMeshCore -r  ScalableMesh  re  Scal
     <ClCompile Include="STM\ScalableMeshFrom3MX.cpp" />
     <ClCompile Include="STM\ScalableMeshInfo.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
+    <ClCompile Include="STM\ScalableMeshSourceCreatorWorker.cpp" />
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
     <ClCompile Include="STM\DrapeOnGraph.cpp" />

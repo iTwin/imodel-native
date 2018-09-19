@@ -19,6 +19,9 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
+struct GenerationTask;
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Mathieu.St-Pierre    06/2018
@@ -40,6 +43,8 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         HFCPtr<MeshIndexType> GetDataIndex();
 
+        void GetGenerationTasks(GenerationTask& generationTaks);
+
         void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
 
         void GetSisterMainLockFileName(BeFileName& lockFileName) const;
@@ -53,6 +58,8 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         StatusInt CloseSqlFiles();
 
         StatusInt OpenSqlFiles(bool readOnly, bool needSisterMainLockFile);
+
+
         
       
     protected:
@@ -64,8 +71,11 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         
 
         virtual                             ~Impl();
+
+
+        StatusInt                    CreateGenerationTasks();
         
-        StatusInt                    CreateMeshTasks();
+        StatusInt                    CreateMeshTasks();        
 
         StatusInt                    CreateTaskPlan();
 

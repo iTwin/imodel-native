@@ -747,14 +747,22 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
             
 
             IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());
+/*
+            if (m_useGroupingStrategy)
+                {
+                status = creatorWorkerPtr->CreateGenerationTasks();
+                }
+            else
+            */
+                {
+                status = creatorWorkerPtr->CreateMeshTasks();
 
-            status = creatorWorkerPtr->CreateMeshTasks();
+                assert(status == SUCCESS);
 
-            assert(status == SUCCESS);
+                status = creatorWorkerPtr->CreateTaskPlan();
 
-            status = creatorWorkerPtr->CreateTaskPlan();
-
-            assert(status == SUCCESS);
+                assert(status == SUCCESS);
+                }
             
 /*
 smFileName
