@@ -822,8 +822,8 @@ struct TileCacheAppData : BeSQLite::Db::AppData
     static RealityData::CachePtr Get(DgnDbR db)
         {
         static BeSQLite::Db::AppData::Key s_key;
-        BeSQLite::Db::AppDataPtr appData = db.FindOrAddAppData(s_key, [&]() { return new TileCacheAppData(db); });
-        return static_cast<TileCacheAppData&>(*appData).m_cache;
+        auto data = db.ObtainAppData(s_key, [&]() { return new TileCacheAppData(db); });
+        return data->m_cache;
         }
 };
 

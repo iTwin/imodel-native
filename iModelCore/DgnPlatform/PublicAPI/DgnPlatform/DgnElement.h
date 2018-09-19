@@ -1676,6 +1676,17 @@ public:
         return data;
         }
 
+    //! Find application data on this element by key, or add it if not found.
+    //! @param[in] key The key specifying the app data of interest
+    //! @param[in] createAppData A callable taking no arguments and returning an AppData*
+    //! @return the existing or newly-created app data corresponding to the supplied key, as a reference-counted pointer to the derived type.
+    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) const -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
+        {
+        using U = decltype(createAppData());
+        AppDataPtr data = FindOrAddAppData(key, createAppData);
+        return static_cast<U>(data.get());
+        }
+
     //! Add app data, replacing a previous entry if it exists.
     //! @param[in] key The key specifying the app data of interest.
     //! @param[in] appdata The new app data to associate with the key.

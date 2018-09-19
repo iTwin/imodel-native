@@ -649,6 +649,19 @@ public:
         return data;
         }
 
+    //! Find or add ApPData on this DgnModel.
+    //! If AppData with the specified key already exists, it is returned.
+    //! Otherwise the supplied function is invoked to create new AppData which will be added and returned.
+    //! @param[in] key The key identifying the type of AppData.
+    //! @params[in] createAppData a callable taking no arguments and returning an AppData*, invoked if no AppData corresponding to the supplied key currently exists on the model.
+    //! @return the AppData corresponding to the supplied key as a ref-counted pointer to the derived type.
+    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) const -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
+        {
+        using U = decltype(createAppData());
+        AppDataPtr data = FindOrAddAppData(key, createAppData);
+        return static_cast<U>(data.get());
+        }
+
     //! Remove AppData from this DgnModel
     //! @return SUCCESS if appData with key is found and was dropped.
     //! @remarks Calls the object's _OnCleanup method.
