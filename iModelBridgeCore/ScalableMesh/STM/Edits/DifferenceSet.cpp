@@ -102,6 +102,28 @@ void DifferenceSet::LoadFromBinaryStream(void* serialized, uint64_t ct)
     }
 
 
+
+void DifferenceSet::Empty()
+    {     
+    addedVertices = bvector<DPoint3d>();
+    removedVertices = bvector<int32_t>();
+    addedFaces = bvector<int32_t>();    
+    removedFaces = bvector<int32_t>();
+    addedUvs = bvector<DPoint2d>();
+    addedUvIndices = bvector<int32_t>();
+
+    addedVertices.clear();    
+    removedVertices.clear();    
+    addedFaces.clear();    
+    removedFaces.clear();    
+    addedUvs.clear();    
+    addedUvIndices.clear();    
+
+    upToDate = true;
+    firstIndex = 0;
+    toggledForID = true;
+    }
+
 void DifferenceSet::ApplySet(DifferenceSet& d, int firstIndx)
     {
     assert(addedUvIndices.size() == 0 || addedFaces.size() == addedUvIndices.size());
