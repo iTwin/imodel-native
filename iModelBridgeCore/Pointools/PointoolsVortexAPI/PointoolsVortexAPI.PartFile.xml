@@ -46,7 +46,7 @@
         <SubPart PartName="GLEW"            PartFile="opengl"           Repository="libsrc-opengl" LibType="Static"/>
     </Part>
 
-    <Part Name="PointoolsVortexAPI_DLL" BentleyBuildMakeFile="PointoolsVortexAPI.mke" ApiNumber="B02">
+    <Part Name="PointoolsVortexAPI_DLL" BentleyBuildMakeFile="PointoolsVortexAPI.mke" ApiNumber="M02">
         <RequiredRepository>PointoolsCommon</RequiredRepository>
         <SubPart PartName="PublicApi" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"           Repository="Bentley" />
@@ -77,7 +77,7 @@
 * Pointools Vortex FeatureExtract
 ********************************************************************************************************
 -->
-  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="extensions/VortexFeatureExtract/FeatureExtract.mke" ApiNumber="B02" >
+  <Part Name="PointoolsVortexAPI_FeatureExtract_DLL" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="extensions/VortexFeatureExtract/FeatureExtract.mke" ApiNumber="M02" >
     <RequiredRepository>PointoolsCommon</RequiredRepository>	
     <!--<SubPart PartName="wildmagic" PartFile="wildmagic" Repository="libsrc-geometrictools"/>-->
     <SubPart PartName="PointoolsVortexAPI_DLL"/>
