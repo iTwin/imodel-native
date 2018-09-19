@@ -19,6 +19,7 @@
 #include <CloudDataSource/DataSourceAccountWSG.h>
 #include <CloudDataSource/DataSourceBuffered.h>
 #endif
+#include "../ScalableMeshRDSProvider.h"
 
 #include <ImagePP/all/h/HCDCodecZlib.h>
 #include <ImagePP/all/h/HCDException.h>
@@ -87,7 +88,7 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::ParseUrl(const WString url)
     {
-    Utf8String projectID;
+    this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
     if (url.ContainsI(L"realitydataservices") && url.ContainsI(L"S3MXECPlugin"))
         { // RDS
         this->m_location = ServerLocation::RDS;
@@ -102,20 +103,21 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         this->m_guid = Utf8String(url.substr(guidPos, guidLength));
         auto projectIDStartPos = url.find(L"S3MXECPlugin--") + 14;
         auto projectIDEndPos = url.find_first_of(L"/", projectIDStartPos);
-        this->m_projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
+        auto projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
+        BeAssert(projectID.Equals(this->m_projectID.c_str()));
         }
     else if (url.ContainsI(L"blob.core.windows.net"))
         { // Direct link to Azure
-
+    
         // NEEDS_WORK_SM_STREAMING : Handle invalid/unsupported Azure urls (e.g. Azure urls which are not from RDS i.e. does not have a project associated)
-
+    
         // The following assumes url has the form https://<storage-account>.blob.core.windows.net/<guid>/<root-document>?<azure-token>
-        this->m_location = ServerLocation::RDS;
+        this->m_location = ServerLocation::AZURE;
         this->m_commMethod = CommMethod::CURL;
         BeAssert(url.substr(0, 8) == L"https://");
         auto firstSeparatorPos = url.find(L".");
         this->m_serverID = Utf8String(url.substr(8, firstSeparatorPos - 8));
-
+    
         // compute positions and lengths for guid, root file and azure token
         auto guidPos = url.find(L"/", 8) + 1;
         auto guidLength = url.find(L"/", guidPos) - guidPos;
@@ -123,23 +125,33 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         auto azureTokenPos = url.find(L"?", rootTilesetPathPos);
         auto rootTilesetPathLength = azureTokenPos == Utf8String::npos ? url.size() : azureTokenPos - rootTilesetPathPos;
         auto azureTokenLength = azureTokenPos == Utf8String::npos ? 0 : url.size() - azureTokenPos;
-
+    
         // guid
         this->m_guid = Utf8String(url.substr(guidPos, guidLength));
-
+    
         // root file
         auto rootTilesetPath = Utf8String(url.substr(rootTilesetPathPos, rootTilesetPathLength));
-
+    
         this->m_url = rootTilesetPath.c_str();
-
-        // azure token (does not need to be present, handled by RDS through projectID
+    
+        // azure token (does not need to be present, handled by RDS through projectID)
         if (azureTokenLength > 0)
             {
             auto azureToken = Utf8String(url.substr(azureTokenPos + 1, azureTokenLength));
             // NEEDS_WORK_SM_STREAMING : handle Azure token properly
             }
-
-        this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
+        if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_projectID, this->m_guid))
+            {
+            // Forward to RDS to properly handle SAS tokens
+            this->m_location = ServerLocation::RDS;
+            }
+        else
+            {
+            // Treat url as regular http(s) server
+            // NEEDS_WORK_SM_STREAMING: handle Azure SAS tokens
+            this->m_location = ServerLocation::HTTP_SERVER;
+            this->m_url = Utf8String(url.c_str());
+            }
         }
     else if (url.StartsWith(L"http") || url.StartsWith(L"https"))
         {
@@ -405,6 +417,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::Close()
             
 template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+    if (indexHeader->m_isCesiumFormat) return false;
     if (indexHeader != NULL && indexHeader->m_rootNodeBlockID.IsValid())
         {
         Json::Value masterHeader;
@@ -528,7 +541,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->DeclareRoot();
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
-        m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID);
+        if (nullptr == m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID))
+            return 0;
         Json::Value* masterJSONPtr = nullptr;
         if ((masterJSONPtr = m_CesiumGroup->GetSMMasterHeaderInfo()) != nullptr)
             {

@@ -914,6 +914,7 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
     ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(
         range, scmQueryParamsPtr->GetLevel() < (size_t)-1 ? scmQueryParamsPtr->GetLevel() : m_scmIndexPtr->GetDepth(), queryExtent3d, scmQueryParamsPtr->GetUseAllResolutions(), scmQueryParamsPtr->GetTargetPixelTolerance()));
 
+    meshQueryP->SetIgnoreFaceIndexes(scmQueryParamsPtr->GetReturnNodesWithNoMesh());
     try
         {
         vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
@@ -1876,6 +1877,13 @@ template <class POINT> void ScalableMeshNode<POINT>::_GetResolutions(float& geom
     meshNode->GetResolution(geometricResolution, textureResolution);    
     }
 
+template <class POINT> IScalableMeshNodeEditPtr ScalableMeshNode<POINT>::_EditNode()
+{
+    LOAD_NODE
+
+    return new ScalableMeshNodeEdit<POINT>(m_node);
+}
+
 template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMesh(IScalableMeshMeshFlagsPtr& flags) const
     {        
     //NEEDS_WORK_TEXTURE use m_loadedMesh
@@ -2050,7 +2058,15 @@ template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMesh(bool loa
 #define QV_RGBS_FORMAT   6      // 4 band with alpha stencil (0 or 255 only)
 #define QV_BGRS_FORMAT   7      // 4 band with alpha stencil (0 or 255 only)
 
-
+template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(ScalableMeshCachedDisplayNode<POINT>& otherPtr)
+    : m_invertClips(otherPtr.m_invertClips), m_loadTexture(otherPtr.m_loadTexture)
+{
+    m_node = dynamic_cast<ScalableMeshNode<POINT>&>(otherPtr).GetNodePtr();
+    m_cachedDisplayMeshData= otherPtr.m_cachedDisplayMeshData;
+    m_cachedDisplayTextureData = otherPtr.m_cachedDisplayTextureData;
+    m_clipVectors = otherPtr.m_clipVectors;
+    m_scalableMeshP = otherPtr.m_scalableMeshP;
+}
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     : ScalableMeshNode<POINT>(nodePtr), m_invertClips(false), m_loadTexture(false)
@@ -2788,6 +2804,78 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
         }
     }
+
+    template <class POINT>   ScalableMeshContourCachedDisplayNode<POINT>::ScalableMeshContourCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
+        : ScalableMeshCachedDisplayNode<POINT>(nodePtr)
+        {
+        m_contoursReady = false;
+        }
+
+    template <class POINT>    ScalableMeshContourCachedDisplayNode<POINT>::ScalableMeshContourCachedDisplayNode(IScalableMeshCachedDisplayNode* nodePtr)
+        : ScalableMeshCachedDisplayNode<POINT>(*dynamic_cast<ScalableMeshCachedDisplayNode<POINT>*>(nodePtr))
+        {
+        m_contoursReady = false;
+        }
+
+    template <class POINT>    bool      ScalableMeshContourCachedDisplayNode<POINT>::_GetContours(bvector<bvector<DPoint3d>>& contours)
+        {
+        if (!m_contoursReady)
+            return false;
+        for (auto& contour : m_contours)
+            {
+            contours.push_back(contour);
+            }
+
+        return true;
+        }
+
+    template <class POINT> void ScalableMeshContourCachedDisplayNode<POINT>::ComputeContours(ContoursParameters params)
+        {
+        m_params = params;
+
+        DRange3d meshRange = GetContentExtent();
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        auto meshP = GetMesh(flags);
+        if (meshP.get() == nullptr) return;
+
+        double roundedDownNextMultiple = (floor(meshRange.low.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
+        double roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.majorContourSpacing)*m_params.majorContourSpacing);
+        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.majorContourSpacing)
+            {
+            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
+            bvector<DSegment3d> allSegments;
+
+            meshP->CutWithPlane(allSegments, plane);
+
+            bvector<bvector<DPoint3d>> polylines;
+            for (auto& seg : allSegments)
+                seg.point[0].z = seg.point[1].z = i;
+            StitchSegmentsAtJunctions(polylines, allSegments);
+
+            for(auto& line: polylines)
+                m_contours.push_back(line);
+            }
+
+        roundedDownNextMultiple = (floor(meshRange.low.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
+        roundedUpNextMultiple = (ceil(meshRange.high.z / m_params.minorContourSpacing)*m_params.minorContourSpacing);
+        for (double i = roundedDownNextMultiple; i < roundedUpNextMultiple; i += m_params.minorContourSpacing)
+            {
+            DPlane3d plane = DPlane3d::From3Points(DPoint3d::From(0, 0, i), DPoint3d::From(0, 1, i), DPoint3d::From(1, 0, i));
+            bvector<DSegment3d> allSegments;
+
+            meshP->CutWithPlane(allSegments, plane);
+
+            bvector<bvector<DPoint3d>> polylines;
+            for (auto& seg : allSegments)
+                seg.point[0].z = seg.point[1].z = i;
+            StitchSegmentsAtJunctions(polylines, allSegments);
+
+            for (auto& line : polylines)
+                m_contours.push_back(line);
+            }
+
+        m_contoursReady = true;
+        }
     
     
 template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const
@@ -2795,6 +2883,10 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
     LOAD_NODE
 
     bvector<IScalableMeshNodePtr> neighbors;
+
+    if (!(relativePosX >= -1 && relativePosX <= 1 && relativePosY >= -1 && relativePosY <= 1 && relativePosZ >= -1 && relativePosZ <= 1))
+        return neighbors;
+
     size_t neighborInd = 0;
     //see HGFSpatialIndex.hpp for node neighbor relations
     if (relativePosZ == -1) neighborInd += 8;
@@ -3062,6 +3154,13 @@ template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) con
     if (m_meshNode == nullptr) return false;
     return m_meshNode->HasClip(clip);
     }
+
+template <class POINT> bool ScalableMeshNode<POINT>::_HasAnyClip() const
+{
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
+    if (m_meshNode == nullptr) return false;
+    return m_meshNode->m_nbClips > 0;
+}
 
 template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     {
@@ -3507,6 +3606,23 @@ template <class POINT> void ScalableMeshNodeEdit<POINT>::_LoadHeader() const
     return m_node->Load();    
     }
 
+
+template <class POINT> void   ScalableMeshNodeEdit<POINT>::_ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates)
+{
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+    for(auto& pos : posToChange)
+        if (meshNode->m_nodeHeader.m_nbFaceIndexes <= pos)
+            return;
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
+    for (size_t i = 0; i < posToChange.size(); ++i)
+    {
+        const_cast<DPoint3d&>((*pointsPtr)[posToChange[i]]) = newCoordinates[i];
+    }
+    pointsPtr->SetDirty(true);
+
+    meshNode->SetDirty(true);
+}
 
 template <class POINT> ScalableMeshNodeWithReprojection<POINT>::ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const GeoCoords::Reprojection& reproject)
     :ScalableMeshNode<POINT>(nodePtr), m_reprojectFunction(reproject)

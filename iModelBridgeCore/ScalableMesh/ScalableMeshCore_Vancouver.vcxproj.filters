@@ -1281,9 +1281,6 @@
     <ClCompile Include="STM\ScalableMeshClipContainer.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\ScalableMeshMesher.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\3dDelaunay\ScalableMeshCao.cpp">
       <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
     </ClCompile>

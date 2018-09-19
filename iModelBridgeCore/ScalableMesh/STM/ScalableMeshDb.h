@@ -71,11 +71,11 @@ public:
 };
 #endif
 
-#ifdef VANCOUVER_API
-    #define BESQL_VERSION_STRUCT SchemaVersion
-#else
+//#ifdef VANCOUVER_API
+//    #define BESQL_VERSION_STRUCT SchemaVersion
+//#else
     #define BESQL_VERSION_STRUCT ProfileVersion    
-#endif
+//#endif
 
 
 class InfiniteRetries : public BeSQLite::BusyRetry
@@ -103,6 +103,7 @@ class ScalableMeshDb : public BeSQLite::Db
 
        virtual DbResult _UpgradeProfile() override;
 #endif
+
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
 
     public:
@@ -119,6 +120,10 @@ class ScalableMeshDb : public BeSQLite::Db
         BENTLEY_SM_EXPORT void CloseShared(bool& wasTransactionAbandoned);
 
         void GetSharedDbFileName(BENTLEY_NAMESPACE_NAME::Utf8String& path);        
+#endif
+
+#ifdef VANCOUVER_API
+        DbResult IsProfileVersionUpToDate(OpenParams const& params);
 #endif
 
         static const BESQL_VERSION_STRUCT CURRENT_VERSION;

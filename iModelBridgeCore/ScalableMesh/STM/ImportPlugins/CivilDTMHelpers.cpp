@@ -13,6 +13,8 @@
 #include "../ImagePPHeaders.h"
 #include "CivilDTMHelpers.h"
 #include "..\Stores\SMStoreUtils.h"
+#include <TerrainModel/Core/DTMIterators.h>
+
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
@@ -463,8 +465,7 @@ MeshHandler::MeshHandler(const BcDTM&                          pi_rDTM,
     m_initialized(false),
     m_maxPtCount(0), 
     m_maxPtIndicesCount(0)
-    {
-    assert(DTMState::Tin == const_cast<BcDTM&>(m_rDTM).GetDTMState());
+    {    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -486,7 +487,12 @@ bool MeshHandler::ComputeCounts()
     //size_t                  m_maxPtIndicesCount;
 
     m_initialized = true;
-    
+
+    if (DTMState::Tin != const_cast<BcDTM&>(m_rDTM).GetDTMState())
+        {
+        DTMStatusInt status = const_cast<BcDTM&>(m_rDTM).Triangulate();
+        assert(status == DTM_SUCCESS);
+        }        
     /*
     m_maxPtCount = ComputeMaxPointCounts(m_typesInfo);    
     m_maxPtIndicesCount = ComputeMaxPointIndicesCounts(m_typesInfo);
@@ -546,6 +552,7 @@ struct MeshCallbackUserArg
     HPU::Array<int32_t>*  m_ptIndicesArray;
     };
 
+
 int TriangleMeshCallback(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d *meshPointsP, int numMeshFaces, long *meshFacesP, void *userP)
     {    
     MeshCallbackUserArg* userArg = (MeshCallbackUserArg*)userP;
@@ -571,12 +578,16 @@ bool MeshHandler::Copy(/*TypeInfoCIter           pi_typeInfoIter,*/
 
     int maxTriangles = m_rDTM.GetTrianglesCount() * 2;
 
-    // Retrieve points of the specified type in point array
-    if (DTM_SUCCESS != const_cast<BcDTM&>(m_rDTM).BrowseTriangleMesh(maxTriangles, fenceParams, (void*)&userArg, TriangleMeshCallback))
-        {
-        assert(!"Unable to gather mesh from source");
-        return false;
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(const_cast<BcDTM&>(m_rDTM));
+
+    en->SetMaxTriangles(maxTriangles);
+
+    for (PolyfaceQueryP polyFace : *en)
+        {                
+        po_pointArray.Append(polyFace->GetPointCP(), polyFace->GetPointCP() + polyFace->GetPointCount());
+        po_ptIndicesArray.Append(polyFace->GetPointIndexCP(), polyFace->GetPointIndexCP() + polyFace->GetPointIndexCount());                
         }
+
 
     return true;
     }
