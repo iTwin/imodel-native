@@ -11,7 +11,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a" ApiNumber="B02">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
@@ -23,7 +23,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsComplete\RealityPlatformTools.mke" OnlyPlatforms="x64" ApiNumber="B02">
+    <Part Name="RealityPlatformTools" BentleyBuildMakeFile="RealityPlatformToolsComplete\RealityPlatformTools.mke" OnlyPlatforms="x64" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
@@ -37,7 +37,7 @@
     </Part>
     
     <!-- depending on the target platform, use either the RealityPlatformTools definition above or below, comment out the other -->
-    <Part Name="RealityPlatformToolsLight" BentleyBuildMakeFile="RealityPlatformToolsLight\RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="B02">
+    <Part Name="RealityPlatformToolsLight" BentleyBuildMakeFile="RealityPlatformToolsLight\RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
@@ -47,7 +47,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke" ApiNumber="B02">
+    <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
@@ -64,7 +64,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="SpatioTemporalSelector" BentleyBuildMakeFile="SpatioTemporalSelector\SpatioTemporalSelector.mke" OnlyPlatforms="x64" ApiNumber="B02">
+    <Part Name="SpatioTemporalSelector" BentleyBuildMakeFile="SpatioTemporalSelector\SpatioTemporalSelector.mke" OnlyPlatforms="x64" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="RealityPlatformTools" />
