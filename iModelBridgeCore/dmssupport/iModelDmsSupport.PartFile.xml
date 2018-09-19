@@ -65,7 +65,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelDmsSupport" BentleyBuildMakeFile="iModelDmsSupport/iModelDmsSupport.mke" OnlyPlatforms="x64"  ApiNumber="B02">
+  <Part Name="iModelDmsSupport" BentleyBuildMakeFile="iModelDmsSupport/iModelDmsSupport.mke" OnlyPlatforms="x64"  ApiNumber="M02">
     <SubPart PartName="ProjectWise_SDK"/>
     <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync" Repository="DgnDbSync"/>
     <SubPart PartName="v8ConfigSupport"/>
