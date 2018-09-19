@@ -94,7 +94,7 @@
     </Part>
     
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
-    <Part Name="ImagePPDll" BentleyBuildMakeFile="all/imagepp.mke" ApiNumber="B02">
+    <Part Name="ImagePPDll" BentleyBuildMakeFile="all/imagepp.mke" ApiNumber="M02">
         <SubPart PartName="PublicApi" />
         <SubPart PartName="ImagePPThirdPartsDll" />
         <SubPart PartName="BentleyDll"                      PartFile="Bentley"              Repository="Bentley" />
