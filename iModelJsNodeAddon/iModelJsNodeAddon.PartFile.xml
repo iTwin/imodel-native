@@ -63,7 +63,7 @@
 
   <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
     <!-- Get the node-addon-api (declaration) from iModelJs, not from node! -->
-    <SubPart PartName="node-addon-api" PartFile="iModelJs" Repository="iModelJs"/>
+    <SubPart PartName="node-addon-api" PartFile="iModelJsMobile" Repository="iModelJsMobile"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
