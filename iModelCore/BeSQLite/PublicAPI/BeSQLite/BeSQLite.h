@@ -2909,6 +2909,19 @@ public:
     //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
     template<typename T> AppDataPtr FindOrAddAppData(AppData::Key const& key, T createAppData) const { return m_appData.FindOrAdd(key, createAppData); }
 
+    //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
+    //! will be invoked to create it, and the returned AppData* will be added to the Db.
+    //! @param[in] key The key to find the appropriate AppData. See discussion of keys in AddAppData.
+    //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
+    //! @return A ref-counted pointer to the existing or newly-added Db::AppData, as the derived type returned by invoking createAppData().
+    //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
+    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) const -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
+        {
+        using U = decltype(createAppData());
+        AppDataPtr data = FindOrAddAppData(key, createAppData);
+        return static_cast<U>(data.get());
+        }
+
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);
 
