@@ -271,7 +271,6 @@
     <Part Name="iModelHubPrewireForIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list.txt</Files>
-            <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/whitelist.txt</Files>
         </Bindings>
     </Part>
 
