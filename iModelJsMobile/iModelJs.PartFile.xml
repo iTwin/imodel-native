@@ -2,6 +2,11 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
+    <Part Name="iModelJsMobile.Dev" PrgOutputDir="iModelJsMobile">
+        <SubPart PartName="iModelCorePRG" PartFile="iModelCore" Repository="DgnPlatform"/>
+        <SubPart PartName="RunGtest"/>
+    </Part>
+
     <Part Name="iModelJs" BentleyBuildMakeFile="iModelJs.mke" ApiNumber="B02">
         <RequiredRepository>Libsrc-websocketpp</RequiredRepository>
 
