@@ -503,15 +503,6 @@
         <Directories DirectoryListName="SchemaComparison" />
         <Directories DirectoryListName="SchemaJsonSerializer" />
     </Product>
-    
-    <Part Name="ToolsSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/SchemaValidator/SQLang/Tools_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
-        <SubPart PartName="UnitsNative"        PartFile="Units"    Repository="Units" />
-        <SubPart PartName="Units-Xliffs"    PartFile="Units"    Repository="Units" />
-        <Bindings>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/Tools_en.sqlang.db3</Files>
-        </Bindings>
-    </Part>
-
 
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
