@@ -48,30 +48,6 @@ DgnFontCR iModelBridgeFontAdmin::_ResolveFont(DgnFontCP font)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool iModelBridgeViewManager::_ForceSoftwareRendering()
-    {
-    // In the common case, we're running on a server, probably inside a VM...no guaranteed access to a usable GPU.
-    // Possible future optimization: determine if we're running on local machine (inside MicroStation?) and use GPU if possible.
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Display::SystemContext* iModelBridgeViewManager::_GetSystemContext() 
-    {
-#if defined(_WIN32)
-    // We don't want to render to a window, and we may not be able to depending upon the context in which we're executing.
-    // Returning nullptr tells DgnView to render to an in-memory, offscreen buffer instead. (aka a 'p-buffer')
-    return nullptr;
-#else
-    return m_systemContext;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileNameCR iModelBridgeKnownLocationsAdmin::_GetLocalTempDirectoryBaseName()

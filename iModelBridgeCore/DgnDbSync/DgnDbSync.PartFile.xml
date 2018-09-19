@@ -26,10 +26,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="B02"  OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="DgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="M02"  OnlyPlatforms="x64" ExcludeLibType="Static">
         <RequiredRepository>V8IModelExtraFiles</RequiredRepository>
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="VersionedV8_InternalSDK" />
         <SubPart PartName="RapidXml2Json" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"/>
@@ -76,10 +75,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="ConceptStationDgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="B02"  OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="ConceptStationDgnV8ConverterDLL" BentleyBuildMakeFile="DgnV8/Converter.mke" ApiNumber="M02"  OnlyPlatforms="x64" ExcludeLibType="Static">
         <RequiredRepository>V8IModelExtraFiles</RequiredRepository>
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="ScalableMeshV8SDK" />
         <SubPart PartName="RapidXml2Json" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="PublicAPI"/>
@@ -115,7 +113,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="SyncManager" BentleyBuildMakeFile="SyncManager/SyncManager.mke" ApiNumber="B02"  OnlyPlatforms="x64,x86">
+    <Part Name="SyncManager" BentleyBuildMakeFile="SyncManager/SyncManager.mke" ApiNumber="M02"  OnlyPlatforms="x64,x86">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="BentleyDll" PartFile="Bentley"  Repository="Bentley"/>
@@ -258,10 +256,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" ApiNumber="B02" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="DgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" ApiNumber="M02" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="DgnV8ConverterDLL" />
-        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge"     Repository="DgnDbSync" />
         <SubPart PartName="iModelBridgeFwk-en" PartFile="iModelBridge"     Repository="DgnDbSync" />
@@ -292,7 +289,6 @@
     <Part Name="ConceptStationDgnV8ConverterExe" BentleyBuildMakeFile="DgnV8/Converters/DgnV8Converter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk" />
         <SubPart PartName="ConceptStationDgnV8ConverterDLL" />
-        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
         <SubPart PartName="ConceptStationDgnV8ConverterSqlang" />
         <Bindings>
@@ -405,10 +401,9 @@
         <SubPart PartName="BimFromDgnDb-Xliffs"/>
     </Part>
     
-    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="M02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"      Repository="DgnPlatform"/>
         <SubPart PartName="ECPresentation"  PartFile="ECPresentation"   Repository="ECPresentation"/>
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"       Repository="DgnDisplay" />
         <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
         <SubPart PartName="Raster"              PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
@@ -448,7 +443,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="M02">
         <SubPart PartName="BimFromJson"/>
         <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
         <Bindings>

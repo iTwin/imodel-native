@@ -45,7 +45,6 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeFolly.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
 LINKER_LIBRARIES  + user32.lib
 

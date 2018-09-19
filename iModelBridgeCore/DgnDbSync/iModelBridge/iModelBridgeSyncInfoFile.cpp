@@ -652,7 +652,7 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
     //  Compute the state of the document
     time_t lmt = 0;
     if (sstateIn)
-        lmt = sstateIn->GetLastModifiedTime();
+        lmt = static_cast<time_t>(sstateIn->GetLastModifiedTime());
     else
         {
         if (BeFileNameStatus::Success == BeFileName::GetFileTime(nullptr, nullptr, &lmt, fileName)) // (may not really be a disk file)
@@ -665,7 +665,7 @@ iModelBridgeSyncInfoFile::ConversionResults iModelBridgeWithSyncInfoBase::Record
     else
         sha1(&lmt, sizeof(lmt)); // otherwise, make the hash depend on the last modified time, as a proxy for the file's contents.
 
-    iModelBridgeSyncInfoFile::SourceState sstate(lmt, sha1.GetHashString());
+    iModelBridgeSyncInfoFile::SourceState sstate(static_cast<double>(lmt), sha1.GetHashString());
 
     //  Write the item to syncinfo, and write the RepositoryLink Element to the BIM
     DocSourceItem docItem(results.m_element->GetCode(), sstate);

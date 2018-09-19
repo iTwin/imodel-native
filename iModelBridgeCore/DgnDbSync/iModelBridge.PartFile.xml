@@ -6,8 +6,8 @@
     <!-- iModelBridge    The bridge DLL. -->
     <!-- ........................................................................................................................................ -->
 
-    <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="B02">
-        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+    <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="M02">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
         <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="PublicAPI" />
       
@@ -86,8 +86,6 @@
     <Part Name="Platform-xliffs">
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <!-- DgnPlatformDLL is responsible for creating DgnPlatform xliffs -->
-      <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay"/>
-      <!-- DgnView is responsible for creating DgnView xliffs -->
       <SubPart PartName="WSClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
       <SubPart PartName="iModelHubClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
       <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
@@ -110,7 +108,7 @@
       </Bindings>
     </Part>
 
-    <Part Name="iModelBridgeFwkLib" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwkLib.mke" ApiNumber="B02">
+    <Part Name="iModelBridgeFwkLib" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwkLib.mke" ApiNumber="M02">
       <SubPart PartName="PublicAPI"/>
       <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
@@ -352,7 +350,7 @@
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=iModelBridge -dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3"
         OnlyPlatforms="WinRT*"
-        ApiNumber="B02"
+        ApiNumber="M02"
         >
         <SubProduct ProductName="iModelBridge-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>

@@ -103,7 +103,7 @@ void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, Utf8CP product
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
     static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), fwkAssets, fwkDb3, productName); // *** TBD supply bridge name as product name
-    DgnViewLib::Initialize(s_host, true);
+    DgnPlatformLib::Initialize(s_host, true);
 
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);

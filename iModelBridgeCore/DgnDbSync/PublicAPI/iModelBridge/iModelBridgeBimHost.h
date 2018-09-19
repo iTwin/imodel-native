@@ -9,7 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <iModelBridge/iModelBridge.h>
-#include <DgnView/DgnViewLib.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -40,34 +40,10 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeNotificationAdmin : DgnPlatformLib::H
         return BentleyApi::SUCCESS;
         }
 
-    virtual NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType t, BentleyApi::Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGEBOX: %s\n", msg);
-        printf("<<NOTIFICATION MessageBox: %s >>\n", msg);
-        return NotificationManager::MESSAGEBOX_VALUE_Ok;
-        }
-
-    virtual void _OutputPrompt(BentleyApi::Utf8CP msg) override
-        { // Log this as an error because we cannot prompt while running a unit test!
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->errorv("PROMPT (IGNORED): %s\n", msg);
-        }
-
     virtual bool _GetLogSQLiteErrors() override 
         {
         return BentleyApi::NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(BentleyApi::NativeLogging::LOG_INFO);
         }
-};
-
-//=======================================================================================
-//! @private
-// @bsiclass
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeViewManager : ViewManager
-{
-    Display::SystemContext* m_systemContext = nullptr;
-    IMODEL_BRIDGE_EXPORT Display::SystemContext* _GetSystemContext() override;
-    IMODEL_BRIDGE_EXPORT bool _ForceSoftwareRendering() override;
-    bool _DoesHostHaveFocus() override {return true;}
 };
 
 //=======================================================================================
@@ -89,11 +65,11 @@ public:
 };
 
 //=======================================================================================
-//! An implementation of Dgn::DgnViewLib::Host that iModelBridgeFwk sets up before running a bridge. 
+//! An implementation of Dgn::DgnPlatformLib::Host that iModelBridgeFwk sets up before running a bridge. 
 //! @ingroup GROUP_iModelBridge
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnViewLib::Host
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnPlatformLib::Host
 {
     RepositoryAdmin*    m_repoAdmin;
     BeFileName          m_fwkSqlangPath;
@@ -104,7 +80,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnViewLib::Host
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new iModelBridgeKnownLocationsAdmin(m_fwkAssetsDir);}
     IMODEL_BRIDGE_EXPORT BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
     NotificationAdmin& _SupplyNotificationAdmin() override {return *new iModelBridgeNotificationAdmin();}
-    ViewManager& _SupplyViewManager() override {return *new iModelBridgeViewManager ();}
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *m_repoAdmin;}
     FontAdmin& _SupplyFontAdmin() override {return *new iModelBridgeFontAdmin;}
     IMODEL_BRIDGE_EXPORT bool _IsFeatureEnabled(Utf8CP) override;

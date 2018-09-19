@@ -2,7 +2,7 @@
 #
 #     $Source: DgnV8/Converters/TiledConverterApp.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -61,7 +61,6 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)Units.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnV8Converter.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Raster.lib 
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib

@@ -64,10 +64,6 @@ $(Delivery)freetype2$(ApiNumber).dll : $(DgnDbDlls)freetype2$(ApiNumber).dll
 
 $(Delivery)BeOpenSSL$(ApiNumber).dll : $(DgnDbDlls)BeOpenSSL$(ApiNumber).dll
 
-#$(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
-
-#$(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
-
 $(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
 
 $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll

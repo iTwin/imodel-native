@@ -13,7 +13,7 @@
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
-#include <DgnView/DgnViewLib.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <WebServices/Client/ClientInfo.h>
 

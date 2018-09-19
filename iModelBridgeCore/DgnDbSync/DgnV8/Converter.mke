@@ -191,7 +191,6 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)Units.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp.lib
@@ -220,7 +219,6 @@ LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BaseGeoCoord.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidCore.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)PSolidAcisInterop.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)RasterCore.lib
-LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnView.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib

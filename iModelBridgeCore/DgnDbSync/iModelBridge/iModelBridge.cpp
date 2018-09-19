@@ -9,6 +9,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <BeSQLite/L10N.h>
 #include <Bentley/BeTextFile.h>
+#include <BeHttp/HttpHeaderProvider.h>
 #include <GeomJsonWireFormat/JsonUtils.h>
 #include "iModelBridgeHelpers.h"
 
@@ -860,6 +861,11 @@ struct MemoryUsageAppData : DgnDb::AppData
     {
     int m_rowsChanged{};
     static Key const& GetKey() { static Key s_key; return s_key; }
+
+    static RefCountedPtr<MemoryUsageAppData> FindOrAdd(DgnDbR db)
+        {
+        return reinterpret_cast<MemoryUsageAppData*>(db.FindOrAddAppData(GetKey(), []() { return new MemoryUsageAppData(); }).get());
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -867,13 +873,13 @@ struct MemoryUsageAppData : DgnDb::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment, int maxRowsChangedPerTxn)
     {
-    MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
+    auto lastCheck = MemoryUsageAppData::FindOrAdd(db);
 
     int rowsChanged = db.GetTotalModifiedRowCount();
-    if ((rowsChanged - lastCheck.m_rowsChanged) <= maxRowsChangedPerTxn)
+    if ((rowsChanged - lastCheck->m_rowsChanged) <= maxRowsChangedPerTxn)
         return BSISUCCESS;
 
-    lastCheck.m_rowsChanged = rowsChanged;
+    lastCheck->m_rowsChanged = rowsChanged;
 
     auto status = db.SaveChanges(commitComment);
     if (BE_SQLITE_OK != status)
@@ -888,9 +894,9 @@ BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commit
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     {
-    MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
+    auto lastCheck = MemoryUsageAppData::FindOrAdd(db);
 
-    lastCheck.m_rowsChanged = db.GetTotalModifiedRowCount();
+    lastCheck->m_rowsChanged = db.GetTotalModifiedRowCount();
 
     auto status = db.SaveChanges(commitComment);
     if (BE_SQLITE_OK != status)
