@@ -115,7 +115,7 @@ SchemaConversionStatus ECSchemaXmlContextUtils::ConvertECSchemaXmlToJson(JsonVal
     if (SchemaReadStatus::Success != readStatus)
         return static_cast<SchemaConversionStatus>(readStatus);
 
-    if (!schema.IsValid() || SchemaWriteStatus::Success != schema->WriteToJsonValue(results))
+    if (!schema.IsValid() || true != schema->WriteToJsonValue(results))
         return SchemaConversionStatus::FailedToCreateJson;
 
     return SchemaConversionStatus::Success;
