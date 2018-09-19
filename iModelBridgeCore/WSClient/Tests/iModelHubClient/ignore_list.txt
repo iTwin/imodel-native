@@ -95,3 +95,11 @@ WSRepositoryClientTests.SendUpdateFileRequest_WebApiV24AndAzureRedirectAndAzureU
     # Which is: 00007FF76328E480
     # To be equal to: response.GetError().GetMessage()
     # Which is: { 'F' (70, 0x46), 'i' (105, 0x69), 'l' (108, 0x6C), 'e' (101, 0x65), ' ' (32, 0x20), 'n' (110, 0x6E), 'o' (111, 0x6F), 't' (116, 0x74), ' ' (32, 0x20), 'f' (102, 0x66), 'o' (111, 0x6F), 'u' (117, 0x75), 'n' (110, 0x6E), 'd' (100, 0x64), ' ' (32, 0x20), 'o' (111, 0x6F), 'n' (110, 0x6E), ' ' (32, 0x20), 's' (115, 0x73), 'e' (101, 0x65), 'r' (114, 0x72), 'v' (118, 0x76), 'e' (101, 0x65), 'r' (114, 0x72), '.' (46, 0x2E), ' ' (32, 0x20), 'P' (80, 0x50), 'l' (108, 0x6C), 'e' (101, 0x65), 'a' (97, 0x61), 's' (115, 0x73), 'e' (101, 0x65), ... }
+
+WSRepositoryClientTests.SendUpdateFileRequest_WebApiV24AndAzureRedirectAndAzureUploadFails_ParsesError
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/19/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Client\WSRepositoryClientTests.cpp(2804): error:       Expected: "TestMessage"
+    # Which is: 00007FF777D2E480
+    # To be equal to: response.GetError().GetMessage()
+    # Which is: { 'F' (70, 0x46), 'i' (105, 0x69), 'l' (108, 0x6C), 'e' (101, 0x65), ' ' (32, 0x20), 'n' (110, 0x6E), 'o' (111, 0x6F), 't' (116, 0x74), ' ' (32, 0x20), 'f' (102, 0x66), 'o' (111, 0x6F), 'u' (117, 0x75), 'n' (110, 0x6E), 'd' (100, 0x64), ' ' (32, 0x20), 'o' (111, 0x6F), 'n' (110, 0x6E), ' ' (32, 0x20), 's' (115, 0x73), 'e' (101, 0x65), 'r' (114, 0x72), 'v' (118, 0x76), 'e' (101, 0x65), 'r' (114, 0x72), '.' (46, 0x2E), ' ' (32, 0x20), 'P' (80, 0x50), 'l' (108, 0x6C), 'e' (101, 0x65), 'a' (97, 0x61), 's' (115, 0x73), 'e' (101, 0x65), ... }
