@@ -591,22 +591,22 @@ TEST_F(TransactionManagerTests, UndoRedo)
     templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
     DgnElementCPtr el2 = templateEl->Insert();
     m_db->SaveChanges("create new");
-    AxisAlignedBox3d extents1 = defaultModel->QueryModelRange();
+    AxisAlignedBox3d extents1 = defaultModel->QueryElementsRange();
 
     templateEl->ChangeElement(201.);
     templateEl->Update();
-    AxisAlignedBox3d extents2 = defaultModel->QueryModelRange();
+    AxisAlignedBox3d extents2 = defaultModel->QueryElementsRange();
     ASSERT_TRUE (!extents1.IsEqual(extents2));
     m_db->SaveChanges("update one");
 
     stat = txns.ReverseSingleTxn();
-    AxisAlignedBox3d extents3 = defaultModel->QueryModelRange();
+    AxisAlignedBox3d extents3 = defaultModel->QueryElementsRange();
     ASSERT_TRUE (extents1.IsEqual(extents3));    // after undo, range should be back to where it was before we did the update
     ASSERT_TRUE(DgnDbStatus::Success == stat);
 
     stat = txns.ReinstateTxn();  // redo the update
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    AxisAlignedBox3d extents4 = defaultModel->QueryModelRange();
+    AxisAlignedBox3d extents4 = defaultModel->QueryElementsRange();
     ASSERT_TRUE (extents4.IsEqual(extents2));    // now it should be back to the same as after we did the original update
 
     templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");

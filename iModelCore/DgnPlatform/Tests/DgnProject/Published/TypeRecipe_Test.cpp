@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/TypeRecipe_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -986,7 +986,7 @@ DgnViewId TypeTests::InsertSpatialView(SpatialModelR model, Utf8CP name)
         view.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     view.SetStandardViewRotation(StandardView::Iso);
-    view.LookAtVolume(model.QueryModelRange());
+    view.LookAtVolume(model.QueryElementsRange());
     view.Insert();
     DgnViewId viewId = view.GetViewId();
     BeAssert(viewId.IsValid());
@@ -1058,7 +1058,7 @@ TEST_F(TypeTests, CreateSampleBim)
         }
 
     DrawingViewDefinitionPtr view2d = DgnDbTestUtils::InsertDrawingView(*instanceModel2d, "2D Instances View");
-    view2d->LookAtVolume(instanceModel2d->QueryModelRange());
+    view2d->LookAtVolume(instanceModel2d->QueryElementsRange());
     ASSERT_TRUE(view2d->Update().IsValid());
 
     PhysicalModelPtr instanceModel3d = DgnDbTestUtils::InsertPhysicalModel(*m_db, "3D Instances");

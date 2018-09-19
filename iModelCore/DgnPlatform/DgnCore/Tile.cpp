@@ -1113,7 +1113,7 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         // - if a model occupies a small fraction of the extents, we must subdivide its tile tree excessively before we reach useful geometry; and
         // - some models contain junk elements in far orbit which blow out the project extents resulting in same problem - constrain that only to those models.
         // Classifiers are applied to all models (currently...) so they use project extents.
-        range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryModelRange();
+        range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryElementsRange();
         range = scaleSpatialRange(range);
         uint32_t nElements = 0;
         populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);

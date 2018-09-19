@@ -249,7 +249,7 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents() const
         {
         auto model = models.Get<SpatialModel>(entry.GetModelId());
         if (model.IsValid())
-            extent.Extend(model->QueryModelRange());
+            extent.Extend(model->QueryElementsRange());
         }
 
     if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a reasonable default

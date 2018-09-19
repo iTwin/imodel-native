@@ -251,7 +251,7 @@ void CompatibilityTests::InsertDefinitionHierarchy(SubjectCR subject)
         CategorySelectorPtr categorySelector = InsertCategorySelector(*definitionModel, categoryId, i);
         ModelSelectorPtr modelSelector = InsertModelSelector(*definitionModel, physicalModel->GetModelId(), i);
         DisplayStyle3dPtr displayStyle = InsertDisplayStyle3d(*definitionModel, i);
-        DRange3d volume = physicalModel->QueryModelRange();
+        DRange3d volume = physicalModel->QueryElementsRange();
         ASSERT_TRUE(geometryPart.IsValid());
         ASSERT_TRUE(categorySelector.IsValid());
         ASSERT_TRUE(modelSelector.IsValid());
@@ -352,7 +352,7 @@ void CompatibilityTests::ModifyDefinitionHierarchy(SubjectCR subject)
     ASSERT_TRUE(modelSelector.IsValid());
     ASSERT_TRUE(displayStyle.IsValid());
     
-    SpatialViewDefinitionPtr spatialViewDefinition = InsertSpatialViewDefinition(*model, 3, *categorySelector, *displayStyle, *modelSelector, GetPhysicalModel(subject)->QueryModelRange());
+    SpatialViewDefinitionPtr spatialViewDefinition = InsertSpatialViewDefinition(*model, 3, *categorySelector, *displayStyle, *modelSelector, GetPhysicalModel(subject)->QueryElementsRange());
     ASSERT_TRUE(spatialViewDefinition.IsValid());
 
     ASSERT_EQ(3, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_CategorySelector), whereClause.c_str()).BuildIdList<DgnElementId>().size());

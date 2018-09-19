@@ -930,7 +930,7 @@ protected:
     DGNPLATFORM_EXPORT void UpdateLastElementModifiedTime();
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryElementsRange() const;//!< @private
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
     void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element); UpdateLastElementModifiedTime();}
@@ -952,8 +952,8 @@ public:
 
     RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
-    //! Get the AxisAlignedBox3d of the contents of this model.
-    AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
+    //! Get the AxisAlignedBox3d of the geometric elements contained within this model.
+    AxisAlignedBox3d QueryElementsRange() const {return _QueryElementsRange();}
 
     //! Get a writable reference to the Formatter for this model.
     Formatter& GetFormatterR() {return m_displayInfo;}
@@ -977,7 +977,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
@@ -996,7 +996,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };

@@ -95,7 +95,7 @@ void DgnModelTests::TestRangeIndex3d()
     EXPECT_TRUE(count == 4);
 
     model->RemoveRangeIndex();  // drop the range index and recreate it from a query
-    AxisAlignedBox3d range = model->QueryModelRange();
+    AxisAlignedBox3d range = model->QueryElementsRange();
 
     model->FillRangeIndex();
     rangeIndex = model->GetRangeIndex();
@@ -153,7 +153,7 @@ void DgnModelTests::CheckEmptyModel()
     {
     // check the range of an empty 3d model
     auto model2 = LoadModel("DefaultModel");
-    AxisAlignedBox3d thirdRange = model2->ToGeometricModel()->QueryModelRange();
+    AxisAlignedBox3d thirdRange = model2->ToGeometricModel()->QueryElementsRange();
     EXPECT_FALSE(thirdRange.IsValid());
 
     int count = 0;
@@ -204,9 +204,9 @@ void DgnModelTests::TestRangeIndex2d()
     AxisAlignedBox3d box(low, high);
 
     AxisAlignedBox3d indexbox2d (rangeIndex->GetExtents().ToRange3d());
-    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryModelRange();
+    AxisAlignedBox3d range2d = drawingModel->ToGeometricModel()->QueryElementsRange();
     drawingModel->ToGeometricModelP()->RemoveRangeIndex();  // drop the range so query wo
-    AxisAlignedBox3d range2d2 = drawingModel->ToGeometricModel()->QueryModelRange();
+    AxisAlignedBox3d range2d2 = drawingModel->ToGeometricModel()->QueryElementsRange();
 
     EXPECT_TRUE(box.IsEqual(range2d2, .00000001));
     EXPECT_TRUE(indexbox2d.IsEqual(range2d2, .00001)); // float vs. double
