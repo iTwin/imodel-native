@@ -1736,10 +1736,10 @@ TEST_F(DataSourceCacheTests, RemoveFile_FileIsLocked_Error)
     {
     auto fileManager = std::make_shared<StubFileManager>();
     auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
-     
+
     ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
     BeFileName filePath = cache->ReadFilePath(fileId);
-    
+
     EXPECT_TRUE(filePath.DoesPathExist());
 
     fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;

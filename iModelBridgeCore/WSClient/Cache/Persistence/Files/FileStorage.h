@@ -33,8 +33,8 @@ struct FileStorage
         BentleyStatus StoreFile(FileInfoR info, BeFileNameCR filePath, FileCache location, BeFileNameCP relativeDir, bool copyFile);
         BentleyStatus FixFileNameIfNeeded(FileCache location, BeFileNameCR relativeDir, Utf8String& fileName);
 
-        static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
-        static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
+        BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
+        BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
 
         //! Remove file and do parent folder cleanup
         CacheStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath = nullptr);
@@ -42,9 +42,9 @@ struct FileStorage
         //! Remove file if exists
         CacheStatus RemoveFile(BeFileNameCR filePath);
         //! Remove directory relative paths if they don't contain any files.
-        static void CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir);
+        void CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir);
         //! Check if directory or any sub-directories contain any files
-        static bool DoesDirContainFiles(BeFileNameCR dir);
+        bool DoesDirContainFiles(BeFileNameCR dir);
 
     public:
         FileStorage
