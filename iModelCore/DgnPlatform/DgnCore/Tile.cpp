@@ -78,7 +78,7 @@ struct ClassificationLoader : Loader
 {
     DEFINE_T_SUPER(Loader);
 private:
-    double m_expansion; // NB: will be used in future?
+    double m_expansion;
     DRange3d m_range;
 
     bool CompressMeshQuantization() const final { return true; }
