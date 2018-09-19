@@ -15,6 +15,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 
+Utf8String whitelistViolationDetails = "If this is caused by a necessary API change, update the whitelist and notify iModelBank of the updates. "
+                                        "If the whitelist violation is unintentional, modify your changes to use existing API functionality.";
+
 class UrlValidatorTests : public WSClientBaseTest
     {};
 
@@ -208,7 +211,7 @@ TEST(UrlValidator, WhitelistCheck)
         if (findResult == whitelistURLs.end())
             urlIsWhitelisted = false;
 
-        ASSERT_TRUE(urlIsWhitelisted) << "The URL \"" << url.key() << "\" is not whitelisted (see whitelist.txt)";
+        ASSERT_TRUE(urlIsWhitelisted) << "The URL \"" << url.key() << "\" is not whitelisted (see whitelist.txt)\n" << whitelistViolationDetails;
         }
     }
 
