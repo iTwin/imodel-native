@@ -40,7 +40,7 @@ m_fileManager(fileManager)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileStorage::RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath)
     {
-    BeFileNameStatus status = BeFileName::BeMoveFile(backupPath, originalPath);
+    BeFileNameStatus status = m_fileManager.MoveFile(backupPath, originalPath);
     if (BeFileNameStatus::Success != status)
         {
         LOG.error("Could not restore old file from backup");
@@ -64,7 +64,7 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
     if (oldBackupFileExists)
         {
         LOG.warning("Found old backup cached file. Removing it");
-        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(backupForRollbackFile))
+        if (BeFileNameStatus::Success != m_fileManager.DeleteFile(backupForRollbackFile))
             {
             LOG.errorv(L"Could not delete existing backup cached file: %ls", backupForRollbackFile.c_str());
             return ERROR;
@@ -74,7 +74,7 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
     // Create backup
     if (backupNeeded)
         {
-        BeFileNameStatus status = BeFileName::BeMoveFile(fileToRollback, backupForRollbackFile);
+        BeFileNameStatus status = m_fileManager.MoveFile(fileToRollback, backupForRollbackFile);
         if (BeFileNameStatus::Success != status)
             {
             LOG.errorv(L"Could not create backup for existing file: %ls", fileToRollback.c_str());
@@ -85,7 +85,7 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
     // Remove any duplicates that already exist
     if (moveToFile.DoesPathExist())
         {
-        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(moveToFile))
+        if (BeFileNameStatus::Success != m_fileManager.DeleteFile(moveToFile))
             {
             if (backupNeeded)
                 {
@@ -99,18 +99,18 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
     BeFileName directory = moveToFile.GetDirectoryName();
     if (!BeFileName::DoesPathExist(directory))
         {
-        if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(directory))
+        if (BeFileNameStatus::Success != m_fileManager.CreateDirectory(directory))
             return ERROR;
         }
 
     BeFileNameStatus status;
     if (copyFile)
         {
-        status = BeFileName::BeCopyFile(moveFromFile, moveToFile);
+        status = m_fileManager.CopyFile(moveFromFile, moveToFile);
         }
     else
         {
-        status = BeFileName::BeMoveFile(moveFromFile, moveToFile);
+        status = m_fileManager.MoveFile(moveFromFile, moveToFile);
 
         //Me might not have access to move file
         if (status != BeFileNameStatus::Success &&
@@ -120,13 +120,13 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
             status != BeFileNameStatus::FileNotFound &&
             status != BeFileNameStatus::AccessViolation)
             {
-            status = BeFileName::BeCopyFile(moveFromFile, moveToFile);
+            status = m_fileManager.CopyFile(moveFromFile, moveToFile);
 
             if (status == BeFileNameStatus::Success)
                 {
-                status = BeFileName::BeDeleteFile(moveFromFile);
+                status = m_fileManager.DeleteFile(moveFromFile);
                 if (status != BeFileNameStatus::Success)
-                    BeFileName::BeDeleteFile(moveToFile);
+                    m_fileManager.DeleteFile(moveToFile);
                 }
             }
         }
@@ -144,7 +144,7 @@ BentleyStatus FileStorage::ReplaceFileWithRollback(BeFileNameCR fileToRollback, 
     // Everything went with no errors, delete file backup
     if (backupNeeded)
         {
-        BeFileNameStatus status = BeFileName::BeDeleteFile(backupForRollbackFile);
+        BeFileNameStatus status = m_fileManager.DeleteFile(backupForRollbackFile);
         if (BeFileNameStatus::Success != status)
             {
             LOG.errorv(L"Could not remove file backup: %ls", backupForRollbackFile.c_str());
@@ -418,7 +418,7 @@ CacheStatus FileStorage::RemoveStoredFile(BeFileNameCR filePath, FileCache locat
         return CacheStatus::OK;
         }
 
-    BeFileNameStatus status = BeFileName::EmptyAndRemoveDirectory(filePath.GetDirectoryName());
+    BeFileNameStatus status = m_fileManager.DeleteDirectory(filePath.GetDirectoryName());
     if (status != BeFileNameStatus::Success &&
         status != BeFileNameStatus::FileNotFound)
         {
@@ -464,7 +464,7 @@ void FileStorage::CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName
         if (DoesDirContainFiles(dir))
             return;
 
-        if (BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(dir))
+        if (BeFileNameStatus::Success != m_fileManager.DeleteDirectory(dir))
             {
             BeAssert(false);
             return;
@@ -517,7 +517,7 @@ BentleyStatus FileStorage::RenameCachedFile(FileInfoR info, Utf8String newFileNa
     if (oldPath == newPath)
         return SUCCESS;
 
-    auto status = BeFileName::BeMoveFile(oldPath, newPath);
+    auto status = m_fileManager.MoveFile(oldPath, newPath);
     if (BeFileNameStatus::Success != status)
         return ERROR;
 
