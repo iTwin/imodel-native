@@ -2743,6 +2743,35 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewRes
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedLockedFileRemovedInNewResults_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(), FileCache::Persistent));
+    BeFileName filePath = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    instances.Clear();
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(CacheStatus::Error, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_NewResponseDoesNotContainHoldingRelationshipChild_RemovesChildInstance)
     {
     auto cache = GetTestCache();
