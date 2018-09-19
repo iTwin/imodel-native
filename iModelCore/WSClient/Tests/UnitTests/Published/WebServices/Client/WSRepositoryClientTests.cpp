@@ -2801,7 +2801,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
     ASSERT_FALSE(response.IsSuccess());
     EXPECT_EQ(WSError::Id::FileNotFound, response.GetError().GetId());
-    EXPECT_EQ("TestMessage", response.GetError().GetMessage());
+    EXPECT_EQ("TestMessage", response.GetError().GetDescription());
     }
 
 /*--------------------------------------------------------------------------------------+
