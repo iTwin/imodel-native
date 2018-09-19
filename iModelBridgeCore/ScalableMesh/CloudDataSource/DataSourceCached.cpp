@@ -100,6 +100,8 @@ CacheWriter::Ptr CacheWriter::s_cacheWriter = nullptr;
 
 CacheWriter::Ptr CacheWriter::GetCacheWriter()
     { 
+    static std::mutex cacheWriterMutex;
+    std::lock_guard<std::mutex> lck(cacheWriterMutex);
     if (!s_cacheWriter.IsValid()) s_cacheWriter = new CacheWriter(); 
     return s_cacheWriter; 
     }

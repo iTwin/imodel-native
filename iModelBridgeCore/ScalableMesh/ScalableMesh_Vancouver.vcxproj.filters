@@ -1027,6 +1027,18 @@
     <ClInclude Include="STM\ScalableMeshInfo.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
+    <ClInclude Include="STM\ScalableMeshProgressiveQueryPlanner.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshProgressiveContourQueryPlanner.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshProgressiveQueryProcessor.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableMeshProgressiveQueryProcessor.hpp">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1497,6 +1509,12 @@
       <Filter>Source\Core\Analysis</Filter>
     </ClCompile>
     <ClCompile Include="STM\ScalableMeshInfo.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshProgressiveQueryPlanner.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshProgressiveContourQueryPlanner.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
   </ItemGroup>

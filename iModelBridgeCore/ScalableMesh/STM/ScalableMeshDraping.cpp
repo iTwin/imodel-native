@@ -148,6 +148,35 @@ IScalableMeshNodePlaneQueryParamsPtr MeshTraversalQueue::GetPlaneQueryParam(size
 
 void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNodes)
     {
+    bvector<bool> skipNode(inputNodes.size(), false);
+
+    bmap<int64_t,bset<int64_t>> parents;
+    bmap<int64_t, bset<size_t>> children;
+    size_t minLevel = INT_MAX;
+    size_t maxLevel = 0;
+
+    for (auto&node : inputNodes)
+    {
+        minLevel = std::min(minLevel, node->GetLevel());
+        maxLevel = std::max(maxLevel, node->GetLevel());
+        IScalableMeshNodePtr nodeIter = node;
+        while (nodeIter->GetLevel() > 0)
+        {
+            nodeIter = nodeIter->GetParentNode();
+            parents[nodeIter->GetLevel()].insert(nodeIter->GetNodeId());
+            children[nodeIter->GetNodeId()].insert(&node - inputNodes.data());
+        }
+    }
+
+    for (auto&node : inputNodes)
+    {
+        if (parents[node->GetLevel()].count(node->GetNodeId()) > 0)
+        {
+            for (auto&index : children[node->GetNodeId()])
+                skipNode[index] = true;
+        }
+    }
+
     for (size_t segment = 0; segment < m_numPointsOnPolyline - 1; segment++)
         {
         DRay3d ray = DRay3d::FromOriginAndVector(m_polylineToDrape[segment], DVec3d::FromStartEndNormalize(m_polylineToDrape[segment], m_polylineToDrape[segment + 1]));
@@ -157,6 +186,8 @@ void MeshTraversalQueue::CollectAll(const bvector<IScalableMeshNodePtr>& inputNo
         bvector<IScalableMeshNodePtr> outNodes;
         for (auto& node : inputNodes)
             {
+            if (skipNode[&node - inputNodes.data()])
+                continue;
 			if (!m_isReprojected)
 			{
             ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,

@@ -10,9 +10,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
         
-        
+           
 #include <ScalableMeshPCH.h>
-#include "ImagePPHeaders.h"   
+#include "ImagePPHeaders.h"
 
 /*----------------------------------------------------------------------+
 | Include MicroStation SDK header files
@@ -35,7 +35,7 @@ using namespace BENTLEY_NAMESPACE_NAME::TerrainModel;
 //template class ScalableMesh3DDelaunayMesher<DPoint3d, ISMStore::Extent3d64f>;
 
 
-
+ 
 
 
 

@@ -465,6 +465,10 @@ bb -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh<
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
     <ClInclude Include="STM\ScalableMeshInfo.h" />
+    <ClInclude Include="STM\ScalableMeshProgressiveContourQueryPlanner.h" />
+    <ClInclude Include="STM\ScalableMeshProgressiveQueryPlanner.h" />
+    <ClInclude Include="STM\ScalableMeshProgressiveQueryProcessor.h" />
+    <ClInclude Include="STM\ScalableMeshProgressiveQueryProcessor.hpp" />
     <ClInclude Include="STM\SharedTextureManager.h" />
     <ClInclude Include="STM\SmCachedDisplayData.h" />
     <ClInclude Include="STM\SMDataSourceParams.h" />
@@ -655,6 +659,8 @@ bb -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  ScalableMesh<
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshFrom3MX.cpp" />
     <ClCompile Include="STM\ScalableMeshInfo.cpp" />
+    <ClCompile Include="STM\ScalableMeshProgressiveContourQueryPlanner.cpp" />
+    <ClCompile Include="STM\ScalableMeshProgressiveQueryPlanner.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />

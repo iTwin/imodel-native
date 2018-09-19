@@ -155,7 +155,7 @@ DbResult SMSQLiteFile::UpdateDatabase()
     m_database->GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
     assert(stmtTest != nullptr);
     stmtTest->Step();
-#ifndef VANCOUVER_API
+//#ifndef VANCOUVER_API
     BESQL_VERSION_STRUCT databaseSchema(GET_VALUE_STR(stmtTest,0));
 
     for (size_t i = 0; i < GetNumberOfReleasedSchemas()- 1; ++i)
@@ -183,7 +183,7 @@ DbResult SMSQLiteFile::UpdateDatabase()
 #ifndef VANCOUVER_API
         stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
 #else
-        stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
+        stmt->BindText(1, versonJson, MAKE_COPY_YES);
 #endif
         status = stmt->Step();
         if (status == BE_SQLITE_DONE) 
@@ -193,7 +193,7 @@ DbResult SMSQLiteFile::UpdateDatabase()
             }
         }
     
-    #endif
+ //   #endif
 
 #ifndef NDEBUG
     if (status != BE_SQLITE_DONE && status != BE_SQLITE_READONLY)
@@ -215,18 +215,23 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         m_database->CloseDb();
 #ifndef VANCOUVER_API
     if (openShareable)
-    {
+        {
         result = m_database->OpenShared(filename, openReadOnly, true);
-    }
+        }
     else
 #endif
-    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
+        result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
 
     if (result != BE_SQLITE_ERROR_FileNotFound)
         {
 #ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
 #else
+    if (result != BE_SQLITE_ERROR_FileNotFound)
+        {
+        Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
+        result = m_database->IsProfileVersionUpToDate(params);
+        }
         if (result == BE_SQLITE_SCHEMA)
 #endif     
             {
@@ -234,8 +239,9 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
 #ifndef VANCOUVER_API
             openParamUpdate.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
+#else
+        m_database->CloseDb();
 #endif
-
             result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
             if (result != BE_SQLITE_OK)

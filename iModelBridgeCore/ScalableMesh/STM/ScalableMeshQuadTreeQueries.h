@@ -199,6 +199,14 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
 
             // Now the viewbox is in the coordinates of the STM whatever the units be.
             }
+
+        virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+        {
+            auto ret = new ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>(m_extent, m_rootToViewMatrix, m_viewportRotMatrix, m_viewBox, m_gatherTileBreaklines);
+            ret->SetMaxPixelError(GetMaxPixelError());
+            ret->SetMeanScreenPixelsPerPoint(GetMeanScreenPixelsPerPoint());
+            return ret;
+        }
 };
 
 
@@ -237,7 +245,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelPointIndexQue
                                    HPMMemoryManagedVector<POINT>& resultPoints);*/
 
         
-
+                            virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+                            {
+                                auto ret = new ScalableMeshQuadTreeLevelPointIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel, m_viewBox);
+                                return ret;
+                            }
 };        
 
 /*======================================================================================================
@@ -306,6 +318,21 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
                                    size_t numSubNodes,
                                    vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
+        virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+        {
+            auto ret = new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel,m_viewBox, m_pixelTolerance);
+            ret->m_useAllRes = m_useAllRes;
+            ret->m_alwaysVisible = m_alwaysVisible;
+            ret->m_extent3d = m_extent3d;
+            ret->m_ignoreFaceIndexes = m_ignoreFaceIndexes;
+            ret->m_includeUnbalancedLeafs = m_includeUnbalancedLeafs;
+            return ret;
+        }
+
+        void SetIgnoreFaceIndexes(bool ignoreIndexes)
+        {
+            m_ignoreFaceIndexes = ignoreIndexes;
+        }
 };     
 
 /*
@@ -367,6 +394,11 @@ public:
                                    size_t numSubNodes,
                                    vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
+        virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+        {
+            auto ret = new ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel, m_target, m_is2d, m_depth, m_useUnboundedRay, m_intersect);
+            return ret;
+        }
 };    
 
 /*
@@ -405,6 +437,12 @@ public:
                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                   size_t numSubNodes,
                                   vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
+
+        virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+        {
+            auto ret = new ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel, m_target, m_depth);
+            return ret;
+        }
 
 };    
 
@@ -514,6 +552,14 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                                           const EXTENT&                           i_visibleExtent,                                                          
                                                           double                                  i_RootToViewMatrix[][4],
                                                           bool& shouldAddNode) const;
+
+        virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+        {
+            auto ret = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>(m_extent, m_rootToViewMatrix, m_viewportRotMatrix, m_viewBox, m_gatherTileBreaklines, m_viewClipVector, m_invertClips, m_maxNumberOfPoints);
+            ret->SetMaxPixelError(GetMaxPixelError());
+            ret->SetMeanScreenPixelsPerPoint(GetMeanScreenPixelsPerPoint());
+            return ret;
+        }
         
 };
 
@@ -543,6 +589,14 @@ public:
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                               size_t numSubNodes,
                               ProducedNodeContainer<POINT, EXTENT>& foundNodes);
+
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+    {
+        auto ret = new ScalableMeshQuadTreeContextMeshQuery<POINT, EXTENT>(m_extent, m_rootToViewMatrix, m_viewportRotMatrix, m_viewClipVector);
+        ret->SetMaxPixelError(GetMaxPixelError());
+        ret->SetMeanScreenPixelsPerPoint(GetMeanScreenPixelsPerPoint());
+        return ret;
+    }
 };
 
 //#include "ScalableMeshQuadTreeQueries.hpp"
