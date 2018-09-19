@@ -88,7 +88,6 @@
 #include <DgnPlatform/LsLocal.h>
 #include <DgnPlatform/LineStyle.h>
 #include <DgnPlatform/DimensionStyle.h>
-#include <DgnView/DgnViewLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/RenderMaterial.h>
 #include <DgnPlatform/DgnMaterial.h>

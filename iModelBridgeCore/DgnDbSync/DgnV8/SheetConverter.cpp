@@ -62,7 +62,6 @@ ViewDefinitionPtr SheetViewFactory::_MakeView(Converter& converter, ViewDefiniti
     if (!parms.GetDgnModel().IsSheetModel())
         return nullptr;
 
-    DgnDbR db = converter.GetDgnDb();
     DefinitionModelPtr definitionModel = converter.GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         return nullptr;

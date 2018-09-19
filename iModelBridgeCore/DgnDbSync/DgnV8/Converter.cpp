@@ -527,7 +527,6 @@ Utf8String Converter::_ComputeModelName(DgnV8ModelCR v8Model)
     if (!_GetNamePrefix().empty())
         dgnDbModelName.insert(0, _GetNamePrefix().c_str());
 
-    DgnModels& models = m_dgndb->Models();
     models.ReplaceInvalidCharacters(dgnDbModelName, models.GetIllegalCharacters(), '_');
 
 #if 0

@@ -1197,7 +1197,7 @@ struct HostTerminator
     {
     ~HostTerminator()
         {
-        DgnViewLib::GetHost().Terminate(true);
+        DgnPlatformLib::GetHost().Terminate(true);
         iModelBridge::L10N::Terminate();
         }
     };
@@ -1275,7 +1275,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BentleyStatus::SUCCESS != LoadBridge())
         return RETURN_STATUS_CONVERTER_ERROR;
 
-    // Initialize the DgnViewLib Host.
+    // Initialize the DgnPlatformLib Host.
     m_repoAdmin = new FwkRepoAdmin(*this);  // TRICKY: This is ultimately passed to the host as a host variable, and host terimation will delete it.
     iModelBridge::Params params;
     SetBridgeParams(params, m_repoAdmin);
@@ -1286,7 +1286,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
     Dgn::iModelBridgeBimHost host(m_repoAdmin, fwkAssetsDir, fwkDb3, Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str());
-    DgnViewLib::Initialize(host, true);
+    DgnPlatformLib::Initialize(host, true);
 
     //  Initialize the bridge-specific L10N
     BeFileName bridgeSqlangPath(params.GetAssetsDir());

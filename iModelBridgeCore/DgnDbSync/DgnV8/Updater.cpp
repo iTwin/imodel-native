@@ -299,7 +299,7 @@ void ChangeDetector::_DetectDeletedElementsInFile(Converter& converter, DgnV8Fil
     for (auto modelInFile = modelsInFile.begin(); modelInFile != modelsInFile.end(); ++modelInFile)
         {
         SyncInfo::ElementIterator elementsInModel(converter.GetDgnDb(), "V8ModelSyncInfoId=?");
-        elementsInModel.GetStatement()->BindInt(1, modelInFile.GetV8ModelSyncInfoId().GetValue());
+        elementsInModel.GetStatement()->BindInt(1, static_cast<int>(modelInFile.GetV8ModelSyncInfoId().GetValue())); // NB sync info ID is row id...if we exceed MAX_INT we have a problem.
         _DetectDeletedElements(converter, elementsInModel);
         }
     }

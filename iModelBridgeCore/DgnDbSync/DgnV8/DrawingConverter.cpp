@@ -754,8 +754,6 @@ ViewDefinitionPtr DrawingViewFactory::_MakeView(Converter& converter, ViewDefini
     if (!parms.GetDgnModel().Is2dModel() || parms.GetDgnModel().IsSheetModel())
         return nullptr;
 
-    DgnDbR db = converter.GetDgnDb();
-
     converter._TurnOnExtractionCategories(*parms.m_categories);
 
     DrawingViewDefinitionPtr view = new DrawingViewDefinition(*converter.GetJobDefinitionModel(), parms.m_name, parms.GetDgnModel().GetModelId(), *parms.m_categories, *parms.m_dstyle->ToDisplayStyle2dP());

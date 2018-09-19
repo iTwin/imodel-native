@@ -515,7 +515,7 @@ void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8
 
     for (size_t iV8Glyph = 0; iV8Glyph < v8Text.GetNumGlyphs(); ++iV8Glyph)
         {
-        DgnGlyph::T_Id resolvedGlyphId = useDerivedGlyphIndices ? derivedGlyphIndices[iV8Glyph] : v8Text.GetGlyphCodes()[iV8Glyph];
+        DgnGlyph::T_Id resolvedGlyphId = useDerivedGlyphIndices ? static_cast<DgnGlyph::T_Id>(derivedGlyphIndices[iV8Glyph]) : v8Text.GetGlyphCodes()[iV8Glyph];
 
         dbText.m_glyphIds[iV8Glyph] = resolvedGlyphId;
         dbText.m_glyphs[iV8Glyph] = resolvedDbFont.FindGlyphCP(resolvedGlyphId, dbFontStyle);

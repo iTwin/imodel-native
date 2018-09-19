@@ -162,8 +162,7 @@ bool Converter::ThumbnailUpdateRequired(ViewDefinition const& view)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateThumbnails()
     {
-#define ELEMENT_TILE_GENERATE_THUMBNAILS
-#if defined(ELEMENT_TILE_GENERATE_THUMBNAILS)
+#if defined(TODO_IMODEL02_THUMBNAILS)
     ThumbnailConfig thumbnailConfig(m_config);
 
     if ((DgnViewType::None == thumbnailConfig.GetViewTypes()) || !_GetParams().WantThumbnails())
