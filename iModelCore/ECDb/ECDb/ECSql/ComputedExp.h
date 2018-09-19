@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ComputedExp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,7 @@ public:
 struct BooleanExp : ComputedExp
     {
 protected:
-    explicit BooleanExp(Type type) : ComputedExp(type) { SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Boolean)); }
+    explicit BooleanExp(Type type) : ComputedExp(type) { SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Boolean)); }
 
 public:
     virtual ~BooleanExp () {}

@@ -31,7 +31,6 @@ enum class ECSqlType
     Delete
     };
 
-
 typedef BeInt64Id ECContainerId;
 typedef BeInt64Id ECRelationshipConstraintId;
 

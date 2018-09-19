@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECInstanceUpdaterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -18,7 +18,7 @@ struct ECInstanceUpdaterAgainstPrimitiveClassTests : ECInstanceUpdaterTests
     protected:
         void UpdateInstances(Utf8CP className, Utf8CP schemaName, int numberOfInstances, bool populateAllProperties)
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("updateInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.ecschema.xml")));
+            ASSERT_EQ(SUCCESS, SetupECDb("updateInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
             ECClassCP testClass = m_ecdb.Schemas().GetClass(schemaName, className);
 
             ECInstanceInserter inserter(m_ecdb, *testClass, nullptr);
@@ -109,7 +109,7 @@ TEST_F(ECInstanceUpdaterAgainstPrimitiveClassTests, UpdateSingleInstanceOfPrimit
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateRelationships)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UpdateRelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("UpdateRelationships.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP navPropRelClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSAHasP_N1");
     ASSERT_TRUE(navPropRelClass != nullptr);
@@ -128,7 +128,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateRelationships)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updatewithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("updatewithcurrenttimestamptrigger.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "ClassWithLastModProp");
     ASSERT_TRUE(testClass != nullptr);
 
@@ -191,7 +191,7 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     ASSERT_EQ(SUCCESS, newLastMod.ToJulianDay(newLastModJdMsec));
 
     uint64_t timeSpan = newLastModJdMsec - firstLastModJdMsec;
-    ASSERT_GT(timeSpan, 1000) << "New LastMod must be at least 1 second later than old LastMod as test was paused for 1 sec before updating";
+    ASSERT_GT(timeSpan, 100) << "New LastMod must be later than old LastMod. Just test that it is a bit older (versus the exact difference) to keep the test robust.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -445,7 +445,7 @@ TEST_F(ECInstanceUpdaterTests, UpdaterBasedOnListOfPropertiesToBind)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECInstanceUpdaterTests, UpdateArrayProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updateArrayProperty.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("updateArrayProperty.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
 
     ECN::ECClassCP testClass = m_ecdb.Schemas().GetClass("KitchenSink", "TestClass");
     ASSERT_TRUE(testClass != nullptr);

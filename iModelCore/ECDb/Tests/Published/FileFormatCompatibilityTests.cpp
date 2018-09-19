@@ -89,6 +89,7 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
 
         static bool CompareTable(DbCR benchmark, DbCR actual, Utf8CP tableName, Utf8CP selectSql, CompareOptions options = CompareOptions::None);
 
+        static void AssertMetaSchemaEnumeration(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
         static Utf8String GetPkColumnName(DbCR db, Utf8CP tableName);
         static BeFileName GetBenchmarkFileFolder(ProfileVersion const&);
         static BeFileName GetBenchmarkSchemaFolder();
@@ -945,6 +946,296 @@ TEST_F(FileFormatCompatibilityTests, PrimitiveDataTypeFormat)
     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// The profile upgrade uses ECEnumerator::DetermineName to update pre EC3.2 enumerators
+// This test is a safe-guard to ensure that the logic of that method does not change
+// @bsiclass                                     Krischan.Eberle                  01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ECEnumUpgrade)
+    {
+    int32_t val = 123;
+
+    EXPECT_STREQ("myvalue", ECEnumerator::DetermineName("myenum", "myvalue", nullptr).c_str());
+    EXPECT_STREQ("myValue", ECEnumerator::DetermineName("myEnum", "myValue", nullptr).c_str());
+    EXPECT_STREQ("my__x0020__Value", ECEnumerator::DetermineName("myEnum", "my Value", nullptr).c_str());
+    EXPECT_STREQ("__x0031__", ECEnumerator::DetermineName("myenum", "1", nullptr).c_str());
+
+    EXPECT_STREQ("myvalue", ECEnumerator::DetermineName("myenum", "myvalue", &val).c_str());
+    EXPECT_STREQ("myValue", ECEnumerator::DetermineName("myEnum", "myValue", &val).c_str());
+    EXPECT_STREQ("my__x0020__Value", ECEnumerator::DetermineName("myEnum", "my Value", &val).c_str());
+    EXPECT_STREQ("__x0031__", ECEnumerator::DetermineName("myenum", "1", &val).c_str());
+
+    EXPECT_STREQ("myenum123", ECEnumerator::DetermineName("myenum", nullptr, &val).c_str());
+    EXPECT_STREQ("myEnum123", ECEnumerator::DetermineName("myEnum", nullptr, &val).c_str());
+    val = -1;
+    EXPECT_STREQ("myEnum__x002D__1", ECEnumerator::DetermineName("myEnum", nullptr, &val).c_str());
+
+    val = 123;
+    EXPECT_STREQ("my__x0020__enum123", ECEnumerator::DetermineName("my enum", nullptr, &val).c_str());
+    EXPECT_STREQ("my__x0020__Enum123", ECEnumerator::DetermineName("my Enum", nullptr, &val).c_str());
+    val = -1;
+    EXPECT_STREQ("my__x0020__Enum__x002D__1", ECEnumerator::DetermineName("my Enum", nullptr, &val).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, PreEC32Enums)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("PreEC32Enums.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="IntEnumNoDisplayLabel" description="1" backingTypeName="int" >
+                    <ECEnumerator value="0" />
+                    <ECEnumerator value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="IntEnumWithDisplayLabel" description="2" backingTypeName="int" >
+                    <ECEnumerator value="0" displayLabel="Turn On"/>
+                    <ECEnumerator value="1" displayLabel="Turn Off"/>
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumNoDisplayLabel" description="3" backingTypeName="string" >
+                    <ECEnumerator value="On" />
+                    <ECEnumerator value="Off" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumWithDisplayLabel" description="4" backingTypeName="string" >
+                    <ECEnumerator value="On" displayLabel="Turn On" />
+                    <ECEnumerator value="Off" displayLabel="Turn Off" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumNonECNameValueNoDisplayLabel" description="5" backingTypeName="string" >
+                    <ECEnumerator value="Turn On"  />
+                    <ECEnumerator value="Turn Off"  />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnumNonECNameValueWithDisplayLabel" description="6" backingTypeName="string" >
+                    <ECEnumerator value="Turn On"  displayLabel="Turn Me On"/>
+                    <ECEnumerator value="Turn Off" displayLabel="Turn Me Off" />
+                </ECEnumeration>
+        </ECSchema>)xml")));
+
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT e.Name,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON e.SchemaId=s.Id WHERE s.Name='TestSchema' ORDER BY e.Description"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"IntEnumNoDisplayLabel0","IntValue":0},{"Name":"IntEnumNoDisplayLabel1","IntValue":1}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"IntEnumWithDisplayLabel0", "IntValue":0, "DisplayLabel":"Turn On"},{"Name":"IntEnumWithDisplayLabel1", "IntValue":1, "DisplayLabel":"Turn Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On", "StringValue":"On"},{"Name":"Off","StringValue":"Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On", "StringValue":"On", "DisplayLabel":"Turn On"},{"Name":"Off", "StringValue":"Off", "DisplayLabel":"Turn Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"Turn__x0020__On", "StringValue":"Turn On"},{"Name":"Turn__x0020__Off","StringValue":"Turn Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"Turn__x0020__On", "StringValue":"Turn On", "DisplayLabel":"Turn Me On"},{"Name":"Turn__x0020__Off", "StringValue":"Turn Off", "DisplayLabel":"Turn Me Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnumNoDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("IntEnumNoDisplayLabel0", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_STREQ("IntEnumNoDisplayLabel1", enumValue->GetName().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+
+    AssertMetaSchemaEnumeration(m_ecdb,"TestSchema", "IntEnumNoDisplayLabel");
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnumWithDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("IntEnumWithDisplayLabel0", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn On", enumValue->GetDisplayLabel().c_str());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("IntEnumWithDisplayLabel1", enumValue->GetName().c_str());
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn Off", enumValue->GetDisplayLabel().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "IntEnumWithDisplayLabel");
+
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnumNoDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "StringEnumNoDisplayLabel");
+
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnumWithDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn On", enumValue->GetDisplayLabel().c_str());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+    ASSERT_TRUE(enumValue->GetIsDisplayLabelDefined());
+    ASSERT_STREQ("Turn Off", enumValue->GetDisplayLabel().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "StringEnumWithDisplayLabel");
+
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnumNonECNameValueNoDisplayLabel");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("Turn On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Turn__x0020__On", enumValue->GetName().c_str());
+    ASSERT_STREQ("Turn On", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+    enumValue = ecenum->FindEnumerator("Turn Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Turn__x0020__Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Turn Off", enumValue->GetString().c_str());
+    ASSERT_FALSE(enumValue->GetIsDisplayLabelDefined());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "StringEnumNonECNameValueNoDisplayLabel");
+    }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, PreEC32EnumsWithSchemaUpgrade)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("PreEC32EnumsWithSchemaUpgrade.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator value="0" />
+                    <ECEnumerator value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator value="On" />
+                    <ECEnumerator value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT e.Name,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON e.SchemaId=s.Id WHERE s.Name='TestSchema' ORDER BY e.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"IntEnum0","IntValue":0},{"Name":"IntEnum1","IntValue":1}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On", "StringValue":"On"},{"Name":"Off","StringValue":"Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("IntEnum0", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_STREQ("IntEnum1", enumValue->GetName().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "IntEnum");
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "StringEnum");
+
+    }
+
+    // now run schema upgrade that modifies the names
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8" ?>
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="IntEnum" backingTypeName="int" >
+                    <ECEnumerator name="On" value="0" />
+                    <ECEnumerator name="Off" value="1" />
+                </ECEnumeration>
+                <ECEnumeration typeName="StringEnum" backingTypeName="string" >
+                    <ECEnumerator name="On" value="On" />
+                    <ECEnumerator name="Off" value="Off" />
+                </ECEnumeration>
+                </ECSchema>)xml")));
+
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT e.Name,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON e.SchemaId=s.Id WHERE s.Name='TestSchema' ORDER BY e.Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On","IntValue":0},{"Name":"Off","IntValue":1}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(JsonValue(R"json([{"Name":"On", "StringValue":"On"},{"Name":"Off","StringValue":"Off"}])json"), JsonValue(stmt.GetValueText(1))) << stmt.GetValueText(0);
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "IntEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator(0);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_EQ(0, enumValue->GetInteger());
+    enumValue = ecenum->FindEnumerator(1);
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_EQ(1, enumValue->GetInteger());
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "IntEnum");
+    }
+
+    {
+    ECEnumerationCP ecenum = m_ecdb.Schemas().GetEnumeration("TestSchema", "StringEnum");
+    ASSERT_TRUE(ecenum != nullptr);
+    ECEnumeratorCP enumValue = ecenum->FindEnumerator("On");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("On", enumValue->GetName().c_str());
+    ASSERT_STREQ("On", enumValue->GetString().c_str());
+    enumValue = ecenum->FindEnumerator("Off");
+    ASSERT_TRUE(enumValue != nullptr);
+    ASSERT_STREQ("Off", enumValue->GetName().c_str());
+    ASSERT_STREQ("Off", enumValue->GetString().c_str());
+
+    AssertMetaSchemaEnumeration(m_ecdb, "TestSchema", "StringEnum");
+
+    }
+    }
+
 //---------------------------------------------------------------------------------------
 //* quick check whether schema import works for benchmark schemas.
 //* Use this test to create a new benchmark file
@@ -1052,6 +1343,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ECDb upgradedFile;
     ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
 
+    //verify 4.0.0.1 upgrade
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, "SELECT Name FROM " BEDB_TABLE_Local " ORDER BY Name"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "First row";
@@ -1059,7 +1351,132 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Second row";
     ASSERT_STRCASEEQ("ec_instanceidsequence", stmt.GetValueText(0)) << "Second row";
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
+    stmt.Finalize();
+    
+    //verify 4.0.0.2 upgrade
+    Db benchmarkFile;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
+
+    {
+    //verify that ECDbMeta schema was upgraded to version 4.0.1
+    //and ECDbSystem schema was upgraded to version 5.0.1
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT Name,VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name IN ('ECDbFileInfo','ECDbMeta','ECDbSystem') ORDER BY Name"));
+    ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
+    EXPECT_STREQ("ECDbFileInfo", ecsqlStmt.GetValueText(0));
+    EXPECT_EQ(2, ecsqlStmt.GetValueInt(1));
+    EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
+    EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
+    ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
+    EXPECT_STREQ("ECDbMeta", ecsqlStmt.GetValueText(0));
+    EXPECT_EQ(4, ecsqlStmt.GetValueInt(1));
+    EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
+    EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
+    ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
+    EXPECT_STREQ("ECDbSystem", ecsqlStmt.GetValueText(0));
+    EXPECT_EQ(5, ecsqlStmt.GetValueInt(1));
+    EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
+    EXPECT_EQ(1, ecsqlStmt.GetValueInt(3));
+    ecsqlStmt.Finalize();
+
+    //verify that extended types were added to ECDbSystem classes
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT p.ExtendedTypeName FROM meta.ECPropertyDef p JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id JOIN meta.ECSchemaDef s ON s.ECInstanceId=c.Schema.Id WHERE s.Name='ECDbSystem' AND p.PrimitiveType=?"));
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.BindInt(1, PrimitiveType::PRIMITIVETYPE_Long));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == ecsqlStmt.Step())
+        {
+        rowCount++;
+        ASSERT_STREQ("Id", ecsqlStmt.GetValueText(0)) << "Expected ExtendedTypeName";
+        }
+    ASSERT_EQ(8, rowCount) << "Expected number of id properties in ECDbSystem schema";
+    ecsqlStmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT p.ExtendedTypeName FROM meta.ECPropertyDef p JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id JOIN meta.ECSchemaDef s ON s.ECInstanceId=c.Schema.Id WHERE s.Name='ECDbFileInfo' AND c.Name='FileInfoOwnership'"));
+    rowCount = 0;
+    while (BE_SQLITE_ROW == ecsqlStmt.Step())
+        {
+        rowCount++;
+        ASSERT_STREQ("Id", ecsqlStmt.GetValueText(0)) << "Expected ExtendedTypeName";
+        }
+    ASSERT_EQ(4, rowCount) << "Expected number of id properties in ECDbFileInfo.FileInfoOwnership class";
     }
+
+    bset<ECSchemaId> ecdbEnumSchemas;
+    {
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT Id FROM ec_Schema WHERE Name IN ('ECDbChange','ECDbFileInfo','ECDbMeta')"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ecdbEnumSchemas.insert(stmt.GetValueId<ECSchemaId>(0));
+        }
+    stmt.Finalize();
+    }
+
+    Statement benchmarkEnumsStmt, upgradedEnumsStmt;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkEnumsStmt.Prepare(benchmarkFile, "SELECT EnumValues,Name,SchemaId FROM ec_Enumeration ORDER BY Id"));
+    ASSERT_EQ(BE_SQLITE_OK, upgradedEnumsStmt.Prepare(upgradedFile, "SELECT EnumValues,Name,SchemaId FROM ec_Enumeration ORDER BY Id"));
+
+    while (BE_SQLITE_ROW == benchmarkEnumsStmt.Step())
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, upgradedEnumsStmt.Step());
+
+        Utf8CP enumName = benchmarkEnumsStmt.GetValueText(1);
+        ASSERT_STREQ(enumName, upgradedEnumsStmt.GetValueText(1));
+        ECSchemaId schemaId = benchmarkEnumsStmt.GetValueId<ECSchemaId>(2);
+        ASSERT_EQ(schemaId, upgradedEnumsStmt.GetValueId<ECSchemaId>(2));
+
+        const bool isECDbEnum = ecdbEnumSchemas.find(schemaId) != ecdbEnumSchemas.end();
+
+        Json::Value benchmarkEnumValuesJson, upgradedEnumValuesJson;
+        ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(benchmarkEnumValuesJson, benchmarkEnumsStmt.GetValueText(0)));
+        ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(upgradedEnumValuesJson, upgradedEnumsStmt.GetValueText(0)));
+        ASSERT_EQ(benchmarkEnumValuesJson.size(), upgradedEnumValuesJson.size());
+        for (Json::ArrayIndex i = 0; i < benchmarkEnumValuesJson.size(); i++)
+            {
+            Json::Value const& benchmarkEnumValueJson = benchmarkEnumValuesJson[i];
+            Json::Value const& upgradedEnumValueJson = upgradedEnumValuesJson[i];
+            ASSERT_TRUE(upgradedEnumValueJson.isMember("Name"));
+            Utf8CP actualName = upgradedEnumValueJson["Name"].asCString();
+
+            if (isECDbEnum)
+                {
+                if (BeStringUtilities::StricmpAscii(benchmarkEnumValueJson["DisplayLabel"].asCString(), "Point2d") == 0)
+                    {
+                    EXPECT_STREQ("Point2d", actualName) << enumName << " (Schema: " << schemaId.ToString() << ") Point2d was lower-cased during the upgrade";
+                    EXPECT_STREQ("Point2d", upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") Point3d was lower-cased during the upgrade";
+                    }
+                else if (BeStringUtilities::StricmpAscii(benchmarkEnumValueJson["DisplayLabel"].asCString(), "Point3d") == 0)
+                    {
+                    EXPECT_STREQ("Point3d", actualName) << enumName << " (Schema: " << schemaId.ToString() << ") For ECDb enums the name is the the display label";
+                    EXPECT_STREQ("Point3d", upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") For ECDb enums the name is the the display label";
+                    }
+                else
+                    {
+                    EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), actualName) << enumName << " (Schema: " << schemaId.ToString() << ") For ECDb enums the name is the the display label";
+                    EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString();
+                    }
+                }
+            else
+                {
+                if (benchmarkEnumValueJson.isMember("StringValue"))
+                    EXPECT_STREQ(benchmarkEnumValueJson["StringValue"].asCString(), actualName);
+                else if (benchmarkEnumValueJson.isMember("IntValue"))
+                    EXPECT_STREQ(Utf8PrintfString("%s%d", enumName, (int) benchmarkEnumValueJson["IntValue"].asInt()).c_str(), actualName);
+                else
+                    FAIL();
+
+                EXPECT_EQ(benchmarkEnumValueJson.isMember("DisplayLabel"), upgradedEnumValueJson.isMember("DisplayLabel")) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
+                EXPECT_STREQ(benchmarkEnumValueJson["DisplayLabel"].asCString(), upgradedEnumValueJson["DisplayLabel"].asCString()) << enumName << " (Schema: " << schemaId.ToString() << ") Benchmark: " << benchmarkEnumValueJson.ToString() << " Upgraded: " << upgradedEnumValueJson.ToString();
+                }
+            }
+        }
+
+    ASSERT_TRUE(upgradedFile.TableExists("ec_Unit"));
+    ASSERT_TRUE(upgradedFile.TableExists("ec_UnitSystem"));
+    ASSERT_TRUE(upgradedFile.TableExists("ec_Phenomenon"));
+    ASSERT_TRUE(upgradedFile.TableExists("ec_Format"));
+    }
+
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/18
@@ -1084,17 +1501,17 @@ TEST_F(FileFormatCompatibilityTests, OpenOldFileWithDifferentOptions)
     ScopedDisableFailOnAssertion disableAssertion;
     ASSERT_EQ((int) BE_SQLITE_READONLY, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly, ECDb::ProfileUpgradeOptions::Upgrade))) << "ProfileUpgradeOptions::Upgrade requires OpenMode::ReadWrite";
     }
-    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly))) << "Opens without upgrade";
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))) << "Can open readwrite";
     EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
     oldFile.CloseDb();
-    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite))) << "Opens without upgrade";
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::None))) << "Can open readwrite";
     EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
     oldFile.CloseDb();
-    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::None))) << "Open without upgrade";
+    ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly))) << "Can open readonly";
     EXPECT_EQ(ProfileVersion(4, 0, 0, 0), oldFile.GetECDbProfileVersion()) << "Open without upgrade";
     oldFile.CloseDb();
     ASSERT_EQ((int) BE_SQLITE_OK, (int) oldFile.OpenBeSQLiteDb(oldFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade))) << "Open with upgrade";
-    EXPECT_EQ(ProfileVersion(4, 0, 0, 1), oldFile.GetECDbProfileVersion()) << "Open with upgrade";
+    EXPECT_EQ(ECDb::CurrentECDbProfileVersion(), oldFile.GetECDbProfileVersion()) << "Open with upgrade";
     oldFile.CloseDb();
     }
 
@@ -1123,7 +1540,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(25, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     
@@ -1170,7 +1587,12 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
             {
             Utf8CP actualDdl = actualDdlStmt.GetValueText(0);
 
-            EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << benchmarkName;
+            if (BeStringUtilities::StricmpAscii(benchmarkName,"ec_Schema") == 0)
+                EXPECT_STREQ("CREATE TABLE ec_Schema(Id INTEGER PRIMARY KEY,Name TEXT UNIQUE NOT NULL COLLATE NOCASE,DisplayLabel TEXT,Description TEXT,Alias TEXT UNIQUE NOT NULL COLLATE NOCASE,VersionDigit1 INTEGER NOT NULL,VersionDigit2 INTEGER NOT NULL,VersionDigit3 INTEGER NOT NULL, OriginalECXmlVersionMajor INTEGER, OriginalECXmlVersionMinor INTEGER)",
+                             actualDdl);
+            else
+                EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << benchmarkName;
+
             actualDdlDumpFile->PutLine(WString(actualDdl, BentleyCharEncoding::Utf8).c_str(), true);
             }
         else
@@ -1182,7 +1604,40 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    ASSERT_EQ(benchmarkMasterTableRowCount, actualDdlStmt.GetValueInt(0)) << benchmarkFilePath.GetNameUtf8();
+    ASSERT_EQ(benchmarkMasterTableRowCount + 18, actualDdlStmt.GetValueInt(0)) << " 18 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  01/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ProfileUpgrade_Enums)
+    {
+    BeFileName benchmarkFilePath = GetBenchmarkFileFolder(InitialBim2ProfileVersion());
+    benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
+
+    BeFileName artefactOutDir;
+    BeTest::GetHost().GetOutputRoot(artefactOutDir);
+    if (!artefactOutDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(artefactOutDir));
+
+    BeFileName upgradedFilePath(artefactOutDir);
+    upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
+    {
+    //upgrade and close again
+    ECDb upgradedFile;
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
+    }
+
+    ECDb upgradedFile;
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(upgradedFile, "SELECT s.Name, e.Name FROM meta.ECEnumerationDef e JOIN meta.ECSchemaDef s ON e.Schema.Id=s.ECInstanceId"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        AssertMetaSchemaEnumeration(upgradedFile, stmt.GetValueText(0), stmt.GetValueText(1));
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1202,7 +1657,7 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(25, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     //schema profile tables
@@ -2024,25 +2479,25 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
-    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKoq" persistenceUnit="u:KM_PER_SEC" presentationUnits="M/SEC" relativeError=".5"/>
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
-    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKoq" persistenceUnit="u:KM_PER_SEC(DefaultReal)" presentationUnits="M/SEC" relativeError=".5"/>
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -2051,7 +2506,7 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -2060,16 +2515,16 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
-    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKoq" persistenceUnit="KM/SEC" presentationUnits="u:M_PER_SEC(DefaultReal)" relativeError=".5"/>
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
     //User defined units (only possible in EC3.2, but not yet in EC3.1)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
@@ -2127,6 +2582,292 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
         </ECSchema>)xml")));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
+    {
+    //Future EC3.2 units (If this code has already EC3.2 we don't need to execute the test)
+    if (ECN::ECVersion::Latest > ECN::ECVersion::V3_1)
+        return;
+
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_KOQs.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="CM" presentationUnits="FT;IN;M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    KindOfQuantityId koqId;
+    { 
+    KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");
+    ASSERT_TRUE(koq != nullptr);
+    koqId = koq->GetId();
+    ASSERT_TRUE(koqId.IsValid());
+    }
+
+
+    auto setEC32 = [&koqId, this] (Utf8CP persistenceUnitStr, Utf8CP presentationFormatStr)
+        {
+        BeFileName ecdbPath(m_ecdb.GetDbFileName());
+        CloseECDb();
+
+        //bump up profile version (which is expected if the file format changes)
+        Db ecdb;
+        if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb(ecdbPath, Db::OpenParams(Db::OpenMode::ReadWrite)))
+            return ERROR;
+
+        if (BE_SQLITE_OK != IncrementProfileVersion(ecdb))
+            return ERROR;
+
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("UPDATE ec_KindOfQuantity SET PersistenceUnit=?, PresentationUnits=? WHERE Id=?");
+        if (stmt == nullptr)
+            return ERROR;
+
+        stmt->BindText(1, persistenceUnitStr, Statement::MakeCopy::No);
+        if (!Utf8String::IsNullOrEmpty(presentationFormatStr))
+            stmt->BindText(2, presentationFormatStr, Statement::MakeCopy::No);
+
+        stmt->BindId(3, koqId);
+        if (BE_SQLITE_DONE != stmt->Step())
+            return ERROR;
+
+        stmt = nullptr;
+        if (BE_SQLITE_OK != ecdb.SaveChanges())
+            return ERROR;
+
+        ecdb.CloseDb();
+
+        if (BE_SQLITE_OK != OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly)))
+            return ERROR;
+
+        return SUCCESS;
+        };
+
+    auto getKoq = [this] () { return m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");};
+
+    auto getPropertyKoq = [this] ()
+        {
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+        if (ecClass == nullptr)
+            return (KindOfQuantityCP) nullptr;
+
+        ECPropertyCP prop = ecClass->GetPropertyP("Prop");
+        if (prop == nullptr)
+            return (KindOfQuantityCP) nullptr;
+
+        return prop->GetKindOfQuantity();
+        };
+
+    auto assertUnit = [] (ECN::ECUnitCR unit, bool expectedIsValidUnit, Utf8CP expectedUnitName)
+        {
+        EXPECT_EQ(expectedIsValidUnit, unit.IsValid()) << unit.GetFullName();
+        EXPECT_STRCASEEQ(expectedUnitName, unit.GetFullName().c_str());
+        };
+
+    //garbage units
+    {
+    ASSERT_EQ(SUCCESS, setEC32("garbage(unknownFormat)", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("garbage", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("garbage(unknownFormat)", R"json(["CM","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("garbage", R"json(["CM","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["CM","garbage(unknownFormat)"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["CM","garbage"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["garbage(unknownFormat)","CM"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["garbage","CM"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    }
+
+    //User defined EC3.2 units
+    {
+    ASSERT_EQ(SUCCESS, setEC32("myalias:myunit(myformat)", R"json(["myalias:mydisplayunit1(myformat)","myalias:mydisplayunit2(myotherformat)"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), false, "myalias:myunit");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("myunit(myformat)", R"json(["mydisplayunit1(myformat)","mydisplayunit2(myotherformat)"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), false, "myunit");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("myalias:myunit", R"json(["myalias:mydisplayunit1","myalias:mydisplayunit2"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), false, "myalias:myunit");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["myalias:myunit(myformat)","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["myalias:myunit","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["KM","myalias:myunit(myformat)","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["KM","myalias:myunit","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
+    }
+
+    //standard units
+    {
+    ASSERT_EQ(SUCCESS, setEC32("KM", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("u:KM", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["CM","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32("u:KM", R"json(["u:CM","u:M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
+    }
+
+    //standard units where ECName differs from unit name
+    {
+    ASSERT_EQ(SUCCESS, setEC32("u:CM_PER_SEC", R"json(["u:M_PER_SEC"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM_PER_SEC");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    }
+
+    }
+
 //*****************************************************************************************
 // FileFormatCompatibilityTests
 //*****************************************************************************************
@@ -2153,6 +2894,53 @@ DbResult FileFormatCompatibilityTests::IncrementProfileVersion(DbR db)
     ProfileVersion profileVersion(profileVersionStr.c_str());
     profileVersion = ProfileVersion(profileVersion.GetMajor(), profileVersion.GetMinor(), profileVersion.GetSub1(), profileVersion.GetSub2() + 1);
     return db.SavePropertyString(profileVersionSpec, profileVersion.ToJson());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2018
+//---------------------------------------------------------------------------------------
+//static
+void FileFormatCompatibilityTests::AssertMetaSchemaEnumeration(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
+    {
+    ECEnumerationCP expectedEnum = ecdb.Schemas().GetEnumeration(schemaName, enumName);
+    ASSERT_TRUE(expectedEnum != nullptr) << schemaName << "." << enumName;
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT e.Name, e.EnumValues FROM meta.ECEnumerationDef e JOIN meta.ECSchemaDef s ON s.ECInstanceId=e.Schema.Id WHERE s.Name=? AND e.Name=?")) << schemaName << "." << enumName;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No)) << schemaName << "." << enumName;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(2, enumName, IECSqlBinder::MakeCopy::No)) << schemaName << "." << enumName;
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << schemaName << "." << enumName;
+
+    ASSERT_STREQ(enumName, stmt.GetValueText(0)) << schemaName << "." << enumName;
+
+    IECSqlValue const& enumValues = stmt.GetValue(1);
+    ASSERT_EQ((int) expectedEnum->GetEnumeratorCount(), enumValues.GetArrayLength()) << schemaName << "." << enumName;
+    auto expectedEnumeratorIt = expectedEnum->GetEnumerators().begin();
+    for (IECSqlValue const& enumValue : enumValues.GetArrayIterable())
+        {
+        ECEnumeratorCP expectedEnumerator = *expectedEnumeratorIt;
+
+        ASSERT_STREQ(expectedEnumerator->GetName().c_str(), enumValue["Name"].GetText()) << schemaName << "." << enumName;
+        if (expectedEnumerator->IsInteger())
+            ASSERT_EQ(expectedEnumerator->GetInteger(), enumValue["IntValue"].GetInt()) << schemaName << "." << enumName;
+        else
+            ASSERT_STREQ(expectedEnumerator->GetString().c_str(), enumValue["StringValue"].GetText()) << schemaName << "." << enumName;
+
+        if (expectedEnumerator->GetIsDisplayLabelDefined())
+            ASSERT_STREQ(expectedEnumerator->GetInvariantDisplayLabel().c_str(), enumValue["DisplayLabel"].GetText()) << schemaName << "." << enumName;
+        else
+            ASSERT_TRUE(enumValue["DisplayLabel"].IsNull()) << schemaName << "." << enumName;
+
+        if (!expectedEnumerator->GetInvariantDescription().empty())
+            ASSERT_STREQ(expectedEnumerator->GetInvariantDescription().c_str(), enumValue["Description"].GetText()) << schemaName << "." << enumName;
+        else
+            ASSERT_TRUE(enumValue["Description"].IsNull()) << schemaName << "." << enumName;
+
+        ++expectedEnumeratorIt;
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << schemaName << "." << enumName;
     }
 
 //---------------------------------------------------------------------------------------

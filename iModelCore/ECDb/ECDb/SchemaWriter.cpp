@@ -6,22 +6,25 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, ECDbCR ecdb, SchemaImportContext& schemaImportCtx, bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies)
+BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext& schemaImportCtx, bvector<ECSchemaCP> const& schemasRaw)
     {
     PERFLOG_START("ECDb", "Schema import> Persist schemas");
 
-    Context ctx(ecdb, schemaImportCtx);
-    if (SUCCESS != ValidateSchemasPreImport(ctx, primarySchemasOrderedByDependencies))
+    Context ctx(schemaImportCtx);
+    bvector<ECSchemaCP> schemas;
+    if (SUCCESS != ctx.PreprocessSchemas(schemas, schemasRaw))
         return ERROR;
 
-    if (SUCCESS != CompareSchemas(ctx, primarySchemasOrderedByDependencies))
+    if (SUCCESS != CompareSchemas(ctx, schemas))
         return ERROR;
 
     if (ctx.GetSchemasToImport().empty())
@@ -29,6 +32,16 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
 
     for (ECSchemaCP schema : ctx.GetSchemasToImport())
         {
+        if (!ctx.IsEC32AvailableInFile())
+            {
+            if (schema->OriginalECXmlVersionAtLeast(ECVersion::V3_2))
+                {
+                ctx.Issues().ReportV("Failed to import ECSchemas. Schema '%s' is an EC %" PRIu32 ".%" PRIu32 " schema. Schemas with ECVersion 3.2 or higher cannot be imported in a file that does not support EC3.2 yet.",
+                                     schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionMajor(), schema->GetOriginalECXmlVersionMinor());
+                return ERROR;
+                }
+            }
+
         if (SUCCESS != ImportSchema(ctx, *schema))
             return ERROR;
         }
@@ -44,32 +57,23 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                     05/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::ValidateSchemasPreImport(Context const& ctx, bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies)
-    {
-    const bool isValid = SchemaValidator::ValidateSchemas(ctx.ImportCtx(), ctx.Issues(), primarySchemasOrderedByDependencies);
-    return isValid ? SUCCESS : ERROR;
-    }
-
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
     {
-    SchemaChange* schemaChange = ctx.Changes().Find(ecSchema.GetName().c_str());
+    SchemaChange* schemaChange = ctx.GetDiff().GetSchemaChange(ecSchema.GetName());
     if (schemaChange != nullptr)
         {
         if (schemaChange->GetStatus() == ECChange::Status::Done)
             return SUCCESS;
 
-        if (schemaChange->GetState() == ChangeState::Modified)
+        if (schemaChange->GetOpCode() == ECChange::OpCode::Modified)
             {
             ECSchemaCP existingSchema = nullptr;
             for (ECSchemaCP schema : ctx.GetExistingSchemas())
                 {
-                if (schema->GetName().Equals(schemaChange->GetId()))
+                if (schema->GetName().Equals(schemaChange->GetChangeName()))
                     {
                     existingSchema = schema;
                     break;
@@ -83,11 +87,11 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             return UpdateSchema(ctx, *schemaChange, *existingSchema, ecSchema);
             }
 
-        if (schemaChange->GetState() == ChangeState::Deleted)
+        if (schemaChange->GetOpCode() == ECChange::OpCode::Deleted)
             {
             schemaChange->SetStatus(ECChange::Status::Done);
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting an ECSchema is not supported.",
-                                 ecSchema.GetFullSchemaName().c_str());
+                                 ecSchema.GetName().c_str());
             return ERROR;
             }
         }
@@ -95,7 +99,7 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
     if (ctx.GetSchemaManager().ContainsSchema(ecSchema.GetName()))
         return SUCCESS;
 
-    if (SUCCESS != InsertSchemaEntry(ctx, ecSchema))
+    if (SUCCESS != InsertSchemaEntry(ctx.GetECDb(), ecSchema))
         {
         DbResult lastErrorCode;
         ctx.GetECDb().GetLastError(&lastErrorCode);
@@ -118,6 +122,46 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             {
             ctx.Issues().ReportV("Failed to import ECEnumeration '%s'.", ecEnum->GetFullName().c_str());
             return ERROR;
+            }
+        }
+
+    if (ctx.IsEC32AvailableInFile())
+        {
+        //Unit stuff must be imported before KOQs as KOQ reference them
+        for (UnitSystemCP us : ecSchema.GetUnitSystems())
+            {
+            if (SUCCESS != ImportUnitSystem(ctx, *us))
+                {
+                ctx.Issues().ReportV("Failed to import UnitSystem '%s'.", us->GetFullName().c_str());
+                return ERROR;
+                }
+            }
+
+        for (PhenomenonCP ph : ecSchema.GetPhenomena())
+            {
+            if (SUCCESS != ImportPhenomenon(ctx, *ph))
+                {
+                ctx.Issues().ReportV("Failed to import Phenomenon '%s'.", ph->GetFullName().c_str());
+                return ERROR;
+                }
+            }
+
+        for (ECUnitCP unit : ecSchema.GetUnits())
+            {
+            if (SUCCESS != ImportUnit(ctx, *unit))
+                {
+                ctx.Issues().ReportV("Failed to import Unit '%s'.", unit->GetFullName().c_str());
+                return ERROR;
+                }
+            }
+
+        for (ECFormatCP format : ecSchema.GetFormats())
+            {
+            if (SUCCESS != ImportFormat(ctx, *format))
+                {
+                ctx.Issues().ReportV("Failed to import Format '%s'.", format->GetFullName().c_str());
+                return ERROR;
+                }
             }
         }
 
@@ -175,10 +219,17 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(Context& ctx, ECSchemaC
     for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : references)
         {
         ECSchemaCP reference = kvPair.second.get();
+        if (!ctx.IsEC32AvailableInFile())
+            {
+            Context::LegacySchemaImportHelper::Action importAction = ctx.LegacySchemaImportHelper().GetImportAction(reference->GetSchemaKey());
+            if (importAction == Context::LegacySchemaImportHelper::Action::Ignore)
+                continue;
+            }
+
         ECSchemaId referenceId = SchemaPersistenceHelper::GetSchemaId(ctx.GetECDb(), DbTableSpace::Main(), reference->GetName().c_str(), SchemaLookupMode::ByName);
         if (!referenceId.IsValid())
             {
-            BeAssert(false && "BuildDependencyOrderedSchemaList used by caller should have ensured that all references are already imported");
+            BeAssert(false && "All referenced schemas are expected to be imported before.");
             return ERROR;
             }
 
@@ -226,7 +277,7 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
         }
     
     //now import actual ECClass
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Class(SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType) VALUES(?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Class "(SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType) VALUES(?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -329,7 +380,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Enumeration(SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues) VALUES(?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Enumeration "(SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues) VALUES(?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -358,7 +409,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
         return ERROR;
 
     Utf8String enumValueJson;
-    if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, ecEnum))
+    if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, ecEnum, ctx.IsEC32AvailableInFile()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindText(7, enumValueJson, Statement::MakeCopy::No))
@@ -372,6 +423,398 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
         return ERROR;
 
     const_cast<ECEnumerationR>(ecEnum).SetId(enumId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportUnitSystem(Context& ctx, UnitSystemCR us)
+    {
+    if (ctx.GetSchemaManager().GetUnitSystemId(us).IsValid())
+        return SUCCESS;
+
+    if (!ctx.GetSchemaManager().GetSchemaId(us.GetSchema()).IsValid())
+        {
+        ctx.Issues().ReportV("Failed to import UnitSystem '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", us.GetName().c_str(), us.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import UnitSystem because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_UnitSystem "(SchemaId,Name,DisplayLabel,Description) VALUES(?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, us.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(2, us.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (us.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(3, us.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (us.GetIsDescriptionDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, us.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    const UnitSystemId usId = DbUtilities::GetLastInsertedId<UnitSystemId>(ctx.GetECDb());
+    if (!usId.IsValid())
+        return ERROR;
+
+    const_cast<UnitSystemR>(us).SetId(usId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportPhenomenon(Context& ctx, PhenomenonCR ph)
+    {
+    if (ctx.GetSchemaManager().GetPhenomenonId(ph).IsValid())
+        return SUCCESS;
+
+    if (!ctx.GetSchemaManager().GetSchemaId(ph.GetSchema()).IsValid())
+        {
+        ctx.Issues().ReportV("Failed to import Phenomenon '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", ph.GetName().c_str(), ph.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import Phenomenon because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Phenomenon "(SchemaId,Name,DisplayLabel,Description,Definition) VALUES(?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, ph.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(2, ph.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (ph.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(3, ph.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (ph.GetIsDescriptionDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(4, ph.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindText(5, ph.GetDefinition(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    const PhenomenonId phId = DbUtilities::GetLastInsertedId<PhenomenonId>(ctx.GetECDb());
+    if (!phId.IsValid())
+        return ERROR;
+
+    const_cast<PhenomenonR>(ph).SetId(phId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
+    {
+    if (ctx.GetSchemaManager().GetUnitId(unit).IsValid())
+        return SUCCESS;
+
+    if (!ctx.GetSchemaManager().GetSchemaId(unit.GetSchema()).IsValid())
+        {
+        ctx.Issues().ReportV("Failed to import Unit '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", unit.GetName().c_str(), unit.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import Unit because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    PhenomenonCP phen = unit.GetPhenomenon();
+    if (SUCCESS != ImportPhenomenon(ctx, *phen))
+        return ERROR;
+
+    if (unit.HasUnitSystem())
+        {
+        UnitSystemCP system = unit.GetUnitSystem();
+        if (SUCCESS != ImportUnitSystem(ctx, *system))
+            return ERROR;
+        }
+
+    ECUnitCP invertingUnit = nullptr;
+    if (unit.IsInvertedUnit())
+        {
+        invertingUnit = unit.GetInvertingUnit();
+        BeAssert(invertingUnit != nullptr);
+        if (SUCCESS != ImportUnit(ctx, *invertingUnit))
+            return ERROR;
+        }
+    
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Unit "(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    const int schemaIdParamIx = 1;
+    const int nameParamIx = 2;
+    const int labelParamIx = 3;
+    const int descParamIx = 4;
+    const int phIdParamIx = 5;
+    const int usIdParamIx = 6;
+    const int defParamIx = 7;
+    const int numeratorParamIx = 8;
+    const int denominatorParamIx = 9;
+    const int offsetParamIx = 10;
+    const int isConstantParamIx = 11;
+    const int invertingUnitIdParamIx = 12;
+
+    if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, unit.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(nameParamIx, unit.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (unit.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(labelParamIx, unit.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (unit.GetIsDescriptionDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(descParamIx, unit.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindId(phIdParamIx, phen->GetId()))
+        return ERROR;
+
+    if (unit.HasUnitSystem())
+        {
+        if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, unit.GetUnitSystem()->GetId()))
+            return ERROR;
+        }
+
+    if (unit.HasDefinition())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (unit.HasNumerator())
+        {
+        if (BE_SQLITE_OK != stmt->BindDouble(numeratorParamIx, unit.GetNumerator()))
+            return ERROR;
+        }
+
+    if (unit.HasDenominator())
+        {
+        if (BE_SQLITE_OK != stmt->BindDouble(denominatorParamIx, unit.GetDenominator()))
+            return ERROR;
+        }
+
+    if (unit.HasOffset())
+        {
+        if (BE_SQLITE_OK != stmt->BindDouble(offsetParamIx, unit.GetOffset()))
+            return ERROR;
+        }
+
+    if (BE_SQLITE_OK != stmt->BindBoolean(isConstantParamIx, unit.IsConstant()))
+        return ERROR;
+
+    if (invertingUnit != nullptr)
+        {
+        if (BE_SQLITE_OK != stmt->BindId(invertingUnitIdParamIx, invertingUnit->GetId()))
+            return ERROR;
+        }
+
+    DbResult stat = stmt->Step();
+    if (BE_SQLITE_DONE != stat)
+        return ERROR;
+
+    const UnitId unitId = DbUtilities::GetLastInsertedId<UnitId>(ctx.GetECDb());
+    if (!unitId.IsValid())
+        return ERROR;
+
+    const_cast<ECUnitR>(unit).SetId(unitId);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
+    {
+    if (ctx.GetSchemaManager().GetFormatId(format).IsValid())
+        return SUCCESS;
+
+    if (!ctx.GetSchemaManager().GetSchemaId(format.GetSchema()).IsValid())
+        {
+        ctx.Issues().ReportV("Failed to import Format '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", format.GetName().c_str(), format.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import Format because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Format "(SchemaId,Name,DisplayLabel,Description,NumericSpec,CompositeSpec) VALUES(?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    const int schemaIdParamIx = 1;
+    const int nameParamIx = 2;
+    const int labelParamIx = 3;
+    const int descParamIx = 4;
+    const int numericSpecParamIx = 5;
+    const int compositeSpecParamIx = 6;
+
+    if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, format.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(nameParamIx, format.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (format.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(labelParamIx, format.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (format.GetIsDescriptionDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(descParamIx, format.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (format.HasNumeric())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(numericSpecParamIx, SchemaPersistenceHelper::SerializeNumericSpec(*format.GetNumericSpec()), Statement::MakeCopy::Yes))
+            return ERROR;
+        }
+
+    if (format.HasComposite())
+        {
+        //Composite Spec Units are persisted in its own table to leverage FKs to the Units table
+        Utf8String specStr = SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(*format.GetCompositeSpec());
+        if (!specStr.empty())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(compositeSpecParamIx, specStr, Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    stmt = nullptr;
+
+    const FormatId formatId = DbUtilities::GetLastInsertedId<FormatId>(ctx.GetECDb());
+    if (!formatId.IsValid())
+        return ERROR;
+
+    const_cast<ECFormatR>(format).SetId(formatId);
+
+    if (format.HasComposite())
+        return ImportFormatComposite(ctx, format, formatId);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR format, FormatId formatId)
+    {
+    if (!format.HasComposite())
+        return SUCCESS;
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_FormatCompositeUnit "(FormatId,Label,UnitId,Ordinal) VALUES(?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
+
+    auto insertUnit = [] (CachedStatement& stmt, FormatId formatId, Nullable<Utf8String> label, ECUnitCR unit, int ordinal)
+        {
+        if (BE_SQLITE_OK != stmt.BindId(1, formatId))
+            return ERROR;
+
+        if (!label.IsNull())
+            {
+            if (BE_SQLITE_OK != stmt.BindText(2, label.Value(), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (BE_SQLITE_OK != stmt.BindId(3, unit.GetId()))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt.BindInt(4, ordinal))
+            return ERROR;
+
+        if (BE_SQLITE_DONE != stmt.Step())
+            return ERROR;
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        return SUCCESS;
+        };
+
+    int ordinal = 0;
+    if (spec.HasMajorUnit())
+        {
+        ECUnitCP unit = (ECUnitCP) spec.GetMajorUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
+        Nullable<Utf8String> label = spec.HasMajorLabel() ? spec.GetMajorLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
+            return ERROR;
+        }
+    ordinal++;
+    if (spec.HasMiddleUnit())
+        {
+        ECUnitCP unit = (ECUnitCP) spec.GetMiddleUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
+        Nullable<Utf8String> label = spec.HasMiddleLabel() ? spec.GetMiddleLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
+            return ERROR;
+        }
+
+    ordinal++;
+    if (spec.HasMinorUnit())
+        {
+        ECUnitCP unit = (ECUnitCP) spec.GetMinorUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
+        Nullable<Utf8String> label = spec.HasMinorLabel() ? spec.GetMinorLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
+            return ERROR;
+        }
+
+    ordinal++;
+    if (spec.HasSubUnit())
+        {
+        ECUnitCP unit = (ECUnitCP) spec.GetSubUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
+        Nullable<Utf8String> label = spec.HasSubLabel() ? spec.GetSubLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
+            return ERROR;
+        }
+
+    BeAssert(ordinal != 0);
     return SUCCESS;
     }
 
@@ -390,7 +833,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_KindOfQuantity(SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits) VALUES(?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_KindOfQuantity(SchemaId,Name,DisplayLabel,Description,RelativeError,PersistenceUnit,PresentationUnits) VALUES(?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -412,25 +855,29 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
             return ERROR;
         }
 
-    if (koq.GetPersistenceUnit().HasProblem())
+    if (BE_SQLITE_OK != stmt->BindDouble(5, koq.GetRelativeError()))
+        return ERROR;
+
+    if (koq.GetPersistenceUnit() == nullptr)
         {
-        ctx.Issues().ReportV("Failed to import KindOfQuantity '%s'. Its persistence unit is invalid: %s.", koq.GetFullName().c_str(), koq.GetPersistenceUnit().GetProblemDescription().c_str());
+        ctx.Issues().ReportV("Failed to import KindOfQuantity '%s'. It must have a persistence unit.", koq.GetFullName().c_str());
         return ERROR;
         }
 
-    Utf8String persistenceUnitStr = koq.GetPersistenceUnit().ToText(false);
+    Utf8String persistenceUnitStr;
+    if (ctx.IsEC32AvailableInFile())
+        persistenceUnitStr = koq.GetPersistenceUnit()->GetQualifiedName(koq.GetSchema());
+    else
+        persistenceUnitStr = koq.GetDescriptorCache().first;
+
     BeAssert(!persistenceUnitStr.empty());
-    if (BE_SQLITE_OK != stmt->BindText(5, persistenceUnitStr, Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
         return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindDouble(6, koq.GetRelativeError()))
-        return ERROR;
-
 
     Utf8String presUnitsJsonStr;
-    if (!koq.GetPresentationUnitList().empty())
+    if (!koq.GetPresentationFormats().empty())
         {
-        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJsonStr, ctx.GetECDb(), koq))
+        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presUnitsJsonStr, ctx.GetECDb(), koq, ctx.IsEC32AvailableInFile()))
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindText(7, presUnitsJsonStr, Statement::MakeCopy::No))
@@ -842,11 +1289,16 @@ BentleyStatus SchemaWriter::ImportCustomAttributes(Context& ctx, IECCustomAttrib
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::InsertSchemaEntry(Context& ctx, ECSchemaCR schema)
+BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
     {
     BeAssert(!schema.HasId());
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?)");
+    const bool supportsECVersion = FeatureManager::IsAvailable(ecdb, Feature::ECVersions);
+    BeAssert(supportsECVersion || schema.OriginalECXmlVersionLessThan(ECVersion::V3_2) && "Only EC 3.1 schemas can be imported into a file not supporting EC 3.2 yet");
+    Utf8CP sql = supportsECVersion ? "INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?)" :
+        "INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?)";
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return ERROR;
 
@@ -880,10 +1332,25 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(Context& ctx, ECSchemaCR schema)
     if (BE_SQLITE_OK != stmt->BindInt64(7, (int64_t) schema.GetVersionMinor()))
         return ERROR;
 
+    if (supportsECVersion)
+        {
+        //original version of 0.0 is considered an unset version
+        if (schema.GetOriginalECXmlVersionMajor() > 0 || schema.GetOriginalECXmlVersionMinor() > 0)
+            {
+            //Persist uint32_t as int64 to not lose unsigned-ness
+            if (BE_SQLITE_OK != stmt->BindInt64(8, (int64_t) schema.GetOriginalECXmlVersionMajor()))
+                return ERROR;
+
+            //Persist uint32_t as int64 to not lose unsigned-ness
+            if (BE_SQLITE_OK != stmt->BindInt64(9, (int64_t) schema.GetOriginalECXmlVersionMinor()))
+                return ERROR;
+            }
+        }
+
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const ECSchemaId id = DbUtilities::GetLastInsertedId<ECSchemaId>(ctx.GetECDb());
+    const ECSchemaId id = DbUtilities::GetLastInsertedId<ECSchemaId>(ecdb);
     if (!id.IsValid())
         return ERROR;
 
@@ -1263,12 +1730,12 @@ bool SchemaWriter::IsPropertyTypeChangeSupported(Utf8StringR error, StringChange
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& propertyChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
+BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propertyChange, ECPropertyCR oldProperty, ECPropertyCR newProperty)
     {
     if (propertyChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    if (propertyChange.GetName().IsValid())
+    if (propertyChange.Name().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECProperty is not supported.");
         return ERROR;
@@ -1281,81 +1748,73 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
         return ERROR;
         }
 
-    if (propertyChange.GetTypeName().IsValid())
+    if (propertyChange.TypeName().IsChanged())
         {
         Utf8String error;
-        if (!IsPropertyTypeChangeSupported(error, propertyChange.GetTypeName(), oldProperty, newProperty))
+        if (!IsPropertyTypeChangeSupported(error, propertyChange.TypeName(), oldProperty, newProperty))
             {
             ctx.Issues().Report(error.c_str());
             return ERROR;
             }
         }
 
-    if (propertyChange.IsStruct().IsValid() || propertyChange.IsStructArray().IsValid() || propertyChange.IsPrimitive().IsValid() ||
-        propertyChange.IsPrimitiveArray().IsValid() || propertyChange.IsNavigation().IsValid())
+    if (propertyChange.IsStruct().IsChanged() || propertyChange.IsStructArray().IsChanged() || propertyChange.IsPrimitive().IsChanged() ||
+        propertyChange.IsPrimitiveArray().IsChanged() || propertyChange.IsNavigation().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the kind of the ECProperty is not supported.",
                                   oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
         return ERROR;
         }
 
-    if (propertyChange.GetArray().IsValid())
-        {
-        ArrayChange& arrayChange = propertyChange.GetArray();
-        if (arrayChange.MaxOccurs().IsValid() || arrayChange.MinOccurs().IsValid())
+    if (propertyChange.ArrayMaxOccurs().IsChanged() || propertyChange.ArrayMinOccurs().IsChanged())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing 'MinOccurs' or 'MaxOccurs' for an Array ECProperty is not supported.",
                                       oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
             }
-        }
 
-    if (propertyChange.GetNavigation().IsValid())
+    if (propertyChange.NavigationRelationship().IsChanged())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'Relationship' for a Navigation ECProperty is not supported.",
+                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
+
+    if (propertyChange.NavigationDirection().IsChanged())
         {
-        NavigationChange& navigationChange = propertyChange.GetNavigation();
-        if (navigationChange.GetRelationshipClassName().IsValid())
-            {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'RelationshipClassName' for a Navigation ECProperty is not supported.",
-                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-            return ERROR;
-            }
-
-        if (navigationChange.Direction().IsValid())
-            {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'Direction' for a Navigation ECProperty is not supported.",
-                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-            return ERROR;
-            }
+        ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'Direction' for a Navigation ECProperty is not supported.",
+                             oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+        return ERROR;
         }
 
     SqlUpdateBuilder sqlUpdateBuilder("ec_Property");
 
-    if (propertyChange.GetMinimumLength().IsValid())
+    if (propertyChange.MinimumLength().IsChanged())
         {
         constexpr Utf8CP kPrimitiveTypeMinLength = "PrimitiveTypeMinLength";
-        if (propertyChange.GetMinimumLength().GetNew().IsNull())
+        if (propertyChange.MinimumLength().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMinLength);
         else
-            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinLength, propertyChange.GetMinimumLength().GetNew().Value());
+            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinLength, propertyChange.MinimumLength().GetNew().Value());
         }
     
-    if (propertyChange.GetMaximumLength().IsValid())
+    if (propertyChange.MaximumLength().IsChanged())
         {
         constexpr Utf8CP kPrimitiveTypeMaxLength = "PrimitiveTypeMaxLength";
-        if (propertyChange.GetMaximumLength().GetNew().IsNull())
+        if (propertyChange.MaximumLength().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMaxLength);
         else
-            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxLength, propertyChange.GetMaximumLength().GetNew().Value());
+            sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxLength, propertyChange.MaximumLength().GetNew().Value());
         }
 
-    if (propertyChange.GetMinimumValue().IsValid())
+    if (propertyChange.MinimumValue().IsChanged())
         {
         constexpr Utf8CP kPrimitiveTypeMinValue = "PrimitiveTypeMinValue";
-        if (propertyChange.GetMinimumValue().GetNew().IsNull() || propertyChange.GetMinimumValue().GetNew().Value().IsNull())
+        if (propertyChange.MinimumValue().GetNew().IsNull() || propertyChange.MinimumValue().GetNew().Value().IsNull())
             sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMinValue);
         else
             {
-            ECValueCR value = propertyChange.GetMinimumValue().GetNew().Value();
+            ECValueCR value = propertyChange.MinimumValue().GetNew().Value();
             if (value.IsInteger())
                 sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetInteger());
             else if (value.IsLong())
@@ -1373,14 +1832,14 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
             }
         }
 
-    if (propertyChange.GetMaximumValue().IsValid())
+    if (propertyChange.MaximumValue().IsChanged())
         {
         constexpr Utf8CP kPrimitiveTypeMaxValue = "PrimitiveTypeMaxValue";
-        if (propertyChange.GetMaximumValue().GetNew().IsNull() || propertyChange.GetMaximumValue().GetNew().Value().IsNull())
+        if (propertyChange.MaximumValue().GetNew().IsNull() || propertyChange.MaximumValue().GetNew().Value().IsNull())
             sqlUpdateBuilder.AddSetToNull(kPrimitiveTypeMaxValue);
         else
             {
-            ECValueCR value = propertyChange.GetMaximumValue().GetNew().Value();
+            ECValueCR value = propertyChange.MaximumValue().GetNew().Value();
             if (value.IsInteger())
                 sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetInteger());
             else if (value.IsLong())
@@ -1398,40 +1857,40 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
             }
         }
     
-    if (propertyChange.GetExtendedTypeName().IsValid())
+    if (propertyChange.ExtendedTypeName().IsChanged())
         {
         constexpr Utf8CP kExtendedTypeName = "ExtendedTypeName";
-        if (propertyChange.GetExtendedTypeName().GetNew().IsNull())
+        if (propertyChange.ExtendedTypeName().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull(kExtendedTypeName);
         else
-            sqlUpdateBuilder.AddSetExp(kExtendedTypeName, propertyChange.GetExtendedTypeName().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kExtendedTypeName, propertyChange.ExtendedTypeName().GetNew().Value().c_str());
         }
 
-    if (propertyChange.GetDisplayLabel().IsValid())
+    if (propertyChange.DisplayLabel().IsChanged())
         {
         constexpr Utf8CP kDisplayLabel = "DisplayLabel";
-        if (propertyChange.GetDisplayLabel().GetNew().IsNull())
+        if (propertyChange.DisplayLabel().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull(kDisplayLabel);
         else
-            sqlUpdateBuilder.AddSetExp(kDisplayLabel, propertyChange.GetDisplayLabel().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kDisplayLabel, propertyChange.DisplayLabel().GetNew().Value().c_str());
         }
 
-    if (propertyChange.GetDescription().IsValid())
+    if (propertyChange.Description().IsChanged())
         {
         constexpr Utf8CP kDescription = "Description";
-        if (propertyChange.GetDescription().GetNew().IsNull())
+        if (propertyChange.Description().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull(kDescription);
         else
-            sqlUpdateBuilder.AddSetExp(kDescription, propertyChange.GetDescription().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp(kDescription, propertyChange.Description().GetNew().Value().c_str());
         }
 
-    if (propertyChange.IsReadonly().IsValid())
+    if (propertyChange.IsReadonly().IsChanged())
         sqlUpdateBuilder.AddSetExp("IsReadonly", propertyChange.IsReadonly().GetNew().Value());
 
-    if (propertyChange.GetPriority().IsValid())
-        sqlUpdateBuilder.AddSetExp("Priority", propertyChange.GetPriority().GetNew().Value());
+    if (propertyChange.Priority().IsChanged())
+        sqlUpdateBuilder.AddSetExp("Priority", propertyChange.Priority().GetNew().Value());
 
-    if (propertyChange.GetEnumeration().IsValid())
+    if (propertyChange.Enumeration().IsChanged())
         {
         if (!newProperty.GetIsPrimitive() && !newProperty.GetIsPrimitiveArray())
             {
@@ -1439,7 +1898,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
             return ERROR;
             }
 
-        if (propertyChange.GetEnumeration().GetNew().IsNull())
+        if (propertyChange.Enumeration().GetNew().IsNull())
             {
             PrimitiveType newPrimType = newProperty.GetIsPrimitive() ? newProperty.GetAsPrimitiveProperty()->GetType() : newProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
             sqlUpdateBuilder.AddSetExp("PrimitiveType", (int) newPrimType);
@@ -1468,9 +1927,9 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
             }
         }
 
-    if (propertyChange.GetKindOfQuantity().IsValid())
+    if (propertyChange.KindOfQuantity().IsChanged())
         {
-        StringChange& change = propertyChange.GetKindOfQuantity();
+        StringChange& change = propertyChange.KindOfQuantity();
 
         if (change.GetNew().IsNull())
             {
@@ -1495,7 +1954,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
                 return ERROR;
                 }
            
-            if (!oldKoq->GetPersistenceUnit().GetUnitName().EqualsIAscii(newKoq->GetPersistenceUnit().GetUnitName()))
+            if (!oldKoq->GetPersistenceUnit()->GetFullName().EqualsIAscii(newKoq->GetPersistenceUnit()->GetFullName()))
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Replacing KindOfQuantity '%s' by '%s' is not supported because their persistent units differ.",
                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), oldKoq->GetFullName().c_str(), newKoq->GetFullName().c_str());
@@ -1515,9 +1974,9 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
         sqlUpdateBuilder.AddSetExp("KindOfQuantityId", id.GetValue());
         }
 
-    if (propertyChange.GetCategory().IsValid())
+    if (propertyChange.Category().IsChanged())
         {
-        StringChange& change = propertyChange.GetCategory();
+        StringChange& change = propertyChange.Category();
         if (change.GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("CategoryId");
         else
@@ -1556,38 +2015,38 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContainerId containerId, ECRelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName)
+BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContainerId containerId, RelationshipConstraintChange& constraintChange, ECRelationshipConstraintCR oldConstraint, ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName)
     {
     Utf8CP constraintEndStr = isSource ? "Source" : "Target";
-    SqlUpdateBuilder updater("ec_RelationshipConstraint");
+    SqlUpdateBuilder updater(TABLE_RelationshipConstraint);
 
     if (constraintChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    if (constraintChange.GetMultiplicity().IsValid())
+    if (constraintChange.Multiplicity().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing 'Multiplicity' of an ECRelationshipConstraint is not supported.",
                                   relationshipName, constraintEndStr);
         return ERROR;
         }
 
-    if (constraintChange.IsPolymorphic().IsValid())
+    if (constraintChange.IsPolymorphic().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing flag 'IsPolymorphic' of an ECRelationshipConstraint is not supported.",
                                   relationshipName, constraintEndStr);
         return ERROR;
         }
 
-    if (constraintChange.ConstraintClasses().IsValid())
+    if (constraintChange.ConstraintClasses().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s - Constraint: %s: Changing the constraint classes is not supported.",
                                   relationshipName, constraintEndStr);
         return ERROR;
         }
 
-    if (constraintChange.GetRoleLabel().IsValid())
+    if (constraintChange.RoleLabel().IsChanged())
         {
-        updater.AddSetExp("RoleLabel", constraintChange.GetRoleLabel().GetNew().Value().c_str());
+        updater.AddSetExp("RoleLabel", constraintChange.RoleLabel().GetNew().Value().c_str());
         }
 
     updater.AddWhereExp("RelationshipEnd", isSource ? ECRelationshipEnd_Source : ECRelationshipEnd_Target);
@@ -1602,7 +2061,7 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(Context& ctx, ECContain
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, ECInstanceChanges& instanceChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
+BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, ECContainerId containerId, CustomAttributeChanges& caChanges, IECCustomAttributeContainerCR oldContainer, IECCustomAttributeContainerCR newContainer)
     {
     int customAttributeIndex = 0;
     ECCustomAttributeInstanceIterable customAttributes = oldContainer.GetCustomAttributes(false);
@@ -1613,36 +2072,36 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
         ++itor;
         }
 
-    if (instanceChanges.Empty() || instanceChanges.GetStatus() == ECChange::Status::Done)
+    if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    for (size_t i = 0; i < instanceChanges.Count(); i++)
+    BeAssert(caChanges.GetParent() != nullptr);
+    const bool caContainerIsNew = caChanges.GetParent()->GetOpCode() == ECChange::OpCode::New;
+
+    for (size_t i = 0; i < caChanges.Count(); i++)
         {
-        ECPropertyValueChange& change = instanceChanges.At(i);
+        CustomAttributeChange& change = caChanges[i];
         if (change.GetStatus() == ECChange::Status::Done)
             continue;
 
-        bvector<Utf8String> tokens;
-        BeStringUtilities::Split(change.GetId(), ":", tokens);
-        if (tokens.size() != 2)
-            return ERROR;
-
-        Utf8StringCR schemaName = tokens[0];
-        Utf8StringCR className = tokens[1];
-
-        if (change.GetParent()->GetState() != ChangeState::New)
+        Utf8String schemaName, className;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, change.GetChangeName()))
             {
-            if (ctx.GetSchemaUpgradeCustomAttributeValidator().HasAnyRuleForSchema(schemaName))
+            ctx.Issues().ReportV("ECSchema Upgrade failed. CustomAttribute change must have fully qualified class name, but was '%s'", change.GetChangeName());
+            return ERROR;
+            }
+
+        if (!caContainerIsNew)
+            {
+            //only validate CA rules, if the container has not just been added with this schema import/update
+            if (ctx.GetSchemaUpgradeCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
                 {
-                if (ctx.GetSchemaUpgradeCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
-                    {
-                    ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported.", schemaName.c_str());
-                    return ERROR;
-                    }
+                ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported.", schemaName.c_str());
+                return ERROR;
                 }
             }
 
-        if (change.GetState() == ChangeState::New)
+        if (change.GetOpCode() == ECChange::OpCode::New)
             {
             IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
             BeAssert(ca.IsValid());
@@ -1655,7 +2114,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             if (InsertCAEntry(ctx, *ca, ca->GetClass().GetId(), containerId, containerType, ++customAttributeIndex) != SUCCESS)
                 return ERROR;
             }
-        else if (change.GetState() == ChangeState::Deleted)
+        else if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             IECInstancePtr ca = oldContainer.GetCustomAttribute(schemaName, className);
             if (ca == nullptr)
@@ -1669,7 +2128,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             if (DeleteCAEntry(ordinal, ctx, ca->GetClass().GetId(), containerId, containerType) != SUCCESS)
                 return ERROR;
             }
-        else if (change.GetState() == ChangeState::Modified)
+        else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
             IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
             BeAssert(ca.IsValid());
@@ -1686,7 +2145,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
         change.SetStatus(ECChange::Status::Done);
         }
 
-    instanceChanges.SetStatus(ECChange::Status::Done);
+    caChanges.SetStatus(ECChange::Status::Done);
     return SUCCESS;
     }
 
@@ -1712,9 +2171,6 @@ bool SchemaWriter::IsChangeToBaseClassIsSupported(ECClassCR baseClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& baseClassChanges, ECN::ECClassCR oldClass, ECN::ECClassCR newClass)
     {
-    if (!baseClassChanges.IsValid())
-        return SUCCESS;
-
     std::function<ECClassCP(ECClassCR, Utf8StringCR)> findBaseClass = [] (ECClassCR ecClass, Utf8StringCR qualifiedName)
         {
         ECClassCP baseClass = nullptr;
@@ -1733,10 +2189,12 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
     bool overrideAllBaseClasses = false;
     for (size_t i = 0; i < baseClassChanges.Count(); i++)
         {
-        auto& change = baseClassChanges.At(i);
-        if (change.GetState() == ChangeState::Deleted)
-            {
+        StringChange& change = baseClassChanges[i];
+        if (!change.IsChanged())
+            continue;
 
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
+            {
             ECClassCP oldBaseClass = findBaseClass(oldClass, change.GetOld().Value());
             if (oldBaseClass == nullptr)
                 return ERROR;
@@ -1750,7 +2208,7 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 return ERROR;
                 }
             }
-        else if (change.GetState() == ChangeState::New)
+        else if (change.GetOpCode() == ECChange::OpCode::New)
             {
             ECClassCP newBaseClass = findBaseClass(newClass, change.GetNew().Value());
             if (newBaseClass == nullptr)
@@ -1765,7 +2223,7 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 return ERROR;
                 }
             }
-        else if (change.GetState() == ChangeState::Modified)
+        else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
             ECClassCP newBaseClass = findBaseClass(newClass, change.GetNew().Value());
             if (newBaseClass == nullptr)
@@ -1785,7 +2243,7 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                 }
             }
         }
-    ///Overide baseClasses
+
     if (overrideAllBaseClasses)
         {
         Statement stmt;
@@ -1815,10 +2273,10 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, ECClassCR oldClass, ECClassCR newClass)
     {
-    if (classChange.GetStatus() == ECChange::Status::Done)
+    if (classChange.GetStatus() == ECChange::Status::Done || !classChange.IsChanged())
         return SUCCESS;
 
-    if (classChange.GetName().IsValid())
+    if (classChange.Name().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECClass is not supported.");
         return ERROR;
@@ -1833,14 +2291,14 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
 
     SqlUpdateBuilder updateBuilder(TABLE_Class);
 
-    if (classChange.GetClassModifier().IsValid())
+    if (classChange.ClassModifier().IsChanged())
         {
-        Nullable<ECClassModifier> oldValue = classChange.GetClassModifier().GetOld();
-        ECClassModifier newValue = classChange.GetClassModifier().GetNew().Value();
+        Nullable<ECClassModifier> oldValue = classChange.ClassModifier().GetOld();
+        ECClassModifier newValue = classChange.ClassModifier().GetNew().Value();
         if (oldValue == ECClassModifier::Abstract)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier from 'Abstract' to another value is not supported",
-                            oldClass.GetFullName());
+                                 oldClass.GetFullName());
 
             return ERROR;
             }
@@ -1850,7 +2308,7 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
             if (!newClass.GetDerivedClasses().empty())
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier to 'Sealed' is only valid if the class does not have derived classes.",
-                                oldClass.GetFullName());
+                                     oldClass.GetFullName());
 
                 return ERROR;
                 }
@@ -1858,51 +2316,50 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
         else if (newValue == ECClassModifier::Abstract)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier to 'Abstract' is not supported.",
-                            oldClass.GetFullName());
+                                 oldClass.GetFullName());
 
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("Modifier", Enum::ToInt(classChange.GetClassModifier().GetNew().Value()));
+        updateBuilder.AddSetExp("Modifier", Enum::ToInt(classChange.ClassModifier().GetNew().Value()));
         }
 
-    if (classChange.ClassType().IsValid())
+    if (classChange.ClassType().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassType of an ECClass is not supported.",
-                        oldClass.GetFullName());
+                             oldClass.GetFullName());
         return ERROR;
         }
 
-    if (classChange.GetDisplayLabel().IsValid())
+    if (classChange.DisplayLabel().IsChanged())
         {
-        if (classChange.GetDisplayLabel().GetNew().IsNull())
+        if (classChange.DisplayLabel().GetNew().IsNull())
             updateBuilder.AddSetToNull("DisplayLabel");
         else
-            updateBuilder.AddSetExp("DisplayLabel", classChange.GetDisplayLabel().GetNew().Value().c_str());
+            updateBuilder.AddSetExp("DisplayLabel", classChange.DisplayLabel().GetNew().Value().c_str());
         }
 
-    if (classChange.GetDescription().IsValid())
+    if (classChange.Description().IsChanged())
         {
-        if (classChange.GetDescription().GetNew().IsNull())
+        if (classChange.Description().GetNew().IsNull())
             updateBuilder.AddSetToNull("Description");
         else
-            updateBuilder.AddSetExp("Description", classChange.GetDescription().GetNew().Value().c_str());
+            updateBuilder.AddSetExp("Description", classChange.Description().GetNew().Value().c_str());
         }
 
-    if (classChange.GetRelationship().IsValid())
+    if (oldClass.IsRelationshipClass())
         {
-        auto& relationshipChange = classChange.GetRelationship();
-        if (relationshipChange.GetStrength().IsValid())
+        if (classChange.Strength().IsChanged())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s: Changing the 'Strength' of an ECRelationshipClass is not supported.",
-                            oldClass.GetFullName());
+                                 oldClass.GetFullName());
             return ERROR;
             }
 
-        if (relationshipChange.GetStrengthDirection().IsValid())
+        if (classChange.StrengthDirection().IsChanged())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECRelationshipClass %s: Changing the 'StrengthDirection' of an ECRelationshipClass is not supported.",
-                            oldClass.GetFullName());
+                                 oldClass.GetFullName());
             return ERROR;
             }
 
@@ -1912,12 +2369,12 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
         if (oldRel == nullptr && newRel == nullptr)
             return ERROR;
 
-        if (relationshipChange.GetSource().IsValid())
-            if (UpdateRelationshipConstraint(ctx, classId, relationshipChange.GetSource(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
+        if (classChange.Source().IsChanged())
+            if (UpdateRelationshipConstraint(ctx, classId, classChange.Source(), newRel->GetSource(), oldRel->GetSource(), true, oldRel->GetFullName()) == ERROR)
                 return ERROR;
 
-        if (relationshipChange.GetTarget().IsValid())
-            if (UpdateRelationshipConstraint(ctx, classId, relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
+        if (classChange.Target().IsChanged())
+            if (UpdateRelationshipConstraint(ctx, classId, classChange.Target(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
                 return ERROR;
         }
 
@@ -1929,13 +2386,13 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
         }
 
 
-    if (classChange.BaseClasses().IsValid())
+    if (classChange.BaseClasses().IsChanged())
         {
         if (UpdateBaseClasses(ctx, classChange.BaseClasses(), oldClass, newClass) != SUCCESS)
             return ERROR;
         }
 
-    if (classChange.Properties().IsValid())
+    if (classChange.Properties().IsChanged())
         {
         if (UpdateProperties(ctx, classChange.Properties(), oldClass, newClass) != SUCCESS)
             return ERROR;
@@ -1947,15 +2404,18 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  05/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, ECPropertyChanges& propertyChanges, ECClassCR oldClass, ECClassCR newClass)
+BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, PropertyChanges& propertyChanges, ECClassCR oldClass, ECClassCR newClass)
     {
     int ordinal = (int) oldClass.GetPropertyCount(false);
     for (size_t i = 0; i < propertyChanges.Count(); i++)
         {
-        auto& change = propertyChanges.At(i);
-        if (change.GetState() == ChangeState::Deleted)
+        PropertyChange& change = propertyChanges[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetId(), false);
+            ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetChangeName(), false);
             if (oldProperty == nullptr)
                 {
                 BeAssert(false && "Failed to find property");
@@ -1966,9 +2426,9 @@ BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, ECPropertyChanges& pr
                 return ERROR;
 
             }
-        else if (change.GetState() == ChangeState::New)
+        else if (change.GetOpCode() == ECChange::OpCode::New)
             {
-            ECPropertyCP newProperty = newClass.GetPropertyP(change.GetName().GetNew().Value().c_str(), false);
+            ECPropertyCP newProperty = newClass.GetPropertyP(change.Name().GetNew().Value().c_str(), false);
             if (newProperty == nullptr)
                 {
                 BeAssert(false && "Failed to find the class");
@@ -1980,10 +2440,10 @@ BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, ECPropertyChanges& pr
 
             ordinal++;
             }
-        else if (change.GetState() == ChangeState::Modified)
+        else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetId(), false);
-            ECPropertyCP newProperty = newClass.GetPropertyP(change.GetId(), false);
+            ECPropertyCP oldProperty = oldClass.GetPropertyP(change.GetChangeName(), false);
+            ECPropertyCP newProperty = newClass.GetPropertyP(change.GetChangeName(), false);
             if (oldProperty == nullptr)
                 {
                 BeAssert(false && "Failed to find property");
@@ -2005,15 +2465,12 @@ BentleyStatus SchemaWriter::UpdateProperties(Context& ctx, ECPropertyChanges& pr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, ReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, SchemaReferenceChanges& referenceChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!referenceChanges.IsValid())
-        return SUCCESS;
-
     for (size_t i = 0; i < referenceChanges.Count(); i++)
         {
-        auto& change = referenceChanges.At(i);
-        if (change.GetState() == ChangeState::Deleted)
+        StringChange& change = referenceChanges[i];
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             SchemaKey oldRef;
             if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
@@ -2038,7 +2495,7 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, ReferenceChange
                 return ERROR;
                 }
             }
-        else if (change.GetState() == ChangeState::New)
+        else if (change.GetOpCode() == ECChange::OpCode::New)
             {
             SchemaKey newRef, existingRef;
             if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
@@ -2048,18 +2505,17 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, ReferenceChange
                 return ERROR;
                 }
 
+            Nullable<Context::LegacySchemaImportHelper::Action> legacyImportAction;
+            if (!ctx.IsEC32AvailableInFile())
+                legacyImportAction = ctx.LegacySchemaImportHelper().GetImportAction(newRef);
+
+            if (legacyImportAction == Context::LegacySchemaImportHelper::Action::Ignore)
+                continue;
+
             //Ensure schema exist
             if (!SchemaPersistenceHelper::TryGetSchemaKey(existingRef, ctx.GetECDb(), DbTableSpace::Main(), newRef.GetName().c_str()))
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s does not exist in the file.",
-                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            //Schema must exist with that or greater version
-            if (!existingRef.Matches(newRef, SchemaMatchType::LatestWriteCompatible))
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
                                           oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
                 return ERROR;
                 }
@@ -2079,38 +2535,10 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(Context& ctx, ReferenceChange
                 return ERROR;
                 }
             }
-        else if (change.GetState() == ChangeState::Modified)
+        else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            SchemaKey oldRef, newRef, existingRef;
-            if (SchemaKey::ParseSchemaFullName(oldRef, change.GetOld().Value().c_str()) != ECObjectsStatus::Success)
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Failed to parse previous ECSchema reference.",
-                                          oldSchema.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            if (SchemaKey::ParseSchemaFullName(newRef, change.GetNew().Value().c_str()) != ECObjectsStatus::Success)
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Failed to parse new ECSchema reference.",
-                                          oldSchema.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            //Ensure schema exist and also get updated version number.
-            if (!SchemaPersistenceHelper::TryGetSchemaKey(existingRef, ctx.GetECDb(), DbTableSpace::Main(), oldRef.GetName().c_str()))
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Referenced ECSchema %s does not exist in the file.",
-                                          oldSchema.GetFullSchemaName().c_str(), oldRef.GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            //Schema must exist with that or greater version
-            if (!existingRef.Matches(newRef, SchemaMatchType::LatestWriteCompatible))
-                {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Could not locate compatible referenced ECSchema %s.",
-                                          oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
-                return ERROR;
-                }
+            BeAssert(false && "Should never end up here, as schema references cannot be modified, they can only be added or deleted.");
+            return ERROR;
             }
 
         change.SetStatus(ECChange::Status::Done);
@@ -2302,7 +2730,7 @@ BentleyStatus SchemaWriter::DeleteCustomAttributes(Context& ctx, ECContainerId i
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
+BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
     ECClassCR ecClass = deletedProperty.GetClass();
     
@@ -2431,15 +2859,15 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, ECPropertyChange& prope
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!classChanges.IsValid())
-        return SUCCESS;
-
     for (size_t i = 0; i < classChanges.Count(); i++)
         {
-        auto& change = classChanges.At(i);
-        if (change.GetState() == ChangeState::Deleted)
+        ClassChange& change = classChanges[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            ECClassCP oldClass = oldSchema.GetClassCP(change.GetId());
+            ECClassCP oldClass = oldSchema.GetClassCP(change.GetChangeName());
             if (oldClass == nullptr)
                 {
                 BeAssert(false && "Failed to find class");
@@ -2449,9 +2877,9 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
             if (SUCCESS != DeleteClass(ctx, change, *oldClass))
                 return ERROR;
             }
-        else if (change.GetState() == ChangeState::New)
+        else if (change.GetOpCode() == ECChange::OpCode::New)
             {
-            ECClassCP newClass = newSchema.GetClassCP(change.GetName().GetNew().Value().c_str());
+            ECClassCP newClass = newSchema.GetClassCP(change.Name().GetNew().Value().c_str());
             if (newClass == nullptr)
                 {
                 BeAssert(false && "Failed to find the class");
@@ -2461,10 +2889,10 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
             if (ImportClass(ctx, *newClass) == ERROR)
                 return ERROR;
             }
-        else if (change.GetState() == ChangeState::Modified)
+        else if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            ECClassCP oldClass = oldSchema.GetClassCP(change.GetId());
-            ECClassCP newClass = newSchema.GetClassCP(change.GetId());
+            ECClassCP oldClass = oldSchema.GetClassCP(change.GetChangeName());
+            ECClassCP newClass = newSchema.GetClassCP(change.GetChangeName());
             if (oldClass == nullptr)
                 {
                 BeAssert(false && "Failed to find class");
@@ -2489,22 +2917,22 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityChanges& koqChanges, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
     {
-    if (!koqChanges.IsValid())
-        return SUCCESS;
-
     for (size_t i = 0; i < koqChanges.Count(); i++)
         {
-        KindOfQuantityChange& change = koqChanges.At(i);
-        if (change.GetState() == ChangeState::Deleted)
+        KindOfQuantityChange& change = koqChanges[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting KindOfQuantity from an ECSchema is not supported.",
                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
-        if (change.GetState() == ChangeState::New)
+        if (change.GetOpCode() == ECChange::OpCode::New)
             {
-            KindOfQuantityCP koq = newSchema.GetKindOfQuantityCP(change.GetId());
+            KindOfQuantityCP koq = newSchema.GetKindOfQuantityCP(change.GetChangeName());
             if (koq == nullptr)
                 {
                 BeAssert(false && "Failed to find kind of quantity");
@@ -2517,10 +2945,10 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
             continue;
             }
 
-        if (change.GetState() == ChangeState::Modified)
+        if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            KindOfQuantityCP oldKoq = oldSchema.GetKindOfQuantityCP(change.GetId());
-            KindOfQuantityCP newKoq = newSchema.GetKindOfQuantityCP(change.GetId());
+            KindOfQuantityCP oldKoq = oldSchema.GetKindOfQuantityCP(change.GetChangeName());
+            KindOfQuantityCP newKoq = newSchema.GetKindOfQuantityCP(change.GetChangeName());
             if (oldKoq == nullptr || newKoq == nullptr)
                 {
                 BeAssert(oldKoq != nullptr && newKoq != nullptr);
@@ -2543,64 +2971,63 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    if (change.GetName().IsValid())
+    if (change.Name().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a KindOfQuantity is not supported.");
         return ERROR;
         }
 
     size_t actualChanges = 0;
-
     SqlUpdateBuilder sqlUpdateBuilder(TABLE_KindOfQuantity);
-    if (change.GetDisplayLabel().IsValid())
+    if (change.DisplayLabel().IsChanged())
         {
         actualChanges++;
-        if (change.GetDisplayLabel().GetNew().IsNull())
+        if (change.DisplayLabel().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("DisplayLabel");
         else
-            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.GetDisplayLabel().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.DisplayLabel().GetNew().Value().c_str());
         }
 
-    if (change.GetDescription().IsValid())
+    if (change.Description().IsChanged())
         {
         actualChanges++;
-        if (change.GetDescription().GetNew().IsNull())
+        if (change.Description().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("Description");
         else
-            sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp("Description", change.Description().GetNew().Value().c_str());
         }
 
-    if (change.GetRelativeError().IsValid())
+    if (change.RelativeError().IsChanged())
         {
-        if (change.GetRelativeError().GetNew().IsNull())
+        if (change.RelativeError().GetNew().IsNull())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError.");
             return ERROR;
             }
 
         actualChanges++;
-        sqlUpdateBuilder.AddSetExp("RelativeError", change.GetRelativeError().GetNew().Value());
+        sqlUpdateBuilder.AddSetExp("RelativeError", change.RelativeError().GetNew().Value());
         }
     
-    if (change.GetPresentationUnitList().IsValid())
+    if (change.PresentationFormats().IsChanged())
         {
         actualChanges++;
 
-        if (newKoq.GetPresentationUnitList().empty())
+        if (newKoq.GetPresentationFormats().empty())
             sqlUpdateBuilder.AddSetToNull("PresentationUnits");
         else
             {
-            Utf8String presUnitsJson;
-            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJson, ctx.GetECDb(), newKoq))
+            Utf8String presFormatsJson;
+            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presFormatsJson, ctx.GetECDb(), newKoq, ctx.IsEC32AvailableInFile()))
                 return ERROR;
 
-            sqlUpdateBuilder.AddSetExp("PresentationUnits", presUnitsJson.c_str());
+            sqlUpdateBuilder.AddSetExp("PresentationUnits", presFormatsJson.c_str());
             }
         }
 
-    if (change.ChangesCount() > actualChanges)
+    if (change.MemberChangesCount() > actualChanges)
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for RelativeError, PresentationUnits, DisplayLabel and Description.",
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
                          oldKoq.GetFullName().c_str());
         return ERROR;
         }
@@ -2614,21 +3041,22 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCategoryChanges& changes, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema)
     {
-    if (!changes.IsValid())
-        return SUCCESS;
-
     for (size_t i = 0; i < changes.Count(); i++)
         {
-        PropertyCategoryChange& change = changes.At(i);
-        if (change.GetState() == ChangeState::Deleted)
+        PropertyCategoryChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting PropertyCategory from an ECSchema is not supported.",
                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
-        else if (change.GetState() == ChangeState::New)
+        
+        if (change.GetOpCode() == ECChange::OpCode::New)
             {
-            PropertyCategoryCP cat = newSchema.GetPropertyCategoryCP(change.GetId());
+            PropertyCategoryCP cat = newSchema.GetPropertyCategoryCP(change.GetChangeName());
             if (cat == nullptr)
                 {
                 BeAssert(false && "Failed to find property category");
@@ -2637,11 +3065,14 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
 
             if (ImportPropertyCategory(ctx, *cat) != SUCCESS)
                 return ERROR;
+
+            continue;
             }
-        else if (change.GetState() == ChangeState::Modified)
+
+        if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            PropertyCategoryCP oldCat = oldSchema.GetPropertyCategoryCP(change.GetId());
-            PropertyCategoryCP newCat = newSchema.GetPropertyCategoryCP(change.GetId());
+            PropertyCategoryCP oldCat = oldSchema.GetPropertyCategoryCP(change.GetChangeName());
+            PropertyCategoryCP newCat = newSchema.GetPropertyCategoryCP(change.GetChangeName());
             if (oldCat == nullptr || newCat == nullptr)
                 {
                 BeAssert(oldCat != nullptr && newCat != nullptr);
@@ -2656,6 +3087,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(Context& ctx, PropertyCateg
     return SUCCESS;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle  03/2018
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2664,7 +3096,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    if (change.GetName().IsValid())
+    if (change.Name().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a PropertyCategory is not supported.");
         return ERROR;
@@ -2673,34 +3105,34 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
     size_t actualChanges = 0;
 
     SqlUpdateBuilder sqlUpdateBuilder(TABLE_PropertyCategory);
-    if (change.GetDisplayLabel().IsValid())
+    if (change.DisplayLabel().IsChanged())
         {
         actualChanges++;
-        if (change.GetDisplayLabel().GetNew().IsNull())
+        if (change.DisplayLabel().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("DisplayLabel");
         else
-            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.GetDisplayLabel().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.DisplayLabel().GetNew().Value().c_str());
         }
 
-    if (change.GetDescription().IsValid())
+    if (change.Description().IsChanged())
         {
         actualChanges++;
-        if (change.GetDescription().GetNew().IsNull())
+        if (change.Description().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("Description");
         else
-            sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp("Description", change.Description().GetNew().Value().c_str());
         }
 
-    if (change.GetPriority().IsValid())
+    if (change.Priority().IsChanged())
         {
         actualChanges++;
-        if (change.GetPriority().GetNew().IsNull())
+        if (change.Priority().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("Priority");
         else
-            sqlUpdateBuilder.AddSetExp("Priority", change.GetPriority().GetNew().Value());
+            sqlUpdateBuilder.AddSetExp("Priority", change.Priority().GetNew().Value());
         }
 
-    if (change.ChangesCount() > actualChanges)
+    if (change.MemberChangesCount() > actualChanges)
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for Priority, DisplayLabel and Description.",
                          oldCat.GetFullName().c_str());
@@ -2714,12 +3146,12 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, ECEnumerationChange& enumChange, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum)
+BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, EnumerationChange& enumChange, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum)
     {
     if (enumChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    if (enumChange.GetName().IsValid())
+    if (enumChange.Name().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a ECEnumeration is not supported.");
         return ERROR;
@@ -2727,7 +3159,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, ECEnumerationChange&
 
     SqlUpdateBuilder sqlUpdateBuilder(TABLE_Enumeration);
 
-    if (enumChange.GetTypeName().IsValid())
+    if (enumChange.TypeName().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECEnumeration %s: 'Type' change is not supported.",
             oldEnum.GetFullName().c_str());
@@ -2735,8 +3167,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, ECEnumerationChange&
         return ERROR;
         }
 
-    bool allowDisruptiveChanges = !newEnum.GetIsStrict();
-    if (enumChange.IsStrict().IsValid())
+    if (enumChange.IsStrict().IsChanged())
         {
         if (enumChange.IsStrict().GetNew().IsNull())
             {
@@ -2749,81 +3180,43 @@ BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, ECEnumerationChange&
         //Allow transition from "strict" to "non-strict" but not the other way around.
         if (enumChange.IsStrict().GetOld().Value() == true &&
             enumChange.IsStrict().GetNew().Value() == false)
-            {
-            allowDisruptiveChanges = true;
             sqlUpdateBuilder.AddSetExp("IsStrict", enumChange.IsStrict().GetNew().Value());
-            }
         else
             {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECEnumeration %s: 'IsStrict' changed. 'None-strict' cannot be change to 'strict'. The other way around is allowed.",
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECEnumeration %s: 'IsStrict' changed. 'Unstrict' cannot be change to 'strict'. The other way around is allowed.",
                 oldEnum.GetFullName().c_str());
 
             return ERROR;
             }
         }
 
-    if (enumChange.GetDisplayLabel().IsValid())
+    if (enumChange.DisplayLabel().IsChanged())
         {
-        if (enumChange.GetDisplayLabel().GetNew().IsNull())
+        if (enumChange.DisplayLabel().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("DisplayLabel");
         else
-            sqlUpdateBuilder.AddSetExp("DisplayLabel", enumChange.GetDisplayLabel().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", enumChange.DisplayLabel().GetNew().Value().c_str());
         }
 
-    if (enumChange.GetDescription().IsValid())
+    if (enumChange.Description().IsChanged())
         {
-        if (enumChange.GetDescription().GetNew().IsNull())
+        if (enumChange.Description().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("Description");
         else
-            sqlUpdateBuilder.AddSetExp("Description", enumChange.GetDescription().GetNew().Value().c_str());
+            sqlUpdateBuilder.AddSetExp("Description", enumChange.Description().GetNew().Value().c_str());
         }
 
-    ECEnumeratorChanges enumeratorChanges = enumChange.Enumerators();
-    if (enumeratorChanges.IsValid())
+    EnumeratorChanges& enumeratorChanges = enumChange.Enumerators();
+    if (enumeratorChanges.IsChanged())
         {
-        if (allowDisruptiveChanges)
-            {
-            Utf8String enumValueJson;
-            if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum))
-                return ERROR;
+        if (SUCCESS != VerifyEnumeratorChanges(ctx, oldEnum, enumeratorChanges))
+            return ERROR;
+    
+        Utf8String enumValueJson;
+        if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum, ctx.IsEC32AvailableInFile()))
+            return ERROR;
 
-            sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
-            }
-        else
-            {
-            size_t newEnumerators = 0;
-            for (size_t i = 0; i < enumeratorChanges.Count(); i++)
-                {
-                ECEnumeratorChange& change = enumeratorChanges.At(i);
-                if (change.GetState() == ChangeState::Deleted)
-                    {
-                    ctx.Issues().ReportV("ECSchema Upgrade failed. Enumerator %s was deleted from Enumeration %s which is not supported.",
-                        change.GetId(), oldEnum.GetFullName().c_str());
-
-                    return ERROR;
-                    }
-                else if (change.GetState() == ChangeState::New)
-                    {
-                    newEnumerators++;
-                    }
-                else if (change.GetState() == ChangeState::Modified)
-                    {
-                    ctx.Issues().ReportV("ECSchema Upgrade failed. Enumerator %s was updated from Enumeration %s which is not supported.",
-                        change.GetId(), oldEnum.GetFullName().c_str());
-
-                    return ERROR;
-                    }
-                }
-
-            if (newEnumerators > 0)
-                {
-                Utf8String enumValueJson;
-                if (SUCCESS != SchemaPersistenceHelper::SerializeEnumerationValues(enumValueJson, newEnum))
-                    return ERROR;
-
-                sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
-                }
-            }
+        sqlUpdateBuilder.AddSetExp("EnumValues", enumValueJson.c_str());
         }
 
     sqlUpdateBuilder.AddWhereExp("Id", oldEnum.GetId().GetValue());
@@ -2835,26 +3228,114 @@ BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, ECEnumerationChange&
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// Enumerator name changes are only allowed for int enums when it has been changed from the meaningless auto-generated name that was applied during the conversion of the schema
+// to EC3.2. This is a one-way opportunity to modify the auto-generated, meaningless names.
+// @bsimethod                                                  Krischan.Eberle 01/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECEnumerationCR oldEnum, EnumeratorChanges& enumeratorChanges)
+    {
+    //The schema comparer compares enumerators by their name. So it cannot detect a name change directly.
+    //this algorithm is based on the assumption that a "deleted" enumerator in the old enum, and a "new" enumerator in the new enum
+    //are the same if their integer value is the same.
+    //this is only done for int enums. For string enums, enumerator name changes are not allowed at all.
+    //Once the enumerator name changes are detected, any regular deleted enumerators are invalid, any regular new enumerators are fine.
+    const bool isIntEnum = oldEnum.GetType() == PRIMITIVETYPE_Integer;
+    bmap<int, EnumeratorChange*> deletedIntEnumerators, newIntEnumerators;
+    bmap<Utf8CP, EnumeratorChange*, CompareUtf8> deletedStringEnumerators, newStringEnumerators;
+    for (size_t i = 0; i < enumeratorChanges.Count(); i++)
+        {
+        EnumeratorChange& change = enumeratorChanges[i];
+        switch (change.GetOpCode())
+            {
+                case ECChange::OpCode::New:
+                    if (isIntEnum)
+                        newIntEnumerators[change.Integer().GetNew().Value()] = &change;
+                    else
+                        newStringEnumerators[change.String().GetNew().Value().c_str()] = &change;
+
+                    continue;
+                case ECChange::OpCode::Deleted:
+                    if (isIntEnum)
+                        deletedIntEnumerators[change.Integer().GetOld().Value()] = &change;
+                    else
+                        deletedStringEnumerators[change.String().GetOld().Value().c_str()] = &change;
+
+                    break;
+                case ECChange::OpCode::Modified:
+                    if (change.Integer().IsChanged() || change.String().IsChanged())
+                        {
+                        ctx.Issues().ReportV("ECSchema Upgrade failed. The value of one or more enumerators of Enumeration %s was modified which is not supported.", oldEnum.GetFullName().c_str());
+                        return ERROR;
+                        }
+
+                    break;
+
+                default:
+                    BeAssert(false);
+                    return ERROR;
+            }
+        }
+
+    const uint32_t oldSchemaOriginalVersionMajor = oldEnum.GetSchema().GetOriginalECXmlVersionMajor();
+    const uint32_t oldSchemaOriginalVersionMinor = oldEnum.GetSchema().GetOriginalECXmlVersionMinor();
+    const bool enumeratorNameChangeAllowed = oldSchemaOriginalVersionMajor < 3 || (oldSchemaOriginalVersionMajor == 3 && oldSchemaOriginalVersionMinor < 2);
+
+    //only need to iterate over deleted enumerators. Any new Enumerators which this might miss, is fine, as they are always supported
+    if (isIntEnum)
+        {
+        for (bpair<int, EnumeratorChange*> const& kvPair : deletedIntEnumerators)
+            {
+            const int val = kvPair.first;
+            //We consider this a name change as the int values are equal.
+            if (enumeratorNameChangeAllowed && newIntEnumerators.find(val) != newIntEnumerators.end())
+                continue;
+
+            //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
+            ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+            return ERROR;
+            }
+        }
+    else
+        {
+        for (bpair<Utf8CP, EnumeratorChange*> const& kvPair : deletedStringEnumerators)
+            {
+            Utf8CP val = kvPair.first;
+            //We consider this a name change as the int values are equal.
+            if (enumeratorNameChangeAllowed && newStringEnumerators.find(val) != newStringEnumerators.end())
+                continue;
+
+            //no counterpart with matching value found or old name is not the auto-generated EC3.2 conversion default name
+            ctx.Issues().ReportV("ECSchema Upgrade failed. An enumerator was deleted from Enumeration %s which is not supported.", oldEnum.GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, ECEnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
-    if (!enumChanges.IsValid())
-        return SUCCESS;
-
     for (size_t i = 0; i < enumChanges.Count(); i++)
         {
-        ECEnumerationChange& change = enumChanges.At(i);
-        if (change.GetState() == ChangeState::Deleted)
+        EnumerationChange& change = enumChanges[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting ECEnumerations from an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
-        else if (change.GetState() == ChangeState::New)
+
+        if (change.GetOpCode() == ECChange::OpCode::New)
             {
-            ECEnumerationCP ecEnum = newSchema.GetEnumerationCP(change.GetId());
+            ECEnumerationCP ecEnum = newSchema.GetEnumerationCP(change.GetChangeName());
             if (ecEnum == nullptr)
                 {
                 BeAssert(false && "Failed to find enum");
@@ -2863,11 +3344,14 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, ECEnumerationChange
 
             if (SUCCESS != ImportEnumeration(ctx, *ecEnum))
                 return ERROR;
+
+            continue;
             }
-        else if (change.GetState() == ChangeState::Modified)
+
+        if (change.GetOpCode() == ECChange::OpCode::Modified)
             {
-            ECEnumerationCP oldEnum = oldSchema.GetEnumerationCP(change.GetId());
-            ECEnumerationCP newEnum = newSchema.GetEnumerationCP(change.GetId());
+            ECEnumerationCP oldEnum = oldSchema.GetEnumerationCP(change.GetChangeName());
+            ECEnumerationCP newEnum = newSchema.GetEnumerationCP(change.GetChangeName());
             BeAssert(oldEnum != nullptr && newEnum != nullptr);
             if (oldEnum == nullptr || newEnum == nullptr)
                 {
@@ -2883,6 +3367,459 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, ECEnumerationChange
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    for (size_t i = 0; i < changes.Count(); i++)
+        {
+        PhenomenonChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Phenomena from an ECSchema is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::New)
+            {
+            PhenomenonCP phen = newSchema.GetPhenomenonCP(change.GetChangeName());
+            if (phen == nullptr)
+                {
+                BeAssert(false && "Failed to find phenomenon");
+                return ERROR;
+                }
+
+            if (SUCCESS != ImportPhenomenon(ctx, *phen))
+                return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::Modified)
+            {
+            PhenomenonCP oldVal = oldSchema.GetPhenomenonCP(change.GetChangeName());
+            PhenomenonCP newVal = newSchema.GetPhenomenonCP(change.GetChangeName());
+            if (oldVal == nullptr)
+                {
+                BeAssert(false && "Failed to find Phenomenon");
+                return ERROR;
+                }
+            if (newVal == nullptr)
+                {
+                BeAssert(false && "Failed to find Phenomenon");
+                return ERROR;
+                }
+
+            if (UpdatePhenomenon(ctx, change, *oldVal, *newVal) != SUCCESS)
+                return ERROR;
+
+            continue;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdatePhenomenon(Context& ctx, PhenomenonChange& change, ECN::PhenomenonCR oldVal, ECN::PhenomenonCR newVal)
+    {
+    if (change.GetStatus() == ECChange::Status::Done)
+        return SUCCESS;
+
+    if (change.Name().IsChanged())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a Phenomenon is not supported.");
+        return ERROR;
+        }
+
+    size_t actualChanges = 0;
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Phenomenon);
+    if (change.DisplayLabel().IsChanged())
+        {
+        actualChanges++;
+        if (change.DisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.DisplayLabel().GetNew().Value().c_str());
+        }
+
+    if (change.Description().IsChanged())
+        {
+        actualChanges++;
+        if (change.Description().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", change.Description().GetNew().Value().c_str());
+        }
+
+    if (change.MemberChangesCount() > actualChanges)
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of Phenomenon '%s' is not supported except for DisplayLabel and Description.",
+                         oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
+    sqlUpdateBuilder.AddWhereExp("Id", oldVal.GetId().GetValue());
+    return sqlUpdateBuilder.ExecuteSql(ctx.GetECDb());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateUnitSystems(Context& ctx, UnitSystemChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    for (size_t i = 0; i < changes.Count(); i++)
+        {
+        UnitSystemChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting UnitSystems from an ECSchema is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::New)
+            {
+            UnitSystemCP system = newSchema.GetUnitSystemCP(change.GetChangeName());
+            if (system == nullptr)
+                {
+                BeAssert(false && "Failed to find unit system");
+                return ERROR;
+                }
+
+            if (SUCCESS != ImportUnitSystem(ctx, *system))
+                return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::Modified)
+            {
+            UnitSystemCP oldVal = oldSchema.GetUnitSystemCP(change.GetChangeName());
+            UnitSystemCP newVal = newSchema.GetUnitSystemCP(change.GetChangeName());
+            if (oldVal == nullptr)
+                {
+                BeAssert(false && "Failed to find UnitSystem");
+                return ERROR;
+                }
+            if (newVal == nullptr)
+                {
+                BeAssert(false && "Failed to find UnitSystem");
+                return ERROR;
+                }
+
+            if (UpdateUnitSystem(ctx, change, *oldVal, *newVal) != SUCCESS)
+                return ERROR;
+
+            continue;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateUnitSystem(Context& ctx, UnitSystemChange& change, ECN::UnitSystemCR oldVal, ECN::UnitSystemCR newVal)
+    {
+    if (change.GetStatus() == ECChange::Status::Done)
+        return SUCCESS;
+
+    if (change.Name().IsChanged())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a UnitSystem is not supported.");
+        return ERROR;
+        }
+
+    size_t actualChanges = 0;
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_UnitSystem);
+    if (change.DisplayLabel().IsChanged())
+        {
+        actualChanges++;
+        if (change.DisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.DisplayLabel().GetNew().Value().c_str());
+        }
+
+    if (change.Description().IsChanged())
+        {
+        actualChanges++;
+        if (change.Description().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", change.Description().GetNew().Value().c_str());
+        }
+
+    if (change.MemberChangesCount() > actualChanges)
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of UnitSystem '%s' is not supported except for DisplayLabel and Description.",
+                         oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
+    sqlUpdateBuilder.AddWhereExp("Id", oldVal.GetId().GetValue());
+    return sqlUpdateBuilder.ExecuteSql(ctx.GetECDb());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateUnits(Context& ctx, UnitChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    for (size_t i = 0; i < changes.Count(); i++)
+        {
+        UnitChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Units from an ECSchema is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::New)
+            {
+            ECUnitCP unit = newSchema.GetUnitCP(change.GetChangeName());
+            if (unit == nullptr)
+                {
+                BeAssert(false && "Failed to find unit");
+                return ERROR;
+                }
+
+            if (SUCCESS != ImportUnit(ctx, *unit))
+                return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::Modified)
+            {
+            ECUnitCP oldVal = oldSchema.GetUnitCP(change.GetChangeName());
+            ECUnitCP newVal = newSchema.GetUnitCP(change.GetChangeName());
+            if (oldVal == nullptr)
+                {
+                BeAssert(false && "Failed to find Unit");
+                return ERROR;
+                }
+            if (newVal == nullptr)
+                {
+                BeAssert(false && "Failed to find Unit");
+                return ERROR;
+                }
+
+            if (UpdateUnit(ctx, change, *oldVal, *newVal) != SUCCESS)
+                return ERROR;
+
+            continue;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateUnit(Context& ctx, UnitChange& change, ECN::ECUnitCR oldVal, ECN::ECUnitCR newVal)
+    {
+    if (change.GetStatus() == ECChange::Status::Done)
+        return SUCCESS;
+
+    if (change.Name().IsChanged())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a Unit is not supported.");
+        return ERROR;
+        }
+
+    size_t actualChanges = 0;
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Unit);
+    if (change.DisplayLabel().IsChanged())
+        {
+        actualChanges++;
+        if (change.DisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.DisplayLabel().GetNew().Value().c_str());
+        }
+
+    if (change.Description().IsChanged())
+        {
+        actualChanges++;
+        if (change.Description().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", change.Description().GetNew().Value().c_str());
+        }
+
+    if (change.MemberChangesCount() > actualChanges)
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of Unit '%s' is not supported except for DisplayLabel and Description.",
+                         oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
+    sqlUpdateBuilder.AddWhereExp("Id", oldVal.GetId().GetValue());
+    return sqlUpdateBuilder.ExecuteSql(ctx.GetECDb());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateFormats(Context& ctx, FormatChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    for (size_t i = 0; i < changes.Count(); i++)
+        {
+        FormatChange& change = changes[i];
+        if (!change.IsChanged())
+            continue;
+
+        if (change.GetOpCode() == ECChange::OpCode::Deleted)
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Formats from an ECSchema is not supported.",
+                                 oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::New)
+            {
+            ECFormatCP format = newSchema.GetFormatCP(change.GetChangeName());
+            if (format == nullptr)
+                {
+                BeAssert(false && "Failed to find format");
+                return ERROR;
+                }
+
+            if (SUCCESS != ImportFormat(ctx, *format))
+                return ERROR;
+            }
+
+        if (change.GetOpCode() == ECChange::OpCode::Modified)
+            {
+            ECFormatCP oldVal = oldSchema.GetFormatCP(change.GetChangeName());
+            ECFormatCP newVal = newSchema.GetFormatCP(change.GetChangeName());
+            if (oldVal == nullptr)
+                {
+                BeAssert(false && "Failed to find format");
+                return ERROR;
+                }
+            if (newVal == nullptr)
+                {
+                BeAssert(false && "Failed to find format");
+                return ERROR;
+                }
+
+            if (UpdateFormat(ctx, change, *oldVal, *newVal) != SUCCESS)
+                return ERROR;
+
+            continue;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal)
+    {
+    if (change.GetStatus() == ECChange::Status::Done)
+        return SUCCESS;
+
+    if (change.Name().IsChanged())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a Format is not supported.");
+        return ERROR;
+        }
+
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Format);
+    if (change.DisplayLabel().IsChanged())
+        {
+        if (change.DisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.DisplayLabel().GetNew().Value().c_str());
+        }
+
+    if (change.Description().IsChanged())
+        {
+        if (change.Description().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", change.Description().GetNew().Value().c_str());
+        }
+
+    NumericFormatSpecChange& numSpecChange = change.NumericSpec();
+    if (numSpecChange.IsChanged())
+        {
+        if (numSpecChange.GetOpCode() == ECN::ECChange::OpCode::Deleted)
+            sqlUpdateBuilder.AddSetToNull("NumericSpec");
+        else
+            {
+            BeAssert(newVal.HasNumeric());
+            sqlUpdateBuilder.AddSetExp("NumericSpec", SchemaPersistenceHelper::SerializeNumericSpec(*newVal.GetNumericSpec()).c_str());
+            }
+        }
+
+    CompositeValueSpecChange& compSpecChange = change.CompositeSpec();
+    if (compSpecChange.IsChanged())
+        {
+        if (compSpecChange.MajorUnit().IsChanged() || compSpecChange.MiddleUnit().IsChanged() || compSpecChange.MinorUnit().IsChanged() ||
+            compSpecChange.SubUnit().IsChanged())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the composite units of Format '%s' is not supported.",
+                                 oldVal.GetFullName().c_str());
+            return ERROR;
+            }
+
+        if (compSpecChange.Spacer().IsChanged() || compSpecChange.IncludeZero().IsChanged())
+            sqlUpdateBuilder.AddSetExp("CompositeSpec", SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(*newVal.GetCompositeSpec()).c_str());
+        }
+
+    FormatId formatId = oldVal.GetId();
+    sqlUpdateBuilder.AddWhereExp("Id", formatId.GetValue());
+    if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+        return ERROR;
+
+    if (SUCCESS != UpdateFormatCompositeUnitLabel(ctx, formatId, compSpecChange.MajorLabel(), 0))
+        return ERROR;
+
+    if (SUCCESS != UpdateFormatCompositeUnitLabel(ctx, formatId, compSpecChange.MiddleLabel(), 1))
+        return ERROR;
+
+    if (SUCCESS != UpdateFormatCompositeUnitLabel(ctx, formatId, compSpecChange.MinorLabel(), 2))
+        return ERROR;
+
+    return UpdateFormatCompositeUnitLabel(ctx, formatId, compSpecChange.SubLabel(), 3);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateFormatCompositeUnitLabel(Context& ctx, FormatId formatId, StringChange& unitLabelChange, int ordinal)
+    {
+    if (!unitLabelChange.IsChanged())
+        return SUCCESS;
+
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_FormatCompositeUnit);
+    if (unitLabelChange.GetNew().IsNull())
+        sqlUpdateBuilder.AddSetToNull("Label");
+    else
+        sqlUpdateBuilder.AddSetExp("Label", unitLabelChange.GetNew().Value().c_str());
+
+    sqlUpdateBuilder.AddWhereExp("FormatId", formatId.GetValue());
+    sqlUpdateBuilder.AddWhereExp("Ordinal", ordinal);
+    return sqlUpdateBuilder.ExecuteSql(ctx.GetECDb());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChange, ECSchemaCR oldSchema, ECSchemaCR newSchema)
@@ -2890,7 +3827,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
     if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    if (schemaChange.GetName().IsValid())
+    if (schemaChange.Name().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECSchema is not supported.");
         return ERROR;
@@ -2905,73 +3842,117 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 
     SqlUpdateBuilder updateBuilder(TABLE_Schema);
 
-    if (schemaChange.GetDisplayLabel().IsValid())
+    if (schemaChange.DisplayLabel().IsChanged())
         {
-        if (schemaChange.GetDisplayLabel().GetNew().IsNull())
+        if (schemaChange.DisplayLabel().GetNew().IsNull())
             updateBuilder.AddSetToNull("DisplayLabel");
         else
-            updateBuilder.AddSetExp("DisplayLabel", schemaChange.GetDisplayLabel().GetNew().Value().c_str());
+            updateBuilder.AddSetExp("DisplayLabel", schemaChange.DisplayLabel().GetNew().Value().c_str());
         }
 
-    if (schemaChange.GetDescription().IsValid())
+    if (schemaChange.Description().IsChanged())
         {
-        if (schemaChange.GetDescription().GetNew().IsNull())
+        if (schemaChange.Description().GetNew().IsNull())
             updateBuilder.AddSetToNull("Description");
         else
-            updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
+            updateBuilder.AddSetExp("Description", schemaChange.Description().GetNew().Value().c_str());
         }
 
-    const bool readVersionHasChanged = schemaChange.GetVersionRead().IsValid();
+    const bool readVersionHasChanged = schemaChange.VersionRead().IsChanged();
     if (readVersionHasChanged)
         {
-        if (schemaChange.GetVersionRead().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionRead().GetValue(ValueId::New).Value())
+        if (schemaChange.VersionRead().GetOld().Value() > schemaChange.VersionRead().GetNew().Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionRead' of an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
         if (!ctx.AreMajorSchemaVersionChangesAllowed())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Major schema version changes are disabled.",
-                                 oldSchema.GetFullSchemaName().c_str());
+                                 oldSchema.GetName().c_str());
             return ERROR;
             }
 
         ctx.AddSchemaWithMajorVersionChange(oldSchema.GetId());
-        updateBuilder.AddSetExp("VersionDigit1", schemaChange.GetVersionRead().GetNew().Value());
+        updateBuilder.AddSetExp("VersionDigit1", schemaChange.VersionRead().GetNew().Value());
         }
 
-    const bool writeVersionHasChanged = schemaChange.GetVersionWrite().IsValid();
+    const bool writeVersionHasChanged = schemaChange.VersionWrite().IsChanged();
     if (writeVersionHasChanged)
         {
-        if (!readVersionHasChanged && schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
+        if (!readVersionHasChanged && schemaChange.VersionWrite().GetOld().Value() > schemaChange.VersionWrite().GetNew().Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionWrite' of an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("VersionDigit2", schemaChange.GetVersionWrite().GetNew().Value());
+        updateBuilder.AddSetExp("VersionDigit2", schemaChange.VersionWrite().GetNew().Value());
         }
 
-    if (schemaChange.GetVersionMinor().IsValid())
+    if (schemaChange.VersionMinor().IsChanged())
         {
-        if (!readVersionHasChanged && !writeVersionHasChanged && schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
+        if (!readVersionHasChanged && !writeVersionHasChanged && schemaChange.VersionMinor().GetOld().Value() > schemaChange.VersionMinor().GetNew().Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionMinor' of an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("VersionDigit3", schemaChange.GetVersionMinor().GetNew().Value());
+        updateBuilder.AddSetExp("VersionDigit3", schemaChange.VersionMinor().GetNew().Value());
         }
 
-    if (schemaChange.GetAlias().IsValid())
+    if (schemaChange.Alias().IsChanged())
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.",
                              oldSchema.GetFullSchemaName().c_str());
         return ERROR;
+        }
+
+    if (schemaChange.ECVersion().IsChanged())
+        {
+        if (schemaChange.ECVersion().GetOld().Value() > schemaChange.ECVersion().GetNew().Value())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'ECVersion' of an ECSchema is not supported.",
+                             oldSchema.GetName().c_str());
+            return ERROR;
+            }
+        }
+
+    if (FeatureManager::IsAvailable(ctx.GetECDb(), Feature::ECVersions))
+        {
+        const bool originalVersionMajorHasChanged = schemaChange.OriginalECXmlVersionMajor().IsChanged();
+        if (originalVersionMajorHasChanged)
+            {
+            uint32_t newVal = schemaChange.OriginalECXmlVersionMajor().GetNew().Value();
+            if (schemaChange.OriginalECXmlVersionMajor().GetOld().Value() > newVal)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMajor' of an ECSchema is not supported.",
+                                     oldSchema.GetName().c_str());
+                return ERROR;
+                }
+
+            updateBuilder.AddSetExp("OriginalECXmlVersionMajor", newVal);
+            }
+
+        if (schemaChange.OriginalECXmlVersionMinor().IsChanged())
+            {
+            uint32_t newVal = schemaChange.OriginalECXmlVersionMinor().GetNew().Value();
+            //if the higher digits have changed, minor version may be decremented
+            if (!originalVersionMajorHasChanged && schemaChange.OriginalECXmlVersionMinor().GetOld().Value() > newVal)
+                {
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMinor' of an ECSchema is not supported.",
+                                     oldSchema.GetName().c_str());
+                return ERROR;
+                }
+            updateBuilder.AddSetExp("OriginalECXmlVersionMinor", newVal);
+            }
+        }
+    else
+        {
+        BeAssert(newSchema.OriginalECXmlVersionLessThan(ECVersion::V3_2) && "Only EC 3.1 schemas can be imported into a file not supporting EC 3.2 yet");
         }
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name
@@ -2987,6 +3968,18 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         return ERROR;
 
     if (UpdateEnumerations(ctx, schemaChange.Enumerations(), oldSchema, newSchema) == ERROR)
+        return ERROR;
+
+    if (SUCCESS != UpdatePhenomena(ctx, schemaChange.Phenomena(), oldSchema, newSchema))
+        return ERROR;
+
+    if (SUCCESS != UpdateUnitSystems(ctx, schemaChange.UnitSystems(), oldSchema, newSchema))
+        return ERROR;
+
+    if (SUCCESS != UpdateUnits(ctx, schemaChange.Units(), oldSchema, newSchema))
+        return ERROR;
+
+    if (SUCCESS != UpdateFormats(ctx, schemaChange.Formats(), oldSchema, newSchema))
         return ERROR;
 
     if (UpdateKindOfQuantities(ctx, schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)
@@ -3005,9 +3998,9 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> const& dependencyOrderedPrimarySchemas)
+BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> const& schemas)
     {
-    if (dependencyOrderedPrimarySchemas.empty())
+    if (schemas.empty())
         {
         BeAssert(false);
         return ERROR;
@@ -3016,7 +4009,7 @@ BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> con
     BeAssert(ctx.GetExistingSchemas().empty() && ctx.GetSchemasToImport().empty());
 
     std::set<Utf8String> doneList;
-    for (ECSchemaCP schema : dependencyOrderedPrimarySchemas)
+    for (ECSchemaCP schema : schemas)
         {
         Utf8String schemaFullName = schema->GetFullSchemaName();
         if (doneList.find(schemaFullName) != doneList.end())
@@ -3038,17 +4031,17 @@ BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> con
     if (!ctx.GetExistingSchemas().empty())
         {
         SchemaComparer comparer;
-        //We do not require detail if schema is added or deleted the name and version suffice
-        SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::AppendDetailLevel::Partial, SchemaComparer::AppendDetailLevel::Partial);
-        if (SUCCESS != comparer.Compare(ctx.Changes(), ctx.GetExistingSchemas(), ctx.GetSchemasToImport(), options))
+        //We do not require detail if schema is added or deleted. the name and version suffices.
+        SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
+        if (SUCCESS != comparer.Compare(ctx.GetDiff(), ctx.GetExistingSchemas(), ctx.GetSchemasToImport(), options))
             return ERROR;
 
         std::set<Utf8CP, CompareIUtf8Ascii> schemaOfInterest;
-        if (ctx.Changes().IsValid())
+        if (ctx.GetDiff().Changes().IsChanged())
             {
-            for (size_t i = 0; i < ctx.Changes().Count(); i++)
+            for (size_t i = 0; i < ctx.GetDiff().Changes().Count(); i++)
                 {
-                schemaOfInterest.insert(ctx.Changes().At(i).GetId());
+                schemaOfInterest.insert(ctx.GetDiff().Changes()[i].GetChangeName());
                 }
             }
         //Remove any irrelevant schemas
@@ -3110,13 +4103,13 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
         ECSchemaCP schema = ctx.GetSchemaManager().GetSchema(name);
         if (schema == nullptr)
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to read schema %s from ECDb.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to read schema '%s' from ECDb.", name.c_str());
             return ERROR;
             }
 
         if (!ValidateSchema(*schema))
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to validate previously imported schema %s.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to validate previously imported schema '%s'.", name.c_str());
             return ERROR;
             }
 
@@ -3128,13 +4121,13 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
         ECSchemaCP schema = ctx.GetSchemaManager().GetSchema(name);
         if (schema == nullptr)
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to read imported schema '%s' from ECDb.", name.c_str());
             return ERROR;
             }
 
         if (!ValidateSchema(*schema))
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to validate imported schema %s.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to validate imported schema '%s'.", name.c_str());
             return ERROR;
             }
 
@@ -3143,5 +4136,219 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
 
     return SUCCESS;
     }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                   Krischan.Eberle    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in)
+    {
+    bvector<ECSchemaCP> schemasToImport = FindAllSchemasInGraph(in);
+    for (ECSchemaCP schema : schemasToImport)
+        {
+        if (schema == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        //this is the in-memory version of ECSchemas. ECDb only supports the latest in-memory version.
+        //Deserializing into older versions is not needed in ECDb and therefore not supported.
+        if (schema->GetECVersion() != ECVersion::Latest)
+            {
+            Issues().ReportV("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
+            return ERROR;
+            }
+
+        if (schema->HasId())
+            {
+            ECSchemaId id = SchemaPersistenceHelper::GetSchemaId(GetECDb(), DbTableSpace::Main(), schema->GetName().c_str(), SchemaLookupMode::ByName);
+            if (!id.IsValid() || id != schema->GetId())
+                {
+                Issues().ReportV("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
+            }
+        }
+
+    bvector<ECSchemaCP> primarySchemas;
+    bvector<ECSchemaP> suppSchemas;
+    for (ECSchemaCP schema : schemasToImport)
+        {
+        if (schema->IsSupplementalSchema())
+            {
+            if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(schema))
+                {
+                LOG.warningv("Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas in the invariant culture.", schema->GetFullSchemaName().c_str());
+                continue;
+                }
+
+            suppSchemas.push_back(const_cast<ECSchemaP> (schema));
+            }
+        else
+            primarySchemas.push_back(schema);
+        }
+
+    schemasToImport.clear();
+    if (!suppSchemas.empty())
+        {
+        for (ECSchemaCP primarySchema : primarySchemas)
+            {
+            if (primarySchema->IsSupplemented())
+                continue;
+
+            ECSchemaP primarySchemaP = const_cast<ECSchemaP> (primarySchema);
+            SupplementedSchemaBuilder builder;
+            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
+            if (SupplementedSchemaStatus::Success != status)
+                {
+                Issues().ReportV("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
+                return ERROR;
+                }
+
+            //All consolidated custom attribute must be reference. But Supplemental Provenance in BSCA is not
+            //This bug could also be fixed in SupplementSchema builder but its much safer to do it here for now.
+            if (primarySchema->GetSupplementalInfo().IsValid())
+                {
+                IECInstancePtr provenance = primarySchema->GetCustomAttribute("SupplementalProvenance");
+                if (provenance.IsValid())
+                    {
+                    auto& bsca = provenance->GetClass().GetSchema();
+                    if (!ECSchema::IsSchemaReferenced(*primarySchema, bsca))
+                        {
+                        primarySchemaP->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
+                        }
+                    }
+                }
+            }
+        }
+
+    // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
+    bvector<ECN::ECSchemaCP> sortedSchemas = Sort(primarySchemas);
+        
+    //If we import into pre-EC3.2 files, we must not import the units and formats schema
+    //as they are only deserialized temporarily by ECObjects
+    if (IsEC32AvailableInFile())
+        out.insert(out.begin(), sortedSchemas.begin(), sortedSchemas.end());
+    else
+        m_legacyHelper.RemoveSchemasToSkip(out, sortedSchemas);
+
+    return SchemaValidator::ValidateSchemas(ImportCtx(), Issues(), out) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bvector<ECN::ECSchemaCP> SchemaWriter::Context::Sort(bvector<ECN::ECSchemaCP> const& in)
+    {
+    bvector<ECN::ECSchemaCP> sortedList;
+    bvector<ECN::ECSchemaCP> layer;
+    do
+        {
+        layer = GetNextLayer(in, layer);
+        std::reverse(layer.begin(), layer.end());
+        for (ECN::ECSchemaCP schema : layer)
+            sortedList.push_back(schema);
+
+        } while (!layer.empty());
+
+        std::reverse(sortedList.begin(), sortedList.end());
+        return sortedList;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bvector<ECN::ECSchemaCP> SchemaWriter::Context::GetNextLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
+    {
+    bvector<ECN::ECSchemaCP> list;
+    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> map;
+    if (referencedBy.empty())
+        {
+        for (auto schema : schemas)
+            if (map.find(schema->GetSchemaKey()) == map.end())
+                map[schema->GetSchemaKey()] = schema;
+
+        for (auto schema : schemas)
+            for (const auto& ref : FindAllSchemasInGraph(*schema, false))
+                {
+                auto itor = map.find(ref.first);
+                if (map.end() != itor)
+                    map.erase(itor);
+                }
+        }
+    else
+        {
+        for (auto schema : referencedBy)
+            for (const auto& ref : schema->GetReferencedSchemas())
+                if (map.end() == map.find(ref.first))
+                    map[ref.first] = ref.second.get();
+
+
+        for (auto const& entry : map)
+            for (const auto& ref : FindAllSchemasInGraph(*entry.second, false))
+                {
+                auto itor = map.find(ref.first);
+                if (map.end() != itor)
+                    map.erase(itor);
+                }
+        }
+
+    for (const auto& ref : map)
+        list.push_back(ref.second);
+
+    return list;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bvector<ECN::ECSchemaCP> SchemaWriter::Context::FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const& schemas)
+    {
+    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> map;
+    for (ECN::ECSchemaCP schema : schemas)
+        for (const auto& entry : FindAllSchemasInGraph(*schema, true))
+            if (map.find(entry.first) == map.end())
+                map[entry.first] = entry.second;
+
+    bvector<ECN::ECSchemaCP> temp;
+    for (const auto& entry : map)
+        temp.push_back(entry.second);
+
+    return temp;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaWriter::Context::FindAllSchemasInGraph(ECN::ECSchemaCR schema, bool includeThisSchema)
+    {
+    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> schemaMap;
+    if (includeThisSchema)
+        schemaMap[schema.GetSchemaKey()] = &schema;
+
+    for (const auto& entry : schema.GetReferencedSchemas())
+        FindAllSchemasInGraph(schemaMap, entry.second.get());
+
+    return schemaMap;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+void SchemaWriter::Context::FindAllSchemasInGraph(bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>>& schemaMap, ECN::ECSchemaCP schema)
+    {
+    if (schemaMap.find(schema->GetSchemaKey()) != schemaMap.end())
+        return;
+
+    schemaMap[schema->GetSchemaKey()] = schema;
+    for (const auto& entry : schema->GetReferencedSchemas())
+        FindAllSchemasInGraph(schemaMap, entry.second.get());
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

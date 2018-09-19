@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/IECSqlBinder.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -130,6 +130,11 @@ public:
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindInt(int value);
+
+    //! Binds an @ref BentleyApi::ECN::ECEnumeration "ECEnumeration" value to the parameter
+    //! @param[in] value Value to bind
+    //! @return ECSqlStatus::Success or error codes
+    ECDB_EXPORT ECSqlStatus BindEnum(ECN::ECEnumeratorCR value);
 
     //! Binds a 64-bit integer value to the parameter
     //! @param[in] value Value to bind

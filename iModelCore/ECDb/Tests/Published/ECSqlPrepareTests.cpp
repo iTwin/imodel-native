@@ -23,7 +23,7 @@ struct ECSqlPrepareTestFixture : public ECDbTestFixture
 
         void SetUp() override
             {
-            EXPECT_EQ(SUCCESS, SetupECDb("ecsqlpreparetests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+            EXPECT_EQ(SUCCESS, SetupECDb("ecsqlpreparetests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
             EXPECT_EQ(SUCCESS, PopulateECDb(10));
             }
     };

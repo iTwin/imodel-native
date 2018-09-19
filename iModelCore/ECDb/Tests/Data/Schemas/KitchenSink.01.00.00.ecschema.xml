@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="KitchenSink" alias="ks" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+<ECSchema schemaName="KitchenSink" alias="ks" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECCustomAttributeClass typeName="AccessCustomAttributes" modifier="None" appliesTo="Any">
         <ECProperty propertyName="AccessLevel" typeName="int" readOnly="false"/>
         <ECProperty propertyName="Writeable" typeName="boolean" readOnly="false"/>
     </ECCustomAttributeClass>
     <ECEntityClass typeName="BaseClass" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -40,7 +40,7 @@
     <ECEntityClass typeName="TestClass" modifier="None">
         <BaseClass>BaseClass</BaseClass>
         <ECCustomAttributes>
-            <AccessCustomAttributes xmlns="KitchenSink.01.00">
+            <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
                 <AccessLevel>4</AccessLevel>
                 <Writeable>False</Writeable>
             </AccessCustomAttributes>
@@ -111,7 +111,7 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="FM_Equipment" displayLabel="Equipment" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -186,14 +186,14 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ImplicitRelationshipClass" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <AccessCustomAttributes xmlns="KitchenSink.01.00">
+            <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
                 <AccessLevel>5</AccessLevel>
                 <Writeable>False</Writeable>
             </AccessCustomAttributes>
         </ECCustomAttributes>
         <Source multiplicity="(0,1)" roleLabel="source constraint" polymorphic="true">
             <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="KitchenSink.01.00">
+                <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
                     <AccessLevel>6</AccessLevel>
                     <Writeable>True</Writeable>
                 </AccessCustomAttributes>
@@ -202,7 +202,7 @@
         </Source>
         <Target multiplicity="(0,N)" roleLabel="target constraint" polymorphic="true">
             <ECCustomAttributes>
-                <AccessCustomAttributes xmlns="KitchenSink.01.00">
+                <AccessCustomAttributes xmlns="KitchenSink.01.00.00">
                     <AccessLevel>7</AccessLevel>
                     <Writeable>False</Writeable>
                 </AccessCustomAttributes>

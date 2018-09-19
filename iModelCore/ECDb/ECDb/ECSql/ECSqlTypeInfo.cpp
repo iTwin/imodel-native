@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlTypeInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,57 +14,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo::Kind kind)
-    : m_kind(kind), m_structType(nullptr), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max()), m_propertyMap(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0))
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(ECN::PrimitiveType primitiveType, bool isArray, DateTime::Info const* dateTimeInfo /*= nullptr*/)
-    : m_structType(nullptr), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max()), m_propertyMap(nullptr)
-    {
-    Populate(isArray, &primitiveType, nullptr, -1, -1, dateTimeInfo);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECStructClassCR structType, bool isArray)
-    : m_primitiveType(static_cast<ECN::PrimitiveType>(0)), m_structType(nullptr), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max()), m_propertyMap(nullptr)
-    {
-    Populate(isArray, nullptr, &structType, -1, -1, nullptr);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     04/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECPropertyCR ecProperty)
-    : m_structType(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0)), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max()), m_propertyMap(nullptr)
-    {
-    DetermineTypeInfo(ecProperty);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     09/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(PropertyMap const& propertyMap)
-    : m_structType(nullptr), m_propertyMap(&propertyMap), m_primitiveType(static_cast<ECN::PrimitiveType>(0)), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max())
-    {
-    DetermineTypeInfo(propertyMap.GetProperty());
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo const& rhs)
-    : m_kind(rhs.m_kind), m_primitiveType(rhs.m_primitiveType), m_dateTimeInfo(rhs.m_dateTimeInfo), m_structType(rhs.m_structType),
-    m_minOccurs(rhs.m_minOccurs), m_maxOccurs(rhs.m_maxOccurs), m_propertyMap(rhs.m_propertyMap)
-    {}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo const& rhs)
     {
     if (this != &rhs)
@@ -72,6 +21,8 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo const& rhs)
         m_kind = rhs.m_kind;
         m_primitiveType = rhs.m_primitiveType;
         m_dateTimeInfo = rhs.m_dateTimeInfo;
+        m_enumType = rhs.m_enumType;
+        m_extendedTypeName = rhs.m_extendedTypeName;
         m_structType = rhs.m_structType;
         m_minOccurs = rhs.m_minOccurs;
         m_maxOccurs = rhs.m_maxOccurs;
@@ -84,15 +35,6 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo const& rhs)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo&& rhs)
-    : m_kind(std::move(rhs.m_kind)), m_primitiveType(std::move(rhs.m_primitiveType)), m_dateTimeInfo(std::move(rhs.m_dateTimeInfo)), m_structType(std::move(rhs.m_structType)),
-    m_minOccurs(std::move(rhs.m_minOccurs)), m_maxOccurs(std::move(rhs.m_maxOccurs)), m_propertyMap(std::move(rhs.m_propertyMap))
-    {}
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo&& rhs)
     {
     if (this != &rhs)
@@ -100,6 +42,8 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo&& rhs)
         m_kind = std::move(rhs.m_kind);
         m_primitiveType = std::move(rhs.m_primitiveType);
         m_dateTimeInfo = std::move(rhs.m_dateTimeInfo);
+        m_enumType = std::move(rhs.m_enumType);
+        m_extendedTypeName = std::move(rhs.m_extendedTypeName);
         m_structType = std::move(rhs.m_structType);
         m_minOccurs = std::move(rhs.m_minOccurs);
         m_maxOccurs = std::move(rhs.m_maxOccurs);
@@ -107,34 +51,6 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo&& rhs)
         }
 
     return *this;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     09/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlTypeInfo::Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECStructClassCP structType, int minOccurs, int maxOccurs, DateTime::Info const* dateTimeInfo)
-    {
-    if (primitiveType != nullptr)
-        {
-        m_primitiveType = *primitiveType;
-        m_kind = isArray ? Kind::PrimitiveArray : Kind::Primitive;
-
-        if (dateTimeInfo != nullptr)
-            m_dateTimeInfo = *dateTimeInfo;
-        }
-    else
-        m_primitiveType = static_cast<ECN::PrimitiveType>(0);
-
-    if (structType != nullptr)
-        {
-        m_structType = structType;
-        m_kind = isArray ? Kind::StructArray : Kind::Struct;
-        }
-    else
-        m_structType = nullptr;
-
-    m_minOccurs = minOccurs >= 0 ? (uint32_t) minOccurs : 0;
-    m_maxOccurs = maxOccurs >= 0 ? (uint32_t) maxOccurs : std::numeric_limits<uint32_t>::max();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -162,6 +78,10 @@ bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessag
 
         return false;
         }
+
+    //for navigation props, no further checks. Equality of kind is sufficient.
+    if (lhsKind == Kind::Navigation)
+        return true;
 
     //now detail checks (kinds are equal on both sides)
 
@@ -216,15 +136,16 @@ bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessag
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Info const& rhs) const
     {
-    if (!m_dateTimeInfo.IsValid() || !rhs.IsValid())
+    BeAssert(m_dateTimeInfo != nullptr && "DateTime ECSqlTypeInfo always have m_dateTimeInfo set");
+    if (!m_dateTimeInfo.Value().IsValid() || !rhs.IsValid())
         return true;
 
     //We allow date-only to interact with datetimes of any kind
-    if (m_dateTimeInfo.GetComponent() == DateTime::Component::Date ||
+    if (m_dateTimeInfo.Value().GetComponent() == DateTime::Component::Date ||
         rhs.GetComponent() == DateTime::Component::Date)
         return true;
 
-    return m_dateTimeInfo.GetKind() == rhs.GetKind();
+    return m_dateTimeInfo.Value().GetKind() == rhs.GetKind();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -234,53 +155,60 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     {
     if (ecProperty.GetIsNavigation())
         {
-        NavigationECPropertyCP navProp = ecProperty.GetAsNavigationProperty();
-        BeAssert(!navProp->IsMultiple() && "Should have been caught at schema import time");
-
+        BeAssert(!ecProperty.GetAsNavigationProperty()->IsMultiple() && "Should have been caught at schema import time");
         m_kind = Kind::Navigation;
         return;
         }
 
-    PrimitiveType primitiveType = ECN::PRIMITIVETYPE_Integer;
-    ECStructClassCP structType = nullptr;
-    bool isArray = ecProperty.GetIsArray();
-
-    uint32_t minOccurs = 0;
-    uint32_t maxOccurs = 0;
-
+    const bool isArray = ecProperty.GetIsArray();
     if (isArray)
         {
         ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
-        if (arrayProperty->GetIsStructArray())
-            structType = &arrayProperty->GetAsStructArrayProperty()->GetStructElementType();
-        else if (arrayProperty->GetIsPrimitiveArray())
-            primitiveType = arrayProperty->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-
         BeAssert(nullptr != arrayProperty);
+        if (arrayProperty->GetIsStructArray())
+            {
+            m_kind = Kind::StructArray;
+            m_structType = &arrayProperty->GetAsStructArrayProperty()->GetStructElementType();
+            }
+        else if (arrayProperty->GetIsPrimitiveArray())
+            {
+            m_kind = Kind::PrimitiveArray;
+            PrimitiveArrayECPropertyCP primArrayProp = arrayProperty->GetAsPrimitiveArrayProperty();
+            m_enumType = primArrayProp->GetEnumeration();
+            //we capture the primitive type of the enum as well, as we allow compare enum expressions with non-enum primitive expressions
+            m_primitiveType = m_enumType != nullptr ? m_enumType->GetType(): primArrayProp->GetPrimitiveElementType();
 
-        minOccurs = arrayProperty->GetMinOccurs();
-        maxOccurs = arrayProperty->GetMaxOccurs();
+            if (primArrayProp->HasExtendedType())
+                m_extendedTypeName = primArrayProp->GetExtendedTypeName().c_str();
+            }
+
+        m_minOccurs = arrayProperty->GetMinOccurs();
+        m_maxOccurs = arrayProperty->GetMaxOccurs();
         }
-    //no array
     else if (ecProperty.GetIsStruct())
-        structType = &ecProperty.GetAsStructProperty()->GetType();
-    else if (ecProperty.GetIsPrimitive())
-        primitiveType = ecProperty.GetAsPrimitiveProperty()->GetType();
-
-    if (structType != nullptr)
         {
-        Populate(isArray, nullptr, structType, minOccurs, maxOccurs, nullptr);
-        return;
+        m_kind = Kind::Struct;
+        m_structType = &ecProperty.GetAsStructProperty()->GetType();
+        }
+    else if (ecProperty.GetIsPrimitive())
+        {
+        m_kind = Kind::Primitive;
+        PrimitiveECPropertyCP primProp = ecProperty.GetAsPrimitiveProperty();
+        m_enumType = primProp->GetEnumeration();
+        //we capture the primitive type of the enum as well, as we allow compare enum expressions with non-enum primitive expressions
+        m_primitiveType = m_enumType != nullptr ? m_enumType->GetType() : primProp->GetType();
+
+        if (primProp->HasExtendedType())
+            m_extendedTypeName = primProp->GetExtendedTypeName().c_str();
         }
 
-    if (primitiveType == ECN::PRIMITIVETYPE_DateTime)
+    if (m_primitiveType == ECN::PRIMITIVETYPE_DateTime)
         {
         DateTime::Info dateTimeInfo;
         CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty);
-        Populate(isArray, &primitiveType, nullptr, minOccurs, maxOccurs, &dateTimeInfo);
+        //always set datetimeinfo, even if DateTime::Info::IsValid is false. m_dateTimeInfo is only nullptr for non-DateTime types.
+        m_dateTimeInfo = dateTimeInfo;
         }
-    else
-        Populate(isArray, &primitiveType, nullptr, minOccurs, maxOccurs, nullptr);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

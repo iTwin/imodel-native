@@ -120,30 +120,40 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
     ECPropertyP generatedPropertyP = nullptr;
     switch (typeKind)
         {
-            case ECSqlTypeInfo::Kind::Primitive:
             case ECSqlTypeInfo::Kind::Null:
             {
             PrimitiveECPropertyP primProp = nullptr;
-            if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, typeInfo.GetPrimitiveType()))
+            if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, PRIMITIVETYPE_Integer))
                 return ECSqlStatus::Error;
 
-            if (selectClauseItemPropNameExp != nullptr)
+            //indicate that this is really of type NULL (which does not exist in ECObjects)
+            primProp->SetExtendedTypeName("NULL"); 
+            generatedPropertyP = primProp;
+            break;
+            }
+
+            case ECSqlTypeInfo::Kind::Primitive:
+            {
+            PrimitiveECPropertyP primProp = nullptr;
+            if (typeInfo.IsEnum())
                 {
-                if (selectClauseItemPropNameExp->GetSystemPropertyInfo().IsId())
-                    {
-                    //This is a workaround to expose the information that a generated property refers to an Id system property.
-                    //iModelJs needs that information to format aliased system property expressions as id.
-                    BeAssert(primProp->GetType() == PRIMITIVETYPE_Long);
-                    primProp->SetExtendedTypeName("Id");
-                    }
-                else if (!selectClauseItemPropNameExp->IsPropertyRef())
-                    {
-                    //Extended types are preserved as well
-                    ECPropertyCR prop = selectClauseItemPropNameExp->GetPropertyMap().GetProperty();
-                    if (prop.HasExtendedType())
-                        primProp->SetExtendedTypeName(prop.GetAsPrimitiveProperty()->GetExtendedTypeName().c_str());
-                    }
+                BeAssert(typeInfo.GetEnumerationType() != nullptr);
+                ECSqlStatus stat = AddReferenceToPropertyTypeSchema(typeInfo.GetEnumerationType()->GetSchema());
+                if (!stat.IsSuccess())
+                    return stat;
+
+                if (ECObjectsStatus::Success != GetClass().CreateEnumerationProperty(primProp, encodedPropName, *typeInfo.GetEnumerationType()))
+                    return ECSqlStatus::Error;
                 }
+            else
+                {
+                if (ECObjectsStatus::Success != GetClass().CreatePrimitiveProperty(primProp, encodedPropName, typeInfo.GetPrimitiveType()))
+                    return ECSqlStatus::Error;
+                }
+
+            //Extended types are preserved as well
+            if (typeInfo.HasExtendedType())
+                primProp->SetExtendedTypeName(typeInfo.GetExtendedTypeName().c_str());
 
             generatedPropertyP = primProp;
             break;
@@ -152,7 +162,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             case ECSqlTypeInfo::Kind::Struct:
             {
             ECStructClassCR structType = typeInfo.GetStructType();
-            ECSqlStatus stat = AddReferenceToStructSchema(structType.GetSchema());
+            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(structType.GetSchema());
             if (!stat.IsSuccess())
                 return stat;
 
@@ -171,16 +181,30 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             case ECSqlTypeInfo::Kind::PrimitiveArray:
             {
             PrimitiveArrayECPropertyP arrayProp = nullptr;
-            if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
-                return ECSqlStatus::Error;
-
-            if (selectClauseItemPropNameExp != nullptr && !selectClauseItemPropNameExp->IsPropertyRef())
+            if (typeInfo.GetEnumerationType() != nullptr)
                 {
-                //Extended types are preserved as well
-                ECPropertyCR prop = selectClauseItemPropNameExp->GetPropertyMap().GetProperty();
-                if (prop.HasExtendedType())
-                    arrayProp->SetExtendedTypeName(prop.GetAsPrimitiveArrayProperty()->GetExtendedTypeName().c_str());
+                ECSqlStatus stat = AddReferenceToPropertyTypeSchema(typeInfo.GetEnumerationType()->GetSchema());
+                if (!stat.IsSuccess())
+                    return stat;
+
+                if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, *typeInfo.GetEnumerationType()))
+                    return ECSqlStatus::Error;
                 }
+            else
+                {
+                if (ECObjectsStatus::Success != GetClass().CreatePrimitiveArrayProperty(arrayProp, encodedPropName, typeInfo.GetPrimitiveType()))
+                    return ECSqlStatus::Error;
+                }
+
+            //Extended types are preserved as well
+            if (typeInfo.HasExtendedType())
+                arrayProp->SetExtendedTypeName(typeInfo.GetExtendedTypeName().c_str());
+
+            if (typeInfo.GetArrayMinOccurs() != nullptr)
+                arrayProp->SetMinOccurs(typeInfo.GetArrayMinOccurs().Value());
+
+            if (typeInfo.GetArrayMaxOccurs() != nullptr)
+                arrayProp->SetMaxOccurs(typeInfo.GetArrayMaxOccurs().Value());
 
             generatedPropertyP = arrayProp;
             break;
@@ -188,7 +212,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             case ECSqlTypeInfo::Kind::StructArray:
             {
             ECStructClassCR structType = typeInfo.GetStructType();
-            ECSqlStatus stat = AddReferenceToStructSchema(structType.GetSchema());
+            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(structType.GetSchema());
             if (!stat.IsSuccess())
                 return stat;
 
@@ -199,6 +223,12 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             StructArrayECPropertyP structArrayProp = nullptr;
             if (ECObjectsStatus::Success != GetClass().CreateStructArrayProperty(structArrayProp, encodedPropName, *asStruct))
                 return ECSqlStatus::Error;
+
+            if (typeInfo.GetArrayMinOccurs() != nullptr)
+                structArrayProp->SetMinOccurs(typeInfo.GetArrayMinOccurs().Value());
+
+            if (typeInfo.GetArrayMaxOccurs() != nullptr)
+                structArrayProp->SetMaxOccurs(typeInfo.GetArrayMaxOccurs().Value());
 
             generatedPropertyP = structArrayProp;
             break;
@@ -218,12 +248,12 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::AddReferenceToStructSchema(ECSchemaCR structSchema) const
+ECSqlStatus DynamicSelectClauseECClass::AddReferenceToPropertyTypeSchema(ECSchemaCR propertyTypeSchema) const
     {
-    if (ECSchema::IsSchemaReferenced(GetSchema(), structSchema))
+    if (ECSchema::IsSchemaReferenced(GetSchema(), propertyTypeSchema))
         return ECSqlStatus::Success;
 
-    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR> (structSchema)))
+    if (ECObjectsStatus::Success != GetSchema().AddReferencedSchema(const_cast<ECSchemaR> (propertyTypeSchema)))
         return ECSqlStatus::Error;
 
     return ECSqlStatus::Success;

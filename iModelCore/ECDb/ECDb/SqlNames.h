@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SqlNames.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,9 +21,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_Column "ec_Column"
 #define TABLE_CustomAttribute "ec_CustomAttribute"
 #define TABLE_Enumeration "ec_Enumeration"
+#define TABLE_Format "ec_Format"
+#define TABLE_FormatCompositeUnit "ec_FormatCompositeUnit"
 #define TABLE_Index "ec_Index"
 #define TABLE_IndexColumn "ec_IndexColumn"
 #define TABLE_KindOfQuantity "ec_KindOfQuantity"
+#define TABLE_Phenomenon "ec_Phenomenon"
 #define TABLE_Property "ec_Property"
 #define TABLE_PropertyCategory "ec_PropertyCategory"
 #define TABLE_PropertyMap "ec_PropertyMap"
@@ -33,6 +36,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_Schema "ec_Schema"
 #define TABLE_SchemaReference "ec_SchemaReference"
 #define TABLE_Table "ec_Table"
+#define TABLE_Unit "ec_Unit"
+#define TABLE_UnitSystem "ec_UnitSystem"
 
 #define COL_PROFILETABLE_Id "Id"
 

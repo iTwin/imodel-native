@@ -358,6 +358,82 @@ KindOfQuantityCP SchemaManager::Dispatcher::GetKindOfQuantity(Utf8StringCR schem
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+ECUnitCP SchemaManager::Dispatcher::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        ECUnitCP unit = manager->GetUnit(schemaNameOrAlias, unitName, mode);
+        if (unit != nullptr)
+            return unit;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+ECFormatCP SchemaManager::Dispatcher::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        ECFormatCP format = manager->GetFormat(schemaNameOrAlias, formatName, mode);
+        if (format != nullptr)
+            return format;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+UnitSystemCP SchemaManager::Dispatcher::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        UnitSystemCP system = manager->GetUnitSystem(schemaNameOrAlias, systemName, mode);
+        if (system != nullptr)
+            return system;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+PhenomenonCP SchemaManager::Dispatcher::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        PhenomenonCP phen = manager->GetPhenomenon(schemaNameOrAlias, phenName, mode);
+        if (phen != nullptr)
+            return phen;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyCategoryCP SchemaManager::Dispatcher::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode mode, Utf8CP tableSpace) const
@@ -610,16 +686,19 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         return ERROR;
         }
 
-    if (ECDb::CurrentECDbProfileVersion() != m_ecdb.GetECDbProfileVersion())
+    // Import into new files is not supported. Import into older files is only supported
+    // if the schemas to import are EC3.1 schemas. This will be checked downstream.
+    if (ECDb::CurrentECDbProfileVersion() < m_ecdb.GetECDbProfileVersion())
         {
-        m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. Schema imports with this version of the software can only be done on files with profile version %s. The file's version, however, is %s.",
+        m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. Cannot import schemas into a file which was created with a higher version of this softwares. The file's version, however, is %s.",
                                           ECDb::CurrentECDbProfileVersion().ToString().c_str(), m_ecdb.GetECDbProfileVersion().ToString().c_str());
         return ERROR;
         }
 
     BeMutexHolder lock(m_mutex);
+    ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     bvector<ECSchemaCP> schemasToMap;
-    if (SUCCESS != PersistSchemas(ctx, schemasToMap, schemas))
+    if (SUCCESS != SchemaWriter::ImportSchemas(schemasToMap, ctx, schemas))
         return ERROR;
 
     if (schemasToMap.empty())
@@ -632,101 +711,6 @@ BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector
         return ERROR;
 
     return MapSchemas(ctx, schemasToMap);
-    }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                   Affan.Khan        29/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MainSchemaManager::PersistSchemas(SchemaImportContext& context, bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECSchemaCP> const& schemas) const
-    {
-    bvector<ECSchemaCP> schemasToImport = FindAllSchemasInGraph(schemas);
-    for (ECSchemaCP schema : schemasToImport)
-        {
-        if (schema == nullptr)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        //this is the in-memory version of ECSchemas. ECDb only supports the latest in-memory version.
-        //Deserializing into older versions is not needed in ECDb and therefore not supported.
-        if (schema->GetECVersion() != ECVersion::Latest)
-            {
-            m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
-            return ERROR;
-            }
-
-        if (schema->HasId())
-            {
-            ECSchemaId id = SchemaPersistenceHelper::GetSchemaId(m_ecdb, GetTableSpace(), schema->GetName().c_str(), SchemaLookupMode::ByName);
-            if (!id.IsValid() || id != schema->GetId())
-                {
-                m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
-                return ERROR;
-                }
-            }
-        }
-
-    PERFLOG_START("ECDb", "Schema import> Schema supplementation");
-    bvector<ECSchemaCP> primarySchemas;
-    bvector<ECSchemaP> suppSchemas;
-    for (ECSchemaCP schema : schemasToImport)
-        {
-        if (schema->IsSupplementalSchema())
-            {
-            if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(schema))
-                {
-                LOG.warningv("Localization ECSchema '%s' is ignored as ECDb always persists ECSchemas in the invariant culture.", schema->GetFullSchemaName().c_str());
-                continue;
-                }
-
-            suppSchemas.push_back(const_cast<ECSchemaP> (schema));
-            }
-        else
-            primarySchemas.push_back(schema);
-        }
-
-    schemasToImport.clear();
-    if (!suppSchemas.empty())
-        {
-        for (ECSchemaCP primarySchema : primarySchemas)
-            {
-            if (primarySchema->IsSupplemented())
-                continue;
-
-            ECSchemaP primarySchemaP = const_cast<ECSchemaP> (primarySchema);
-            SupplementedSchemaBuilder builder;
-            SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
-            if (SupplementedSchemaStatus::Success != status)
-                {
-                m_ecdb.GetImpl().Issues().ReportV("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
-                return ERROR;
-                }
-
-            //All consolidated customattribute must be reference. But Supplemental Provenance in BSCA is not
-            //This bug could also be fixed in SupplementSchema builder but its much safer to do it here for now.
-            if (primarySchema->GetSupplementalInfo().IsValid())
-                {
-                auto provenance = primarySchema->GetCustomAttribute("SupplementalProvenance");
-                if (provenance.IsValid())
-                    {
-                    auto& bsca = provenance->GetClass().GetSchema();
-                    if (!ECSchema::IsSchemaReferenced(*primarySchema, bsca))
-                        {
-                        primarySchemaP->AddReferencedSchema(const_cast<ECSchemaR>(bsca));
-                        }
-                    }
-                }
-            }
-        }
-    PERFLOG_FINISH("ECDb", "Schema import> Schema supplementation");
-
-    // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
-    bvector<ECSchemaCP> primarySchemasOrderedByDependencies = Sort(primarySchemas);
-    primarySchemas.clear(); // Just make sure no one tries to use it anymore
-    ECDbExpressionSymbolContext symbolsContext(m_ecdb);
-    return SchemaWriter::ImportSchemas(schemasToMap, m_ecdb, context, primarySchemasOrderedByDependencies);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1534,120 +1518,6 @@ BentleyStatus MainSchemaManager::RepopulateCacheTables() const
         }
 
     return SUCCESS;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bvector<ECN::ECSchemaCP> MainSchemaManager::FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const& schemas)
-    {
-    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> map;
-    for (ECN::ECSchemaCP schema : schemas)
-        for (const auto& entry : FindAllSchemasInGraph(*schema, true))
-            if (map.find(entry.first) == map.end())
-                map[entry.first] = entry.second;
-
-    bvector<ECN::ECSchemaCP> temp;
-    for (const auto& entry : map)
-        temp.push_back(entry.second);
-
-    return temp;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> MainSchemaManager::FindAllSchemasInGraph(ECN::ECSchemaCR schema, bool includeThisSchema)
-    {
-    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> schemaMap;
-    if (includeThisSchema)
-        schemaMap[schema.GetSchemaKey()] = &schema;
-
-    for (const auto& entry : schema.GetReferencedSchemas())
-        FindAllSchemasInGraph(schemaMap, entry.second.get());
-
-    return schemaMap;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-void MainSchemaManager::FindAllSchemasInGraph(bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>>& schemaMap, ECN::ECSchemaCP schema)
-    {
-    if (schemaMap.find(schema->GetSchemaKey()) != schemaMap.end())
-        return;
-
-    schemaMap[schema->GetSchemaKey()] = schema;
-    for (const auto& entry : schema->GetReferencedSchemas())
-        FindAllSchemasInGraph(schemaMap, entry.second.get());
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bvector<ECN::ECSchemaCP> MainSchemaManager::Sort(bvector<ECN::ECSchemaCP> const& schemas)
-    {
-    bvector<ECN::ECSchemaCP> sortedList;
-    bvector<ECN::ECSchemaCP> layer;
-    do
-        {
-        layer = GetNextLayer(schemas, layer);
-        std::reverse(layer.begin(), layer.end());
-        for (ECN::ECSchemaCP schema : layer)
-            sortedList.push_back(schema);
-
-        } while (!layer.empty());
-
-        std::reverse(sortedList.begin(), sortedList.end());
-        return sortedList;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bvector<ECN::ECSchemaCP> MainSchemaManager::GetNextLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
-    {
-    bvector<ECN::ECSchemaCP> list;
-    bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> map;
-    if (referencedBy.empty())
-        {
-        for (auto schema : schemas)
-            if (map.find(schema->GetSchemaKey()) == map.end())
-                map[schema->GetSchemaKey()] = schema;
-
-        for (auto schema : schemas)
-            for (const auto& ref : FindAllSchemasInGraph(*schema, false))
-                {
-                auto itor = map.find(ref.first);
-                if (map.end() != itor)
-                    map.erase(itor);
-                }
-        }
-    else
-        {
-        for (auto schema : referencedBy)
-            for (const auto& ref : schema->GetReferencedSchemas())
-                if (map.end() == map.find(ref.first))
-                    map[ref.first] = ref.second.get();
-
-
-        for (auto const& entry : map)
-            for (const auto& ref : FindAllSchemasInGraph(*entry.second, false))
-                {
-                auto itor = map.find(ref.first);
-                if (map.end() != itor)
-                    map.erase(itor);
-                }
-        }
-
-    for (const auto& ref : map)
-        list.push_back(ref.second);
-
-    return list;
     }
 
 //---------------------------------------------------------------------------------------

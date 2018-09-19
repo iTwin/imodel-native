@@ -10,6 +10,8 @@
 #include "ECDbTests.h"
 #include "TestInfoHolders.h"
 #include <Bentley/BeNumerical.h>
+#include <Bentley/BeVersion.h>
+#include <Bentley/Nullable.h>
 #include <json/json.h>
 #include <BeRapidJson/BeRapidJson.h>
 
@@ -57,6 +59,8 @@ struct TestHelper final
         DbResult ExecuteECSql(Utf8CP ecsql) const;
         JsonValue ExecuteSelectECSql(Utf8CP ecsql) const;
         DbResult ExecuteInsertECSql(ECInstanceKey&, Utf8CP ecsql) const;
+
+        BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
 
         MapStrategyInfo GetMapStrategy(ECN::ECClassId) const;
 

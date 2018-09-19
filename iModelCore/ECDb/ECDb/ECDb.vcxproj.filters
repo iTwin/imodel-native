@@ -382,7 +382,6 @@
     <ClInclude Include="SchemaValidator.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
-    <ClInclude Include="PolicyManager.h" />
     <ClInclude Include="ProfileManager.h">
       <Filter>Profile</Filter>
     </ClInclude>
@@ -414,6 +413,8 @@
     <ClInclude Include="ChangeManager.h">
       <Filter>Change</Filter>
     </ClInclude>
+    <ClInclude Include="PolicyManager.h" />
+    <ClInclude Include="FeatureManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -726,7 +727,6 @@
     <ClCompile Include="SchemaValidator.cpp">
       <Filter>SchemaManager</Filter>
     </ClCompile>
-    <ClCompile Include="PolicyManager.cpp" />
     <ClCompile Include="ProfileManager.cpp">
       <Filter>Profile</Filter>
     </ClCompile>
@@ -761,14 +761,10 @@
     <ClCompile Include="ChangeManager.cpp">
       <Filter>Change</Filter>
     </ClCompile>
+    <ClCompile Include="PolicyManager.cpp" />
+    <ClCompile Include="FeatureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml">
-      <Filter>ECSchemas</Filter>
-    </Xml>
-    <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml">
-      <Filter>ECSchemas</Filter>
-    </Xml>
     <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
@@ -776,6 +772,12 @@
       <Filter>ECSchemas</Filter>
     </Xml>
     <Xml Include="ECSchemas\ECDbChange.01.00.01.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
+    <Xml Include="ECSchemas\ECDbMeta.04.00.01.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
+    <Xml Include="ECSchemas\ECDbFileInfo.02.00.01.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
   </ItemGroup>

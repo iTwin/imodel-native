@@ -151,7 +151,7 @@ struct ThreadSafetyTests : public ECDbTestFixture  {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ECInstanceKey acmeKey, bentleyKey, vwKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(acmeKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('ACME', 123)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bentleyKey,"INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('Bentley', 4000)"));
@@ -260,7 +260,7 @@ TEST_F(ThreadSafetyTests, MultipleThreadsSingleConnection_FailingGetClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ECInstanceKey acmeKey, bentleyKey, vwKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(acmeKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('ACME', 123)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(bentleyKey, "INSERT INTO stco.Company(Name,NumberOfEmployees) VALUES('Bentley', 4000)"));
@@ -330,7 +330,7 @@ TEST_F(ThreadSafetyTests, ConnectionPerThread_ECSQL)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ThreadSafetyTests, ConnectionPerThread_SQL)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
 
     ECInstanceKey acmeKey, bentleyKey, vwKey;

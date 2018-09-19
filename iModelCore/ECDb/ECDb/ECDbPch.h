@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPch.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -27,6 +27,7 @@
 #include "JsonPersistenceHelper.h"
 
 #include "ECDbImpl.h"
+#include "FeatureManager.h"
 
 #include "ProfileManager.h"
 #include "ProfileUpgrader.h"

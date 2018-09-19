@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlCustomFunctionTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -149,7 +149,7 @@ struct ToBoolStrSqlFunction final : ScalarFunction
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlCustomFunctionTestFixture, RegisterUnregisterCustomSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     PowSqlFunction func;
@@ -167,7 +167,7 @@ TEST_F(ECSqlCustomFunctionTestFixture, RegisterUnregisterCustomSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlCustomFunctionTestFixture, CallUnregisteredSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     Utf8CP ecsql = "SELECT I,POW(I,2) FROM ecsql.P";
@@ -187,7 +187,7 @@ TEST_F(ECSqlCustomFunctionTestFixture, CallUnregisteredSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlCustomFunctionTestFixture, NumericSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("NumericSqlFunction.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("NumericSqlFunction.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ecsql.P (I) VALUES (10)"));
@@ -269,7 +269,7 @@ TEST_F(ECSqlCustomFunctionTestFixture, NumericSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlCustomFunctionTestFixture, StringSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     ToBoolStrSqlFunction func;
@@ -292,7 +292,7 @@ TEST_F(ECSqlCustomFunctionTestFixture, StringSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlCustomFunctionTestFixture, BlobSqlFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
     //insert one more test row which has a NULL column
@@ -352,7 +352,7 @@ TEST_F(ECSqlCustomFunctionTestFixture, BlobSqlFunction)
 //+---------------+---------------+---------------+---------------+---------------+------
  TEST_F (ECSqlCustomFunctionTestFixture, AggregateFunction)
      {
-     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+     ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
      ASSERT_EQ(SUCCESS, PopulateECDb(3));
 
      SumOfSquares func;
@@ -436,7 +436,7 @@ TEST_F(ECSqlCustomFunctionTestFixture, JulianDayFromStringFunction)
             JulianDayFromStringFunction() : ScalarFunction("JULIANDAYFROMSTRING", 1, DbValueType::FloatVal) {}
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     DateTime dt(2015, 3, 24);
     Utf8String dtStr = dt.ToString();

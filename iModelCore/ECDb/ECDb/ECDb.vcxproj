@@ -107,6 +107,7 @@
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
+    <ClCompile Include="FeatureManager.cpp" />
     <ClCompile Include="IssueReporter.cpp" />
     <ClCompile Include="JsonPersistenceHelper.cpp" />
     <ClCompile Include="LightweightCache.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
+    <ClInclude Include="FeatureManager.h" />
     <ClInclude Include="IssueReporter.h" />
     <ClInclude Include="JsonPersistenceHelper.h" />
     <ClInclude Include="LightweightCache.h" />
@@ -251,9 +253,12 @@
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDbChange.01.00.01.ecschema.xml" />
-    <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbFileInfo.02.00.01.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
-    <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbMeta.04.00.01.ecschema.xml">
+    </Xml>
     <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

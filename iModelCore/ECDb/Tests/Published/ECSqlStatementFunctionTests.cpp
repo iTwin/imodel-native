@@ -31,7 +31,7 @@ struct ECSqlStatementFunctionTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(5));
     ASSERT_EQ(SUCCESS, m_ecdb.AttachChangeCache(ECDb::GetDefaultChangeCachePath(m_ecdb.GetDbFileName())));
 
@@ -144,7 +144,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, CoalesceAndNullIf)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     
     {
@@ -210,7 +210,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, CoalesceAndNullIf)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, FunctionCallWithDistinct)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlbuiltinfunctiontest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     auto getIntScalar = [] (ECDbCR ecdb, Utf8CP ecsql)
         {
@@ -289,7 +289,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, FunctionCallWithDistinct)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementFunctionTestFixture, InVirtualSetFunction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     const int perClassRowCount = 10;
     ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 

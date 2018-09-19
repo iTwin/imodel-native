@@ -3,13 +3,13 @@
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECCustomAttributes>
-        <SchemaMap xmlns="ECDbMap.02.00">
+        <SchemaMap xmlns="ECDbMap.02.00.00">
             <TablePrefix>sc</TablePrefix>
         </SchemaMap>
     </ECCustomAttributes>
     <ECEntityClass typeName="AAA">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -28,7 +28,7 @@
     </ECStructClass>
     <ECEntityClass typeName="AAFoo">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -55,7 +55,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -72,7 +72,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="Asset">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -136,7 +136,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="ClassWithPrimitiveProperties" modifier="Sealed">
         <ECCustomAttributes>
-            <DbIndexList xmlns="ECDbMap.02.00">
+            <DbIndexList xmlns="ECDbMap.02.00.00">
                 <Indexes>
                     <DbIndex>
                         <Name>IDX_ON_intProp_doubleProp_stringProp</Name>
@@ -281,7 +281,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeHardware" modifier="Sealed" strength="referencing">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>Hardware__trg_0N_id</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -295,7 +295,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeOffice" modifier="Sealed" strength="referencing">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>Cubicle__trg_0N_id</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -311,7 +311,7 @@
         <BaseClass>Asset</BaseClass>
         <ECNavigationProperty propertyName="Employee" relationshipName="EmployeePhone" direction="Backward">
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="Number" typeName="string"/>
@@ -328,7 +328,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeProject" modifier="Sealed" strength="referencing">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                 <SourceECInstanceIdColumn>Employee__src_1N_id</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>Project__trg_1N_id</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -350,7 +350,7 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="Foo">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>

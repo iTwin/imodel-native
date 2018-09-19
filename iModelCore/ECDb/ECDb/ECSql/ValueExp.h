@@ -110,18 +110,18 @@ struct CastExp final : ValueExp
             m_castOperandIndex = AddChild(std::move(castOperand));
             }
 
-        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8StringCR castTargetSchemaName, Utf8StringCR castTargetClassName, bool castTargetIsArray)
-            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetSchemaName(castTargetSchemaName), m_castTargetTypeName(castTargetClassName), m_castTargetIsArray(castTargetIsArray)
+        CastExp(std::unique_ptr<ValueExp> castOperand, Utf8StringCR castTargetSchemaName, Utf8StringCR castTargetTypeName, bool castTargetIsArray)
+            : ValueExp(Type::Cast, castOperand->IsConstant()), m_castTargetSchemaName(castTargetSchemaName), m_castTargetTypeName(castTargetTypeName), m_castTargetIsArray(castTargetIsArray)
             {
             m_castOperandIndex = AddChild(std::move(castOperand));
             }
 
         ValueExp const* GetCastOperand() const { return GetChild<ValueExp>(m_castOperandIndex); }
         Utf8StringCR GetCastTargetSchemaName() const { return m_castTargetSchemaName; }
-        Utf8StringCR GetCastTargetClassName() const { BeAssert(!m_castTargetSchemaName.empty()); return m_castTargetTypeName; }
+        Utf8StringCR GetCastTargetTypeName() const { BeAssert(!m_castTargetSchemaName.empty()); return m_castTargetTypeName; }
         Utf8StringCR GetCastTargetPrimitiveType() const { BeAssert(m_castTargetSchemaName.empty()); return m_castTargetTypeName; }
         bool CastTargetIsArray() const { return m_castTargetIsArray; }
-        bool NeedsCasting() const;
+        bool NeedsCasting() const { BeAssert(IsComplete()); return GetCastOperand()->GetTypeInfo() != GetTypeInfo(); }
     };
 
 
@@ -157,17 +157,15 @@ struct EnumValueExp final : ValueExp
     {
     private:
         ECN::ECEnumeratorCR m_enumerator;
-        Utf8String m_accessString;
+        PropertyPath m_expPath;
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
     public:
-        explicit EnumValueExp(ECN::ECEnumeratorCR value, Utf8StringCR accessString);
-
+        EnumValueExp(ECN::ECEnumeratorCR value, PropertyPath const& expPath);
         ECN::ECEnumeratorCR GetEnumerator() const { return m_enumerator; }
-        Utf8String GetSqlValue() const;
-
     };
+
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      04/2013
 //+===============+===============+===============+===============+===============+======

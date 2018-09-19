@@ -101,7 +101,7 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
     ASSERT_EQ(SUCCESS, SetupECDb("subclassingexternalfileinfo.ecdb",
                                  SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECSchemaReference name="ECDbFileInfo" version="02.00" alias="ecdbf"/>
+                <ECSchemaReference name="ECDbFileInfo" version="02.01" alias="ecdbf"/>
                 <ECEntityClass typeName="MyExternalFileInfo" modifier="Sealed">
                     <BaseClass>ecdbf:ExternalFileInfo</BaseClass>
                     <ECProperty propertyName="MyExtraInformation" typeName="string" />
@@ -211,7 +211,7 @@ TEST_F(FileInfoTestFixture, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(SUCCESS, SetupECDb("ecdbfileinfo.ecdb", SchemaItem(TEST_SCHEMA_XML)));
 
     //test file
-    Utf8CP testFileName = "ECSqlTest.01.00.ecschema.xml";
+    Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePath;
@@ -329,7 +329,7 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
 
     {
     //Test file 1
-    BeFileName testFilePath = SearchTestFile("ECSqlTest.01.00.ecschema.xml");
+    BeFileName testFilePath = SearchTestFile("ECSqlTest.01.00.00.ecschema.xml");
     ASSERT_TRUE(testFilePath.DoesPathExist());
 
     DbResult stat = BE_SQLITE_OK;
@@ -338,19 +338,19 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
     ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
 
     //Imports the file into the db.
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "ECSqlTest.01.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &expectedLastModified);
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "ECSqlTest.01.00.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &expectedLastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
     }
 
     {
     //test file 2
-    BeFileName testFilePath = SearchTestFile("StartupCompany.02.00.ecschema.xml");
+    BeFileName testFilePath = SearchTestFile("StartupCompany.02.00.00.ecschema.xml");
     ASSERT_TRUE(testFilePath.DoesPathExist());
 
     //Imports the file into the db.
     DbResult stat = BE_SQLITE_OK;
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "StartupCompany.02.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", "ECSchema");
+    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "StartupCompany.02.00.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", "ECSchema");
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
     }
@@ -361,20 +361,20 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
     DbEmbeddedFileTable::Iterator::Entry file = iter.begin();
     for (auto const& file : iter)
         {
-        if (strcmp(file.GetNameUtf8(), "StartupCompany.02.00.ecschema.xml") == 0)
+        if (strcmp(file.GetNameUtf8(), "StartupCompany.02.00.00.ecschema.xml") == 0)
             {
             EXPECT_EQ(2, file.GetId().GetValue());
             EXPECT_STREQ("XML", file.GetTypeUtf8());
             EXPECT_STREQ("ECSchema", file.GetDescriptionUtf8());
-            EXPECT_EQ(28697, file.GetFileSize());
+            EXPECT_EQ(28730, file.GetFileSize());
             EXPECT_EQ(524288, file.GetChunkSize());
             }
-        else if (strcmp(file.GetNameUtf8(), "ECSqlTest.01.00.ecschema.xml") == 0)
+        else if (strcmp(file.GetNameUtf8(), "ECSqlTest.01.00.00.ecschema.xml") == 0)
             {
             EXPECT_EQ(1, file.GetId().GetValue());
             EXPECT_STREQ("XML", file.GetTypeUtf8());
             EXPECT_TRUE(Utf8String::IsNullOrEmpty(file.GetDescriptionUtf8()));
-            EXPECT_EQ(29813, file.GetFileSize());
+            EXPECT_EQ(29900, file.GetFileSize());
             EXPECT_EQ(524288, file.GetChunkSize());
             }
         }
@@ -391,7 +391,7 @@ TEST_F(FileInfoTestFixture, VerifyEmbeddedFileSize)
     DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
 
     //embed test file
-    Utf8CP testFileName = "ECSqlTest.01.00.ecschema.xml";
+    Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
     uint64_t size = 0;
     {
     BeFileName testFilePath = SearchTestFile(testFileName);
@@ -411,7 +411,7 @@ TEST_F(FileInfoTestFixture, VerifyEmbeddedFileSize)
 
     //Read existing embedded file, AddEntry, Save and verify the size. 
     {
-    Utf8CP newfileName = "CopyECSqlTest.01.00.ecschema.xml";
+    Utf8CP newfileName = "CopyECSqlTest.01.00.00.ecschema.xml";
 
     //Creates a new entry in the embedded file table with the specified name.
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(newfileName, "XML"));
@@ -610,7 +610,7 @@ TEST_F(FileInfoTestFixture, Purge)
     ECClassId embeddedFileInfoClassId = m_ecdb.Schemas().GetClassId("ECDbFileInfo", "EmbeddedFileInfo");
     ASSERT_TRUE(embeddedFileInfoClassId.IsValid());
 
-    Utf8CP testFileName = "ECSqlTest.01.00.ecschema.xml";
+    Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
 
     BeFileName testFilePath;
     BeTest::GetHost().GetDocumentsRoot(testFilePath);
@@ -626,7 +626,7 @@ TEST_F(FileInfoTestFixture, Purge)
     ASSERT_TRUE(id.IsValid());
     fooChildEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));
 
-    testFileName = "Copy of ECSqlTest.01.00.ecschema.xml";
+    testFileName = "Copy of ECSqlTest.01.00.00.ecschema.xml";
     lastModified = DateTime::GetCurrentTimeUtc();
     id = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &lastModified);
     ASSERT_EQ(BE_SQLITE_OK, stat);

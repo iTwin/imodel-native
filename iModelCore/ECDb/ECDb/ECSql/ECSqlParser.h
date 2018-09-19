@@ -150,7 +150,8 @@ private:
 
     BentleyStatus ParseCastSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseColumn(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseColumnRef(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseColumnRef(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*, bool forceIntoPropertyNameExp) const;
+    BentleyStatus ParseColumnRefAsPropertyNameExp(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseColumnRefCommalist(std::unique_ptr<PropertyNameListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseComparison(BooleanSqlOperator&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseConcatenation(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
@@ -160,9 +161,9 @@ private:
     BentleyStatus ParseDatetimeValueFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp>&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseECRelationshipJoin(std::unique_ptr<ECRelationshipJoinExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseECSqlOption(std::unique_ptr<OptionExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseExpressionPath(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*, bool forcePropertyNameExp = false) const;
 
     BentleyStatus ParseFactor(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseFctSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
@@ -190,6 +191,8 @@ private:
     BentleyStatus ParseLimitOffsetClause(std::unique_ptr<LimitOffsetExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseLiteral(Utf8StringR literalVal, ECSqlTypeInfo& dataType, connectivity::OSQLParseNode const&) const;
 
+    BentleyStatus ParseMemberFunctionCall(std::unique_ptr<MemberFunctionCallExp>&, connectivity::OSQLParseNode const&) const;
+
     BentleyStatus ParseNamedColumnsJoin(std::unique_ptr<NamedPropertiesJoinExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNotToken(bool& isNot, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNumValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
@@ -200,7 +203,6 @@ private:
     BentleyStatus ParseOuterJoinType(ECSqlJoinType&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseParameter(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParsePropertyPath(std::unique_ptr<PropertyNameExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseQualifiedJoin(std::unique_ptr<JoinExp>&, connectivity::OSQLParseNode const*) const;
 
@@ -231,12 +233,11 @@ private:
     BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
 
     ScopedIssueReporter const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
-    static void ResolveEnumerators(Exp& exp, ECDbCR ecdb);
     static bool IsPredicate(connectivity::OSQLParseNode const&);
     static Utf8CP SqlDataTypeKeywordToString(sal_uInt32 sqlKeywordId);
 
 public:
-    ECSqlParser() : m_context (nullptr) {}
+    ECSqlParser() {}
     ~ECSqlParser() {}
 
     std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql, ScopedIssueReporter const&) const;

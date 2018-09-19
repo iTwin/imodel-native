@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECSqlStatementTests" alias="ECST" version="01.00" displayLabel="ECSqlStatementTests DataBase" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECSqlStatementTests" alias="ECST" version="01.00.00" displayLabel="ECSqlStatementTests DataBase" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECStructClass typeName="ContactDetails" modifier="None">
         <ECProperty propertyName="ContactType" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Notes" typeName="string" readOnly="false"/>

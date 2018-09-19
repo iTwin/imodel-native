@@ -399,14 +399,7 @@ IECSqlBinder& ArrayECSqlBinder::JsonValueBinder::MoveCurrentArrayElementBinder(E
         return *m_currentArrayElementBinder;
         }
 
-    if (arrayTypeInfo.GetKind() == ECSqlTypeInfo::Kind::PrimitiveArray)
-        m_currentArrayElementBinder = std::make_unique<JsonValueBinder>(ecdb, ECSqlTypeInfo(arrayTypeInfo.GetPrimitiveType(), false, &arrayTypeInfo.GetDateTimeInfo()), newArrayElementJson, *m_jsonAllocator);
-    else
-        {
-        BeAssert(arrayTypeInfo.GetKind() == ECSqlTypeInfo::Kind::StructArray);
-        m_currentArrayElementBinder = std::make_unique<JsonValueBinder>(ecdb, ECSqlTypeInfo(arrayTypeInfo.GetStructType()), newArrayElementJson, *m_jsonAllocator);
-        }
-
+    m_currentArrayElementBinder = std::make_unique<JsonValueBinder>(ecdb, ECSqlTypeInfo::CreateArrayElement(arrayTypeInfo), newArrayElementJson, *m_jsonAllocator);
     return *m_currentArrayElementBinder;
     }
 

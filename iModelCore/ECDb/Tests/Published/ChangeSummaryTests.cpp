@@ -3448,7 +3448,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
@@ -4256,7 +4256,7 @@ TEST_F(ChangeSummaryTestFixtureV1, Overflow_ArrayOfStructs)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixtureV1, RelationshipChangesFromCurrentTransaction)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 

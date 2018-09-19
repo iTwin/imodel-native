@@ -403,7 +403,7 @@ TEST_F(RapidJsonTests, RoundTripInt64)
 //---------------------------------------------------------------------------------------
 TEST_F(RapidJsonTests, InsertIntoECDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("RapidJsonInsertIntoECDb.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("RapidJsonInsertIntoECDb.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;

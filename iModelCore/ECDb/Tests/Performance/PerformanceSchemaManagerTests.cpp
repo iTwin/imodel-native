@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceSchemaManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -22,7 +22,7 @@ struct PerformanceSchemaManagerTests : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     bvector<ECSchemaCP> schemas = m_ecdb.Schemas().GetSchemas(true);
@@ -74,7 +74,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_AllClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     int classCount = -1;
@@ -111,7 +111,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookup_SingleClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_SingleClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidlookup.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     int classCount = -1;
@@ -151,7 +151,7 @@ TEST_F(PerformanceSchemaManagerTests, ECClassIdLookupDuringECSqlPreparation_Sing
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceSchemaManagerTests, GetECClassIdSqlScenarios)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidsqlscenarios.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecclassidsqlscenarios.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSchemaCP expectedSchema = m_ecdb.Schemas().GetSchema("ECSqlTest", false);
     ASSERT_TRUE(expectedSchema != nullptr);

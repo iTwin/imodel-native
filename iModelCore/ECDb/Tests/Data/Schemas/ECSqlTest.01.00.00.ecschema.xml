@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECSqlTest" alias="ecsql" version="01.00" description="ECSQL test schema" displayLabel="ECSQL test schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECSqlTest" alias="ecsql" version="01.00.00" description="ECSQL test schema" displayLabel="ECSQL test schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
-    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECCustomAttributes>
-        <SchemaMap xmlns="ECDbMap.02.00">
+        <SchemaMap xmlns="ECDbMap.02.00.00">
             <TablePrefix>ecsqltest</TablePrefix>
         </SchemaMap>
     </ECCustomAttributes>
@@ -24,7 +24,7 @@
         <ECProperty propertyName="dt" typeName="dateTime" category="Core"/>
         <ECProperty propertyName="dtUtc" typeName="dateTime" category="Core">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -50,7 +50,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="AbstractTablePerHierarchy" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -79,7 +79,7 @@
         <ECProperty propertyName="nodatetimeinfo" typeName="dateTime"/>
         <ECProperty propertyName="utc" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -101,21 +101,21 @@
         <ECProperty propertyName="Dt" typeName="dateTime"/>
         <ECProperty propertyName="DtUtc" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="DtUnspec" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Unspecified</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="DateOnly" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeComponent>Date</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -127,7 +127,7 @@
         <ECProperty propertyName="P3D" typeName="point3d"/>
         <ECNavigationProperty propertyName="MyPSA" relationshipName="PSAHasP" direction="Backward" priority="5">
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
 
@@ -139,7 +139,7 @@
         <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -166,7 +166,7 @@
         <ECProperty propertyName="Dt" typeName="dateTime" category="Core"/>
         <ECProperty propertyName="DtUtc" typeName="dateTime" category="Core">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -183,7 +183,7 @@
         <ECArrayProperty propertyName="Dt_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="DtUtc_Array" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -196,17 +196,17 @@
         <ECStructArrayProperty propertyName="PStruct_Array" typeName="PStruct" minOccurs="0" maxOccurs="unbounded" category="Misc" priority="333"/>
         <ECNavigationProperty propertyName="P" relationshipName="PSAHasP_N1" direction="Forward" category="Misc" priority="333">
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="Parent" relationshipName="PSAHasPSA_1N" direction="Backward">
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="Partner" relationshipName="PSAHasPSA_11" direction="Backward" >
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
@@ -284,54 +284,54 @@
         <ECProperty propertyName="nodatetimeinfo" typeName="dateTime"/>
         <ECProperty propertyName="emptydatetimeinfo" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00" />
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="utc" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="unspecified" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Unspecified</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="local" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Local</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="dateonly" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeComponent>Date</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="garbagekind" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Garbage</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="garbagecomponent" typeName="dateTime">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeComponent>Garbage</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
         <ECArrayProperty propertyName="utcarray" typeName="dateTime" minOccurs="0" maxOccurs="unbounded">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -341,25 +341,25 @@
     </ECEntityClass>
     <ECEntityClass typeName="THBase">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="S" typeName="string"/>
         <ECNavigationProperty propertyName="PSA1" relationshipName="PSAHasTHBase_0N" direction="Backward">
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="PSA2" relationshipName="PSAHasOnlyTHBase_0N" direction="Backward" >
             <ECCustomAttributes>
-                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00.00"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECEntityClass typeName="MyMixin" modifier="Abstract">
         <ECCustomAttributes>
-            <IsMixin xmlns="CoreCustomAttributes.01.00">
+            <IsMixin xmlns="CoreCustomAttributes.01.00.00">
                 <AppliesToEntityClass>THBase</AppliesToEntityClass>            
             </IsMixin>
         </ECCustomAttributes>
@@ -454,7 +454,7 @@
     
     <ECEntityClass typeName="PUnmapped" modifier="Sealed" description="Class not mapped to a DB table">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>

@@ -85,7 +85,6 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="ECDb"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="TestsSqlang"  PartFile="Units" Repository="Units" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECDb" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-ECDbTestData" SourceName="Delivery/UnitTests/ECDbTestData" />    

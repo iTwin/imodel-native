@@ -19,7 +19,7 @@ struct JsonInserterTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertJsonCppJSON)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -294,7 +294,7 @@ TEST_F(JsonInserterTests, InsertLinkTableRels)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertRapidJson)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertUsingRapidJson.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertUsingRapidJson.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -398,7 +398,7 @@ TEST_F(JsonInserterTests, InsertRapidJson2)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertPartialPointJson)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertPartialPointJson.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertPartialPointJson.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
@@ -438,7 +438,7 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_insertthenread.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_insertthenread.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECInstanceKey pKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));
@@ -537,7 +537,7 @@ TEST_F(JsonInserterTests, RoundTrip_InsertThenRead)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgradetest.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.03.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgradetest.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.03.ecschema.xml")));
 
     IECClassLocaterR classLocater = m_ecdb.GetClassLocater();
     ECClassCP rootClass = classLocater.LocateClass("DSCacheSchema", "Root");

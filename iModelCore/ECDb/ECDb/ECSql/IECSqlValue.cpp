@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/IECSqlValue.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -152,6 +152,52 @@ BeGuid IECSqlValue::GetGuid() const
     BeGuid guid;
     memcpy(&guid, blobValue, sizeof(guid));
     return guid;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Shaun.Sewall        10/2016
+//---------------------------------------------------------------------------------------
+ECN::ECEnumeratorCP IECSqlValue::GetEnum() const
+    {
+    if (IsNull())
+        return nullptr;
+
+    ECN::ECPropertyCP prop = nullptr;
+    ECSqlPropertyPath const& propPath = GetColumnInfo().GetPropertyPath();
+    ECSqlPropertyPath::Entry const& leafEntry = propPath.GetLeafEntry();
+    if (leafEntry.GetKind() == ECSqlPropertyPath::Entry::Kind::Property)
+        prop = leafEntry.GetProperty();
+    else
+        {
+        ECSqlPropertyPath::Entry const& arrayPropEntry = propPath.At(propPath.Size() - 2);
+        BeAssert(arrayPropEntry.GetKind() == ECSqlPropertyPath::Entry::Kind::Property);
+        prop = arrayPropEntry.GetProperty();
+        }
+
+    if (prop == nullptr)
+        {
+        BeAssert(prop != nullptr);
+        return nullptr;
+        }
+
+    ECN::ECEnumerationCP ecEnum = nullptr;
+    if (prop->GetIsPrimitive())
+        ecEnum = prop->GetAsPrimitiveProperty()->GetEnumeration();
+    else if (prop->GetIsPrimitiveArray())
+        ecEnum = prop->GetAsPrimitiveArrayProperty()->GetEnumeration();
+
+    if (ecEnum == nullptr)
+        {
+        LOG.error("ECSqlStatement::GetEnum> This method can only be called for a column backed by a property of an enumeration type.");
+        return nullptr;
+        }
+
+    if (ecEnum->GetType() == ECN::PRIMITIVETYPE_Integer)
+        return ecEnum->FindEnumerator(GetInt());
+    else if (ecEnum->GetType() == ECN::PRIMITIVETYPE_String)
+        return ecEnum->FindEnumerator(GetText());
+
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------

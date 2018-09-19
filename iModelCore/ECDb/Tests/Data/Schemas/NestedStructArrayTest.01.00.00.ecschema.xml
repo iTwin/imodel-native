@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="NestedStructArrayTest" alias="nsat" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+<ECSchema schemaName="NestedStructArrayTest" alias="nsat" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECEntityClass typeName="ClassA" modifier="None">
 		<ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -40,7 +40,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="BaseHasDerivedA" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00"/>
         </ECCustomAttributes>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
             <Class class="ClassA"/>
@@ -69,7 +69,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="DerivedBHasChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00"/>
         </ECCustomAttributes>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
             <Class class="DerivedB"/>

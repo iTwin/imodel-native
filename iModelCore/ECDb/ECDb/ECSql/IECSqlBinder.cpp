@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/IECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -89,6 +89,20 @@ ECSqlStatus IECSqlBinder::BindGeometry(IGeometryCR value)
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindInt(int value) { return _BindInt(value); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2018
+//---------------------------------------------------------------------------------------
+ECSqlStatus IECSqlBinder::BindEnum(ECN::ECEnumeratorCR value) 
+    {
+    if (value.IsInteger())
+        return BindInt(value.GetInteger());
+
+    if (value.IsString())
+        return BindText(value.GetString().c_str(), IECSqlBinder::MakeCopy::No);
+
+    return ECSqlStatus::Error;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013

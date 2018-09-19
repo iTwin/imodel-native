@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+
     <ECEntityClass typeName="ECSchemaDef" description="ECSchema" displayLabel="ECSchema" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_Schema</TableName>
             </ClassMap>
@@ -14,29 +15,31 @@
         <ECProperty propertyName="Alias" typeName="string"/>
         <ECProperty propertyName="VersionMajor" typeName="int">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
+                <PropertyMap xmlns="ECDbMap.02.00.00">
                     <ColumnName>VersionDigit1</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="VersionWrite" typeName="int">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
+                <PropertyMap xmlns="ECDbMap.02.00.00">
                     <ColumnName>VersionDigit2</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="VersionMinor" typeName="int">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
+                <PropertyMap xmlns="ECDbMap.02.00.00">
                     <ColumnName>VersionDigit3</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="OriginalECXmlVersionMajor" typeName="int"/>
+        <ECProperty propertyName="OriginalECXmlVersionMinor" typeName="int"/>
     </ECEntityClass>
     <ECEntityClass typeName="ECClassDef" description="ECClass" displayLabel="ECClass" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_Class</TableName>
             </ClassMap>
@@ -52,13 +55,15 @@
         <ECProperty propertyName="RelationshipStrengthDirection" typeName="ECRelationshipDirection" description="Applies to ECClassType::Relationship only."/>
     </ECEntityClass>
     <ECStructClass typeName="ECEnumeratorDef" modifier="Sealed">
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="IntValue" typeName="int"/>
         <ECProperty propertyName="StringValue" typeName="string"/>
-        <ECProperty propertyName="DisplayLabel" typeName="string"/>
     </ECStructClass>
     <ECEntityClass typeName="ECEnumerationDef" description="ECEnumeration" displayLabel="ECEnumeration" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_Enumeration</TableName>
             </ClassMap>
@@ -69,7 +74,7 @@
         <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="Type" typeName="PrimitiveType">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
+                <PropertyMap xmlns="ECDbMap.02.00.00">
                     <ColumnName>UnderlyingPrimitiveType</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
@@ -79,7 +84,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="KindOfQuantityDef" description="KindOfQuantity" displayLabel="KindOfQuantity" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_KindOfQuantity</TableName>
             </ClassMap>
@@ -92,9 +97,80 @@
         <ECProperty propertyName="RelativeError" typeName="double"/>
         <ECArrayProperty propertyName="PresentationUnits" typeName="string"/>
     </ECEntityClass>
+    <ECEntityClass typeName="UnitDef" description="Unit" displayLabel="Unit" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_Unit</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsUnits" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECNavigationProperty propertyName="UnitSystem" relationshipName="UnitSystemHasUnits" direction="backward"/>
+        <ECNavigationProperty propertyName="Phenomenon" relationshipName="PhenomenonOwnsUnits" direction="backward"/>
+        <ECProperty propertyName="Definition" typeName="string"/>
+        <ECProperty propertyName="Numerator" typeName="double"/>
+        <ECProperty propertyName="Denominator" typeName="double"/>
+        <ECProperty propertyName="Offset" typeName="double"/>
+        <ECProperty propertyName="IsConstant" typeName="boolean"/>
+        <ECNavigationProperty propertyName="InvertingUnit" description="If this property is set, this UnitDef is an inverted unit. It inverts the unit specified by this property." relationshipName="UnitHasInvertedUnit" direction="backward"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="UnitSystemDef" description="UnitSystem" displayLabel="UnitSystem" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_UnitSystem</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsUnitSystems" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PhenomenonDef" description="Phenomenon" displayLabel="Phenomenon" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_Phenomenon</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsPhenomena" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="Definition" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FormatDef" description="Format" displayLabel="Format" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_Format</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsFormats" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="NumericSpec" typeName="string" extendedTypeName="JSON"/>
+        <ECProperty propertyName="CompositeSpec" typeName="string" description="CompositeSpec without units. Composite units are held by FormatCompositeUnitDef" extendedTypeName="JSON"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FormatCompositeUnitDef" description="FormatCompositeUnit" displayLabel="FormatCompositeUnit" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_FormatCompositeUnit</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Format" relationshipName="FormatOwnsCompositeUnits" direction="backward"/>
+        <ECProperty propertyName="Label" typeName="string"/>
+        <ECNavigationProperty propertyName="Unit" relationshipName="CompositeUnitRefersToUnit" direction="forward"/>
+        <ECProperty propertyName="Ordinal" typeName="int" description="Position of the Composite Unit in its Format"/>
+    </ECEntityClass>
     <ECEntityClass typeName="PropertyCategoryDef" description="PropertyCategory" displayLabel="PropertyCategory" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_PropertyCategory</TableName>
             </ClassMap>
@@ -107,7 +183,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="ECPropertyDef" description="ECProperty" displayLabel="ECProperty" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_Property</TableName>
             </ClassMap>
@@ -137,7 +213,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="ECRelationshipConstraintDef" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_RelationshipConstraint</TableName>
             </ClassMap>
@@ -160,11 +236,11 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SchemaHasSchemaReferences" modifier="Sealed" strength="referencing">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_SchemaReference</TableName>
             </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                 <SourceECInstanceIdColumn>SchemaId</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>ReferencedSchemaId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -186,11 +262,11 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ClassHasBaseClasses" modifier="Sealed" strength="referencing">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_ClassHasBaseClasses</TableName>
             </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                 <SourceECInstanceIdColumn>ClassId</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>BaseClassId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -205,13 +281,11 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ClassHasAllBaseClasses" strength="referencing" modifier="Sealed" description="Relates a given ECClassId (Source) to all its base classes (recursively) (Target). For optimization reasons this ECRelationshipClass also holds a row for each ECClass that points to itself. Base class id order: class itself, then base classes in breadth first manner.">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>ExistingTable</Strategy>
-                </MapStrategy>
+            <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_cache_ClassHierarchy</TableName>
             </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                 <SourceECInstanceIdColumn>ClassId</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>BaseClassId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -239,12 +313,84 @@
             <Class class="KindOfQuantityDef"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsUnitSystems" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="UnitSystemDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsPhenomena" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="PhenomenonDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsUnits" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsFormats" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="FormatDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FormatOwnsCompositeUnits" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="FormatDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="FormatCompositeUnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CompositeUnitRefersToUnit" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+            <Class class="FormatCompositeUnitDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referred to by" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="SchemaOwnsPropertyCategories" modifier="Sealed" strength="embedding">
         <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
             <Class class="ECSchemaDef"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
             <Class class="PropertyCategoryDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PhenomenonOwnsUnits" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+            <Class class="PhenomenonDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is of" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="UnitSystemHasUnits" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="has" polymorphic="false">
+            <Class class="UnitSystemDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="UnitHasInvertedUnit" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="is inverted by" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="inverts" polymorphic="false">
+            <Class class="UnitDef"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PropertyHasEnumeration" description="ECPropertyKind::Enumeration: relates the property to its ECEnumeration." modifier="Sealed" strength="referencing">
@@ -305,11 +451,11 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="RelationshipConstraintHasClasses" modifier="Sealed" strength="referencing">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_RelationshipConstraintClass</TableName>
             </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
                 <SourceECInstanceIdColumn>ConstraintId</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>ClassId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -321,65 +467,67 @@
             <Class class="ECClassDef"/>
         </Target>
     </ECRelationshipClass>
+    <!-- ECCustomAttributeContainerType can be OR'ed together. That cannot be expressed in the ECEnumerations
+         directly though. -->
     <ECEnumeration typeName="ECCustomAttributeContainerType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="1" displayLabel="Schema"/>
-        <ECEnumerator value="2" displayLabel="EntityClass"/>
-        <ECEnumerator value="4" displayLabel="CustomAttributeClass"/>
-        <ECEnumerator value="8" displayLabel="StructClass"/>
-        <ECEnumerator value="16" displayLabel="RelationshipClass"/>
-        <ECEnumerator value="30" displayLabel="AnyClass"/>
-        <ECEnumerator value="32" displayLabel="PrimitiveProperty"/>
-        <ECEnumerator value="64" displayLabel="StructProperty"/>
-        <ECEnumerator value="128" displayLabel="PrimitiveArrayProperty"/>
-        <ECEnumerator value="256" displayLabel="StructArrayProperty"/>
-        <ECEnumerator value="512" displayLabel="NavigationProperty"/>
-        <ECEnumerator value="992" displayLabel="AnyProperty"/>
-        <ECEnumerator value="1024" displayLabel="SourceRelationshipConstraint"/>
-        <ECEnumerator value="2048" displayLabel="TargetRelationshipConstraint"/>
-        <ECEnumerator value="3072" displayLabel="AnyRelationshipConstraint"/>
-        <ECEnumerator value="4095" displayLabel="Any"/>
+        <ECEnumerator name="Schema" value="1" displayLabel="Schema" />
+        <ECEnumerator name="EntityClass" value="2" displayLabel="EntityClass"/>
+        <ECEnumerator name="CustomAttributeClass" value="4" displayLabel="CustomAttributeClass"/>
+        <ECEnumerator name="StructClass" value="8" displayLabel="StructClass"/>
+        <ECEnumerator name="RelationshipClass" value="16" displayLabel="RelationshipClass"/>
+        <ECEnumerator name="AnyClass" value="30" displayLabel="AnyClass"/>
+        <ECEnumerator name="PrimitiveProperty" value="32" displayLabel="PrimitiveProperty"/>
+        <ECEnumerator name="StructProperty" value="64" displayLabel="StructProperty"/>
+        <ECEnumerator name="PrimitiveArrayProperty" value="128" displayLabel="PrimitiveArrayProperty"/>
+        <ECEnumerator name="StructArrayProperty" value="256" displayLabel="StructArrayProperty"/>
+        <ECEnumerator name="NavigationProperty" value="512" displayLabel="NavigationProperty"/>
+        <ECEnumerator name="AnyProperty" value="992" displayLabel="AnyProperty"/>
+        <ECEnumerator name="SourceRelationshipConstraint" value="1024" displayLabel="SourceRelationshipConstraint"/>
+        <ECEnumerator name="TargetRelationshipConstraint" value="2048" displayLabel="TargetRelationshipConstraint"/>
+        <ECEnumerator name="AnyRelationshipConstraint" value="3072" displayLabel="AnyRelationshipConstraint"/>
+        <ECEnumerator name="Any" value="4095" displayLabel="Any"/>
     </ECEnumeration>
     <ECEnumeration typeName="ECClassModifier" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="None"/>
-        <ECEnumerator value="1" displayLabel="Abstract"/>
-        <ECEnumerator value="2" displayLabel="Sealed"/>
+        <ECEnumerator name="None" value="0" displayLabel="None" />
+        <ECEnumerator name="Abstract" value="1" displayLabel="Abstract" />
+        <ECEnumerator name="Sealed" value="2" displayLabel="Sealed" />
     </ECEnumeration>
     <ECEnumeration typeName="ECRelationshipEnd" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Source"/>
-        <ECEnumerator value="1" displayLabel="Target"/>
+        <ECEnumerator name="Source" value="0" displayLabel="Source" />
+        <ECEnumerator name="Target" value="1" displayLabel="Target" />
     </ECEnumeration>
     <ECEnumeration typeName="ECClassType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Entity"/>
-        <ECEnumerator value="1" displayLabel="Relationship"/>
-        <ECEnumerator value="2" displayLabel="Struct"/>
-        <ECEnumerator value="3" displayLabel="CustomAttribute"/>
+        <ECEnumerator name="Entity" value="0" displayLabel="Entity" />
+        <ECEnumerator name="Relationship" value="1" displayLabel="Relationship" />
+        <ECEnumerator name="Struct" value="2" displayLabel="Struct" />
+        <ECEnumerator name="CustomAttribute" value="3" displayLabel="CustomAttribute" />
     </ECEnumeration>
     <ECEnumeration typeName="ECPropertyKind" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Primitive"/>
-        <ECEnumerator value="1" displayLabel="Struct"/>
-        <ECEnumerator value="2" displayLabel="PrimitiveArray"/>
-        <ECEnumerator value="3" displayLabel="StructArray"/>
-        <ECEnumerator value="4" displayLabel="Navigation"/>
+        <ECEnumerator name="Primitive" value="0" displayLabel="Primitive" />
+        <ECEnumerator name="Struct" value="1" displayLabel="Struct" />
+        <ECEnumerator name="PrimitiveArray" value="2" displayLabel="PrimitiveArray" />
+        <ECEnumerator name="StructArray" value="3" displayLabel="StructArray" />
+        <ECEnumerator name="Navigation" value="4" displayLabel="Navigation" />
     </ECEnumeration>
     <ECEnumeration typeName="ECRelationshipDirection" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="1" displayLabel="Forward"/>
-        <ECEnumerator value="2" displayLabel="Backward"/>
+        <ECEnumerator name="Forward" value="1" displayLabel="Forward" />
+        <ECEnumerator name="Backward" value="2" displayLabel="Backward" />
     </ECEnumeration>
     <ECEnumeration typeName="ECRelationshipStrength" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Referencing"/>
-        <ECEnumerator value="1" displayLabel="Holding"/>
-        <ECEnumerator value="2" displayLabel="Embedding"/>
+        <ECEnumerator name="Referencing" value="0" displayLabel="Referencing" />
+        <ECEnumerator name="Holding" value="1" displayLabel="Holding" />
+        <ECEnumerator name="Embedding" value="2" displayLabel="Embedding" />
     </ECEnumeration>
     <ECEnumeration typeName="PrimitiveType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="257" displayLabel="Binary"/>
-        <ECEnumerator value="513" displayLabel="Boolean"/>
-        <ECEnumerator value="769" displayLabel="DateTime"/>
-        <ECEnumerator value="1025" displayLabel="Double"/>
-        <ECEnumerator value="1281" displayLabel="Integer"/>
-        <ECEnumerator value="1537" displayLabel="Long"/>
-        <ECEnumerator value="1793" displayLabel="Point2D"/>
-        <ECEnumerator value="2049" displayLabel="Point3D"/>
-        <ECEnumerator value="2305" displayLabel="String"/>
-        <ECEnumerator value="2561" displayLabel="IGeometry"/>
+        <ECEnumerator name="Binary" value="257" displayLabel="Binary" />
+        <ECEnumerator name="Boolean" value="513" displayLabel="Boolean" />
+        <ECEnumerator name="DateTime" value="769" displayLabel="DateTime" />
+        <ECEnumerator name="Double" value="1025" displayLabel="Double" />
+        <ECEnumerator name="Integer" value="1281" displayLabel="Integer" />
+        <ECEnumerator name="Long" value="1537" displayLabel="Long" />
+        <ECEnumerator name="Point2d" value="1793" displayLabel="Point2d" />
+        <ECEnumerator name="Point3d" value="2049" displayLabel="Point3d" />
+        <ECEnumerator name="String" value="2305" displayLabel="String" />
+        <ECEnumerator name="IGeometry" value="2561" displayLabel="IGeometry" />
     </ECEnumeration>
 </ECSchema>

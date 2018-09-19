@@ -41,6 +41,7 @@ ECDbAllHeaders = \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)ECDbSqlFunctions.h \
+                $(baseDir)FeatureManager.h \
                 $(baseDir)DbUtilities.h \
                 $(baseDir)SchemaManagerDispatcher.h \
                 $(baseDir)DbMapValidator.h \
@@ -187,6 +188,8 @@ $(o)ECDbImpl$(oext):                                          $(baseDir)ECDbImpl
 $(o)ECDbSqlFunctions$(oext):                                  $(baseDir)ECDbSqlFunctions.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)FeatureManager$(oext):                                    $(baseDir)FeatureManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)IssueReporter$(oext):                                     $(baseDir)IssueReporter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
