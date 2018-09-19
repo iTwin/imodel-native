@@ -362,6 +362,8 @@ $(modifiedHeadersOutputBaseDir).stamp : $[@wildcard $(DgnV8Sdk)PublicAPI/*.h]
 \<GeoCoord\/basegeocoord.h\>!<VersionedDgnV8Api\/GeoCoord\/basegeocoord.h>
 \<Mstn\/RealDwg\/rDwgAPI.h\>!<VersionedDgnV8Api\/Mstn\/RealDWG\/rDwgAPI.h>
 \<realdwg\/base\/dbmain.h\>!<VersionedDgnV8Api\/realdwg\/base\/dbmain.h>
+DgnDimStyleP!Bentley::DgnPlatform::DgnDimStyle*
+DgnDimStyleCP!const Bentley::DgnPlatform::DgnDimStyle*
     <
     python $(bsiScripts)RegexListReplace.py $(o)replacements ${modifiedHeadersOutputBaseDir}
     >$@
