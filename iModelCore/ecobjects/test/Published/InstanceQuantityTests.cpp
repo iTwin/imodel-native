@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceQuantityTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -39,7 +39,7 @@ TEST_F(InstanceQuantityTests, GetQuantityFromDoubleWithKoqDefined)
     Units::Quantity q;
     ASSERT_EQ(ECObjectsStatus::PropertyValueNull, instance->GetQuantity(q, "Length"));
     ASSERT_EQ(0.0, q.GetMagnitude()) << "Getting Quantity for null value outputs quantity with 0 magnitude";
-    ASSERT_STREQ("CM", q.GetUnit()->GetName()) << "Getting Quantity for null value outputs quantity with correct unit";
+    ASSERT_STREQ("CM", q.GetUnit()->GetName().c_str()) << "Getting Quantity for null value outputs quantity with correct unit";
     q = Units::Quantity(42, *q.GetUnit());
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetQuantity("Length", q));
     Units::Quantity oq;
@@ -51,7 +51,7 @@ TEST_F(InstanceQuantityTests, GetQuantityFromDoubleWithKoqDefined)
     ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("LengthArray", 1));
     ASSERT_EQ(ECObjectsStatus::PropertyValueNull, instance->GetQuantity(q, "LengthArray", 0));
     ASSERT_EQ(0.0, q.GetMagnitude()) << "Getting Quantity for null value outputs quantity with 0 magnitude";
-    ASSERT_STREQ("CM", q.GetUnit()->GetName()) << "Getting Quantity for null value outputs quantity with correct unit";
+    ASSERT_STREQ("CM", q.GetUnit()->GetName().c_str()) << "Getting Quantity for null value outputs quantity with correct unit";
     q = Units::Quantity(42, *q.GetUnit());
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetQuantity("LengthArray", q, 0));
     ASSERT_EQ(ECObjectsStatus::Success, instance->GetQuantity(oq, "LengthArray", 0));
@@ -140,14 +140,18 @@ TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined)
     IECInstancePtr instance = pipeClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     Units::Quantity q;
-    q = Units::Quantity(42, *Units::UnitRegistry::Instance().LookupUnit("FT"));
+    ECUnitCP ftUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
+    ASSERT_NE(nullptr, ftUnit);
+    q = Units::Quantity(42, *ftUnit);
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetQuantity("Length", q));
     Units::Quantity oq;
     ASSERT_EQ(ECObjectsStatus::Success, instance->GetQuantity(oq, "Length"));
     ASSERT_EQ(1280.16, oq.GetMagnitude());
     ASSERT_STREQ("CM", oq.GetUnitName());
 
-    ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("Length", Units::Quantity(42, *Units::UnitRegistry::Instance().LookupUnit("ACRE"))));
+    ECUnitCP acreUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("ACRE");
+    ASSERT_NE(nullptr, acreUnit);
+    ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("Length", Units::Quantity(42, *acreUnit)));
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("Length", Units::Quantity()));
 
 
@@ -157,7 +161,7 @@ TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined)
     ASSERT_EQ(1280.16, oq.GetMagnitude());
     ASSERT_STREQ("CM", oq.GetUnitName());
 
-    ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("LengthArray", Units::Quantity(42, *Units::UnitRegistry::Instance().LookupUnit("ACRE")), 2));
+    ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("LengthArray", Units::Quantity(42, *acreUnit), 2));
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("LengthArray", Units::Quantity(), 2));
     }
 
@@ -187,7 +191,9 @@ TEST_F(InstanceQuantityTests, SetQuantityToUnsupportedProperties)
     IECInstancePtr instance = pipeClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     Units::Quantity q;
-    q = Units::Quantity(42, *Units::UnitRegistry::Instance().LookupUnit("FT"));
+    ECUnitCP ftUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
+    ASSERT_NE(nullptr, ftUnit);
+    q = Units::Quantity(42, *ftUnit);
     ASSERT_EQ(ECObjectsStatus::PropertyNotFound, instance->SetQuantity("NotAPropertyName", q));
     ASSERT_EQ(ECObjectsStatus::PropertyHasNoKindOfQuantity, instance->SetQuantity("DoubleNoKOQ", q));
 

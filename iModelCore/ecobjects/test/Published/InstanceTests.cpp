@@ -120,8 +120,9 @@ struct StringEncodingTests : ECTestFixture
     {
     ECSchemaPtr         m_schema;
 
-    StringEncodingTests() : ECTestFixture()
+    void SetUp() override
         {
+        ECTestFixture::SetUp();
         ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
         ECSchemaPtr schema;
         EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *schemaContext));  

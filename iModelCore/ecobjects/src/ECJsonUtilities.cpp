@@ -41,18 +41,6 @@ ECClassCP ECJsonUtilities::GetClassFromClassNameJson(JsonValueCR json, IECClassL
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                           Victor.Cushman                          11/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Json::Value ECJsonUtilities::FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus)
-    {
-    Json::Value val(Json::objectValue);
-    val[ECJSON_UNIT_FORMAT_UNIT] = fus.GetUnitName();
-    val[ECJSON_UNIT_FORMAT_FORMAT] = fus.GetNamedFormatSpec()->GetName();
-    return val;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2017
 //---------------------------------------------------------------------------------------
 //static
@@ -1446,14 +1434,14 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
             {
             if (koq)
                 {
-                Utf8String formattedVal = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, 0, &status);
+                Utf8String formattedVal = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, &status);
                 if (ECQuantityFormattingStatus::Success == status)
                     {
                     Json::Value quantityValue(Json::objectValue);
 
                     quantityValue[json_rawValue()] = ecValue.GetDouble();
                     quantityValue[json_formattedValue()] = formattedVal;
-                    quantityValue[json_currentUnit()] = koq->GetDefaultPresentationUnit().ToText(true);
+                    quantityValue[json_currentUnit()] = koq->GetDefaultPresentationFormat()->GetName();
                     valueToPopulate[propertyName] = quantityValue;
                     return BSISUCCESS;
                     }

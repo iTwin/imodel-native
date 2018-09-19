@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ComprehensiveSchemaWithUnknowns" alias="cmpr" version="01.00" description="Comprehensive Schema to demonstrate use of all ECSchema concepts." displayLabel="Comprehensive Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.11.11">
-    <ECSchemaReference unknownAttribute="foo" name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
+<ECSchema schemaName="ComprehensiveSchemaWithUnknowns" alias="cmpr" version="01.00.00" description="Comprehensive Schema to demonstrate use of all ECSchema concepts." displayLabel="Comprehensive Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.11.11">
+    <ECSchemaReference unknownAttribute="foo" name="Bentley_Standard_CustomAttributes" version="01.00.12" alias="bsca"/>
     <UnknownElement />
     <ECCustomAttributeClass unknownAttribute="foo" typeName="GeneralCustomAttribute" description="Custom Attribute that can be applied to anything." modifier="None">
         <ECProperty unknownAttribute="foo" propertyName="Primitive" typeName="string" readOnly="false"/>
         <UnknownElement />
     </ECCustomAttributeClass>
     <ECCustomAttributes unknownAttribute="foo">
-        <GeneralCustomAttribute unknownAttribute="foo"  xmlns="ComprehensiveSchemaWithUnknowns.01.00">
+        <GeneralCustomAttribute unknownAttribute="foo"  xmlns="ComprehensiveSchemaWithUnknowns.01.00.00">
             <Primitive unknownAttribute="foo" >General Value</Primitive>
         </GeneralCustomAttribute>
     </ECCustomAttributes>
     <ECEnumeration typeName="Enumeration" backingTypeName="int" description="This is a description." displayLabel="This is a display label." isStrict="true" unknownAttribute="foo" >
         <UnknownElement />
-        <ECEnumerator value="1" displayLabel="First" unknownAttribute="foo" />
-        <ECEnumerator value="2" displayLabel="Second"/>
-        <ECEnumerator value="3" displayLabel="Third"/>
+        <ECEnumerator name="One" value="1" displayLabel="First" unknownAttribute="foo" />
+        <ECEnumerator name="Two" value="2" displayLabel="Second"/>
+        <ECEnumerator name="Three" value="3" displayLabel="Third"/>
     </ECEnumeration>
     <ECEntityClass typeName="BaseEntity" description="Base Entity Description" displayLabel="Base Entity" modifier="Abstract" unknownAttribute="foo" >
         <UnknownElement />
@@ -31,7 +31,7 @@
     <ECEntityClass typeName="Entity" modifier="Sealed" unknownAttribute="foo" >
         <BaseClass unknownAttribute="foo">BaseEntity</BaseClass>
         <ECCustomAttributes>
-            <ClassCustomAttribute xmlns="ComprehensiveSchemaWithUnknowns.01.00">
+            <ClassCustomAttribute xmlns="ComprehensiveSchemaWithUnknowns.01.00.00">
                 <Primitive>General Value on Class</Primitive>
             </ClassCustomAttribute>
         </ECCustomAttributes>
@@ -49,7 +49,7 @@
         <ECProperty propertyName="Calculated" typeName="string" readOnly="false">
             <UnknownElement />
             <ECCustomAttributes>
-                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.00.12">
                     <ECExpression>&quot;Primitve 10=&quot; &amp; this.Primitive10</ECExpression>
                 </CalculatedECPropertySpecification>
             </ECCustomAttributes>

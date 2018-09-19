@@ -128,7 +128,7 @@ TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
     prop->SetPriority(5);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, prop->WriteJson(schemaJson, true));
+    EXPECT_TRUE(prop->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandalonePropertyCategory.ecschema.json"));
@@ -136,6 +136,69 @@ TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PropertyCategoryTest, LookupPropertyCategoryTest)
+    {
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="ref" version="01.00.00" alias="r" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="2"/>
+        </ECSchema>)xml";
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ref" version="1.0.0" alias="r"/>
+            <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="2"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr refSchema;
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    auto shouldBeNull = schema->LookupPropertyCategory("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupPropertyCategory("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupPropertyCategory("banana:propCategory");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupPropertyCategory("testSchema:propCategory");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupPropertyCategory("ref:propCategory");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupPropertyCategory("r:propCategory", true);
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = schema->LookupPropertyCategory("propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("ts:propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("testSchema:propCategory", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("r:propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("ref:propCategory", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("TS:propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("TESTSCHEMA:propCategory", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("R:propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("REF:propCategory", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, schema->GetPropertyCategoryCount());
     }
 
 //---------------------------------------------------------------------------------------

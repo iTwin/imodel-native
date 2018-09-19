@@ -15,10 +15,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus PropertyCategory::SetName(Utf8CP name)
     {
-    if (!ECNameValidation::IsValidName(name))
+    if (!m_validatedName.SetValidName(name, false))
         return ECObjectsStatus::InvalidName;
 
-    m_validatedName.SetName(name);
     m_fullName = GetSchema().GetName() + ":" + GetName();
     return ECObjectsStatus::Success;
     }
@@ -43,7 +42,7 @@ Utf8String PropertyCategory::GetQualifiedName(ECSchemaCR primarySchema) const
     Utf8StringCR name = GetName();
     if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (GetSchema(), alias)))
         {
-        LOG.warningv ("warning: Cannot qualify an PropertyCategory name with an alias unless the schema containing the PropertyCategry is referenced by the primary schema."
+        LOG.warningv ("warning: Cannot qualify a PropertyCategory name with an alias unless the schema containing the PropertyCategry is referenced by the primary schema."
             "The name will remain unqualified.\n  Primary ECSchema: %s\n  PropertyCategory: %s\n ECSchema containing PropertyCategory: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
         return name;
         }
@@ -122,7 +121,7 @@ SchemaWriteStatus PropertyCategory::WriteXml(BeXmlWriterR xmlWriter, ECVersion e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+bool PropertyCategory::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema items
     if (standalone)
@@ -131,7 +130,7 @@ SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standa
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
-        outValue[ECJSON_SCHEMA_ITEM_NAME_ATTRIBUTE] = GetName();
+        outValue[NAME_ATTRIBUTE] = GetName();
         }
 
     outValue[ECJSON_SCHEMA_ITEM_TYPE] = PROPERTY_CATEGORY_ELEMENT;
@@ -143,7 +142,7 @@ SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standa
 
     // Property Category properties
     outValue[PRIORITY_ATTRIBUTE] = GetPriority();
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

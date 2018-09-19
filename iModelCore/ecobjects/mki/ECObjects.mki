@@ -30,12 +30,14 @@ always:
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
-ecPublicAPISrc          = $(SrcRoot)ecobjects/PublicApi/
-ecPrivateAPISrc         = $(SrcRoot)ecobjects/PrivateApi/
-ecobjectsPublicAPISrc   = $(ecPublicAPISrc)ECObjects/
-ecobjectsPrivateAPISrc  = $(ecPrivateAPISrc)ECObjects/
 ecobjectsSrc            = $(SrcRoot)ecobjects/
+
+ecPublicAPISrc          = $(ecobjectsSrc)PublicApi/
+ecobjectsPublicAPISrc   = $(ecPublicAPISrc)ECObjects/
 ecunitsPublicAPISrc     = $(ecPublicAPISrc)ECUnits/
+
+ecPrivateAPISrc         = $(ecobjectsSrc)PrivateApi/
+ecobjectsPrivateAPISrc  = $(ecPrivateAPISrc)ECObjects/
 
 #-----------------------------------------------------------------------
 # Configure Google Test macros

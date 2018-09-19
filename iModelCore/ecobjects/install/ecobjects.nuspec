@@ -34,7 +34,7 @@
 
         <file src="Assets\ECSchemas\Standard\*"                 target="Assets\ECSchemas\Standard" />
         <file src="Notices\*"                                   target="Notices" />
-        <file src="Assets\icudt61l.dat"                         target="Assets\icudt61l.dat" />
+        <file src="Assets\icudt62l.dat"                         target="Assets\icudt62l.dat" />
         <file src="PublishedApi\**\*"                           target="include" />
     </files>
 </package>

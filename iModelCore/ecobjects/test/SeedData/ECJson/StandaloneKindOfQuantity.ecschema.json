@@ -1,26 +1,16 @@
 ﻿{
-  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemaitem",
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
   "schemaVersion": "03.01.00",
   "schemaItemType": "KindOfQuantity",
   "schema": "ExampleSchema",
   "name": "ExampleKoQ",
   "relativeError": 3.0,
-  "persistenceUnit": {
-    "unit": "MM",
-    "format": "DefaultReal"
-  },
+  "persistenceUnit": "Units.MM",
   "presentationUnits": [
-    {
-      "unit": "IN",
-      "format": "DefaultReal"
-    },
-    {
-      "unit": "MM",
-      "format": "DefaultReal"
-    },
-    {
-      "unit": "CM",
-      "format": "DefaultReal"
-    }
+      "Formats.DefaultRealU[Units.MM]",
+      "Formats.DefaultRealU(3)[Units.MM]",
+      "Formats.DefaultRealU[Units.MM|]",
+      "Formats.DefaultReal[Units.M|meters]",
+      "Formats.AmerFI[Units.FT|feets][Units.IN|inches]"
   ]
 }

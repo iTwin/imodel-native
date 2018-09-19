@@ -21,150 +21,147 @@ struct SchemaDeserializationTest : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    Paul.Connelly   12/12
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static ECPropertyP GetPropertyByName (ECClassCR ecClass, Utf8CP name, bool expectExists = true)
+    static ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true)
         {
-        ECPropertyP prop = ecClass.GetPropertyP (name);
-        EXPECT_EQ (expectExists, NULL != prop);
-        Utf8String utf8 (name);
-        prop = ecClass.GetPropertyP (utf8.c_str ());
-        EXPECT_EQ (expectExists, NULL != prop);
+        ECPropertyP prop = ecClass.GetPropertyP(name);
+        EXPECT_EQ(expectExists, nullptr != prop);
+        Utf8String utf8(name);
+        prop = ecClass.GetPropertyP(utf8.c_str());
+        EXPECT_EQ(expectExists, nullptr != prop);
         return prop;
         }
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Carole.MacDonald                01/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
+    void VerifyWidgetsSchema(ECSchemaPtr const& schema)
         {
         ASSERT_TRUE(schema.IsValid());
-        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1));
+        EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_2));
 
-        EXPECT_STREQ ("Widgets", schema->GetName ().c_str ());
-        EXPECT_STREQ ("wid", schema->GetAlias ().c_str ());
-        EXPECT_STREQ ("Widgets Display Label", schema->GetDisplayLabel ().c_str ());
-        EXPECT_TRUE (schema->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("Widgets Description", schema->GetDescription ().c_str ());
-        EXPECT_EQ (9, schema->GetVersionRead ());
-        EXPECT_EQ (6, schema->GetVersionMinor ());
+        EXPECT_STREQ("Widgets", schema->GetName().c_str());
+        EXPECT_STREQ("wid", schema->GetAlias().c_str());
+        EXPECT_STREQ("Widgets Display Label", schema->GetDisplayLabel().c_str());
+        EXPECT_TRUE(schema->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("Widgets Description", schema->GetDescription().c_str());
+        EXPECT_EQ(9, schema->GetVersionRead());
+        EXPECT_EQ(6, schema->GetVersionMinor());
 
     #ifdef DEBUG_PRINT
-        for (ECClassP pClass: schema->GetClasses())
+        for(ECClassP pClass: schema->GetClasses())
             {
-            printf ("Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
+            printf("Widgets contains class: '%s' with display label '%s'\n", pClass->GetName().c_str(), pClass->GetDisplayLabel().c_str());
             }
     #endif
 
-        ECClassP pClass = schema->GetClassP ("ClassDoesNotExistInSchema");
-        EXPECT_FALSE (pClass);
+        ECClassP pClass = schema->GetClassP("ClassDoesNotExistInSchema");
+        EXPECT_FALSE(pClass);
 
-        pClass = schema->GetClassP ("ecProject");
-        ASSERT_TRUE (NULL != pClass);
-        EXPECT_STREQ ("ecProject", pClass->GetName ().c_str ());
-        EXPECT_STREQ ("Project", pClass->GetDisplayLabel ().c_str ());
-        EXPECT_TRUE (pClass->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("Project Class", pClass->GetDescription ().c_str ());
-        EXPECT_TRUE (pClass->IsEntityClass());
-        EXPECT_FALSE (pClass->HasBaseClasses ());
-        ECPropertyP pProperty = GetPropertyByName (*pClass, "Name");
-        ASSERT_TRUE (NULL != pProperty);
-        EXPECT_STREQ ("Name", pProperty->GetName ().c_str ());
-        EXPECT_TRUE (pProperty->GetIsPrimitive ());
-        EXPECT_FALSE (pProperty->GetIsStruct ());
-        EXPECT_FALSE (pProperty->GetIsArray ());
-        EXPECT_STREQ ("string", pProperty->GetTypeName ().c_str ());
-        EXPECT_TRUE (PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty ()->GetType ());
-        EXPECT_TRUE (pProperty->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("Project Name", pProperty->GetDisplayLabel ().c_str ());
-        EXPECT_STREQ ("", pProperty->GetDescription ().c_str ());
-        EXPECT_EQ (pClass, &pProperty->GetClass ());
-        EXPECT_FALSE (pProperty->GetIsReadOnly ());
+        pClass = schema->GetClassP("ecProject");
+        ASSERT_NE(nullptr, pClass);
+        EXPECT_STREQ("ecProject", pClass->GetName().c_str());
+        EXPECT_STREQ("Project", pClass->GetDisplayLabel().c_str());
+        EXPECT_TRUE(pClass->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("Project Class", pClass->GetDescription().c_str());
+        EXPECT_TRUE(pClass->IsEntityClass());
+        EXPECT_FALSE(pClass->HasBaseClasses());
+        ECPropertyP pProperty = GetPropertyByName(*pClass, "Name");
+        ASSERT_NE(nullptr, pProperty);
+        EXPECT_STREQ("Name", pProperty->GetName().c_str());
+        EXPECT_TRUE(pProperty->GetIsPrimitive());
+        EXPECT_FALSE(pProperty->GetIsStruct());
+        EXPECT_FALSE(pProperty->GetIsArray());
+        EXPECT_STREQ("string", pProperty->GetTypeName().c_str());
+        EXPECT_TRUE(PRIMITIVETYPE_String == pProperty->GetAsPrimitiveProperty()->GetType());
+        EXPECT_TRUE(pProperty->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("Project Name", pProperty->GetDisplayLabel().c_str());
+        EXPECT_STREQ("", pProperty->GetDescription().c_str());
+        EXPECT_EQ(pClass, &pProperty->GetClass());
+        EXPECT_FALSE(pProperty->GetIsReadOnly());
 
-        pProperty = GetPropertyByName (*pClass, "PropertyDoesNotExistInClass", false);
-        EXPECT_FALSE (pProperty);
+        pProperty = GetPropertyByName(*pClass, "PropertyDoesNotExistInClass", false);
+        EXPECT_FALSE(pProperty);
 
-        ECClassP customAttribClass = schema->GetClassP ("AccessCustomAttributes");
-        ASSERT_TRUE (NULL != customAttribClass);
-        EXPECT_STREQ ("AccessCustomAttributes", customAttribClass->GetName ().c_str ());
-        EXPECT_STREQ ("AccessCustomAttributes", customAttribClass->GetDisplayLabel ().c_str ());
-        EXPECT_FALSE (customAttribClass->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("", customAttribClass->GetDescription ().c_str ());
-        EXPECT_TRUE (customAttribClass->IsCustomAttributeClass());
-        EXPECT_FALSE (customAttribClass->HasBaseClasses ());
+        ECClassP customAttribClass = schema->GetClassP("AccessCustomAttributes");
+        ASSERT_NE(nullptr, customAttribClass);
+        EXPECT_STREQ("AccessCustomAttributes", customAttribClass->GetName().c_str());
+        EXPECT_STREQ("AccessCustomAttributes", customAttribClass->GetDisplayLabel().c_str());
+        EXPECT_FALSE(customAttribClass->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("", customAttribClass->GetDescription().c_str());
+        EXPECT_TRUE(customAttribClass->IsCustomAttributeClass());
+        EXPECT_FALSE(customAttribClass->HasBaseClasses());
 
-        pClass = schema->GetClassP ("Struct1");
-        ASSERT_TRUE (NULL != pClass);
-        EXPECT_STREQ ("Struct1", pClass->GetName ().c_str ());
-        EXPECT_STREQ ("Struct1", pClass->GetDisplayLabel ().c_str ());
-        EXPECT_FALSE (pClass->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("", pClass->GetDescription ().c_str ());
-        EXPECT_TRUE (pClass->IsStructClass());
-        EXPECT_FALSE (pClass->HasBaseClasses ());
+        pClass = schema->GetClassP("Struct1");
+        ASSERT_NE(nullptr, pClass);
+        EXPECT_STREQ("Struct1", pClass->GetName().c_str());
+        EXPECT_STREQ("Struct1", pClass->GetDisplayLabel().c_str());
+        EXPECT_FALSE(pClass->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("", pClass->GetDescription().c_str());
+        EXPECT_TRUE(pClass->IsStructClass());
+        EXPECT_FALSE(pClass->HasBaseClasses());
 
-        pClass = schema->GetClassP ("Struct2");
-        ASSERT_TRUE (NULL != pClass);
-        EXPECT_STREQ ("Struct2", pClass->GetName ().c_str ());
-        EXPECT_STREQ ("Struct2", pClass->GetDisplayLabel ().c_str ());
-        EXPECT_FALSE (pClass->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("", pClass->GetDescription ().c_str ());
-        EXPECT_TRUE (pClass->IsStructClass());
-        EXPECT_FALSE (pClass->HasBaseClasses ());
-        pProperty = GetPropertyByName (*pClass, "NestedArray");
-        EXPECT_TRUE (NULL != pProperty);
-        EXPECT_STREQ ("NestedArray", pProperty->GetName ().c_str ());
-        EXPECT_FALSE (pProperty->GetIsPrimitive ());
-        EXPECT_FALSE (pProperty->GetIsStruct ());
-        EXPECT_TRUE (pProperty->GetIsArray ());
-        EXPECT_STREQ ("Struct1", pProperty->GetTypeName ().c_str ());
-        StructArrayECPropertyP structArrayProperty = pProperty->GetAsStructArrayPropertyP ();
-        EXPECT_TRUE (NULL != structArrayProperty);
-        EXPECT_EQ (schema->GetClassP ("Struct1"), &structArrayProperty->GetStructElementType ());
-        EXPECT_EQ (0, structArrayProperty->GetMinOccurs ());
-        EXPECT_EQ (UINT_MAX, structArrayProperty->GetMaxOccurs ());
-        EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("NestedArray", pProperty->GetDisplayLabel ().c_str ());
-        EXPECT_STREQ ("", pProperty->GetDescription ().c_str ());
-        EXPECT_EQ (pClass, &pProperty->GetClass ());
-        EXPECT_FALSE (pProperty->GetIsReadOnly ());
+        pClass = schema->GetClassP("Struct2");
+        ASSERT_NE(nullptr, pClass);
+        EXPECT_STREQ("Struct2", pClass->GetName().c_str());
+        EXPECT_STREQ("Struct2", pClass->GetDisplayLabel().c_str());
+        EXPECT_FALSE(pClass->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("", pClass->GetDescription().c_str());
+        EXPECT_TRUE(pClass->IsStructClass());
+        EXPECT_FALSE(pClass->HasBaseClasses());
+        pProperty = GetPropertyByName(*pClass, "NestedArray");
+        EXPECT_NE(nullptr, pProperty);
+        EXPECT_STREQ("NestedArray", pProperty->GetName().c_str());
+        EXPECT_FALSE(pProperty->GetIsPrimitive());
+        EXPECT_FALSE(pProperty->GetIsStruct());
+        EXPECT_TRUE(pProperty->GetIsArray());
+        EXPECT_STREQ("Struct1", pProperty->GetTypeName().c_str());
+        StructArrayECPropertyP structArrayProperty = pProperty->GetAsStructArrayPropertyP();
+        EXPECT_NE(nullptr, structArrayProperty);
+        EXPECT_EQ(schema->GetClassP("Struct1"), &structArrayProperty->GetStructElementType());
+        EXPECT_EQ(0, structArrayProperty->GetMinOccurs());
+        EXPECT_EQ(UINT_MAX, structArrayProperty->GetMaxOccurs());
+        EXPECT_FALSE(pProperty->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("NestedArray", pProperty->GetDisplayLabel().c_str());
+        EXPECT_STREQ("", pProperty->GetDescription().c_str());
+        EXPECT_EQ(pClass, &pProperty->GetClass());
+        EXPECT_FALSE(pProperty->GetIsReadOnly());
 
-        pClass = schema->GetClassP ("TestClass");
-        ASSERT_TRUE (NULL != pClass);
-        EXPECT_TRUE (pClass->HasBaseClasses ());
-        pProperty = GetPropertyByName (*pClass, "EmbeddedStruct");
-        ASSERT_TRUE (NULL != pProperty);
-        EXPECT_STREQ ("EmbeddedStruct", pProperty->GetName ().c_str ());
-        EXPECT_FALSE (pProperty->GetIsPrimitive ());
-        EXPECT_TRUE (pProperty->GetIsStruct ());
-        EXPECT_FALSE (pProperty->GetIsArray ());
-        EXPECT_STREQ ("Struct1", pProperty->GetTypeName ().c_str ());
-        StructECPropertyP structProperty = pProperty->GetAsStructPropertyP ();
-        EXPECT_EQ (schema->GetClassP ("Struct1"), &(structProperty->GetType ()));
-        EXPECT_FALSE (pProperty->GetIsDisplayLabelDefined ());
-        EXPECT_STREQ ("EmbeddedStruct", pProperty->GetDisplayLabel ().c_str ());
-        EXPECT_STREQ ("", pProperty->GetDescription ().c_str ());
-        EXPECT_EQ (pClass, &pProperty->GetClass ());
-        EXPECT_FALSE (pProperty->GetIsReadOnly ());
+        pClass = schema->GetClassP("TestClass");
+        ASSERT_TRUE(nullptr != pClass);
+        EXPECT_TRUE(pClass->HasBaseClasses());
+        pProperty = GetPropertyByName(*pClass, "EmbeddedStruct");
+        ASSERT_TRUE(nullptr != pProperty);
+        EXPECT_STREQ("EmbeddedStruct", pProperty->GetName().c_str());
+        EXPECT_FALSE(pProperty->GetIsPrimitive());
+        EXPECT_TRUE(pProperty->GetIsStruct());
+        EXPECT_FALSE(pProperty->GetIsArray());
+        EXPECT_STREQ("Struct1", pProperty->GetTypeName().c_str());
+        StructECPropertyP structProperty = pProperty->GetAsStructPropertyP();
+        EXPECT_EQ(schema->GetClassP("Struct1"), &(structProperty->GetType()));
+        EXPECT_FALSE(pProperty->GetIsDisplayLabelDefined());
+        EXPECT_STREQ("EmbeddedStruct", pProperty->GetDisplayLabel().c_str());
+        EXPECT_STREQ("", pProperty->GetDescription().c_str());
+        EXPECT_EQ(pClass, &pProperty->GetClass());
+        EXPECT_FALSE(pProperty->GetIsReadOnly());
 
-        IECInstancePtr instance = pClass->GetCustomAttribute (*customAttribClass);
-        EXPECT_TRUE (instance.IsValid ());
+        IECInstancePtr instance = pClass->GetCustomAttribute(*customAttribClass);
+        EXPECT_TRUE(instance.IsValid());
 
         ECValue ecValue;
-        EXPECT_EQ (ECObjectsStatus::Success, instance->GetValue (ecValue, "AccessLevel"));
-        EXPECT_EQ (4, ecValue.GetInteger ());
+        EXPECT_EQ(ECObjectsStatus::Success, instance->GetValue(ecValue, "AccessLevel"));
+        EXPECT_EQ(4, ecValue.GetInteger());
 
-        EXPECT_EQ (ECObjectsStatus::Success, instance->GetValue (ecValue, "Writeable"));
-        EXPECT_FALSE (ecValue.GetBoolean ());
+        EXPECT_EQ(ECObjectsStatus::Success, instance->GetValue(ecValue, "Writeable"));
+        EXPECT_FALSE(ecValue.GetBoolean());
 
     #ifdef DEBUG_PRINT
-        for (ECPropertyP pProperty: pClass->GetProperties())
+        for(ECPropertyP pProperty: pClass->GetProperties())
             {
-            printf ("TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
+            printf("TestClass contains property: %s of type %s\n", pProperty->GetName().c_str(), pProperty->GetTypeName().c_str());
             }
     #endif   
         }
     };
-
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
@@ -193,7 +190,7 @@ TEST_F(SchemaDeserializationTest, TestAbstractness)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
     {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='StructArray' version='01.00' displayLabel='StructArrays' description='Schema with invalid XML for a struct array property' nameSpacePrefix='sa' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -207,12 +204,12 @@ TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
     ECClassP ent = schema->GetClassP("Ent1");
     ASSERT_TRUE(ent->IsEntityClass());
     ECPropertyP prop = ent->GetPropertyP("TypeReferences");
-    ASSERT_TRUE(nullptr != prop);
+    ASSERT_NE(nullptr, prop);
     StructArrayECPropertyCP typeReferences1 = prop->GetAsStructArrayProperty();
-    ASSERT_TRUE(nullptr == typeReferences1);
+    ASSERT_EQ(nullptr, typeReferences1);
 
     ArrayECPropertyCP typeReferences2 = prop->GetAsArrayProperty();
-    ASSERT_TRUE(nullptr != typeReferences2);
+    ASSERT_NE(nullptr, typeReferences2);
     }
 
 //---------------------------------------------------------------------------------------
@@ -220,7 +217,7 @@ TEST_F(SchemaDeserializationTest, InvalidStructArrayPropertySpecification)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, CaseSensitivity)
     {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='CaseInsensitive' version='01.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' nameSpacePrefix='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -239,11 +236,11 @@ TEST_F(SchemaDeserializationTest, CaseSensitivity)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXML, *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
     ECClassP ent = schema->GetClassP("Entity");
-    ASSERT_TRUE(nullptr != ent);
+    ASSERT_NE(nullptr, ent);
     ECPropertyP prop = ent->GetPropertyP("StructProp");
-    ASSERT_TRUE(nullptr != prop);
+    ASSERT_NE(nullptr, prop);
     StructECPropertyP structProp = prop->GetAsStructPropertyP();
-    ASSERT_TRUE(nullptr != structProp);
+    ASSERT_NE(nullptr, structProp);
     EXPECT_TRUE(ent->IsDefined("CustomAttrib"));
 
     }
@@ -545,7 +542,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
 
     ECSchemaPtr schema;
     //schemaContext->AddSchemaPath(L"C:\\temp\\data\\ECXA\\SchemasAndDgn\');
-    //SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\Bentley_Plant.06.00.ecschema.xml", *schemaContext);
+    //SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, L"C:\\temp\\data\\ECXA\\SchemasAndDgn\\Bentley_Plant.06.00.ecschema.xml", *schemaContext);
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"EmptyCustomAttribute.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
@@ -561,15 +558,13 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::Success, status);
 
     ECClassP pClass = schema->GetClassP("circle");
-    ASSERT_TRUE(NULL != pClass);
+    ASSERT_TRUE(nullptr != pClass);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -595,7 +590,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
     EXPECT_EQ(0, schema->GetVersionMinor());
 
     ECClassP pClass = schema->GetClassP("OnlyRequiredECClassAttributes");
-    ASSERT_TRUE(NULL != pClass);
+    ASSERT_TRUE(nullptr != pClass);
     EXPECT_STREQ("OnlyRequiredECClassAttributes", pClass->GetName().c_str());
     EXPECT_STREQ("OnlyRequiredECClassAttributes", pClass->GetDisplayLabel().c_str());
     EXPECT_FALSE(pClass->GetIsDisplayLabelDefined());
@@ -649,7 +644,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_FALSE(pClass);
 
     pClass = schema->GetClassP("ecProject");
-    ASSERT_TRUE(NULL != pClass);
+    ASSERT_TRUE(nullptr != pClass);
     EXPECT_STREQ("ecProject", pClass->GetName().c_str());
     EXPECT_STREQ("Project", pClass->GetDisplayLabel().c_str());
     EXPECT_TRUE(pClass->GetIsDisplayLabelDefined());
@@ -657,7 +652,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_TRUE(pClass->IsEntityClass());
     EXPECT_FALSE(pClass->HasBaseClasses());
     ECPropertyP pProperty = GetPropertyByName(*pClass, "Name");
-    ASSERT_TRUE(NULL != pProperty);
+    ASSERT_TRUE(nullptr != pProperty);
     EXPECT_STREQ("Name", pProperty->GetName().c_str());
     EXPECT_TRUE(pProperty->GetIsPrimitive());
     EXPECT_FALSE(pProperty->GetIsStruct());
@@ -671,7 +666,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_FALSE(pProperty->GetIsReadOnly());
 
     pProperty = pClass->GetPropertyP("Geometry");
-    ASSERT_TRUE(NULL != pProperty);
+    ASSERT_TRUE(nullptr != pProperty);
     EXPECT_STREQ("Geometry", pProperty->GetName().c_str());
     EXPECT_TRUE(pProperty->GetIsPrimitive());
     EXPECT_FALSE(pProperty->GetIsStruct());
@@ -685,7 +680,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
     EXPECT_FALSE(pProperty->GetIsReadOnly());
 
     pProperty = pClass->GetPropertyP("LineSegment");
-    ASSERT_TRUE(NULL != pProperty);
+    ASSERT_TRUE(nullptr != pProperty);
     EXPECT_STREQ("LineSegment", pProperty->GetName().c_str());
     EXPECT_TRUE(pProperty->GetIsPrimitive());
     EXPECT_FALSE(pProperty->GetIsStruct());
@@ -923,9 +918,9 @@ TEST_F(SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
 void ValidateElementOrder(bvector<Utf8String> expectedTypeNames, BeXmlNodeP root)
     {
     BeXmlNodeP currentNode = root->GetFirstChild();
-    for (auto expectedTypeName : expectedTypeNames)
+    for(auto expectedTypeName : expectedTypeNames)
         {
-        if (currentNode == nullptr)
+        if(currentNode == nullptr)
             {
             FAIL() << "Expected end of document, Node '" << expectedTypeName << "' expected.";
             }
@@ -992,7 +987,7 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrder)
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
     ASSERT_EQ(BEXML_Success, xmlStatus);
 
-    // Enumerations (DEF) are serialized first, then classes (ABC, GHI)
+    // Enumerations(DEF) are serialized first, then classes(ABC, GHI)
     bvector<Utf8String> typeNames = {"DEF", "ABC", "GHI"};
     ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
     }
@@ -1090,7 +1085,7 @@ TEST_F(SchemaDeserializationTest, TestDefaultElementOrderWithBaseClassAndRelatio
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, ecSchemaXmlString.c_str(), stringByteCount);
     EXPECT_EQ(BEXML_Success, xmlStatus);
 
-    // First Enumeration (PQR), then classes alphabetically (ABC, DEF, GHI). As MNO is the base class of ABC and
+    // First Enumeration(PQR), then classes alphabetically(ABC, DEF, GHI). As MNO is the base class of ABC and
     // JKL has a constraint in DEF, those two classes are written before the class they depend in.
     bvector<Utf8String> typeNames = {"PQR", "MNO", "ABC", "JKL", "DEF", "GHI"};
     ValidateElementOrder(typeNames, xmlDom.get()->GetRootElement());
@@ -1112,7 +1107,7 @@ TEST_F(SchemaDeserializationTest, ExpectInvalidSchemaAndDuplicateStatusWhenLoadi
     ECSchemaPtr schema2;
     status = ECSchema::ReadFromXmlFile(schema2, schemaFilePath.c_str(), *schemaContext);
     EXPECT_EQ(SchemaReadStatus::DuplicateSchema, status) << "Getting the schema a second time did not return a status of DuplicateSchema";
-    EXPECT_TRUE(schema2.IsNull()) << "Expected schema to be null on second call to ECSchema::ReadFromXmlFile";
+    EXPECT_TRUE(schema2.IsNull()) << "Expected schema to be nullptr on second call to ECSchema::ReadFromXmlFile";
 
     SchemaKey key(schema->GetSchemaKey());
     ECSchemaPtr schema3 = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
@@ -1309,4 +1304,47 @@ TEST_F(SchemaDeserializationTest, SelfReferencingStructArray)
     ECPropertyP bad = foo->GetPropertyP("Luminaires");
     ASSERT_EQ(nullptr, bad);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    05/2018
+//--------------------------------------------------------------------------------------
+TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )xml";
+
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->SetCalculateChecksum(true);
+    ASSERT_TRUE(context->GetCalculateChecksum()) << "The calculate checksum flag should be turned on.";
+
+    ECSchemaPtr testSchema;
+    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+
+    ASSERT_TRUE(testSchema.IsValid());
+    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
+    }
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_FALSE(context->GetCalculateChecksum()) << "By default the calculate checksum flag should be off";
+    ECSchemaPtr testSchema;
+    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+    ASSERT_TRUE(testSchema.IsValid());
+    EXPECT_TRUE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
+    }
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->SetSkipValidation(true);
+    context->SetCalculateChecksum(true);
+
+    ECSchemaPtr testSchema;
+    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+
+    ASSERT_TRUE(testSchema.IsValid());
+    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
+    }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

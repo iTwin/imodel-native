@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -57,7 +56,8 @@ struct ConversionOptions
 //--------------------------------------------------------------------------------------
 static int ValidateLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, ConversionOptions options)
     {
-    if (!ECSchemaValidator::Validate(schema))
+    ECSchemaValidator validator;
+    if (!validator.Validate(schema))
         return -1;
 
     if (options.IncludeAll)
@@ -216,24 +216,12 @@ int main(int argc, char** argv)
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
     workingDirectory.AppendToPath(L"Assets");
 
-    BeFileName sqlangFile(workingDirectory.c_str());
-    sqlangFile.AppendToPath(L"sqlang");
-    BeFileName tempDirectory(sqlangFile.c_str());
-    sqlangFile.AppendToPath(L"Tools_en.sqlang.db3");
-
-    BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
     s_logger->infov(L"Loading schema '%ls' for  validation", options.InputFile.GetName());
     int validationResult = ValidateSchema(options);
 
-    BeSQLite::L10N::Shutdown();
-
     return validationResult;
     }
-
-
 

@@ -1,0 +1,15 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "Unit",
+  "name": "ExampleUnit",
+  "definition": "M",
+  "label": "ExampleUnitLabel",
+  "description": "ExampleUnitDescription",
+  "numerator": 10.0,
+  "denominator": 1.0,
+  "offset": 1.0,
+  "phenomenon": "ExampleSchema.ExamplePhenomenon",
+  "unitSystem": "ExampleSchema.ExampleUnitSystem"
+}

@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -121,7 +120,7 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
 //--------------------------------------------------------------------------------------
 static int ConvertLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, ConversionOptions options)
     {
-    if (!ECSchemaConverter::Convert(schema))
+    if (!ECSchemaConverter::Convert(schema, &context))
         return -1;
 
     if (options.RemoveUnusedSchemaReferences)
@@ -379,21 +378,11 @@ int main(int argc, char** argv)
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
     workingDirectory.AppendToPath(L"Assets");
 
-    BeFileName sqlangFile(workingDirectory.c_str());
-    sqlangFile.AppendToPath(L"sqlang");
-    BeFileName tempDirectory(sqlangFile.c_str());
-    sqlangFile.AppendToPath(L"Tools_en.sqlang.db3");
-
-    BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
     s_logger->infov(L"Loading schema '%ls' for conversion to ECXml version '%d'.'%d'", options.InputFile.GetName(), options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor);
     int convertResult = ConvertSchema(options);
-
-    BeSQLite::L10N::Shutdown();
 
     return convertResult;
     }

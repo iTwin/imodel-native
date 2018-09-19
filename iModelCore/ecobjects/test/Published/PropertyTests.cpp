@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/PropertyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -572,6 +572,7 @@ TEST_F(PropertyTest, CompareProperties)
         EXPECT_TRUE(testProp->IsSame(*prop1));
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                       06/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1049,6 +1050,8 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    ECSchemaR unitsSchema = *ECTestFixture::GetUnitsSchema();
+    schema->AddReferencedSchema(unitsSchema);
 
     ECEntityClassP entity;
     EC_EXPECT_SUCCESS(schema->CreateEntityClass(entity, "TestEntity"));
@@ -1056,7 +1059,10 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "KoQ"));
     koq->SetRelativeError(5);
-    EXPECT_TRUE(koq->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", "MM")));
+    
+    ECUnitCP mmUnit = unitsSchema.GetUnitCP("MM");
+    EXPECT_NE(nullptr, mmUnit);
+    EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*mmUnit));
 
     PrimitiveECPropertyP primProp;
     EC_EXPECT_SUCCESS(entity->CreatePrimitiveProperty(primProp, "TestPrimProp"));
@@ -1576,6 +1582,8 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     {
     ECSchemaPtr ecSchema;
     ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
+    ecSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    ecSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEntityClassP a;
     ECEntityClassP b;
@@ -1598,18 +1606,18 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     ecSchema->CreateKindOfQuantity(temperature, "Temperature");
 
     // Phenomenon Length
-    feet->SetPersistenceUnit("MM");
-    feet->SetDefaultPresentationUnit("FT");
+    feet->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    feet->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
     feet->SetRelativeError(10e-3);
 
     // Phenomenon Length
-    inch->SetPersistenceUnit("M");
-    inch->SetDefaultPresentationUnit("IN");
+    inch->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    inch->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
     inch->SetRelativeError(10e-4);
     
     // Phenomenon Temperature
-    temperature->SetPersistenceUnit("CELSIUS");
-    temperature->SetDefaultPresentationUnit("FAHRENHEIT");
+    temperature->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CELSIUS"));
+    temperature->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
     temperature->SetRelativeError(10e-3);
 
     // Test PrimitiveECProperty
@@ -1626,7 +1634,8 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     c->AddBaseClass(*a);
     c->CreatePrimitiveProperty(primPropOverride2, "PrimProp");
     EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primPropOverride2->SetKindOfQuantity(temperature));
-    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride2->SetKindOfQuantity(feet));
 
     a->RemoveProperty("PrimProp");
     EXPECT_EQ(0, a->GetPropertyCount()) << "All properties were not successfully removed from class 'A'";
@@ -1651,7 +1660,8 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     c->AddBaseClass(*a);
     c->CreatePrimitiveArrayProperty(primArrPropOverride2, "PrimArrProp");
     EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primArrPropOverride2->SetKindOfQuantity(temperature));
-    EXPECT_EQ(ECObjectsStatus::Success, primArrPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primArrPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::Success, primArrPropOverride2->SetKindOfQuantity(feet));
     }
 
 //---------------------------------------------------------------------------------------

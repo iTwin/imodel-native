@@ -8,101 +8,6 @@
 #include "ECObjectsPch.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool StandardValueInfo::Equals(const StandardValueInfo& sd) const
-    {
-    //let them be equal even if mustBeFromList is different
-    if (m_valuesMap.size() != sd.m_valuesMap.size())
-        return false;
-    for (auto const& pair : m_valuesMap)
-        {
-        auto it = sd.m_valuesMap.find(pair.first);
-        if (it == sd.m_valuesMap.end())
-            return false;
-
-        if (!it->second.EqualsI(pair.second))
-            return false;
-        }
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer                   09/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool StandardValueInfo::Contains(const StandardValueInfo& sd) const
-    {
-    for (auto const& pair : sd.m_valuesMap)
-        {
-        auto it = m_valuesMap.find(pair.first);
-        if (it == m_valuesMap.end() || !it->second.Equals(pair.second))
-            return false;
-        }
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-StandardValueInfo::StandardValueInfo(ECEnumerationP& ecEnum)
-    {
-    m_mustBeFromList = ecEnum->GetIsStrict();
-    for (auto const& enumerator : ecEnum->GetEnumerators())
-        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer                   02/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-StandardValueInfo::StandardValueInfo(ECEnumerationCR ecEnum)
-    {
-    m_mustBeFromList = ecEnum.GetIsStrict();
-    for (auto const& enumerator : ecEnum.GetEnumerators())
-        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo)
-    {
-    sdInfo.m_mustBeFromList = true; //default is true
-    ECValue value;
-    if (ECObjectsStatus::Success == instance.GetValue(value, "MustBeFromList")
-        && !value.IsNull() && value.IsBoolean())
-        {
-        sdInfo.m_mustBeFromList = value.GetBoolean();
-        }
-
-    Utf8String accessString = "ValueMap";
-    ECObjectsStatus status;
-    status = instance.GetValue(value, accessString.c_str());
-    if (ECObjectsStatus::Success != status)
-        return status;
-
-    uint32_t arraySize = value.GetArrayInfo().GetCount();
-    for (uint32_t i = 0; i < arraySize; i++)
-        {
-        status = instance.GetValue(value, accessString.c_str(), i);
-        if (ECObjectsStatus::Success != status && !value.IsStruct())
-            return status;
-
-        IECInstancePtr  structInstance = value.GetStruct();
-        if (!structInstance.IsValid())
-            return ECObjectsStatus::Error;
-
-        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "Value")))
-            return status;
-        int index = value.GetInteger();
-
-        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "DisplayString")))
-            return status;
-        sdInfo.m_valuesMap[index] = value.ToString();
-        }
-    return ECObjectsStatus::Success;
-    }
-
 static Utf8CP const  STANDARDVALUES_CUSTOMATTRIBUTE = "StandardValues";
 static Utf8CP const  BECA_SCHEMANAME = "EditorCustomAttributes";
 static Utf8CP const  BSCA_SCHEMANAME = "Bentley_Standard_CustomAttributes";
@@ -140,95 +45,66 @@ static Utf8CP const SHOW                            = "Show";
 static Utf8CP const HIDDEN_SCHEMA                   = "HiddenSchema";
 static Utf8CP const HIDDEN_CLASS                    = "HiddenClass";
 
-bool convertStrategyName(ECValueR strategy, IECInstanceCR classMap, Utf8StringR convertedStrategy)
+//=======================================================================================
+//! ECSchemaConverter
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomECSchemaConverterP ECSchemaConverter::GetSingleton()
     {
-    if (strategy.IsNull() || !strategy.IsString())
-        return false;
-    Utf8CP originalStrategy = strategy.GetUtf8CP();
-    if (0 == strcmp(originalStrategy, SHARED_TABLE))
+    static CustomECSchemaConverterP converterSingleton = nullptr;
+
+    if (nullptr == converterSingleton)
         {
-        ECValue appliesToSubClasses;
-        if (ECObjectsStatus::Success != classMap.GetValue(appliesToSubClasses, APPLIES_TO_SUBCLASS) ||
-            appliesToSubClasses.IsNull() || !appliesToSubClasses.IsBoolean() || !appliesToSubClasses.GetBoolean())
-            {
-            return false;
-            }
-        convertedStrategy = TABLE_PER_HIERARCHY;
-        return true;
+        converterSingleton = new CustomECSchemaConverter();
+        converterSingleton->SetRemoveLegacyStandardCustomAttributes(true);
+
+        IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
+        converterSingleton->AddConverter(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE, scConv);
+
+        IECCustomAttributeConverterPtr priorityConv = new PropertyPriorityConverter();
+        converterSingleton->AddConverter(BECA_SCHEMANAME, PROPERTY_PRIORITY, priorityConv);
+
+        IECCustomAttributeConverterPtr categoryConv = new CategoryConverter();
+        converterSingleton->AddConverter(BECA_SCHEMANAME, CATEGORY, categoryConv);
+
+        IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
+        converterSingleton->AddConverter(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS, unitSchemaConv);
+
+        IECCustomAttributeConverterPtr unitSystemConv = new UnitSystemConverter();
+        converterSingleton->AddConverter(UNIT_ATTRIBUTES, IS_UNIT_SYSTEM, unitSystemConv);
+        converterSingleton->AddConverter(UNIT_ATTRIBUTES, MIXED_UNIT_SYSTEM, unitSystemConv);
+        converterSingleton->AddConverter(UNIT_ATTRIBUTES, SI_UNIT_SYSTEM, unitSystemConv);
+        converterSingleton->AddConverter(UNIT_ATTRIBUTES, US_UNIT_SYSTEM, unitSystemConv);
+
+        IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
+        converterSingleton->AddConverter(UNIT_ATTRIBUTES, UNIT_SPECIFICATION, unitPropConv);
+        converterSingleton->AddConverter(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION, unitPropConv);
+
+        converterSingleton->AddSchemaReferenceToRemove(UNIT_ATTRIBUTES);
+
+        // Iterates over the Custom Attributes classes that will be converted. This converter basically
+        // handles Custom Attributes that moved into a new schema but with no content change.
+        auto const& mappingDictionary = StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping();
+        IECCustomAttributeConverterPtr standardClassConverter = new StandardCustomAttributeReferencesConverter();
+        for (auto classMapping : mappingDictionary)
+            converterSingleton->AddConverter(classMapping.first, standardClassConverter);
+
+        IECCustomAttributeConverterPtr hideProp = new HidePropertyConverter();
+        converterSingleton->AddConverter(BECA_SCHEMANAME, HIDE_PROPERTY, hideProp);
+        IECCustomAttributeConverterPtr displayOpt = new DisplayOptionsConverter();
+        converterSingleton->AddConverter(BSCA_SCHEMANAME, DISPLAY_OPTIONS, displayOpt);
+
         }
-    if (0 == strcmp(originalStrategy, NOT_MAPPED))
-        {
-        convertedStrategy = originalStrategy;
-        return true;
-        }
-    return false;
+
+    return converterSingleton;
     }
 
-Utf8CP ECDbClassMapConverter::GetSchemaName() { return ECDB_SCHEMANAME; }
-Utf8CP ECDbClassMapConverter::GetClassName() { return CLASS_MAP; }
-
-ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
-    {
-    ECClassP ecClass = dynamic_cast<ECClassP> (&container);
-    if (instance.GetClass().GetSchema().GetVersionRead() > 1)
-        {
-        LOG.infov("Found ECDbMap:ClassMap custom attribute from schema version greater than 1.0.  Skipping because we're only trying to convert ClassMap custom attributes from ECDbMap 1.0");
-        return ECObjectsStatus::Success;
-        }
-    container.RemoveCustomAttribute(ECDB_SCHEMANAME, CLASS_MAP);
-    container.RemoveSupplementedCustomAttribute(ECDB_SCHEMANAME, CLASS_MAP);
-
-    if (nullptr == ecClass)
-        {
-        LOG.warningv("ECDbMap:ClassMap custom attribute applied to a container which is not a class.  Removing Custom Attribute from %s and skipping.", container.GetContainerName());
-        return ECObjectsStatus::Success;
-        }
-    
-    Utf8String convertedStrategyName;
-    ECValue strategy;
-    if (ECObjectsStatus::Success != instance.GetValue(strategy, STRATEGY) || !convertStrategyName(strategy, instance, convertedStrategyName))
-        {
-        LOG.warningv("Failed to convert ECDbMap:ClassMap on %s because the MapStrategy is not 'SharedTable with AppliesToSubclasses == true' or 'NotMapped'.  Removing and skipping.", container.GetContainerName());
-        return ECObjectsStatus::Success;
-        }
-        
-    SchemaKey key(ECDB_SCHEMANAME, 2, 0, 0);
-    auto ecdbMapSchema = ECSchema::LocateSchema(key, *m_schemaContext);
-    if (ecdbMapSchema.IsNull() || !ecdbMapSchema.IsValid())
-        {
-        LOG.errorv("Failed to convert ECDbMap::ClassMap on %s because the ECDbMap 2.0.0 schema could not be found.  Removing and skipping.", container.GetContainerName());
-        return ECObjectsStatus::Error;
-        }
-        
-    IECInstancePtr classMap = ecdbMapSchema->GetClassCP(CLASS_MAP)->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECValue convertedMapStrategy(convertedStrategyName.c_str());
-    classMap->SetValue(MAP_STRATEGY, convertedMapStrategy);
-    schema.AddReferencedSchema(*ecdbMapSchema);
-    container.SetCustomAttribute(*classMap);
-
-    return ECObjectsStatus::Success;
-    }
-
-struct UnitSpecification
-    {
-    UnitSpecification() = delete;
-    static bool TryGetNewKOQName(IECInstanceCR instance, Utf8StringR newKindOfQuantityName)
-        {
-        return TryGetStringValue(instance, KOQ_NAME, newKindOfQuantityName) || TryGetStringValue(instance, DIMENSION_NAME, newKindOfQuantityName);
-        }
-
-    static bool TryGetStringValue(IECInstanceCR instance, Utf8CP propName, Utf8StringR stringValue)
-        {
-        ECValue v;
-        if (ECObjectsStatus::Success == instance.GetValue(v, propName) && !v.IsNull() && !Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
-            {
-            stringValue = v.GetUtf8CP();
-            return true;
-            }
-        
-        return false;
-        }
-    };
+//=======================================================================================
+//! CustomECSchemaConverter
+//=======================================================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
@@ -252,61 +128,6 @@ bool CustomECSchemaConverter::Convert(ECSchemaR schema, bool doValidate)
         schema.Validate(true);
 
     return m_convertedOK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Basanta.Kharel                  12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-CustomECSchemaConverterP ECSchemaConverter::GetSingleton()
-    {
-    static CustomECSchemaConverterP ECSchemaConverterSingleton = nullptr;
-
-    if (nullptr == ECSchemaConverterSingleton)
-        {
-        ECSchemaConverterSingleton = new CustomECSchemaConverter();
-        ECSchemaConverterSingleton->SetRemoveLegacyStandardCustomAttributes(true);
-
-        IECCustomAttributeConverterPtr scConv = new StandardValuesConverter();
-        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, STANDARDVALUES_CUSTOMATTRIBUTE, scConv);
-
-        IECCustomAttributeConverterPtr priorityConv = new PropertyPriorityConverter();
-        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, PROPERTY_PRIORITY, priorityConv);
-
-        IECCustomAttributeConverterPtr categoryConv = new CategoryConverter();
-        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, CATEGORY, categoryConv);
-
-        IECCustomAttributeConverterPtr unitSchemaConv = new UnitSpecificationsConverter();
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, UNIT_SPECIFICATIONS, unitSchemaConv);
-
-        IECCustomAttributeConverterPtr unitSystemConv = new UnitSystemConverter();
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, IS_UNIT_SYSTEM, unitSystemConv);
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, MIXED_UNIT_SYSTEM, unitSystemConv);
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, SI_UNIT_SYSTEM, unitSystemConv);
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, US_UNIT_SYSTEM, unitSystemConv);
-
-        IECCustomAttributeConverterPtr unitPropConv = new UnitSpecificationConverter();
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, UNIT_SPECIFICATION, unitPropConv);
-        ECSchemaConverterSingleton->AddConverter(UNIT_ATTRIBUTES, DISPLAY_UNIT_SPECIFICATION, unitPropConv);
-
-        ECSchemaConverterSingleton->AddSchemaReferenceToRemove(UNIT_ATTRIBUTES);
-
-        // Iterates over the Custom Attributes classes that will be converted. This converter basically
-        // handles Custom Attributes that moved into a new schema but with no content change.
-        auto const& mappingDictionary = StandardCustomAttributeReferencesConverter::GetCustomAttributesMapping();
-        IECCustomAttributeConverterPtr standardClassConverter = new StandardCustomAttributeReferencesConverter();
-        for (auto classMapping : mappingDictionary)
-            {
-            ECSchemaConverterSingleton->AddConverter(classMapping.first, standardClassConverter);
-            }
-
-        IECCustomAttributeConverterPtr hideProp = new HidePropertyConverter();
-        ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, HIDE_PROPERTY, hideProp);
-        IECCustomAttributeConverterPtr displayOpt = new DisplayOptionsConverter();
-        ECSchemaConverterSingleton->AddConverter(BSCA_SCHEMANAME, DISPLAY_OPTIONS, displayOpt);
-
-        }
-
-    return ECSchemaConverterSingleton;
     }
 
 //---------------------------------------------------------------------------------------
@@ -437,13 +258,13 @@ void CustomECSchemaConverter::ProcessCustomAttributeInstance(ECCustomAttributeIn
         if (nullptr != converter)
             {
             LOG.debugv("Started [%s Converter][Container %s]. ", fullName, containerName.c_str());
-            auto status = converter->Convert(*schema, container, *attr);
+            auto status = converter->Convert(*schema, container, *attr, m_schemaContext.get());
             if (ECObjectsStatus::Success != status)
                 {
                 LOG.errorv("Failed [%s Converter][Container %s]. ", fullName, containerName.c_str());
                 m_convertedOK = false;
                 }
-            else    
+            else
                 LOG.debugv("Succeeded [%s Converter][Container %s]. ", fullName, containerName.c_str());
             }
         else if (GetRemoveLegacyStandardCustomAttributes() && IsCustomAttributeFromOldStandardSchemas(*attr))
@@ -642,6 +463,192 @@ bvector<ECClassP> CustomECSchemaConverter::GetHierarchicallySortedClasses(ECSche
     return classes;
     }
 
+//=======================================================================================
+//! ECDbClassMapConverter
+//=======================================================================================
+
+bool convertStrategyName(ECValueR strategy, IECInstanceCR classMap, Utf8StringR convertedStrategy)
+    {
+    if (strategy.IsNull() || !strategy.IsString())
+        return false;
+    Utf8CP originalStrategy = strategy.GetUtf8CP();
+    if (0 == strcmp(originalStrategy, SHARED_TABLE))
+        {
+        ECValue appliesToSubClasses;
+        if (ECObjectsStatus::Success != classMap.GetValue(appliesToSubClasses, APPLIES_TO_SUBCLASS) ||
+            appliesToSubClasses.IsNull() || !appliesToSubClasses.IsBoolean() || !appliesToSubClasses.GetBoolean())
+            {
+            return false;
+            }
+        convertedStrategy = TABLE_PER_HIERARCHY;
+        return true;
+        }
+    if (0 == strcmp(originalStrategy, NOT_MAPPED))
+        {
+        convertedStrategy = originalStrategy;
+        return true;
+        }
+    return false;
+    }
+
+Utf8CP ECDbClassMapConverter::GetSchemaName() { return ECDB_SCHEMANAME; }
+Utf8CP ECDbClassMapConverter::GetClassName() { return CLASS_MAP; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
+    {
+    ECClassP ecClass = dynamic_cast<ECClassP> (&container);
+    if (instance.GetClass().GetSchema().GetVersionRead() > 1)
+        {
+        LOG.infov("Found ECDbMap:ClassMap custom attribute from schema version greater than 1.0.  Skipping because we're only trying to convert ClassMap custom attributes from ECDbMap 1.0");
+        return ECObjectsStatus::Success;
+        }
+    container.RemoveCustomAttribute(ECDB_SCHEMANAME, CLASS_MAP);
+    container.RemoveSupplementedCustomAttribute(ECDB_SCHEMANAME, CLASS_MAP);
+
+    if (nullptr == ecClass)
+        {
+        LOG.warningv("ECDbMap:ClassMap custom attribute applied to a container which is not a class.  Removing Custom Attribute from %s and skipping.", container.GetContainerName());
+        return ECObjectsStatus::Success;
+        }
+    
+    Utf8String convertedStrategyName;
+    ECValue strategy;
+    if (ECObjectsStatus::Success != instance.GetValue(strategy, STRATEGY) || !convertStrategyName(strategy, instance, convertedStrategyName))
+        {
+        LOG.warningv("Failed to convert ECDbMap:ClassMap on %s because the MapStrategy is not 'SharedTable with AppliesToSubclasses == true' or 'NotMapped'.  Removing and skipping.", container.GetContainerName());
+        return ECObjectsStatus::Success;
+        }
+
+    if (nullptr == context)
+        {
+        BeAssert(true);
+        LOG.error("Missing ECSchemaReadContext, it is necessary to perform conversion on a ECDbMap:ClassMap custom attribute.");
+        return ECObjectsStatus::Error;
+        }
+
+    static SchemaKey key(ECDB_SCHEMANAME, 2, 0, 0);
+    auto ecdbMapSchema = ECSchema::LocateSchema(key, *context);
+    if (ecdbMapSchema.IsNull() || !ecdbMapSchema.IsValid())
+        {
+        LOG.errorv("Failed to convert ECDbMap::ClassMap on %s because the ECDbMap 2.0.0 schema could not be found.  Removing and skipping.", container.GetContainerName());
+        return ECObjectsStatus::Error;
+        }
+        
+    IECInstancePtr classMap = ecdbMapSchema->GetClassCP(CLASS_MAP)->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECValue convertedMapStrategy(convertedStrategyName.c_str());
+    classMap->SetValue(MAP_STRATEGY, convertedMapStrategy);
+    schema.AddReferencedSchema(*ecdbMapSchema);
+    container.SetCustomAttribute(*classMap);
+
+    return ECObjectsStatus::Success;
+    }
+
+//=======================================================================================
+//! StandardValueInfo
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool StandardValueInfo::Equals(const StandardValueInfo& sd) const
+    {
+    //let them be equal even if mustBeFromList is different
+    if (m_valuesMap.size() != sd.m_valuesMap.size())
+        return false;
+    for (auto const& pair : m_valuesMap)
+        {
+        auto it = sd.m_valuesMap.find(pair.first);
+        if (it == sd.m_valuesMap.end())
+            return false;
+
+        if (!it->second.EqualsI(pair.second))
+            return false;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   09/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool StandardValueInfo::Contains(const StandardValueInfo& sd) const
+    {
+    for (auto const& pair : sd.m_valuesMap)
+        {
+        auto it = m_valuesMap.find(pair.first);
+        if (it == m_valuesMap.end() || !it->second.Equals(pair.second))
+            return false;
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+StandardValueInfo::StandardValueInfo(ECEnumerationP& ecEnum)
+    {
+    m_mustBeFromList = ecEnum->GetIsStrict();
+    for (auto const& enumerator : ecEnum->GetEnumerators())
+        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+StandardValueInfo::StandardValueInfo(ECEnumerationCR ecEnum)
+    {
+    m_mustBeFromList = ecEnum.GetIsStrict();
+    for (auto const& enumerator : ecEnum.GetEnumerators())
+        m_valuesMap[enumerator->GetInteger()] = enumerator->GetDisplayLabel();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Basanta.Kharel                  01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus StandardValueInfo::ExtractInstanceData(IECInstanceR instance, StandardValueInfo& sdInfo)
+    {
+    sdInfo.m_mustBeFromList = true; //default is true
+    ECValue value;
+    if (ECObjectsStatus::Success == instance.GetValue(value, "MustBeFromList")
+        && !value.IsNull() && value.IsBoolean())
+        {
+        sdInfo.m_mustBeFromList = value.GetBoolean();
+        }
+
+    Utf8String accessString = "ValueMap";
+    ECObjectsStatus status;
+    status = instance.GetValue(value, accessString.c_str());
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    uint32_t arraySize = value.GetArrayInfo().GetCount();
+    for (uint32_t i = 0; i < arraySize; i++)
+        {
+        status = instance.GetValue(value, accessString.c_str(), i);
+        if (ECObjectsStatus::Success != status && !value.IsStruct())
+            return status;
+
+        IECInstancePtr  structInstance = value.GetStruct();
+        if (!structInstance.IsValid())
+            return ECObjectsStatus::Error;
+
+        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "Value")))
+            return status;
+        int index = value.GetInteger();
+
+        if (ECObjectsStatus::Success != (status = structInstance->GetValue(value, "DisplayString")))
+            return status;
+        sdInfo.m_valuesMap[index] = value.ToString();
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//=======================================================================================
+//! StandardValuesConverter
+//=======================================================================================
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                  09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -676,7 +683,7 @@ ECObjectsStatus StandardValuesConverter::Merge(ECPropertyP prop, StandardValueIn
     for (auto const& pair : nonConflictingValues)
         {
         ECEnumeratorP enumerator;
-        enumeration->CreateEnumerator(enumerator, pair.first);
+        enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
         enumerator->SetDisplayLabel(pair.second.c_str());
 
         // Add it to the sdInfo so that subsequent classes can be compared against it. 
@@ -789,7 +796,7 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+ECObjectsStatus StandardValuesConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     //are standard values even added to ecclass or ecschema?
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
@@ -907,7 +914,7 @@ ECObjectsStatus StandardValuesConverter::MergeEnumeration(ECEnumerationP& enumer
         ECEnumeratorP enumerator = enumeration->FindEnumerator(pair.first);
         if (enumerator == nullptr)
             {
-            enumeration->CreateEnumerator(enumerator, pair.first);
+            enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
             enumerator->SetDisplayLabel(pair.second.c_str());
             }
         else if (enumerator->GetInvariantDisplayLabel() != pair.second)
@@ -959,7 +966,7 @@ ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enume
 
     for (auto const& pair : sdInfo.m_valuesMap)
         {
-        status = enumeration->CreateEnumerator(enumerator, pair.first);
+        status = enumeration->CreateEnumerator(enumerator, ECEnumerator::DetermineName(enumeration->GetName(), nullptr, &pair.first), pair.first);
         if (ECObjectsStatus::Success != status)
             return status;
 
@@ -967,6 +974,34 @@ ECObjectsStatus StandardValuesConverter::CreateEnumeration(ECEnumerationP& enume
         }
     return ECObjectsStatus::Success;
     }
+
+//=======================================================================================
+//! UnitSpecificationConverter
+//=======================================================================================
+
+struct UnitSpecification
+    {
+    UnitSpecification() = delete;
+    static bool TryGetNewKOQName(ECPropertyCR ecprop, Utf8StringR newKindOfQuantityName)
+        {
+        IECInstancePtr instance = ecprop.GetCustomAttributeLocal(UNIT_ATTRIBUTES, UNIT_SPECIFICATION);
+        if (instance.IsValid())
+            return TryGetStringValue(*instance, KOQ_NAME, newKindOfQuantityName) || TryGetStringValue(*instance, DIMENSION_NAME, newKindOfQuantityName);
+        return false;
+        }
+
+    static bool TryGetStringValue(IECInstanceCR instance, Utf8CP propName, Utf8StringR stringValue)
+        {
+        ECValue v;
+        if (ECObjectsStatus::Success == instance.GetValue(v, propName) && !v.IsNull() && !Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
+            {
+            stringValue = v.GetUtf8CP();
+            return true;
+            }
+        
+        return false;
+        }
+    };
 
 ECObjectsStatus addOldUnitCustomAttribute(ECSchemaR schema, ECPropertyP prop, Utf8CP oldUnitName)
     {
@@ -997,22 +1032,22 @@ bool kindOfQuantityHasMatchingPersitenceUnit(KindOfQuantityCP koq, Units::UnitCP
     if (nullptr == koq)
         return true;
 
-    return Units::Unit::AreEqual(koq->GetPersistenceUnit().GetUnit(), unit);
+    return Units::Unit::AreEqual(koq->GetPersistenceUnit(), unit);
     }
 
 bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::UnitCP displayUnit, Units::UnitCP persistenceUnit)
     {
-    if (nullptr == displayUnit)
-        return Units::Unit::AreEqual(koq->GetDefaultPresentationUnit().GetUnit(), persistenceUnit);
-    return Units::Unit::AreEqual(koq->GetDefaultPresentationUnit().GetUnit(), displayUnit);
+    if (koq->GetDefaultPresentationFormat()->HasCompositeMajorUnit())
+        return Units::Unit::AreEqual(koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit(), (nullptr == displayUnit) ? persistenceUnit : displayUnit);
+    return false; 
     }
 
 bool unitIsAcceptable (Units::UnitCP unit)
     {
-    return unit->IsSI() || 0 == strcmp(unit->GetPhenomenon()->GetName(), "PERCENTAGE");
+    return unit->IsSI() || 0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "PERCENTAGE") || 0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "NUMBER");
     }
 
-ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
     {
     ECObjectsStatus status = schema.CreateKindOfQuantity(newKOQ, newKoqName);
     if (ECObjectsStatus::Success != status)
@@ -1022,14 +1057,14 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         return status;
         }
 
-    Units::UnitCP originalUnit = newUnit;
+    ECUnitCP originalUnit = newUnit;
     if (!unitIsAcceptable(newUnit)) 
         {
         newUnit = newUnit->GetPhenomenon()->GetSIUnit();
         if (nullptr == newUnit)
             {
             Utf8String fullName = schema.GetFullSchemaName();
-            LOG.warningv("Failed to resolve SI unit for %s while converting KOQ %s in schema %s", originalUnit->GetName(), newKoqName, fullName.c_str());
+            LOG.warningv("Failed to resolve SI unit for %s while converting KOQ %s in schema %s", originalUnit->GetName().c_str(), newKoqName, fullName.c_str());
             return ECObjectsStatus::Error;
             }
         persistenceUnitChanged = true;
@@ -1037,34 +1072,40 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
 
     if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
         {
-        newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultRealU", newUnit->GetName()));
+        newKOQ->SetPersistenceUnit(*newUnit);
         newKOQ->SetRelativeError(1e-4);
         }
     else
         {
-        newKOQ->SetPersistenceUnit(baseKOQ->GetPersistenceUnit());
+        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit());
         newKOQ->SetRelativeError(baseKOQ->GetRelativeError());
         persistenceUnitChanged = true;
         }
 
     if (nullptr != newDisplayUnit)
-        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", newDisplayUnit->GetName()));
+        {
+        if (ECObjectsStatus::Success != newKOQ->AddPresentationFormatSingleUnitOverride(*schema.LookupFormat("f:DefaultRealU"), nullptr, newDisplayUnit))
+            LOG.warningv("During conversion on KOQ '%s' failed to add unit '%s' as a presentation format override", newKOQ->GetFullName().c_str(), newDisplayUnit->GetFullName().c_str());
+        }
     else if (persistenceUnitChanged)
-        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", originalUnit->GetName()));
+        { 
+        if (ECObjectsStatus::Success != newKOQ->AddPresentationFormatSingleUnitOverride(*schema.LookupFormat("f:DefaultRealU"), nullptr, originalUnit))
+            LOG.warningv("During conversion on KOQ '%s' failed to add unit '%s' as a presentation format override", newKOQ->GetFullName().c_str(), originalUnit->GetFullName().c_str());
+        }
 
     return ECObjectsStatus::Success;
     }
 
-bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, Units::UnitCP newUnit)
+bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, ECUnitCP newUnit)
     {
     if (nullptr == baseKOQ)
         return false;
-    return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit().GetUnit(), newUnit);
+    return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit(), newUnit);
     }
 
-bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged)
+bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged)
     {
-    if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit().GetUnit()))
+    if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit()))
         return false;
 
     if (!unitIsAcceptable(newUnit) && !baseAndNewUnitAreIncompatible(newKOQ, newUnit))
@@ -1079,14 +1120,14 @@ bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKO
     return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
     }
 
-ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
     {
     persistenceUnitChanged = false;
     KindOfQuantityCP baseKOQ = prop->GetKindOfQuantity();
     if (baseAndNewUnitAreIncompatible(baseKOQ, newUnit))
         {
         LOG.errorv("Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this properties unit '%s'",
-                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit().GetUnit()->GetName(), newUnit->GetName());
+                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit()->GetName().c_str(), newUnit->GetName().c_str());
         return ECObjectsStatus::KindOfQuantityNotCompatible;
         }
 
@@ -1125,26 +1166,82 @@ void removePropertyUnitCustomAttributes(IECCustomAttributeContainerR container, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
         {
-        LOG.warningv("Found UnitSpecification custom attribute on a container which is not a property, removing.  Container is %s.", container.GetContainerName());
+        LOG.warningv("Found UnitSpecification or DisplayUnitSpecification custom attribute on a container which is not a property, removing.  Container is %s.", container.GetContainerName());
+        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+        return ECObjectsStatus::Success;
+        }
+
+    auto koq = prop->GetKindOfQuantity();
+    if (nullptr != koq && prop->IsKindOfQuantityDefinedLocally())
+        {
+        LOG.warningv("Found DisplayUnitSpecification on property %s:%s.%s with UnitSpecification defined locally. Skipping conversion since the DisplayUnitSpecificaiton was already processed.", schema.GetFullSchemaName().c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
         removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
         return ECObjectsStatus::Success;
         }
 
     Unit oldUnit;
+    ECUnitCP newUnit = nullptr;
+    Utf8String koqName;
     if(!Unit::GetUnitForECProperty(oldUnit, *prop))
         {
-        Utf8String fullName = schema.GetFullSchemaName();
-        LOG.errorv("The property %s:%s.%s has a UnitSpecification but it does not resolve to a unit.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
-        removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
-        return ECObjectsStatus::Success;
+        if (nullptr == koq)
+            {
+            Utf8String fullName = schema.GetFullSchemaName();
+            LOG.warningv("The property %s:%s.%s has a UnitSpecification or DisplayUnitSpecification but the persistence unit cannot be resloved.  Dropping units information.", fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str());
+            removePropertyUnitCustomAttributes(container, instance.GetClass().GetSchema().GetName(), instance.GetClass().GetName());
+            return ECObjectsStatus::Success;
+            }
+        // Base property has already been converted and this property just has a DisplayUnitSpecification applied
+        newUnit = koq->GetPersistenceUnit();
+        if (nullptr == newUnit)
+            {
+            Utf8String fullName = schema.GetFullSchemaName();
+            LOG.errorv("The property %s:%s.%s has a KOQ %s:%s that does not have a unit, failing conversion.",
+                fullName.c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), koq->GetSchema().GetName().c_str(), koq->GetName().c_str());
+            return ECObjectsStatus::Error;
+            }
+        koqName = koq->GetName();
         }
 
-    Units::UnitCP newUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnit.GetName());
+    if (nullptr == context)
+        {
+        BeAssert(true);
+        LOG.error("Missing ECSchemaReadContext, it is necessary to perform conversion on a UnitSpecification custom attribute.");
+        return ECObjectsStatus::Error;
+        }
+
+    static SchemaKey unitsKey("Units", 1, 0, 0); // These can be static since we already know the name and version we need to be able to locate.
+    static SchemaKey formatsKey("Formats", 1, 0, 0);
+
+    ECSchemaPtr unitSchema = context->LocateSchema(unitsKey, SchemaMatchType::Latest);
+    if (!unitSchema.IsValid())
+        {
+        LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", unitsKey.GetFullSchemaName().c_str());
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
+    ECSchemaPtr formatSchema = context->LocateSchema(formatsKey, SchemaMatchType::Latest);
+    if (!formatSchema.IsValid())
+        {
+        LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", formatsKey.GetFullSchemaName().c_str());
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
+    if (nullptr == newUnit)
+        {
+        Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnit.GetName());
+
+        Utf8String schemaName;
+        Utf8String name;
+        ECClass::ParseClassName(schemaName, name, ecName);
+
+        newUnit = unitSchema->GetUnitCP(name.c_str());
+        }
     if (nullptr == newUnit)
         {
         Utf8String fullName = schema.GetFullSchemaName();
@@ -1153,17 +1250,47 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         return ECObjectsStatus::Success;
         }
 
+    if (!ECSchema::IsSchemaReferenced(schema, *unitSchema) && ECObjectsStatus::Success != schema.AddReferencedSchema(*unitSchema))
+        {
+        LOG.errorv("Unable to add the %s schema as a reference to %s.", unitSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
+    if (!ECSchema::IsSchemaReferenced(schema, *formatSchema) && ECObjectsStatus::Success != schema.AddReferencedSchema(*formatSchema))
+        {
+        LOG.errorv("Unable to add the %s schema as a reference to %s.", formatSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
     KindOfQuantityP newKOQ;
     Utf8String newKOQName;
-    if (!UnitSpecification::TryGetNewKOQName(instance, newKOQName))
-        newKOQName = newUnit->GetPhenomenon()->GetName();
+    if (!UnitSpecification::TryGetNewKOQName(*prop, newKOQName))
+        newKOQName = Utf8String::IsNullOrEmpty(koqName.c_str()) ? newUnit->GetPhenomenon()->GetName() : koqName;
 
-    Units::UnitCP newDisplayUnit = nullptr;
+    ECUnitCP newDisplayUnit = nullptr;
     Unit oldDisplayUnit;
     Utf8String oldFormatString;
     if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
         {
-        newDisplayUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldDisplayUnit.GetName());
+        Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldDisplayUnit.GetName());
+
+        if (nullptr != ecName)
+            {
+            Utf8String alias;
+            Utf8String name;
+            ECClass::ParseClassName(alias, name, ecName);
+
+            newDisplayUnit = unitSchema->GetUnitCP(name.c_str());
+            if (nullptr != newDisplayUnit)
+                {
+                if (!ECSchema::IsSchemaReferenced(schema, *unitSchema) && ECObjectsStatus::Success != schema.AddReferencedSchema(*unitSchema))
+                    {
+                    LOG.errorv("Unable to add the %s schema as a reference to %s.", unitSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
+                    return ECObjectsStatus::SchemaNotFound;
+                    }
+                }
+            }
+
         if (nullptr == newDisplayUnit)
             LOG.warningv("The property %s:%s.%s has an old display unit '%s' that does not resolve to a new unit.", schema.GetFullSchemaName().c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldDisplayUnit.GetName());
         }
@@ -1189,7 +1316,10 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     return ECObjectsStatus::Success;
     }
 
-ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     ECSchemaP containerAsSchema = dynamic_cast<ECSchemaP>(&container);
     if (containerAsSchema == nullptr)
@@ -1204,10 +1334,14 @@ ECObjectsStatus UnitSpecificationsConverter::Convert(ECSchemaR schema, IECCustom
     return ECObjectsStatus::Success;
     }
 
+//=======================================================================================
+//! UnitSystemConverter
+//=======================================================================================
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus UnitSystemConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+ECObjectsStatus UnitSystemConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     ECSchemaP containerAsSchema = dynamic_cast<ECSchemaP>(&container);
     if (containerAsSchema == nullptr)
@@ -1227,6 +1361,13 @@ ECObjectsStatus UnitSystemConverter::Convert(ECSchemaR schema, IECCustomAttribut
     return ECObjectsStatus::Success;
     }
 
+//=======================================================================================
+//! CustomAttributeReplacement
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus CustomAttributeReplacement::AddPropertyMapping(Utf8CP oldPropertyName, Utf8CP newPropertyName)
     {
     auto const it = m_propertyMapping.find(oldPropertyName);
@@ -1243,6 +1384,9 @@ ECObjectsStatus CustomAttributeReplacement::AddPropertyMapping(Utf8CP oldPropert
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String CustomAttributeReplacement::GetPropertyMapping(Utf8CP oldPropertyName)
     {
     auto const it = m_propertyMapping.find(oldPropertyName);
@@ -1252,13 +1396,17 @@ Utf8String CustomAttributeReplacement::GetPropertyMapping(Utf8CP oldPropertyName
     return it->second;
     }
 
+//=======================================================================================
+//! StandardCustomAttributeReferencesConverter
+//=======================================================================================
+
 bmap<Utf8String, CustomAttributeReplacement> StandardCustomAttributeReferencesConverter::s_entries = bmap<Utf8String, CustomAttributeReplacement>();
 bool StandardCustomAttributeReferencesConverter::s_isInitialized = false;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR sourceCustomAttribute)
+ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR sourceCustomAttribute, ECSchemaReadContextP context)
     {
     auto sourceCustomAttributeClass = &sourceCustomAttribute.GetClass();
     auto sourceCustomAttributeKey = ECSchemaConverter::GetQualifiedClassName(sourceCustomAttributeClass->GetSchema().GetName(), sourceCustomAttributeClass->GetName());
@@ -1469,10 +1617,14 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::ConvertPropertyToEnu
     return status;
     }
 
+//=======================================================================================
+//! PropertyPriorityConverter
+//=======================================================================================
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
@@ -1508,6 +1660,10 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
     return status;
     }
 
+//=======================================================================================
+//! PropertyPriorityConverter
+//=======================================================================================
+
 PropertyCategoryP getExistingCategory(ECSchemaR schema, ECPropertyP prop, IECInstanceR categoryCA, Utf8CP existingName)
     {
     PropertyCategoryP existingCategory = schema.GetPropertyCategoryP(existingName);
@@ -1542,7 +1698,7 @@ ECObjectsStatus createPropertyCategory(ECSchemaR schema, PropertyCategoryP& newC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
@@ -1600,6 +1756,10 @@ ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeC
     return status;
     }
 
+//=======================================================================================
+//! HidePropertyConverter
+//=======================================================================================
+
 bool getBoolValue(IECInstanceR instance, Utf8CP accessString, bool defaultValue)
     {
     ECValue ecValue;
@@ -1609,7 +1769,10 @@ bool getBoolValue(IECInstanceR instance, Utf8CP accessString, bool defaultValue)
     return ecValue.IsNull() ? defaultValue : ecValue.GetBoolean();
     }
 
-ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     ECPropertyP prop = dynamic_cast<ECPropertyP> (&container);
     if (prop == nullptr)
@@ -1640,6 +1803,13 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
     return ECObjectsStatus::Success;
     }
 
+//=======================================================================================
+//! DisplayOptionsConverter
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance)
     {
     bool hideSchema = getBoolValue(instance, HIDDEN, false) || getBoolValue(instance, HIDE_INSTANCES, false);
@@ -1655,6 +1825,9 @@ ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR s
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance)
     {
     bool hideClass = getBoolValue(instance, HIDDEN, false) || getBoolValue(instance, HIDE_INSTANCES, false);
@@ -1671,10 +1844,12 @@ ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR sc
     ecClass.RemoveCustomAttribute(instance.GetClass());
     ecClass.RemoveSupplementedCustomAttribute(instance.GetClass());
     return ECObjectsStatus::Success;
-
     }
 
-ECObjectsStatus DisplayOptionsConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance)
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus DisplayOptionsConverter::Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context)
     {
     ECClassP ecClass = dynamic_cast<ECClassP> (&container);
     if (nullptr != ecClass)

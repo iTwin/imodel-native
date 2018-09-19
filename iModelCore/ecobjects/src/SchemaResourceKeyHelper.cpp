@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaResourceKeyHelper.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -70,6 +70,13 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECEnumerationCR ecEnum
                                  ecEnumeration.GetInvariantDescription().c_str());
     }
 
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECEnumeratorCR ecEnumerator)
+    {
+    return GetTypeDescriptionKey(ecEnumerator.GetEnumeration().GetSchema().GetName().c_str(),
+                                 ecEnumerator.GetName().c_str(),
+                                 ecEnumerator.GetInvariantDescription().c_str());
+    }
+
 Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity)
     {
     return GetTypeDisplayLabelKey(kindOfQuantity.GetSchema().GetName().c_str(),
@@ -96,6 +103,62 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(PropertyCategoryCR pro
     return GetTypeDescriptionKey(propertyCategory.GetSchema().GetName().c_str(),
                                  propertyCategory.GetName().c_str(),
                                  propertyCategory.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(UnitSystemCR unitSystem)
+    {
+    return GetTypeDisplayLabelKey(unitSystem.GetSchema().GetName().c_str(),
+        unitSystem.GetName().c_str(),
+        unitSystem.GetInvariantDisplayLabel().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(UnitSystemCR unitSystem)
+    {
+    return GetTypeDescriptionKey(unitSystem.GetSchema().GetName().c_str(),
+        unitSystem.GetName().c_str(),
+        unitSystem.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(PhenomenonCR phenomenon)
+    {
+    return GetTypeDisplayLabelKey(phenomenon.GetSchema().GetName().c_str(),
+        phenomenon.GetName().c_str(),
+        phenomenon.GetInvariantDisplayLabel().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(PhenomenonCR phenomenon)
+    {
+    return GetTypeDescriptionKey(phenomenon.GetSchema().GetName().c_str(),
+        phenomenon.GetName().c_str(),
+        phenomenon.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ECUnitCR unit)
+    {
+    return GetTypeDisplayLabelKey(unit.GetSchema().GetName().c_str(),
+        unit.GetName().c_str(),
+        unit.GetInvariantDisplayLabel().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECUnitCR unit)
+    {
+    return GetTypeDescriptionKey(unit.GetSchema().GetName().c_str(),
+        unit.GetName().c_str(),
+        unit.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ECFormatCR format)
+    {
+    return GetTypeDisplayLabelKey(format.GetSchema().GetName().c_str(),
+        format.GetName().c_str(),
+        format.GetInvariantDisplayLabel().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECFormatCR format)
+    {
+    return GetTypeDescriptionKey(format.GetSchema().GetName().c_str(),
+        format.GetName().c_str(),
+        format.GetInvariantDescription().c_str());
     }
 
 Utf8String SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty)

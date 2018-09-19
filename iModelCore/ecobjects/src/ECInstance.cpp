@@ -289,7 +289,7 @@ ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAcce
 
     if (v.IsNull())
         {
-        q = Units::Quantity(0.0, *koq->GetPersistenceUnit().GetUnit());
+        q = Units::Quantity(0.0, *koq->GetPersistenceUnit());
         return ECObjectsStatus::PropertyValueNull;
         }
 
@@ -299,7 +299,7 @@ ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAcce
         return ECObjectsStatus::DataTypeNotSupported;
         }
 
-    q = Units::Quantity(v.GetDouble(), *koq->GetPersistenceUnit().GetUnit());
+    q = Units::Quantity(v.GetDouble(), *koq->GetPersistenceUnit());
     return ECObjectsStatus::Success;
     }
 //---------------------------------------------------------------------------------------
@@ -479,8 +479,8 @@ ECObjectsStatus    IECInstance::SetQuantity(Utf8CP propertyAccessString, Units::
     if (nullptr == koq)
         return ECObjectsStatus::PropertyHasNoKindOfQuantity;
 
-    Units::Quantity converted = q.ConvertTo(koq->GetPersistenceUnit().GetUnit());
-    if (!converted.ISValid())
+    Units::Quantity converted = q.ConvertTo(koq->GetPersistenceUnit());
+    if (!converted.IsValid())
         return ECObjectsStatus::KindOfQuantityNotCompatible;
 
     uint32_t propertyIndex = 0;
@@ -2868,21 +2868,31 @@ struct  InstanceXmlReader
 
             if (nullptr != koq && !Utf8String::IsNullOrEmpty(oldUnitName))
                 {
-                Units::UnitCP oldUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnitName);
-                double convertedValue;
-                if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_Double)
+                Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnitName);
+                if (nullptr != ecName)
                     {
-                    oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
-                    ecValue.SetDouble(convertedValue);
-                    }
-                else if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_String && !Utf8String::IsNullOrEmpty(ecValue.GetUtf8CP()))
-                    {
-                    double d;
-                    if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(ecValue.GetUtf8CP(), "%lg", &d))
+                    ECUnitCP oldUnit = koq->GetSchema().LookupUnit(ecName, true);
+                    if (nullptr == oldUnit)
                         {
-                        oldUnit->Convert(convertedValue, d, koq->GetPersistenceUnit().GetUnit());
-                        Utf8PrintfString dStr("%lg", d);
-                        ecValue.SetUtf8CP(dStr.c_str());
+                        LOG.warningv("Failed to lookup unit '%s' for property '%s'. Cannot convert value. Skipping.", ecName, propertyName.c_str());
+                        return InstanceReadStatus::Success;
+                        }
+
+                    double convertedValue;
+                    if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_Double)
+                        {
+                        oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit());
+                        ecValue.SetDouble(convertedValue);
+                        }
+                    else if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_String && !Utf8String::IsNullOrEmpty(ecValue.GetUtf8CP()))
+                        {
+                        double d;
+                        if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(ecValue.GetUtf8CP(), "%lg", &d))
+                            {
+                            oldUnit->Convert(convertedValue, d, koq->GetPersistenceUnit());
+                            Utf8PrintfString dStr("%lg", d);
+                            ecValue.SetUtf8CP(dStr.c_str());
+                            }
                         }
                     }
                 }
@@ -3748,6 +3758,54 @@ struct  InstanceXmlWriter
             }
 
         /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                Kyle.Abramowitz                   05/2018
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        InstanceWriteStatus     WriteInstanceLatestVersion(IECInstanceCR ecInstance, bool writeInstanceId, Utf8CP className)
+            {
+            ECClassCR   ecClass = ecInstance.GetClass();
+            ECSchemaCR  ecSchema = ecClass.GetSchema();
+            Utf8String  fullSchemaName = ecSchema.GetFullSchemaName();
+
+            m_xmlWriter->WriteElementStart(className, fullSchemaName.c_str());
+
+            auto relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&ecInstance);
+            // if relationship, need the attributes used in relationships.
+            if (nullptr != relationshipInstance)
+                {
+                if (!relationshipInstance->GetSource().IsValid())
+                    return InstanceWriteStatus::XmlWriteError;
+
+                Utf8String sourceClassName;
+                if (0 != relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
+                    sourceClassName.Sprintf("%s:%s", relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
+                else
+                    sourceClassName.Sprintf("%s", relationshipInstance->GetSource()->GetClass().GetName().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_SOURCECLASS_ATTRIBUTE, sourceClassName.c_str());
+
+                if (!relationshipInstance->GetTarget().IsValid())
+                    return InstanceWriteStatus::XmlWriteError;
+
+                Utf8String targetClassName;
+                if (0 != relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
+                    targetClassName.Sprintf("%s:%s", relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+                else
+                    targetClassName.Sprintf("%s", relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_TARGETCLASS_ATTRIBUTE, targetClassName.c_str());
+                }
+
+            if (writeInstanceId)
+                m_xmlWriter->WriteAttribute(ECXML_ECINSTANCE_INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
+
+            InstanceWriteStatus status = WritePropertyValuesOfClassOrStructArrayMember(ecClass, ecInstance, NULL);
+            if (status != InstanceWriteStatus::Success)
+                return status;
+            m_xmlWriter->WriteElementEnd();
+            return InstanceWriteStatus::Success;
+            }
+
+        /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Prasanna.Prakash                03/16
         +---------------+---------------+---------------+---------------+---------------+------*/
         InstanceWriteStatus     WriteInstance(IECInstanceCR ecInstance, bool writeInstanceId)
@@ -4293,6 +4351,16 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter, Ut
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
     return instanceWriter.WriteInstance(*this, false, className);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Kyle.Abramowitz                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BeXmlWriterR xmlWriter, Utf8CP className)
+    {
+    InstanceXmlWriter instanceWriter(&xmlWriter);
+
+    return instanceWriter.WriteInstanceLatestVersion(*this, false, className);
     }
 
 /*---------------------------------------------------------------------------------**//**

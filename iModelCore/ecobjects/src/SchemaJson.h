@@ -19,16 +19,20 @@ struct SchemaJsonWriter
         ECSchemaCR m_ecSchema;
 
     protected:
-        SchemaWriteStatus WriteSchemaReferences();
-        SchemaWriteStatus WriteClass(ECClassCR ecClass);
-        SchemaWriteStatus WriteEnumeration(ECEnumerationCR ecEnumeration);
-        SchemaWriteStatus WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity);
-        SchemaWriteStatus WritePropertyCategory(PropertyCategoryCR propertyCategory);
-        SchemaWriteStatus WriteSchemaItems();
+        bool WriteSchemaReferences();
+        bool WriteClass(ECClassCR ecClass);
+        bool WriteEnumeration(ECEnumerationCR ecEnumeration);
+        bool WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity);
+        bool WritePropertyCategory(PropertyCategoryCR propertyCategory);
+        bool WriteUnitSystem(UnitSystemCR unitSystem);
+        bool WritePhenomenon(PhenomenonCR phenomenon);
+        bool WriteUnit(ECUnitCR unit);
+
+        bool WriteSchemaItems();
 
     public:
         SchemaJsonWriter(Json::Value& jsonRoot, ECSchemaCR ecSchema);
-        virtual SchemaWriteStatus Serialize();
+        virtual bool Serialize();
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

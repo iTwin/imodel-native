@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaLocalizationTests.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -388,18 +388,18 @@ TEST_F(SchemaLocalizationTests, CopyingALocalizedSchemaEC3)
 TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchemaEC3)
     {
     ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddCulture(L"it-IT");
     schemaContext->AddCulture(L"it");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 2, 0, 0);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
-    ASSERT_EQ(true, testSchema.IsValid()) << "Failed to load 'House' schema from disk";
+    ASSERT_TRUE(testSchema.IsValid()) << "Failed to load 'House' schema from disk";
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, IT);
 
     ECSchemaPtr copyTestSchema;
-    Utf8String     schemaXml;
+    Utf8String  schemaXml;
     EXPECT_EQ(SchemaWriteStatus::Success, testSchema->WriteToXmlString(schemaXml));
     ECSchemaReadContextPtr deserializedSchemaContext = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copyTestSchema, schemaXml.c_str(), *deserializedSchemaContext)) << "Failed to copy schema";

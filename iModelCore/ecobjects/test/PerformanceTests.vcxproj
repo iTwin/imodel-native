@@ -36,23 +36,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <OutDir>$(OutRoot)Winx64\Build\ECObjectsTest\</OutDir>
-    <IntDir>$(OutRoot)Winx64\Build\ECObjectsTest\</IntDir>
-    <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsTest\</IntermediateOutputPath>
-    <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsTest\</BaseIntermediateOutputPath>
-    <NMakeOutput>$(OutRoot)Winx64\Build\ECObjectsTest\</NMakeOutput>
-    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutRoot)Winx64\BuildContexts\ECObjectsTest\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ECObjectsTest\SubParts\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-  </PropertyGroup>
-  <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
-    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
-    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
-    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <OutDir>$(OutRoot)Winx64\Build\ECObjectsPerformanceTests\</OutDir>
+    <IntDir>$(OutRoot)Winx64\Build\ECObjectsPerformanceTests\</IntDir>
+    <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsPerformanceTests\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsPerformanceTests\</BaseIntermediateOutputPath>
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECObjects-PerformanceGTest\ECObjectsPerformanceTests.exe</NMakeOutput>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir);$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\TestFixture\;$(ProjectDir)\Performance\;$(OutRoot)Winx64\BuildContexts\ECObjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECObjects\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
@@ -60,6 +49,7 @@
     <ClCompile Include="Performance\PerformanceECXmlTests.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\PropertiesTests.cpp" />
+    <ClCompile Include="Performance\StandardUnitsSchemaTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />

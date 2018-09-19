@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -806,8 +806,8 @@ TEST_F(ECRelationshipClassTest, TestRelationshipDelayedValidation)
     baseRelationClass->GetTarget().AddClass(*entityClassB);
     ASSERT_TRUE(baseRelationClass->Verify());
     ASSERT_TRUE(baseRelationClass->GetIsVerified()) << "Now that the Source and Target constraints are fully defined the class should verify.";
-    ASSERT_TRUE(ecSchema->Validate()) << "The schema should now validate as an EC3.1 schema since the relationship is now verified.";
-    ASSERT_TRUE(ecSchema->IsECVersion(ECVersion::V3_1)) << "The schema should now be an EC3.1 schema.";
+    ASSERT_TRUE(ecSchema->Validate()) << "The schema should now validate since the relationship is now verified.";
+    ASSERT_TRUE(ecSchema->IsECVersion(ECVersion::Latest)) << "The schema should now be an EC" << ECSchema::GetECVersionString(ECVersion::Latest) << " schema.";
 
     ECRelationshipClassP relationClass;
     ecSchema->CreateRelationshipClass(relationClass, "relClass", false);
@@ -949,7 +949,7 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClass)
     relationshipClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, relationshipClass->WriteJson(schemaJson, true));
+    EXPECT_TRUE(relationshipClass->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECRelationshipClass.ecschema.json"));
@@ -998,7 +998,7 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstract
     relationshipClass->GetTarget().AddClass(*classA);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, relationshipClass->WriteJson(schemaJson, true));
+    EXPECT_TRUE(relationshipClass->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StadaloneECRelationshipClassWithAbstractConstraint.ecschema.json"));
@@ -1043,7 +1043,7 @@ TEST_F(ECRelationshipClassTest, InheritedConstraintCustomAttributesShouldNotBeSe
     derivedRelationshipClass->GetTarget().SetRoleLabel("TargetRoleLabel");
 
     Json::Value relationshipClassJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, derivedRelationshipClass->WriteJson(relationshipClassJson, true));
+    EXPECT_TRUE(derivedRelationshipClass->ToJson(relationshipClassJson, true));
 
     Json::Value testDataJson;
     BeFileName relClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/RelationshipConstraintInheritedCustomAttributes.ecschema.json"));

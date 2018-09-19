@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -669,6 +669,12 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
             customAttributeClassNode->GetXmlString (customAttributeXmlString);
             InstanceReadStatus thisStatus = InstanceReadStatus::Success;
             ICustomAttributeDeserializerP CustomAttributeDeserializerP = CustomAttributeDeserializerManager::GetManager ().GetCustomDeserializer (customAttributeClassNode->GetName());
+            auto ns = customAttributeClassNode->GetNamespace();
+            if (!SchemaParseUtils::IsFullSchemaNameFormatValidForVersion(ns, _GetContainerSchema()->GetOriginalECXmlVersionMajor(), _GetContainerSchema()->GetOriginalECXmlVersionMinor()))
+                {
+                LOG.errorv("Custom attribute namespaces must contain a valid 3.2 full schema name in the form <schemaName>.RR.ww.mm");
+                return CustomAttributeReadStatus::InvalidCustomAttributes;
+                }
             if (CustomAttributeDeserializerP)
                 thisStatus = CustomAttributeDeserializerP->LoadCustomAttributeFromString (customAttributeInstance, *customAttributeClassNode, *context, schemaContext, *this);
             else
@@ -707,7 +713,8 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes 
 (
-BeXmlWriterR xmlWriter
+BeXmlWriterR xmlWriter,
+ECVersion ecXmlVersion
 ) const
     {
     if (m_primaryCustomAttributes.size() == 0)
@@ -728,7 +735,10 @@ BeXmlWriterR xmlWriter
         else if (0 == BeStringUtilities::StricmpAscii(className, "DisplayUnitSpecificationAttr"))
             className = "DisplayUnitSpecification";
 
-        (*iter)->WriteToBeXmlNode(xmlWriter, className);
+        if (ecXmlVersion == ECVersion::V2_0)
+            (*iter)->WriteToBeXmlNode(xmlWriter, className);
+        else
+            (*iter)->WriteToBeXmlNodeLatestVersion(xmlWriter, className);
         }
     xmlWriter.WriteElementEnd();
 
@@ -738,7 +748,7 @@ BeXmlWriterR xmlWriter
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes(Json::Value& outValue) const
+bool IECCustomAttributeContainer::WriteCustomAttributes(Json::Value& outValue) const
     {
     outValue = Json::Value(Json::ValueType::arrayValue);
     for (IECInstancePtr pInstance : GetCustomAttributes(false))
@@ -748,7 +758,7 @@ SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes(Json::Value
         outValue.append(instanceJson);
         }
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -897,7 +907,7 @@ ECCustomAttributeInstanceIterable::IteratorState::~IteratorState()
     {
     delete m_customAttributes;
     }
-			
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -921,7 +931,7 @@ bool IECCustomAttributeContainer::IsDefined (Utf8StringCR className) const
         }
     return false;
     }
-		
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -968,14 +978,11 @@ bool      includeSupplementalAttributes
         }
     return result;
     }
-		
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Colin.Kerr                      05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented
-(
-Utf8StringCR className
-)
+IECInstancePtr IECCustomAttributeContainer::GetLocalAttributeAsSupplemented(Utf8StringCR className)
     {
     for(auto const& caIter : m_supplementedCustomAttributes)
         {
@@ -983,7 +990,7 @@ Utf8StringCR className
         if (0 == className.compare(caClass.GetName()))
             return caIter;
         }
-    
+
     IECInstancePtr customAttribute;
     for(auto const& caIter : m_primaryCustomAttributes)
         {
@@ -1028,21 +1035,15 @@ Utf8StringCR className
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal
-(
-Utf8StringCR className
-) const
+IECInstancePtr IECCustomAttributeContainer::GetCustomAttributeLocal(Utf8StringCR className) const
     {
     return GetCustomAttributeInternal(className, false, true);
     }
-		
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::RemoveCustomAttribute
-(
-Utf8StringCR className
-)
+bool IECCustomAttributeContainer::RemoveCustomAttribute(Utf8StringCR className)
     {
     ECCustomAttributeCollection::iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
@@ -1054,7 +1055,7 @@ Utf8StringCR className
             return true;
             }
         }
-
     return false;
     }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

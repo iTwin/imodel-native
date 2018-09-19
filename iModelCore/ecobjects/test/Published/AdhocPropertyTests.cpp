@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/AdhocPropertyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -23,7 +23,7 @@ struct AdHocPropertyTest : ECTestFixture
     {
     protected:
         ECSchemaPtr         m_schema;
-        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ECSchemaReadContextPtr context;
 
         Utf8CP const s_schemaXml =
             "<?xml version='1.0' encoding='utf-8'?>"
@@ -63,6 +63,8 @@ struct AdHocPropertyTest : ECTestFixture
 
         void SetUp()
             {
+            ECTestFixture::SetUp();
+            context = ECSchemaReadContext::CreateContext();
             EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, s_schemaXml, *context));
             }
     };

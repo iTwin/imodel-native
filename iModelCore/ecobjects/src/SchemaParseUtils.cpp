@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaParseUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -228,7 +228,15 @@ ECObjectsStatus SchemaParseUtils::ParseModifierXmlString(ECClassModifier& modifi
 * @bsimethod                                    Caleb.Shafer                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
+//
+// Prior to EC3.2 multiplicity strings were parsed with scanf using the format string "(%d..%d)" and would "pass" if the first integer was parsed
+// successfully, irregardless of whether the entire string was valid or not. Using this multiplicity string parsing mechanism the strings
+//      "(3..N)"
+//      "(3,N)"
+//      "(3banana)"
+// Would all be parsed as if they were "(3..*)". For schemas with ECVersion 3.2 or later, this bug was fixed and the restrictions on valid
+// multiplicity strings were tightened. The ParseLegacyMultiplicityString method exists solely for comparability with old EC versions.
+ECObjectsStatus SchemaParseUtils::ParseLegacyMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, Utf8StringCR multiplicityString)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
@@ -256,6 +264,30 @@ ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t &lowerLimit, 
     // Otherwise, we just assume the upper limit is '*' and is unbounded
     upperLimit = UINT_MAX;
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus SchemaParseUtils::ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString)
+    {
+    static std::regex rgx("\\(([0-9]+)\\s*\\.\\.\\s*([0-9]+|\\*)\\)", std::regex::optimize);
+    // For the multiplicity string in the form (lowerLimit..upperLimit) described by the above regex string.
+    // match[0] : entire string
+    // match[1] : lowerLimit
+    // match[2] : upperLimit
+    std::cmatch match;
+
+    if (!std::regex_match(multiplicityString.c_str(), match, rgx))
+        {
+        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    lowerLimit = (uint32_t)BeStringUtilities::ParseUInt64(match[1].str().c_str());
+    upperLimit = match[2].str() == "*" ? UINT_MAX : (uint32_t)BeStringUtilities::ParseUInt64(match[2].str().c_str());
+
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,6 +347,47 @@ ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8
         return ECObjectsStatus::ParseError;
 
     return ECObjectsStatus::Success;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                    05/2018
+//---------------+---------------+---------------+---------------+---------------+-----
+bool SchemaParseUtils::IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullName, uint32_t xmlMajorVersion, uint32_t xmlMinorVersion)
+    {
+    if (Utf8String::IsNullOrEmpty(schemaFullName))
+        return false;
+
+    Utf8CP firstDot = strchr (schemaFullName, '.');
+    if (Utf8String::IsNullOrEmpty(firstDot))
+        return false;
+
+    static const auto countDots = [](Utf8CP versionString) -> int
+        {
+        int count = 0;
+        const int maxVersionSize = 10; //If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
+        int iter = 0;
+        while (versionString[iter] != '\0' && iter < maxVersionSize)
+            {
+            if (versionString[iter] == '.')
+                ++count;
+            ++iter;
+            }
+        return count;
+        };
+
+    SchemaKey key;
+    auto dots = countDots(firstDot+1);
+    if ((xmlMajorVersion >= 3 && xmlMinorVersion >= 2) || xmlMajorVersion > 3)
+        {
+        if (dots < 2)
+            return false;
+        }
+    else
+        {
+        if (dots < 1)
+            return false;
+        }
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -412,6 +485,37 @@ Utf8CP SchemaParseUtils::StrengthToString(StrengthType strength)
         }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType elementType)
+    {
+    switch (elementType)
+        {
+        case ECSchemaElementType::ECClass:
+            return EC_CLASS_ELEMENT;
+        case ECSchemaElementType::ECEnumeration:
+            return ECJSON_ENUMERATION_ELEMENT;
+        case ECSchemaElementType::KindOfQuantity:
+            return KIND_OF_QUANTITY_ELEMENT;
+        case ECSchemaElementType::PropertyCategory:
+            return PROPERTY_CATEGORY_ELEMENT;
+        case ECSchemaElementType::UnitSystem:
+            return UNIT_SYSTEM_ELEMENT;
+        case ECSchemaElementType::Phenomenon:
+            return PHENOMENON_ELEMENT;
+        case ECSchemaElementType::Unit:
+            return UNIT_ELEMENT;
+        case ECSchemaElementType::InvertedUnit:
+            return INVERTED_UNIT_ELEMENT;
+        case ECSchemaElementType::Constant:
+            return CONSTANT_ELEMENT;
+        }
+
+    return EMPTY_STRING;
+    }
+
 static void SetOrAppendValue(Utf8StringR str, Utf8CP val)
     {
     if (Utf8String::IsNullOrEmpty(str.c_str()))
@@ -504,6 +608,81 @@ Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity
         BeStringUtilities::Snprintf(legacyString, "(%d,%d)", multiplicity.GetLowerLimit(), multiplicity.GetUpperLimit());
 
     return legacyString;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                   06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema)
+    {
+    Utf8String name;
+    Nullable<int32_t> precision;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+
+    // The name of a NamedFormat is a format string representing that NamedFormat.
+    Formatting::Format::ParseFormatString(name, precision, unitNames, unitLabels, format.GetName());
+    auto& parentSchema = format.GetParentFormat()->GetSchema();
+    Utf8String qualifiedFormatName = parentSchema.GetName() + "." + name;
+
+    if (precision.IsValid())
+        {
+        qualifiedFormatName += "(";
+        qualifiedFormatName += std::to_string(precision.Value()).c_str();
+        qualifiedFormatName += ")";
+        }
+
+    for(int i = 0; i < unitNames.size(); i++)
+        { 
+        qualifiedFormatName += "[";
+        qualifiedFormatName += ECJsonUtilities::ECNameToJsonName(*primarySchema.LookupUnit(unitNames[i].c_str()));
+
+        if (unitLabels[i].IsValid()) // We want to override a label
+            {
+            qualifiedFormatName += "|";
+            qualifiedFormatName += unitLabels[i].Value();
+            }
+        qualifiedFormatName += "]";
+        }
+    return qualifiedFormatName;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2018
+//--------------------------------------------------------------------------------------
+// static 
+ECObjectsStatus SchemaParseUtils::ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR stringToParse)
+    {
+    if (0 == stringToParse.length())
+        {
+        LOG.error("Failed to parse an alias and schema item name from a qualified name because the string is empty.");
+        return ECObjectsStatus::ParseError;
+        }
+
+    Utf8String::size_type colonIndex = stringToParse.find(':');
+    if (Utf8String::npos == colonIndex)
+        {
+        alias.clear();
+        itemName = stringToParse;
+        return ECObjectsStatus::Success;
+        }
+
+    if (stringToParse.length() == colonIndex + 1)
+        {
+        LOG.errorv("Failed to parse an alias and schema item name from the qualified name '%s' because the string ends with a colon. There must be characters after the colon.",
+            stringToParse.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    if (0 == colonIndex)
+        alias.clear();
+    else
+        alias = stringToParse.substr(0, colonIndex);
+
+    itemName = stringToParse.substr(colonIndex + 1);
+
+    return ECObjectsStatus::Success;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

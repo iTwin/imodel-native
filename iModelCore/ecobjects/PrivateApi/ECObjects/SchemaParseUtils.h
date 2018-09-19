@@ -13,12 +13,11 @@
 #define EC_NAMESPACE_PREFIX3                "ec3"
 
 #define ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
-#define ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema"
-#define ECJSON_SCHEMA_ITEM_URI              "https://dev.bentley.com/json_schemas/ec/31/draft-01/schemaitem"
+#define ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/32/draft-01/ecschema"
+#define ECJSON_SCHEMA_ITEM_URI              "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem"
 
 #define ECJSON_URI_SPEC_ATTRIBUTE           "$schema"
 #define ECXML_SCHEMA_NAME_ATTRIBUTE         "schemaName"
-#define ECJSON_SCHEMA_NAME_ATTRIBUTE        "name"
 
 #define ECJSON_SCHEMA_ITEMS_ATTRIBUTE       "items"
 #define ECJSON_PARENT_VERSION_ATTRIBUTE     "schemaVersion"
@@ -39,6 +38,16 @@
 #define ECXML_ENUMERATION_ELEMENT           "ECEnumeration"
 #define ECJSON_ENUMERATION_ELEMENT          "Enumeration"
 #define PROPERTY_CATEGORY_ELEMENT           "PropertyCategory"
+#define UNIT_SYSTEM_ELEMENT                 "UnitSystem"
+#define PHENOMENON_ELEMENT                  "Phenomenon"
+#define UNIT_ELEMENT                        "Unit"
+#define INVERTED_UNIT_ELEMENT               "InvertedUnit"
+#define CONSTANT_ELEMENT                    "Constant"
+#define FORMAT_ELEMENT                      "Format"
+#define FORMAT_COMPOSITE_ELEMENT            "Composite"
+#define FORMAT_JSON_COMPOSITE_ELEMENT       "composite"
+#define FORMAT_COMPOSITE_UNIT_ELEMENT       "Unit"
+#define FORMAT_COMPOSITE_UNITS_ELEMENT      "units"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"
@@ -62,11 +71,37 @@
 #define EC_CONSTRAINTKEY_ELEMENT            "Key"
 #define EC_KEYPROPERTY_ELEMENT              "Property"
 
+#define FORMAT_ROUND_FACTOR_ATTRIBUTE           "roundFactor"
+#define FORMAT_TYPE_ATTRIBUTE                   "type"
+#define FORMAT_SIGN_OPTION_ATTRIBUTE            "showSignOption"
+#define FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE        "scientificType"
+#define FORMAT_TRAITS_ATTRIBUTE                 "formatTraits"
+#define FORMAT_PRECISION_ATTRIBUTE              "precision"
+#define FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE      "decimalSeparator"
+#define FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE    "thousandSeparator"
+#define FORMAT_UOM_SEPARATOR_ATTRIBUTE          "uomSeparator"
+#define FORMAT_STAT_SEPARATOR_ATTRIBUTE         "stationSeparator"
+#define FORMAT_STATION_SIZE_ATTRIBUTE           "stationOffsetSize"
+#define FORMAT_MIN_WIDTH_ATTRIBUTE              "minWidth"
+
+#define COMPOSITE_SPACER_ATTRIBUTE          "spacer"
+#define COMPOSITE_INCLUDEZERO_ATTRIBUTE     "includeZero"
+#define COMPOSITE_UNIT_LABEL_ATTRIBUTE      "label"
+
 #define ECXML_DISPLAY_LABEL_ATTRIBUTE       "displayLabel"
 #define ECJSON_DISPLAY_LABEL_ATTRIBUTE      "label"
 #define SCHEMA_VERSION_ATTRIBUTE            "version"
 #define ALIAS_ATTRIBUTE                     "alias"
+#define NAME_ATTRIBUTE                      "name"
 #define DESCRIPTION_ATTRIBUTE               "description"
+#define NUMERATOR_ATTRIBUTE                 "numerator"
+#define DENOMINATOR_ATTRIBUTE               "denominator"
+#define OFFSET_ATTRIBUTE                    "offset"
+#define IS_CONSTANT_ATTRIBUTE               "isConstant"
+#define UNIT_NAME_ATTRIBUTE                 "unit"
+#define PHENOMENON_NAME_ATTRIBUTE           "phenomenon"
+#define UNIT_SYSTEM_NAME_ATTRIBUTE          "unitSystem"
+#define INVERTS_UNIT_ATTRIBUTE              "invertsUnit"
 #define APPLIES_TO                          "appliesTo"
 #define CUSTOM_ATTRIBUTE_APPLIES_TO_ATTRIBUTE   APPLIES_TO
 #define MIXIN_APPLIES_TO_ATTRIBUTE              APPLIES_TO
@@ -89,6 +124,7 @@
 #define ECXML_READONLY_ATTRIBUTE            "readOnly"
 #define ECJSON_READONLY_ATTRIBUTE           "isReadOnly"
 #define CATEGORY_ATTRIBUTE                  "category"
+#define DEFINITION_ATTRIBUTE                "definition"
 #define TYPE_NAME_ATTRIBUTE                 "typeName"
 #define EXTENDED_TYPE_NAME_ATTRIBUTE        "extendedTypeName"
 #define ECXML_MINIMUM_VALUE_ATTRIBUTE       "minimumValue"
@@ -117,14 +153,12 @@
 #define MODIFIER_ATTRIBUTE                  "modifier"
 #define PROPERTY_NAME_ATTRIBUTE             "propertyName"
 #define SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE   "nameSpacePrefix"
-#define SCHEMAREF_NAME_ATTRIBUTE            "name"
 #define SCHEMAREF_VERSION_ATTRIBUTE         "version"
 #define SCHEMAREF_PREFIX_ATTRIBUTE          "prefix"
 #define STRENGTH_ATTRIBUTE                  "strength"
 #define STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"
 #define CARDINALITY_ATTRIBUTE               "cardinality"
 #define CONSTRAINTCLASSNAME_ATTRIBUTE       "class"
-#define KEYPROPERTYNAME_ATTRIBUTE           "name"
 
 #define ECXML_TRUE                          "True"
 #define ECXML_FALSE                         "False"
@@ -238,18 +272,52 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus ParseDirectionString(ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseXmlFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseModifierXmlString(ECClassModifier& modifier, Utf8StringCR modifierString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseLegacyMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
     ECOBJECTS_EXPORT static ECObjectsStatus ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString);
-
+    ECOBJECTS_EXPORT static bool IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullName, uint32_t xmlMajorVersion, uint32_t xmlMinorVersion);
     ECOBJECTS_EXPORT static Utf8CP DirectionToString(ECRelatedInstanceDirection direction);
     ECOBJECTS_EXPORT static Utf8CP ModifierToXmlString(ECClassModifier modifier);
     ECOBJECTS_EXPORT static Utf8CP ModifierToJsonString(ECClassModifier modifier);
     ECOBJECTS_EXPORT static Utf8CP PrimitiveTypeToString(PrimitiveType primitiveType);
     ECOBJECTS_EXPORT static Utf8CP StrengthToString(StrengthType strength);
+    ECOBJECTS_EXPORT static Utf8CP SchemaElementTypeToString(ECSchemaElementType elementType);
     ECOBJECTS_EXPORT static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     ECOBJECTS_EXPORT static Utf8String MultiplicityToLegacyString(RelationshipMultiplicity multiplicity);
+    ECOBJECTS_EXPORT static Utf8String GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema);
+
+    //! Given a schema and a schema item, will return the fully qualified name.  If the schema item is part of the passed in schema, there
+    //! is no alias.  Otherwise, the item's schema must be a referenced schema in the passed in schema
+    //! @param[in]  primarySchema   The schema used to lookup the alias of the class's schema
+    //! @param[in]  schemaItem      The schema item whose schema should be searched for
+    //! @return Utf8String    The alias if the item's schema is not the primarySchema
+    template<typename T>
+    static Utf8String GetQualifiedName(ECSchemaCR primarySchema, T const& schemaItem)
+        {
+        Utf8String alias;
+        Utf8StringCR name = schemaItem.GetName();
+        if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(schemaItem.GetSchema(), alias)))
+            {
+            NativeLogging::LoggingManager::GetLogger(L"ECObjectsNative")->warningv ("warning: Cannot qualify a SchemaItem name with an alias unless the schema containing the SchemaItem is referenced by the primary schema."
+                "The name will remain unqualified.\n  Primary ECSchema: %s\n  SchemaItem: %s\n ECSchema containing SchemaItem: %s", primarySchema.GetName().c_str(), name.c_str(), schemaItem.GetSchema().GetName().c_str());
+            return name;
+            }
+
+        if (alias.empty())
+            return name;
+        else
+            return alias + ":" + name;
+        }
+
+    //! Given a qualified schema item name, will parse out the schema's alias and the item name.
+    //!
+    //! If anything other than a qualified item name is provided it will it will be split on the first `:` found.
+    //! @param[out] alias       The alias of the schema
+    //! @param[out] className   The name of the class
+    //! @param[in]  qualifiedItemName  The qualified name of the item, in the format of ns:itemName
+    //! @return A status code indicating whether the qualified name was successfully parsed or not
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR alias, Utf8StringR itemName, Utf8StringCR qualifiedItemName);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-

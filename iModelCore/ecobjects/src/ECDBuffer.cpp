@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECDBuffer.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ECObjectsPch.h"
@@ -247,26 +247,24 @@ uint32_t        PropertyLayout::GetSizeInFixedSection () const
 * based on  http://www.isthe.com/chongo/src/fnv/hash_32.c
 *
 * input:
-*	buf	- start of buffer to hash
-*	len	- length of buffer in octets
-*	hval	- previous hash value or 0 if first call
+*   buf - start of buffer to hash
+*   len - length of buffer in octets
+*   hval - previous hash value or 0 if first call
 *
 * returns:
-*	32 bit hash as a static hash type
-*
-*
+*   32 bit hash as a static hash type
 *
 * @bsimethod                                    Bill.Steinbock                  12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 static uint32_t ComputeFnvHashForString (Utf8CP buf, uint32_t hashValue)
     {
-    if (NULL == buf || 0==*buf)
+    if (nullptr == buf || 0==*buf)
         return hashValue;
 
     size_t len = strlen(buf) * sizeof (Utf8Char);
 
-    unsigned char *bp = (unsigned char *)buf;	/* start of buffer */
-    unsigned char *be = bp + len;		/* beyond end of buffer */
+    unsigned char *bp = (unsigned char *)buf;   /* start of buffer */
+    unsigned char *be = bp + len;       /* beyond end of buffer */
 
     /*
     * FNV-1 hash each octet in the buffer
@@ -289,8 +287,8 @@ static uint32_t ComputeFnvHashForString (Utf8CP buf, uint32_t hashValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static uint32_t ComputeFnvHashForUInt32 (uint32_t buf, uint32_t hashValue)
     {
-    unsigned char *bp = (unsigned char *)&buf;	/* start of buffer */
-    unsigned char *be = bp + sizeof (buf);	/* beyond end of buffer */
+    unsigned char *bp = (unsigned char *)&buf;  /* start of buffer */
+    unsigned char *be = bp + sizeof (buf);  /* beyond end of buffer */
 
     /*
     * FNV-1 hash each octet in the buffer

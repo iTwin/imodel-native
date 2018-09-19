@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaLocalizedStrings.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,16 +42,27 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetSchemaDisplayLabel(ECSchemaCP ecSchema, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetSchemaDescription(ECSchemaCP ecSchema, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetClassDisplayLabel(ECClassCP ecClass, Utf8StringCR invariantDisplayLabel) const;
-    ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDisplayLabel(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetClassDescription(ECClassCP ecClass, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDisplayLabel(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDescription(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetEnumeratorDisplayLabel(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDisplayLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetEnumeratorDescription(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantityDisplayLabel(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantityDescription(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyCategoryDisplayLabel(PropertyCategoryCR propertyCategory, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyCategoryDescription(PropertyCategoryCR propertyCategory, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDescription(ECPropertyCP ecProperty, Utf8StringCR invariantDescription) const;
-    ECOBJECTS_EXPORT Utf8StringCR GetEnumeratorDisplayLabel(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDisplayLabel) const;
+
+    ECOBJECTS_EXPORT Utf8StringCR GetFormatDisplayLabel(ECFormatCR format, Utf8StringCR invariantDisplayLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetFormatDescription(ECFormatCR format, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDisplayLabel(UnitSystemCR unitSystem, Utf8StringCR invariantRoleLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDescription(UnitSystemCR unitSystem, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitDisplayLabel(ECUnitCR unit, Utf8StringCR invariantDisplayLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetUnitDescription(ECUnitCR unit, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetPhenomenonDisplayLabel(PhenomenonCR phenomenon, Utf8StringCR invariantRoleLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetPhenomenonDescription(PhenomenonCR phenomenon, Utf8StringCR invariantDescription) const;
+
     ECOBJECTS_EXPORT Utf8StringCR GetRelationshipSourceRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetRelationshipTargetRoleLabel(ECRelationshipClassCP relClass, Utf8StringCR invariantRoleLabel) const;
 

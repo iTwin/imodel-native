@@ -36,9 +36,9 @@ bool tryCreateCA(ECSchemaR schema, Utf8CP origClassName, Utf8CP className, IECIn
 bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, ECSchemaR unitAttributesSchema)
     {
     schema.AddReferencedSchema(unitAttributesSchema);
-    Utf8CP perUnitName = ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName();
-    Utf8String oldPerUnitName;
-    if(!Units::UnitRegistry::Instance().TryGetOldName(perUnitName, oldPerUnitName))
+    Utf8CP perUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetPersistenceUnit())->GetFullName().c_str();
+    Utf8CP oldPerUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(perUnitName);
+    if(nullptr == oldPerUnitName)
         {
         LOG.warningv("Failed to find old  unit name for the persistence unit '%s' used on property '%s.%s.%s'", 
                      perUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
@@ -48,17 +48,25 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     IECInstancePtr unitSpecCA;
     if (!tryCreateCA(unitAttributesSchema, UNIT_SPECIFICATION_ORIG, UNIT_SPECIFICATION, unitSpecCA))
         return false;
-    ECValue oldName(oldPerUnitName.c_str());
+    ECValue oldName(oldPerUnitName);
     unitSpecCA->SetValue(UNIT_NAME, oldName);
     ecProperty->SetCustomAttribute(*unitSpecCA);
 
-    if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
+    if (ecProperty->GetKindOfQuantity()->HasPresentationFormats())
         {
-        Utf8CP presUnitName = ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName();
-        Utf8String oldPresUnitName;
-        if (!Units::UnitRegistry::Instance().TryGetOldName(presUnitName, oldPresUnitName))
+        ECUnitCP unit = static_cast<ECUnitCP>(ecProperty->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetCompositeMajorUnit());
+        if (nullptr == unit)
             {
-            LOG.warningv("Failed to find old  unit name for the presentation unit '%s' used on property '%s.%s.%s'",
+            LOG.warningv("Presentation format '%s' does not have a major unit used on property '%s.%s.%s'. Dropping", 
+                ecProperty->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str(), schema.GetName().c_str(), 
+                ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
+            return true;
+            }
+        Utf8CP presUnitName = unit->GetFullName().c_str();
+        Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(presUnitName);
+        if (nullptr == oldPresUnitName)
+            {
+            LOG.warningv("Failed to find old unit name for the presentation unit '%s' used on property '%s.%s.%s'",
                          presUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
             return true;
             }
@@ -66,7 +74,7 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
         IECInstancePtr displayUnitSpecCA;
         if (!tryCreateCA(unitAttributesSchema, DISPLAY_UNIT_SPECIFICATION_ORIG, DISPLAY_UNIT_SPECIFICATION, displayUnitSpecCA))
             return false;
-        ECValue oldPresName(oldPresUnitName.c_str());
+        ECValue oldPresName(oldPresUnitName);
         displayUnitSpecCA->SetValue(DISPLAY_UNIT_NAME, oldPresName);
         ECValue formatString(DEFAULT_FORMATTER);
         displayUnitSpecCA->SetValue(DISPLAY_FORMAT_STRING, formatString);
@@ -113,6 +121,22 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
                 removeOldPersistenceUnitCustomAttribute(schema, ecProperty);
                 }
             }
+        }
+
+    static SchemaKey unitsKey = SchemaKey("Units", 1, 0, 0);
+    auto unitsSchema = schema.FindSchema(unitsKey, SchemaMatchType::Latest);
+    static SchemaKey formatsKey = SchemaKey("Formats", 1, 0, 0);
+    auto formatsSchema = schema.FindSchema(formatsKey, SchemaMatchType::Latest);
+    if(nullptr != unitsSchema && schema.IsSchemaReferenced(schema, *unitsSchema))
+        {
+        LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", unitsSchema->GetFullSchemaName().c_str());
+        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(unitsKey));
+        }
+
+    if(nullptr != formatsSchema && schema.IsSchemaReferenced(schema, *formatsSchema))
+        {
+        LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", formatsSchema->GetFullSchemaName().c_str());
+        schema.m_refSchemaList.erase(schema.m_refSchemaList.find(formatsKey));
         }
 
     schema.RemoveUnusedSchemaReferences();

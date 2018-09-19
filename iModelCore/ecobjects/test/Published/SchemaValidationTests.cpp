@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaValidationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -98,6 +98,7 @@ TEST_F(SchemaValidationTests, TestValidSchemaNames)
     statusB = schemaA->CreateEntityClass(ecClass, "MyClass""§$%&/()");
     EXPECT_TRUE(statusB == ECObjectsStatus::InvalidName) << "Expected InvalidName because the class name contains invalid characters";
 
+    ASSERT_EQ(ECObjectsStatus::Success, schemaA->CreateEntityClass(ecClass, "MyClass"));
     PrimitiveECPropertyP prop;
     statusB = ecClass->CreatePrimitiveProperty(prop, "MyProperty!§$%&/()=", PRIMITIVETYPE_String);
     EXPECT_TRUE(statusB == ECObjectsStatus::InvalidName) << "Expected InvalidName because the property name contains invalid characters";
@@ -156,18 +157,18 @@ TEST_F(SchemaValidationTests, TestClassConstraintDelayedValidation)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid()) << "The schema should have successfully been read from the xml string.";
 
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should stay a 3.0 schema and not be upgraded to a 3.1 schema.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema should stay a 3.0 schema and not be upgraded to a the latest EC version.";
 
     // Attempt to validate the schema, should remain a 3.0 schema
     EXPECT_TRUE(schema->Validate());
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should still not be a 3.1 schema after the validation is ran.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema should still not be upgraded after the validation is ran.";
 
-    // Update the schema to now be a validate 3.1 schema
+    // Update the schema to now be a validate 3.2 schema
     ECClassCP baseClass = schema->GetClassCP("B");
     EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("C")->AddBaseClass(*baseClass)) << "Adding a base class to C to make the relationship constraints valid.";
 
     schema->Validate();
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should now be a 3.1 schema.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema should now be upgraded to the latest ECVersion.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -207,7 +208,7 @@ TEST_F(SchemaValidationTests, TestMultiplicityConstraintDelayedValidation)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
 
-    EXPECT_FALSE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should have been read as a 3.0 schema. It fails validation.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema should have been read as a 3.0 schema. It fails validation.";
     EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetLowerLimit());
     EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetMultiplicity().GetUpperLimit());
     EXPECT_EQ(1, schema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetMultiplicity().GetLowerLimit());
@@ -222,7 +223,7 @@ TEST_F(SchemaValidationTests, TestMultiplicityConstraintDelayedValidation)
     EXPECT_EQ(ECObjectsStatus::Success, schema->GetClassP("ARelB")->GetRelationshipClassP()->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany())) << "Fixing the Target multiplicity to not violate the narrowing rule.";
 
     EXPECT_TRUE(schema->Validate());
-    EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "Since the validation passed, the schema should not be an EC3.1 schema.";
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "Since the validation passed, the schema should be upgraded to the latest EC version.";
     }
 
 //---------------------------------------------------------------------------------------

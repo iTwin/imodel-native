@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/SchemaParseUtilsTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -300,6 +300,58 @@ TEST_F(SchemaParseUtilsTest, ParseModifierXmlString)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaParseUtilsTest, ParseLegacyMultiplicityString)
+    {
+    uint32_t lowerLimit, upperLimit;
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(3..12)"));
+    EXPECT_EQ(3, lowerLimit);
+    EXPECT_EQ(12, upperLimit);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(5..*)"));
+    EXPECT_EQ(5, lowerLimit);
+    EXPECT_EQ(UINT_MAX, upperLimit);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(42 .. 120)"));
+    EXPECT_EQ(42, lowerLimit);
+    EXPECT_EQ(120, upperLimit);
+
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, ""));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "foo"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(foo..12)"));
+
+    // The tests below exist for a known bug in SchemaParseUtils::ParseLegacyMultiplicityString, where a multiplicity
+    // string parsed with the scanf format string "(%d..%d)" will successfully parse the first integer, fail to
+    // parse the second integer, and assume the second integer was inteded to be "*". As a result of this bug strings
+    // such as
+    //      "(3..N)"
+    //      "(3,N)"
+    //      "(3banana)"
+    // would all be parsed as if they were "(3..*)".
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(3,12)"));
+    EXPECT_EQ(3, lowerLimit);
+    EXPECT_EQ(UINT_MAX, upperLimit);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(5,N)"));
+    EXPECT_EQ(5, lowerLimit);
+    EXPECT_EQ(UINT_MAX, upperLimit);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(7..N)"));
+    EXPECT_EQ(7, lowerLimit);
+    EXPECT_EQ(UINT_MAX, upperLimit);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(5)"));
+    EXPECT_EQ(5, lowerLimit);
+    EXPECT_EQ(UINT_MAX, upperLimit);
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseLegacyMultiplicityString(lowerLimit, upperLimit, "(7banana)"));
+    EXPECT_EQ(7, lowerLimit);
+    EXPECT_EQ(UINT_MAX, upperLimit);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaParseUtilsTest, ParseMultiplicityString)
     {
     uint32_t lowerLimit, upperLimit;
@@ -320,40 +372,12 @@ TEST_F(SchemaParseUtilsTest, ParseMultiplicityString)
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "foo"));
     EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(foo..12)"));
 
-    // The tests below exist for a known bug in SchemaParseUtils::ParseMultiplicityString. where a multiplicity
-    // string parsed with the scanf format string "(%d..%d)" will successfully parse the first integer, fail to
-    // parse the second integer, and assume the second integer was inteded to be "*". As a result of this bug strings
-    // such as
-    //      "(3..N)"
-    //      "(3,N)"
-    //      "(3banana)"
-    // would all be parsed as if they were "(3..*)".
-    // For now these semantically incorrect tests will be expected to pass. When the SchemaParseUtils::ParseMultiplicityString
-    // method is updated to behave correctly these tests should be changed from
-    //      EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, <some bad string>));
-    //      EXPECT_EQ(<some lower limit>, lowerLimit);
-    //      EXPECT_EQ(UINT_MAX, upperLimit);
-    // to
-    //      EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, <some bad string>));
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(3,12)"));
-    EXPECT_EQ(3, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
-
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(5,N)"));
-    EXPECT_EQ(5, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
-
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(7..N)"));
-    EXPECT_EQ(7, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
-
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(5)"));
-    EXPECT_EQ(5, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
-
-    EXPECT_EQ(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(7banana)"));
-    EXPECT_EQ(7, lowerLimit);
-    EXPECT_EQ(UINT_MAX, upperLimit);
+    // Should fail to parse the old, nasty multiplicity strings
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(3,12)"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(5,N)"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(7..N)"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(5)"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaParseUtils::ParseMultiplicityString(lowerLimit, upperLimit, "(7banana)"));
     }
 
 //---------------------------------------------------------------------------------------

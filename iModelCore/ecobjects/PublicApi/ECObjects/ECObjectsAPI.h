@@ -49,7 +49,9 @@ capture this information.
 
 #include <ECObjects/ECEnabler.h>
 #include <ECObjects/ECInstance.h>
+#include <ECObjects/ECUnit.h>
 #include <ECObjects/ECSchema.h>
+#include <ECObjects/ECName.h>
 #include <ECObjects/SchemaResourceKeyHelper.h>
 #include <ECObjects/ECSchemaConverter.h>
 #include <ECObjects/ECSchemaDownConverter.h>
@@ -69,4 +71,3 @@ capture this information.
 #include <ECObjects/ECRelationshipPath.h>
 
 #include <ECObjects/DesignByContract.h>
-

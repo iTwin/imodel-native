@@ -16,7 +16,7 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=================================================================================
-//! Formatting options for ECProperty values of the type @ref BentleyApi::ECN::PRIMITIVETYPE_Long "Long" / Int64
+//! Formatting options for ECProperty values of the type PrimitiveType::PRIMITIVETYPE_Long "Long" / Int64
 //! @remarks Because of JavaScript issues with 64 bit numbers, in many use cases Int64 values cannot be formatted as number
 //! without data loss. Using one of the other options from this enumeration allows to workaround that issue.
 // @bsienum                                                    09/2017
@@ -143,27 +143,27 @@ public:
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
 
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::Id "ECJsonSystemNames::Id" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::Id "ECJsonSystemNames::Id" as JsonCpp StaticString
     static constexpr Json::StaticString json_id() { return Json::StaticString(ECJsonSystemNames::Id()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::ClassName "ECJsonSystemNames::ClassName" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::ClassName "ECJsonSystemNames::ClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_className() { return Json::StaticString(ECJsonSystemNames::ClassName()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::SourceId "ECJsonSystemNames::SourceId" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::SourceId "ECJsonSystemNames::SourceId" as JsonCpp StaticString
     static constexpr Json::StaticString json_sourceId() { return Json::StaticString(ECJsonSystemNames::SourceId()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::SourceClassName "ECJsonSystemNames::SourceClassName" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::SourceClassName "ECJsonSystemNames::SourceClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_sourceClassName() { return Json::StaticString(ECJsonSystemNames::SourceClassName()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::TargetId "ECJsonSystemNames::TargetId" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::TargetId "ECJsonSystemNames::TargetId" as JsonCpp StaticString
     static constexpr Json::StaticString json_targetId() { return Json::StaticString(ECJsonSystemNames::TargetId()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::TargetClassName "ECJsonSystemNames::TargetClassName" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::TargetClassName "ECJsonSystemNames::TargetClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_targetClassName() { return Json::StaticString(ECJsonSystemNames::TargetClassName()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::Id "ECJsonSystemNames::Navigation::Id" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::Navigation::Id "ECJsonSystemNames::Navigation::Id" as JsonCpp StaticString
     static constexpr Json::StaticString json_navId() { return Json::StaticString(ECJsonSystemNames::Navigation::Id()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::Navigation::RelClassName "ECJsonSystemNames::Navigation::RelClassName" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::Navigation::RelClassName "ECJsonSystemNames::Navigation::RelClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_navRelClassName() { return Json::StaticString(ECJsonSystemNames::Navigation::RelClassName()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::Point::X "ECJsonSystemNames::Point::X" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::Point::X "ECJsonSystemNames::Point::X" as JsonCpp StaticString
     static constexpr Json::StaticString json_x() { return Json::StaticString(ECJsonSystemNames::Point::X()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::Point::Y "ECJsonSystemNames::Point::Y" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::Point::Y "ECJsonSystemNames::Point::Y" as JsonCpp StaticString
     static constexpr Json::StaticString json_y() { return Json::StaticString(ECJsonSystemNames::Point::Y()); }
-    //! @ref BentleyApi::ECN::ECJsonSystemNames::Point::Z "ECJsonSystemNames::Point::Z" as JsonCpp StaticString
+    //! @ref ECN::ECJsonSystemNames::Point::Z "ECJsonSystemNames::Point::Z" as JsonCpp StaticString
     static constexpr Json::StaticString json_z() { return Json::StaticString(ECJsonSystemNames::Point::Z()); }
     //! @}
 
@@ -195,11 +195,6 @@ public:
     //! @return Fully qualified KindOfQuantity name for the ECJSON format
     static Utf8String FormatKindOfQuantityName(KindOfQuantityCR koq) {return Utf8PrintfString("%s.%s", koq.GetSchema().GetName().c_str(), koq.GetName().c_str());}
 
-    //! Generates a Json object in the ECJSON Unit Format from a FormatUnitSet.
-    //! @param [in] fus FormatUnitSet
-    //! @return Json object for a FormatUnitSet in the ECJSON Unit Format 
-    static Json::Value FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus);
-
     //! Lowers the first char of the specified string.
     //! @remarks Use this method to make a name, e.g. an ECProperty name a JSON member name.
     //! @param[in,out] str String to lower its first character
@@ -213,6 +208,16 @@ public:
     //! @param[in] ecClass ECClass
     //! @return SUCCESS or ERROR
     static void ClassNameToJson(Json::Value& json, ECClassCR ecClass) { json = FormatClassName(ecClass); }
+
+    //! Returns a fully qualified name of any SchemaChild
+    //! Type must have both GetName() and GetSchema() methods
+    //! @param[in] ec The schema child to extract name from
+    //! return A string containing the fully qualified name
+    template<typename T>
+    static Utf8String ECNameToJsonName(T const& ec)
+        {
+        return ec.GetSchema().GetName() + "." + ec.GetName();
+        }
 
     //! Looks up an ECClass from a JSON string containing the fully qualified class name
     //! @param[in] json JSON containing the class name
@@ -436,27 +441,27 @@ public:
     ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(ByteStream& byteStream, RapidJsonValueCR json);
 
     //! Converts the specified DPoint2d to a JSON value
-    //! The point is converted to a JSON object with keys "x" and "y" (see BentleyApi::ECN::ECJsonSystemNames::Point).
+    //! The point is converted to a JSON object with keys "x" and "y" (see ECN::ECJsonSystemNames::Point).
     //! @param[out] json the resulting Json value
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus Point2dToJson(RapidJsonValueR json, DPoint2d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified JSON value to a DPoint2d
-    //! The JSON value must hold the point as JSON object with keys "x" and "y" (see BentleyApi::ECN::ECJsonSystemNames::Point).
+    //! The JSON value must hold the point as JSON object with keys "x" and "y" (see ECN::ECJsonSystemNames::Point).
     //! @param[out] pt the resulting point
     //! @param[in] json the RapidJson value.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2d(DPoint2d& pt, RapidJsonValueCR json);
     //! Converts the specified DPoint3d to a JSON value
-    //! The point is converted to a JSON object with keys "x", "y" and "z" (see BentleyApi::ECN::ECJsonSystemNames::Point).
+    //! The point is converted to a JSON object with keys "x", "y" and "z" (see ECN::ECJsonSystemNames::Point).
     //! @param[out] json the resulting RapidJson value.
     //! @param[in] pt Point to convert
     //! @param[in] allocator Allocator to use to populate the RapidJson value.
     //! @return SUCCESS or ERROR
     ECOBJECTS_EXPORT static BentleyStatus Point3dToJson(RapidJsonValueR json, DPoint3d pt, rapidjson::MemoryPoolAllocator<>& allocator);
     //! Converts the specified JSON value to a DPoint3d
-    //! The JSON value must hold the point as JSON object with keys "x", "y" and "z" (see BentleyApi::ECN::ECJsonSystemNames::Point).
+    //! The JSON value must hold the point as JSON object with keys "x", "y" and "z" (see ECN::ECJsonSystemNames::Point).
     //! @param[out] pt the resulting point
     //! @param[in] json the JSON value
     //! @return SUCCESS or ERROR
@@ -480,7 +485,7 @@ public:
 
     
 //=================================================================================
-//! Populates an ECInstance from a JSON in the @ref BentleyApi::ECN::ECJsonSystemNames "ECJSON Format".
+//! Populates an ECInstance from a JSON in the @ref ECN::ECJsonSystemNames "ECJSON Format".
 // @bsiclass                                                 Ramanujam.Raman      01/2014
 //+===============+===============+===============+===============+===============+======
 struct JsonECInstanceConverter final
@@ -508,74 +513,73 @@ struct JsonECInstanceConverter final
 /*=================================================================================**//**
 * JsonEcInstanceWriter - creates Json object from ECInstance
 * If writeFormattedQuanties is true then primitive values with koq specification will be save as a JSON object with rawValue, formattedValue, and fusSpec.
-* @bsiclass                                                     Bill.Steinbock  02/2016
+* @bsistruct                                                     Bill.Steinbock  02/2016
 +===============+===============+===============+===============+===============+======*/
 struct JsonEcInstanceWriter final
-    {
-    private:
-        static void          AppendAccessString(Utf8String& compoundAccessString, Utf8String& baseAccessString, const Utf8String& propertyName);
-        static StatusInt     WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
-        static StatusInt     WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType, KindOfQuantityCP koq = nullptr);
-        static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
-        static StatusInt     WriteNavigationPropertyValue(Json::Value& valueToPopulate, ECN::NavigationECPropertyR navigationProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
-        static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
-        static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
+{
+private:
+    static void          AppendAccessString(Utf8String& compoundAccessString, Utf8String& baseAccessString, const Utf8String& propertyName);
+    static StatusInt     WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
+    static StatusInt     WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType, KindOfQuantityCP koq = nullptr);
+    static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
+    static StatusInt     WriteNavigationPropertyValue(Json::Value& valueToPopulate, ECN::NavigationECPropertyR navigationProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
+    static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
+    static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
 
-    public:
-        //! Write the supplied primitive property value as JSON
-        //! @param[out] valueToPopulate the JSON object to populate
-        //! @param[in] structProperty the property to write
-        //! @param[in] ecInstance the IEInstance containing the structProperty
-        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
-        //! @return SUCCESS or error status.
-        ECOBJECTS_EXPORT static StatusInt     WriteEmbeddedStructValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+public:
+    //! Write the supplied primitive property value as JSON
+    //! @param[out] valueToPopulate the JSON object to populate
+    //! @param[in] structProperty the property to write
+    //! @param[in] ecInstance the IEInstance containing the structProperty
+    //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
+    //! @return SUCCESS or error status.
+    ECOBJECTS_EXPORT static StatusInt WriteEmbeddedStructValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
 
-        //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
-        //! @param[out] valueToPopulate the JSON object to populate
-        //! @param[in] structProperty the property to write
-        //! @param[in] ecInstance the IEInstance containing the structProperty value
-        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
-        //! @return SUCCESS or error status.
-        ECOBJECTS_EXPORT static StatusInt     WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
+    //! @param[out] valueToPopulate the JSON object to populate
+    //! @param[in] structProperty the property to write
+    //! @param[in] ecInstance the IEInstance containing the structProperty value
+    //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct's name.
+    //! @return SUCCESS or error status.
+    ECOBJECTS_EXPORT static StatusInt WriteEmbeddedStructValueForPresentation(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString);
 
-        //! Write the supplied primitive property value as JSON
-        //! @param[out] valueToPopulate the JSON object to populate
-        //! @param[in] primitiveProperty the property to write
-        //! @param[in] ecInstance the IEInstance containing the property value
-        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
-        //! @return SUCCESS or error status.
-        ECOBJECTS_EXPORT static StatusInt   WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    //! Write the supplied primitive property value as JSON
+    //! @param[out] valueToPopulate the JSON object to populate
+    //! @param[in] primitiveProperty the property to write
+    //! @param[in] ecInstance the IEInstance containing the property value
+    //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
+    //! @return SUCCESS or error status.
+    ECOBJECTS_EXPORT static StatusInt WritePrimitiveValue(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
 
-        //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
-        //! @param[out] valueToPopulate the JSON object to populate
-        //! @param[in] primitiveProperty the property to write
-        //! @param[in] ecInstance the IEInstance containing the property value
-        //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
-        //! @return SUCCESS or error status.
-        ECOBJECTS_EXPORT static StatusInt   WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
+    //! Write the supplied primitive property value as JSON and include presentation data such as KOQ info in the Json
+    //! @param[out] valueToPopulate the JSON object to populate
+    //! @param[in] primitiveProperty the property to write
+    //! @param[in] ecInstance the IEInstance containing the property value
+    //! @param[in] baseAccessString The prefix to use to determine the full access string to the property, typically this would be the containing ECStruct name.
+    //! @return SUCCESS or error status.
+    ECOBJECTS_EXPORT static StatusInt WritePrimitiveValueForPresentation(Json::Value& valueToPopulate, PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString);
 
-        //! Write the supplied instance as JSON
-        //! @param[out] valueToPopulate the JSON object to populate
-        //! @param[in] ecInstance the IEInstance containing the property values
-        //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
-        //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
-        //! @param[in] serializeNullValues If true all values, even null values, of the IECInstance will be serialized.
-        //! @return SUCCESS or error status.
-        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool serializeNullValues = false);
+    //! Write the supplied instance as JSON
+    //! @param[out] valueToPopulate the JSON object to populate
+    //! @param[in] ecInstance the IEInstance containing the property values
+    //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
+    //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
+    //! @param[in] serializeNullValues If true all values, even null values, of the IECInstance will be serialized.
+    //! @return SUCCESS or error status.
+    ECOBJECTS_EXPORT static StatusInt WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool serializeNullValues = false);
 
-        //! Write the supplied instance in the ECSchemaJSON format
-        //! @param[out] valueToPopulate the JSON object to populate
-        //! @param[in] ecInstance the IEInstance containing the property values
-        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance);
+    //! Write the supplied instance in the ECSchemaJSON format
+    //! @param[out] valueToPopulate the JSON object to populate
+    //! @param[in] ecInstance the IEInstance containing the property values
+    ECOBJECTS_EXPORT static StatusInt WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance);
 
-        //! Write the supplied instance as JSON and include presentation data such as KOQ info in the Json
-        //! @param[out] valueToPopulate the JSON object to populate
-        //! @param[in] ecInstance the IEInstance containing the property values
-        //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
-        //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
-        //! @return SUCCESS or error status.
-        ECOBJECTS_EXPORT static StatusInt     WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId);
-    };
-
+    //! Write the supplied instance as JSON and include presentation data such as KOQ info in the Json
+    //! @param[out] valueToPopulate the JSON object to populate
+    //! @param[in] ecInstance the IEInstance containing the property values
+    //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
+    //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
+    //! @return SUCCESS or error status.
+    ECOBJECTS_EXPORT static StatusInt WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId);
+};
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -1,0 +1,10 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "Phenomenon",
+  "name": "ExamplePhenomenon",
+  "definition": "LENGTH*LENGTH",
+  "label": "ExamplePhenomenonLabel",
+  "description": "ExamplePhenomenonDescription"
+}

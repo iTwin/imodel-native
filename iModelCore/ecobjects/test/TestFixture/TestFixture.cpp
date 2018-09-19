@@ -1,4 +1,3 @@
-#include "TestFixture.h"
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: test/TestFixture/TestFixture.cpp $
@@ -17,22 +16,14 @@ USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-  
+ECSchemaPtr ECTestFixture::s_unitsSchema;
+ECSchemaPtr ECTestFixture::s_formatsSchema;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
 void ECTestFixture::SetUp()
     {
-    BeFileName sqlangFile;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-    sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-    BeFileName temporaryDirectory;
-    BeTest::GetHost().GetTempDir(temporaryDirectory);
-
-    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
     }
 
 //----------------------------------------------------------------------------------------
@@ -40,7 +31,6 @@ void ECTestFixture::SetUp()
 //----------------------------------------------------------------------------------------
 void ECTestFixture::TearDown()
     {
-    BeSQLite::L10N::Shutdown();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,6 +41,7 @@ ECTestFixture::ECTestFixture()
     BeFileName assetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory (assetsDir);
     ECN::ECSchemaReadContext::Initialize (assetsDir);
+    GetUnitsSchema();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,6 +82,34 @@ Utf8String ECTestFixture::GetDateTime ()
     strftime(buff, sizeof(buff), "%H:%M:%S", &timeinfo);
     dateTime.append (buff);
     return dateTime.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Kyle.Abramowitz                     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr ECTestFixture::GetUnitsSchema(bool recreate)
+    {
+    if(recreate || s_unitsSchema.IsNull())
+        { 
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaKey key("Units", 1, 0, 0);
+        s_unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+        }
+    return s_unitsSchema;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECSchemaPtr ECTestFixture::GetFormatsSchema(bool recreate)
+    {
+    if (recreate || s_formatsSchema.IsNull())
+        {
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaKey key("Formats", 1, 0, 0);
+        s_formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+        }
+    return s_formatsSchema;
     }
 
 //---------------------------------------------------------------------------------------
@@ -166,18 +185,25 @@ void ECTestFixture::AssertSchemaDeserializationFailure(SchemaItem const& schemaI
 // @bsimethod                                 Kyle.Abramowitz                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-void ECTestFixture::RoundTripSchemaToVersionAndBack(ECSchemaPtr& schema, SchemaItem item, ECN::ECVersion toVersion, SchemaReadStatus expectedReadStatus, SchemaWriteStatus expectedWriteStatus, Utf8CP failureMessage)
+void ECTestFixture::RoundTripSchema(ECSchemaPtr& schema, SchemaItem item, ECVersion toVersion, SchemaReadStatus expectedReadStatus, SchemaWriteStatus expectedWriteStatus, Utf8CP failureMessage)
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr local;
     deserializeSchema(local, *context, item, SchemaReadStatus::Success, true, "Should be able to deserialize original schema for round trip test");
+    RoundTripSchema(schema, local.get(), toVersion, expectedReadStatus, expectedWriteStatus, failureMessage);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+void ECTestFixture::RoundTripSchema(ECSchemaPtr& schema, ECSchemaCP inSchema, ECVersion toVersion, SchemaReadStatus expectedReadStatus, SchemaWriteStatus expectedWriteStatus, Utf8CP failureMessage)
+    {
     Utf8String outXml;
-    ASSERT_NE(nullptr, local.get());
-    ASSERT_TRUE(local->Validate());
-    ASSERT_EQ(expectedWriteStatus, local->WriteToXmlString(outXml, toVersion));
+    ASSERT_EQ(expectedWriteStatus, inSchema->WriteToXmlString(outXml, toVersion));
     if (SchemaWriteStatus::Success != expectedWriteStatus)
         return;
-    context = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     deserializeSchema(schema, *context, SchemaItem(outXml), expectedReadStatus, true, "Should be able to deserialize the round tripped schema");
     }
 
@@ -224,6 +250,9 @@ BentleyStatus ECTestUtility::ReadJsonInputFromFile(Json::Value& jsonInput, BeFil
     return Json::Reader::Parse(fileContent, jsonInput) ? SUCCESS : ERROR;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 bool ECTestUtility::JsonDeepEqual(Json::Value const& a, Json::Value const& b)
     {
     return a.ToString() == b.ToString();
@@ -351,6 +380,6 @@ bool ECTestUtility::CompareECInstances(ECN::IECInstanceCR expected, ECN::IECInst
 
     return CompareProperties(actual, *propertyValuesExpected);
     }
-    
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 

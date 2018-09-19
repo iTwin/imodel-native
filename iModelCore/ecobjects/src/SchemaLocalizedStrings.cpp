@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaLocalizedStrings.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -109,6 +109,18 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDescription(ECEnumerationCR e
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  12/2017
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetEnumeratorDescription(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(ecEnumerator);
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer                    12/2016
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetKindOfQuantityDisplayLabel(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDisplayLabel) const
@@ -153,6 +165,102 @@ Utf8StringCR SchemaLocalizedStrings::GetPropertyCategoryDescription(PropertyCate
         return invariantDescription;
 
     Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(propertyCategory);
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetUnitDisplayLabel(ECUnitCR unit, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(unit);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetUnitDescription(ECUnitCR unit, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(unit);
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetPhenomenonDisplayLabel(PhenomenonCR phenomenon, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(phenomenon);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetPhenomenonDescription(PhenomenonCR phenomenon, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(phenomenon);
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetUnitSystemDisplayLabel(UnitSystemCR unitSystem, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(unitSystem);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetUnitSystemDescription(UnitSystemCR unitSystem, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(unitSystem);
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetFormatDisplayLabel(ECFormatCR format, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(format);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetFormatDescription(ECFormatCR format, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(format);
     return GetLocalizedString(key.c_str(), invariantDescription);
     }
 
@@ -453,7 +561,7 @@ ECObjectsStatus SchemaLocalizedStrings::ParseCaKeyString(Utf8StringR containerAc
     size_t accessorHashSepIndex = keyString.rfind(COLON); // index of ':' between PropertyAccessor and Hash
     if (WString::npos == accessorHashSepIndex)
         return ECObjectsStatus::ParseError;
-				
+
     caSchemaName = keyString.substr(beginCaKeyIndex, caSchemaClassSepIndex - beginCaKeyIndex);
     caClassName = keyString.substr(caSchemaClassSepIndex + 1, propertyAccessorIndex - caSchemaClassSepIndex - 1);
     propertyAccessor = keyString.substr(propertyAccessorIndex + 1, accessorHashSepIndex - propertyAccessorIndex - 1);

@@ -995,6 +995,10 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_WithExclusions)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refingSchema, goodRefSchemaXml, *context));
     ASSERT_TRUE(refingSchema.IsValid());
 
+    context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
     Utf8CP badRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
@@ -1038,7 +1042,7 @@ TEST_F(ClassTest, SerializeStandaloneEntityClass)
     entityClass->SetCustomAttribute(*customAttr);
 
     Json::Value schemaItemJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, entityClass->WriteJson(schemaItemJson, true));
+    EXPECT_TRUE(entityClass->ToJson(schemaItemJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECEntityClass.ecschema.json"));
@@ -1070,7 +1074,7 @@ TEST_F(ClassTest, SerializeStandaloneStructClass)
     primArrProp->SetDisplayLabel("ExPrimitiveArray");
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, structClass->WriteJson(schemaJson, true));
+    EXPECT_TRUE(structClass->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECStructClass.ecschema.json"));
@@ -1094,7 +1098,7 @@ TEST_F(ClassTest, SerializeStandaloneCustomAttributeClass)
     customAttrClass->SetContainerType(ECN::CustomAttributeContainerType::Schema | ECN::CustomAttributeContainerType::AnyProperty);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, customAttrClass->WriteJson(schemaJson, true));
+    EXPECT_TRUE(customAttrClass->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECCustomAttributeClass.ecschema.json"));
@@ -1111,6 +1115,7 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
 
     ECEntityClassP entityClass;
     schema->CreateEntityClass(entityClass, "ExampleEntityClass");
@@ -1123,7 +1128,7 @@ TEST_F(ClassTest, SerializeClassWithProperties)
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "TestKindOfQuantity");
-    koq->SetPersistenceUnit("M(DefaultRealU)");
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
 
     ECStructClassP structClass;
     schema->CreateStructClass(structClass, "ExampleStructClass");
@@ -1174,7 +1179,7 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     entityClass->CreateNavigationProperty(navProp, "ExampleNavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Backward, false);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, entityClass->WriteJson(schemaJson, true)); Json::Value testDataJson;
+    EXPECT_TRUE(entityClass->ToJson(schemaJson, true)); Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithClassProperties.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
@@ -1225,7 +1230,7 @@ TEST_F(ClassTest, InheritedCustomAttributesAndPropertiesShouldNotBeSerializedByD
     derivedEntityClass->AddBaseClass(*baseEntityClass);
 
     Json::Value entityClassJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, derivedEntityClass->WriteJson(entityClassJson, true));
+    EXPECT_TRUE(derivedEntityClass->ToJson(entityClassJson, true));
 
     Json::Value testDataJson;
     BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneClassDefaultSerializeInheritedCustomAttributesAndProperties.ecschema.json"));
@@ -1261,13 +1266,93 @@ TEST_F(ClassTest, ExplicitSerializeInheritedProperties)
     primPropOverrideDerived->SetMaximumLength(12);
 
     Json::Value entityClassJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, derivedEntityClass->WriteJson(entityClassJson, true, true));
+    EXPECT_TRUE(derivedEntityClass->ToJson(entityClassJson, true, true));
 
     Json::Value testDataJson;
     BeFileName entityClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneClassExplicitlySerializeInheritedProperties.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, entityClassTestDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ClassTest, LookupClassTest)
+    {
+    Utf8CP baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+                <ECEntityClass typeName="BaseClass">
+                    <ECCustomAttributes>
+                        <NotSubClassableInReferencingSchemas xmlns="CoreCustomAttributes.01.00"/>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECEntityClass typeName="LocalDerivedClass">
+                    <BaseClass>BaseClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+    
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    ECSchemaPtr refingSchema;
+    ASSERT_TRUE(!refingSchema.IsValid());
+
+    Utf8CP goodRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
+                <ECEntityClass typeName="RemoteDerivedClass">
+                    <BaseClass>ts:LocalDerivedClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refingSchema, goodRefSchemaXml, *context));
+    ASSERT_TRUE(refingSchema.IsValid());
+
+    auto shouldBeNull = refingSchema->LookupClass("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = refingSchema->LookupClass("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = refingSchema->LookupClass("banana:RemoteDerivedClass");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = refingSchema->LookupClass("banana:BaseClass");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = refingSchema->LookupClass("TestSchema:BaseClass");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = refingSchema->LookupClass("RefingSchema:RemoteDerivedClass");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = refingSchema->LookupClass("rs:RemoteDerivedClass", true);
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = refingSchema->LookupClass("RemoteDerivedClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("ts:BaseClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("BaseClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("TestSchema:BaseClass", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("BaseClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("RefingSchema:RemoteDerivedClass", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("rs:RemoteDerivedClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("TS:BaseClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("BaseClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("TESTSCHEMA:BaseClass", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("BaseClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("REFINGSCHEMA:RemoteDerivedClass", true);
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("RS:RemoteDerivedClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, refingSchema->GetClassCount());
     }
 
 //=======================================================================================

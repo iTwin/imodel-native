@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/MixinTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -139,7 +139,7 @@ TEST_F(MixinTest, MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseCla
 TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization)
     {
     Utf8CP schemaXmlBad = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="BadTestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
           <ECEntityClass typeName="Mixin0" modifier="Abstract">
             <BaseClass>Entity0</BaseClass>
@@ -154,7 +154,7 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization)
         )xml";
 
     Utf8CP schemaXmlGood = R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="GoodTestSchema1" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
           <ECEntityClass typeName="Mixin0" modifier="Abstract">
             <BaseClass>Mixin1</BaseClass>
@@ -176,7 +176,7 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization)
         )xml";
 
     Utf8CP schemaXmlGood2 = R"xml(
-    <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchema schemaName="GoodTestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
         <ECEntityClass typeName='MxBase' modifier='Abstract'>
             <ECCustomAttributes>"
@@ -215,7 +215,7 @@ TEST_F(MixinTest, MixinClassMayOnlyHaveMixinAsBaseClass_XmlDeserialization)
         </ECEntityClass>
     </ECSchema>)xml";
 
-    Utf8CP schemaXmlGood3 = "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    Utf8CP schemaXmlGood3 = "<ECSchema schemaName='GoodTestSchema3' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
         "  <ECEntityClass typeName='Equipment'  modifier='Abstract'>"
         "      <ECProperty propertyName='Code' typeName='string' />"
@@ -683,7 +683,7 @@ TEST_F(MixinTest, SerializeStandaloneMixin)
     mixin->SetClassModifier(ECClassModifier::Abstract);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, mixin->WriteJson(schemaJson, true));
+    EXPECT_TRUE(mixin->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneMixin.ecschema.json"));

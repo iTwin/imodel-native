@@ -5,9 +5,8 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "ECObjectsPch.h"
-#include <regex>
+#include <algorithm>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -16,40 +15,46 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus KindOfQuantity::SetName(Utf8CP name)
     {
-    if (!ECNameValidation::IsValidName(name))
+    if (!m_validatedName.SetValidName(name, false))
         return ECObjectsStatus::InvalidName;
 
-    m_validatedName.SetName(name);
     m_fullName = GetSchema().GetName() + ":" + GetName();
     return ECObjectsStatus::Success;
     }
 
-//TODO: add string representation for FUS once we can call ToText on invalid FUS.
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                03/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 bool KindOfQuantity::Verify() const
     {
     bool isValid = true;
-    if (m_persistenceFUS.HasProblem())
+    if (nullptr == m_persistenceUnit)
         {
-        LOG.errorv("Validation Error - KindOfQuantity '%s' persistence FormatUnitSet has a problem: %s",
-                   GetFullName().c_str(), m_persistenceFUS.GetProblemDescription().c_str());
+        LOG.errorv("Validation Error - KindOfQuantity '%s' does not have a persistence unit",
+                   GetFullName().c_str());
+        isValid = false;
+        }
+
+    if ((nullptr != m_persistenceUnit) && m_persistenceUnit->IsConstant())
+        {
+        LOG.errorv("Validation Error - KindOfQuantity '%s' persistence unit is a constant", GetFullName().c_str());
         isValid = false;
         }
     
-    for (Formatting::FormatUnitSetCR presFUS : m_presentationFUS)
+    for (auto const& format : m_presentationFormats)
         {
-        if (presFUS.HasProblem())
+        if (format.IsProblem())
             {
-            LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet has a problem: %s",
-                GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
+            LOG.errorv("Validation Error - KindOfQuantity '%s' presentation format has a problem: %s",
+                GetFullName().c_str(), format.GetProblemDescription().c_str());
             isValid = false;
             }
-        else if ((!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), m_persistenceFUS.GetUnit())))
+        else if (nullptr != m_persistenceUnit && 
+                format.HasCompositeMajorUnit() &&
+                !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), m_persistenceUnit))
             {
-            LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet conflicts with the persistence FormatUnitSet %s.",
-                GetFullName().c_str(), m_persistenceFUS.ToText(false).c_str());
+            LOG.errorv("Validation Error - KindOfQuantity '%s' presentation format input unit conflicts with the persistence unit %s.",
+                GetFullName().c_str(), m_persistenceUnit->GetName().c_str());
             isValid = false;
             }
         }
@@ -64,62 +69,22 @@ Utf8StringCR KindOfQuantity::GetFullName() const
     {
     if (m_fullName.size() == 0)
         m_fullName = GetSchema().GetName() + ":" + GetName();
-        
+
     return m_fullName;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2018
+//--------------------------------------------------------------------------------------
 Utf8String KindOfQuantity::GetQualifiedName(ECSchemaCR primarySchema) const
     {
-    Utf8String alias;
-    Utf8StringCR name = GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (GetSchema(), alias)))
-        {
-        LOG.warningv ("warning: Cannot qualify an KindOfQuantity name with an alias unless the schema containing the KindOfQuantity is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  KindOfQuantity: %s\n ECSchema containing KindOfQuantity: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
-        return name;
-        }
-
-    if (alias.empty())
-        return name;
-    else
-        return alias + ":" + name;
+    return SchemaParseUtils::GetQualifiedName<KindOfQuantity>(primarySchema, *this);
     }
 
-//Following two methods need to be exported as the ValidatedName struct does not export its methods.
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::SetDisplayLabel(Utf8CP value) {m_validatedName.SetDisplayLabel(value); return ECObjectsStatus::Success;}
-
-ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
-    {
-    if (0 == stringToParse.length())
-        {
-        return ECObjectsStatus::ParseError;
-        }
-
-    Utf8String::size_type colonIndex = stringToParse.find(':');
-    if (Utf8String::npos == colonIndex)
-        {
-        alias.clear();
-        kindOfQuantityName = stringToParse;
-        return ECObjectsStatus::Success;
-        }
-
-    if (stringToParse.length() == colonIndex + 1)
-        {
-        return ECObjectsStatus::ParseError;
-        }
-
-    if (0 == colonIndex)
-        alias.clear();
-    else
-        alias = stringToParse.substr(0, colonIndex);
-
-    kindOfQuantityName = stringToParse.substr(colonIndex + 1);
-
-    return ECObjectsStatus::Success;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                12/2016
@@ -137,101 +102,579 @@ Utf8StringCR KindOfQuantity::GetDescription() const
     return GetSchema().GetLocalizedStrings().GetKindOfQuantityDescription(*this, m_description); 
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                08/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
     {
-    if (persistenceFUS.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persistenceFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
-        return false;
+    if (unit.IsConstant())
+        {
+        LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is a constant", GetFullName().c_str(), unit.GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    if (HasPresentationFormats())
+        {
+        for (auto const& format : m_presentationFormats)
+            {
+            if (format.HasCompositeMajorUnit() && !ECUnit::AreCompatible(&unit, format.GetCompositeMajorUnit()))
+                {
+                LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is not compatible with format '%s'", GetFullName().c_str(), unit.GetFullName().c_str(), format.GetName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            }
+        }
+    m_persistenceUnit = &unit;
+    m_descriptorCacheValid = false;
 
-    m_persistenceFUS = persistenceFUS;
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
-    {
-    if (presentationFUS.HasProblem() || (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), m_persistenceFUS.GetUnit()))
-        || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
-        return false;
-
-    m_presentationFUS.push_back(presentationFUS);
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSet presentationFUS)
-    {
-    for (auto itor = m_presentationFUS.begin(); itor != m_presentationFUS.end(); itor++)
-        if (Units::Unit::AreEqual(itor->GetUnit(), presentationFUS.GetUnit()))
-            m_presentationFUS.erase(itor);
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
+    //will only be serialized in 3.0 and later
     if (ecXmlVersion < ECVersion::V3_0)
-        { //will only be serialized in 3.0 and later
         return SchemaWriteStatus::Success;
-        }
 
-    Utf8CP elementName = KIND_OF_QUANTITY_ELEMENT;
-    SchemaWriteStatus status = SchemaWriteStatus::Success;
-    
-    xmlWriter.WriteElementStart(elementName);
-    
+    xmlWriter.WriteElementStart(KIND_OF_QUANTITY_ELEMENT);
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
-    auto& displayLabel = GetInvariantDisplayLabel();
-    if (!displayLabel.empty())
-        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
+    if (!GetInvariantDisplayLabel().empty())
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
 
-    if (GetPersistenceUnit().HasProblem())
+    if (nullptr == GetPersistenceUnit())
         {
-        LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), GetPersistenceUnit().GetProblemDescription().c_str());
+        LOG.errorv("Failed to write schema because KindOfQuantity '%s' does not have a perisistence unit", GetName().c_str());
         return SchemaWriteStatus::FailedToSaveXml;
         }
-    Utf8String persistenceUnitString = GetPersistenceUnit().ToText(false);
+
+    auto getUnitNameFromVersion = [this, &ecXmlVersion](ECUnitCP unit, Utf8StringR out) -> bool 
+        {
+        if (ecXmlVersion > ECVersion::V3_1)
+            {
+            out = unit->GetQualifiedName(GetSchema());
+            return true;
+            }
+        // EC3.0 and EC3.1
+        auto ecName = Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+        if (nullptr != ecName)
+            { 
+            out = ecName;
+            return true;
+            }
+        return false;
+        };
+    Utf8String persistenceUnitString;
+    auto hasValidUnitForVersion = getUnitNameFromVersion(GetPersistenceUnit(), persistenceUnitString);
+    if (!hasValidUnitForVersion)
+        {
+        LOG.errorv("Failed to write KindOfQuantity %s because it has a persistence unit not defined in the version it is being serialized to", GetName().c_str());
+        return SchemaWriteStatus::FailedToSaveXml;
+        }
+
     xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnitString.c_str());
 
     double relError = GetRelativeError();
     xmlWriter.WriteAttribute(RELATIVE_ERROR, relError);
 
-    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (presentationUnits.size() > 0)
         {
         Utf8String presentationUnitString;
         bool first = true;
-        for(Formatting::FormatUnitSetCR fus : presentationUnits)
+        for(NamedFormatCR format : presentationUnits)
             {
-            if (fus.HasProblem())
+            if (format.IsProblem())
                 {
-                LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), fus.GetProblemDescription().c_str());
+                LOG.errorv("Failed to write schema because presentation Format for KindOfQuantity '%s' has problem: '%s'.", GetFullName().c_str(), format.GetProblemDescription().c_str());
                 return SchemaWriteStatus::FailedToSaveXml;
                 }
-            if (!first)
-                presentationUnitString += ";";
-            presentationUnitString += fus.ToText(false);
-            first = false;
+
+            if(ecXmlVersion < ECVersion::V3_2)
+                {
+                Utf8String fusDescriptor;
+                if(ECObjectsStatus::Success != FormatToFUSDescriptor(fusDescriptor, format))
+                    continue;
+                if (!first)
+                    presentationUnitString += ";";
+                presentationUnitString += fusDescriptor;
+                first = false;
+                }
+            else
+                {
+                if (!first)
+                    presentationUnitString += ";";
+                presentationUnitString += format.GetQualifiedFormatString(GetSchema());
+                first = false;
+                }
             }
         xmlWriter.WriteAttribute(PRESENTATION_UNITS_ATTRIBUTE, presentationUnitString.c_str());
         }
 
     xmlWriter.WriteElementEnd();
-    return status;
+    return SchemaWriteStatus::Success;;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
+    {
+    Utf8String alias;
+    Utf8String name;
+    ECClass::ParseClassName(alias, name, unitName);
+    if (alias.empty())
+        alias.assign(GetSchema().GetAlias());
+
+    auto unit = nameToUnitMapper(alias, name);
+    if (nullptr == unit)
+        {
+        LOG.errorv("Unable to add unit name '%s' ", unitName.c_str());
+        return ECObjectsStatus::InvalidUnitName;
+        }
+
+    if (nullptr == GetSchema().GetUnitsContext().LookupUnit(unitName.c_str()))
+        {
+        LOG.errorv("Could not locate persistence unit with name '%s' for KoQ '%s' could not be located", unitName.c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    SetPersistenceUnit(*unit);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+NamedFormatCP KindOfQuantity::GetCachedPersistenceFormat() const
+    {
+    if (nullptr == m_persistenceUnit)
+        return nullptr;
+
+    if (m_persFormatCache.IsValid())
+        {
+        if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
+            return &m_persFormatCache.Value();
+        }
+
+    Utf8String name = "DefaultRealU";
+    name += "[";
+    name += m_persistenceUnit->GetQualifiedName(GetSchema());
+    name += "]";
+    m_persFormatCache = NamedFormat(name);
+    m_persFormatCache.ValueR().SetNumericSpec(Formatting::NumericFormatSpec::DefaultFormat());
+    auto comp = Formatting::CompositeValueSpec(*m_persistenceUnit);
+    comp.SetMajorLabel(m_persistenceUnit->GetDisplayLabel().c_str());
+    m_persFormatCache.ValueR().SetCompositeSpec(comp);
+    return &m_persFormatCache.Value();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
+    {
+    UnitAndLabelPairs units;
+    if (nullptr == inputUnitOverride && nullptr != labelOverride)
+        {
+        if (parent.HasCompositeMajorUnit())
+            inputUnitOverride = (ECUnitCP)parent.GetCompositeMajorUnit();
+        else
+            return ECObjectsStatus::Error;
+        }
+    if (nullptr != inputUnitOverride)
+        { 
+        units = UnitAndLabelPairs();
+        units.push_back(make_bpair(inputUnitOverride, (nullptr != labelOverride) ? Nullable<Utf8String>(labelOverride) : Nullable<Utf8String>(nullptr)));
+        }
+
+    return AddPresentationFormat(parent, precisionOverride, &units, isDefault);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  07/2018
+//--------------------------------------------------------------------------------------
+// static
+ECObjectsStatus KindOfQuantity::TransformFormatString(ECFormatCP& outFormat, Nullable<int32_t>& outPrec, UnitAndLabelPairs& outPairs, Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper, ECSchemaCP koqSchema)
+    {
+    Utf8String formatName;
+    Nullable<int32_t> prec;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+    if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, formatString))
+        {
+        LOG.errorv("Failed to parse Presentation FormatString '%s'", formatString.c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    Utf8String alias;
+    Utf8String unqualifiedName;
+    ECClass::ParseClassName(alias, unqualifiedName, formatName);
+
+    if (alias.empty() && (nullptr != koqSchema))
+        alias = koqSchema->GetAlias();
+
+    auto format = nameToFormatMapper(alias, unqualifiedName);
+
+    if (nullptr == format)
+        {
+        LOG.errorv("Format '%s' could not be looked up", formatName.c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (!unitNames.empty())
+        {
+        int i = 0;
+        for (const auto& u : unitNames)
+            {
+            ECClass::ParseClassName(alias, unqualifiedName, u);
+            if (alias.empty() && (nullptr != koqSchema))
+                alias = koqSchema->GetAlias();
+
+            auto unit = nameToUnitMapper(alias, unqualifiedName);
+            if (nullptr == unit)
+                {
+                LOG.errorv("Presentation unit with name '%s' could not be looked up", u.c_str());
+                return ECObjectsStatus::Error;
+                }
+            outPairs.push_back(make_bpair(unit, (i < unitLabels.size()) ? unitLabels[i] : nullptr));
+            i++;
+            }
+        }
+
+    outFormat = format;
+    outPrec = prec;
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
+    {
+    ECFormatCP format = nullptr;
+    Nullable<int32_t> prec = nullptr;
+    UnitAndLabelPairs units;
+    if (ECObjectsStatus::Success != TransformFormatString(format, prec, units, formatString, nameToFormatMapper, nameToUnitMapper, &GetSchema()))
+        return ECObjectsStatus::Error;
+
+    if (!units.empty())
+        return AddPresentationFormat(*format, prec, &units);
+    return AddPresentationFormat(*format, prec); // no unit overrides
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  07/2018
+//--------------------------------------------------------------------------------------
+// static
+bool KindOfQuantity::ValidatePresentationFormat(ECFormatCR parent, ECUnitCP persistenceUnit, Nullable<int32_t> precisionOverride, KindOfQuantity::UnitAndLabelPairs const* unitsAndLabels)
+    {
+    // Check for null persistence unit. Cannot add presentation units if there is no persistence unit
+    if (nullptr == persistenceUnit)
+        {
+        LOG.error("Missing a persistence unit. Cannot add presentation formats.");
+        return false;
+        }
+
+    if (parent.IsOverride())
+        {
+        LOG.error("KOQ cannot create an override using another override as a parent");
+        return false;
+        }
+
+    // Parent has no units and we don't provide any overrides
+    if (!parent.HasCompositeMajorUnit() && (nullptr == unitsAndLabels || unitsAndLabels->empty()))
+        {
+        LOG.error("KOQ cannot have a format without composite units and no unit overrides.");
+        return false;
+        }
+
+    // Parent has unit and verify they are compatible
+    if (parent.HasCompositeMajorUnit() && nullptr != persistenceUnit && !Units::Unit::AreCompatible(parent.GetCompositeMajorUnit(), persistenceUnit))
+        {
+        LOG.error("KOQ cannot have a format with a major unit that is incompatible with KOQ's persistence unit");
+        return false;
+        }
+
+    if (precisionOverride.IsValid())
+        {
+        if (Formatting::PresentationType::Fractional == parent.GetPresentationType())
+            {
+            Formatting::FractionalPrecision prec;
+            if (!Formatting::Utils::FractionalPrecisionByDenominator(prec, precisionOverride.Value()))
+                {
+                LOG.errorv("%d is not a valid fractional precision override value", precisionOverride.Value());
+                return false;
+                }
+            }
+        else
+            {
+            Formatting::DecimalPrecision prec;
+            if (!Formatting::Utils::GetDecimalPrecisionByInt(prec, precisionOverride.Value()))
+                {
+                LOG.errorv("%d is not a valid decimal precision override value", precisionOverride.Value());
+                return false;
+                }
+            }
+        }
+
+    if (nullptr == unitsAndLabels || unitsAndLabels->empty())
+        return true;
+
+    auto& overrides = *unitsAndLabels;
+    if(parent.HasComposite() && 0 < parent.GetCompositeSpec()->GetUnitCount())
+        {
+        auto composite = parent.GetCompositeSpec();
+        if (composite->GetUnitCount() != overrides.size())
+            {
+            LOG.error("Cannot override a different number of units than already exists on a format");
+            return false;
+            }
+
+        auto compUnits = composite->GetUnits();
+        for (int i = 0; i < overrides.size(); ++i)
+            {
+            if (!Units::Unit::AreEqual(overrides[i].first, compUnits[i]))
+                {
+                LOG.error("KOQ cannot change UOM in an override when one is already defined by the format");
+                return false;
+                }
+            }
+        }
+    else
+        {
+        bvector<Units::UnitCP> newUnits;
+        for (auto pair : overrides)
+            {
+            // Validate that unit is compatible with the KOQ.
+            if(nullptr == persistenceUnit || nullptr == pair.first || !Units::Unit::AreCompatible(persistenceUnit, pair.first))
+                {
+                LOG.errorv("All unit overrides must be compatible with each other and must exist");
+                return false;
+                }
+            newUnits.push_back(pair.first);
+            }
+
+        Formatting::CompositeValueSpec localComp;
+        bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(localComp, newUnits);
+
+        if (!compStatus) // CompStatus will be false if: too many units, null units or the spec has a problem
+            {
+            LOG.error("Failed to set composite spec");
+            if (localComp.IsProblem())
+                LOG.errorv("Composite spec has problem '%s'", localComp.GetProblemDescription().c_str());
+
+            return false;
+            }
+        }
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  07/2018
+//--------------------------------------------------------------------------------------
+// static
+bool KindOfQuantity::ValidatePresentationFormat(Utf8StringCR formatString, ECUnitCP persistenceUnit, ECSchemaCR formats, ECSchemaCR units)
+    {
+    ECFormatCP format = nullptr;
+    Nullable<int32_t> prec = nullptr;
+    UnitAndLabelPairs pairs;
+
+    // lookup units on this KoQs schema. All references must be already added.
+    const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+        {
+        return units.LookupUnit((alias + ":" + name).c_str());
+        };
+
+    // lookup units on this KoQs schema. All references must be already added.
+    const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+        {
+        return formats.LookupFormat((alias + ":" + name).c_str());
+        };
+
+    if (ECObjectsStatus::Success != TransformFormatString(format, prec, pairs, formatString, formatLookerUpper, unitLookerUpper))
+        return false;
+
+    return ValidatePresentationFormat(*format, persistenceUnit, prec, &pairs);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride, UnitAndLabelPairs const* unitsAndLabels, bool isDefault)
+    {
+    // All validation done here. No need to check error codes in this function
+    if (!ValidatePresentationFormat(parent, GetPersistenceUnit(), precisionOverride, unitsAndLabels))
+        return ECObjectsStatus::Error;
+
+    Utf8String out;
+    CreateOverrideString(out, parent, precisionOverride, unitsAndLabels);
+    NamedFormat nfp = NamedFormat(out, &parent);
+
+    if (precisionOverride.IsValid())
+        {
+        if (Formatting::PresentationType::Fractional == nfp.GetPresentationType())
+            {
+            Formatting::FractionalPrecision prec;
+            Formatting::Utils::FractionalPrecisionByDenominator(prec, precisionOverride.Value());
+            nfp.GetNumericSpecP()->SetPrecision(prec);
+            }
+        else
+            {
+            Formatting::DecimalPrecision prec;
+            Formatting::Utils::GetDecimalPrecisionByInt(prec, precisionOverride.Value());
+            nfp.GetNumericSpecP()->SetPrecision(prec);
+            }
+        }
+
+    // If there are no unit overrides
+    if (nullptr == unitsAndLabels || 0 == unitsAndLabels->size())
+        {
+        if (isDefault)
+            m_presentationFormats.insert(m_presentationFormats.begin(), nfp);
+        else
+            m_presentationFormats.push_back(nfp);
+        return ECObjectsStatus::Success;
+        }
+
+    auto& overrides = *unitsAndLabels;
+    bvector<Units::UnitCP> newUnits;
+    for (auto pair : overrides)
+        newUnits.push_back(pair.first);
+
+    Formatting::CompositeValueSpec localComp;
+    Formatting::CompositeValueSpec::CreateCompositeSpec(localComp, newUnits);
+    nfp.SetCompositeSpec(localComp);
+
+    if (!overrides.empty())
+        {
+        // If we override a numeric spec then set spacer to match UomSeparator. If we don't there will always be a space
+        // between the value and its unit label since the default spacer is a blank character.
+        if (!nfp.GetCompositeSpecP()->HasSpacer())
+            {
+            Formatting::NumericFormatSpecCP nsP = parent.GetNumericSpec();
+            if (nsP && nsP->GetUomSeparator())
+                nfp.GetCompositeSpecP()->SetSpacer(nsP->GetUomSeparator());
+            }
+        }
+
+    switch (overrides.size()) // Fallthroughs intentional to add all necessary labels
+        {
+        case 4:
+            if (overrides[3].second.IsValid())
+                nfp.GetCompositeSpecP()->SetSubLabel(overrides[3].second.Value());
+        case 3:
+            if (overrides[2].second.IsValid())
+                nfp.GetCompositeSpecP()->SetMinorLabel(overrides[2].second.Value());
+        case 2:
+            if (overrides[1].second.IsValid())
+                nfp.GetCompositeSpecP()->SetMiddleLabel(overrides[1].second.Value());
+        case 1:
+            if (overrides[0].second.IsValid())
+                nfp.GetCompositeSpecP()->SetMajorLabel(overrides[0].second.Value());
+        }
+
+    if (isDefault)
+        m_presentationFormats.insert(m_presentationFormats.begin(), nfp);
+    else
+        m_presentationFormats.push_back(nfp);
+
+    m_descriptorCacheValid = false;
+
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format)
+    {
+    if (format.HasCompositeMajorUnit() && !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), GetPersistenceUnit()))
+        {
+        LOG.errorv("KOQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    m_presentationFormats.emplace_back(format);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride,  UnitAndLabelPairs const* unitsAndLabels) const
+    {
+    if (parent.IsOverride())
+        {
+        LOG.errorv("KOQ '%s' cannot create an override using another override as a parent", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    out += parent.GetName();
+    
+    if (precisionOverride.IsValid())
+        {
+        out += "(";
+        out += std::to_string(precisionOverride.Value()).c_str();
+        out += ")";
+        }
+
+    if (nullptr != unitsAndLabels)
+        {
+        auto& input = *unitsAndLabels;
+        if (input.size() > 4)
+            {
+            LOG.errorv("KOQ '%s' cannot have more than 4 override units specified on a presentation format", GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        for(const auto& i : input)
+            { 
+            auto& unit = i.first;
+            if (nullptr == unit)
+                return ECObjectsStatus::Error;
+            out += "[";
+            out += unit->GetQualifiedName(GetSchema());
+
+            if (i.second.IsValid()) // We want to override a label
+                {
+                out += "|";
+                out += i.second.Value();
+                }
+
+            out += "]";
+            }
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Bill.Steinbock                  06/2017
+//---------------------------------------------------------------------------------------
+Json::Value KindOfQuantity::GetPresentationFormatsJson() const
+    {
+    Json::Value arrayObj(Json::arrayValue);
+
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
+    if (presentationUnits.size() > 0)
+        {
+        for (NamedFormatCR format : presentationUnits)
+            {
+            if (format.IsProblem())
+                continue;
+
+            arrayObj.append(format.GetName());
+            }
+        }
+    return arrayObj;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+bool KindOfQuantity::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema items
     if (standalone)
@@ -240,7 +683,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
-        outValue[ECJSON_SCHEMA_ITEM_NAME_ATTRIBUTE] = GetName();
+        outValue[NAME_ATTRIBUTE] = GetName();
         }
 
     outValue[ECJSON_SCHEMA_ITEM_TYPE] = KIND_OF_QUANTITY_ELEMENT;
@@ -251,33 +694,33 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
     // KindOfQuantity Properties
-    if (GetPersistenceUnit().HasProblem())
+    if (nullptr == GetPersistenceUnit())
         {
-        LOG.errorv("Failed to write schema because persistance UNIT for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), GetPersistenceUnit().GetProblemDescription().c_str());
-        return SchemaWriteStatus::FailedToCreateJson;
+        LOG.errorv("Failed to write schema because KindOfQuantity '%s' does not have a persistence unit ", GetName().c_str());
+        return false;
         }
 
-    outValue[PERSISTENCE_UNIT_ATTRIBUTE] = ECJsonUtilities::FormatUnitSetToUnitFormatJson(GetPersistenceUnit());
+    outValue[PERSISTENCE_UNIT_ATTRIBUTE] =  ECJsonUtilities::ECNameToJsonName(*GetPersistenceUnit());
 
     outValue[RELATIVE_ERROR] = GetRelativeError();
 
-    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (0 != presentationUnits.size())
         {
         Json::Value presentationUnitArr(Json::ValueType::arrayValue);
-        for (auto const& fus : presentationUnits)
+        for (auto const& format : presentationUnits)
             {
-            if (fus.HasProblem())
+            if (format.IsProblem())
                 {
-                LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), fus.GetProblemDescription().c_str());
-                return SchemaWriteStatus::FailedToCreateJson;
+                LOG.errorv("Failed to write schema because persistance format for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), format.GetProblemDescription().c_str());
+                return false;
                 }
-            presentationUnitArr.append(ECJsonUtilities::FormatUnitSetToUnitFormatJson(fus));
+            presentationUnitArr.append(SchemaParseUtils::GetJsonFormatString(format, GetSchema()));
             }
         outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
         }
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -293,456 +736,385 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
     READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
-    if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
-        {
-        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    bool ecSchemaXmlGreaterThen31 = GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::V3_1);
-
-    Formatting::FormatUnitSet persistenceFUS;
-    bool invalidUnit = false;
-    ECObjectsStatus status = ParseFUSDescriptor(persistenceFUS, invalidUnit, value.c_str(), *this, !ecSchemaXmlGreaterThen31);
-    if (ECObjectsStatus::Success != status)
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    SetPersistenceUnit(persistenceFUS);
-
     double relError;
     if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, RELATIVE_ERROR))
         {
         LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), RELATIVE_ERROR);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
+
     SetRelativeError(relError);
 
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
+    // Read Persistence Unit
+    Utf8String persUnit;
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(persUnit, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(persUnit.c_str()))
         {
-        bvector<Utf8String> presentationUnits;
-        BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
-        for(auto const& presValue : presentationUnits)
-            {
-            Formatting::FormatUnitSet presFUS;
-            bool invalidUnit = false;
-            if (!ecSchemaXmlGreaterThen31)
-                {
-                ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true);
-                if (ECObjectsStatus::Success != status || invalidUnit)
-                    {
-                    LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                        presValue.c_str(), GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
-                    }
-                }
-            else
-                {
-                Utf8String fusDesc;
-                if (ECObjectsStatus::Success != FormatStringToFUSDescriptor(fusDesc, *this, presValue))
-                    continue;
-
-                if (ECObjectsStatus::Success != ParseFUSDescriptor(presFUS, invalidUnit, fusDesc.c_str(), *this, false))
-                    {
-                    LOG.warningv("Failed to parse FUS '%s' created from format string '%s' on KoQ '%s'", fusDesc.c_str(), presValue.c_str(), GetFullName().c_str());
-                    continue;
-                    }
-                }
-            m_presentationFUS.push_back(presFUS);
-            }
+        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
         }
+
+    // Read Presentation Formats
+    bvector<Utf8String> presentationFormats;
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
+        BeStringUtilities::Split(value.c_str(), ";", presentationFormats);
+
+    // If version < 3.2. We have to upgrade our desriptors before we parse them.
+    if (GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_2))
+        {
+        // Add schema references. Always need units for the persistence unit.
+        SchemaKey key("Units", 1, 0, 0);
+        auto unitsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+        if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
+            { 
+            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old units.",
+                unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
+                {
+                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                return SchemaReadStatus::ReferencedSchemaNotFound;
+                }
+            }
+
+        key = SchemaKey("Formats", 1, 0, 0);
+        auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+        if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+            { 
+            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old formats.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
+                {
+                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                return SchemaReadStatus::ReferencedSchemaNotFound;
+                }
+            }
+
+        bvector<Utf8CP> fusDescriptors;
+        fusDescriptors.reserve(presentationFormats.size());
+        for (const auto& str : presentationFormats) // Load pointers to match api for FromFUSDescriptors
+            fusDescriptors.push_back(str.c_str());
+
+        if (ECObjectsStatus::Success != FromFUSDescriptors(persUnit.c_str(), fusDescriptors, *formatsSchema, *unitsSchema))
+            return SchemaReadStatus::InvalidECSchemaXml;
+
+        if (GetPresentationFormats().empty())
+            {
+            GetSchemaR().RemoveReferencedSchema(*formatsSchema);
+            }
+
+        return SchemaReadStatus::Success;
+        }
+
+    // lookup units on this KoQs schema. All references must be already added.
+    const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+        {
+        if (alias == GetSchema().GetAlias())
+            return GetSchema().LookupUnit(name.c_str());
+
+        return GetSchema().LookupUnit((alias + ":" + name).c_str());
+        };
+
+    // lookup units on this KoQs schema. All references must be already added.
+    const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
+        {
+        if (alias == GetSchema().GetAlias())
+            return GetSchema().LookupFormat(name.c_str());
+
+        return GetSchema().LookupFormat((alias + ":" + name).c_str());
+        };
+
+    ECUnitCP persUnitPointer = GetSchema().LookupUnit(persUnit.c_str());
+    if (nullptr == persUnitPointer)
+        return SchemaReadStatus::InvalidECSchemaXml;
+
+    SetPersistenceUnit(*persUnitPointer);
+
+    for(auto const& presValue : presentationFormats)
+        {
+        if (ECObjectsStatus::Success != AddPresentationFormatByString(presValue, formatLookerUpper, unitLookerUpper))
+            return SchemaReadStatus::InvalidECSchemaXml; // Logging in AddPresentationUnit
+        }
+
     return SchemaReadStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR formatName, Utf8CP descriptor)
+    {
+    Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
+    unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+    if (unitName.empty())
+        {
+        LOG.errorv("Failed to find unit mapping for unit with name '%s' in legacy unit mappings", unitName.c_str());
+        return ECObjectsStatus::InvalidUnitName;
+        }
+    Utf8CP mappedName = formatName.c_str();;
+    if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
+        {
+        mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
+        mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName((nullptr == mappedName) ? formatName.c_str() : mappedName);
+        if (nullptr == mappedName)
+            {
+            LOG.warningv("EC3.2 upgrade: Failed to find a mapping for the legacy name/alias '%s'. Dropping the format.", formatName.c_str());
+            formatName = ""; // Resetting this so there isn't a valid formatName in the return.
+            return ECObjectsStatus::InvalidFormat;
+            }
+        Utf8String alias;
+        Utf8String name;
+        SchemaParseUtils::ParseName(alias, name, mappedName);
+        formatName = ("f:" + name).c_str();
+        }
+
+    return ECObjectsStatus::Success;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strict)
+ECObjectsStatus KindOfQuantity::FromFUSDescriptors(Utf8CP persFUS, const bvector<Utf8CP>& presFuses, ECSchemaCR formatSchema, ECSchemaCR unitsSchema)
     {
-    Utf8String unitName;
-    Utf8String format;
-    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
-
-    Formatting::NamedFormatSpecCP nfs = nullptr;
-    if (Utf8String::IsNullOrEmpty(format.c_str()))
-        // Need to keep the default without a Unit for backwards compatibility.
-        nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultReal");
-    else
-        {
-        nfs = Formatting::StdFormatSet::FindFormatSpec(format.c_str());
-        if (nullptr == nfs)
-            {
-            if (strict)
-                {
-                LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid FUS, '%s'.",
-                    descriptor, koq.GetFullName().c_str(), format.c_str());
-                return ECObjectsStatus::Error;
-                }
-            else
-                {
-                // Assuming since there was previously a format that it should contain the Unit with it.
-                nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
-                LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
-                    descriptor, koq.GetFullName().c_str());
-                }
-            }
-        }
-    Utf8String name;
-    Utf8String unqualifiedName;
-    Utf8String alias;
-    if(unitName.Contains(":"))
-        {
-        bvector<Utf8String> split;
-        BeStringUtilities::Split(unitName.c_str(), ":", split);
-        if(split.size() > 1)
-            { 
-            unqualifiedName = split[1];
-            alias = split[0].EqualsI("u") ? "UNITS" : "";
-            }
-        }
-    // HACK we dont' have the units schema yet to resolve the alias but want to support looking up qualified ec names
-    // If the alias is u we just assume that it's for the Units schema.
-    if(!Units::UnitRegistry::Instance().TryGetNewNameFromECName((alias + ":" + unqualifiedName).c_str(), name))
-        name = unitName;
+    Utf8String persUnit;
+    bvector<Utf8String> formatStrings;
+    auto status = KindOfQuantity::UpdateFUSDescriptors(persUnit, formatStrings, persFUS, presFuses, formatSchema, unitsSchema);
     
-    Units::UnitCP unit;
-    unit = Units::UnitRegistry::Instance().LookupUnit(name.c_str());
-    if (nullptr == unit)
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    auto persUnitCP = GetSchema().LookupUnit(persUnit.c_str());
+    SetPersistenceUnit(*persUnitCP);
+    m_descriptorCacheValid = false;
+
+    // lookup units on this KoQs schema. All references must be already added.
+    const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
         {
-        if (strict)
-            {
-            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid Unit, '%s'.",
-                descriptor, koq.GetFullName().c_str(), unitName.c_str());
-            return ECObjectsStatus::Error;
-            }
+        if (alias == GetSchema().GetAlias())
+            return GetSchema().LookupUnit(name.c_str());
 
-        unit = Units::UnitRegistry::Instance().AddDummyUnit(unitName.c_str());
-        if (nullptr == unit)
-            return ECObjectsStatus::Error;
+        return GetSchema().LookupUnit((alias + ":" + name).c_str());
+        };
 
-        LOG.warningv("Adding dummy unit %s for FormatUnitSet '%s' on KindOfQuantity '%s'.",
-            unitName.c_str(), descriptor, koq.GetFullName().c_str());
-        hasInvalidUnit = true;
-        }
-    else if (!unit->IsValid())
+    // lookup units on this KoQs schema. All references must be already added.
+    const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name) 
         {
-        LOG.warningv("FormatUnitSet '%s' on KindOfQuantity '%s' has a dummy unit, %s.",
-            descriptor, koq.GetFullName().c_str(), unitName.c_str());
-        hasInvalidUnit = true;
+        if (alias == GetSchema().GetAlias())
+            return GetSchema().LookupFormat(name.c_str());
+
+        return GetSchema().LookupFormat((alias + ":" + name).c_str());
+        };
+
+    RemoveAllPresentationFormats();
+    for (const auto& pres : formatStrings)
+        {
+        if (ECObjectsStatus::Success != AddPresentationFormatByString(pres, formatLookerUpper, unitLookerUpper))
+            return ECObjectsStatus::Error;
         }
 
-    fus = Formatting::FormatUnitSet(nfs, unit);
-
-    if (fus.HasProblem())
-        LOG.warningv("FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-            descriptor, koq.GetFullName().c_str(), fus.GetProblemDescription().c_str());
+    // Cache old descriptors
+    m_descriptorCache.first = persFUS;
+    m_descriptorCache.second = {};
+    for (const auto& pres : presFuses)
+        {
+        m_descriptorCache.second.push_back(pres);
+        }
+    m_descriptorCacheValid = true;
 
     return ECObjectsStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Kyle.Abramowitz                  07/18
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus KindOfQuantity::FormatStringToFUSDescriptor(Utf8StringR fusDescriptor, KindOfQuantityCR koq, Utf8StringCR formatString)
+// Used for upgrading from ECXml 3.1.
+static const Utf8String oldDefaultFormatName = "DefaultReal";
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+// static
+ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema, ECSchemaCR unitsSchema)
     {
-    Utf8CP mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(formatString.c_str());
-                
-    Utf8String formatName;
-    Nullable<int32_t> prec;
-    bvector<Utf8String> unitNames;
-    bvector<Nullable<Utf8String>> unitLabels;
-    if ((SUCCESS != ParseFormatString(formatName, prec, unitNames, unitLabels, formatString)) || formatName.empty())
+    unitName.clear();
+    formatStrings.clear();
+    if (Utf8String::IsNullOrEmpty(persFus))
+        return ECObjectsStatus::NullPointerValue;
+
+    //Persistence
+    Utf8String persistenceUnit;
+    Utf8String persistenceFormat;
+    Utf8String alias;
+    Utf8String unqualifiedPers;
+    ECObjectsStatus status = ExtractUnitFormatAndMap(persistenceUnit, persistenceFormat, persFus);
+    if (ECObjectsStatus::Success != status && ECObjectsStatus::InvalidFormat != status)
+        return status;
+
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
+        return ECObjectsStatus::Error;
+    
+    auto persistenceUnitCP = unitsSchema.GetUnitCP(unqualifiedPers.c_str());
+    // Presentation
+    for (Utf8CP presFus : presFuses)
         {
-        LOG.warningv("Presentation Format String '%s' is invalid on KoQ '%s'", formatString.c_str(), koq.GetFullName().c_str());
+        Utf8String presentationUnit;
+        Utf8String presentationFormat;
+        status = ExtractUnitFormatAndMap(presentationUnit, presentationFormat, presFus);
+        if (ECObjectsStatus::Success != status)
+            {
+            if (ECObjectsStatus::InvalidFormat == status)
+                continue; // Dropping the presentation FUS
+            return status;
+            }
+
+        if (presentationUnit.empty())
+            {
+            LOG.errorv("Presentation unit was not defined in this descriptor '%s'", presFus);
+            return ECObjectsStatus::InvalidUnitName;
+            }
+
+        if (presentationFormat.empty())
+            presentationFormat = oldDefaultFormatName;
+
+        Utf8String unqualifiedPres;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPres, presentationUnit))
+            return ECObjectsStatus::Error;
+
+        Utf8String unqualifiedPresFormat;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPresFormat, presentationFormat))
+            return ECObjectsStatus::Error;
+
+        Utf8String formatString;
+        formatString
+            .append("f:")
+            .append(unqualifiedPresFormat);
+        bvector<Utf8String> split;
+        BeStringUtilities::Split(unqualifiedPresFormat.c_str(), "(", split);
+        Utf8String qualifiedPres = "u:" + unqualifiedPres;
+        auto format = formatSchema.GetFormatCP(split[0].c_str());
+        if (nullptr != format && !format->HasComposite() && !unqualifiedPresFormat.Contains("["))
+            {
+            formatString
+                .append("[")
+                .append(qualifiedPres)
+                .append("]");
+            }
+
+        if (!ValidatePresentationFormat(formatString, persistenceUnitCP, formatSchema, unitsSchema))
+            {
+            LOG.warningv("Dropping presentation FUS '%s' because it mapped to format string '%s' which is not valid", presFus, formatString.c_str());
+            continue;
+            }
+
+        formatStrings.push_back(formatString);
+        }
+
+    // If there are no presentation units, create on using the persistence fus. Use the default format if none is provided
+    if (formatStrings.size() == 0 && !persistenceFormat.empty())
+        {
+        Utf8String unqualifiedPersFormat;
+        if(ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPersFormat, persistenceFormat))
+            return ECObjectsStatus::Error;
+
+        Utf8String formatString;
+        formatString
+            .append("f:")
+            .append(unqualifiedPersFormat);
+        bvector<Utf8String> split;
+        BeStringUtilities::Split(unqualifiedPersFormat.c_str(), "(", split);
+        auto format = formatSchema.GetFormatCP(split[0].c_str());
+        if (nullptr != format && !format->HasComposite() && !unqualifiedPersFormat.Contains("["))
+            {
+            formatString
+                .append("[")
+                .append("u:")
+                .append(unqualifiedPers)
+                .append("]");
+            }
+
+        if (ValidatePresentationFormat(formatString, persistenceUnitCP, formatSchema, unitsSchema))
+            formatStrings.push_back(formatString);
+        else
+            LOG.warningv("Dropping presentation FUS '%s' because it mapped to format string '%s' which is not valid", persFus, formatString.c_str());
+        }
+
+    unitName = "u:" + unqualifiedPers;
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Joseph.Urbano                   09/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::FormatToFUSDescriptor(Utf8StringR outFUSDescriptor, NamedFormatCR format) const
+    {
+    outFUSDescriptor = "";
+
+    if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorUnit())
+        {
+        LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    ECUnitCP unit = (ECUnitCP)format.GetCompositeSpec()->GetMajorUnit();
+    auto ecName = Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+    if (nullptr == ecName)
+        {
+        LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    Utf8String presUnit = ecName;
+
+    SchemaKey key("Formats", 1, 0, 0);
+    if (!format.GetParentFormat()->GetSchema().GetSchemaKey().Matches(key, SchemaMatchType::Latest))
+        {
+        LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it is not a standard format", GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
+    BeAssert(tokens.size() > 0);
+    Utf8String split = tokens[0];
+    Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + split).c_str());
+    mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
+    if (nullptr == mapped)
+        {
+        LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetQualifiedFormatString(GetSchema()).c_str(), GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
-    if (Utf8String::IsNullOrEmpty(mappedName))
-        {
-        if (prec.IsValid())
-            {
-            Utf8String nameWithPrec;
-            nameWithPrec = formatName;
-            nameWithPrec
-                .append("(")
-                .append(std::to_string(prec.Value()).c_str())
-                .append(")");
-            Utf8String _alias;
-            Utf8String name;
-            ECClass::ParseClassName(_alias, name, nameWithPrec.c_str());     
-            mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
-            }
-        if (nullptr == mappedName)
-            {
-            Utf8String _alias;
-            Utf8String name;
-            ECClass::ParseClassName(_alias, name, formatName.c_str());
-            mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
-            if (Utf8String::IsNullOrEmpty(mappedName))
-                {
-                LOG.warningv("Presentation Format String '%s' has a format that could not be mapped on KoQ '%s'", formatString.c_str(), koq.GetFullName().c_str());
-                mappedName = "DefaultRealU";
-                }
-            }
-        }
-    Utf8String unitName = nullptr;
-    if (!unitNames.empty())
-        unitName = unitNames.front().c_str();
-    else
-        {
-        auto format = Formatting::StdFormatSet::FindFormatSpec(mappedName);
-        if (format != nullptr && format->HasComposite())
-            {
-            auto major = format->GetCompositeMajorUnit();
-            if (major != nullptr)
-                unitName = Utf8String("u:") + major->GetName();
-            }
-        }
-
-    Utf8String presFusString;
-    if (!Utf8String::IsNullOrEmpty(unitName.c_str()))
-        {
-        Utf8String newName;
-        Utf8String alias;
-        Utf8String className;
-        ECClass::ParseClassName(alias, className, unitName);
-
-        if (alias.Equals("u"))
-            alias = "UNITS";
-
-        if(!Units::UnitRegistry::Instance().TryGetNewNameFromECName((alias + ":" + className).c_str(), newName))
-            {
-            LOG.warningv("Failed to map unit '%s' from format string '%s' to a known unit on KoQ '%s'", unitName.c_str(), formatString.c_str(), koq.GetFullName().c_str());
-            newName = koq.GetPersistenceUnit().GetUnitName();
-            }
-        presFusString.append(newName);
-        }
-    else
-        presFusString.append(koq.GetPersistenceUnit().GetUnitName());
-
-    presFusString
-        .append("(")
-        .append(mappedName)
-        .append(")");
-    fusDescriptor = presFusString;
+    Utf8String presentationUnitString;
+    outFUSDescriptor += presUnit;
+    outFUSDescriptor += "(";
+    outFUSDescriptor += mapped;
+    outFUSDescriptor += ")";
+    
     return ECObjectsStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Kyle.Abramowitz                  04/18
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-BentleyStatus KindOfQuantity::ParseFormatString(Utf8StringR formatName, Nullable<int32_t>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Joseph.Urbano                   09/2018
+//--------------------------------------------------------------------------------------
+void KindOfQuantity::ValidateDescriptorCache() const
     {
-    static size_t const precisionOverrideIndx = 0;
-    static std::regex const rgx(R"REGEX(([\w,:]+)(\(([^\)]+)\))?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?)REGEX", std::regex::optimize);
-    std::cmatch match;
+    if (m_descriptorCacheValid)
+        return;
 
-    
-    if (!std::regex_match(formatString.c_str(), match, rgx))
-        return BentleyStatus::ERROR;
+    m_descriptorCache.first.clear();
+    m_descriptorCache.second.clear();
 
-    size_t numOfRegexes = match.size();
-    if (0 == numOfRegexes)
-        return BentleyStatus::ERROR;
-
-    // Handle format first to fail fast.
-    if (!match[1].matched)
+    ECUnitCP unit = GetPersistenceUnit();
+    if(nullptr == unit)
         {
-        LOG.errorv("failed to map a format name to a Format");
-        return BentleyStatus::ERROR;
-        }
-    // Get format name. Should always be the first match
-    formatName = match[1].str().c_str();
+        LOG.errorv("Persistence unit not found on KindOfQuantity '%s' while validating the FUS descriptor cache", GetFullName().c_str());
+        return;
+        } 
 
-    
-    if (match[2].matched && match[3].matched)
+    auto newName = Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+    if (nullptr != newName)
+        m_descriptorCache.first = newName;
+
+    for (NamedFormatCR format : GetPresentationFormats())
         {
-        Utf8String const overrideStr(match[2].str().c_str());
-        // BeStringUtilities::Split ignores empty tokens. Since overrides are
-        // position dependent, we actually need to count tokens even if they are
-        // the empty string. This function does just that using ',' as a separator.
-        bvector<Utf8String> overrides = [](Utf8StringCR str) -> bvector<Utf8String>
-            {
-            bvector<Utf8String> tokens;
-            size_t prevPos = 1; // Initial position is the character directly after the opening '(' in the override string.
-            size_t currPos;
-            while (str.npos != (currPos = str.find_first_of(",)", prevPos)))
-                {
-                tokens.push_back(Utf8String(str.substr(prevPos, currPos - prevPos).c_str()).Trim());
-                prevPos = currPos + 1;
-                }
-            return tokens;
-            }(overrideStr);
-
-        // It is considered an error to pass in a format string with empty
-        // override brackets. If no overrides are needed, the user should instead
-        // leave the brackets off altogether. As an example the incorrect format
-        // string "SomeFormat<>" should instead be written as "SomeFormat".
-        // Additionally, if a format would be specified using an override string
-        // With no items actually overridden such as "SomeFormat<,,,,>" the string
-        // is also erroneous.
-        if (!overrideStr.empty()
-            && overrides.end() == std::find_if_not(overrides.begin(), overrides.end(),
-                [](Utf8StringCR ovrstr) -> bool
-            {
-            return std::all_of(ovrstr.begin(), ovrstr.end(), ::isspace);
-            }))
-            {
-            LOG.errorv("override list must contain at least one override");
-            return BentleyStatus::ERROR;
-            }
-
-        // The first override parameter overrides the default precision for the format.
-        if (overrides.size() >= precisionOverrideIndx + 1) // Bail if the user didn't include this override.
-            {
-            if (!overrides[precisionOverrideIndx].empty())
-                {
-                uint64_t localPrecision;
-                BentleyStatus status = BeStringUtilities::ParseUInt64(localPrecision, overrides[precisionOverrideIndx].c_str());
-                if (BentleyStatus::SUCCESS != status)
-                    {
-                    LOG.errorv("Invalid FormatString: Failed to parse integer for precision override of FormatString, %s", formatString.c_str());
-                    return status;
-                    }
-                precision = static_cast<int32_t>(localPrecision);
-                }
-            }
-        }
-
-    int i = 4;
-    while (i < match.size())
-        {
-        if (!match[i].matched)
-            break;
-        // Unit override: required;
-        if (!match[i+1].matched)
-            return ERROR;
-        unitNames.push_back(match[i+1].str().c_str());
-        // Label override; optional
-        if (match[i+2].matched) // matches a bar
-            {
-            labels.push_back(Nullable<Utf8String>(match[i+3].str().c_str()));
-            }
-        else // no label. ok
-            labels.push_back(nullptr);
-        i+=4;
-        }
-
-    return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) const
-    { 
-    if (m_presentationFUS.size() > 0)
-        {
-        return (indx < m_presentationFUS.size())? &m_presentationFUS[indx] :  m_presentationFUS.begin();
-        }
-    else
-        return &m_persistenceFUS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  12/2017
-//---------------------------------------------------------------------------------------
-Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(Utf8CP inFusId, bool useAlias) const
-    {
-    if (!inFusId)
-        return nullptr;
-    Utf8String fusId(inFusId);
-
-    for (Formatting::FormatUnitSetCR fus : m_presentationFUS)
-        {
-        if (fus.HasProblem())
+        Utf8String fusDescriptor;
+        if(ECObjectsStatus::Success != FormatToFUSDescriptor(fusDescriptor, format))
             continue;
-
-        if (fusId.Equals(fus.ToText(useAlias)))
-            return &fus;
+        m_descriptorCache.second.push_back(fusDescriptor);
         }
 
-    if (fusId.Equals(m_persistenceFUS.ToText(useAlias)))
-        return &m_persistenceFUS;
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String KindOfQuantity::GetPresentationFUSDescriptor(size_t indx, bool useAlias) const
-    {
-    Formatting::FormatUnitSetCP fusP;
-    if (m_presentationFUS.size() > 0)
-        {
-        fusP = (indx < m_presentationFUS.size()) ? &m_presentationFUS[indx] : m_presentationFUS.begin();
-        }
-    else
-        fusP = &m_persistenceFUS;
-    return fusP->ToText(useAlias);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value KindOfQuantity::PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias) const
-    {
-    Formatting::FormatUnitSetCP fusCP = GetPresentationFUS(indx);
-    Json::Value jval = fusCP->FormatQuantityJson(qty, useAlias);
-    return jval;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Bill.Steinbock                  06/2017
-//---------------------------------------------------------------------------------------
-Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
-    {
-    Json::Value arrayObj(Json::arrayValue);
-
-    bvector<Formatting::FormatUnitSet> const& presentationUnits = GetPresentationUnitList();
-    if (presentationUnits.size() > 0)
-        {
-        for (Formatting::FormatUnitSetCR fus : presentationUnits)
-            {
-            if (fus.HasProblem())
-                continue;
-
-            arrayObj.append(fus.ToText(useAlias));
-            }
-        }
-    return arrayObj;
-    }
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value KindOfQuantity::ToJson(bool useAlias) const
-    {
-    Json::Value jval;
-    jval[Formatting::json_KOQName()] = m_fullName.c_str();
-    jval[Formatting::json_schemaName()] = m_schema.GetName().c_str();
-    jval[Formatting::json_persistFUS()] = m_persistenceFUS.ToJson(useAlias);
-    jval[Formatting::json_relativeErr()] = GetPresentationsJson(useAlias);
-    return jval;
-    }
-
-BEU::T_UnitSynonymVector* KindOfQuantity::GetSynonymVector() const
-    {
-    BEU::PhenomenonCP php = GetPhenomenon();
-    return (nullptr == php) ? nullptr : php->GetSynonymVector();
-    }
-
-size_t KindOfQuantity::GetSynonymCount() const
-    {
-    BEU::PhenomenonCP php = GetPhenomenon();
-    return (nullptr == php) ? 0 : php->GetSynonymCount();
-    }
-
-BEU::PhenomenonCP KindOfQuantity::GetPhenomenon() const
-    {
-    Formatting::FormatUnitSet fus = GetPersistenceUnit();
-    BEU::UnitCP un = fus.GetUnit();
-    BEU::PhenomenonCP php = (nullptr == un)? nullptr : un->GetPhenomenon();
-    return php;
+    m_descriptorCacheValid = true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

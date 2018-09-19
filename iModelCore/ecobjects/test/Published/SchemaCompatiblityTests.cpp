@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct SchemaCompatibilityTests : ECTestFixture
 {
     Utf8CP templateSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%s">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%s">
             %s
         </ECSchema>
     )xml";

@@ -55,7 +55,7 @@
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
     <ClCompile Include="ECClass.cpp" />
-    <ClCompile Include="ECcontext.cpp" />
+    <ClCompile Include="ECContext.cpp" />
     <ClCompile Include="ECCustomAttribute.cpp" />
     <ClCompile Include="ECDBuffer.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
@@ -68,7 +68,9 @@
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
     <ClCompile Include="ECSchemaDownConverter.cpp" />
+    <ClCompile Include="ECSchemaUnitsContext.cpp" />
     <ClCompile Include="ECSchemaValidator.cpp" />
+    <ClCompile Include="Format.cpp" />
     <ClCompile Include="KindOfQuantity.cpp" />
     <ClCompile Include="ECSchemaConverter.cpp" />
     <ClCompile Include="ECType.cpp" />
@@ -76,6 +78,7 @@
     <ClCompile Include="ExpressionContext.cpp" />
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
+    <ClCompile Include="Phenomenon.cpp" />
     <ClCompile Include="PresentationMetadataHelper.cpp" />
     <ClCompile Include="PropertyCategory.cpp" />
     <ClCompile Include="SchemaComparer.cpp" />
@@ -89,6 +92,8 @@
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
     <ClCompile Include="SystemSymbolProvider.cpp" />
+    <ClCompile Include="ECUnit.cpp" />
+    <ClCompile Include="UnitSystem.cpp" />
     <ClCompile Include="Units\ECUnitsClassLocater.cpp" />
     <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>
@@ -104,6 +109,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECJsonUtilities.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECName.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
@@ -112,6 +118,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaDownConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECUnit.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaComparer.h" />
@@ -121,6 +128,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SystemSymbolProvider.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\VirtualCollectionIterator.h" />
     <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h" />
     <ClInclude Include="..\PublicApi\ECUnits\Units.h" />
     <ClInclude Include="DateTimeInfoAccessor.h" />
@@ -134,7 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\mki\ECObjects.mki" />
-    <None Include="ecobjects.mke" />
+    <None Include="ECObjects.mke" />
     <None Include="ECObjectsCompileOpts.mki" />
   </ItemGroup>
   <ItemGroup>

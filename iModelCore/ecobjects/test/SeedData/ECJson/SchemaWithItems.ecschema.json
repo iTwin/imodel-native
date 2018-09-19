@@ -1,5 +1,5 @@
 ﻿{
-  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema",
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/ecschema",
   "name": "ExampleSchema",
   "version": "03.01.00",
   "alias": "ex",
@@ -8,6 +8,14 @@
   "references": [
     {
       "name" : "CoreCustomAttributes",
+      "version" : "01.00.00"
+    },
+    {
+      "name" : "Formats",
+      "version" : "01.00.00"
+    },
+    {
+      "name" : "Units",
       "version" : "01.00.00"
     },
     {
@@ -102,25 +110,33 @@
     },
     "ExampleKoQ": {
       "schemaItemType": "KindOfQuantity",
-      "persistenceUnit": {
-        "unit": "MM",
-        "format": "DefaultReal"
-      },
+      "persistenceUnit": "ExampleSchema.ExampleUnit",
       "relativeError": 3.0,
       "presentationUnits": [
-        {
-          "unit": "IN",
-          "format": "DefaultReal"
-        },
-        {
-          "unit": "MM",
-          "format": "DefaultReal"
-        },
-        {
-          "unit": "CM",
-          "format": "DefaultReal"
-        }
+        "Formats.DefaultRealU[ExampleSchema.ExampleUnit|example]"
       ]
+    },
+    "ExamplePhenomenon" : {
+      "schemaItemType" : "Phenomenon",
+      "label" : "ExamplePhenomenonLabel",
+      "description" : "ExamplePhenomenonDescription",
+      "definition" : "LENGTH"
+    },
+    "ExampleUnitSystem" : {
+      "schemaItemType" : "UnitSystem",
+      "label" : "ExampleUnitSystemLabel",
+      "description" : "ExampleUnitSystemDescription"
+    },
+    "ExampleUnit" : {
+      "schemaItemType" : "Unit",
+      "label" : "ExampleUnitLabel",
+      "description" : "ExampleUnitDescription",
+      "definition" : "[MILLI]M",
+      "denominator" : 1.0,
+      "numerator" : 10.0,
+      "offset" : 1.0,
+      "phenomenon" : "ExampleSchema.ExamplePhenomenon",
+      "unitSystem" : "ExampleSchema.ExampleUnitSystem"
     },
     "ExampleEnumeration": {
       "schemaItemType": "Enumeration",
@@ -129,14 +145,17 @@
       "enumerators": [
         {
           "value": 1,
+          "name": "EnumeratorA",
           "label": "None"
         },
         {
            "value": 2,
+           "name": "EnumeratorB",
            "label": "SomeVal"
         },
         {
           "value": 3,
+          "name": "EnumeratorC",
           "label": "AnotherVal"
         }
       ]

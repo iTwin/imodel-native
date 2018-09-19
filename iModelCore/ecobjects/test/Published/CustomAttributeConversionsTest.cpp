@@ -20,14 +20,13 @@ struct PropertyPriorityCustomAttributeConversionTest : ECTestFixture
     {
     ECSchemaPtr m_becaSchema;
 
-    virtual void SetUp() override
+    void SetUp() override
         {
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        ECTestFixture::SetUp();
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
         SchemaKey key("EditorCustomAttributes", 1, 3);
         m_becaSchema = ECSchema::LocateSchema(key, *schemaContext);
         ASSERT_TRUE(m_becaSchema.IsValid());
-
-        ECTestFixture::SetUp();
         }
 
     ECClassCP GetPropertyPriorityClass() const
@@ -56,9 +55,11 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
 
     Utf8String GetDateTimeInfoValue(IECInstancePtr instancePtr, Utf8CP name);
 
-    virtual void SetUp() override
+    void SetUp() override
         {
-        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        ECTestFixture::SetUp();
+
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
         SchemaKey key("Bentley_Standard_CustomAttributes", 1, 6);
         m_bscaSchema = ECSchema::LocateSchema(key, *schemaContext);
@@ -67,8 +68,6 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
         SchemaKey coreCAKey("CoreCustomAttributes", 1, 0, 0);
         m_coreCASchema = ECSchema::LocateSchema(coreCAKey, *schemaContext);
         ASSERT_TRUE(m_coreCASchema.IsValid());
-
-        ECTestFixture::SetUp();
         }
     };
 
@@ -77,11 +76,17 @@ struct StandardCustomAttributeConversionTests : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct CustomAttributeRemovalTest : ECTestFixture
     {
-    ECSchemaReadContextPtr   m_readContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr m_readContext;
     Utf8String m_customAttributeName;
     Utf8String m_customAttributeSchemaName;
     ECSchemaPtr m_schema;
     ECSchemaPtr m_refSchema;
+
+    void SetUp() override
+        {
+        ECTestFixture::SetUp();
+        m_readContext = ECSchemaReadContext::CreateContext();
+        }
 
     CustomAttributeRemovalTest(Utf8String schemaName, Utf8String customAttributeName)
         :m_customAttributeName(customAttributeName), m_customAttributeSchemaName(schemaName){}
@@ -131,7 +136,13 @@ struct CustomAttributeRemovalTest : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
     {
-    ECSchemaReadContextPtr   m_validationReadContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr   m_validationReadContext;
+
+    void SetUp() override
+        {
+        CustomAttributeRemovalTest::SetUp();
+        m_validationReadContext = ECSchemaReadContext::CreateContext();
+        }
 
     StandardValueToEnumConversionTest()
         :CustomAttributeRemovalTest("EditorCustomAttributes", "StandardValues") {}
@@ -149,7 +160,7 @@ struct StandardValueToEnumConversionTest : CustomAttributeRemovalTest
     void ValidateSchema(ECSchemaR schema, bool useFreshReadContext = true)
         {
         Utf8String out;
-        EXPECT_EQ(SchemaWriteStatus::Success, schema.WriteToXmlString(out, ECVersion::V3_1));
+        EXPECT_EQ(SchemaWriteStatus::Success, schema.WriteToXmlString(out, ECVersion::Latest));
 
         ECSchemaPtr schemaCopy;
         if (useFreshReadContext)
@@ -369,7 +380,7 @@ TEST_F(StandardValueToEnumConversionTest, StandardValuesTest)
         {
         int i = enumerator->GetInteger();
         Utf8String displayLabel = enumerator->GetDisplayLabel();
-        EXPECT_EQ(displayLabel, sdValues[i]) << "Enumrator displaylabel doesnot match StandardValue's Display String";
+        EXPECT_EQ(displayLabel, sdValues[i]) << "Enumerator displaylabel does not match StandardValue's Display String";
         }
     }
 
@@ -440,7 +451,6 @@ TEST_F(StandardValueToEnumConversionTest, StrictTestSimple)
     ASSERT_NE(nullptr, ecEnum = m_schema->GetEnumerationCP("Name_Title3")) << "Enumeration Name_Title3 should have been created";
     EXPECT_EQ(1, ecEnum->GetEnumeratorCount());
     EXPECT_EQ(true, ecEnum->GetIsStrict()) << "Name_Title3 has not set MustBeFromList. Default is true so GetIsStrict() should return true";
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -3337,7 +3347,8 @@ void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Ut
     context->AddSchemaPath(ecdbSchemaDir);
 
     CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
-    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter(*context);
+    schemaConverter->AddSchemaReadContext(*context);
+    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter();
     schemaConverter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConverter);
 
     schemaConverter->Convert(*schema); // Converter doesn't return an error when it hits a mapping strategy it doesn't understand

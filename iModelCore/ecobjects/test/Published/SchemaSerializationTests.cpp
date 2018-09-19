@@ -99,11 +99,11 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     enumeration->SetDisplayLabel("This is a display label.");
     enumeration->SetDescription("This is a description.");
     ECEnumeratorP enumerator;
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 1));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator1", 1));
     enumerator->SetDisplayLabel("First");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 2));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator2", 2));
     enumerator->SetDisplayLabel("Second");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator3", 3));
     enumerator->SetDisplayLabel("Third");
 
     PrimitiveECPropertyP prop;
@@ -122,7 +122,7 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     SchemaWriteStatus status = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base.xml").c_str());
     EXPECT_EQ(SchemaWriteStatus::Success, status);
 
-    status = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), ECVersion::V3_1);
+    status = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"base_ec3.xml").c_str(), ECVersion::V3_2);
     EXPECT_EQ(SchemaWriteStatus::Success, status);
 
     WString ecSchemaXmlString;
@@ -153,6 +153,8 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     schema->SetDescription("Comprehensive Schema to demonstrate use of all ECSchema concepts.");
     schema->SetDisplayLabel("Comprehensive Schema");
     schema->AddReferencedSchema(*standardCASchema);
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEntityClassP baseEntityClass;
     ECEntityClassP entityClass;
@@ -241,11 +243,11 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     enumeration->SetDisplayLabel("This is a display label.");
     enumeration->SetDescription("This is a description.");
     ECEnumeratorP enumerator;
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 1));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator1", 1));
     enumerator->SetDisplayLabel("First");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 2));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator2", 2));
     enumerator->SetDisplayLabel("Second");
-    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, 3));
+    EXPECT_EQ(ECObjectsStatus::Success, enumeration->CreateEnumerator(enumerator, "Enumerator3", 3));
     enumerator->SetDisplayLabel("Third");
 
     PrimitiveECPropertyP prop;
@@ -269,11 +271,11 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("Kind of a Description here");
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationUnit("FT");
-    kindOfQuantity->AddPresentationUnit("IN");
-    kindOfQuantity->AddPresentationUnit("MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     WString fullSchemaName;
     fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
@@ -283,7 +285,7 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     legacyFullSchemaName.AssignUtf8(schema->GetLegacyFullSchemaName().c_str());
     legacyFullSchemaName.append(L".ecschema.xml");
 
-    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), ECVersion::V3_1);
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(fullSchemaName.c_str()).c_str(), ECVersion::V3_2);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
 
     SchemaWriteStatus status3 = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(legacyFullSchemaName.c_str()).c_str(), ECVersion::V2_0);
@@ -303,6 +305,8 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
     schema->SetDescription("Schema to test Kind of Quantity Inheritance serialization.");
     schema->SetDisplayLabel("KOQ Inheritance Test Schema");
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEntityClassP parentEntityClass;
     ECEntityClassP derivedEntityClass1;
@@ -314,20 +318,20 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("Kind of a Description here");
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationUnit("FT");
-    kindOfQuantity->AddPresentationUnit("IN");
-    kindOfQuantity->AddPresentationUnit("MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity2, "OverrideKindOfQuantity"));
     kindOfQuantity2->SetDescription("Kind of a Description here");
     kindOfQuantity2->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity2->SetPersistenceUnit("CM");
+    kindOfQuantity2->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity2->SetRelativeError(10e-4);
-    kindOfQuantity2->SetDefaultPresentationUnit("FT");
-    kindOfQuantity2->AddPresentationUnit("IN");
-    kindOfQuantity2->AddPresentationUnit("MILLIINCH");
+    kindOfQuantity2->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
+    kindOfQuantity2->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
+    kindOfQuantity2->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     schema->CreateEntityClass(parentEntityClass, "ParentEntity");
     parentEntityClass->SetClassModifier(ECClassModifier::Abstract);
@@ -547,6 +551,52 @@ TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributesSerializedInOrder)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Caleb.Shafer                            08/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributeVersionAsTwoPartWhenEC2)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "testSchema", "ts", 5, 1, 0);
+
+    ECCustomAttributeClassP caClass;
+    schema->CreateCustomAttributeClass(caClass, "TestCA");
+
+    StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
+
+    // Schema level
+    auto schemaCAInstance = enabler->CreateInstance();
+    EC_EXPECT_SUCCESS(schema->SetCustomAttribute(*schemaCAInstance));
+
+    // Class level
+    auto relCAInstance = enabler->CreateInstance();
+    ECRelationshipClassP relClass;
+    schema->CreateRelationshipClass(relClass, "TestClass");
+
+    EC_EXPECT_SUCCESS(relClass->SetCustomAttribute(*relCAInstance));
+
+    // Property level
+    auto propCAInstance = enabler->CreateInstance();
+    PrimitiveECPropertyP prop;
+    relClass->CreatePrimitiveProperty(prop, "TestProp");
+
+    EC_EXPECT_SUCCESS(prop->SetCustomAttribute(*propCAInstance));
+
+    // Relationship constraint level
+    auto constraintCAInstance = enabler->CreateInstance();
+    EC_EXPECT_SUCCESS(relClass->GetSource().SetCustomAttribute(*constraintCAInstance));
+
+    Utf8String schemaXml;
+    schema->WriteToEC2XmlString(schemaXml, schema.get());
+
+    int numOfMatches = 0;
+    size_t offset = 0;
+    while((offset = schemaXml.find("xmlns=\"testSchema.05.00\"", offset+1)) != Utf8String::npos)
+        numOfMatches += 1;
+
+    EXPECT_EQ(numOfMatches, 4);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
@@ -554,7 +604,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToJsonValue(schemaJson));
+    EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithNoItems.ecschema.json").c_str());
@@ -570,6 +620,8 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
 TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     {
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     // Entity Class / Mixin Classes
     ECEntityClassP baseEntityClass;
@@ -628,13 +680,20 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     customAttrClass->SetClassModifier(ECClassModifier::Sealed);
     customAttrClass->SetContainerType(ECN::CustomAttributeContainerType::Schema | ECN::CustomAttributeContainerType::AnyProperty);
 
+    UnitSystemP unitSystem;
+    schema->CreateUnitSystem(unitSystem, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
+    
+    PhenomenonP phenom;
+    schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH", "ExamplePhenomenonLabel", "ExamplePhenomenonDescription");
+
+    ECUnitP unit;
+    schema->CreateUnit(unit, "ExampleUnit", "[MILLI]M", *phenom, *unitSystem, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription");
+
     // Kind of Quantity
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
-    koq->SetPersistenceUnit("MM");
-    koq->SetDefaultPresentationUnit("IN");
-    koq->AddPresentationUnit("MM");
-    koq->AddPresentationUnit("CM");
+    koq->SetPersistenceUnit(*unit);
+    koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, unit, "example");
     koq->SetRelativeError(3);
 
     // Enumeration
@@ -642,13 +701,13 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     schema->CreateEnumeration(enumeration, "ExampleEnumeration", PrimitiveType::PRIMITIVETYPE_Integer);
     enumeration->SetIsStrict(true);
     ECEnumeratorP enumeratorA;
-    enumeration->CreateEnumerator(enumeratorA, 1);
+    enumeration->CreateEnumerator(enumeratorA, "EnumeratorA", 1);
     enumeratorA->SetDisplayLabel("None");
     ECEnumeratorP enumeratorB;
-    enumeration->CreateEnumerator(enumeratorB, 2);
+    enumeration->CreateEnumerator(enumeratorB, "EnumeratorB", 2);
     enumeratorB->SetDisplayLabel("SomeVal");
     ECEnumeratorP enumeratorC;
-    enumeration->CreateEnumerator(enumeratorC, 3);
+    enumeration->CreateEnumerator(enumeratorC, "EnumeratorC", 3);
     enumeratorC->SetDisplayLabel("AnotherVal");
 
     // Property Category
@@ -658,7 +717,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
 
     // Test the schema
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToJsonValue(schemaJson));
+    EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithItems.ecschema.json"));
@@ -666,6 +725,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

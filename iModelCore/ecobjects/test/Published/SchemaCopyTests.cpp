@@ -54,12 +54,12 @@ struct SchemaCopyTest : CopyTestFixture
 //---------------+---------------+---------------+---------------+---------------+-------
 void SchemaCopyTest::SetUp()
     {
+    CopyTestFixture::SetUp();
     bvector<WString> searchPaths;
     searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
     m_schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     m_schemaContext = ECSchemaReadContext::CreateContext();
     m_schemaContext->AddSchemaLocater(*m_schemaLocater);
-    CopyTestFixture::SetUp();
     }
 
 //---------------------------------------------------------------------------------------
@@ -104,6 +104,26 @@ TEST_F(SchemaCopyTest, Schema_Success)
     EXPECT_EQ(5, m_targetSchema->GetVersionMinor());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Kyle.Abramowitz    02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopiedSchemaShouldAlwaysHaveOriginalXmlVersionSetToLatest)
+    {
+    uint32_t latestMajor;
+    uint32_t latestMinor;
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::Latest));
+    CopySchema();
+    ECSchema::ParseECVersion(latestMajor, latestMinor, ECVersion::V3_1);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_sourceSchema, "TestSchema", "ts", 1, 0, 0, ECVersion::V2_0));
+    CopySchema();
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMajor(), latestMajor);
+    EXPECT_EQ(m_targetSchema->GetOriginalECXmlVersionMinor(), latestMinor);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -127,11 +147,13 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
 
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetDisplayLabel("Test KoQ");
     koq->SetDescription("Test Description");
-    koq->SetPersistenceUnit("M");
-    koq->AddPresentationUnit("CM");
-    koq->AddPresentationUnit("MM");
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     koq->SetRelativeError(10e-3);
 
     CopySchema();
@@ -142,10 +164,10 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     ASSERT_TRUE(nullptr != targetKoq);
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
-    EXPECT_STREQ("CM", targetKoq->GetDefaultPresentationUnit().GetUnitName().c_str());
-    EXPECT_EQ(2, targetKoq->GetPresentationUnitList().size());
-    EXPECT_STREQ("MM", targetKoq->GetPresentationUnitList().at(1).GetUnitName().c_str());
-    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName());
+    EXPECT_STREQ("AmerFI", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_EQ(2, targetKoq->GetPresentationFormats().size());
+    EXPECT_STREQ("DefaultRealU[u:M]", targetKoq->GetPresentationFormats().at(1).GetName().c_str());
+    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 
@@ -158,9 +180,10 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
 
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     koq->SetDisplayLabel("Test KoQ");
     koq->SetDescription("Test Description");
-    koq->SetPersistenceUnit("M");
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     koq->SetRelativeError(10e-3);
 
     CopySchema();
@@ -171,8 +194,81 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
     ASSERT_TRUE(nullptr != targetKoq);
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
-    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit().GetUnit()->GetName());
-    EXPECT_FALSE(targetKoq->HasPresentationUnits());
+    EXPECT_STREQ("M", targetKoq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_FALSE(targetKoq->HasPresentationFormats());
+    EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestKindOfQuantity_PersistanceUnitDefinedInSchema)
+    {
+    CreateTestSchema();
+
+    KindOfQuantityP koq;
+    ECUnitP unit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    koq->SetDisplayLabel("Test KoQ");
+    koq->SetDescription("Test Description");
+    koq->SetPersistenceUnit(*m_sourceSchema->GetUnitCP("SMOOT"));
+    koq->SetRelativeError(10e-3);
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetKindOfQuantityCount());
+
+    KindOfQuantityCP targetKoq = m_targetSchema->GetKindOfQuantityCP("TestKoQ");
+    ASSERT_TRUE(nullptr != targetKoq);
+    EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetKoq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_FALSE(targetKoq->HasPresentationFormats());
+    EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestKindOfQuantity_PresentationUnitDefinedInSchema)
+    {
+    CreateTestSchema();
+
+    KindOfQuantityP koq;
+    ECUnitP unit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    ECFormatP format;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT_SQUARED", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateFormat(format, "SMOOT_FORMAT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    koq->SetDisplayLabel("Test KoQ");
+    koq->SetDescription("Test Description");
+    koq->SetPersistenceUnit(*m_sourceSchema->GetUnitCP("SMOOT"));
+    koq->SetDefaultPresentationFormat(*format, nullptr, unit);
+    koq->SetRelativeError(10e-3);
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetKindOfQuantityCount());
+
+    KindOfQuantityCP targetKoq = m_targetSchema->GetKindOfQuantityCP("TestKoQ");
+    ECFormatCP targetFormat = m_targetSchema->GetFormatCP("SMOOT_FORMAT");
+    ASSERT_TRUE(nullptr != targetKoq);
+    ASSERT_TRUE(nullptr != targetFormat);
+    EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetKoq->GetPersistenceUnit()->GetName().c_str());
+    EXPECT_STREQ("SMOOT_FORMAT[SMOOT_SQUARED]", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_TRUE(targetKoq->HasPresentationFormats());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 
@@ -192,7 +288,7 @@ TEST_F(SchemaCopyTest, CopySchemaWithReferencesCopiedThroughBaseClassOrRelations
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer));
     ASSERT_TRUE(enumeration != nullptr);
     enumeration->SetIsStrict(false);
-    enumeration->CreateEnumerator(enumeratorA, 42);
+    enumeration->CreateEnumerator(enumeratorA, "enumeratorA", 42);
 
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateEntityClass(entityClass, "Banana"));
     EC_ASSERT_SUCCESS(entityClass->CreatePrimitiveProperty(enumProp, "Silly", PrimitiveType::PRIMITIVETYPE_Integer));
@@ -271,9 +367,9 @@ TEST_F(SchemaCopyTest, CopySchemaWithIntEnumeration)
     enumeration->SetDisplayLabel("My Display Label");
     enumeration->SetDescription("Test Description");
     enumeration->SetIsStrict(true);
-    enumeration->CreateEnumerator(enumeratorA, 42);
+    enumeration->CreateEnumerator(enumeratorA, "enumeratorA", 42);
     enumeratorA->SetDisplayLabel("The value for 42");
-    enumeration->CreateEnumerator(enumeratorB, 56);
+    enumeration->CreateEnumerator(enumeratorB, "enumeratorB", 56);
     enumeratorB->SetDisplayLabel("The value for 56");
 
     CopySchema();
@@ -311,9 +407,9 @@ TEST_F(SchemaCopyTest, CopySchemaWithStringEnumeration)
     enumeration->SetDisplayLabel("My Display Label");
     enumeration->SetDescription("Test Description");
     enumeration->SetIsStrict(false);
-    enumeration->CreateEnumerator(enumeratorA, "Value A");
+    enumeration->CreateEnumerator(enumeratorA, "EnumeratorA", "Value A");
     enumeratorA->SetDisplayLabel("The value for A");
-    enumeration->CreateEnumerator(enumeratorB, "Value B");
+    enumeration->CreateEnumerator(enumeratorB, "EnumeratorB", "Value B");
     enumeratorB->SetDisplayLabel("The value for B");
 
     CopySchema();
@@ -707,6 +803,245 @@ TEST_F(SchemaCopyTest, CopySchemaWithInvalidReferenceAndCreateInstance)
     ellipseClassInstance->SetValue("Name", v);
     EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue(out, "Name"));
     EXPECT_TRUE(out.Equals(ECValue("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithSystemAndPhenomenonInStandardUnitSchema)
+    {
+    CreateTestSchema();
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
+    ECUnitP unit;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH"), *ECTestFixture::GetUnitsSchema()->GetUnitSystemCP("SI"), 10.0, 10.0, 10.0, "SMOOT", "SMOOT"));
+
+    CopySchema();
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *ECTestFixture::GetUnitsSchema()));
+    EXPECT_EQ(1, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetUnitCP("SMOOT");
+    ASSERT_TRUE(nullptr != targetUnit);
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDefinition().c_str());
+    EXPECT_DOUBLE_EQ(10.0, targetUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(10.0, targetUnit->GetDenominator());
+    EXPECT_DOUBLE_EQ(10.0, targetUnit->GetOffset());
+    EXPECT_STRCASEEQ(ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH")->GetName().c_str(), targetUnit->GetPhenomenon()->GetName().c_str());
+    EXPECT_STRCASEEQ(ECTestFixture::GetUnitsSchema()->GetUnitSystemCP("SI")->GetName().c_str(), targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithInvertedUnitWithSystemPhenomenonAndUnitInStandardSchema)
+    {
+    CreateTestSchema();
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
+    ECUnitP unit;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateInvertedUnit(unit, *ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), "SMOOT", *ECTestFixture::GetUnitsSchema()->GetUnitSystemCP("SI"), "SMOOT", "SMOOT"));
+
+    CopySchema();
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *ECTestFixture::GetUnitsSchema()));
+    EXPECT_EQ(1, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetInvertedUnitCP("SMOOT");
+    ASSERT_EQ(targetUnit->GetInvertingUnit(), ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    ASSERT_TRUE(nullptr != targetUnit);
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STRCASEEQ(ECTestFixture::GetUnitsSchema()->GetUnitCP("M")->GetName().c_str(), targetUnit->GetInvertingUnit()->GetName().c_str());
+    EXPECT_STRCASEEQ(ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH")->GetName().c_str(), targetUnit->GetPhenomenon()->GetName().c_str());
+    ASSERT_TRUE(targetUnit->HasUnitSystem());
+    EXPECT_STRCASEEQ(ECTestFixture::GetUnitsSchema()->GetUnitSystemCP("SI")->GetName().c_str(), targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithConstantWithPhenomenonInStandardSchema)
+    {
+    CreateTestSchema();
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
+    ECUnitP unit;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateConstant(unit, "SMOOT", "SMOOT", *ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH"), 10.0, 10.0, "SMOOT", "SMOOT"));
+
+    CopySchema();
+
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*m_targetSchema, *ECTestFixture::GetUnitsSchema()));
+    EXPECT_EQ(1, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetConstantCP("SMOOT");
+    ASSERT_TRUE(nullptr != targetUnit);
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDefinition().c_str());
+    EXPECT_DOUBLE_EQ(10.0, targetUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(10.0, targetUnit->GetDenominator());
+    EXPECT_STRCASEEQ(ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH")->GetName().c_str(), targetUnit->GetPhenomenon()->GetName().c_str());
+    ASSERT_FALSE(targetUnit->HasUnitSystem());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithUnitAllDefinedInSchema)
+    {
+    CreateTestSchema();
+    ECUnitP unit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, 10.0, 9.0, 8.0, "SMOOT", "SMOOT"));
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetUnitCP("SMOOT");
+    ASSERT_TRUE(nullptr != targetUnit);
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDefinition().c_str());
+    EXPECT_DOUBLE_EQ(10.0, targetUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(9.0, targetUnit->GetDenominator());
+    EXPECT_DOUBLE_EQ(8.0, targetUnit->GetOffset());
+    EXPECT_STREQ("SMOOT_PHENOM", targetUnit->GetPhenomenon()->GetName().c_str());
+    EXPECT_STREQ("SMOOT_SYSTEM", targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithInvertedUnitAllDefinedInSchema)
+    {
+    CreateTestSchema();
+    ECUnitP unit;
+    ECUnitP invUnit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateInvertedUnit(invUnit, *unit, "INVERSE_SMOOT", *system, "SMOOT", "SMOOT"));
+
+    CopySchema();
+
+    EXPECT_EQ(2, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetInvertedUnitCP("INVERSE_SMOOT");
+    ASSERT_TRUE(nullptr != targetUnit);
+    ASSERT_TRUE(targetUnit->IsInvertedUnit());
+    ASSERT_TRUE(targetUnit->HasUnitSystem());
+    EXPECT_STRCASEEQ("SMOOT", targetUnit->GetInvertingUnit()->GetName().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT_PHENOM", targetUnit->GetPhenomenon()->GetName().c_str());
+    EXPECT_STREQ("SMOOT_SYSTEM", targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithConstantAllDefinedInSchema)
+    {
+    CreateTestSchema();
+    ECUnitP unit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateConstant(unit, "SMOOT", "SMOOT", *phenom, 10.0, 9.0, "SMOOT", "SMOOT"));
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetUnitCP("SMOOT");
+    ASSERT_TRUE(nullptr != targetUnit);
+    ASSERT_TRUE(targetUnit->IsConstant());
+    ASSERT_FALSE(targetUnit->HasUnitSystem());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDefinition().c_str());
+    EXPECT_DOUBLE_EQ(10.0, targetUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(9.0, targetUnit->GetDenominator());
+    EXPECT_STREQ("SMOOT_PHENOM", targetUnit->GetPhenomenon()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopyStandardUnitsSchema)
+    {
+    ECTestFixture::GetUnitsSchema()->CopySchema(m_targetSchema);
+    PhenomenonCP length = m_targetSchema->GetPhenomenonCP("LENGTH");
+    ECUnitCP m = m_targetSchema->GetUnitCP("M");
+    ECUnitCP pi = m_targetSchema->GetConstantCP("PI");
+
+    EXPECT_TRUE(Units::Phenomenon::AreEqual(length, ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH")));
+    EXPECT_TRUE(Units::Unit::AreEqual(m, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    EXPECT_TRUE(Units::Unit::AreEqual(pi, ECTestFixture::GetUnitsSchema()->GetConstantCP("PI")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopyStandardFormatsSchema)
+    {
+    ECTestFixture::GetFormatsSchema()->CopySchema(m_targetSchema);
+    ECFormatCP def = m_targetSchema->GetFormatCP("DefaultRealU");
+    ECFormatCP amer = m_targetSchema->GetFormatCP("AmerFI");
+
+    ASSERT_NE(nullptr, def);
+    ASSERT_NE(nullptr, amer);
+    auto referenceDefault = ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU")->GetNumericSpec();
+    auto defNum = def->GetNumericSpec();
+
+    EXPECT_EQ(referenceDefault->GetDecimalPrecision(), defNum->GetDecimalPrecision());
+    EXPECT_EQ(referenceDefault->GetDecimalSeparator(), defNum->GetDecimalSeparator());
+    EXPECT_EQ(referenceDefault->GetFormatTraits(), defNum->GetFormatTraits());
+    EXPECT_EQ(referenceDefault->GetMinWidth(), defNum->GetMinWidth());
+    EXPECT_EQ(referenceDefault->GetPresentationType(), defNum->GetPresentationType());
+    EXPECT_DOUBLE_EQ(referenceDefault->GetRoundingFactor(), defNum->GetRoundingFactor());
+    EXPECT_EQ(referenceDefault->GetSignOption(), defNum->GetSignOption());
+    EXPECT_EQ(referenceDefault->GetStationOffsetSize(), defNum->GetStationOffsetSize());
+    EXPECT_EQ(referenceDefault->GetStationSeparator(), defNum->GetStationSeparator());
+    EXPECT_EQ(referenceDefault->GetThousandSeparator(), defNum->GetThousandSeparator());
+    EXPECT_STREQ(referenceDefault->GetUomSeparator(), defNum->GetUomSeparator());
+    EXPECT_FALSE(def->HasComposite());
+
+    auto refAmerFiNum = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI")->GetNumericSpec();
+    auto refAmerFIComp = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI")->GetCompositeSpec();
+
+    auto amerFiNum = amer->GetNumericSpec();
+    auto amerFiComp = amer->GetCompositeSpec();
+
+    ASSERT_TRUE(amer->HasComposite());
+    EXPECT_EQ(refAmerFiNum->GetDecimalPrecision(), amerFiNum->GetDecimalPrecision());
+    EXPECT_EQ(refAmerFiNum->GetDecimalSeparator(), amerFiNum->GetDecimalSeparator());
+    EXPECT_EQ(refAmerFiNum->GetFormatTraits(), amerFiNum->GetFormatTraits());
+    EXPECT_EQ(refAmerFiNum->GetMinWidth(), amerFiNum->GetMinWidth());
+    EXPECT_EQ(refAmerFiNum->GetPresentationType(), amerFiNum->GetPresentationType());
+    EXPECT_DOUBLE_EQ(refAmerFiNum->GetRoundingFactor(), amerFiNum->GetRoundingFactor());
+    EXPECT_EQ(refAmerFiNum->GetSignOption(), amerFiNum->GetSignOption());
+    EXPECT_EQ(refAmerFiNum->GetStationOffsetSize(), amerFiNum->GetStationOffsetSize());
+    EXPECT_EQ(refAmerFiNum->GetStationSeparator(), amerFiNum->GetStationSeparator());
+    EXPECT_EQ(refAmerFiNum->GetThousandSeparator(), amerFiNum->GetThousandSeparator());
+    EXPECT_STREQ(refAmerFiNum->GetUomSeparator(), amerFiNum->GetUomSeparator());
+
+    EXPECT_STRCASEEQ(refAmerFIComp->GetSpacer().c_str(), amerFiComp->GetSpacer().c_str());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetMajorLabel().c_str(), amerFiComp->GetMajorLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetMajorUnit(), amerFiComp->GetMajorUnit());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetMiddleLabel().c_str(), amerFiComp->GetMiddleLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetMiddleUnit(), amerFiComp->GetMiddleUnit());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetMinorLabel().c_str(), amerFiComp->GetMinorLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetMinorUnit(), amerFiComp->GetMinorUnit());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetSubLabel().c_str(), amerFiComp->GetSubLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetSubUnit(), amerFiComp->GetSubUnit());
     }
 
 //=======================================================================================
