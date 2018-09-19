@@ -818,7 +818,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                 IModelConsole::WriteErrorLine("Failed to extract change summary. Could not read ChangeSet file %s into a ChangeGroup.", changesetFilePath.GetNameUtf8().c_str());
                 return;
                 }
-            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
+            PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
 
             PERFLOG_START("iModelConsole", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
             if (BE_SQLITE_OK != changeset.FromChangeGroup(group))
