@@ -26,7 +26,7 @@
     </Part>
 
     <!--<Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1" ApiNumber="G">-->
-      <Part Name="CloudDataSource" BentleyBuildMakeFile="CloudDataSource.mke" ApiNumber="B02">
+      <Part Name="CloudDataSource" BentleyBuildMakeFile="CloudDataSource.mke" ApiNumber="M02">
         <SubPart PartName="AzureSDKB02" />
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"  PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
