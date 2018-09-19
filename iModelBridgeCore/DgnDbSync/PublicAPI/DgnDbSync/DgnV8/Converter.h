@@ -1184,7 +1184,7 @@ public:
     BentleyStatus GenerateThumbnails();
     BentleyStatus GenerateRealityModelTilesets();
     void  StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb);
-
+    BentleyStatus GenerateWebMercatorModel();
 
     bool ThumbnailUpdateRequired(ViewDefinition const& view);
 
