@@ -25,9 +25,9 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
 template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, bvector<DPoint2d>& uvs, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP)
     {
     if (meshP->GetNbFaceIndexes() == 0) return;
-    DPoint3d origins[6];
+    DPoint3d origins[6];   
     DVec3d normals[6];
-    nodeRange.Get6Planes(origins, normals);
+    nodeRange.Get6Planes(origins, normals);   
     DPlane3d planes[6];
     ClipPlane clipPlanes[6];
 
@@ -243,7 +243,8 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
                 faceIndexes.push_back(meshP->GetFaceIndexes()[i]);
                 faceIndexes.push_back(meshP->GetFaceIndexes()[i + 1]);
                 faceIndexes.push_back(meshP->GetFaceIndexes()[i + 2]);
-                faceIds.push_back(ids[currentPart]);
+                if (ids.size() > currentPart)
+                    faceIds.push_back(ids[currentPart]);
                 continue;
                 }
             DPoint3d polygonArray[10];
@@ -359,7 +360,9 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
                     faceIndexes.push_back(polyIndexes[j]);
                     faceIndexes.push_back(polyIndexes[j + 1]);
                     }
-                faceIds.push_back(ids[currentPart]);
+
+                if (ids.size() > currentPart)
+                    faceIds.push_back(ids[currentPart]);
                 }
             }
 #if DEBUG && SM_TRACE_CLIP_MESH 

@@ -699,7 +699,6 @@ bb -ax64 -p ScalableMeshCore -f  ScalableMeshCore -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\ScalableMeshFilteringOptions.cpp" />
     <ClCompile Include="STM\ScalableMeshImportSequencePersistance.cpp" />
     <ClCompile Include="STM\ScalableMeshInitialization.cpp" />
-    <ClCompile Include="STM\ScalableMeshMesher.cpp" />
     <ClCompile Include="STM\ScalableMeshMoniker.cpp" />
     <ClCompile Include="STM\ScalableMeshPolicy.cpp" />
     <ClCompile Include="STM\ScalableMeshProgressiveQuery.cpp" />

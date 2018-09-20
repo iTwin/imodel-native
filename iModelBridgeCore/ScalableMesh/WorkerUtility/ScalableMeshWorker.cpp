@@ -259,6 +259,12 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 
             continue;
             }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"-useGroupingStrategy") || argv[iArg] == wcsstr(argv[iArg], L"-gr"))
+            {
+            m_useGroupingStrategy = true;            
+            continue;
+            }
        
         fwprintf(stderr, L"Unrecognized command line option: %ls\n", argv[iArg]);
         return PrintUsage(argv[0]);

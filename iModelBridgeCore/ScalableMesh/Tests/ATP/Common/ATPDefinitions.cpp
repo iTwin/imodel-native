@@ -838,7 +838,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             }
                         }
                     });
-
+                
                 
                 StatusInt status = creatorPtr->Create(isSingleFile);
                 importInProgress = false;
@@ -4615,7 +4615,7 @@ bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPo
         for (size_t i = 0; i < 3; ++i)
             {
             DPoint2d triPt2d(DPoint2d::From(triangle[i]));            
-            if (!PolygonOps::IsPointInConvexPolygon(triPt2d, &feature2d[0], feature2d.size(), 0)) return false;
+            if (!PolygonOps::IsPointInConvexPolygon(triPt2d, &feature2d[0], (int)feature2d.size(), 0)) return false;
             }        
         }
     else
@@ -4651,7 +4651,7 @@ bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPo
             for (size_t i = 0; i < 3; ++i)
                 { 
                 DPoint2d triPt2d(DPoint2d::From(triangle[i]));
-                if (PolygonOps::IsPointInConvexPolygon(triPt2d, &polygon2d[0], polygon2d.size(), 0)) trianglePts[i] = true;                
+                if (PolygonOps::IsPointInConvexPolygon(triPt2d, &polygon2d[0], (int)polygon2d.size(), 0)) trianglePts[i] = true;                
                 }
             }
         return (trianglePts[0] && trianglePts[1] && trianglePts[2]);
@@ -5911,3 +5911,183 @@ void PerformMapboxTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     stmFile = 0;
         }
     }
+
+void PerformEditTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+{
+#ifndef VANCOUVER_API      
+    assert(!"ERROR : EDIT_TEST only available on Vancouver");
+    return;
+
+#else
+    BeXmlStatus statusRead;
+    WString stmFileName;
+    statusRead = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+
+    if (statusRead != BEXML_Success)
+    {
+        printf("ERROR : stmFileName attribute not found\r\n");
+    }
+    else
+    {
+        {
+            StatusInt status;
+            IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), false, true, status);
+
+            WString dgnFileName;
+
+            status = pTestNode->GetAttributeStringValue(dgnFileName, "dgnFileName");
+
+            if (status != BEXML_Success)
+            {
+                printf("ERROR : dgnFileName attribute not found\r\n");
+                return;
+            }
+
+
+            DgnFilePtr planeFile = DgnFile::Create(*DgnDocument::CreateForLocalFile(dgnFileName.c_str()), DgnFileOpenMode::ReadOnly);
+
+            if (planeFile != nullptr && planeFile->LoadDgnFile(nullptr) != DGNFILE_STATUS_Success)
+                return;
+
+            DgnModelPtr defaultModel = planeFile->LoadModelById(planeFile->GetDefaultModelId());
+            planeFile->FillAllLoadedModels();
+
+            double scaleToUors = ModelInfo::GetUorPerMaster(&defaultModel->GetModelInfo());
+
+            DPlane3d plane;
+            DRange3d planeRange = DRange3d::NullRange();
+            for (PersistentElementRefP elRef : *defaultModel->GetGraphicElementsP())
+            {
+                ElementHandle elHandle(elRef);
+                if (LineStringHandler::GetInstance().IsValidForElement(elHandle) &&!ConeHandler::GetInstance().IsValidForElement(elHandle))
+                {
+                    CurveVectorPtr curveVec;
+                    LineStringHandler::GetInstance().GetCurveVector(elHandle, curveVec);
+                    bvector<DPoint3d> listOfPts;
+                    if (!curveVec.IsValid())
+                        continue;
+                    for (auto&child : *curveVec)
+                    {
+                        IFacetOptionsPtr opts = IFacetOptions::New();
+                        bvector<DPoint3d> vec;
+                        child->AddStrokes(vec, *opts);
+                        listOfPts.insert(listOfPts.end(), vec.begin(), vec.end());
+                    }
+                    if (listOfPts.size() > 3)
+                    {
+                        for(auto& pt: listOfPts)
+                            pt.Scale(1 / scaleToUors);
+                        planeRange = DRange3d::From(listOfPts);
+                        plane = DPlane3d::From3Points(listOfPts[0], listOfPts[1], listOfPts[2]);
+                        break;
+                    }
+                }
+            }
+
+            if (plane.normal.Magnitude() == 0 || planeRange.IsNull())
+            {
+                ElementHandle cylinderElement;
+                DPoint3d basePt, topPt;
+                double radius;
+                RotMatrix rMatrix;
+                for (PersistentElementRefP elRef : *defaultModel->GetGraphicElementsP())
+                {
+                    ElementHandle elHandle(elRef);
+                    if (ConeHandler::GetInstance().IsValidForElement(elHandle))
+                    {
+                        double baseRadius, topRadius;
+                        bool capped;
+                        if (SUCCESS == ConeHandler::GetInstance().GetConeData(elHandle, &rMatrix, &basePt, &topPt,&baseRadius, &topRadius, &capped)
+                            && DoubleOps::AlmostEqual(topRadius,baseRadius))
+                        {
+                            cylinderElement = elHandle;
+                            radius = baseRadius;
+                            break;
+                        }
+
+                    }
+                }
+                if (!cylinderElement.IsValid() || radius == 0)
+                    return;
+
+                radius /= scaleToUors;
+                DRange3d elRange;
+                DataConvert::ScanRangeToDRange3d(elRange, *cylinderElement.GetIndexRange());
+                elRange.low.Scale(1 / scaleToUors);
+                elRange.high.Scale(1 / scaleToUors);
+
+                basePt.Scale(1 / scaleToUors);
+                topPt.Scale(1 / scaleToUors);
+
+                DVec3d dir = DVec3d::FromStartEnd(basePt, topPt);
+                double height = dir.Magnitude();
+                dir.Normalize();
+                double minZ = 0;
+                Transform tr;
+                DPoint3d origin = basePt;
+                tr.InitFrom(rMatrix, origin);
+
+                ClipVectorPtr cp = ClipVector::Create();
+                //for query, create a block around the element
+                DPoint2d pt[5] = { DPoint2d::From(-radius, -radius), DPoint2d::From(-radius, radius),
+                    DPoint2d::From(radius, radius), DPoint2d::From(radius, -radius), DPoint2d::From(-radius, -radius) };
+                ClipVector::AppendShape(cp, pt, 5, false, &minZ, &height, &tr);
+
+                bvector<IScalableMeshNodePtr> nodes;
+                IScalableMeshMeshQueryParamsPtr paramsQuery = IScalableMeshMeshQueryParams::CreateParams();
+                paramsQuery->SetReturnNodesWithNoMesh(true);
+                IScalableMeshMeshQueryPtr queryBox = stmFile->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+                for (size_t i = 0; i < (size_t)stmFile->GetNbResolutions(); ++i)
+                {
+                    nodes.clear();
+                    paramsQuery->SetLevel(i);
+                    if (queryBox->Query(nodes, cp.get(), paramsQuery) != SUCCESS)
+                        return;
+
+                    for (auto&node : nodes)
+                    {
+                        DRange3d nodeRange = node->GetContentExtent();
+                        if (nodeRange.IntersectsWith(elRange))
+                        {
+                            stmFile->GetMeshEditInterface()->SmoothNode(basePt, radius, dir, height, node);
+                        }
+                    }
+                }
+            }
+            else
+            {
+
+                //query nodes along plane
+                IScalableMeshNodePlaneQueryParamsPtr paramsQuery = IScalableMeshNodePlaneQueryParams::CreateParams();
+                bvector<IScalableMeshNodePtr> nodes;
+
+                paramsQuery->SetPlane(plane);
+
+                IScalableMeshMeshQueryPtr queryPlane = stmFile->GetMeshQueryInterface(MESH_QUERY_PLANE_INTERSECT);
+
+                bset<uint64_t> processedNodeIds;
+                for (size_t i = 0; i < (size_t)stmFile->GetNbResolutions(); ++i)
+                {
+                    nodes.clear();
+                    paramsQuery->SetLevel(i);
+                    if (queryPlane->Query(nodes, NULL, 0, paramsQuery) != SUCCESS)
+                        return;
+
+                    for (auto&node : nodes)
+                    {
+                        DRange3d nodeRange = node->GetContentExtent();
+                        if (nodeRange.IntersectsWith(planeRange) && processedNodeIds.count(node->GetNodeId()) == 0)
+                        {
+                            stmFile->GetMeshEditInterface()->SmoothNode(plane, node);
+                            processedNodeIds.insert(node->GetNodeId());
+                        }
+                    }
+                }
+            }
+        }
+        //else
+        //    printf("Error loading stm file");
+    }
+#endif
+}
+

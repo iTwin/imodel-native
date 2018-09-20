@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
 const wchar_t* s_path = L"C:\\work\\2017q3\\tmp\\";
-
+   
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
     s += tag;
@@ -1765,7 +1765,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
         }
     }
 
-bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
+bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<size_t>& polyfaceIndices, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
     {
     polyfaces.resize(2);
     bvector<DRange3d> triangleBoxes;
@@ -1793,10 +1793,16 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox, isMask);
     bvector<ClipVectorPtr> clipPolys;
     bool shouldUseClipPrimitives = true;
+    
     if (!shouldUseClipPrimitives)
+    {
         clipPolys.push_back(currentClip);
+        for (size_t i =0; i < currentClip->size(); ++i)
+            polyfaceIndices.push_back(i);
+    }
     else
         {
+        size_t i = 0;
         for (ClipPrimitivePtr const& primitive : *clip)
             {
             if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]).first)
@@ -1806,8 +1812,12 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
 #else
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
 #endif
+                if(!isMask.empty())
+                    newClip->back()->SetIsMask(isMask[&primitive - &clip->front()]);
                 clipPolys.push_back(newClip);
+                polyfaceIndices.push_back(i);
                 }
+            ++i;
             }
         polyfaces.resize(clipPolys.size() + 1);
         }
@@ -1912,6 +1922,804 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
          }
 #endif
      return ret;
+    }
+
+
+void MeshClipper::TagUVsOnPolyface(PolyfaceHeaderPtr& poly, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr, FaceToUVMap& faceToUVMap, bmap<int32_t, int32_t>& mapOfIndices)
+{
+    vector<int32_t> indices(poly->GetPointIndexCount());
+    memcpy(&indices[0], poly->GetPointIndexCP(), poly->GetPointIndexCount() * sizeof(int32_t));
+    bmap<int32_t, int32_t> allPts;
+    std::map<DPoint2d, int32_t, DPoint2dZYXTolerancedSortComparison> allUvs(DPoint2dZYXTolerancedSortComparison(1e-5));
+    for (size_t i = 0; i < poly->GetPointIndexCount(); ++i)
+    {
+        DPoint3d pt;
+        dtmPtr->GetBcDTM()->GetPoint(poly->GetPointIndexCP()[i], pt);
+        if (allPts.count(poly->GetPointIndexCP()[i]) == 0)
+        {
+            allPts[poly->GetPointIndexCP()[i]] = (int)poly->Point().size();
+            poly->Point().push_back(pt);
+        }
+    }
+    //size_t nFaceMisses = 0;
+    poly->PointIndex().clear();
+    poly->Param().SetActive(true);
+    poly->ParamIndex().SetActive(true);
+    for (size_t i = 0; i < indices.size(); i += 3)
+    {
+        DPoint2d uvCoords[3];
+        int32_t newIndices[3] = { indices[i], indices[i + 1], indices[i + 2] };
+        /* for (size_t j = 0; j < 3; ++j)
+        {
+        if (mapOfIndices.count(indices[i + j]) != 0)
+        {
+        newIndices[j] = mapOfIndices[indices[i + j]];
+        }
+        }
+        if (!faceToUVMap.GetFacet(&newIndices[0], uvCoords))
+        {
+        if (poly->Param().size() == 0)
+        poly->Param().push_back(DPoint2d::From(0.0, 0.0));
+        nFaceMisses++;
+        poly->PointIndex().push_back(allPts[newIndices[0]] + 1);
+        poly->PointIndex().push_back(allPts[newIndices[ 1]] + 1);
+        poly->PointIndex().push_back(allPts[newIndices[2]] + 1);
+        for (size_t uvI = 0; uvI < 3; ++uvI)
+        poly->ParamIndex().push_back(1);
+        continue;
+        }*/
+        poly->PointIndex().push_back(allPts[newIndices[0]] + 1);
+        poly->PointIndex().push_back(allPts[newIndices[1]] + 1);
+        poly->PointIndex().push_back(allPts[newIndices[2]] + 1);
+        for (size_t uvI = 0; uvI < 3; ++uvI)
+        {
+            uvCoords[uvI] = ComputeUVs(poly->Point()[allPts[newIndices[uvI]]], m_nodeRange, m_widthOfTexData, m_heightOfTexData);
+            if (allUvs.count(uvCoords[uvI]) == 0 || allUvs[uvCoords[uvI]] == 0)
+            {
+                poly->Param().push_back(uvCoords[uvI]);
+                allUvs[uvCoords[uvI]] = (int)poly->GetParamCount();
+            }
+
+            poly->ParamIndex().push_back(allUvs[uvCoords[uvI]]);
+        }
+    }
+}
+
+DTMInsertPointCallback MeshClipper::GetInsertPointCallback(FaceToUVMap& faceToUVMap, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& ptr)
+{
+    return[&faceToUVMap, &ptr](int newPtNum, DPoint3dCR pt, double&elevation, bool onEdge, const int pts[])
+    {
+        if (onEdge)
+        {
+            DPoint2d uvCoords[2];
+            faceToUVMap.SplitEdge(uvCoords, newPtNum, pts, pts + 2, [&ptr, &pt](std::array<DPoint2d, 3> uvCoords, const int32_t* indices, int32_t newPt) -> DPoint2d
+            {
+                double fraction;
+                DPoint3d pt1, pt2;
+                ptr->GetBcDTM()->GetPoint(indices[0], pt1);
+                ptr->GetBcDTM()->GetPoint(indices[1], pt2);
+                DSegment3d seg = DSegment3d::From(pt1, pt2);
+                seg.PointToFractionParameter(fraction, pt);
+                DPoint2d newUv = DPoint2d::FromInterpolate(uvCoords[0], fraction, uvCoords[1]);
+                return newUv;
+            });
+        }
+        else
+        {
+            DPoint2d uv;
+            faceToUVMap.SplitFacet(uv, newPtNum, pts, [&ptr, &pt](std::array<DPoint2d, 3> uvCoords, const int32_t* indices, int32_t newPt) -> DPoint2d
+            {
+                DPoint3d triangle[3];
+                for (size_t i = 0; i < 3; ++i)
+                    ptr->GetBcDTM()->GetPoint(indices[i], triangle[i]);
+
+                DPoint3d barycentric;
+                bsiDPoint3d_barycentricFromDPoint3dTriangle(&barycentric, &pt, &triangle[0], &triangle[1], &triangle[2]);
+                DPoint2d newUv;
+                bsiDPoint2d_fromBarycentricAndDPoint2dTriangle(&newUv, &barycentric, &uvCoords[0], &uvCoords[1], &uvCoords[2]);
+                return newUv;
+            });
+        }
+    };
+}
+
+void MeshClipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
+    {
+    BC_DTM_OBJ* bcDtmP = 0;
+    int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
+    if (dtmCreateStatus == 0)
+        {
+        BcDTMPtr bcDtmObjPtr;
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
+        dtmPtr = bcDtmObjPtr.get();
+        }
+    else return;
+    DPoint3d triangle[4];
+
+    for (unsigned int t = 0; t < m_nIndices; t += 3)
+        {
+        for (int i = 0; i < 3; i++)
+            triangle[i] = m_vertexBuffer[m_indexBuffer[i + t] - 1];
+
+        triangle[3] = triangle[0];
+
+        std::swap(triangle[1], triangle[2]);
+        //DTM doesn't like colinear triangles
+        if (bsiGeom_isDPoint3dArrayColinear(triangle, 3, 1e-6)) continue;
+
+        bcdtmObject_storeDtmFeatureInDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), DTMFeatureType::GraphicBreak, dtmPtr->GetBcDTM()->GetTinHandle()->nullUserTag, 1, &dtmPtr->GetBcDTM()->GetTinHandle()->nullFeatureId, &triangle[0], 4);
+        }
+    bcdtmObject_triangulateStmTrianglesDtmObject(dtmPtr->GetBcDTM()->GetTinHandle());
+    }
+
+bool MeshClipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons)
+    {
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
+    MakeDTMFromIndexList(dtmPtr);
+    return GetRegionsFromClipPolys(polyfaces, polygons, dtmPtr);
+    }
+
+bool MeshClipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, bvector<bvector<DPoint3d>>& polygons, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr)
+    {
+    DTMUserTag    userTag = 0;
+    DTMFeatureId* textureRegionIdsP = 0;
+    long          numRegionTextureIds = 0;
+    FaceToUVMap originalFaceMap(m_range);
+    int32_t* toDTMIndexBuffer = 0;
+    DPoint3d* toDTMVertexBuffer = 0;
+    if (m_uvBuffer && m_uvIndices)
+        {
+        toDTMIndexBuffer = new int32_t[m_nIndices];
+        TranslateToDTMIndices(toDTMIndexBuffer, m_vertexBuffer, m_indexBuffer, dtmPtr, m_nIndices);
+        toDTMVertexBuffer = new DPoint3d[dtmPtr->GetBcDTM()->GetPointCount()];
+        for (size_t i = 0; i < (size_t)dtmPtr->GetBcDTM()->GetPointCount(); ++i)
+            {
+            DPoint3d pt;
+            dtmPtr->GetBcDTM()->GetPoint((int)i, pt);
+            toDTMVertexBuffer[i] = pt;
+            }
+        originalFaceMap.ReadFrom(toDTMIndexBuffer, m_uvIndices, m_uvBuffer, m_nIndices);
+        }
+    if (dtmPtr->GetBcDTM()->GetTinHandle()->dtmState != DTMState::Tin) return false;
+    polyfaces.resize(polygons.size() + 1);
+
+    int stat = DTM_SUCCESS;
+    for (auto& poly : polygons)
+        {
+        stat = bcdtmInsert_internalDtmFeatureMrDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(),
+            DTMFeatureType::Region,
+            1,
+            2,
+            userTag,
+            &textureRegionIdsP,
+            &numRegionTextureIds,
+            &poly[0],
+            (long)poly.size(),
+            m_uvBuffer && m_uvIndices ? GetInsertPointCallback(originalFaceMap, dtmPtr) : nullptr);
+
+        userTag++;
+        }
+
+
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
+    if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
+    en->SetExcludeAllRegions();
+    en->SetMaxTriangles((int)m_nIndices * 10);
+    bmap<int32_t, int32_t> updatedIndices;
+    if (m_uvBuffer && m_uvIndices)
+        {
+        int32_t* newDTMIndexBuffer = new int32_t[m_nIndices];
+        for (size_t i = 0; i < m_nIndices; ++i)
+            {
+            toDTMIndexBuffer[i] += 1;
+            }
+        TranslateToDTMIndices(newDTMIndexBuffer, toDTMVertexBuffer, toDTMIndexBuffer, dtmPtr, m_nIndices);
+        for (size_t i = 0; i < m_nIndices; ++i)
+            {
+            updatedIndices[newDTMIndexBuffer[i]] = toDTMIndexBuffer[i] - 1;
+            }
+        delete[] toDTMIndexBuffer;
+        delete[] newDTMIndexBuffer;
+        }
+    for (PolyfaceQueryP pf : *en)
+        {
+        PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+        vec->CopyFrom(*pf);
+        if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
+        polyfaces[0].push_back(vec);
+        }
+    for (size_t n = 0; n < polygons.size() && n < (size_t)userTag; ++n)
+        {
+        en->Reset();
+        en->SetFilterRegionByUserTag(n);
+        for (PolyfaceQueryP pf : *en)
+            {
+            PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+            vec->CopyFrom(*pf);
+            if (m_uvBuffer && m_uvIndices) TagUVsOnPolyface(vec, dtmPtr, originalFaceMap, updatedIndices);
+            polyfaces[n + 1].push_back(vec);
+            }
+        }
+
+    if (textureRegionIdsP != 0)
+        {
+        free(textureRegionIdsP);
+        textureRegionIdsP = 0;
+        }
+    for (auto& polygon : polyfaces)
+        if (polygon.size() > 0) return true;
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::New(*IFacetOptions::Create());
+    PolyfaceQueryCarrier* poly = new PolyfaceQueryCarrier(3, false, m_nIndices, m_nVertices, m_vertexBuffer, m_indexBuffer, 0, 0, 0, m_uvBuffer && m_uvIndices ? m_nVertices : 0, m_uvBuffer && m_uvIndices ? m_uvBuffer : 0, m_uvIndices);
+    builder->AddPolyface(*poly);
+    delete poly;
+    polyfaces[0].push_back(builder->GetClientMeshPtr());
+    return true;
+    }
+
+MeshClipper::MeshClipper()
+    {
+    m_vertexBuffer = nullptr;
+    m_nVertices =  0;
+    m_indexBuffer = nullptr;
+    m_nIndices = 0;
+    m_uvBuffer = nullptr;
+    m_uvIndices = nullptr;
+    m_range= DRange3d::NullRange();
+    m_nodeRange = DRange3d::NullRange();
+    m_widthOfTexData = 1024;
+    m_heightOfTexData = 1024;
+    m_is25dData = false;
+    wasClipped = false;
+    }
+
+void MeshClipper::SetSourceMesh(const PolyfaceQuery* meshSourceData, bool is25dData)
+    {
+    m_sourceData = meshSourceData;
+    m_is25dData = is25dData;
+    }
+
+void MeshClipper::SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons)
+    {
+    for (size_t i = 0; i < ids.size() && i < polygons.size(); ++i)
+        {
+        ClipPolyInfo info;
+        info.id = ids[i];
+        info.pts = polygons[i];
+        info.isMask = true;
+        allPolys.push_back(info);
+        }
+    OrderClipGeometryList();
+    }
+
+void MeshClipper::SetClipGeometry(const bvector<uint64_t>& ids, const bvector<bvector<DPoint3d>>& polygons, const bvector<bool>& polygonIsMask)
+    {
+    for (size_t i = 0; i < ids.size() && i < polygons.size() && i <  polygonIsMask.size(); ++i)
+    {
+        ClipPolyInfo info;
+        info.id = ids[i];
+        info.pts = polygons[i];
+        info.isMask = polygonIsMask[i];
+        allPolys.push_back(info);
+    }
+    OrderClipGeometryList();
+    }
+
+void MeshClipper::SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip)
+    {
+    bmap<uint64_t, ClipVectorInfo> mapOfVector;
+    size_t n = 0;
+    for (const auto& primitive : *clip)
+    {
+        uint64_t id = idsForPrimitives.find(n)->second;
+        if (mapOfVector.count(id) == 0)
+            mapOfVector[id] = ClipVectorInfo();
+        mapOfVector[id].id = id;
+        if (nullptr == mapOfVector[id].clip)
+        {
+#ifdef VANCOUVER_API
+            vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive));
+#else
+            vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive.get()));
+#endif
+            mapOfVector[id].clip = vectorDefs.back().get();
+        }
+        else const_cast<ClipVector*>(mapOfVector[id].clip)->push_back(primitive);
+        mapOfVector[id].arePrimitivesMasks.push_back(primitive->IsMask());
+        n++;
+    }
+    for (auto& vecPair : mapOfVector)
+    {
+        allVectors.push_back(vecPair.second);
+    }
+    OrderClipGeometryList();
+    }
+
+void MeshClipper::SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives, ClipVectorCP clip, const bmap<size_t, bool>& isMaskForEachPrimitive)
+    {
+    bmap<uint64_t, ClipVectorInfo> mapOfVector;
+    size_t n = 0;
+    for (const auto& primitive : *clip)
+       {
+        uint64_t id = idsForPrimitives.find(n)->second;
+        if (mapOfVector.count(id) == 0)
+            mapOfVector[id] = ClipVectorInfo();
+        mapOfVector[id].id =id;
+        if (nullptr == mapOfVector[id].clip)
+            {
+#ifdef VANCOUVER_API
+            vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive));
+#else
+            vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive.get()));
+#endif
+            mapOfVector[id].clip = vectorDefs.back().get();
+            }
+        else const_cast<ClipVector*>(mapOfVector[id].clip)->push_back(primitive);
+        mapOfVector[id].arePrimitivesMasks.push_back(isMaskForEachPrimitive.find(n)->second);
+        n++;
+       }
+    for (auto& vecPair : mapOfVector)
+        {
+        allVectors.push_back(vecPair.second);
+        }
+    OrderClipGeometryList();
+    }
+
+void MeshClipper::SetClipGeometry(uint64_t id, ClipVectorCP clip, bool isMask)
+    {
+    ClipVectorInfo info;
+    info.id = id;
+    info.clip = clip;
+    info.arePrimitivesMasks.resize(clip->size(), isMask);
+    OrderClipGeometryList();
+    }
+
+void MeshClipper::SetMaskInfo(uint64_t id, bool isMask)
+    {
+    for (auto& vec : allVectors)
+        {
+        if (vec.id == id)
+            for (auto& prim : vec.arePrimitivesMasks)
+                prim = isMask;
+        }
+    for (auto& poly : allPolys)
+        {
+        if (poly.id == id)
+            poly.isMask = isMask;
+        }
+    }
+
+bool MeshClipper::IsClipMask(uint64_t id)
+{
+    bool isMask = false;
+    for (auto& info : orderedClipList)
+    {
+        if (info->id == id)
+            if (info->type == ClipInfo::Type::Vector)
+            {
+                for (auto& mask : static_cast<ClipVectorInfo*>(info)->arePrimitivesMasks)
+                    isMask = mask;
+            }
+            else if (info->type == ClipInfo::Type::Polygon)
+            {
+                isMask = static_cast<ClipPolyInfo*>(info)->isMask;
+            }
+    }
+    return isMask;
+}
+
+void MeshClipper::ClearClipGeometry()
+{
+    orderedClipList.clear();
+    allPolys.clear();
+    allVectors.clear();
+}
+
+void MeshClipper::SetMeshExtents(DRange3d extentOfData, DRange3d extentOfTexture)
+{
+    m_range = extentOfData;
+    m_nodeRange = extentOfTexture;
+}
+
+void MeshClipper::OrderClipGeometryList()
+{
+    orderedClipList.clear();
+    for (auto& poly : allPolys)
+        orderedClipList.push_back(&poly);
+    for (auto& vec : allVectors)
+        orderedClipList.push_back(&vec);
+
+    std::sort(orderedClipList.begin(), orderedClipList.end(),[](ClipInfo* a, ClipInfo* b) {
+        if (!a->isClipMask() && b->isClipMask())
+        return true; 
+        if (a->isClipMask() && !b->isClipMask())
+            return false;
+        return false;
+    });
+}
+
+bool MeshClipper::HasOnlyPolygons()
+{
+    return allVectors.empty();
+}
+
+void MeshClipper::GetClipsAsPolygons(bvector<bvector<DPoint3d>>& outPolygons)
+{
+    for (auto& clip : orderedClipList)
+    {
+        if (clip->type == ClipInfo::Type::Polygon)
+            outPolygons.push_back(static_cast<ClipPolyInfo*>(clip)->pts);
+    }
+}
+
+void MeshClipper::GetClipsAsVectors(bvector<ClipVectorPtr>& outVectors)
+{
+    for (auto& clip : orderedClipList)
+    {
+        if (clip->type == ClipInfo::Type::Vector)
+            outVectors.push_back(ClipVectorPtr(const_cast<ClipVector*>(static_cast<ClipVectorInfo*>(clip)->clip)));
+        else if (clip->type == ClipInfo::Type::Polygon)
+        {
+            CurveVectorPtr curvePtr = CurveVector::CreateLinear(static_cast<ClipPolyInfo*>(clip)->pts, CurveVector::BOUNDARY_TYPE_Outer);
+            vectorDefs.push_back(ClipVector::CreateFromCurveVector(*curvePtr, 1e-8, 1e-8));
+            outVectors.push_back(vectorDefs.back().get());
+        }
+    }
+}
+
+
+void MeshClipper::GetClipsAsSingleVector(ClipVectorPtr& outVector)
+{
+    for (auto& clip : orderedClipList)
+    {
+        if (clip->type == ClipInfo::Type::Vector)
+        {
+            for (size_t i = 0; i < static_cast<ClipVectorInfo*>(clip)->clip->size(); ++i)
+            {
+                outVector->push_back((*static_cast<ClipVectorInfo*>(clip)->clip)[i]);
+                outVector->back()->SetIsMask(static_cast<ClipVectorInfo*>(clip)->arePrimitivesMasks[i]);
+            }
+        }
+        else if (clip->type == ClipInfo::Type::Polygon)
+        {
+            CurveVectorPtr curvePtr = CurveVector::CreateLinear(static_cast<ClipPolyInfo*>(clip)->pts, CurveVector::BOUNDARY_TYPE_Outer);
+            vectorDefs.push_back(ClipVector::CreateFromCurveVector(*curvePtr, 1e-8, 1e-8));
+            for (size_t i = 0; i < vectorDefs.back()->size(); ++i)
+            {
+                outVector->push_back((*vectorDefs.back())[i]);
+                outVector->back()->SetIsMask(static_cast<ClipPolyInfo*>(clip)->isMask);
+            }
+        }
+    }
+}
+
+void MeshClipper::ComputeClip()
+{
+    bvector<bvector<PolyfaceHeaderPtr>> outputRegions;
+    if (m_is25dData && HasOnlyPolygons())
+    {
+        bvector<bvector<DPoint3d>> polygons;
+        GetClipsAsPolygons(polygons);
+
+        GetRegionsFromClipPolys(outputRegions, polygons);
+
+        for (size_t i = 0; i < orderedClipList.size() && i < polygons.size() && i < outputRegions.size()+1; ++i)
+        {
+            ClippedRegion reg;
+            reg.isExterior = false;
+            reg.id = orderedClipList[i]->id;
+            for (auto& m : outputRegions[i + 1])
+                reg.meshes.push_back(m);
+            computedRegions.push_back(reg);
+        }
+        ClippedRegion regExt;
+        regExt.isExterior = true;
+        regExt.id = 0;
+        for (auto& m : outputRegions[0])
+            regExt.meshes.push_back(m);
+        computedRegions.push_back(regExt);
+    }
+    else
+    {
+        if (HasOnlyPolygons())
+        {
+            bvector<bvector<DPoint3d>> polygons;
+            GetClipsAsPolygons(polygons);
+
+            GetRegionsFromClipPolys3D(outputRegions, polygons, m_sourceData);
+
+            for (size_t i = 0; i < orderedClipList.size() && i < polygons.size() && i < outputRegions.size() + 1; ++i)
+            {
+                ClippedRegion reg;
+                reg.isExterior = false;
+                reg.id = orderedClipList[i]->id;
+                for (auto& m : outputRegions[i + 1])
+                    reg.meshes.push_back(m);
+                computedRegions.push_back(reg);
+            }
+            ClippedRegion regExt;
+            regExt.isExterior = true;
+            regExt.id = 0;
+            for (auto& m : outputRegions[0])
+                regExt.meshes.push_back(m);
+            computedRegions.push_back(regExt);
+        }
+        else
+        {
+            ClipVectorPtr unifiedVector = ClipVector::Create();
+            bvector<bool> isMask;
+            GetClipsAsSingleVector(unifiedVector);
+
+            bvector<size_t> polyIndices;
+            GetRegionsFromClipVector3D(outputRegions, polyIndices, unifiedVector.get(), m_sourceData, isMask);
+
+            size_t reg = 1, clipIdx = 0;
+            for (auto& clip : orderedClipList)
+            {
+                if (reg >= outputRegions.size())  break;
+                ClippedRegion regClipped;
+                regClipped.isExterior = false;
+                regClipped.id = clip->id;
+                if (clip->type == ClipInfo::Type::Vector)
+                {
+                    for (size_t i = 0; i < static_cast<ClipVectorInfo*>(clip)->clip->size(); ++i)
+                    {
+                        if (polyIndices[reg - 1] == clipIdx)
+                        {
+                            for (auto& m : outputRegions[reg])
+                                regClipped.meshes.push_back(m);
+                            ++reg;
+                        }
+                        ++clipIdx;
+                    }
+                }
+                else if (clip->type == ClipInfo::Type::Polygon)
+                {
+                    if (polyIndices[reg - 1] == clipIdx)
+                    {
+                        for (auto& m : outputRegions[reg])
+                            regClipped.meshes.push_back(m);
+                        ++reg;
+                    }
+                    ++clipIdx;
+                }
+                if(!regClipped.meshes.empty())
+                    computedRegions.push_back(regClipped);
+
+            }
+            ClippedRegion regExt;
+            regExt.isExterior = true;
+            regExt.id = 0;
+            for (auto& m : outputRegions[0])
+                regExt.meshes.push_back(m);
+            computedRegions.push_back(regExt);
+        }
+    }
+    wasClipped = true;
+}
+
+MeshClipper::RegionResult MeshClipper::GetRegions(bvector<uint64_t>& ids, bvector<bvector<PolyfaceHeaderPtr>>& polyfaces)
+{
+
+    if (!WasClipped())
+        return MeshClipper::RegionResult::ClippingNotComputed;
+
+    if (computedRegions.size() == 0)
+        return MeshClipper::RegionResult::NoData;
+
+    bvector<bpair<uint64_t, PolyfaceHeaderPtr>> vec;
+
+    for (auto& reg : computedRegions)
+    {
+        ids.push_back(reg.id);
+        polyfaces.push_back(reg.meshes);
+    }
+    return MeshClipper::RegionResult::Success;
+}
+
+MeshClipper::RegionResult MeshClipper::GetInOrOutRegion(PolyfaceHeaderPtr& mesh, const bool getInside)
+    {
+    if (!WasClipped())
+        return MeshClipper::RegionResult::ClippingNotComputed;
+
+    if (computedRegions.size() == 0)
+        return MeshClipper::RegionResult::NoData;
+
+    mesh = PolyfaceHeader::CreateFixedBlockIndexed(3);
+    auto reg = std::find_if(computedRegions.begin(), computedRegions.end(), [&getInside](ClippedRegion& r) { return r.isExterior == getInside; });
+    if (reg == computedRegions.end() || reg->meshes.empty() || reg->meshes[0] == nullptr)
+        return RegionResult::NoData;
+    mesh->CopyFrom(*reg->meshes[0]);
+
+    for (size_t i = 1; i < reg->meshes.size(); ++i)
+        mesh->AddIfMatchedLayout(*reg->meshes[i]);
+    return MeshClipper::RegionResult::Success;
+    }
+
+MeshClipper::RegionResult MeshClipper::GetExteriorRegion(PolyfaceHeaderPtr& mesh)
+    {
+    return GetInOrOutRegion(mesh, false);
+    }
+
+MeshClipper::RegionResult MeshClipper::GetInteriorRegion(PolyfaceHeaderPtr& mesh)
+    {
+    return GetInOrOutRegion(mesh, true);
+    }
+
+bool MeshClipper::WasClipped()
+{
+    return wasClipped;
+}
+
+MeshClipper::ClipInfo* MeshClipper::FindMatchingClip(uint64_t id)
+{
+    auto iter = std::find_if(orderedClipList.begin(), orderedClipList.end(), [id](ClipInfo* a) {
+        return (a->id == id);
+    });
+    if (iter == orderedClipList.end())
+        return nullptr;
+    return *iter;
+}
+
+void MeshClipper::SelectRegions(MeshClipper::RegionFilter filter, MeshClipper::RegionFilterMode mode)
+{
+    if (!WasClipped())
+    {
+        selectionError = MeshClipper::RegionResult::ClippingNotComputed;
+        return;
+    }
+
+    if (computedRegions.size() == 0)
+    {
+        selectionError = MeshClipper::RegionResult::NoData;
+        return;
+    }
+
+    if (mode == MeshClipper::RegionFilterMode::SelectedIDs || mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs)
+    {
+        selectionError = MeshClipper::RegionResult::InsufficientRegionFilterArguments;
+        return;
+    }
+    for (auto& region : computedRegions)
+    {
+        bool isRegionSuitable = false;
+        if (FindMatchingClip(region.id) == nullptr)
+            continue;
+        switch (filter)
+        {
+        case MeshClipper::RegionFilter::Boundary:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && !FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && FindMatchingClip(region.id)->isClipMask());
+            break;
+        case MeshClipper::RegionFilter::Mask:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !FindMatchingClip(region.id)->isClipMask());
+            break;
+        case MeshClipper::RegionFilter::BoundaryOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || !FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || !FindMatchingClip(region.id)->isClipMask()));
+            break;
+        case MeshClipper::RegionFilter::MaskOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || FindMatchingClip(region.id)->isClipMask()));
+            break;
+        case MeshClipper::RegionFilter::Exterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && region.isExterior) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !region.isExterior);
+            break;
+        case MeshClipper::RegionFilter::All:
+            isRegionSuitable = mode == MeshClipper::RegionFilterMode::IncludeSelected;
+            break;
+        default:
+            break;
+        };
+
+        if (isRegionSuitable)
+            selectedRegions.push_back(&region);
+    }
+    selectionError = MeshClipper::RegionResult::Success;
+}
+void MeshClipper::SelectRegions(MeshClipper::RegionFilter filter, MeshClipper::RegionFilterMode mode, bvector<uint64_t>& idsFilter)
+{
+    if (!WasClipped())
+    {
+        selectionError = MeshClipper::RegionResult::ClippingNotComputed;
+        return;
+    }
+
+    if (computedRegions.size() == 0)
+    {
+        selectionError = MeshClipper::RegionResult::NoData;
+        return;
+    }
+    for (auto& region : computedRegions)
+    {
+        bool isRegionSuitable = false;
+        switch (filter)
+        {
+        case MeshClipper::RegionFilter::Boundary:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && !FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && !FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::Mask:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !FindMatchingClip(region.id)->isClipMask()) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !FindMatchingClip(region.id)->isClipMask() && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::BoundaryOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || !FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || !FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && (region.isExterior || !FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !(region.isExterior || !FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::MaskOrExterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && (region.isExterior || FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !(region.isExterior || FindMatchingClip(region.id)->isClipMask())) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && (region.isExterior || FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !(region.isExterior || FindMatchingClip(region.id)->isClipMask()) && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case MeshClipper::RegionFilter::Exterior:
+            isRegionSuitable = (mode == MeshClipper::RegionFilterMode::IncludeSelected && region.isExterior) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelected && !region.isExterior) ||
+                (mode == MeshClipper::RegionFilterMode::SelectedIDs && region.isExterior && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end()) ||
+                (mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && !region.isExterior && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end());
+            break;
+        case  MeshClipper::RegionFilter::All:
+            isRegionSuitable = mode == MeshClipper::RegionFilterMode::IncludeSelected ||
+                mode == MeshClipper::RegionFilterMode::SelectedIDs && std::find(idsFilter.begin(), idsFilter.end(), region.id) != idsFilter.end() ||
+                mode == MeshClipper::RegionFilterMode::ExcludeSelectedIDs && std::find(idsFilter.begin(), idsFilter.end(), region.id) == idsFilter.end();
+            break;
+        default:
+            break;
+        };
+
+        if (isRegionSuitable)
+            selectedRegions.push_back(&region);
+    }
+    selectionError = MeshClipper::RegionResult::Success;
+}
+MeshClipper::RegionResult MeshClipper::GetSelectedRegion(PolyfaceHeaderPtr& mesh)
+{
+    if (selectionError != MeshClipper::RegionResult::Success)
+        return selectionError;
+    if (selectedRegions.empty())
+        return MeshClipper::RegionResult::NoRegionsMatchingSelection;
+
+    if(selectedRegions.front()->meshes.empty())
+        return MeshClipper::RegionResult::NoData;
+    mesh = selectedRegions.front()->meshes.front();
+    if (selectedRegions.size() > 1)
+        return MeshClipper::RegionResult::MoreThanOneRegionMatchingSelection;
+    return selectionError;
+}
+
+bvector<bpair<uint64_t, PolyfaceHeaderPtr>>&& MeshClipper::GetSelectedRegions(MeshClipper::RegionResult& result)
+{
+    bvector<bpair<uint64_t, PolyfaceHeaderPtr>> vec;
+    if (selectionError != MeshClipper::RegionResult::Success)
+    {
+        result = selectionError;
+        return std::move(vec);
+    }
+
+
+    if (selectedRegions.empty())
+        result = MeshClipper::RegionResult::NoRegionsMatchingSelection;
+
+    for (auto& reg : selectedRegions)
+    {
+        for (auto& m : reg->meshes)
+            vec.push_back(make_bpair(reg->id, m));
+    }
+    result = MeshClipper::RegionResult::Success;
+    return std::move(vec);
+}
+
+void MeshClipper::ClearSelection()
+    {
+    selectedRegions.clear();
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

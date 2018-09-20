@@ -91,13 +91,20 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
         BeFileName m_startingIndexTask;       
         uint16_t   m_nbExtraWorkers;
         Utf8String m_workerProcessName;
+        bool       m_useGroupingStrategy;
 
         WString GetArgValueW(WCharCP arg);
         Utf8String GetArgValue(WCharCP arg);        
 
     public:
         BeFileName          m_outputName;
-        ScalableMeshWorker() { m_nbExtraWorkers = 0; }
+
+        ScalableMeshWorker()
+            {
+            m_nbExtraWorkers = 0;
+            m_useGroupingStrategy = false;
+            }
+        
         int PrintUsage(WCharCP programName);
         int ParseCommandLine(int argc, WCharP argv[]);
         BentleyStatus Initialize(int argc, WCharP argv[]);

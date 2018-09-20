@@ -210,6 +210,194 @@ uint32_t IScalableMeshSourceCreatorWorker::Impl::GetNbNodesPerTask(size_t nbNode
     return nbNodesPerTask;
     }
 
+
+struct NodesToGenerate
+    {    
+    //uint64_t          m_levelId;
+    bvector<uint64_t> m_nodeIds; //Node ID to mesh and filter.
+    bvector<uint64_t> m_nodeStitchIds; //Node ID to stitch. Should be a subset of m_nodeId
+
+    void Merge(const NodesToGenerate& nodesToGenerate)
+        {        
+        m_nodeIds.insert(m_nodeIds.end(), nodesToGenerate.m_nodeIds.begin(), nodesToGenerate.m_nodeIds.end());
+        }
+    };
+
+struct GenerationTask
+    {
+    GenerationTask(int nbResolutions)
+        {
+        m_resolutionToGenerate.resize(nbResolutions);
+        m_totalNbPoints = 0;
+        }
+
+    void AddNode(IScalableMeshNodePtr& currentNode)
+        {
+        m_resolutionToGenerate[currentNode->GetLevel() - 1].m_nodeIds.push_back(currentNode->GetNodeId());
+        m_totalNbPoints += currentNode->GetPointCount();
+        }    
+
+    void MergeGenerationTask(GenerationTask& generationTask)
+        {
+        assert(generationTask.m_resolutionToGenerate.size() == m_resolutionToGenerate.size());
+
+        for (uint32_t levelInd = 0; levelInd < m_resolutionToGenerate.size(); levelInd++)
+            {
+            m_resolutionToGenerate[levelInd].Merge(generationTask.m_resolutionToGenerate[levelInd]);
+            }          
+
+        m_totalNbPoints += generationTask.m_totalNbPoints;
+        }
+    
+    bvector<NodesToGenerate> m_resolutionToGenerate;
+    uint32_t                 m_orderId;
+    uint64_t                 m_totalNbPoints;
+    };
+
+#if 0 
+
+void AccumulateNode(bvector<GenerationTask>& toExecuteTasks, GenerationTask& currentTask, IScalableMeshNodePtr& currentNode, uint64_t pointThreshold, uint64_t currentLevelId, int nbResolutions)
+    {
+    bvector<IScalableMeshNodePtr> childrenNodes(currentNode->GetChildrenNodes());
+
+    if (childrenNodes.size() > 0)
+        {        
+        bvector<GenerationTask> tasks[childrenNodes.size()];
+
+        uint32_t nodeInd = 0;
+
+        for (auto& node : childrenNodes)
+            {
+            AccumulateNode(toExecuteTasks, tasks[nodeInd], node, pointThreshold, currentLevelId);
+            nodeInd++;
+            }
+
+        for (auto& task : tasks)
+            {
+            if (currentTask.m_totalNbPoints + task.m_totalNbPoints < pointThreshold)
+                {
+                currentTask.MergeGenerationTask(task);
+                }
+            else
+                {
+                toExecuteTasks.push_back(currentTask);                
+                currentTask = GenerationTask(currentTask.m_resolutionToGenerate.size());
+                }
+            }
+        }    
+    else
+        {
+        currentTask.AddNode(currentNode);
+        }
+    }
+
+
+void CreateGroup(s_nbResPerGroup)
+    {
+
+    bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
+
+    bvector<IScalableMeshNodePtr> childrenNodes(meshNode->GetChildrenNodes())
+
+
+    
+    IScalableMeshNodePtr meshNode
+
+    }
+
+static int s_nbResPerGroup = 4;
+#endif 
+
+void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(GenerationTask& generationTasks)
+    {
+#if 0 
+    GenerationTask generationTasks;
+
+    IScalableMeshNodePtr meshNode(m_scmPtr->GetRootNode());
+
+
+    s_nbResPerGroup 
+
+    int nbRes = m_scmPtr->GetNbResolutions();
+
+    
+
+    
+    CreateGroup(s_nbResPerGroup, )
+
+
+
+    bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
+
+    bvector<IScalableMeshNodePtr> meshNode->GetChildrenNodes() const = 0;
+
+#endif        
+    }
+
+StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks()
+    {
+#if 0
+    BeFileName taskDirectory(m_scmFileName);
+
+    taskDirectory = taskDirectory.GetDirectoryName();
+
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+
+    bvector<uint64_t> nodesToMesh;
+
+    wchar_t stringBuffer[100000];
+    
+
+    GenerationTask generationTasks;
+
+    GetGenerationTasks(generationTasks);
+
+
+    bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
+
+    bvector<IScalableMeshNodePtr> _GetChildrenNodes() const = 0;
+
+
+
+
+
+
+
+    pDataIndex->Mesh(&nodesToMesh);
+
+    uint32_t nbNodesPerTask = GetNbNodesPerTask(nodesToMesh.size());
+
+    for (size_t ind = 0; ind < nodesToMesh.size();)
+            {
+        BeFileName meshTaskFile(taskDirectory);
+
+        swprintf(stringBuffer, L"Mesh%zi.xml", ind);
+        meshTaskFile.AppendString(stringBuffer);
+        BeXmlDomPtr xmlDomPtr(BeXmlDom::CreateEmpty());
+
+        BeXmlNodeP workerNode(xmlDomPtr->AddNewElement("workerTask", nullptr, nullptr));
+        workerNode->AddAttributeStringValue("type", "mesh");
+
+        for (size_t nodeInd = 0; nodeInd < nbNodesPerTask; nodeInd++)
+            {
+            BeXmlNodeP tileNode(xmlDomPtr->AddNewElement("tile", nullptr, workerNode));
+            tileNode->AddAttributeUInt64Value("id", nodesToMesh[ind]);
+            ind++;
+
+            if (ind >= nodesToMesh.size())
+                break;
+            
+
+        BeXmlDom::ToStringOption toStrOption = (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent);
+
+        BeXmlStatus status = xmlDomPtr->ToFile(meshTaskFile, toStrOption, BeXmlDom::FILE_ENCODING_Utf8);
+        assert(status == BEXML_Success);
+        }
+#endif
+    return SUCCESS;
+    }
+
+
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
     {
     BeFileName taskDirectory(m_scmFileName);

@@ -68,7 +68,9 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
  bool s_useSpecialTriangulationOnGrids = false;
 #endif
 
-ScalableMeshExistingMeshMesher<DPoint3d,DRange3d> s_ExistingMeshMesher;
+ ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filterClass = nullptr;
+
+//ScalableMeshExistingMeshMesher<DPoint3d,DRange3d> s_ExistingMeshMesher;
 
 
 size_t nGraphPins =0;
@@ -485,18 +487,18 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate
         }
 
 
-    // Ensure GCS and sources are save to the file.
+    // Ensure GCS and sources are save to the file.  
     m_gcsDirty = true;
-    m_sourcesDirty = true;
+    m_sourcesDirty = true;   
     //return filePtr;
 }
 
 void IScalableMeshSourceCreator::SetUserFilterCallback(MeshUserFilterCallback callback)
     {
-#ifdef WIP_MESH_IMPORT
-    if (s_filter == nullptr) s_filter = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
-    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filter)->SetCallback(callback);
-#endif
+//#ifdef WIP_MESH_IMPORT
+    if (s_filterClass == nullptr) s_filterClass = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
+    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filterClass)->SetCallback(callback);
+//#endif 
     }
 
 

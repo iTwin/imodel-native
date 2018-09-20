@@ -62,6 +62,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <CloudDataSource/DataSourceManager.h>
 #endif
 
+#include "Stores/SMStreamingDataStore.h"
+
 //extern DataSourceManager s_dataSourceManager;
 
 
@@ -233,6 +235,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         IScalableMeshRDSProviderPtr   m_smRDSProvider = nullptr;
 
+        SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr m_streamingSettings = nullptr;
+
 		IScalableMeshClippingOptionsPtr m_clippingOptions;
 
 
@@ -373,6 +377,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
+#else
+        virtual BentleyStatus                      _Reproject(DgnGCSCP targetCS, DgnDbR dgnProject) override;
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
@@ -407,8 +413,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override;
 #endif
-
-        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override;
+        
         virtual void _ReFilter() override;
         
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
@@ -633,6 +638,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             {
             return ERROR;
             }
+#else
+        virtual BentleyStatus                      _Reproject(DgnGCSCP targetCS, DgnDbR dgnProject) override
+            {
+            return ERROR;
+            }
 #endif
         virtual SMStatus                      _DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution) override
             {
@@ -682,8 +692,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override { return ERROR; }
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const override { return ERROR; }
 #endif
-
-        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) override {};
+        
         virtual void _ReFilter() override {};
            
     };

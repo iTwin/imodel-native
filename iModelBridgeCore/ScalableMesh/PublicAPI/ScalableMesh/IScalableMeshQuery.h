@@ -27,6 +27,8 @@
 #include <DgnPlatform/ClipVector.h>
 #include <Bentley/bset.h>
 
+#include <BeJsonCpp/BeJsonUtilities.h>
+
 #ifdef VANCOUVER_API
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
@@ -519,6 +521,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         virtual bool _HasClip(uint64_t id) const = 0;
 
+        virtual bool _HasAnyClip() const =0;
+
         virtual bool _IsClippingUpToDate() const = 0;
 
         virtual bool _IsDataUpToDate() const = 0;
@@ -534,6 +538,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 		virtual void _ClearCachedData() = 0;      
 
         virtual SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const = 0;
+
+        virtual IScalableMeshNodeEditPtr _EditNode() = 0;
 
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
@@ -589,6 +595,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         bool     DeleteClip(uint64_t id, bool isVisible=true) const;
 
+        BENTLEY_SM_EXPORT bool HasAnyClip() const;
+
         BENTLEY_SM_EXPORT DRange3d GetNodeExtent() const;
 
         BENTLEY_SM_EXPORT DRange3d GetContentExtent() const;
@@ -621,6 +629,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT SMNodeViewStatus IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const;
 
+        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditNode();
+
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
 
@@ -645,6 +655,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
+        virtual bool      _GetContours(bvector<bvector<DPoint3d>>& contours) = 0;
+
     public : 
 
 
@@ -655,6 +667,8 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
         BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<CLIP_VECTOR_NAMESPACE::ClipVectorPtr>& clipVectors) const;
 
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
+
+        BENTLEY_SM_EXPORT bool      GetContours(bvector<bvector<DPoint3d>>& contours);
 
         BENTLEY_SM_EXPORT static IScalableMeshCachedDisplayNodePtr Create(uint64_t nodeId, IScalableMesh* smP);
     };
@@ -674,6 +688,7 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
 
         virtual bvector<IScalableMeshNodeEditPtr> _EditChildrenNodes() = 0;
         virtual IScalableMeshNodeEditPtr _EditParentNode() = 0;
+        virtual void   _ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates) = 0;
 
     public:
         BENTLEY_SM_EXPORT StatusInt AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices);
@@ -688,6 +703,8 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodeEditPtr> EditChildrenNodes();
         BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr EditParentNode();
+
+        void                        ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates);
     };
 
 
@@ -715,6 +732,12 @@ struct IScalableMeshMeshQueryParams  : virtual public RefCountedBase
         virtual void _SetUseAllResolutions(bool useAllResolutions) = 0;
 
         virtual void _SetTargetPixelTolerance(double pixelTol) = 0;
+
+
+        virtual bool _GetReturnNodesWithNoMesh() = 0;
+
+        virtual void _SetReturnNodesWithNoMesh(bool returnEmptyNodes) = 0;
+
     public:
         BENTLEY_SM_EXPORT static IScalableMeshMeshQueryParamsPtr CreateParams();
 
@@ -735,6 +758,10 @@ struct IScalableMeshMeshQueryParams  : virtual public RefCountedBase
         BENTLEY_SM_EXPORT void SetUseAllResolutions(bool useAllResolutions);
 
         BENTLEY_SM_EXPORT void SetTargetPixelTolerance(double pixelTol);
+
+        BENTLEY_SM_EXPORT bool GetReturnNodesWithNoMesh();
+
+        BENTLEY_SM_EXPORT void SetReturnNodesWithNoMesh(bool returnEmptyNodes);
     };
 
 
@@ -774,6 +801,16 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
         virtual StatusInt       _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) = 0;
         
         virtual void            _SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector) = 0;
+
+        virtual bool            _ShouldLoadContours() const = 0;
+
+        virtual double          _GetMajorContourInterval() const = 0;
+
+        virtual double          _GetMinorContourInterval() const = 0;
+
+        virtual void            _SetLoadContours(bool loadContours) = 0;
+
+        virtual void            _SetContourInterval(double major, double minor) = 0;
                                                   
     public : 
 
@@ -791,6 +828,12 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
         const CLIP_VECTOR_NAMESPACE::ClipVectorPtr GetViewClipVector() const;
 
         bool                IsProgressiveDisplay() const;
+
+        bool                ShouldLoadContours() const;
+
+        double              GetMajorContourInterval() const;
+
+        double              GetMinorContourInterval() const;
     
         
         BENTLEY_SM_EXPORT void      SetViewBox(const DPoint3d viewBox[]);        
@@ -807,7 +850,11 @@ struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshM
 
         BENTLEY_SM_EXPORT void      SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector);
         
-        BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();       
+        BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();
+
+        BENTLEY_SM_EXPORT void      SetLoadContours(bool loadContours);
+
+        BENTLEY_SM_EXPORT void      SetContourInterval(double major, double minor);
     };
 
 
@@ -947,7 +994,5 @@ struct IScalableMeshNodePlaneQueryParams  : IScalableMeshMeshQueryParams
 
         BENTLEY_SM_EXPORT static IScalableMeshNodePlaneQueryParamsPtr CreateParams();
     };
-
-
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

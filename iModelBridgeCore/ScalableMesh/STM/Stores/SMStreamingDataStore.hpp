@@ -19,6 +19,7 @@
 #include <CloudDataSource/DataSourceAccountWSG.h>
 #include <CloudDataSource/DataSourceBuffered.h>
 #endif
+#include "../ScalableMeshRDSProvider.h"
 
 #include <ImagePP/all/h/HCDCodecZlib.h>
 #include <ImagePP/all/h/HCDException.h>
@@ -87,7 +88,7 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
 
 template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::ParseUrl(const WString url)
     {
-    Utf8String projectID;
+    this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
     if (url.ContainsI(L"realitydataservices") && url.ContainsI(L"S3MXECPlugin"))
         { // RDS
         this->m_location = ServerLocation::RDS;
@@ -102,20 +103,21 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         this->m_guid = Utf8String(url.substr(guidPos, guidLength));
         auto projectIDStartPos = url.find(L"S3MXECPlugin--") + 14;
         auto projectIDEndPos = url.find_first_of(L"/", projectIDStartPos);
-        this->m_projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
+        auto projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
+        BeAssert(projectID.Equals(this->m_projectID.c_str()));
         }
     else if (url.ContainsI(L"blob.core.windows.net"))
         { // Direct link to Azure
-
+    
         // NEEDS_WORK_SM_STREAMING : Handle invalid/unsupported Azure urls (e.g. Azure urls which are not from RDS i.e. does not have a project associated)
-
+    
         // The following assumes url has the form https://<storage-account>.blob.core.windows.net/<guid>/<root-document>?<azure-token>
-        this->m_location = ServerLocation::RDS;
+        this->m_location = ServerLocation::AZURE;
         this->m_commMethod = CommMethod::CURL;
         BeAssert(url.substr(0, 8) == L"https://");
         auto firstSeparatorPos = url.find(L".");
         this->m_serverID = Utf8String(url.substr(8, firstSeparatorPos - 8));
-
+    
         // compute positions and lengths for guid, root file and azure token
         auto guidPos = url.find(L"/", 8) + 1;
         auto guidLength = url.find(L"/", guidPos) - guidPos;
@@ -123,27 +125,37 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         auto azureTokenPos = url.find(L"?", rootTilesetPathPos);
         auto rootTilesetPathLength = azureTokenPos == Utf8String::npos ? url.size() : azureTokenPos - rootTilesetPathPos;
         auto azureTokenLength = azureTokenPos == Utf8String::npos ? 0 : url.size() - azureTokenPos;
-
+    
         // guid
         this->m_guid = Utf8String(url.substr(guidPos, guidLength));
-
+    
         // root file
         auto rootTilesetPath = Utf8String(url.substr(rootTilesetPathPos, rootTilesetPathLength));
-
+    
         this->m_url = rootTilesetPath.c_str();
-
-        // azure token (does not need to be present, handled by RDS through projectID
+    
+        // azure token (does not need to be present, handled by RDS through projectID)
         if (azureTokenLength > 0)
             {
             auto azureToken = Utf8String(url.substr(azureTokenPos + 1, azureTokenLength));
             // NEEDS_WORK_SM_STREAMING : handle Azure token properly
             }
-
-        this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
+        if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_projectID, this->m_guid))
+            {
+            // Forward to RDS to properly handle SAS tokens
+            this->m_location = ServerLocation::RDS;
+            }
+        else
+            {
+            // Treat url as regular http(s) server
+            // NEEDS_WORK_SM_STREAMING: handle Azure SAS tokens
+            this->m_location = ServerLocation::HTTP_SERVER;
+            this->m_url = Utf8String(url.c_str());
+            }
         }
     else if (url.StartsWith(L"http") || url.StartsWith(L"https"))
         {
-        this->m_location = ServerLocation::HTTP_SERVER;
+        this->m_location = url.Contains(L"://localhost") ? ServerLocation::HTTP_SERVER_LOCAL : ServerLocation::HTTP_SERVER;
         this->m_commMethod = CommMethod::CURL;
         this->m_url = Utf8String(url.c_str());
         }
@@ -255,7 +267,14 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     std::unique_ptr<std::function<string()>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
-    if (settings->IsLocal() && settings->IsUsingCURL())
+    if (settings->IsDataFromHTTPServerAddress())
+        {
+        service_name = L"DataSourceServiceCURL";
+        account_name = L"HTTP-Servers";
+
+        m_masterFileName = settings->GetURL();
+        }
+    else if (settings->IsLocal() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceCURL";
         account_name = L"LocalCURLAccount";
@@ -313,13 +332,6 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         // NEEDS_WORK_SM_STREAMING: Use WAStorage library here...
         assert(!"Not implemented...");
-        }
-    else if (settings->IsDataFromHTTPServerAddress())
-        {
-        service_name = L"DataSourceServiceCURL";
-        account_name = L"HTTP-Servers";
-        
-        m_masterFileName = settings->GetURL();
         }
     else
         {
@@ -405,6 +417,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::Close()
             
 template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+    if (indexHeader->m_isCesiumFormat) return false;
     if (indexHeader != NULL && indexHeader->m_rootNodeBlockID.IsValid())
         {
         Json::Value masterHeader;
@@ -528,7 +541,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->DeclareRoot();
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
-        m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID);
+        if (nullptr == m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID))
+            return 0;
         Json::Value* masterJSONPtr = nullptr;
         if ((masterJSONPtr = m_CesiumGroup->GetSMMasterHeaderInfo()) != nullptr)
             {
@@ -1735,10 +1749,13 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             int childInd = 0;
             for (auto& child : children)
                 {
-                if (child.isMember("SMHeader"))
+                if (child.isMember("SMHeader") && child["SMHeader"].isMember("id"))
                     header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMHeader"]["id"].asUInt());
                 else
+                    {
+                    assert(child.isMember("SMRootID"));
                     header->m_apSubNodeID[childInd++] = HPMBlockID(child["SMRootID"].asUInt());
+                    }
                 }
             header->m_SubNodeNoSplitID = header->m_apSubNodeID[0];
             }
@@ -2199,7 +2216,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     //    {
     //    delete it->second;
     //    }
-    m_dataCache.clear();
+    m_dataCache.reset(nullptr);
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
@@ -2234,10 +2251,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
                 sizeToWrite = (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t);
                 dataToWrite = new Byte[sizeToWrite];
                 reinterpret_cast<uint32_t&>(*dataToWrite) = (uint32_t)bufferSize;
-                if (m_dataCache.count(blockID.m_integerID) > 0)
+                if (m_dataCache != nullptr)
                     {
                     // must update data count in the cache
-                    auto& block = this->m_dataCache[blockID.m_integerID];
+                    auto& block = this->m_dataCache;
                     block->resize(bufferSize);
                     memcpy(block->data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
                     dataToWrite = block->data();
@@ -2383,10 +2400,8 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         }
     auto blockSize = block.size();
     // Data now resides in the pool, no longer need to keep it in the store
-    m_dataCacheMutex.lock();
     block.UnLoad();
-    m_dataCache.erase(block.GetID());
-    m_dataCacheMutex.unlock();
+    m_dataCache.reset(nullptr);
 
     return blockSize;
     }
@@ -2399,9 +2414,7 @@ template <class DATATYPE, class EXTENT> bool SMStreamingNodeDataStore<DATATYPE, 
 template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlock(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
-    m_dataCacheMutex.lock();
-    auto& block = m_dataCache[blockID.m_integerID];
-    m_dataCacheMutex.unlock();
+    auto& block = m_dataCache;
     if (!block)
         {
         block.reset(new StreamingDataBlock());
@@ -2995,10 +3008,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
 template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
-    m_dataCacheMutex.lock();
-    StreamingTextureBlock* texture = static_cast<StreamingTextureBlock*>(m_dataCache[blockID.m_integerID].get());
+    StreamingTextureBlock* texture = static_cast<StreamingTextureBlock*>(m_dataCache.get());
     if (!texture) texture = new StreamingTextureBlock();
-    m_dataCacheMutex.unlock();
     assert((texture->GetID() != uint64_t(-1) ? texture->GetID() == blockID.m_integerID : true));
     if (!texture->IsLoaded())
         {
@@ -3112,11 +3123,8 @@ template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYP
     ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
     assert(maxCountData >= texture.size());
     memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
-    m_dataCacheMutex.lock();
-    auto textureID = texture.GetID();
     //delete m_dataCache[textureID];
-    m_dataCache.erase(textureID);
-    m_dataCacheMutex.unlock();
+    m_dataCache.reset(nullptr);
     return std::min(textureSize + 3 * sizeof(int), maxCountData);
     }
 

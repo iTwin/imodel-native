@@ -170,9 +170,12 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
     curl_easy_setopt(curl, CURLOPT_URL, url);
     Utf8String pemFileName;
 
+#ifdef VANCOUVER_API //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
     GetCertificateAutoritiesFileUrl(pemFileName);
     curl_easy_setopt(curl, CURLOPT_CAINFO, pemFileName.c_str());
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
+#endif
+
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);    
 
@@ -296,9 +299,61 @@ WebServiceKey GetBingKey()
     logger->debug("Perform curl using");
     logger->debug(bingKeyUrl.c_str());
 
+
+#if 0 //Would be more generic to use (and would alleviate the need for security code maintance) but seems to have singleton crash problem.
+    Http::Request httpRequest(bingKeyUrl);
+    httpRequest.SetValidateCertificate(true);
+
+    Http::HttpRequestHeadersR httpHeader(httpRequest.GetHeaders());
+
+
+    RequestConstructor curlConstructor;
+    Utf8String token = curlConstructor.GetToken();
+    
+    Utf8String field;
+    Utf8String value;
+
+    int tokenInd = 0;
+    size_t offset = 0;
+    Utf8String m;
+    while ((offset = token.GetNextToken (m, ":", offset)) != Utf8String::npos)
+        {
+        if (tokenInd == 0)
+            {
+            field = m;
+            }
+        else
+            {
+            value += m /*+ Utf8String(" ")*/;
+            }
+
+        tokenInd++;
+        }
+
+    httpHeader.AddValue(field, value);
+
+    folly::Future<Http::Response> httpResponseAsync(httpRequest.Perform());
+
+    httpResponseAsync.wait();
+
+    if (!httpResponseAsync.get().IsSuccess())
+        {
+        logger->error("curl failed, returning empty key");
+        return WebServiceKey();
+        }
+
+    /*
+    Http::HttpBodyCR httpBody(httpResponseAsync.get().GetBody());
+    readBuffer = httpBody.AsString();
+    */
+
+    Http::HttpBodyPtr httpBody(httpRequest.GetResponseBody());
+    readBuffer = httpBody->AsString();        
+#endif
+
     Utf8String postFields;
     CURLcode result = PerformCurl(bingKeyUrl, &readBuffer, nullptr, postFields);
-
+    
     if (CURLE_OK != result)
         {
         logger->error("curl failed, returning empty key");
@@ -424,7 +479,8 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 #ifdef VANCOUVER_API
 			pCertAutorityAuth->SetCertificateAuthFileUrl(WString(pemFileName.c_str(), true));
 #else	
-			pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
+            //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error. 
+            //pCertAutorityAuth->SetCertificateAuthFileUrl(pemFileName);
 #endif
             return true;
             }

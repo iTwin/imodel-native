@@ -325,7 +325,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
      virtual void                            _Write() override
          {
          if ((int)m_pointPacket.GetSize() == 0) return;
-#ifdef WIP_MESH_IMPORT
+//#ifdef WIP_MESH_IMPORT
          Utf8String str;
          str.Sprintf("%s", m_metadataPacket.Get());
          
@@ -364,8 +364,8 @@ class GenericLinearStorageEditor : public Import::BackInserter
              m_rIndex.AddTexture(width, height, nChannels, &tex[0] + 3 * sizeof(int), tex.size() - 3 * sizeof(int));
              }
              // Append to index
-         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str(), 0,0, m_uvPacket.Get());
-#endif
+         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str(), 0,0, m_uvPacket.Get(), m_is3dData);
+//#endif
          // TDORAY: Throw on failures?
          }
      virtual bool                           _IsAcceptingData() { return m_rIndex.m_progress == nullptr || !m_rIndex.m_progress->IsCanceled(); }

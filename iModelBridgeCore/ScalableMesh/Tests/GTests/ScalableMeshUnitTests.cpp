@@ -17,7 +17,7 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
-
+#include "../../STM/Edits/ClipUtilities.h"
 
 
 
@@ -184,11 +184,11 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
             DRange3d clipRange = DRange3d::From(vec.data(), (int)vec.size());
 
             vec.clear();
-            vec.push_back(clipRange.low);
-            vec.push_back(DPoint3d::From(clipRange.high.x, clipRange.low.y, clipRange.high.z)); 
+            vec.push_back(DPoint3d::From(clipRange.low.x, clipRange.low.y, clipRange.high.z));
             vec.push_back(DPoint3d::From(clipRange.low.x, clipRange.high.y, clipRange.high.z));
             vec.push_back(clipRange.high);
-            vec.push_back(clipRange.low);
+            vec.push_back(DPoint3d::From(clipRange.high.x, clipRange.low.y, clipRange.high.z)); 
+            vec.push_back(DPoint3d::From(clipRange.low.x, clipRange.low.y, clipRange.high.z));
             }
 
         void SetReprojection(IScalableMeshPtr myScalableMesh, bool& status)
@@ -2115,6 +2115,272 @@ TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
         current->GetSkirtMeshes(meshes, fakeClips);
 
         ASSERT_TRUE(meshes.empty());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetChildrenNodes)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    if (myScalableMesh->GetNbResolutions() > 1)
+    {
+        auto nodes = nodeP->GetChildrenNodes();
+        ASSERT_EQ(nodes.empty(), false);
+
+        for (auto& nodeChild : nodes)
+        {
+            ASSERT_EQ(nodeChild->GetParentNode()->GetNodeId(), nodeP->GetNodeId());
+            ASSERT_EQ(nodeChild->GetLevel(), 1);
+        }
+
+        std::queue<IScalableMeshNodePtr> nodeQueue;
+        for (auto& nodeChild : nodes)
+            nodeQueue.push(nodeChild);
+
+        while (!nodeQueue.empty())
+        {
+            IScalableMeshNodePtr current = nodeQueue.front();
+            nodeQueue.pop();
+            bvector<IScalableMeshNodePtr> nodeNext = current->GetChildrenNodes();
+            for (auto& n : nodeNext)
+            {
+                nodeQueue.push(n);
+                ASSERT_EQ(n->GetLevel(), current->GetLevel() + 1);
+            }
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetBcDTM)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+
+        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP = nullptr;
+        ASSERT_EQ(SUCCESS, mesh->GetAsBcDTM(bcdtmP));
+        ASSERT_EQ(bcdtmP->GetTrianglesCount(), mesh->GetNbFaces());
+
+        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP2 = nodeP->GetBcDTM();
+        ASSERT_EQ(bcdtmP->GetTrianglesCount(), bcdtmP2->GetTrianglesCount());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetNeighborAt)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    if (myScalableMesh->GetNbResolutions() > 1)
+    {
+        auto nodes = nodeP->GetChildrenNodes();
+        ASSERT_EQ(nodes.empty(), false);
+
+        std::queue<IScalableMeshNodePtr> nodeQueue;
+        for (auto& nodeChild : nodes)
+            nodeQueue.push(nodeChild);
+
+        while (!nodeQueue.empty())
+        {
+            IScalableMeshNodePtr current = nodeQueue.front();
+            nodeQueue.pop();
+            bvector<IScalableMeshNodePtr> nodeNext = current->GetChildrenNodes();
+            for (auto& n : nodeNext)
+            {
+                nodeQueue.push(n);
+            }
+            bvector<IScalableMeshNodePtr> neighbor = current->GetNeighborAt(-1, 0, 0);
+
+            DRange3d myExt = current->GetNodeExtent();
+            for (auto& n : neighbor)
+            {
+                DRange3d range = n->GetNodeExtent();
+                ASSERT_EQ(range.high.x <= myExt.low.x, true);
+                ASSERT_EQ(range.high.y >= myExt.low.y && range.low.y <= myExt.high.y, true);
+                ASSERT_EQ(range.high.z >= myExt.low.z && range.low.z <= myExt.high.z, true);
+            }
+
+            neighbor = current->GetNeighborAt(1, 0, 0);
+            for (auto& n : neighbor)
+            {
+                DRange3d range = n->GetNodeExtent();
+                ASSERT_EQ(range.low.x >= myExt.high.x, true);
+                ASSERT_EQ(range.high.y >= myExt.low.y && range.low.y <= myExt.high.y, true);
+                ASSERT_EQ(range.high.z >= myExt.low.z && range.low.z <= myExt.high.z, true);
+            }
+
+            neighbor = current->GetNeighborAt(0, -1, 0);
+            for (auto& n : neighbor)
+            {
+                DRange3d range = n->GetNodeExtent();
+                ASSERT_EQ(range.high.y <= myExt.low.y, true);
+                ASSERT_EQ(range.high.x >= myExt.low.x && range.low.x <= myExt.high.x, true);
+                ASSERT_EQ(range.high.z >= myExt.low.z && range.low.z <= myExt.high.z, true);
+            }
+
+            neighbor = current->GetNeighborAt(0, 1, 0);
+            for (auto& n : neighbor)
+            {
+                DRange3d range = n->GetNodeExtent();
+                ASSERT_EQ(range.low.y >= myExt.high.y, true);
+                ASSERT_EQ(range.high.x >= myExt.low.x && range.low.x <= myExt.high.x, true);
+                ASSERT_EQ(range.high.z >= myExt.low.z && range.low.z <= myExt.high.z, true);
+            }
+
+            neighbor = current->GetNeighborAt(1, 1, 0);
+            for (auto& n : neighbor)
+            {
+                DRange3d range = n->GetNodeExtent();
+                ASSERT_EQ(range.low.x >= myExt.high.x, true);
+                ASSERT_EQ(range.low.y >= myExt.high.y, true);
+                ASSERT_EQ(range.high.z >= myExt.low.z && range.low.z <= myExt.high.z, true);
+            }
+
+            neighbor = current->GetNeighborAt(1, -1, 0);
+            for (auto& n : neighbor)
+            {
+                DRange3d range = n->GetNodeExtent();
+                ASSERT_EQ(range.low.x >= myExt.high.x, true);
+                ASSERT_EQ(range.high.y <= myExt.low.y, true);
+                ASSERT_EQ(range.high.z >= myExt.low.z && range.low.z <= myExt.high.z, true);
+            }
+
+            neighbor = current->GetNeighborAt(0, 0, 0);
+            ASSERT_EQ(neighbor.empty(), true);
+
+            neighbor = current->GetNeighborAt(127, 0, 127);
+            ASSERT_EQ(neighbor.empty(), true);
+
+            neighbor = current->GetNeighborAt(2, 0, 0);
+            ASSERT_EQ(neighbor.empty(), true);
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetTextureCompressed)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    IScalableMeshTexturePtr textureP = nodeP->GetTextureCompressed();
+    if (textureP.IsValid())
+    {
+        ASSERT_TRUE(textureP->GetSize() != 0);
+        ASSERT_TRUE(textureP->GetData() != nullptr);
+    }
+    else
+    {
+        ASSERT_FALSE(nodeP->IsTextured());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    double maxZ = range.high.z;
+    range.scaleAboutCenter(&range, 0.75);
+
+    range.high.z = maxZ;
+    bvector<DPoint3d> clipPoints;
+    CreateSimpleClipFromRangeHelper(clipPoints, range);
+
+    uint64_t clipId = 20;
+    ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
+
+    //load root node
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, false);
+
+    Transform tr = Transform::FromIdentity();
+    nodeP->RefreshMergedClip(tr);
+    auto mesh = nodeP->GetMeshUnderClip(flags, clipId);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+    { 
+        ASSERT_TRUE(mesh.IsValid());
+        for (size_t pt = 0; pt < mesh->GetPolyfaceQuery()->GetPointIndexCount(); ++pt)
+            ASSERT_TRUE(range.IsContainedXY(mesh->GetPolyfaceQuery()->GetPointCP()[mesh->GetPolyfaceQuery()->GetPointIndexCP()[pt]-1]));
+    }
+}
+
+TEST_P(ScalableMeshTestWithParams, MeshClipperClipFilterModes3D)
+{
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> clipPoints;
+    CreateClipFromRangeHelper(clipPoints, range);
+
+    bvector<uint64_t> ids;
+    ids.push_back(1);
+    bvector<bvector<DPoint3d>> polygons;
+    polygons.push_back(clipPoints);
+
+    //load root node
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+        MeshClipper m;
+        m.SetSourceMesh(mesh->GetPolyfaceQuery());
+        m.SetClipGeometry(ids, polygons);
+
+        EXPECT_TRUE(m.IsClipMask(1));
+        EXPECT_FALSE(m.WasClipped());
     }
 }
 

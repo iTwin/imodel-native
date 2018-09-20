@@ -28,6 +28,8 @@
 #include <ScalableMesh\Import\Plugin\SourceV0.h>
 #include <ScalableMesh\IScalableMeshPolicy.h>
 
+#include <STMInternal/GeoCoords/WKTUtils.h>
+
 
 #define PointCloudMinorId_Handler 1
 
@@ -137,7 +139,23 @@ private:
 
             try
                 {
-                gcs = GetGCSFactory().Create(WKT.c_str());
+                WString wktWithoutFlavor;
+
+                ISMStore::WktFlavor fileWktFlavor;
+                BaseGCS::WktFlavor  baseGcsWktFlavor;
+
+                fileWktFlavor = GetWKTFlavor(&wktWithoutFlavor, WKT);
+                bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
+
+                if (result == true)
+                    {
+                    SMStatus status;
+                    gcs = GetGCSFactory().Create(wktWithoutFlavor.c_str(), baseGcsWktFlavor, status);
+                    }
+                else
+                    {
+                    gcs = GetGCSFactory().Create(WKT.c_str());
+                    }                
                 }
             catch (CustomError&)
                 {

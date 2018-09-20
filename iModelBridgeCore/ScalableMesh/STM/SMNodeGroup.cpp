@@ -244,6 +244,8 @@ StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
         }
 
     uint64_t tileID = tile.isMember("SMRootID") ? tile["SMRootID"].asUInt() : tile["SMHeader"]["id"].asUInt();
+    uint64_t tileLevel = tile["SMHeader"].isMember("level") ? tile["SMHeader"]["level"].asUInt() : this->m_level;
+    tile["SMHeader"]["level"] = tileLevel;
 
     if (SUCCESS != this->SaveTileToCache(tile, tileID))
         return ERROR;
@@ -252,6 +254,7 @@ StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
         {
         for (auto& child : tile["children"])
             {
+            child["SMHeader"]["level"] = tileLevel + 1;
             if (SUCCESS != SaveTileToCacheWithExistingTileIDs(child))
                 return ERROR;
             }
@@ -280,6 +283,7 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
                 newPrefix.append(BEFILENAME(GetDirectoryName, contentURL));
                 auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
                 SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, s_currentGroupID);
+                newGroup->SetLevel(tile["SMHeader"]["level"].asUInt());
 #ifndef LINUX_SCALABLEMESH_BUILD
                 newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
 #endif
@@ -885,6 +889,7 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
     if (!m_tileTreeMap.empty())
         {
         assert(parentNodeID != uint32_t(-1));
+        assert(m_tileTreeMap.count(parentNodeID) == 1);
         auto parentTilePtr = m_tileTreeMap[parentNodeID];
         assert(parentTilePtr != nullptr);
 
@@ -908,10 +913,10 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
 
             // Keep the index before updating the parent tile
             m_tilesetRootNode["index"] = parentNodeTileChildren.size();
+            m_tileTreeMap[parentNodeID] = &parentNodeTile;
 
             auto& childTile = parentNodeTileChildren.append(tile);
             childTile.removeMember("children");
-            childTile.removeMember("SMHeader");
 
             childTile["content"]["url"] = Utf8String(("n_" + std::to_string(this->GetID()) + ".json").c_str());
             }
@@ -924,7 +929,6 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
 void SMNodeGroup::AppendChildGroup(SMNodeGroupPtr childGroup)
     {
     Json::Value childReferenceNode;
-    childReferenceNode["SMRootID"] = childGroup->m_tilesetRootNode["SMHeader"]["id"];
     childReferenceNode["boundingVolume"] = childGroup->m_tilesetRootNode["boundingVolume"];
     childReferenceNode["geometricError"] = childGroup->m_tilesetRootNode["geometricError"];
     childReferenceNode["refine"] = childGroup->m_tilesetRootNode["refine"];
@@ -1027,6 +1031,18 @@ Json::Value * SMGroupCache::GetNodeFromCache(const uint64_t & nodeId)
     assert(m_nodeHeadersPtr->count(nodeId) == 1); // Node was not properly downloaded
     return m_nodeHeadersPtr->operator[](nodeId);
     }
+
+
+#ifndef VANCOUVER_API
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t SMGroupCache::_GetExcessiveRefCountThreshold() const 
+    { 
+    return numeric_limits<uint32_t>::max(); 
+    }
+#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016

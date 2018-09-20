@@ -55,6 +55,8 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         
     protected:                
     private:
+
+        void CreateGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node, const DPoint3d* points, int nbPoints, const long* ptsIndice, int nbPtsIndice) const;
         void LoadAdjacencyData(MTGGraph* graph, POINT* pPoints, size_t size) const;
         void SelectPointsToStitch(std::vector<DPoint3d>& stitchedPoints, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, MTGGraph* meshGraph, EXTENT neighborExt, vector<int>* pointsToDestPointsMap) const;
         void SelectPointsBasedOnBox(std::vector<DPoint3d>& stitchedPoints, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, EXTENT neighborExt) const;
@@ -81,9 +83,11 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
             {         
             return true;
             };
-
+        
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const override
             {
+            assert(!"Currently Deactivated");
+
 #ifdef WIP_MESH_IMPORT
             node->GetMetadata();
             node->GetMeshParts();

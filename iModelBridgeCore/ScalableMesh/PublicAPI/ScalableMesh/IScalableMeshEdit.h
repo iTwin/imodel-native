@@ -38,10 +38,24 @@ class IScalableMeshEdit  : public RefCountedBase
     protected:
         virtual int _RemoveWithin(CLIP_VECTOR_NAMESPACE::ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes) = 0;
 
+        virtual void _SmoothNode(const DPlane3d& sourceGeometry, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node) = 0;
+
+        virtual void _SmoothNode(const DPoint3d& center, double radius, const DVec3d& direction, double height, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node) = 0;
+
+        virtual void _Smooth(const DPlane3d& sourceGeometry) = 0;
+
     public:
         BENTLEY_SM_EXPORT int RemoveWithin(CLIP_VECTOR_NAMESPACE::ClipVectorCP clipPlaneSet);
 
         BENTLEY_SM_EXPORT int RemoveWithin(CLIP_VECTOR_NAMESPACE::ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes);
+
+        BENTLEY_SM_EXPORT void Smooth(const DPlane3d& sourceGeometry);
+
+        BENTLEY_SM_EXPORT void SmoothNode(const DPlane3d& sourceGeometry, IScalableMeshNodePtr& node);
+
+        BENTLEY_SM_EXPORT void SmoothNode(const DPoint3d& center, double radius, const DVec3d& direction, double height, IScalableMeshNodePtr& node);
+
+        BENTLEY_SM_EXPORT void SmoothNode(const DPlane3d& sourceGeometry, const bvector<size_t>& targetedIndices, IScalableMeshNodePtr& node);
     };
 
 typedef RefCountedPtr<IScalableMeshEdit>                          IScalableMeshEditPtr;

@@ -95,6 +95,9 @@ WString GetHeaderForTestType(TestType t)
         case TEST_3MX_TO_3SM_CONVERSION:
             return L"InputFileName, OutputFileName, Result, Duration (minutes)\n";
             break;
+        case TEST_EDIT_MESH:
+            return  L"";
+            break;
             
         default: break;
         }
@@ -151,7 +154,7 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
         {
         
         if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"generation"))
-            t = TEST_GENERATION;        
+            t = TEST_GENERATION;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"partialUpdate"))
             t = TEST_PARTIAL_UPDATE;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"meshQuality"))
@@ -205,13 +208,15 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
             t = EXPORT_TO_UNITY;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"sqlFileUpdate"))
-            t = TEST_SQL_FILE_UPDATE;        
+            t = TEST_SQL_FILE_UPDATE;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"textureStreaming"))
             t = TEST_MAPBOX;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeTestlnsFileCreation"))
             t = DRAPE_TEST_LNS_FILE_CREATION;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"3mxTo3smConversion"))
-            t = TEST_3MX_TO_3SM_CONVERSION;               
+            t = TEST_3MX_TO_3SM_CONVERSION;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"smoothingEdit"))
+            t = TEST_EDIT_MESH; 
         else return false;
         }
     else return false;
@@ -401,7 +406,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;                
             case TEST_3MX_TO_3SM_CONVERSION:
                 Perform3MxTo3SmTest(pTestNode, pResultFile);
-                break;     
+                break;  
+            case TEST_EDIT_MESH:
+                PerformEditTest(pTestNode, pResultFile);
             
             default: break;
             }

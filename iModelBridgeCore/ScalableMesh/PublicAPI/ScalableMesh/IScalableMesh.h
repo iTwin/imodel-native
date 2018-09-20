@@ -231,7 +231,6 @@ struct IScalableMesh :  IRefCounted
         virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
 #endif
 
-        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) = 0;
         virtual void _ReFilter() = 0;
 
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
@@ -321,6 +320,8 @@ struct IScalableMesh :  IRefCounted
 
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) = 0;
+#else
+        virtual BentleyStatus                      _Reproject(BentleyApi::Dgn::DgnGCSCP targetCS, DgnDbR dgnProject) = 0;
 #endif
 
         virtual Transform              _GetReprojectionTransform() const = 0;
@@ -518,6 +519,8 @@ struct IScalableMesh :  IRefCounted
 
 #ifdef VANCOUVER_API
         BENTLEY_SM_EXPORT BentleyStatus          Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel);
+#else
+        BENTLEY_SM_EXPORT BentleyStatus          Reproject(BentleyApi::Dgn::DgnGCSCP targetCS, DgnDbR dgnProject);
 #endif
 
         BENTLEY_SM_EXPORT Transform              GetReprojectionTransform() const;
@@ -578,8 +581,7 @@ struct IScalableMesh :  IRefCounted
 #ifdef WIP_MESH_IMPORT
         BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);
 #endif
-
-        static void SetUserFilterCallback(MeshUserFilterCallback callback);
+        
         void ReFilter();
 
     };
