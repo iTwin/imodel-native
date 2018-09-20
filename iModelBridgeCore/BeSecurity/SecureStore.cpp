@@ -29,56 +29,30 @@ USING_NAMESPACE_BENTLEY_SECURITY
 
 #if defined(ANDROID)
 #include <Bentley/BeJStringUtilities.h>
-#define KEY_ALIAS "MobileDgnSecureStore"
+#define KEY_ALIAS "com.bentley.SecureStore.Key"
 jclass                  s_keyStoreCipherJClass = nullptr;
 static JavaVM*          s_jvm;
 static pthread_key_t    s_destructorKey;
 #endif
 
-#if defined (BENTLEY_WIN32) || defined(ANDROID) || defined(BENTLEY_WINRT)
-
-const unsigned char s_key[] =
-    {
-    0xdc, 0xbc, 0x10, 0x4d, 0x76, 0x6b, 0xd5, 0x79, 0x4c, 0x80, 0x4, 0xe, 0x17,
-    0x91, 0x19, 0xb9, 0x48, 0xf7, 0x7e, 0x53, 0x6f, 0x7b, 0xb3, 0xb, 0xd5,
-    0xbe, 0x78, 0xbf, 0x5, 0xc4, 0xc, 0x84, 0x54, 0x6d, 0x93, 0x4b, 0xde, 0x1c,
-    0xd4, 0x62, 0x28, 0x18, 0xe2, 0x95, 0x4, 0x27, 0x56, 0x42, 0x0, 0x61, 0xe,
-    0x57, 0xf6, 0x74, 0x84, 0x70, 0x92, 0x0, 0x7c, 0xda, 0x40, 0x9f, 0x1
-    };
-
-const unsigned char s_iv[] =
-    {
-    0x23, 0x56, 0x5c, 0x26, 0x3e, 0xa5, 0x31, 0x13, 0x90, 0xc9, 0xa4, 0xff,
-    0xbc, 0xd8, 0x6d, 0x44, 0xd8, 0x6d, 0x44
-    };
-
-#endif
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SecureStore::SecureStore(ILocalState& customLocalState) :
-m_localState (customLocalState)
-    {
-    }
+SecureStore::SecureStore(ILocalState& localState) :
+m_localState (localState)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-SecureStore::~SecureStore()
-    {
-    }
+SecureStore::~SecureStore() {}
 
-#if !defined(ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE_IOS)
+#if !defined(ANDROID)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SecureStore::Initialize(void* arg)
-    {
-    }
+void SecureStore::Initialize(void* arg) {}
 #endif
-
-#if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 
 #if defined(ANDROID)
 //---------------------------------------------------------------------------------------
@@ -200,53 +174,6 @@ static Utf8String CallJavaKeyStoreCipherMethod(Utf8CP methodName, Utf8CP input, 
 
 #endif
 
-#if defined (BENTLEY_WIN32) || defined(ANDROID) || defined (BENTLEY_WINRT)
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ClearValueUsingLocalStateAndOpenSSL(ILocalState& localState, Utf8StringCR identifier)
-    {
-    if (identifier.empty ())
-        {
-        return;
-        }
-    localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), "null");
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String LoadValueUsingLocalStateAndOpenSSL(ILocalState& localState, Utf8StringCR identifier)
-    {
-    if (identifier.empty ())
-        {
-        return nullptr;
-        }
-
-    Utf8String encodedValue = Base64Utilities::Decode (localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ()));
-
-    EVP_CIPHER_CTX * pCtx = EVP_CIPHER_CTX_new();
-    EVP_CIPHER_CTX_set_padding(pCtx, 0);
-
-    EVP_DecryptInit_ex(pCtx, EVP_aes_256_gcm(), nullptr, s_key, s_iv);
-
-    bvector<unsigned char> outbuf;
-    // See documentation for EVP_DecryptUpdate at the page below for explanation of
-    // the required size for outbuf:
-    // https://www.openssl.org/docs/crypto/EVP_EncryptInit.html
-    outbuf.resize(encodedValue.size() + EVP_CIPHER_CTX_block_size(pCtx));
-    int outlen;
-    if (!EVP_DecryptUpdate(pCtx, &outbuf[0], &outlen, (const unsigned char *) encodedValue.c_str(), (int) encodedValue.size()))
-        {
-        return nullptr;
-        }
-
-    EVP_CIPHER_CTX_free(pCtx);
-
-    return Utf8String ((CharCP)&outbuf[0], (size_t)outlen);
-    }
-#endif
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -264,10 +191,8 @@ void SecureStore::SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8CP value)
         return;
         }
 
-#if defined(ANDROID) || defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     Utf8String encrypted = Encrypt(value);
     m_localState.SaveValue(LOCAL_STATE_NAMESPACE, identifier.c_str(), encrypted);
-#endif
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -281,13 +206,8 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
         return nullptr;
         }
 
-#if defined(ANDROID) || defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     Utf8String encrypted = m_localState.GetValue (LOCAL_STATE_NAMESPACE, identifier.c_str ());
     return Decrypt(encrypted.c_str());
-#else
-    BeAssert("Platform not supported!");
-    return nullptr;
-#endif
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -307,31 +227,7 @@ Utf8String SecureStore::CreateIdentifier (Utf8CP nameSpace, Utf8CP key)
     return Utf8PrintfString ("%s:%s", nameSpace, key);
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SecureStore::LegacyLoadValue (Utf8CP nameSpace, Utf8CP key)
-    {
-#if defined (BENTLEY_WIN32) || defined(ANDROID) || defined (BENTLEY_WINRT)
-    return LoadValueUsingLocalStateAndOpenSSL (m_localState, CreateIdentifier (nameSpace, key));
-#else
-    // No changes
-    return LoadValue (nameSpace, key);
-#endif
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SecureStore::LegacyClearValue (Utf8CP nameSpace, Utf8CP key)
-    {
-#if defined (BENTLEY_WIN32) || defined(ANDROID) || defined (BENTLEY_WINRT)
-    return ClearValueUsingLocalStateAndOpenSSL (m_localState, CreateIdentifier (nameSpace, key));
-#else
-    // No changes
-    SaveValue (nameSpace, key, nullptr);
-#endif
-    }
+#if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2016

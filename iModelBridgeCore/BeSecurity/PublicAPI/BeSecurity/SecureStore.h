@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeSecurity/SecureStore.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,9 +35,6 @@ struct ISecureStore : public ICipher
         virtual ~ISecureStore () {};
         virtual void SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value) = 0;
         virtual Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) = 0;
-
-        virtual Utf8String LegacyLoadValue (Utf8CP nameSpace, Utf8CP key) = 0;
-        virtual void LegacyClearValue(Utf8CP nameSpace, Utf8CP key) = 0;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -53,55 +50,37 @@ struct SecureStore : public ISecureStore
 
         //__PUBLISH_SECTION_END__
     public:
-        //! [iOS] SecureStore uses one keychain  access group prefix to generate full keychain access group string. 
-        //!     Initialize with const char*. Prefix example: "XXXXXX.com.organization."
-        //! [Android] SecureStore uses KeyStore to store private keys. Initialize with JNIEnv*
-        //! [Win][WinRT] Initialize does nothing
+        //! Initialize before using.
+        //! [Winows]    Does nothing
+        //! [iOS]       Does nothing
+        //! [Android]   SecureStore uses KeyStore to store private keys. Initialize with JNIEnv*
         BESECURITY_EXPORT static void Initialize(void* arg);
         //__PUBLISH_SECTION_START__
     public:
-        //! Create new persistence with default DgnClientApp::LocalState or custom.
-        //! NOTE: For iOS LocalState is not used - iOS KeyChain is used instead.
-        BESECURITY_EXPORT SecureStore (ILocalState& customLocalState);
-        BESECURITY_EXPORT ~SecureStore ();
+        //! Create new secure store object with default local state to store encrypted data.
+        BESECURITY_EXPORT SecureStore(ILocalState& localState);
+        BESECURITY_EXPORT ~SecureStore();
 
         //! Stores value for given key in namespace. If value is empty, key-value pair is deleted. If key or namespace is empty nothing is done.
-        //! Value is encrypted and stored in persistent storage and implementation depends on platform:
-        //! iOS: Using Keychain. DgnClientFxIos::Initialize() accepts keychain access group prefix that is required when using SecureStore.
-        //!      Access group prefix is combined with nameSpace parameter and given access group is then used to store value with key as identifier.
-        //!      Application needs to be signed with access group in order for secure store to work. Example:
-        //!         Initialized access group prefix: "XXXXXX.com.organization."
-        //!         nameSpace parameter: "Passwords"
-        //!         key parameter: "MainPassword"
-        //!         value parameter: string to be encrypted and stored
-        //!         Application needs to be signed with Code Signing Entitlements to use "XXXXXX.com.organization.Passwords" keychain access group.
-        //!         Value will be saved to "XXXXXX.com.organization.Passwords" access group with identifier "MainPassword"
-        //!      Because global KeyChain is used, apps that have access to same access groups can override and read values with same identifiers.
-        //! Android: Value is encrypted and stored locally. Encryption keys are encrypted/saved using KeyStore.
-        //!      Note: API versions prior to 18 cannot use KeyStore if device lock screen is not password/pin/pattern protected.
-        //!      If that is the case, popup requiring for user to set lock screen password is shown and app is shut down.
-        //! Windows Desktop, Windows RT: TBD. Value is encrypted and saved locally.
+        //! Value is encrypted with Encrypt() and stored to local state.
         BESECURITY_EXPORT void SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value) override;
 
-        //! Loads value for given key in namespace. Empty string is returned when value not found or other error occurs.
+        //! Loads value for given key in namespace. See SaveValue() for more info. Empty string is returned when value not found or other error occurs.
+        //! Value is loaded from local state and decrypted with Decrypt().
         BESECURITY_EXPORT Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) override;
 
-        //! Will attempt to load value using known old implementation.
-        //! LegacyLoadValue() will act as LoadValue() if implementation for given platform did not change.
-        //! Useful when upgrading and preserving existing user information. Loaded value should be saved using different namespace or key.
-        BESECURITY_EXPORT Utf8String LegacyLoadValue (Utf8CP nameSpace, Utf8CP key) override;
-
-        //! Clear value saved with known old implementation.
-        //! LegacyLoadValue() will act as SaveValue(nameSpace, key, nullptr) if implementation for given platform did not change.
-        //! Value should be preserved using SaveValue() with new namespace or key in order to avoid accidental deletion.
-        BESECURITY_EXPORT void LegacyClearValue (Utf8CP nameSpace, Utf8CP key) override;
-
-        //! Protect data using platform specific encryption. For more information see SaveValue().
-        //! iOS: Key is stored in Keychain. Application needs to be signed with <XXXXXX.com.organization>.Keys access group.
-        //! Android, Windows Desktop, Windows Store - managed automatically.
+        //! Protect data using platform specific encryption.
+        //! Windows:
+        //!     Encryption is done using OS APIs, security is per-user and per-device.
+        //! iOS:
+        //!     Encryption keys are stored using private app Keychain. Security is per-app.
+        //! Android:
+        //!     Encryption keys are stored using KeyStore. Security is per-app.
+        //!         Note: API versions prior to 18 cannot use KeyStore if device lock screen is not password/pin/pattern protected.
+        //!         If that is the case, popup requiring for user to set lock screen password is shown and app is shut down.
         BESECURITY_EXPORT Utf8String Encrypt(Utf8CP value) override;
 
-        //! Decrypt value that was encrypted using Encrypt().
+        //! Decrypt value that was encrypted using Encrypt(). See Encrypt() for more info.
         BESECURITY_EXPORT Utf8String Decrypt(Utf8CP value) override;
     };
 
