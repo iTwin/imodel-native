@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/DgnECTypeAdapters.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -3143,8 +3143,8 @@ bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP& kindOfQuantity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TryGetOldUnitFromNewName(Utf8CP newUnitName, UnitR oldUnit)
     {
-    Utf8String oldUnitName;
-    return Units::UnitRegistry::Instance().TryGetOldName(newUnitName, oldUnitName) && Unit::GetUnitByName(oldUnit, oldUnitName.c_str());
+    Utf8CP oldUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(newUnitName);
+    return nullptr != oldUnitName && Unit::GetUnitByName(oldUnit, oldUnitName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3161,7 +3161,7 @@ bool ECUnitsTypeAdapter::_GetUnits (UnitSpecR spec, IDgnECTypeAdapterContextCR c
     if (!TryGetKindOfQuantity(ecprop, koq))
         return false;
 
-    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), ecunit))
+    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit()->GetName().c_str(), ecunit))
         return false;
 
     spec = ecunit;
@@ -3181,7 +3181,7 @@ bool ECUnitsTypeAdapter::_ConvertToString (Utf8StringR valueAsString, ECValueCR 
     if (!TryGetKindOfQuantity(ecprop, koq))
         return false;
 
-    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), storedUnit))
+    if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit()->GetName().c_str(), storedUnit))
         return false;
 
     if (context.GetDgnModel())
@@ -3191,7 +3191,7 @@ bool ECUnitsTypeAdapter::_ConvertToString (Utf8StringR valueAsString, ECValueCR 
     Utf8String fmt;
     Utf8CP label = storedUnit.GetShortLabel();
 
-    Utf8CP displayUnitName = koq->GetDefaultPresentationUnit().GetUnit()->GetName();
+    Utf8CP displayUnitName = koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit()->GetName().c_str();
     if (TryGetOldUnitFromNewName(displayUnitName, displayUnit))
         {
         if (!v.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
@@ -3239,8 +3239,8 @@ bool ECUnitsTypeAdapter::_ConvertToDisplayType (ECValueR v, IDgnECTypeAdapterCon
     Utf8String unusedFmt;
     KindOfQuantityCP koq = nullptr;
     if (!v.IsNull() && NULL != ecprop && TryGetKindOfQuantity(ecprop, koq) 
-                                        && TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), storedUnit) 
-                                        && TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().GetUnit()->GetName(), displayUnit))
+                                        && TryGetOldUnitFromNewName(koq->GetPersistenceUnit()->GetName().c_str(), storedUnit) 
+                                        && TryGetOldUnitFromNewName(koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit()->GetName().c_str(), displayUnit))
         {
         double displayValue = v.GetDouble();
         if (!displayUnit.IsCompatible (storedUnit) || !storedUnit.ConvertTo (displayValue, displayUnit))
@@ -3267,12 +3267,12 @@ bool ECUnitsTypeAdapter::_ConvertFromString (ECValueR v, Utf8CP stringValue, IDg
             return false;
 
         Unit storedUnit;
-        if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit().GetUnit()->GetName(), storedUnit))
+        if (!TryGetOldUnitFromNewName(koq->GetPersistenceUnit()->GetName().c_str(), storedUnit))
             return false;
         
         Utf8String fmt;
         Unit displayUnit;
-        if (TryGetOldUnitFromNewName(koq->GetDefaultPresentationUnit().GetUnit()->GetName(), displayUnit))
+        if (TryGetOldUnitFromNewName(koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit()->GetName().c_str(), displayUnit))
             {
             // Convert to storage units
             double value = v.GetDouble();

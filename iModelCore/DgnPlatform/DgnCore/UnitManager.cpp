@@ -2,7 +2,7 @@
 |
 |   $Source: DgnCore/UnitManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -82,57 +82,57 @@ typedef struct StandardUnitTableEntry const*       StandardUnitTableEntryCP;
 static StandardUnitTableEntry   s_standardUnits[] =
     {
     // Meter based
-    {UnitBase::Meter,     UnitSystem::Metric,     1000000000000000.0,       1.0,                     StandardUnit::MetricFemtometers,   DgnCoreL10N::UNIT_LABEL_Femtometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Femtometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Femtometers(), },
-    {UnitBase::Meter,     UnitSystem::Metric,     1000000000000.0,          1.0,                     StandardUnit::MetricPicometers,    DgnCoreL10N::UNIT_LABEL_Picometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Picometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Picometers(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1000000000.0,             1.0,                     StandardUnit::MetricNanometers,    DgnCoreL10N::UNIT_LABEL_Nanometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Nanometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Nanometers(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1000000.0,                1.0,                     StandardUnit::MetricMicrometers,   DgnCoreL10N::UNIT_LABEL_Micrometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Micrometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Micrometers(), },
-    {UnitBase::Meter,     UnitSystem::Metric,     1000.0,                   1.0,                     StandardUnit::MetricMillimeters,   DgnCoreL10N::UNIT_LABEL_Millimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Millimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Millimeters(), },
-    {UnitBase::Meter,     UnitSystem::Metric,     100.0,                    1.0,                     StandardUnit::MetricCentimeters,   DgnCoreL10N::UNIT_LABEL_Centimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Centimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Centimeters(), },
-    {UnitBase::Meter,     UnitSystem::Metric,     10.0,                     1.0,                     StandardUnit::MetricDecimeters,    DgnCoreL10N::UNIT_LABEL_Decimeters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Decimeters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Decimeters(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1.0,                     StandardUnit::MetricMeters,        DgnCoreL10N::UNIT_LABEL_Meters(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Meters(),       DgnCoreL10N::UNIT_PLURAL_NAME_Meters(),      },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      10.0,                    StandardUnit::MetricDekameters,    DgnCoreL10N::UNIT_LABEL_Dekameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Dekameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Dekameters(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      100.0,                   StandardUnit::MetricHectometers,   DgnCoreL10N::UNIT_LABEL_Hectometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Hectometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Hectometers(), },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000.0,                  StandardUnit::MetricKilometers,    DgnCoreL10N::UNIT_LABEL_Kilometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Kilometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Kilometers(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000.0,               StandardUnit::MetricMegameters,    DgnCoreL10N::UNIT_LABEL_Megameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Megameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Megameters(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000.0,            StandardUnit::MetricGigameters,    DgnCoreL10N::UNIT_LABEL_Gigameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Gigameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Gigameters(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000000.0,         StandardUnit::MetricTerameters,    DgnCoreL10N::UNIT_LABEL_Terameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Terameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Terameters(),  },
-    {UnitBase::Meter,     UnitSystem::Metric,     1.0,                      1000000000000000.0,      StandardUnit::MetricPetameters,    DgnCoreL10N::UNIT_LABEL_Petameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Petameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Petameters(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1000000000000000.0,       1.0,                     StandardUnit::MetricFemtometers,   DgnCoreL10N::UNIT_LABEL_Femtometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Femtometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Femtometers(), },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1000000000000.0,          1.0,                     StandardUnit::MetricPicometers,    DgnCoreL10N::UNIT_LABEL_Picometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Picometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Picometers(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1000000000.0,             1.0,                     StandardUnit::MetricNanometers,    DgnCoreL10N::UNIT_LABEL_Nanometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Nanometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Nanometers(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1000000.0,                1.0,                     StandardUnit::MetricMicrometers,   DgnCoreL10N::UNIT_LABEL_Micrometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Micrometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Micrometers(), },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1000.0,                   1.0,                     StandardUnit::MetricMillimeters,   DgnCoreL10N::UNIT_LABEL_Millimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Millimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Millimeters(), },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     100.0,                    1.0,                     StandardUnit::MetricCentimeters,   DgnCoreL10N::UNIT_LABEL_Centimeters(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Centimeters(),  DgnCoreL10N::UNIT_PLURAL_NAME_Centimeters(), },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     10.0,                     1.0,                     StandardUnit::MetricDecimeters,    DgnCoreL10N::UNIT_LABEL_Decimeters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Decimeters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Decimeters(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      1.0,                     StandardUnit::MetricMeters,        DgnCoreL10N::UNIT_LABEL_Meters(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Meters(),       DgnCoreL10N::UNIT_PLURAL_NAME_Meters(),      },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      10.0,                    StandardUnit::MetricDekameters,    DgnCoreL10N::UNIT_LABEL_Dekameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Dekameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Dekameters(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      100.0,                   StandardUnit::MetricHectometers,   DgnCoreL10N::UNIT_LABEL_Hectometers(),  DgnCoreL10N::UNIT_SINGULAR_NAME_Hectometers(),  DgnCoreL10N::UNIT_PLURAL_NAME_Hectometers(), },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      1000.0,                  StandardUnit::MetricKilometers,    DgnCoreL10N::UNIT_LABEL_Kilometers(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Kilometers(),   DgnCoreL10N::UNIT_PLURAL_NAME_Kilometers(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      1000000.0,               StandardUnit::MetricMegameters,    DgnCoreL10N::UNIT_LABEL_Megameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Megameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Megameters(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      1000000000.0,            StandardUnit::MetricGigameters,    DgnCoreL10N::UNIT_LABEL_Gigameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Gigameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Gigameters(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      1000000000000.0,         StandardUnit::MetricTerameters,    DgnCoreL10N::UNIT_LABEL_Terameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Terameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Terameters(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::Metric,     1.0,                      1000000000000000.0,      StandardUnit::MetricPetameters,    DgnCoreL10N::UNIT_LABEL_Petameters(),   DgnCoreL10N::UNIT_SINGULAR_NAME_Petameters(),   DgnCoreL10N::UNIT_PLURAL_NAME_Petameters(),  },
 
     // International foot based.
-    {UnitBase::Meter,     UnitSystem::English,    10000000000.0,            254.0,                   StandardUnit::EnglishMicroInches,  DgnCoreL10N::UNIT_LABEL_MicroInches(),  DgnCoreL10N::UNIT_SINGULAR_NAME_MicroInches(),  DgnCoreL10N::UNIT_PLURAL_NAME_MicroInches(), },
-    {UnitBase::Meter,     UnitSystem::English,    10000000.0,               254.0,                   StandardUnit::EnglishMils,         DgnCoreL10N::UNIT_LABEL_Mils(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Mils(),         DgnCoreL10N::UNIT_PLURAL_NAME_Mils(),        },
-    {UnitBase::Meter,     UnitSystem::English,    10000.0 * 72.0,           254.0,                   StandardUnit::EnglishPoints,       DgnCoreL10N::UNIT_LABEL_Points(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Points(),       DgnCoreL10N::UNIT_PLURAL_NAME_Points(),      },
-    {UnitBase::Meter,     UnitSystem::English,    10000.0 * 6.0,            254.0,                   StandardUnit::EnglishPicas,        DgnCoreL10N::UNIT_LABEL_Picas(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Picas(),        DgnCoreL10N::UNIT_PLURAL_NAME_Picas(),       },
-    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0,                   StandardUnit::EnglishInches,       DgnCoreL10N::UNIT_LABEL_Inches(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Inches(),       DgnCoreL10N::UNIT_PLURAL_NAME_Inches(),      },
-    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0,            StandardUnit::EnglishFeet,         DgnCoreL10N::UNIT_LABEL_Feet(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Feet(),         DgnCoreL10N::UNIT_PLURAL_NAME_Feet(),        },
-    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0 * 3.0,      StandardUnit::EnglishYards,        DgnCoreL10N::UNIT_LABEL_Yards(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Yards(),        DgnCoreL10N::UNIT_PLURAL_NAME_Yards(),       },
-    {UnitBase::Meter,     UnitSystem::English,    10000.0,                  254.0 * 12.0 * 5280.0,   StandardUnit::EnglishMiles,        DgnCoreL10N::UNIT_LABEL_Miles(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Miles(),        DgnCoreL10N::UNIT_PLURAL_NAME_Miles(),       },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000000000.0,            254.0,                   StandardUnit::EnglishMicroInches,  DgnCoreL10N::UNIT_LABEL_MicroInches(),  DgnCoreL10N::UNIT_SINGULAR_NAME_MicroInches(),  DgnCoreL10N::UNIT_PLURAL_NAME_MicroInches(), },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000000.0,               254.0,                   StandardUnit::EnglishMils,         DgnCoreL10N::UNIT_LABEL_Mils(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Mils(),         DgnCoreL10N::UNIT_PLURAL_NAME_Mils(),        },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000.0 * 72.0,           254.0,                   StandardUnit::EnglishPoints,       DgnCoreL10N::UNIT_LABEL_Points(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Points(),       DgnCoreL10N::UNIT_PLURAL_NAME_Points(),      },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000.0 * 6.0,            254.0,                   StandardUnit::EnglishPicas,        DgnCoreL10N::UNIT_LABEL_Picas(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Picas(),        DgnCoreL10N::UNIT_PLURAL_NAME_Picas(),       },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000.0,                  254.0,                   StandardUnit::EnglishInches,       DgnCoreL10N::UNIT_LABEL_Inches(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Inches(),       DgnCoreL10N::UNIT_PLURAL_NAME_Inches(),      },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000.0,                  254.0 * 12.0,            StandardUnit::EnglishFeet,         DgnCoreL10N::UNIT_LABEL_Feet(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Feet(),         DgnCoreL10N::UNIT_PLURAL_NAME_Feet(),        },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000.0,                  254.0 * 12.0 * 3.0,      StandardUnit::EnglishYards,        DgnCoreL10N::UNIT_LABEL_Yards(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Yards(),        DgnCoreL10N::UNIT_PLURAL_NAME_Yards(),       },
+    {UnitBase::Meter,     Dgn::UnitSystem::English,    10000.0,                  254.0 * 12.0 * 5280.0,   StandardUnit::EnglishMiles,        DgnCoreL10N::UNIT_LABEL_Miles(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Miles(),        DgnCoreL10N::UNIT_PLURAL_NAME_Miles(),       },
 
     // US Survey foot based.
-    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  1000.0,                  StandardUnit::EnglishSurveyInches, DgnCoreL10N::UNIT_LABEL_SurveyInches(), DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyInches(), DgnCoreL10N::UNIT_PLURAL_NAME_SurveyInches(),},
-    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0,                 StandardUnit::EnglishSurveyFeet,   DgnCoreL10N::UNIT_LABEL_SurveyFeet(),   DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyFeet(),   DgnCoreL10N::UNIT_PLURAL_NAME_SurveyFeet(),  },
-    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 6.0,           StandardUnit::EnglishFathoms,      DgnCoreL10N::UNIT_LABEL_Fathoms(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Fathoms(),      DgnCoreL10N::UNIT_PLURAL_NAME_Fathoms(),     },
-    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 16.5,          StandardUnit::EnglishRods,         DgnCoreL10N::UNIT_LABEL_Rods(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Rods(),         DgnCoreL10N::UNIT_PLURAL_NAME_Rods(),        },
-    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 66.0,          StandardUnit::EnglishChains,       DgnCoreL10N::UNIT_LABEL_Chains(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Chains(),       DgnCoreL10N::UNIT_PLURAL_NAME_Chains(),      },
-    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 660.0,         StandardUnit::EnglishFurlongs,     DgnCoreL10N::UNIT_LABEL_Furlongs(),     DgnCoreL10N::UNIT_SINGULAR_NAME_Furlongs(),     DgnCoreL10N::UNIT_PLURAL_NAME_Furlongs(),    },
-    {UnitBase::Meter,     UnitSystem::USSurvey,   39370.0,                  12000.0 * 5280.0,        StandardUnit::EnglishSurveyMiles,  DgnCoreL10N::UNIT_LABEL_SurveyMiles(),  DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyMiles(),  DgnCoreL10N::UNIT_PLURAL_NAME_SurveyMiles(), },
+    {UnitBase::Meter,     Dgn::UnitSystem::USSurvey,   39370.0,                  1000.0,                  StandardUnit::EnglishSurveyInches, DgnCoreL10N::UNIT_LABEL_SurveyInches(), DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyInches(), DgnCoreL10N::UNIT_PLURAL_NAME_SurveyInches(),},
+    {UnitBase::Meter,     Dgn::UnitSystem::USSurvey,   39370.0,                  12000.0,                 StandardUnit::EnglishSurveyFeet,   DgnCoreL10N::UNIT_LABEL_SurveyFeet(),   DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyFeet(),   DgnCoreL10N::UNIT_PLURAL_NAME_SurveyFeet(),  },
+    {UnitBase::Meter,     Dgn::UnitSystem::USSurvey,   39370.0,                  12000.0 * 6.0,           StandardUnit::EnglishFathoms,      DgnCoreL10N::UNIT_LABEL_Fathoms(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Fathoms(),      DgnCoreL10N::UNIT_PLURAL_NAME_Fathoms(),     },
+    {UnitBase::Meter,     Dgn::UnitSystem::USSurvey,   39370.0,                  12000.0 * 16.5,          StandardUnit::EnglishRods,         DgnCoreL10N::UNIT_LABEL_Rods(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Rods(),         DgnCoreL10N::UNIT_PLURAL_NAME_Rods(),        },
+    {UnitBase::Meter,     Dgn::UnitSystem::USSurvey,   39370.0,                  12000.0 * 66.0,          StandardUnit::EnglishChains,       DgnCoreL10N::UNIT_LABEL_Chains(),       DgnCoreL10N::UNIT_SINGULAR_NAME_Chains(),       DgnCoreL10N::UNIT_PLURAL_NAME_Chains(),      },
+    {UnitBase::Meter,     Dgn::UnitSystem::USSurvey,   39370.0,                  12000.0 * 660.0,         StandardUnit::EnglishFurlongs,     DgnCoreL10N::UNIT_LABEL_Furlongs(),     DgnCoreL10N::UNIT_SINGULAR_NAME_Furlongs(),     DgnCoreL10N::UNIT_PLURAL_NAME_Furlongs(),    },
+    {UnitBase::Meter,     Dgn::UnitSystem::USSurvey,   39370.0,                  12000.0 * 5280.0,        StandardUnit::EnglishSurveyMiles,  DgnCoreL10N::UNIT_LABEL_SurveyMiles(),  DgnCoreL10N::UNIT_SINGULAR_NAME_SurveyMiles(),  DgnCoreL10N::UNIT_PLURAL_NAME_SurveyMiles(), },
 
     // No System
-    {UnitBase::Meter,     UnitSystem::Undefined,  10000000000.0,            1.0,                     StandardUnit::NoSystemAngstroms,         DgnCoreL10N::UNIT_LABEL_Angstroms(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Angstroms(),         DgnCoreL10N::UNIT_PLURAL_NAME_Angstroms(),        },
-    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      1852.0,                  StandardUnit::NoSystemNauticalMiles,     DgnCoreL10N::UNIT_LABEL_NauticalMiles(),     DgnCoreL10N::UNIT_SINGULAR_NAME_NauticalMiles(),     DgnCoreL10N::UNIT_PLURAL_NAME_NauticalMiles(),    },
-    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      149597900000.0,          StandardUnit::NoSystemAstronomicalUnits, DgnCoreL10N::UNIT_LABEL_AstronomicalUnits(), DgnCoreL10N::UNIT_SINGULAR_NAME_AstronomicalUnits(), DgnCoreL10N::UNIT_PLURAL_NAME_AstronomicalUnits(),},
-    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      9460730000000000.0,      StandardUnit::NoSystemLightYears,        DgnCoreL10N::UNIT_LABEL_LightYears(),        DgnCoreL10N::UNIT_SINGULAR_NAME_LightYears(),        DgnCoreL10N::UNIT_PLURAL_NAME_LightYears(),       },
-    {UnitBase::Meter,     UnitSystem::Undefined,  1.0,                      30856780000000000.0,     StandardUnit::NoSystemParsecs,           DgnCoreL10N::UNIT_LABEL_Parsecs(),           DgnCoreL10N::UNIT_SINGULAR_NAME_Parsecs(),           DgnCoreL10N::UNIT_PLURAL_NAME_Parsecs(),          },
+    {UnitBase::Meter,     Dgn::UnitSystem::Undefined,  10000000000.0,            1.0,                     StandardUnit::NoSystemAngstroms,         DgnCoreL10N::UNIT_LABEL_Angstroms(),         DgnCoreL10N::UNIT_SINGULAR_NAME_Angstroms(),         DgnCoreL10N::UNIT_PLURAL_NAME_Angstroms(),        },
+    {UnitBase::Meter,     Dgn::UnitSystem::Undefined,  1.0,                      1852.0,                  StandardUnit::NoSystemNauticalMiles,     DgnCoreL10N::UNIT_LABEL_NauticalMiles(),     DgnCoreL10N::UNIT_SINGULAR_NAME_NauticalMiles(),     DgnCoreL10N::UNIT_PLURAL_NAME_NauticalMiles(),    },
+    {UnitBase::Meter,     Dgn::UnitSystem::Undefined,  1.0,                      149597900000.0,          StandardUnit::NoSystemAstronomicalUnits, DgnCoreL10N::UNIT_LABEL_AstronomicalUnits(), DgnCoreL10N::UNIT_SINGULAR_NAME_AstronomicalUnits(), DgnCoreL10N::UNIT_PLURAL_NAME_AstronomicalUnits(),},
+    {UnitBase::Meter,     Dgn::UnitSystem::Undefined,  1.0,                      9460730000000000.0,      StandardUnit::NoSystemLightYears,        DgnCoreL10N::UNIT_LABEL_LightYears(),        DgnCoreL10N::UNIT_SINGULAR_NAME_LightYears(),        DgnCoreL10N::UNIT_PLURAL_NAME_LightYears(),       },
+    {UnitBase::Meter,     Dgn::UnitSystem::Undefined,  1.0,                      30856780000000000.0,     StandardUnit::NoSystemParsecs,           DgnCoreL10N::UNIT_LABEL_Parsecs(),           DgnCoreL10N::UNIT_SINGULAR_NAME_Parsecs(),           DgnCoreL10N::UNIT_PLURAL_NAME_Parsecs(),          },
 
     // Angular
-    {UnitBase::Degree,    UnitSystem::Undefined,  3600.0,                   1.0,                     StandardUnit::AngleSeconds,        DgnCoreL10N::UNIT_LABEL_Seconds(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Seconds(),       DgnCoreL10N::UNIT_PLURAL_NAME_Seconds(), },
-    {UnitBase::Degree,    UnitSystem::Undefined,  60.0,                     1.0,                     StandardUnit::AngleMinutes,        DgnCoreL10N::UNIT_LABEL_Minutes(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Minutes(),       DgnCoreL10N::UNIT_PLURAL_NAME_Minutes(), },
-    {UnitBase::Degree,    UnitSystem::Undefined,  10.0,                     9.0,                     StandardUnit::AngleGrads,          DgnCoreL10N::UNIT_LABEL_Grads(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Grads(),         DgnCoreL10N::UNIT_PLURAL_NAME_Grads(),   },
-    {UnitBase::Degree,    UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::AngleDegrees,        DgnCoreL10N::UNIT_LABEL_Degrees(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Degrees(),       DgnCoreL10N::UNIT_PLURAL_NAME_Degrees(), },
-    {UnitBase::Degree,    UnitSystem::Undefined,  3.1415926535897932846,    180.0,                   StandardUnit::AngleRadians,        DgnCoreL10N::UNIT_LABEL_Radians(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Radians(),       DgnCoreL10N::UNIT_PLURAL_NAME_Radians(), },
+    {UnitBase::Degree,    Dgn::UnitSystem::Undefined,  3600.0,                   1.0,                     StandardUnit::AngleSeconds,        DgnCoreL10N::UNIT_LABEL_Seconds(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Seconds(),       DgnCoreL10N::UNIT_PLURAL_NAME_Seconds(), },
+    {UnitBase::Degree,    Dgn::UnitSystem::Undefined,  60.0,                     1.0,                     StandardUnit::AngleMinutes,        DgnCoreL10N::UNIT_LABEL_Minutes(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Minutes(),       DgnCoreL10N::UNIT_PLURAL_NAME_Minutes(), },
+    {UnitBase::Degree,    Dgn::UnitSystem::Undefined,  10.0,                     9.0,                     StandardUnit::AngleGrads,          DgnCoreL10N::UNIT_LABEL_Grads(),        DgnCoreL10N::UNIT_SINGULAR_NAME_Grads(),         DgnCoreL10N::UNIT_PLURAL_NAME_Grads(),   },
+    {UnitBase::Degree,    Dgn::UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::AngleDegrees,        DgnCoreL10N::UNIT_LABEL_Degrees(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Degrees(),       DgnCoreL10N::UNIT_PLURAL_NAME_Degrees(), },
+    {UnitBase::Degree,    Dgn::UnitSystem::Undefined,  3.1415926535897932846,    180.0,                   StandardUnit::AngleRadians,        DgnCoreL10N::UNIT_LABEL_Radians(),      DgnCoreL10N::UNIT_SINGULAR_NAME_Radians(),       DgnCoreL10N::UNIT_PLURAL_NAME_Radians(), },
 
     // No Base
-    {UnitBase::None,      UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::UnitlessWhole,       DgnCoreL10N::UNIT_LABEL_UnitlessWhole(), DgnCoreL10N::UNIT_SINGULAR_NAME_UnitlessWhole(), DgnCoreL10N::UNIT_PLURAL_NAME_UnitlessWhole(),},
+    {UnitBase::None,      Dgn::UnitSystem::Undefined,  1.0,                      1.0,                     StandardUnit::UnitlessWhole,       DgnCoreL10N::UNIT_LABEL_UnitlessWhole(), DgnCoreL10N::UNIT_SINGULAR_NAME_UnitlessWhole(), DgnCoreL10N::UNIT_PLURAL_NAME_UnitlessWhole(),},
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -351,14 +351,14 @@ bool            UnitIteratorOptions::IsBaseAllowed(UnitBase base) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            UnitIteratorOptions::IsSystemAllowed(UnitSystem system) const
+bool            UnitIteratorOptions::IsSystemAllowed(Dgn::UnitSystem system) const
     {
     switch (system)
         {
-        case UnitSystem::Undefined:   return m_allowSystemNone;
-        case UnitSystem::English:     return m_allowSystemMetric;
-        case UnitSystem::Metric:      return m_allowSystemEnglish;
-        case UnitSystem::USSurvey:    return m_allowSystemUSSurvey;
+        case Dgn::UnitSystem::Undefined:   return m_allowSystemNone;
+        case Dgn::UnitSystem::English:     return m_allowSystemMetric;
+        case Dgn::UnitSystem::Metric:      return m_allowSystemEnglish;
+        case Dgn::UnitSystem::USSurvey:    return m_allowSystemUSSurvey;
         }
 
     BeAssert(0);
@@ -419,14 +419,14 @@ void            UnitIteratorOptions::DisallowAllSystems()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetAllowAdditionalSystem(UnitSystem system)
+void            UnitIteratorOptions::SetAllowAdditionalSystem(Dgn::UnitSystem system)
     {
     switch (system)
         {
-        case UnitSystem::Undefined:     m_allowSystemNone     = true;   return;
-        case UnitSystem::English:       m_allowSystemMetric   = true;   return;
-        case UnitSystem::Metric:        m_allowSystemEnglish  = true;   return;
-        case UnitSystem::USSurvey:      m_allowSystemUSSurvey = true;   return;
+        case Dgn::UnitSystem::Undefined:     m_allowSystemNone     = true;   return;
+        case Dgn::UnitSystem::English:       m_allowSystemMetric   = true;   return;
+        case Dgn::UnitSystem::Metric:        m_allowSystemEnglish  = true;   return;
+        case Dgn::UnitSystem::USSurvey:      m_allowSystemUSSurvey = true;   return;
         }
 
     BeAssert(0);
@@ -435,7 +435,7 @@ void            UnitIteratorOptions::SetAllowAdditionalSystem(UnitSystem system)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            UnitIteratorOptions::SetAllowSingleSystem(UnitSystem system)
+void            UnitIteratorOptions::SetAllowSingleSystem(Dgn::UnitSystem system)
     {
     DisallowAllSystems();
     SetAllowAdditionalSystem(system);
@@ -913,7 +913,7 @@ void UserUnitTable::ResetForTest()
 void UserUnitTable::PopulateFromStandardUnits()
     {
     m_containsStandardUnits = true;
-    UnitSystem  unitSystem[] = {UnitSystem::Metric, UnitSystem::English, UnitSystem::USSurvey, UnitSystem::Undefined };
+    Dgn::UnitSystem  unitSystem[] = {Dgn::UnitSystem::Metric, Dgn::UnitSystem::English, Dgn::UnitSystem::USSurvey, Dgn::UnitSystem::Undefined };
     for (int iSystem = 0; iSystem < _countof(unitSystem); iSystem++)
         {
         UnitIteratorOptions options;
