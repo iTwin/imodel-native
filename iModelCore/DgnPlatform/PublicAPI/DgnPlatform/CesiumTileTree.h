@@ -11,12 +11,12 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileIO.h>
+#include <Bentley/BeThread.h>
 #include <Bentley/BeAtomic.h>
 #include <Bentley/CancellationToken.h>
+#include <BeHttp/HttpRequest.h>
 #include <folly/futures/Future.h>
 
-#define BEGIN_DGN_CESIUM_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Cesium {
-#define END_DGN_CESIUM_NAMESPACE } END_BENTLEY_DGN_NAMESPACE
 #define USING_NAMESPACE_DGN_CESIUM using namespace BentleyApi::Dgn::Cesium;
 
 BEGIN_DGN_CESIUM_NAMESPACE
@@ -24,18 +24,16 @@ BEGIN_DGN_CESIUM_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ICesiumPublisher);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(PublishedTile);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshMaterial);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Root);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile);
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Output);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadState);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
 
 DEFINE_REF_COUNTED_PTR(PublishedTile);
-DEFINE_REF_COUNTED_PTR(Root);
 DEFINE_REF_COUNTED_PTR(Tile);
-DEFINE_REF_COUNTED_PTR(Output);
 DEFINE_REF_COUNTED_PTR(Texture);
 DEFINE_REF_COUNTED_PTR(LoadState);
+DEFINE_REF_COUNTED_PTR(Loader);
 
 using ChildTiles = bvector<TilePtr>;
 DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ChildTiles);
@@ -84,11 +82,16 @@ struct Output : RefCountedBase, NonCopyableClass
 struct Tile : RefCountedBase, NonCopyableClass
 {
     enum class LoadStatus : int {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
+    friend struct Root;
 protected:
     RootR m_root;
     TileCP m_parent;
     ElementAlignedBox3d m_range;
     mutable BeAtomic<LoadStatus> m_loadStatus;
+
+    LoadStatus GetLoadStatus() const { return m_loadStatus.load(); }
+    void SetLoadStatus(LoadStatus status) { m_loadStatus.store(status); }
+    void SetAbandoned();
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_loadStatus(LoadStatus::NotLoaded) { }
 
@@ -96,7 +99,6 @@ public:
     RootR GetRoot() { return m_root; }
     RootCR GetRoot() const { return m_root; }
 
-    LoadStatus GetLoadStatus() const { return m_loadStatus.load(); }
     bool IsNotLoaded() const { return LoadStatus::NotLoaded == GetLoadStatus(); }
     bool IsQueued() const { return LoadStatus::Queued == GetLoadStatus(); }
     bool IsLoading() const { return LoadStatus::Loading == GetLoadStatus(); }
@@ -104,17 +106,16 @@ public:
     bool IsNotFound() const { return LoadStatus::NotFound == GetLoadStatus(); }
     bool IsAbandoned() const { return LoadStatus::Abandoned == GetLoadStatus(); }
 
-    void SetLoadStatus(LoadStatus status) { m_loadStatus.store(status); }
-    void SetIsNotLoaded() { SetLoadStatus(LoadStatus::NotLoaded); }
+    void SetNotLoaded() { SetLoadStatus(LoadStatus::NotLoaded); }
     void SetIsQueued() { SetLoadStatus(LoadStatus::Queued); }
     void SetIsLoading() { SetLoadStatus(LoadStatus::Loading); }
     void SetIsReady() { SetLoadStatus(LoadStatus::Ready); }
-    void SetIsNotFound() { SetLoadStatus(LoadStatus::NotFound); }
-    void SetIsAbandoned() { SetLoadStatus(LoadStatus::Abandoned); }
+    void SetNotFound() { SetLoadStatus(LoadStatus::NotFound); }
 
     virtual Utf8String _GetName() const = 0;
     virtual double _GetMaximumSize() const = 0;
     virtual ChildTilesCP _GetChildren(bool create) const = 0;
+    virtual LoaderPtr _CreateLoader(LoadStateR) = 0;
 };
 
 //=======================================================================================
@@ -123,15 +124,24 @@ public:
 struct LoadState : ICancellationToken, RefCountedBase, NonCopyableClass
 {
 private:
-    TileCPtr m_tile;
-    BeAtomic<bool> m_canceled;
-public:
-    explicit LoadState(TileCR tile) : m_tile(&tile) { }
-    DGNPLATFORM_EXPORT ~LoadState();
+    // Because ICancellationToken has to be passed around as a shared_ptr...
+    struct CancellationToken : ICancellationToken
+    {
+        BeAtomic<bool> m_canceled;
+        
+        bool IsCanceled() override { return m_canceled.load(); }
+        void SetCanceled() { m_canceled.store(true); }
+        void Register(std::weak_ptr<ICancellationListener> listener) override { }
+    };
 
-    bool IsCanceled() override { return m_canceled.load(); }
-    void SetCanceled() { m_canceled.store(true); }
-    void Register(std::weak_ptr<ICancellationListener> listener) override { }
+    TileCPtr m_tile;
+    std::shared_ptr<CancellationToken> m_cancellationToken;
+public:
+    explicit LoadState(TileCR tile) : m_tile(&tile), m_cancellationToken(std::make_shared<CancellationToken>()) { }
+
+    bool IsCanceled() const { return m_cancellationToken->IsCanceled(); }
+    void SetCanceled() { m_cancellationToken->SetCanceled(); }
+    ICancellationTokenPtr GetCancellationToken() const { return m_cancellationToken; }
 
     TileCR GetTile() const { return *m_tile; }
 
@@ -147,6 +157,40 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                   Mathieu.Marchand  11/2016
+//=======================================================================================
+struct HttpDataQuery
+{
+    Http::HttpByteStreamBodyPtr m_responseBody;
+    Http::Request m_request;
+    LoadStatePtr m_loads;
+
+    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, LoadStateR loads);
+
+    Http::Request& GetRequest() {return m_request;}
+
+    //! Valid only after 'Perform' has completed.
+    ByteStream const& GetData() const {return m_responseBody->GetByteStream();}
+    
+    //! Perform http request and wait for the result.
+    DGNPLATFORM_EXPORT folly::Future<Http::Response> Perform();
+};
+
+//=======================================================================================
+// @bsiclass                                                   Mathieu.Marchand  11/2016
+//=======================================================================================
+struct FileDataQuery
+{
+    Utf8String m_fileName;
+    LoadStatePtr m_loads;
+
+    FileDataQuery(Utf8StringCR fileName, LoadStateR loads) : m_fileName(fileName), m_loads(&loads) {}
+
+    //! Read the entire file in a single chunk of memory.
+    DGNPLATFORM_EXPORT folly::Future<ByteStream> Perform();
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
 struct Root : RefCountedBase, NonCopyableClass
@@ -157,6 +201,8 @@ protected:
     Transform m_location;
     Utf8String m_rootResource;
     OutputPtr m_output;
+    mutable BeConditionVariable m_cv;
+    mutable std::set<LoadStatePtr, LoadState::PtrComparator> m_activeLoads;
     bool m_isHttp;
 
     DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootResource, OutputR output);
@@ -179,6 +225,45 @@ public:
 
     virtual Utf8String _ConstructTileResource(TileCR tile) const { return m_rootResource + tile._GetName(); }
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, LoadStateR loads);
+
+    void StartTileLoad(LoadStateR) const;
+    void DoneTileLoad(LoadStateR) const;
+    void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
+    void CancelAllTileLoads();
+    void CancelTileLoad(TileCR);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct Loader : RefCountedBase, NonCopyableClass
+{
+protected:
+    Utf8String m_resourceName;
+    TilePtr m_tile;
+    LoadStatePtr m_loads;
+    StreamBuffer m_tileBytes;
+    Utf8String m_contentType;
+
+    Loader(Utf8StringCR resourceName, TileR tile, LoadStateR loads) : m_resourceName(resourceName), m_tile(&tile), m_loads(&loads) { }
+
+    BentleyStatus LoadTile();
+public:
+    bool IsCanceledOrAbandoned() const { return m_loads->IsCanceled() || m_tile->IsAbandoned(); }
+    OutputR GetOutput() const { return m_tile->GetRoot().GetOutput(); }
+
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
+    virtual BentleyStatus _LoadTile() = 0;
+
+    struct LoadFlag
+    {
+        LoadStatePtr m_state;
+
+        LoadFlag(LoadStateR state) : m_state(&state) { state.GetTile().GetRoot().StartTileLoad(state); }
+        ~LoadFlag() { m_state->GetTile().GetRoot().DoneTileLoad(*m_state); }
+    };
+
+    folly::Future<BentleyStatus> Perform();
 };
 
 //=======================================================================================

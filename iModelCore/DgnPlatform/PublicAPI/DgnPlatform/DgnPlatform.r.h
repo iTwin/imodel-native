@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.r.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,6 +25,8 @@
   #define BEGIN_SHEET_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Sheet {
   #define END_SHEET_NAMESPACE   } END_BENTLEY_DGN_NAMESPACE
 
+  #define BEGIN_DGN_CESIUM_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace Cesium {
+  #define END_DGN_CESIUM_NAMESPACE } END_BENTLEY_DGN_NAMESPACE
 #else
   #include <Geom/GeomApi.r.h>
   #define BEGIN_BENTLEY_DGN_NAMESPACE
@@ -38,6 +40,9 @@
 
   #define BEGIN_SHEET_NAMESPACE 
   #define END_SHEET_NAMESPACE 
+
+  #define BEGIN_DGN_CESIUM_NAMESPACE
+  #define END_DGN_CESIUM_NAMESPACE
 #endif
 
 // for backwards compatibility, do not use

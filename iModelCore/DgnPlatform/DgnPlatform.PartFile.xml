@@ -45,6 +45,7 @@
     <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp" /><!-- For CesiumTileWriter... -->
         <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="ECDbLibrary"         PartFile="ECDb"         Repository="ECDb" />

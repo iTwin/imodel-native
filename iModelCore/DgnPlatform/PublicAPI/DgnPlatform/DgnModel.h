@@ -977,6 +977,9 @@ public:
     //! Returns the time of the most recent modification to any element in this model, in unix milliseconds.
     DGNPLATFORM_EXPORT uint64_t GetLastElementModifiedTime() const;
     void InitLastElementModifiedTime(); //!< @private
+
+    //! If this model supports producing Cesium 3D tiles, return a root of such a tile tree. The default implementation returns nullptr.
+    DGNPLATFORM_EXPORT virtual Cesium::RootPtr _CreateCesiumTileTree(Cesium::OutputR output);
 };
 
 //=======================================================================================

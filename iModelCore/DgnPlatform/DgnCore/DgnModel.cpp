@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/CesiumTileTree.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
@@ -2082,5 +2083,13 @@ void GeometricModel::UpdateLastElementModifiedTime()
 uint64_t GeometricModel::GetLastElementModifiedTime() const
     {
     return m_lastModifiedTime.load();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Cesium::RootPtr GeometricModel::_CreateCesiumTileTree(Cesium::OutputR)
+    {
+    return nullptr;
     }
 
