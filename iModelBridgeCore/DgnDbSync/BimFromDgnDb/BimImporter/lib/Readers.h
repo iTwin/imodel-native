@@ -56,6 +56,7 @@ static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 static Utf8CP const JSON_TYPE_PointCloudModel = "PointCloudModel";
 static Utf8CP const JSON_TYPE_ThreeMxModel = "ThreeMxModel";
 static Utf8CP const JSON_TYPE_RasterFileModel = "RasterFileModel";
+static Utf8CP const JSON_TYPE_EmbeddedFile = "EmbeddedFile";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
@@ -78,7 +79,7 @@ struct Reader
         CodeSpecId GetMappedCodeSpecId(Json::Value& element);
         BentleyStatus RemapPropertyElementId(ECN::IECInstanceR properties, Utf8CP propertyName);
         DgnElementId GetMappedElementId(Json::Value& element, Utf8CP propertyName);
-        static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimTeleporter"); }
+        static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimUpgrader"); }
         DgnDbP GetDgnDb();
         SyncInfo* GetSyncInfo();
 
@@ -538,6 +539,17 @@ struct PropertyDataReader : Reader
         using Reader::Reader;
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct EmbeddedFileReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& fileData) override;
+
+    public:
+        using Reader::Reader;
+    };
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------

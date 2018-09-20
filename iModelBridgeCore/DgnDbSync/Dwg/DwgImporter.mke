@@ -16,9 +16,8 @@
 appName             = DwgImporter
 baseDir             = $(_MakeFilePath)
 DgnDbSyncRoot       = $(SrcRoot)DgnDbSync/
-DgnDbSyncPubApi     = $(DgnDbSyncRoot)PublicAPI/DgnDbSync/
-DwgPubApi           = $(DgnDbSyncPubApi)Dwg/
-DwgDbPubApi         = $(DwgPubApi)PublicAPI/
+DwgPublicApi        = $(DgnDbSyncRoot)PublicAPI/Dwg/
+DwgDbPubApi         = $(DwgPublicApi)DwgDb/
 
 o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/
 always:
@@ -27,8 +26,6 @@ always:
 CompileOptionsMki   = $(baseDir)DwgCompileOptions.mki
 %include $(CompileOptionsMki)
 
-DgnDbSyncDepends    = $(DgnDbSyncPubApi)DgnDbSync.h
-
 DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
                       $(DwgDbPubApi)DwgDbHost.h             \
                       $(DwgDbPubApi)DwgDbDatabase.h         \
@@ -36,17 +33,15 @@ DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
                       $(DwgDbPubApi)DwgDbEntities.h         \
                       $(DwgDbPubApi)DwgDbSymbolTables.h     \
                       $(DwgDbPubApi)BasicTypes.h            \
-                      $(DwgPubApi)DwgSyncInfo.h             \
-                      $(DwgPubApi)DwgHelper.h               \
-                      $(DwgPubApi)DwgL10N.h                 \
-                      $(DwgPubApi)DwgImporter.h             \
-                      $(DwgPubApi)ProtocalExtensions.h
+                      $(DwgPublicApi)DwgSyncInfo.h          \
+                      $(DwgPublicApi)DwgHelper.h            \
+                      $(DwgPublicApi)DwgL10N.h              \
+                      $(DwgPublicApi)DwgImporter.h          \
+                      $(DwgPublicApi)ProtocalExtensions.h
 
 MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
 IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 PchCompiland                    = $(baseDir)DwgImportInternal.cpp
-PchExplicitDepends              = $(DwgDbDepends)
-PchExtraOptions                 = -D__DGNDBSYNC_BUILD__=1
 PchOutputDir                    = $(o)
 
 %include $(SharedMki)PreCompileHeader.mki
@@ -57,47 +52,49 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
 
-$(o)DwgImporter$(oext)      : $(baseDir)DwgImporter.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)DwgImporter$(oext)      : $(baseDir)DwgImporter.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)DwgUpdater$(oext)       : $(baseDir)DwgUpdater.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)DwgUpdater$(oext)       : $(baseDir)DwgUpdater.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)DwgImportHost$(oext)    : $(baseDir)DwgImportHost.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)DwgImportHost$(oext)    : $(baseDir)DwgImportHost.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportLayers$(oext)     : $(baseDir)ImportLayers.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportLayers$(oext)     : $(baseDir)ImportLayers.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportLayouts$(oext)    : $(baseDir)ImportLayouts.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportLayouts$(oext)    : $(baseDir)ImportLayouts.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportLinetypes$(oext)  : $(baseDir)ImportLinetypes.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportLinetypes$(oext)  : $(baseDir)ImportLinetypes.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportMaterials$(oext)  : $(baseDir)ImportMaterials.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportMaterials$(oext)  : $(baseDir)ImportMaterials.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportViewports$(oext)  : $(baseDir)ImportViewports.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportViewports$(oext)  : $(baseDir)ImportViewports.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportEntities$(oext)   : $(baseDir)ImportEntities.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportEntities$(oext)   : $(baseDir)ImportEntities.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportTexts$(oext)      : $(baseDir)ImportTexts.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportTexts$(oext)      : $(baseDir)ImportTexts.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportPolyline$(oext)   : $(baseDir)ImportPolyline.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportPolyline$(oext)   : $(baseDir)ImportPolyline.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportAttribute$(oext)  : $(baseDir)ImportAttribute.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportAttribute$(oext)  : $(baseDir)ImportAttribute.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportRaster$(oext)     : $(baseDir)ImportRaster.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportRaster$(oext)     : $(baseDir)ImportRaster.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportPointClouds$(oext): $(baseDir)ImportPointClouds.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportPointClouds$(oext): $(baseDir)ImportPointClouds.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportLights$(oext)     : $(baseDir)ImportLights.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportLights$(oext)     : $(baseDir)ImportLights.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportXrefs$(oext)      : $(baseDir)ImportXrefs.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportXrefs$(oext)      : $(baseDir)ImportXrefs.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ImportBreps$(oext)      : $(baseDir)ImportBreps.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportBreps$(oext)      : $(baseDir)ImportBreps.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ImportGroups$(oext)     : $(baseDir)ImportGroups.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ConvertConfig$(oext)    : $(baseDir)Config/ConvertConfig.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) ${MultiCompileDepends}
 
-$(o)ProcessLogger$(oext)    : $(baseDir)ProcessLogger.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+$(o)ConvertConfig$(oext)    : $(baseDir)Config/ConvertConfig.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ProcessLogger$(oext)    : $(baseDir)ProcessLogger.cpp $(DwgDepends) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects =% $(MultiCompileObjectList)

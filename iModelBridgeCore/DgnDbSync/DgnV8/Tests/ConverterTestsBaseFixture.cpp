@@ -31,7 +31,7 @@ void ConverterTestBaseFixture::InitializeTheConverter()
 
         BentleyApi::BeFileName v8DllsRelativeDir(L"DgnV8"); // it's relative to dllDirectory
 
-        Converter::Initialize(m_params.GetLibraryDir(), m_params.GetAssetsDir(), v8DllsRelativeDir, nullptr, false, 0, nullptr);
+        Converter::Initialize(m_params.GetLibraryDir(), m_params.GetAssetsDir(), v8DllsRelativeDir, nullptr, false, 0, nullptr, nullptr);
         }
     }
 
@@ -375,7 +375,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure)
+void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input, bool expectFailure, bool expectUpdate)
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
@@ -383,6 +383,10 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     params.SetInputFileName(input);
     auto db = OpenExistingDgnDb(output);
     ASSERT_TRUE(db.IsValid());
+    bool hadAnyChanges = false;
+    time_t mtime;
+    BentleyApi::BeFileName::GetFileTime(nullptr, nullptr, &mtime, output);
+
     if (!m_opts.m_useTiledConverter)
         {
         RootModelConverter updater(params);
@@ -400,6 +404,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             updater.Process();
             ASSERT_EQ(expectFailure, updater.WasAborted());
             m_count = updater.GetElementsConverted();
+            hadAnyChanges = updater.HadAnyChanges();
             }
         }
     else
@@ -425,6 +430,11 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
             }
         }
     db->SaveChanges();
+    if (!expectFailure)
+        ASSERT_EQ(hadAnyChanges, expectUpdate);
+    if (!hadAnyChanges)
+        output.SetFileTime(nullptr, &mtime);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -570,7 +580,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         }
 
     //  Run the Updater again => should be a NOP
-    DoUpdate(m_dgnDbFileName, rootV8FileName);
+    DoUpdate(m_dgnDbFileName, rootV8FileName, false, false);
     ASSERT_EQ(0, m_count) << L"Update should not have found any more changes.";
 
     if (true)
@@ -611,7 +621,7 @@ void ConverterTestBaseFixture::TestElementChanges(BentleyApi::BeFileNameCR rootV
         }
 
     //  Run the Updater again => should be a NOP
-    DoUpdate(m_dgnDbFileName, rootV8FileName);
+    DoUpdate(m_dgnDbFileName, rootV8FileName, false, false);
     ASSERT_EQ(0, m_count) << L"Update should not have found any more changes.";
 
     if (true)

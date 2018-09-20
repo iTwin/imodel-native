@@ -180,6 +180,11 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         return SUCCESS;
         }
 
+    if (entry.isMember("masterUnit"))
+        {
+        m_masterUnit = entry["masterUnit"].asString();
+        return SUCCESS;
+        }
     Utf8String objectType = entry[JSON_TYPE_KEY].asString();
     if (Utf8String::IsNullOrEmpty(objectType.c_str()))
         return ERROR;
@@ -265,6 +270,8 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         reader = new BaselineReader(this);
     else if (objectType.Equals(JSON_TYPE_PropertyData))
         reader = new PropertyDataReader(this);
+    else if (objectType.Equals(JSON_TYPE_EmbeddedFile))
+        reader = new EmbeddedFileReader(this);
     else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
         reader = new GenericElementAspectReader(this);
     else if (objectType.Equals(JSON_TYPE_TextAnnotationData))

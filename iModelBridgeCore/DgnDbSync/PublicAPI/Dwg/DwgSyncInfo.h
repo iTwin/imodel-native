@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgSyncInfo.h $
+|     $Source: PublicAPI/Dwg/DwgSyncInfo.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,16 +8,16 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnDbSync/Dwg/DwgImporter.h>
-#include <DgnDbSync/DgnDbSync.h>
+#include <Dwg/DwgImporter.h>
 
 #include <DgnPlatform/DgnPlatform.h>
 #include <Bentley/MD5.h>
 #include <iterator>                         // std::iterator, std::input_iterator_tag
 
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_DWGDB
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 #define SYNCINFO_ATTACH_ALIAS   "SYNCINFO"
 #define SYNCINFO_TABLE(name)    "dwgsync_" name
@@ -30,6 +30,7 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 #define SYNC_TABLE_Linetype     SYNCINFO_TABLE("Linetype")
 #define SYNC_TABLE_Material     SYNCINFO_TABLE("Material")
 #define SYNC_TABLE_View         SYNCINFO_TABLE("View")
+#define SYNC_TABLE_Group        SYNCINFO_TABLE("Group")
 #define SYNC_TABLE_ECSchema     SYNCINFO_TABLE("ECSchema")
 #define SYNC_TABLE_Discards     SYNCINFO_TABLE("Discards")
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
@@ -117,27 +118,27 @@ struct DwgSyncInfo
 
     struct FileIterator : BeSQLite::DbTableIterator
         {
-        DGNDBSYNC_EXPORT FileIterator(DgnDbCR db, Utf8CP where);
+        DWG_EXPORT FileIterator(DgnDbCR db, Utf8CP where);
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct FileIterator;
             Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
         public:
-            DGNDBSYNC_EXPORT DwgFileId GetSyncId();
-            DGNDBSYNC_EXPORT Utf8String GetUniqueName();
-            DGNDBSYNC_EXPORT Utf8String GetDwgName();
-            DGNDBSYNC_EXPORT Utf8String GetVersionGuid();   // changes on each DWG save
-            DGNDBSYNC_EXPORT bool GetCannotUseElementIds();
-            DGNDBSYNC_EXPORT uint64_t GetLastModifiedTime(); // (Unix time in seconds)
-            DGNDBSYNC_EXPORT uint64_t GetFileSize();
-            DGNDBSYNC_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
+            DWG_EXPORT DwgFileId GetSyncId();
+            DWG_EXPORT Utf8String GetUniqueName();
+            DWG_EXPORT Utf8String GetDwgName();
+            DWG_EXPORT Utf8String GetVersionGuid();   // changes on each DWG save
+            DWG_EXPORT bool GetCannotUseElementIds();
+            DWG_EXPORT uint64_t GetLastModifiedTime(); // (Unix time in seconds)
+            DWG_EXPORT uint64_t GetFileSize();
+            DWG_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
             Entry const& operator* () const {return *this;}
         };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
+        DWG_EXPORT const_iterator begin() const;
         const_iterator end() const {return Entry (NULL, false);}
         };
 
@@ -208,10 +209,10 @@ struct DwgSyncInfo
         void        SetDwgModelId (DwgModelId mid) { m_modelId = mid;}
         DwgFileId   GetDwgFileId () const {return m_fileId;}
         void        SetDwgFileId (DwgFileId fid) { m_fileId = fid;}
-        DGNDBSYNC_EXPORT bool operator<(DwgModelSource const& rhs) const;
-        DGNDBSYNC_EXPORT bool operator==(DwgModelSource const& rhs) const {return m_fileId == rhs.m_fileId && m_modelId.GetValue() == rhs.m_modelId.GetValue();}
-        DGNDBSYNC_EXPORT bool operator!=(DwgModelSource const& rhs) const {return !(*this == rhs);}
-        DGNDBSYNC_EXPORT bool IsValid () { return m_fileId.IsValid() && m_modelId.IsValid(); }
+        DWG_EXPORT bool operator<(DwgModelSource const& rhs) const;
+        DWG_EXPORT bool operator==(DwgModelSource const& rhs) const {return m_fileId == rhs.m_fileId && m_modelId.GetValue() == rhs.m_modelId.GetValue();}
+        DWG_EXPORT bool operator!=(DwgModelSource const& rhs) const {return !(*this == rhs);}
+        DWG_EXPORT bool IsValid () const { return m_fileId.IsValid() && m_modelId.IsValid(); }
         };  // DwgModelSource
 
     enum class ModelSourceType
@@ -236,13 +237,13 @@ struct DwgSyncInfo
         uint64_t                    m_instanceId;   //!< DWG object ID of a block, an xref insert or a raster image from which this model was created
 
     public:
-        DwgModelMapping ();
+        DWG_EXPORT DwgModelMapping ();
         //! map the modelspace or a paperspace to a DgnModel
-        DwgModelMapping (DgnModelId mid, DwgDbBlockTableRecordCR block, TransformCR trans);
+        DWG_EXPORT DwgModelMapping (DgnModelId mid, DwgDbBlockTableRecordCR block, TransformCR trans);
         //! map an xref insert entity to a DgnModel
-        DwgModelMapping (DgnModelId mid, DwgDbBlockReferenceCR xrefInsert, DwgDbDatabaseR xrefDwg, TransformCR trans);
+        DWG_EXPORT DwgModelMapping (DgnModelId mid, DwgDbBlockReferenceCR xrefInsert, DwgDbDatabaseR xrefDwg, TransformCR trans);
         //! map a raster attachment to a DgnModel
-        DwgModelMapping (DgnModelId mid, DwgDbRasterImageCR raster, TransformCR trans);
+        DWG_EXPORT DwgModelMapping (DgnModelId mid, DwgDbRasterImageCR raster, TransformCR trans);
 
         BeSQLite::DbResult  Insert (BeSQLite::Db&) const;
         BeSQLite::DbResult  Update (BeSQLite::Db&) const;
@@ -267,7 +268,7 @@ struct DwgSyncInfo
 
     struct ModelIterator : BeSQLite::DbTableIterator
         {
-        DGNDBSYNC_EXPORT ModelIterator(DgnDbCR db, Utf8CP where);
+        DWG_EXPORT ModelIterator(DgnDbCR db, Utf8CP where);
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
@@ -275,21 +276,21 @@ struct DwgSyncInfo
             Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
 
         public:
-            DGNDBSYNC_EXPORT DwgModelSyncInfoId GetDwgModelSyncInfoId ();
-            DGNDBSYNC_EXPORT DwgModelMapping GetMapping ();
-            DGNDBSYNC_EXPORT DgnModelId GetModelId();
-            DGNDBSYNC_EXPORT DwgFileId GetDwgFileId();
-            DGNDBSYNC_EXPORT DwgModelId GetDwgModelId();
-            DGNDBSYNC_EXPORT Utf8CP GetDwgName();
-            DGNDBSYNC_EXPORT ModelSourceType GetSourceType();
-            DGNDBSYNC_EXPORT uint64_t GetDwgModelInstanceId();
-            DGNDBSYNC_EXPORT Transform GetTransform();
+            DWG_EXPORT DwgModelSyncInfoId GetDwgModelSyncInfoId ();
+            DWG_EXPORT DwgModelMapping GetMapping ();
+            DWG_EXPORT DgnModelId GetModelId();
+            DWG_EXPORT DwgFileId GetDwgFileId();
+            DWG_EXPORT DwgModelId GetDwgModelId();
+            DWG_EXPORT Utf8CP GetDwgName();
+            DWG_EXPORT ModelSourceType GetSourceType();
+            DWG_EXPORT uint64_t GetDwgModelInstanceId();
+            DWG_EXPORT Transform GetTransform();
             Entry const& operator* () const {return *this;}
         };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
+        DWG_EXPORT const_iterator begin() const;
         const_iterator end() const {return Entry (NULL, false);}
         };
 
@@ -333,7 +334,7 @@ struct DwgSyncInfo
 
     struct ImportJobIterator : BeSQLite::DbTableIterator
         {
-        DGNDBSYNC_EXPORT ImportJobIterator(DgnDbCR db, Utf8CP where);
+        DWG_EXPORT ImportJobIterator(DgnDbCR db, Utf8CP where);
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {
         private:
@@ -341,13 +342,13 @@ struct DwgSyncInfo
             Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
 
         public:
-            DGNDBSYNC_EXPORT ImportJob GetimportJob();
+            DWG_EXPORT ImportJob GetimportJob();
             Entry const& operator* () const {return *this;}
             };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
+        DWG_EXPORT const_iterator begin() const;
         const_iterator end() const {return Entry (NULL, false);}
         };  // ImportJobIterator
 
@@ -466,6 +467,7 @@ struct DwgSyncInfo
         DwgObjectProvenance () {}
         BentleyStatus  CreateBlockHash (DwgDbObjectIdCR blockId);
         BentleyStatus  CreateAsmObjectHash (DwgDbObjectCR obj);
+        void AppendComplexObjectHash (DwgObjectHash::HashFiler& filer, DwgDbObjectCR obj);
         bool HasSecondaryHash () const { return !m_secondaryHash.IsNull(); }
         bool IsSame (DwgObjectProvenance const& other, bool check2nd = false) const { return m_primaryHash.IsSame(other.m_primaryHash) && (!check2nd || m_secondaryHash.IsSame(other.m_secondaryHash)); }
         DwgObjectHash const& GetPrimaryHash () const { return m_primaryHash; }
@@ -528,7 +530,7 @@ struct DwgSyncInfo
     //! plus information about the state of the dwg object's data.
     struct ElementIterator : BeSQLite::DbTableIterator
         {
-        DGNDBSYNC_EXPORT ElementIterator(DgnDbCR db, Utf8CP where);
+        DWG_EXPORT ElementIterator(DgnDbCR db, Utf8CP where);
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {
             private:
@@ -536,18 +538,18 @@ struct DwgSyncInfo
                 Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
 
             public:
-                DGNDBSYNC_EXPORT DgnElementId GetElementId() const;
-                DGNDBSYNC_EXPORT DwgFileId GetDwgFileId() const;
-                DGNDBSYNC_EXPORT DwgModelSyncInfoId GetDwgModelSyncInfoId() const;
-                DGNDBSYNC_EXPORT uint64_t GetDwgObjectId() const;
-                DGNDBSYNC_EXPORT DwgObjectProvenance GetProvenance() const;
-                DGNDBSYNC_EXPORT DwgObjectMapping GetObjectMapping() const;
+                DWG_EXPORT DgnElementId GetElementId() const;
+                DWG_EXPORT DwgFileId GetDwgFileId() const;
+                DWG_EXPORT DwgModelSyncInfoId GetDwgModelSyncInfoId() const;
+                DWG_EXPORT uint64_t GetDwgObjectId() const;
+                DWG_EXPORT DwgObjectProvenance GetProvenance() const;
+                DWG_EXPORT DwgObjectMapping GetObjectMapping() const;
                 Entry const& operator* () const {return *this;}
             };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
+        DWG_EXPORT const_iterator begin() const;
         const_iterator end() const {return Entry (NULL, false);}
         };
 
@@ -602,25 +604,72 @@ struct DwgSyncInfo
     // Material iterator
     struct MaterialIterator : BeSQLite::DbTableIterator
         {
-        DGNDBSYNC_EXPORT MaterialIterator(DgnDbCR db);
+        DWG_EXPORT MaterialIterator(DgnDbCR db);
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
             {
-            private:
-                friend struct MaterialIterator;
-                Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
+        private:
+            friend struct MaterialIterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
 
-            public:
-                DGNDBSYNC_EXPORT RenderMaterialId GetRenderMaterialId();
-                DGNDBSYNC_EXPORT DwgFileId GetDwgFileId();
-                DGNDBSYNC_EXPORT uint64_t GetDwgObjectId();
-                Entry const& operator* () const {return *this;}
+        public:
+            DWG_EXPORT RenderMaterialId GetRenderMaterialId();
+            DWG_EXPORT DwgFileId GetDwgFileId();
+            DWG_EXPORT uint64_t GetDwgObjectId();
+            Entry const& operator* () const {return *this;}
             };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
-        DGNDBSYNC_EXPORT const_iterator begin() const;
+        DWG_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry (nullptr, false); }
         };  // MaterialIterator
+
+    //! Sync info for Group
+    struct Group
+        {
+    private:
+        BentleyApi::MD5     m_hasher;
+
+    public:
+        StableIdPolicy      m_idPolicy;
+        DgnElementId        m_id;
+        DwgFileId           m_fileId;
+        uint64_t            m_objectId;
+        Utf8String          m_name;
+        DwgObjectHash       m_hash;
+        
+        DWG_EXPORT explicit Group () { m_id.Invalidate(); }
+        DWG_EXPORT explicit Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy, DwgDbGroupCR group);
+        DWG_EXPORT BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        DWG_EXPORT BeSQLite::DbResult Update (BeSQLite::Db&) const;
+        DWG_EXPORT DgnElementId GetDgnElementId () const { return m_id; }
+        DWG_EXPORT uint64_t GetDwgHandleValue () const { return m_objectId; }
+        DWG_EXPORT bool IsValid() const { return m_id.IsValid(); }
+        bool IsSame (Group const& other) const { return m_hash.IsSame(other.m_hash); }
+        };  // Group
+
+    // Group iterator
+    struct GroupIterator : BeSQLite::DbTableIterator
+        {
+        DWG_EXPORT GroupIterator(DgnDbCR db);
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+        private:
+            friend struct GroupIterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
+
+        public:
+            DWG_EXPORT DgnElementId GetDgnElementId();
+            DWG_EXPORT DwgFileId GetDwgFileId();
+            DWG_EXPORT uint64_t GetDwgObjectId();
+            Entry const& operator* () const {return *this;}
+            };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DWG_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        };  // GroupIterator
 
 
     DwgImporter&        m_dwgImporter;
@@ -634,28 +683,28 @@ protected:
     //! Optimized for fast look-up
     BentleyStatus FindFirstSubCategory (DgnSubCategoryId&, DwgModelSource, uint64_t flid);
 
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertFile(FileProvenance&, FileInfo const&);
+    DWG_EXPORT BeSQLite::DbResult InsertFile(FileProvenance&, FileInfo const&);
 
     BentleyStatus PerformVersionChecks();
 
 public:
     BentleyStatus CreateTables();
 
-    DGNDBSYNC_EXPORT BeSQLite::DbResult SavePropertyString (BeSQLite::PropertySpec const& spec, Utf8CP stringData, uint64_t majorId=0, uint64_t subId=0);
-    DGNDBSYNC_EXPORT BeSQLite::DbResult QueryProperty (Utf8StringR str, BeSQLite::PropertySpec const& spec, uint64_t id=0, uint64_t subId=0) const;
+    DWG_EXPORT BeSQLite::DbResult SavePropertyString (BeSQLite::PropertySpec const& spec, Utf8CP stringData, uint64_t majorId=0, uint64_t subId=0);
+    DWG_EXPORT BeSQLite::DbResult QueryProperty (Utf8StringR str, BeSQLite::PropertySpec const& spec, uint64_t id=0, uint64_t subId=0) const;
 
     //! Construct a DwgSyncInfo object to use for the specified project.
     DwgSyncInfo (DwgImporter&);
-    DGNDBSYNC_EXPORT ~DwgSyncInfo ();
+    DWG_EXPORT ~DwgSyncInfo ();
 
     DgnDb* GetDgnDb () {return m_dgndb;}
 
     //! Get the name of the .syncinfo file
-    DGNDBSYNC_EXPORT static BeFileName GetDbFileName (DgnDb&);
-    DGNDBSYNC_EXPORT static BeFileName GetDbFileName (BeFileNameCR);
+    DWG_EXPORT static BeFileName GetDbFileName (DgnDb&);
+    DWG_EXPORT static BeFileName GetDbFileName (BeFileNameCR);
 
     //! Call this to attach a synchinfo file to a project.
-    DGNDBSYNC_EXPORT BentleyStatus AttachToProject (DgnDb& targetProject, BeFileNameCR dbName);
+    DWG_EXPORT BentleyStatus AttachToProject (DgnDb& targetProject, BeFileNameCR dbName);
 
     //! This function associates this DwgSyncInfoBase object with the specified project.
     //! Call this after attaching an existing .syncinfo file to the specified project.
@@ -667,7 +716,7 @@ public:
     //! Create an empty .syncinfo file. Then attach it to the project.
     //! @param[in] dbName The name of the syncinfo file
     //! @param[in] deleteIfExists If true, any existing .syncinfo file with the same name is deleted
-    DGNDBSYNC_EXPORT static BentleyStatus CreateEmptyFile (BeFileNameCR dbName, bool deleteIfExists=true);
+    DWG_EXPORT static BentleyStatus CreateEmptyFile (BeFileNameCR dbName, bool deleteIfExists=true);
 
     //! Query if the DwgSyncInfo is valid (created or read)
     bool IsValid() const {return m_isValid;}
@@ -675,35 +724,36 @@ public:
     //! Mark the DwgSyncInfo as valid or not.
     void SetValid (bool b) {m_isValid=b;}
 
-    DGNDBSYNC_EXPORT void SetLastError (BeSQLite::DbResult);
-    DGNDBSYNC_EXPORT void GetLastError (BeSQLite::DbResult&, Utf8String&);
+    DWG_EXPORT void SetLastError (BeSQLite::DbResult);
+    DWG_EXPORT void GetLastError (BeSQLite::DbResult&, Utf8String&);
 
     //! @name DWG Files
     //! @{
 
     //! Get information about a disk file
-    DGNDBSYNC_EXPORT static DwgFileId   GetDwgFileId (DwgDbDatabaseR);
-    static StableIdPolicy               GetFileIdPolicy (DwgDbDatabaseR);
-    Utf8String                          GetUniqueName (WStringCR fullname);
+    DWG_EXPORT static DwgFileId   GetDwgFileId (DwgDbDatabaseR);
+    static StableIdPolicy   GetFileIdPolicy (DwgDbDatabaseR);
+    Utf8String  GetUniqueName (WStringCR fullname);
+    DWG_EXPORT BentleyStatus  DeleteFile (DwgFileId fileId);
 
     //! Query if the specified file appears to have changed, compared to save data in syncinfo
     //! @return true if the file is not found in syncinfo or if it is found and its last-save time is different
-    DGNDBSYNC_EXPORT bool HasLastSaveTimeChanged (DwgDbDatabaseCR);
+    DWG_EXPORT bool HasLastSaveTimeChanged (DwgDbDatabaseCR);
 
     //! Query if a dwg file's disk file might have changed since syncinfo was created or last updated
     //! @param[in] dwgFileName  the name of the file on disk
-    DGNDBSYNC_EXPORT bool HasDiskFileChanged(BeFileNameCR dwgFileName);
+    DWG_EXPORT bool HasDiskFileChanged(BeFileNameCR dwgFileName);
 
     //! Query if a dwg file's version GUID might have changed since syncinfo was created or last updated
     //! @param[in] dwg  DWG database
-    DGNDBSYNC_EXPORT bool HasVersionGuidChanged (DwgDbDatabaseCR dwg);
+    DWG_EXPORT bool HasVersionGuidChanged (DwgDbDatabaseCR dwg);
     //! @}
 
     //! @name DWG Models/Layouts
     //! @{
 
     //! Delete all syncinfo for the specified DWG model.
-    DGNDBSYNC_EXPORT BentleyStatus DeleteModel (DwgSyncInfo::DwgModelSyncInfoId const&);
+    DWG_EXPORT BentleyStatus DeleteModel (DwgSyncInfo::DwgModelSyncInfoId const&);
 
     //! Create sync info for a DWG model/layout/xref/raster
     //! @param[out] minfo   The newly inserted sync info for the model
@@ -711,29 +761,29 @@ public:
     //! @param[in] block The dwg layout block model (a modelspace or a paperspace)
     //! @param[in] transform The transform from the dwg layout block model to the DgnDb model
     //! @return non-zero error status if the new sync info could not be created
-    DGNDBSYNC_EXPORT BentleyStatus InsertModel (DwgModelMapping& minfo, DgnModelId modelId, DwgDbBlockTableRecordCR block, TransformCR transform);
+    DWG_EXPORT BentleyStatus InsertModel (DwgModelMapping& minfo, DgnModelId modelId, DwgDbBlockTableRecordCR block, TransformCR transform);
     //! Create sync info for an xref model
     //! @param[out] minfo The newly inserted sync info for the model
     //! @param[in] modelId The model in the DgnDb to which this dwg layout block model is mapped
     //! @param[in] xrefInsert The dwg xref attachment
     //! @param[in] xrefDwg The dwg xref file/database
     //! @param[in] transform The transform the DWG xref to the DgnModel
-    DGNDBSYNC_EXPORT BentleyStatus InsertModel (DwgModelMapping& minfo, DgnModelId modelId, DwgDbBlockReferenceCR xrefInsert, DwgDbDatabaseR xrefDwg, TransformCR transform);
+    DWG_EXPORT BentleyStatus InsertModel (DwgModelMapping& minfo, DgnModelId modelId, DwgDbBlockReferenceCR xrefInsert, DwgDbDatabaseR xrefDwg, TransformCR transform);
     //! Create sync info for a DWG raster model
     //! @param[out] minfo The newly inserted sync info for the model
     //! @param[in] modelId The model in the DgnDb to which this dwg layout block model is mapped
     //! @param[in] image The dwg raster attachment
     //! @param[in] transform The transform from the dwg raster to the raster model
-    DGNDBSYNC_EXPORT BentleyStatus InsertModel (DwgModelMapping& minfo, DgnModelId modelId, DwgDbRasterImageCR image, TransformCR transform);
+    DWG_EXPORT BentleyStatus InsertModel (DwgModelMapping& minfo, DgnModelId modelId, DwgDbRasterImageCR image, TransformCR transform);
     //! Find DgnModel, optionally matching a transformation
     //! @param[out] mapping The sync info found for the model
     //! @param[in] id The dwg object ID
     //! @param[in] trans The transformation for the model, optional
-    DGNDBSYNC_EXPORT BentleyStatus FindModel (DwgModelMapping* mapping, DwgDbObjectIdCR id, TransformCP trans);
+    DWG_EXPORT BentleyStatus FindModel (DwgModelMapping* mapping, DwgDbObjectIdCR id, TransformCP trans);
     //! Find DgnModel by DwgModelSyncInfoId
     //! @param[out] mapping The sync info found for the model
     //! @param[in] syncInfoId The syncInfo ID for the model
-    DGNDBSYNC_EXPORT BentleyStatus FindModel (DwgModelMapping* mapping, DwgModelSyncInfoId syncInfoId);
+    DWG_EXPORT BentleyStatus FindModel (DwgModelMapping* mapping, DwgModelSyncInfoId syncInfoId);
 
     //! @}
 
@@ -743,26 +793,26 @@ public:
     //! @note This deletes all rows in sync info having the specified dwg object id in the current dwg model.
     //! @param[in] dwgid  The ID of the object in the dwg repository
     //! @return non-zero error code if the object is not found in sync info for the current dwg model.
-    DGNDBSYNC_EXPORT BentleyStatus DeleteElement (DwgDbObjectIdCR, DwgModelSyncInfoId const& modelSyncId);
+    DWG_EXPORT BentleyStatus DeleteElement (DwgDbObjectIdCR, DwgModelSyncInfoId const& modelSyncId);
 
     //! Remove sync info for a DWG object. The object is assumed to be in the current dwg file.
     //! @note This deletes all rows in sync info having the specified native object id in the current model within the current dwg model.
     //! @param[in] id Identfies the entity in the DgnDb
     //! @return non-zero error status if no sync info could be found for this object or if the syncinfo file could not be updated
-    DGNDBSYNC_EXPORT BentleyStatus DeleteElement (DgnElementId id);
+    DWG_EXPORT BentleyStatus DeleteElement (DgnElementId id);
 
     //! Mark a dwg object as not converted.
-    DGNDBSYNC_EXPORT void InsertDiscardedDwgObject (DwgDbEntityCR, DwgModelSyncInfoId const& modelSyncId);
+    DWG_EXPORT void InsertDiscardedDwgObject (DwgDbEntityCR, DwgModelSyncInfoId const& modelSyncId);
 
     //! Delete a discard record. The updater should call this when it successfully converts an object that was formerly discarded.
     //! @param[in] dwgId  The ID of the object in the dwg repository
     //! @param[in] modelSyncId  The raw ID of the model in DwgSyncInfo table
-    DGNDBSYNC_EXPORT BentleyStatus DeleteDiscardedDwgObject (DwgDbObjectIdCR dwgId, DwgModelSyncInfoId const& modelSyncId);
+    DWG_EXPORT BentleyStatus DeleteDiscardedDwgObject (DwgDbObjectIdCR dwgId, DwgModelSyncInfoId const& modelSyncId);
 
     //! Query if a dwg object was not converted. The dwg object is assumed to be in the current dwg model in the current dwg file.
     //! @param[in] dwgId  The ID of the object in the dwg repository
     //! @param[in] modelSyncId  The raw ID of the model in DwgSyncInfo table
-    DGNDBSYNC_EXPORT bool WasDwgObjectDiscarded (DwgDbObjectIdCR dwgId, DwgModelSyncInfoId const& modelSyncId);
+    DWG_EXPORT bool WasDwgObjectDiscarded (DwgDbObjectIdCR dwgId, DwgModelSyncInfoId const& modelSyncId);
     //! @}
 
     //! @name Layers, Materials
@@ -771,23 +821,31 @@ public:
     //! Lookup the first native layer mapped to the specified dwg layer id. Objects using this layer are assumed to be in the current dwg model in the current dwg file.
     //! This function checks first for a model-specific version of the layer and then falls back to a file-wide version.
     //! This function returns the default category if all else fails
-    DGNDBSYNC_EXPORT DgnSubCategoryId GetSubCategory (DwgDbObjectIdCR layerId, DwgModelSource);
+    DWG_EXPORT DgnSubCategoryId GetSubCategory (DwgDbObjectIdCR layerId, DwgModelSource);
 
     //! Find the category to use for the specified DWG entity (i.e. a graphic object only)
     //! This function returns the default category if all else fails
-    DGNDBSYNC_EXPORT DgnCategoryId GetCategory (DwgDbEntityCR);
-    DGNDBSYNC_EXPORT DgnCategoryId GetCategory (DwgDbObjectIdCR layerId, DwgDbDatabaseP dwg);
-    DGNDBSYNC_EXPORT DgnSubCategoryId GetSubCategory (DwgDbObjectIdCR layerId, DwgDbDatabaseP dwg);
-    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory (DwgDbObjectIdCR layerId, DwgModelSource model);
-    DGNDBSYNC_EXPORT DgnSubCategoryId FindSubCategory (DwgDbObjectIdCR layerId, DwgFileId fileId);
-    DGNDBSYNC_EXPORT DgnCategoryId FindCategory (DwgDbObjectIdCR layerId, DwgFileId fileId);
-    DGNDBSYNC_EXPORT DwgDbHandle FindLayerHandle (DgnCategoryId categoryId, DwgFileId fileId);
+    DWG_EXPORT DgnCategoryId GetCategory (DwgDbEntityCR);
+    DWG_EXPORT DgnCategoryId GetCategory (DwgDbObjectIdCR layerId, DwgDbDatabaseP dwg);
+    DWG_EXPORT DgnSubCategoryId GetSubCategory (DwgDbObjectIdCR layerId, DwgDbDatabaseP dwg);
+    DWG_EXPORT DgnSubCategoryId FindSubCategory (DwgDbObjectIdCR layerId, DwgModelSource model);
+    DWG_EXPORT DgnSubCategoryId FindSubCategory (DwgDbObjectIdCR layerId, DwgFileId fileId);
+    DWG_EXPORT DgnCategoryId FindCategory (DwgDbObjectIdCR layerId, DwgFileId fileId);
+    DWG_EXPORT DwgDbHandle FindLayerHandle (DgnCategoryId categoryId, DwgFileId fileId);
 
-    //! Query sync info for a dwg material in the current dwg file.
-    DGNDBSYNC_EXPORT bool FindMaterial (Material& out, DwgDbObjectIdCR id);
-    DGNDBSYNC_EXPORT Material InsertMaterial (RenderMaterialId id, DwgDbMaterialCR material);
-    DGNDBSYNC_EXPORT BentleyStatus UpdateMaterial (DwgSyncInfo::Material& prov);
-    DGNDBSYNC_EXPORT BentleyStatus DeleteMaterial (RenderMaterialId id);
+    //! Query sync info for a dwg material in the current dwg file (applies to StableIdPolicy::ById)..
+    DWG_EXPORT bool FindMaterial (Material& out, DwgDbObjectIdCR id);
+    DWG_EXPORT Material InsertMaterial (RenderMaterialId id, DwgDbMaterialCR material);
+    DWG_EXPORT BentleyStatus UpdateMaterial (DwgSyncInfo::Material& prov);
+    DWG_EXPORT BentleyStatus DeleteMaterial (RenderMaterialId id);
+
+    //! Query sync info for a DWG group (applies to StableIdPolicy::ById).
+    //! @param[out] out The sync info about the requested group
+    //! @param[in] groupId The input DWG group object ID for which a sync info is queried
+    DWG_EXPORT bool FindGroup (DwgSyncInfo::Group& out, DwgDbObjectIdCR groupId);
+    DWG_EXPORT Group InsertGroup (DgnElementId id, DwgDbGroupCR group);
+    DWG_EXPORT BentleyStatus UpdateGroup (DwgSyncInfo::Group& syncGroup);
+    DWG_EXPORT BentleyStatus DeleteGroup (DgnElementId id);
 
     //! @}
 
@@ -800,11 +858,13 @@ public:
     //! @param[in] modelSyncId The raw ID of the DWG Model in the syncinfo table
     //! @return non-zero error status if the insert to syncinfo failed.
     //! Note you cannot change the mapping between Dwg object and DgnDb element in an update. You must do delete and add.
-    DGNDBSYNC_EXPORT BentleyStatus InsertElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt, DwgModelSyncInfoId const& modelSyncId);
-    DGNDBSYNC_EXPORT BentleyStatus UpdateElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt);
-    DGNDBSYNC_EXPORT bool TryFindElement (DgnElementId&, DwgDbObjectCP, DwgModelSyncInfoId const&) const;
+    DWG_EXPORT BentleyStatus InsertElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt, DwgModelSyncInfoId const& modelSyncId);
+    DWG_EXPORT BentleyStatus UpdateElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt);
+    DWG_EXPORT bool TryFindElement (DgnElementId&, DwgDbObjectCP, DwgModelSyncInfoId const&) const;
+    //! Find all elements mapped from the input object and in models mapped from the same DWG file.
+    DWG_EXPORT bool FindElements (DgnElementIdSet&, DwgDbObjectIdCR) const;
     //! Check if the specified BIM element is mapped to the same DWG object as any element in the specified set.
-    DGNDBSYNC_EXPORT bool IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdSet const& known) const;
+    DWG_EXPORT bool IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdSet const& known) const;
 
     //! Record sync info for a layer.
     //! @param[in]  subId The layer's sub category ID in DgnDb
@@ -812,17 +872,17 @@ public:
     //! @param[in]  layer The DWG layer
     //! @return non-zero error status if the layer could not be inserted in sync info. This would probably be caused by a non-unique name.
     //! @note reports an issue in insertion fails.
-    DGNDBSYNC_EXPORT Layer InsertLayer (DgnSubCategoryId subId, DwgModelSource ms, DwgDbLayerTableRecordCR layer);
+    DWG_EXPORT Layer InsertLayer (DgnSubCategoryId subId, DwgModelSource ms, DwgDbLayerTableRecordCR layer);
 
     //! Record sync info for a linetype.
     //! @param[in]  id          DgnDb linestyle ID
     //! @param[in]  model       DWG model source
     //! @param[in]  ltype       DWG linetype object
-    DGNDBSYNC_EXPORT Linetype       InsertLinetype (DgnStyleId id, DwgModelSource const& model, DwgDbLinetypeTableRecordCR ltype);
-    DGNDBSYNC_EXPORT Linetype       InsertLinetype (DgnStyleId id, DwgDbLinetypeTableRecordCR ltype);
-    DGNDBSYNC_EXPORT BentleyStatus  UpdateLinetype (DgnStyleId id, DwgDbLinetypeTableRecordCR ltype);
-    DGNDBSYNC_EXPORT DgnStyleId     FindLineStyle (DwgDbObjectIdCR linetypId, DwgModelSource const& model);
-    DGNDBSYNC_EXPORT DgnStyleId     FindLineStyle (DwgDbObjectIdCR linetypId);
+    DWG_EXPORT Linetype       InsertLinetype (DgnStyleId id, DwgModelSource const& model, DwgDbLinetypeTableRecordCR ltype);
+    DWG_EXPORT Linetype       InsertLinetype (DgnStyleId id, DwgDbLinetypeTableRecordCR ltype);
+    DWG_EXPORT BentleyStatus  UpdateLinetype (DgnStyleId id, DwgDbLinetypeTableRecordCR ltype);
+    DWG_EXPORT DgnStyleId     FindLineStyle (DwgDbObjectIdCR linetypId, DwgModelSource const& model);
+    DWG_EXPORT DgnStyleId     FindLineStyle (DwgDbObjectIdCR linetypId);
     //! @}
     
     //! Record sync info for a ViewDefinition created from a modelspace viewport, the paperspace viewport, or a viewport entity
@@ -830,14 +890,14 @@ public:
     //! @param[in]  objId       object ID of a DWG viewport table record or a viewport entity
     //! @param[in]  type        Source viewport type - modelspace, paperspace, or viewport entity
     //! @param[in]  name        View name
-    DGNDBSYNC_EXPORT View           InsertView (DgnViewId id, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name);
-    DGNDBSYNC_EXPORT BentleyStatus  UpdateView (DgnViewId id, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name);
+    DWG_EXPORT View           InsertView (DgnViewId id, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name);
+    DWG_EXPORT BentleyStatus  UpdateView (DgnViewId id, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name);
     //! Query syncInfo by DWG ID and source
     //! @param[in]  vportId     entityId of a viewport table record or a viewport entity
     //! @param[in]  type        viewport table record, paperspace viewport or viewport entity
-    DGNDBSYNC_EXPORT DgnViewId      FindView (DwgDbObjectIdCR vportId, View::Type type);
-    DGNDBSYNC_EXPORT DwgDbHandle    FindViewportHandle (DgnViewId viewId);
-    DGNDBSYNC_EXPORT BentleyStatus  DeleteView (DgnViewId viewId);
+    DWG_EXPORT DgnViewId      FindView (DwgDbObjectIdCR vportId, View::Type type);
+    DWG_EXPORT DwgDbHandle    FindViewportHandle (DgnViewId viewId);
+    DWG_EXPORT BentleyStatus  DeleteView (DgnViewId viewId);
     //! @}
     
     //! @name ImportJobs - When we convert a DgnV8-based project and store its contents in a DgnDb, that's an "import job".
@@ -848,15 +908,15 @@ public:
     //! Look up a record in the ImportJob table
     //! @param[out] importJob   The gtest data, if found
     //! @param[in] dwgModel      Identifies the DWG root model in syncinfo
-    DGNDBSYNC_EXPORT BentleyStatus FindImportJobById(ImportJob& importJob, DwgModelSyncInfoId const& dwgModel);
+    DWG_EXPORT BentleyStatus FindImportJobById(ImportJob& importJob, DwgModelSyncInfoId const& dwgModel);
 
     //! Record the fact that the specified importJob has been converted and stored in the DgnDb
     //! @param importJob    The importJob info to insert
-    DGNDBSYNC_EXPORT BentleyStatus InsertImportJob(ImportJob const& importJob);
+    DWG_EXPORT BentleyStatus InsertImportJob(ImportJob const& importJob);
     //! Update the import job's transform, prefix, and subjectid.
     //! @param importJob    The importJob info to update
-    DGNDBSYNC_EXPORT BentleyStatus UpdateImportJob(ImportJob const& importJob);
+    DWG_EXPORT BentleyStatus UpdateImportJob(ImportJob const& importJob);
     //! @}
     };  // DwgSyncInfo
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

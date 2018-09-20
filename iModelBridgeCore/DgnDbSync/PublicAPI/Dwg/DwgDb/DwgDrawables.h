@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDrawables.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgDrawables.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,8 +10,8 @@
 ---------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbObjects.h>
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbSymbolTables.h>
+#include    <Dwg/DwgDb/DwgDbObjects.h>
+#include    <Dwg/DwgDb/DwgDbSymbolTables.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
 #include    <Teigha/Kernel/Include/Gi/GiDrawable.h>

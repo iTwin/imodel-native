@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgDbDatabase.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgDbDatabase.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include    <DgnDbSync/Dwg/DwgDb/DwgDbCommon.h>
-#include    <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
+#include    <Dwg/DwgDb/DwgDbCommon.h>
+#include    <Dwg/DwgDb/BasicTypes.h>
 #include    <Bentley/RefCounted.h>
 
 #ifdef DWGTOOLKIT_OpenDwg
@@ -66,6 +66,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId      GetRegAppTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetTextStyleTableId () const;
     DWGDB_EXPORT DwgDbObjectId      GetViewportTableId () const;
+    DWGDB_EXPORT DwgDbObjectId      GetGroupDictionaryId () const;
     DWGDB_EXPORT DwgString          GetFileName () const;
     DWGDB_EXPORT double             GetANGBASE () const;
     DWGDB_EXPORT bool               GetANGDIR () const;

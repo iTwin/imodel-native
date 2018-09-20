@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
 
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 #ifdef DWGTOOLKIT_OpenDwg
 #define gpDesc      g_pDesc

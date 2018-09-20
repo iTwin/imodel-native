@@ -38,6 +38,8 @@ DgnAttachmentArrayP Converter::GetAttachments(DgnV8ModelRefR v8Model)
         LOG.tracev("Loading attachments for %s", v8Model.AsDgnAttachmentCP()? IssueReporter::FmtAttachment(*v8Model.AsDgnAttachmentCP()).c_str(): IssueReporter::FmtModel(*v8Model.GetDgnModelP()).c_str());
 
     v8Model.ReadAndLoadDgnAttachments(loadOptions);
+    RealityMeshAttachmentConversion::ForceClassifierAttachmentLoad (v8Model);
+
 
     return v8Model.GetDgnAttachmentsP();
     }
@@ -305,19 +307,54 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         // *** WIP_CONVERT_CVE code = CreateCode(defaultCodeValue, defaultCodeScope);
         }
 
-    // *** WIP_CONVERT_CVE - what bis element class to use? Will it always be the same for all kinds of drawing extractions?
-    DgnClassId elementClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic));
+    DgnClassId elementClassId;
+    V8ElementECContent ecContent;
+    bool hasPrimaryInstance = false;
+    bool hasSecondaryInstances = false;
+    DgnV8Api::ElementHandle v8eh(drawingModelMapping.GetV8Model().FindElementByID(originalElementMapping.m_v8ElementId));
+    if (v8eh.IsValid())
+        {
+        bool isNewElement = true;
+        if (IsUpdating())
+            {
+            IChangeDetector::SearchResults changeInfo;
+            if (GetChangeDetector()._IsElementChanged(changeInfo, *this, v8eh, drawingModelMapping) && IChangeDetector::ChangeType::Update == changeInfo.m_changeType)
+                isNewElement = false;
+            }
+        GetECContentOfElement(ecContent, v8eh, drawingModelMapping, true);
+        hasPrimaryInstance = ecContent.m_primaryV8Instance != nullptr;
+        hasSecondaryInstances = !ecContent.m_secondaryV8Instances.empty();
+        elementClassId = _ComputeElementClass(v8eh, ecContent, drawingModelMapping);
+        }
+    else
+        {
+        SyncInfo::FileById theFile(GetDgnDb(), drawingModelMapping.GetV8FileSyncInfoId());
+        auto i = theFile.begin();
+        Utf8String fileName;
+        if (i == theFile.end())
+            {
+            auto entry = *i;
+            fileName = entry.GetUniqueName();
+            }
+        ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ExtractedGraphicMissingElement(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str(), fileName.c_str());
+        }
+
+    if (!elementClassId.IsValid())
+        elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
+
     DgnElementPtr drawingGraphic = CreateNewElement(model, elementClassId, categoryId, code);
     if (!drawingGraphic.IsValid())
         return DgnDbStatus::BadRequest;
 
     if (!drawingGraphic.IsValid())
         {
+        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicCreationFailure(), "", model.GetName().c_str(), elementClassId.GetValue(), categoryId.GetValue(), code.GetValueUtf8());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
     if (BSISUCCESS != builder.Finish(*drawingGraphic->ToGeometrySourceP()))
         {
+        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }
@@ -326,6 +363,29 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     ++m_elementsConverted;
 
     DgnDbStatus status = DgnDbStatus::Success;
+    ElementConversionResults results;
+    results.m_element = drawingGraphic;
+    if (hasPrimaryInstance)
+        {
+        if (nullptr == m_elementConverter)
+            m_elementConverter = new ElementConverter(*this);
+        m_elementConverter->ConvertToElementItem(results, ecContent.m_primaryV8Instance.get(), &ecContent.m_elementConversionRule);
+
+        Bentley::WString displayLabel;
+        ecContent.m_primaryV8Instance->GetDisplayLabel(displayLabel);
+        results.m_element->SetUserLabel(Utf8String(displayLabel.c_str()).c_str());
+
+        if (ecContent.m_v8ElementType == V8ElementType::NamedGroup)
+            OnNamedGroupConverted(v8eh, results.m_element->GetElementClassId());
+        }
+    //item or aspects only if there was an ECInstance on the element at all
+    if (hasSecondaryInstances)
+        {
+        if (nullptr == m_elementAspectConverter)
+            m_elementAspectConverter = new ElementAspectConverter(*this);
+        if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(results, ecContent.m_secondaryV8Instances))
+            return DgnDbStatus::BadElement;
+        }
 
     if (IsUpdating())
         {
@@ -352,6 +412,31 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         return status;
 
     GetSyncInfo().InsertExtractedGraphic(attachmentSource, originalElementMapping, categoryId, drawingGraphic->GetElementId());
+
+    if (v8eh.IsValid())
+        {
+        BeSQLite::EC::ECInstanceKey bisElementKey = drawingGraphic->GetECInstanceKey();
+        SyncInfo::V8FileSyncInfoId fileId = GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP());
+        if (results.m_v8PrimaryInstance.IsValid())
+            ECInstanceInfo::Insert(GetDgnDb(), fileId, results.m_v8PrimaryInstance, bisElementKey, true);
+
+        for (bpair<V8ECInstanceKey, BECN::IECInstancePtr> const& v8SecondaryInstanceMapping : results.m_v8SecondaryInstanceMappings)
+            {
+            BECN::IECInstanceCR aspect = *v8SecondaryInstanceMapping.second;
+            BeSQLite::EC::ECInstanceId aspectId;
+            if (SUCCESS != BeSQLite::EC::ECInstanceId::FromString(aspectId, aspect.GetInstanceId().c_str()))
+                {
+                BeAssert(false && "Could not convert IECInstance's instance id to a BeSQLite::EC::ECInstanceId.");
+                continue;
+                }
+
+            ECInstanceInfo::Insert(GetDgnDb(), fileId, v8SecondaryInstanceMapping.first, BeSQLite::EC::ECInstanceKey(aspect.GetClass().GetId(), aspectId), false);
+
+            // need to record which element class each aspect is associated with.
+            ElementClassToAspectClassMapping::Insert(GetDgnDb(), drawingGraphic->GetElementClassId(), drawingGraphic->GetElementClass()->GetSchema().GetName().c_str(), drawingGraphic->GetElementClass()->GetName().c_str(),
+                                                     aspect.GetClass().GetId(), aspect.GetClass().GetSchema().GetName().c_str(), aspect.GetClass().GetName().c_str());
+            }
+        }
 
     //  Create a relationship to the 3d element that it was derived from. (If the relationship already exists, this will be a nop.)
     auto originalInBim = GetDgnDb().Elements().Get<GeometricElement>(originalElementMapping.m_elementId);
@@ -815,7 +900,11 @@ void ConvertDetailingSymbolExtension::Initialize(Converter& converter)
     {
     static bool s_initialized;
     if (s_initialized)
-        return;
+        {
+        // If the application creates multiple converters in succession, then s_initialized will be true, but the tables won't exist
+        if (converter.GetDgnDb().TableExists(DETAILINGSYMBOLS_TEMP_TABLE))
+            return;
+        }
     s_initialized = true;
 
     DbResult result = converter.GetDgnDb().CreateTable(DETAILINGSYMBOLS_TEMP_TABLE, "SourceV8ModelSyncInfoId INT NOT NULL, SourceV8ElementId BIGINT NOT NULL, TargetV8ModelSyncInfoId INT, TargetV8ElementId BIGINT, DetType INT");

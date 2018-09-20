@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright (c) Microsoft Corporation.  All rights reserved.
+
+    The use and distribution terms for this software are cov    Common Public License 1.0 (http://opensource.org/licenses/cpl.php)
+    which can be found in the file CPL.TXT at the root of this distribution.
+    By using this software in any fashion, you are agreeing to be bound by
+    the terms of this license.
+
+    You must not remove this notice, or any other, from this software.
+
+    Product.MSI - example source code for Product from "Getting Started" in help
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:fw="http://schemas.microsoft.com/wix/FirewallExtension">
+    <Fragment Id="DirectoryStructure">
+
+        <Upgrade Id="!(wix.wixUpgradeCode)">
+            <UpgradeVersion IncludeMaximum="no" Maximum="!(wix.wixProductVersion)" IgnoreRemoveFailure="no" OnlyDetect="no" Property="REVITBRIDGE_MAJOR_UPGRADE"/>
+        </Upgrade>
+      <DirectoryRef Id="INSTALLDIR">
+        <Directory Id="Dgnv8BridgeRegistryEntriesDir">
+            <Component Id="Dgnv8BridgeRegistryEntries" Guid="{500E802A-1128-465B-8032-C528F90B66EC}" Win64="$(var.COMPONENT_WIN64)" Feature="DefaultFeature">
+              <RegistryKey Root="HKLM" Key="Software\Bentley\iModelBridges\IModelBridgeForMstn" >
+                <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeB02.dll" KeyPath="yes"/>
+                <RegistryValue Name="AffinityLibraryPath" Type="string" Value="[INSTALLDIR]DgnV8BridgeB02.dll"/>
+                <RegistryValue Name="BridgeAssetsDir" Type="string" Value="[INSTALLDIR]Assets"/>
+                <RegistryValue Name="iModelFrameWorkExe" Type="string" Value="[INSTALLDIR]iModelBridgeFwk.exe"/>
+                <RegistryValue Name="IsPowerPlatformBased" Type="string" Value="false"/>
+              </RegistryKey>
+            </Component>
+        </Directory>
+      </DirectoryRef>
+    </Fragment>
+
+</Wix>

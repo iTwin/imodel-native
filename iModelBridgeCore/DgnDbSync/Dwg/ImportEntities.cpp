@@ -9,7 +9,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
@@ -1719,8 +1719,8 @@ BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DrawBlockAttributes (DwgDbBlockReferenceCR blockRef)
     {
-    DwgDbObjectIterator iter = blockRef.GetAttributeIterator ();
-    if (!iter.IsValid())
+    DwgDbObjectIteratorPtr  iter = blockRef.GetAttributeIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSISUCCESS;
 
     // save off last DrawParameters
@@ -1728,9 +1728,9 @@ BentleyStatus   DrawBlockAttributes (DwgDbBlockReferenceCR blockRef)
     uint32_t        count = 0;
 
     // draw each and every attribute followed the block reference:
-    for (iter.Start(); !iter.Done(); iter.Next())
+    for (iter->Start(); !iter->Done(); iter->Next())
         {
-        DwgDbEntityPtr  attrib(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbEntityPtr  attrib(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (!attrib.IsNull())
             {
             DwgGiDrawablePtr    drawable = attrib->GetDrawable ();
@@ -2648,11 +2648,11 @@ bool            DwgImporter::_SkipEmptyElement (DwgDbEntityCP entity)
     DwgDbBlockReferenceCP   blockRef = DwgDbBlockReference::Cast(entity);
     if (nullptr != blockRef)
         {
-        DwgDbObjectIterator attrIter = blockRef->GetAttributeIterator ();
-        if (attrIter.IsValid())
+        DwgDbObjectIteratorPtr  attrIter = blockRef->GetAttributeIterator ();
+        if (attrIter->IsValid() && attrIter->IsValid())
             {
-            attrIter.Start ();
-            if (!attrIter.Done())
+            attrIter->Start ();
+            if (!attrIter->Done())
                 return  false;
 
             // no variable attributes - does the block have constant attrdef's?
@@ -3007,8 +3007,8 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     if (modelspace.IsNull())
         return  BSIERROR;
 
-    DwgDbBlockChildIterator     entityIter = modelspace->GetBlockChildIterator ();
-    if (!entityIter.IsValid())
+    DwgDbBlockChildIteratorPtr  entityIter = modelspace->GetBlockChildIterator ();
+    if (!entityIter.IsValid() || !entityIter->IsValid())
         return  BSIERROR;
 
     ResolvedModelMapping    modelMap = this->FindModel (m_modelspaceId, this->GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelSpace);
@@ -3119,9 +3119,9 @@ BentleyStatus   DwgImporter::_ImportEntitySection ()
     else
         {
         // import entities in database order
-        for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
+        for (entityIter->Start(); !entityIter->Done(); entityIter->Step())
             {
-            inputs.SetEntityId (entityIter.GetEntityId());
+            inputs.SetEntityId (entityIter->GetEntityId());
             this->OpenAndImportEntity (inputs);
             }
         }

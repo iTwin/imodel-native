@@ -328,7 +328,7 @@ TEST_F(MultiBridgeTests, Sandwich)
     ASSERT_TRUE(db.IsValid());
 
     // Each model is created in the physical partition of each bridge.
-    auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
+    auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(2, masterModels.size());
     auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
     auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, rrefModels.size());
 

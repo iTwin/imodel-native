@@ -9,7 +9,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          12/16
@@ -33,6 +33,8 @@ DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
         return  layerId;
 
     auto& masterDwg = m_importer.GetDwgDb ();
+    if (&masterDwg == m_xrefDwg)
+        return  layerId;
 
     DwgDbObjectId               effectiveLayerId;
     DwgDbLayerTableRecordPtr    layer(layerId, DwgDbOpenMode::ForRead);
@@ -281,23 +283,23 @@ size_t  DwgImporter::_ImportLayersByFile (DwgDbDatabaseP dwg)
         return  BSIERROR;
 
     DwgSyncInfo::DwgFileId      dwgfileId = DwgSyncInfo::GetDwgFileId (*dwg);
-    DwgDbSymbolTableIterator    iter = layerTable->NewIterator ();
+    DwgDbSymbolTableIteratorPtr iter = layerTable->NewIterator ();
 
-    if (!iter.IsValid())
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // include hidden and reconciled layers
-    iter.SetSkipHiddenLayers (false);
-    iter.SetSkipReconciledLayers (false);
+    iter->SetSkipHiddenLayers (false);
+    iter->SetSkipReconciledLayers (false);
 
     size_t      count = 0;
     DwgString   xrefName;
     if (dwg != m_dwgdb.get())
         xrefName.Assign (BeFileName::GetFileNameWithoutExtension(dwg->GetFileName().c_str()).c_str());
 
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbLayerTableRecordPtr    layer(iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbLayerTableRecordPtr    layer(iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (layer.IsNull())
             {
             this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CantOpenObject(), "LayerRecord");
@@ -435,6 +437,7 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
     if (categoryId.IsValid())
         {
         // a drawing category found - check sub-category:
+        DgnSubCategory::Appearance lastAppearance;
         subCategoryId.Invalidate ();
 
         for (auto entry : DgnSubCategory::MakeIterator(db, categoryId))
@@ -446,11 +449,15 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
                 subCategoryId = subcategory->GetSubCategoryId ();
                 break;
                 }
+            lastAppearance = subcategory->GetAppearance ();
             }
 
         if (!subCategoryId.IsValid())
             {
             // no matching sub-category found - add a new one for the desired appearance:
+            Utf8String suffix = DwgHelper::CompareSubcatAppearance (lastAppearance, appear);
+            if (!suffix.empty())
+                name += suffix;
             DgnSubCategory  newSubcat (DgnSubCategory::CreateParams(db, categoryId, name, appear));
             if (newSubcat.Insert().IsValid())
                 subCategoryId = newSubcat.GetSubCategoryId ();

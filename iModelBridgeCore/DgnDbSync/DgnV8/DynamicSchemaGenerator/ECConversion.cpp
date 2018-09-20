@@ -59,6 +59,8 @@ static bool anyTxnsInFile(DgnDbR db)
     }
 
 static Utf8CP const EXTEND_TYPE = "ExtendType";
+static Utf8CP const Units_SchemaName = "Units";
+static Utf8CP const Formats_SchemaName = "Formats";
 
 //****************************************************************************************
 // ExtendTypeConverter
@@ -66,26 +68,87 @@ static Utf8CP const EXTEND_TYPE = "ExtendType";
 struct ExtendTypeConverter : ECN::IECCustomAttributeConverter
     {
     private:
+        ECN::ECSchemaPtr m_unitsStandardSchema; // cache of the units schema
+        ECN::ECSchemaPtr m_formatsStandardSchema; // cache of the units schema
         DgnV8Api::StandardUnit m_standardUnit;
         DgnV8Api::AngleMode m_angle;
 
-        ECN::ECObjectsStatus ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName);
+        ECN::ECObjectsStatus ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName, ECN::ECSchemaReadContextR context);
     public:
-        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance);
+        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context);
         ExtendTypeConverter(DgnV8Api::StandardUnit standard, DgnV8Api::AngleMode angle) : m_standardUnit(standard), m_angle(angle) {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName)
+ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName, ECN::ECSchemaReadContextR context)
     {
     ECN::KindOfQuantityP koq = schema.GetKindOfQuantityP(koqName.c_str());
     if (nullptr == koq)
         {
         schema.CreateKindOfQuantity(koq, koqName.c_str());
-        koq->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultRealU", persistenceUnitName));
-        koq->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", presentationUnitName));
+
+        if (!m_unitsStandardSchema.IsValid())
+            {
+            static ECN::SchemaKey key("Units", 1, 0, 0);
+            m_unitsStandardSchema = ECN::ECSchema::LocateSchema(key, context);
+            if (!m_unitsStandardSchema.IsValid())
+                {
+                BeAssert(false);
+                return ECN::ECObjectsStatus::SchemaNotFound;
+                }
+            }
+
+        if (!m_formatsStandardSchema.IsValid())
+            {
+            static ECN::SchemaKey key("Formats", 1, 0, 0);
+            m_formatsStandardSchema = ECN::ECSchema::LocateSchema(key, context);
+            if (!m_formatsStandardSchema.IsValid())
+                {
+                BeAssert(false);
+                return ECN::ECObjectsStatus::SchemaNotFound;
+                }
+            }
+
+        // Locate persistence Unit within Format Schema
+        ECN::ECUnitCP persistenceUnit = m_unitsStandardSchema->GetUnitCP(persistenceUnitName);
+        if (nullptr == persistenceUnit)
+            return ECN::ECObjectsStatus::Error;
+
+        // Check if Units Schema is referenced
+        if (!ECN::ECSchema::IsSchemaReferenced(schema, *m_unitsStandardSchema) && ECN::ECObjectsStatus::Success != schema.AddReferencedSchema(*m_unitsStandardSchema))
+            {
+            LOG.errorv("Unable to add the %s schema as a reference to %s.", m_unitsStandardSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
+            return ECN::ECObjectsStatus::SchemaNotFound;
+            }
+
+        koq->SetPersistenceUnit(*persistenceUnit);
+
+        // Locate presentation Unit within Format Schema
+        ECN::ECUnitCP presUnit = m_unitsStandardSchema->GetUnitCP(presentationUnitName);
+        if (nullptr == presUnit)
+            {
+            BeAssert(false);
+            return ECN::ECObjectsStatus::Error;
+            }
+
+        // Check if Units Schema is referenced
+        if (!ECN::ECSchema::IsSchemaReferenced(schema, *m_formatsStandardSchema) && ECN::ECObjectsStatus::Success != schema.AddReferencedSchema(*m_formatsStandardSchema))
+            {
+            LOG.errorv("Unable to add the %s schema as a reference to %s.", m_formatsStandardSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
+            return ECN::ECObjectsStatus::SchemaNotFound;
+            }
+
+        ECN::ECFormatCP format = schema.LookupFormat("f:DefaultRealU");
+        if (nullptr == format)
+            {
+            BeAssert(false);
+            return ECN::ECObjectsStatus::Error;
+            }
+
+        // No need to check if the Units schema is referenced, checked for persistence Unit
+        koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, presUnit);
         koq->SetRelativeError(1e-4);
         }
     prop->SetKindOfQuantity(koq);
@@ -144,35 +207,35 @@ Utf8CP getAreaUnitName(DgnV8Api::StandardUnit standard)
     switch (standard)
         {
         case StandardUnit::EnglishMiles:
-            return "SQ.MILE";
+            return "SQ_MILE";
         case StandardUnit::EnglishYards:
-            return "SQ.YRD";
+            return "SQ_YRD";
         case StandardUnit::EnglishFeet:
-            return "SQ.FT";
+            return "SQ_FT";
         case StandardUnit::EnglishInches:
         case StandardUnit::EnglishMicroInches: // There is no equivalent in the new system for square microinches
         case StandardUnit::EnglishMils: // There is no equivalent in the new system for square milliinches
-            return "SQ.IN";
+            return "SQ_IN";
         case StandardUnit::EnglishSurveyMiles:
-            return "SQ.US_SURVEY_MILE";
+            return "SQ_US_SURVEY_MILE";
         case StandardUnit::EnglishSurveyFeet:
-            return "SQ.US_SURVEY_FT";
+            return "SQ_US_SURVEY_FT";
         case StandardUnit::EnglishSurveyInches:
-            return "SQ.US_SURVEY_IN";
+            return "SQ_US_SURVEY_IN";
         case StandardUnit::MetricKilometers:
-            return "SQ.KM";
+            return "SQ_KM";
         case StandardUnit::MetricMeters:
-            return "SQ.M";
+            return "SQ_M";
         case StandardUnit::MetricCentimeters:
-            return "SQ.CM";
+            return "SQ_CM";
         case StandardUnit::MetricMillimeters:
-            return "SQ.MM";
+            return "SQ_MM";
         case StandardUnit::MetricMicrometers:
-            return "SQ.MU";
+            return "SQ_MU";
         case StandardUnit::NoSystemNauticalMiles:
-            return "SQ.MILE"; // There is no equivalent in the new system for Square Nautical miles
+            return "SQ_MILE"; // There is no equivalent in the new system for Square Nautical miles
         default:
-            return "M";
+            return "SQ_M";
     };
     }
 
@@ -184,35 +247,35 @@ Utf8CP getVolumeUnitName(DgnV8Api::StandardUnit standard)
     switch (standard)
         {
         case StandardUnit::EnglishMiles:
-            return "CUB.MILE";
+            return "CUB_MILE";
         case StandardUnit::EnglishYards:
-            return "CUB.YRD";
+            return "CUB_YRD";
         case StandardUnit::EnglishFeet:
-            return "CUB.FT";
+            return "CUB_FT";
         case StandardUnit::EnglishInches:
         case StandardUnit::EnglishMicroInches: // There is no equivalent in the new system for cubic microinches
         case StandardUnit::EnglishMils: // There is no equivalent in the new system for cubic milliinches
-            return "CUB.IN";
+            return "CUB_IN";
         case StandardUnit::EnglishSurveyMiles:  // There is no equivalent in the new system for cubic survey miles
-            return "CUB.MILE";
+            return "CUB_MILE";
         case StandardUnit::EnglishSurveyFeet:  // There is no equivalent in the new system for cubic survey feet
-            return "CUB.FT";
+            return "CUB_FT";
         case StandardUnit::EnglishSurveyInches: // There is no equivalent in the new system for cubic survey inches
-            return "CUB.IN";
+            return "CUB_IN";
         case StandardUnit::MetricKilometers:
-            return "CUB.KM";
+            return "CUB_KM";
         case StandardUnit::MetricMeters:
-            return "CUB.M";
+            return "CUB_M";
         case StandardUnit::MetricCentimeters:
-            return "CUB.CM";
+            return "CUB_CM";
         case StandardUnit::MetricMillimeters:
-            return "CUB.MM";
+            return "CUB_MM";
         case StandardUnit::MetricMicrometers:
-            return "CUB.MU";
+            return "CUB_MU";
         case StandardUnit::NoSystemNauticalMiles:
-            return "CUB.MILE"; // There is no equivalent in the new system for cubic Nautical miles
+            return "CUB_MILE"; // There is no equivalent in the new system for cubic Nautical miles
         default:
-            return "M";
+            return "CUB_M";
         };
     }
 
@@ -238,7 +301,7 @@ Utf8CP getAngleUnitName(DgnV8Api::AngleMode angle)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance)
+ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, BECN::ECSchemaReadContextP context)
     {
     ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
     if (prop == nullptr)
@@ -260,6 +323,13 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
         return ECN::ECObjectsStatus::Success;
         }
 
+    if (nullptr == context)
+        {
+        BeAssert(true);
+        LOG.error("Missing ECSchemaReadContext, it is necessary to perform conversion on a ExtendType custom attribute.");
+        return ECN::ECObjectsStatus::Error;
+        }
+
     int standard = standardValue.GetInteger();
     switch (standard)
         {
@@ -269,25 +339,30 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
         //    break;
         // Distance
         case 8:
-            ReplaceWithKOQ(schema, prop, "DISTANCE", "M", getLinearUnitName(m_standardUnit));
+            ReplaceWithKOQ(schema, prop, "DISTANCE", "M", getLinearUnitName(m_standardUnit), *context);
             break;
             // Area
         case 9:
-            ReplaceWithKOQ(schema, prop, "AREA", "SQ.M", getAreaUnitName(m_standardUnit));
+            ReplaceWithKOQ(schema, prop, "AREA", "SQ_M", getAreaUnitName(m_standardUnit), *context);
             break;
             // Volume
         case 10:
-            ReplaceWithKOQ(schema, prop, "VOLUME", "CUB.M", getVolumeUnitName(m_standardUnit));
+            ReplaceWithKOQ(schema, prop, "VOLUME", "CUB_M", getVolumeUnitName(m_standardUnit), *context);
             break;
             // Angle
         case 11:
-            ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle));
+            ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle), *context);
             break;
         default:
             LOG.warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
             break;
         }
+
+    // Need to clear the cache of the units and formats schema.
+    m_unitsStandardSchema = nullptr;
+    m_formatsStandardSchema = nullptr;
+
     return ECN::ECObjectsStatus::Success;
     }
 
@@ -1036,8 +1111,8 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
                     leftSchema = merged;
                     Utf8String xml;
                     merged->WriteToXmlString(xml);
-                    leftSchema->ReComputeCheckSum();
-                    LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: 0x%llx", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checkSum);
+                    leftSchema->ComputeCheckSum();
+                    LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: %s", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checksum.c_str());
                     }
                 else
                     {
@@ -1263,8 +1338,6 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
     };
 
-static bool s_doFileSaveTimeCheck = true;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
@@ -1367,7 +1440,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
      bvector<BECN::ECSchemaP> schemas;
      m_schemaReadContext->GetCache().GetSchemas(schemas);
      bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group", 
-         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi", "PDMx_Base", "TUAS"};
+         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals",
+         "Electrical_RCM", "pid_ansi", "PDMx_Base", "TUAS", "HS2", "BMHDesigner"};
      bool needsFlattening = false;
      // It is possible that a schema will refer to one of the above schemas that needs flattening.  In such a situation, the reference needs to be updated to the flattened ref.  There is no
      // easy way to replace a referenced schema.  Therefore, if one of the schemas in the set needs to be flattened, we just flatten everything which automatically updates the references.
@@ -1449,7 +1523,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              continue;
          if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*schema))
              continue;
-         if (!ECN::ECSchemaConverter::Convert(*schema, false))
+         if (!ECN::ECSchemaConverter::Convert(*schema, m_schemaReadContext.get(), false))
              {
              Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
              ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
@@ -2260,6 +2334,14 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
 void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject)
     {
     bool wasFlattened = false;
+    // CopyFlattenedProperty looks in m_flattenedRefs, so we need to prepopulate that
+    ECN::ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
+    for (ECN::ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
+        {
+        ECN::ECSchemaP refSchema = it->second.get();
+        m_flattenedRefs[refSchema->GetName()] = refSchema;
+        }
+
     for (BECN::ECClassP ecClass : schema->GetClasses())
         {
         BECN::ECEntityClassP entityClass = ecClass->GetEntityClassP();
@@ -2509,7 +2591,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
         if (context.ExcludeSchemaFromBisification(*schema))
             continue;
 
-        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_1))
+        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_2))
             {
 //#define EXPORT_FAILEDECSCHEMAS 1
 #ifdef EXPORT_FAILEDECSCHEMAS
@@ -2940,7 +3022,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObje
 BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
     {
     Utf8String schemaName(schemaKey.GetName().c_str());
-    BECN::SchemaKey existingSchemaKey;
+    ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
     if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
         {
@@ -2964,12 +3046,12 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                 {
                 Utf8String error;
                 error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
-                              Utf8String(existingSchemaKey.GetFullSchemaName()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
+                              existingSchemaKey.GetFullSchemaName().c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
                 ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                 return BSISUCCESS;
                 }
 
-            const int majorDiff = existingSchemaKey.GetVersionRead() - schemaKey.GetVersionMajor();
+            const int majorDiff = existingSchemaKey.GetVersionMajor() - schemaKey.GetVersionMajor();
             const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
             const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
 
@@ -3151,6 +3233,8 @@ void DynamicSchemaGenerator::InitializeECSchemaConversion()
         }
     m_syncReadContext->SetSkipValidation(true);
     m_schemaReadContext->SetSkipValidation(true);
+    m_syncReadContext->SetCalculateChecksum(true);
+    m_schemaReadContext->SetCalculateChecksum(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3166,11 +3250,13 @@ void DynamicSchemaGenerator::FinalizeECSchemaConversion()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DynamicSchemaGenerator::CheckNoECSchemaChanges(bvector<DgnV8ModelP> const& uniqueModels)
     {
-    bmap<Utf8String, uint32_t> syncInfoChecksums;
-    GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums);
-
     for (auto& v8Model : uniqueModels)
+        {
+        bmap<Utf8String, uint32_t> syncInfoChecksums;
+        SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8Model->GetDgnFileP());
+        GetSyncInfo().RetrieveECSchemaChecksums(syncInfoChecksums, v8FileId);
         CheckECSchemasForModel(*v8Model, syncInfoChecksums);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -3460,12 +3546,13 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
 
         if (gen.DidEcConversionFailDueToLockingError())
             return BSIERROR;    // This is a re-try-able failure, not a fatal error that should stop the conversion
+        m_hadAnyChanges |= gen.GetAnyImported();
         }
 
     if (WasAborted())
         return BSIERROR;
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
 
     // Let handler extensions import schemas
     importHandlerExtensionsSchema(*this);
@@ -3473,7 +3560,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
     if (WasAborted())
         return BSIERROR;
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
 
     for (auto xdomain : XDomainRegistry::s_xdomains)
         {
@@ -3486,7 +3573,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
     if (WasAborted())
         return BSIERROR;
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
 
     // This shouldn't be dependent on importing schemas.  Sometimes you want class views for just the basic Bis classes.
     if (GetConfig().GetOptionValueBool("CreateECClassViews", true))
@@ -3498,7 +3585,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
             }
         }
 
-    GetDgnDb().SaveChanges();
+    CheckForAndSaveChanges();
     return BSISUCCESS;
     }
 

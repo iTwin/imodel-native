@@ -9,7 +9,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 struct EscapeCode
     {
@@ -1601,3 +1601,34 @@ bool    DwgHelper::GetTransformForSharedParts (TransformP out, double* uniformSc
 
     return  isValid;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DwgHelper::CompareSubcatAppearance (DgnSubCategory::Appearance const& a1, DgnSubCategory::Appearance const& a2)
+    {
+    // compare two inputs and return the first difference in a suffix string from the second input:
+    Utf8String  diff;
+    if (a1.IsInvisible() != a2.IsInvisible())
+        diff = a2.IsInvisible() ? "_off" : "_on";
+    else if (a1.GetDontPlot() != a2.GetDontPlot())
+        diff = a2.GetDontPlot() ? "_pltOff" : "_pltOn";
+    else if (a1.GetDontSnap() != a2.GetDontSnap())
+        diff = a2.GetDontSnap() ? "_snpOff" : "_snpOn";
+    else if (a1.GetDontLocate() != a2.GetDontLocate())
+        diff = a2.GetDontLocate() ? "_locOff" : "_locOn";
+    else if (a1.GetColor() != a2.GetColor())
+        diff.Sprintf ("_clr0x%x", a2.GetColor().GetValue());
+    else if (a1.GetWeight() != a2.GetWeight())
+        diff.Sprintf ("_wt%d", a2.GetWeight());
+    else if (a1.GetStyle() != a2.GetStyle())
+        diff.Sprintf ("_st%lld", a2.GetStyle().IsValid() ? a2.GetStyle().GetValue() : 0);
+    else if (a1.GetDisplayPriority() != a2.GetDisplayPriority())
+        diff.Sprintf ("_pr%d", a2.GetDisplayPriority());
+    else if (a1.GetRenderMaterial() != a2.GetRenderMaterial())
+        diff.Sprintf ("_mat%lld", a2.GetRenderMaterial().IsValid() ? a2.GetRenderMaterial().GetValue() : 0);
+    else if (a1.GetTransparency() != a2.GetTransparency())
+        diff.Sprintf ("_trns%g", a2.GetTransparency());
+    return  diff;
+    }
+

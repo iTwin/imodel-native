@@ -296,7 +296,7 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
         _GetConverterParams().SetV8SdkRelativeDir(v8DllsRelativeDir, isPowerplatformBased);
         }
 
-    Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv);
+    Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv, _GetParams().GetDmsSupportLibrary());
 
     // Resolve import config file.
     BeFileName configFile;
@@ -473,7 +473,11 @@ BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
     {
+    bool skipECData = false;
+    if (nullptr != m_converter)
+        skipECData = m_converter->SkipECContent();
     m_converter.reset(new RootModelConverter(m_params));
+    m_converter->SetSkipEContent(skipECData);
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
     return m_converter->AttachSyncInfo();
@@ -563,6 +567,7 @@ SubjectCPtr RootModelConverterApp::_InitializeJob()
 BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
     {
     m_converter->Process();
+    m_hadAnyChanges = m_converter->HadAnyChanges();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }
 

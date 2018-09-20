@@ -10,7 +10,7 @@
 
 typedef bvector<DwgDbHandle>    T_EntityHandles;
 
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/18
@@ -43,8 +43,11 @@ public:
     void    FindXrefBlock (DwgStringCR blockName);
     size_t  CountAndCheckModelspaceEntity (bool& found, DwgDbHandleCR entityHandle) const;
     void    RenameAndActivateLayout (DwgStringCR oldName, DwgStringCR newName);
+    void    CreateGroup (Utf8StringCR name, DwgDbObjectIdArrayCR members);
+    void    UpdateGroup (Utf8StringCR name, DwgDbObjectIdArrayCR members);
 
     DwgDbObjectIdCR GetCurrentObjectId () const;
     DwgDbObjectId   GetModelspaceId () const;
+    DwgDbStatus     GetModelspaceEntities (DwgDbObjectIdArrayR ids) const;
 
 }; // DwgFileEditor

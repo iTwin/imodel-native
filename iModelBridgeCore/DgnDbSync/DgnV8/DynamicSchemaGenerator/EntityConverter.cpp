@@ -97,7 +97,7 @@ Utf8CP BisConversionRuleHelper::GetAspectClassSuffix(BisConversionRule conversio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(SchemaConversionContext& context, ECN::ECClassCP childClass, BisConversionRule childRule, bvector<ECClassP> classes, bool isBaseClassCheck)
+BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(SchemaConversionContext& context, ECN::ECClassCP incomingClass, BisConversionRule incomingRule, bvector<ECClassP> classes, bool isBaseClassCheck)
     {
     DynamicSchemaGenerator& converter = context.GetConverter();
     for (BECN::ECClassP ecClass : classes)
@@ -108,45 +108,51 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
         bool hasSecondary;
         if (V8ECClassInfo::TryFind(existingV8ClassId, existingRule, context.GetDgnDb(), v8ClassName, hasSecondary))
             {
-            if (BisConversionRule::ToDefaultBisBaseClass == existingRule && BisConversionRule::ToDefaultBisBaseClass != childRule)
+            if (BisConversionRule::ToDefaultBisBaseClass == existingRule && BisConversionRule::ToDefaultBisBaseClass != incomingRule)
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
+                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, incomingRule))
                     return BSIERROR;
+                if (BisConversionRule::ToPhysicalElement != incomingRule)
+                    if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, isBaseClassCheck ? ecClass->GetDerivedClasses() : ecClass->GetBaseClasses(), !isBaseClassCheck))
+                        return BSIERROR;
                 }
             // If a class is using the ToAspectOnly rule, all of its children must also become aspects
-            else if (!isBaseClassCheck && BisConversionRule::ToAspectOnly == childRule)
+            else if (!isBaseClassCheck && BisConversionRule::ToAspectOnly == incomingRule)
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
+                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, incomingRule))
                     return BSIERROR;
                 }
-            else if (!isBaseClassCheck && ((BisConversionRule::ToDrawingGraphic == existingRule && BisConversionRule::ToPhysicalElement == childRule) ||
-                                          (BisConversionRule::ToPhysicalElement == existingRule && BisConversionRule::ToDrawingGraphic == childRule)))
+            // If the base is physical and the derived class is drawing, then make the derived class Physical
+            else if (BisConversionRule::ToDrawingGraphic == existingRule && BisConversionRule::ToPhysicalElement == incomingRule)
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::TransformedUnbisifiedAndIgnoreInstances))
+                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::ToPhysicalElement))
                     return BSIERROR;
                 }
-            else if (isBaseClassCheck && BisConversionRule::ToGroup == childRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
+            else if (BisConversionRule::ToGroup == incomingRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
                 {
                 BisConversionRule tempRule;
                 BECN::ECClassId incomingV8ClassId;
-                ECClassName incomingV8ClassName(*childClass);
+                ECClassName incomingV8ClassName(*incomingClass);
                 if (V8ECClassInfo::TryFind(incomingV8ClassId, tempRule, context.GetDgnDb(), incomingV8ClassName, hasSecondary))
                     {
                     if (BSISUCCESS != V8ECClassInfo::Update(converter, incomingV8ClassId, existingRule))
                         return BSIERROR;
-                    childRule = existingRule;
+                    incomingRule = existingRule;
+                    if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, ecClass->GetDerivedClasses(), false))
+                        return BSIERROR;
                     }
                 }
-            else if (isBaseClassCheck && BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == childRule || BisConversionRule::ToDrawingGraphic == childRule))
+            else if (BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == incomingRule || BisConversionRule::ToDrawingGraphic == incomingRule))
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
+                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, incomingRule))
                     return BSIERROR;
-
+                if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, ecClass->GetDerivedClasses(), false))
+                    return BSIERROR;
                 }
             }
-        else if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, childRule))
+        else if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, incomingRule))
             return BSIERROR;
-        if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, childRule, isBaseClassCheck ? ecClass->GetBaseClasses() : ecClass->GetDerivedClasses(), isBaseClassCheck))
+        if (BSISUCCESS != CheckBaseAndDerivedClassesForBisification(context, ecClass, incomingRule, isBaseClassCheck ? ecClass->GetBaseClasses() : ecClass->GetDerivedClasses(), isBaseClassCheck))
             return BSIERROR;
         }
     return BSISUCCESS;

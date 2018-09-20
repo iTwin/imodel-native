@@ -563,7 +563,7 @@ BentleyStatus LsComponentReader::_Read(Json::Value& object)
             GetLogger().errorv("Failed to remap geometry part Id '%" PRIu64 " LsComponent", oldId);
             return ERROR;
             }
-        jsonValue["geomPartId"] = mappedId.GetValue();
+        jsonValue["geomPartId"] = mappedId.ToHexStr(); // ###INT64TOHEXSTR Was mappedId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
         }
     LineStyleStatus lstat = LsComponent::AddComponentAsJsonProperty(v10Id, *GetDgnDb(), componentType, jsonValue);
 
@@ -2115,6 +2115,225 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
     }
 
 //---------------------------------------------------------------------------------------
+// ExtendTypeConverter                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+static Utf8CP const EXTEND_TYPE = "ExtendType";
+
+struct ExtendTypeConverter : ECN::IECCustomAttributeConverter
+    {
+    private:
+        ECN::ECSchemaPtr m_unitsStandardSchema; // cache of the units schema
+        ECN::ECSchemaPtr m_formatsStandardSchema; // cache of the formats schema
+
+        ECN::ECObjectsStatus ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName, ECN::ECSchemaReadContextR context);
+        static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("BimUpgrader"); }
+        Utf8String m_unit;
+
+    public:
+        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context);
+        ExtendTypeConverter(Utf8StringCR unit) : m_unit(unit) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName, ECN::ECSchemaReadContextR context)
+    {
+    ECN::KindOfQuantityP koq = schema.GetKindOfQuantityP(koqName.c_str());
+    if (nullptr == koq)
+        {
+        schema.CreateKindOfQuantity(koq, koqName.c_str());
+
+        if (!m_unitsStandardSchema.IsValid())
+            {
+            static ECN::SchemaKey key("Units", 1, 0, 0);
+            m_unitsStandardSchema = ECN::ECSchema::LocateSchema(key, context);
+            if (!m_unitsStandardSchema.IsValid())
+                {
+                BeAssert(false);
+                return ECN::ECObjectsStatus::SchemaNotFound;
+                }
+            }
+
+        if (!m_formatsStandardSchema.IsValid())
+            {
+            static ECN::SchemaKey key("Formats", 1, 0, 0);
+            m_formatsStandardSchema = ECN::ECSchema::LocateSchema(key, context);
+            if (!m_formatsStandardSchema.IsValid())
+                {
+                BeAssert(false);
+                return ECN::ECObjectsStatus::SchemaNotFound;
+                }
+            }
+        
+        // Locate persistence Unit within Format Schema
+        ECN::ECUnitCP persistenceUnit = m_unitsStandardSchema->GetUnitCP(persistenceUnitName);
+        if (nullptr == persistenceUnit)
+            return ECN::ECObjectsStatus::Error;
+        
+        // Check if Units Schema is referenced
+        if (!ECN::ECSchema::IsSchemaReferenced(schema, *m_unitsStandardSchema) && ECN::ECObjectsStatus::Success != schema.AddReferencedSchema(*m_unitsStandardSchema))
+            {
+            GetLogger().errorv("Unable to add the %s schema as a reference to %s.", m_unitsStandardSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
+            return ECN::ECObjectsStatus::SchemaNotFound;
+            }
+
+        koq->SetPersistenceUnit(*persistenceUnit);
+
+        // Locate presentation Unit within Format Schema
+        ECN::ECUnitCP presUnit = m_unitsStandardSchema->GetUnitCP(presentationUnitName);
+        if (nullptr == presUnit)
+            {
+            BeAssert(false);
+            return ECN::ECObjectsStatus::Error;
+            }
+
+        // Check if Units Schema is referenced
+        if (!ECN::ECSchema::IsSchemaReferenced(schema, *m_formatsStandardSchema) && ECN::ECObjectsStatus::Success != schema.AddReferencedSchema(*m_formatsStandardSchema))
+            {
+            GetLogger().errorv("Unable to add the %s schema as a reference to %s.", m_formatsStandardSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
+            return ECN::ECObjectsStatus::SchemaNotFound;
+            }
+
+        ECN::ECFormatCP format = schema.LookupFormat("f:DefaultRealU");
+        if (nullptr == format)
+            {
+            BeAssert(false);
+            return ECN::ECObjectsStatus::Error;
+            }
+
+        // No need to check if the Units schema is referenced, checked for persistence Unit
+        koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, presUnit);
+        koq->SetRelativeError(1e-4);
+        }
+    prop->SetKindOfQuantity(koq);
+    prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+    prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+    return ECN::ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getLinearUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "FT";
+    if (unit.EqualsIAscii("Metric"))
+        return "M";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "US_SURVEY_FT";
+    return "M";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getAreaUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "SQ.FT";
+    if (unit.EqualsIAscii("Metric"))
+        return "SQ.M";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "SQ.US_SURVEY_FT";
+    return "SQ.M";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getVolumeUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "CUB.FT";
+    if (unit.EqualsIAscii("Metric"))
+        return "CUB.M";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "CUB.FT";
+    return "CUB.M";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getAngleUnitName(Utf8StringCR unit)
+    {
+    if (unit.EqualsIAscii("English"))
+        return "ARC_DEG";
+    if (unit.EqualsIAscii("USSurvey"))
+        return "ARC_DEG";
+    return "RAD";
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context)
+    {
+    ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
+    if (prop == nullptr)
+        {
+        GetLogger().warningv("Found ExtendType custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
+        container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        return ECN::ECObjectsStatus::Success;
+        }
+
+    ECN::ECValue standardValue;
+    ECN::ECObjectsStatus status = instance.GetValue(standardValue, "Standard");
+    if (ECN::ECObjectsStatus::Success != status || standardValue.IsNull())
+        {
+        GetLogger().infov("Found an ExtendType custom attribute on an ECProperty, '%s.%s', but it did not contain a Standard value. Dropping custom attribute....",
+                  prop->GetClass().GetFullName(), prop->GetName().c_str());
+        container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        return ECN::ECObjectsStatus::Success;
+        }
+
+    if (nullptr == context)
+        {
+        BeAssert(true);
+        GetLogger().error("Missing ECSchemaReadContext, it is necessary to perform conversion on a ExtendType custom attribute.");
+        return ECN::ECObjectsStatus::Error;
+        }
+
+    int standard = standardValue.GetInteger();
+    switch (standard)
+        {
+        // Coordinates
+        //case 7:
+        //    ReplaceWithKOQ(schema, prop, "COORDINATE", "Coord", 0.0001);
+        //    break;
+        // Distance
+        case 8:
+            ReplaceWithKOQ(schema, prop, "DISTANCE", "M", getLinearUnitName(m_unit), *context);
+            break;
+            // Area
+        case 9:
+            ReplaceWithKOQ(schema, prop, "AREA", "SQ_M", getAreaUnitName(m_unit), *context);
+            break;
+            // Volume
+        case 10:
+            ReplaceWithKOQ(schema, prop, "VOLUME", "CUB_M", getVolumeUnitName(m_unit), *context);
+            break;
+            // Angle
+        case 11:
+            ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_unit), *context);
+            break;
+        default:
+            GetLogger().warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
+                         prop->GetClass().GetFullName(), prop->GetName().c_str());
+            break;
+        }
+    
+    // Need to clear the cache of the units and formats schema.
+    m_unitsStandardSchema = nullptr;
+    m_formatsStandardSchema = nullptr;
+
+    return ECN::ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaReader::_Read(Json::Value& schemas)
@@ -2267,6 +2486,9 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
         flattener2.CheckForMixinConversion(*rootClass);
         }
 
+    ECN::IECCustomAttributeConverterPtr extendType = new ExtendTypeConverter(m_importer->m_masterUnit);
+    ECN::ECSchemaConverter::AddConverter("EditorCustomAttributes", EXTEND_TYPE, extendType);
+
     bvector<SchemaKey> schemasToDrop;
     for (ECN::SchemaKey key : keysToImport)
         {
@@ -2296,7 +2518,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             return ERROR;
             }
 
-        if (!toImport->Validate(true) || !toImport->IsECVersion(ECN::ECVersion::V3_1))
+        if (!toImport->Validate(true) || !(toImport->GetECVersion() >= ECN::ECVersion::V3_1))
             {
             GetLogger().fatalv("Failed to validate schema %s as EC3.1.  Unable to continue.", toImport->GetName().c_str());
             return ERROR;
@@ -2755,6 +2977,34 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
             }
         }
 
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus EmbeddedFileReader::_Read(Json::Value& fileData)
+    {
+    bvector<Byte> blob;
+    if (ERROR == ECJsonUtilities::JsonToBinary(blob, fileData["data"]))
+        {
+        GetLogger().warning("Failed to read encoded embedded file data.");
+        return ERROR;
+        }
+
+    DbResult dbres = GetDgnDb()->EmbeddedFiles().AddEntry(fileData["name"].asCString(), fileData["type"].asCString(), nullptr);
+    if (BE_SQLITE_OK != dbres)
+        {
+        GetLogger().warning("Failed to create entry for embedded file.");
+        return ERROR;
+        }
+
+    dbres = GetDgnDb()->EmbeddedFiles().Save(blob.data(), blob.size(), fileData["name"].asCString());
+    if (BE_SQLITE_OK != dbres)
+        {
+        GetLogger().warningv("Failed to write data for embedded file %s.", fileData["name"].asCString());
+        return ERROR;
+        }
     return SUCCESS;
     }
 

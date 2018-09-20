@@ -39,7 +39,7 @@ TEST_F(LevelTests, NoLevelChangesInTile)
         ASSERT_EQ( DgnV8Api::LevelCacheErrorCode::None , lc.Write() );
         }
 
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false); // update should fail because of the level change in the tile
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false); // update should fail because of the level change in the tile
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -194,7 +194,7 @@ TEST_F(LevelTests, LevelMergeFromAttachments_Always)
 
     m_params.SetCopyLevel(Converter::Params::CopyLevel::Always);
 
-    TestLevelConversion(5, 1, 3, true);
+    TestLevelConversion(4, 1, 3, true);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
@@ -277,5 +277,5 @@ TEST_F(LevelTests, LevelMaskfromSheetAttachment_toViewAttachment)
 
     m_params.SetCopyLevel(Converter::Params::CopyLevel::IfDifferent);
 
-    TestLevelConversion(5, 4, 4, true);
+    TestLevelConversion(4, 4, 4, true);
     }

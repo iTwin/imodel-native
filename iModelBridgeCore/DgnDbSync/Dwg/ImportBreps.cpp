@@ -9,7 +9,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgBrepExt)
 
@@ -140,7 +140,7 @@ void    DwgBrepExt::FreeBrep (PK_BODY_create_topology_2_r_t& brep) const
         auto pkError = ::PK_ENTITY_delete (1, deletes);
         if (PK_ERROR_no_errors != pkError)
             {
-            Utf8PrintfString msg("Failled deleting a Parasolid body. [Error=%d]!\n", pkError);
+            Utf8PrintfString msg("Failled deleting a Parasolid body. [Error=%d, ID=%llx]!\n", pkError, m_entity->GetObjectId().ToUInt64());
             m_importer->ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::Error(), msg.c_str());
             }
         brep.body = PK_ENTITY_null;

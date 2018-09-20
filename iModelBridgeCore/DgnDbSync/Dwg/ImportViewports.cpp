@@ -9,7 +9,7 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgViewportExt)
 
@@ -1257,13 +1257,13 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewports ()
     if (viewportTable.IsNull())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = viewportTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = viewportTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbViewportTableRecordPtr     viewport (iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        DwgDbViewportTableRecordPtr     viewport (iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (viewport.IsNull())
             {
             this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CantOpenObject(), "ViewportTableRecord");

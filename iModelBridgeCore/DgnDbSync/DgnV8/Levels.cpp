@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Levels.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -128,7 +128,7 @@ void Converter::ComputeSubCategoryAppearanceFromLevel(DgnSubCategory::Appearance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId Converter::FindFirstModelInSyncInfo(DgnV8ModelCR v8Model)
+DgnModelId Converter::FindFirstModelInSyncInfo(DgnV8ModelCR v8Model) const
     {
     SyncInfo::ModelIterator it(*m_dgndb, "V8FileSyncInfoId=? AND V8Id=?");
     it.GetStatement()->BindInt(1, GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP()).GetValue());
@@ -344,6 +344,13 @@ void Converter::HandleLevelAppearanceInconsistency(ViewDefinitionR theView, DgnA
 
     bool maybeMakeSubCategories = !GetParams().NeverCopyLevel(); 
     IssueSeverity issueSeverity = maybeMakeSubCategories? IssueSeverity::Info: IssueSeverity::Error;
+
+    if (DgnV8Api::LevelCacheErrorCode::CannotFindLevel == v8Level->GetStatus())
+        {
+        if (IssueSeverity::Error == issueSeverity)
+            ReportIssueV(issueSeverity, IssueCategory::VisualFidelity(), Issue::LevelDisplayInconsistent(), nullptr, Utf8String(v8Level.GetName()).c_str(), IssueReporter::FmtAttachment(v8Attachment).c_str());
+        return;
+        }
 
     bool forceInvisible = false;
     if (!isV8LevelOn && theView.GetCategorySelector().IsCategoryViewed(categoryId))

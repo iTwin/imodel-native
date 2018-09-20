@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgGiObjects.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgGiObjects.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -403,7 +403,7 @@ public:
         Sphere              = 4,
         };
 
-    enum TileBy         // == T_Super:: Tiling
+    enum TileBy         // == T_Super::Tiling
         {
         InheritTiling       = 0,
         Tile                = 1,

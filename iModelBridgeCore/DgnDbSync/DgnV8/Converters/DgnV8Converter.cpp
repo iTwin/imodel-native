@@ -52,13 +52,8 @@ void iModelBridge_getAffinity(WCharP buffer,
                               WCharCP affinityLibraryPathStr,
                               WCharCP sourceFileNameStr)
     {
-    BentleyM0200::BeFileName sourceFileName(sourceFileNameStr);
-    BentleyM0200::BeFileName affinityLibraryPath(affinityLibraryPathStr);
-    if (BSISUCCESS == Converter::CheckCanOpenFile(sourceFileName, affinityLibraryPath))
-        {
-        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
-        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"DgnV8Bridge");
-        }
+    Converter::GetAffinity(buffer, bufferSize, affinityLevel, affinityLibraryPathStr, sourceFileNameStr);
+    
 
 #ifdef COMMENT_OUT_EXAMPLE_CODE
     // *** The following is just an example of how iModelBridge_getAffinity could support more than one bridge.

@@ -777,3 +777,160 @@ TEST_F(ModelTests, SpecifyRootModel_FromActiveViewGroup)
     ASSERT_TRUE(modelId.IsValid()); db->Models();
     ASSERT_TRUE(db->Models().GetModel(modelId)->Is3d());
     }
+
+static void addDrawingModel(BentleyApi::BeFileName filename, WCharCP modelName)
+    {
+    V8FileEditor v8editor;
+    v8editor.Open(filename);
+    DgnV8Api::DgnModelStatus modelStatus;
+    v8editor.m_file->CreateNewModel(&modelStatus, modelName, DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+    ASSERT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+    v8editor.Save();
+    }
+
+static void addLine(BentleyApi::BeFileName filename, DgnV8Api::ModelId mid)
+    {
+    V8FileEditor v8editor;
+    v8editor.Open(filename);
+    DgnV8Api::DgnModel* v8Model = v8editor.m_file->LoadModelById(mid).get();
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, v8Model);
+    v8editor.AddLine(&eid);
+    v8editor.Save();
+    }
+
+static void addRefAttachment(BentleyApi::BeFileName filename, DgnV8Api::ModelId masterModelId, BentleyApi::BeFileName const& refFileName, WCharCP refModelName)
+    {
+    V8FileEditor v8editor;
+    v8editor.Open(filename);
+    DgnV8Api::DgnModel* masterModel = v8editor.m_file->LoadModelById(masterModelId).get();
+    Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(refFileName.c_str());
+    DgnV8Api::DgnAttachment* attachment;
+    ASSERT_EQ(BentleyApi::SUCCESS, masterModel->CreateDgnAttachment(attachment, *moniker, refModelName, true));
+    ASSERT_EQ(BentleyApi::SUCCESS, attachment->WriteToModel());
+    v8editor.Save();
+    }
+
+static size_t countJobSubjects(DgnDbR db)
+    {
+    size_t actualCount = 0;
+    auto childids = db.Elements().GetRootSubject()->QueryChildren();
+    for (auto childid : childids)
+        {
+        auto subj = db.Elements().Get<Subject>(childid);
+        if (subj.IsValid() && JobSubjectUtils::IsJobSubject(*subj))
+            ++actualCount;
+        }
+    return actualCount;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ModelTests, MultipleRootFiles)
+    {
+    // Preconditions: We must have 2 "root" or "master" files
+
+    LineUpFiles(L"DeletedModelDetectionWithMultipleRoots.ibim", L"Test3d.dgn", false);
+    BentleyApi::BeFileName root1(m_v8FileName);
+
+    BentleyApi::BeFileName root2(root1.GetDirectoryName());
+    root2.AppendToPath(L"Root2.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(root1, root2));
+
+    BentleyApi::BeFileName commonRefFile(root1.GetDirectoryName());
+    commonRefFile.AppendToPath(L"Ref.dgn");
+    ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(root1, commonRefFile));
+
+    // --------------------------------------
+    //  Test: No duplicate drawings
+    // --------------------------------------
+
+    // Preconditions: each masterfile has both a 3d model and a drawing model ...
+    addDrawingModel(root1, L"Drawing1");
+    addDrawingModel(root2, L"Drawing2");
+
+    // ... and the converter searches for drawings in both files. (This is what the iModel bridge framework causes bridges to do.)
+    m_params.AddDrawingAndSheetFile(root1);
+    m_params.AddDrawingAndSheetFile(root2);
+
+    // Convert Root1.dgn.
+    // Verify that it creates a spatial model and 2 drawing models (that is, it finds the drawings in both root files).
+    m_v8FileName = root1;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel)));
+    ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+
+    db->CloseDb();
+    db = nullptr;
+
+    // Convert Root2.dgn, writing to the same iModel.
+    // Verify that it creates a spatial model.
+    // Verify that it creates no additional drawing models.
+    // Verify that it does not delete any spatial models.
+    m_v8FileName = root2;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    db = OpenExistingDgnDb(m_dgnDbFileName);
+
+    ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel)));
+    ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+
+    // Also verify that we have 2 job subjects
+    ASSERT_EQ(2, countJobSubjects(*db));
+
+    db->CloseDb();
+    db = nullptr;
+
+    // --------------------------------------
+    // Test: one job does not delete the models created by the other job.
+    // --------------------------------------
+
+    //  Preconditions: we must make a change to each of the "master" files, so that the updates will process them.
+    addLine(root1, 0);
+    addLine(root2, 0);
+
+    m_v8FileName = root1;
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    db = OpenExistingDgnDb(m_dgnDbFileName);
+    EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel)));
+    EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    db->CloseDb();
+    db = nullptr;
+
+    m_v8FileName = root2;
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+    db = OpenExistingDgnDb(m_dgnDbFileName);
+    EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel)));
+    EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    db->CloseDb();
+    db = nullptr;
+
+    // --------------------------------------
+    // Test: do not duplicate a common reference attachment file
+    // --------------------------------------
+
+    //  Add commonRefFile as an attachment to both root1 and root2
+    addRefAttachment(root1, 0, commonRefFile, L"Default");
+    addRefAttachment(root2, 0, commonRefFile, L"Default");
+
+    //  Update, starting from root1. Verify that it imports commonRefFile
+    m_v8FileName = root1;
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    db = OpenExistingDgnDb(m_dgnDbFileName);
+    EXPECT_EQ(3, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel))) << "Expect one more spatial model to have been imported";
+    EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel))) << "No additional drawings expected";
+    db->CloseDb();
+    db = nullptr;
+
+    //      update, starting from root2. Verify that it does NOT import commonRefFile
+    m_v8FileName = root2;
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+    db = OpenExistingDgnDb(m_dgnDbFileName);
+    EXPECT_EQ(3, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SpatialModel))) << "No additional spatial models expected";
+    EXPECT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel))) << "No additional drawings expected";
+    db->CloseDb();
+    db = nullptr;
+    }

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgL10N.h $
+|     $Source: PublicAPI/Dwg/DwgL10N.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,9 +8,9 @@
 #pragma once
 
 #include <iModelBridge/iModelBridge.h>
-#include <DgnDbSync/DgnDbSync.h>
+#include <Dwg/DwgImporter.h>
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 //! Categories for issues
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (IssueCategory, dwg_issueCategory)
@@ -64,6 +64,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(FontMissing)                 // =="Missing %s font '%s'. Some elements may not display properly."==
     L10N_STRING(FontNotEmbedded)             // =="Did not embed %s font '%s' due to importer configuration. Some elements may not display properly."==
     L10N_STRING(FontNumberError)             // =="Could not resolve font number %u."==
+    L10N_STRING(GroupError)                  // =="Group import error [%s]"==
     L10N_STRING(InvalidLayer)                // =="Invalid Layer [%s] could not be converted"==
     L10N_STRING(InvalidRange)                // =="Invalid Range"==
     L10N_STRING(InvisibleElementFilteredOut) // =="Element [%s] is invisible. It was not converted."==
@@ -111,7 +112,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (ProgressMessage, dwg_progress)
     L10N_STRING(STEP_CREATING)                     // =="Creating DgnDb [%s]"==
     L10N_STRING(STEP_EMBED_FILES)                  // =="Embedding Files"==
     L10N_STRING(STEP_EMBED_FONTS)                  // =="Embedding Fonts"==
-    L10N_STRING(STEP_CREATE_CLASS_VIEWS)           // =="Create ECClass Views"==
+    L10N_STRING(STEP_IMPORTING_GROUPS)             // =="Importing Groups"==
     L10N_STRING(STEP_IMPORTING_LAYERS)             // =="Importing Layers"==
     L10N_STRING(STEP_IMPORTING_TEXTSTYLES)         // =="Importing Text Styles"==
     L10N_STRING(STEP_IMPORTING_LINETYPES)          // =="Importing Line Types"==
@@ -137,4 +138,4 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (DataStrings, dwg_dataStrings)
     L10N_STRING(Subject)                    // =="Subject"==
 IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

@@ -2,7 +2,7 @@
 #
 #     $Source: DgnDbSync.prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -11,25 +11,5 @@ baseDir         = $(_MakeFilePath)
 
 DgnDbSyncAPISrc = $(baseDir)PublicAPI/DgnDbSync
 
-%if defined (PUBLICAPI_DgnV8)
-
-# Wire header files for DgnV8Converter only
-always:
-    ~linkdir "$(BuildContext)PublicAPI/DgnDbSync/DgnV8=$(DgnDbSyncAPISrc)/DgnV8"
-    ~linkdir "$(BuildContext)PublicAPI/DgnDbSync/SyncManager=$(DgnDbSyncAPISrc)/SyncManager"
-    ~linkfile "$(BuildContext)PublicAPI/DgnDbSync/DgnDbSync.h=$(DgnDbSyncAPISrc)/DgnDbSync.h"
-
-%elif defined (PUBLICAPI_Dwg)
-
-# Wire header files for DwgConverter only
-always:
-    ~linkdir "$(BuildContext)PublicAPI/DgnDbSync/Dwg=$(DgnDbSyncAPISrc)/Dwg"
-    ~linkfile "$(BuildContext)PublicAPI/DgnDbSync/DgnDbSync.h=$(DgnDbSyncAPISrc)/DgnDbSync.h"
-
-%else
-
-# Default to wire all header files under DgnDbSync
 always:
     ~linkdir "$(BuildContext)PublicAPI/DgnDbSync=$(DgnDbSyncAPISrc)"
-
-%endif

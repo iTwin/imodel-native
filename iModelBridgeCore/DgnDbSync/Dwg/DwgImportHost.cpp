@@ -18,7 +18,7 @@
 
 USING_NAMESPACE_DWGDB
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 // Autodesk provides below key path for finding the registry root key of the installed RealDWG component:
 #if defined (_X64_)
@@ -216,7 +216,7 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
         }
 
     // if looks like a standard relative path, try resolving it to the full path:
-    if (checkFile.StartsWith(L".."))
+    if (checkFile.StartsWith(L"..") || checkFile.StartsWith(L".\\"))
         {
         BeFileName  resolved;
         if (BSISUCCESS == BeFileName::ResolveRelativePath(resolved, inFile, basePath.c_str())&& resolved.DoesPathExist())
@@ -651,4 +651,4 @@ void            DwgImporter::MessageCenter::ProcessInputMessage (WCharCP message
         }
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

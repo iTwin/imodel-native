@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/BasicGeometryTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -57,7 +57,7 @@ TEST_F(BasicGeometryTests, LineUpdateWithoutAnyChange)
         VerifyElement(*db, eid1, GeometricPrimitive::GeometryType::CurvePrimitive);
     }
 
-    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
     // *** TBD: Check that m_count == 0
     }
 

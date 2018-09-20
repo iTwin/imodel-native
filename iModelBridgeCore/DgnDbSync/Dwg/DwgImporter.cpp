@@ -8,8 +8,9 @@
 #include    "DwgImportInternal.h"
 
 USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 static const Utf8CP                 s_codeSpecName = "DWG";    // TBD: One authority per DWG file?
 
@@ -79,15 +80,15 @@ BentleyStatus   DwgImporter::MakeSchemaChanges ()
     if (DwgDbStatus::Success != blockTable.OpenStatus())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // collect attribute definitions from regular blocks
     ECSchemaPtr     attrdefSchema;
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbObjectId   blockId = iter.GetRecordId ();
+        DwgDbObjectId   blockId = iter->GetRecordId ();
         if (!blockId.IsValid() || m_dwgdb->GetModelspaceId() == blockId || m_dwgdb->GetPaperspaceId() == blockId)
             continue;
 
@@ -119,6 +120,33 @@ void   DwgImporter::GetOrCreateJobPartitions ()
     this->InitUncategorizedCategory ();
     this->InitBusinessKeyCodeSpec ();
     this->InitSheetListModel ();
+    this->InitGroupModel ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DwgImporter::InitGroupModel ()
+    {
+    static Utf8CP s_partitionName = "Imported Groups";
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), s_partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_groupModelId = DgnModelId(partitionId.GetValueUnchecked());
+    
+    if (m_groupModelId.IsValid())
+        return BentleyStatus::BSISUCCESS;
+
+    GroupInformationPartitionPtr ed = GroupInformationPartition::Create(GetJobSubject(), s_partitionName);
+    GroupInformationPartitionCPtr partition = ed->InsertT<GroupInformationPartition>();
+    if (!partition.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    GenericGroupModelPtr groupModel = GenericGroupModel::CreateAndInsert(*partition);
+    if (!groupModel.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    m_groupModelId = groupModel->GetModelId();
+    return BentleyStatus::BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -380,7 +408,7 @@ ResolvedModelMapping    DwgImporter::GetModelFromSyncInfo (DwgDbObjectIdCR id, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType sourceType)
     {
-    // find cached model mapping by DWG model object ID
+    // find cached model mapping by DWG model object ID, matching transform, and source type
     ResolvedModelMapping    unresolved (dwgModelId);
 
     auto    range = m_dwgModelMap.equal_range (unresolved);
@@ -388,6 +416,25 @@ ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, Trans
         {
         // a DgnModel exists, check transform & source type!
         if (modelMap->GetTransform().IsEqual(trans) && modelMap->GetMapping().GetSourceType() == sourceType) 
+            return *modelMap;
+        }
+
+    return  ResolvedModelMapping();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, DwgSyncInfo::ModelSourceType sourceType)
+    {
+    // find cached model mapping by DWG model ID & source type only, ignoring transform
+    ResolvedModelMapping    unresolved (dwgModelId);
+
+    auto    range = m_dwgModelMap.equal_range (unresolved);
+    for (auto modelMap = range.first; modelMap != range.second; ++modelMap)
+        {
+        // a DgnModel exists, check source type!
+        if (modelMap->GetMapping().GetSourceType() == sourceType) 
             return *modelMap;
         }
 
@@ -659,11 +706,11 @@ BentleyStatus   DwgImporter::SetModelPropertiesFromModelspaceViewport (DgnModelP
         if (viewportTable.IsNull())
             return  BSIERROR;
 
-        DwgDbSymbolTableIterator    iter = viewportTable->NewIterator ();
-        if (!iter.IsValid())
+        DwgDbSymbolTableIteratorPtr iter = viewportTable->NewIterator ();
+        if (!iter.IsValid() || !iter->IsValid())
             return  BSIERROR;
 
-        viewport.OpenObject (iter.GetRecordId(), DwgDbOpenMode::ForRead);
+        viewport.OpenObject (iter->GetRecordId(), DwgDbOpenMode::ForRead);
         if (viewport.IsNull())
             return  BSIERROR;
         }
@@ -837,7 +884,6 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
     // build a consistent & valid model name for all DWG models:
     auto modelName = this->_ComputeModelName (dwgBlock, suffix);
 
-    IDwgChangeDetector& changeDetector = this->_GetChangeDetector ();
     if (this->IsUpdating())
         {
         if (DwgSyncInfo::ModelSourceType::XRefAttachment == sourceType)
@@ -860,7 +906,7 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
             if (!this->FindModel(dwgModelId, trans, sourceType).IsValid())
                 this->AddToDwgModelMap (modelMap);
             // tell the updater about the coming DWG model object:
-            changeDetector._OnModelSeen (*this, modelMap);
+            this->_GetChangeDetector()._OnModelSeen (*this, modelMap);
             return  modelMap;
             }
         // not found in syncinfo - may have to create a new one.
@@ -885,13 +931,29 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
         return modelMap;
         }
 
+    modelMap = this->CreateAndInsertModelMap (model, dwgBlock, trans, xrefInsert, xrefDwg);
+
+    return  modelMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping DwgImporter::CreateAndInsertModelMap (DgnModelP model, DwgDbBlockTableRecordCR dwgBlock, TransformCR trans, DwgDbBlockReferenceCP xrefInsert, DwgDbDatabaseP xrefDwg)
+    {
+    ResolvedModelMapping    modelMap;
+    if (nullptr == model)
+        return  modelMap;
+
     // save the model info to syncInfo:
+    DwgDbObjectId   dwgModelId = xrefInsert == nullptr ? dwgBlock.GetObjectId() : xrefInsert->GetObjectId();
+    DgnModelId      dgnModelId = model->GetModelId ();
+    BentleyStatus   status = BSISUCCESS;
     DwgSyncInfo::DwgModelMapping    mapping;
-    BentleyStatus                   status = BSISUCCESS;
-    if (nullptr == xrefInsert)
-        status = m_syncInfo.InsertModel (mapping, modelId, dwgBlock, trans);
+    if (nullptr == xrefInsert || nullptr == xrefDwg)
+        status = m_syncInfo.InsertModel (mapping, dgnModelId, dwgBlock, trans);
     else
-        status = m_syncInfo.InsertModel (mapping, modelId, *xrefInsert, *xrefDwg, trans);
+        status = m_syncInfo.InsertModel (mapping, dgnModelId, *xrefInsert, *xrefDwg, trans);
     BeAssert(status==BSISUCCESS);
 
     modelMap.SetModelInstanceId (dwgModelId);
@@ -899,13 +961,13 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
     modelMap.SetMapping (mapping);
 
     if (LOG_MODEL_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
-        LOG_MODEL.tracev("+ %s %d -> %s %d", mapping.GetDwgName().c_str(), mapping.GetDwgModelId().GetValue(), model->GetName().c_str(), model->GetModelId().GetValue());
+        LOG_MODEL.tracev("+ %s %d -> %s %d", mapping.GetDwgName().c_str(), mapping.GetDwgModelId().GetValue(), model->GetName().c_str(), dgnModelId.GetValue());
 
     // save in our list of known model mappings.
     this->AddToDwgModelMap (modelMap);
     // tell the updater about the newly discovered model
-    changeDetector._OnModelInserted (*this, modelMap, xrefDwg);
-    changeDetector._OnModelSeen (*this, modelMap);
+    this->_GetChangeDetector()._OnModelInserted (*this, modelMap, xrefDwg);
+    this->_GetChangeDetector()._OnModelSeen (*this, modelMap);
 
     return  modelMap;
     }
@@ -961,16 +1023,19 @@ ResolvedModelMapping    DwgImporter::FindRootModelFromImportJob ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping    DwgImporter::GetOrCreateRootModel (bool updating)
+ResolvedModelMapping    DwgImporter::_GetOrCreateRootModel (bool updating)
     {
+    ResolvedModelMapping    rootModelMap;
     if (m_dwgdb.IsNull())
         {
         BeAssert (false && "DWG file is not opened yet!");
-        return  ResolvedModelMapping();
+        return  rootModelMap;
         }
 
-    if (m_rootDwgModelMap.IsValid())
-        return  m_rootDwgModelMap;
+    // do this only once per session
+    rootModelMap = this->GetRootModel ();
+    if (rootModelMap.IsValid())
+        return  rootModelMap;
 
     if (m_modelspaceId.IsNull())
         m_modelspaceId = m_dwgdb->GetModelspaceId ();
@@ -989,7 +1054,7 @@ ResolvedModelMapping    DwgImporter::GetOrCreateRootModel (bool updating)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::CannotOpenModelspace(), "when creating the root model!");
         this->OnFatalError ();
-        return m_rootDwgModelMap;
+        return rootModelMap;
         }
     Transform   newTransform = m_rootTransformInfo.GetRootTransform ();
     this->ScaleModelTransformBy (newTransform, *modelspaceBlock.get());
@@ -998,14 +1063,14 @@ ResolvedModelMapping    DwgImporter::GetOrCreateRootModel (bool updating)
     if (updating)
         {
         // try retrieving the root model from the syncInfo per current import job:
-        m_rootDwgModelMap = this->FindRootModelFromImportJob ();
-        if (m_rootDwgModelMap.IsValid())
+        rootModelMap = this->FindRootModelFromImportJob ();
+        if (rootModelMap.IsValid())
             {
-            this->_GetChangeDetector()._OnModelSeen (*this, m_rootDwgModelMap);
-            this->AddToDwgModelMap (m_rootDwgModelMap);
+            this->_GetChangeDetector()._OnModelSeen (*this, rootModelMap);
+            this->AddToDwgModelMap (rootModelMap);
 
             // check if the root model transformation has been changed from previous import:
-            auto oldTransform = m_rootDwgModelMap.GetTransform ();
+            auto oldTransform = rootModelMap.GetTransform ();
             auto pointTol = oldTransform.Translation().Magnitude() * 0.01;
 
             m_rootTransformInfo.SetHasChanged (!newTransform.IsEqual(oldTransform, 0.01, pointTol));
@@ -1019,18 +1084,202 @@ ResolvedModelMapping    DwgImporter::GetOrCreateRootModel (bool updating)
                 m_rootTransformInfo.SetChangeTransformFromOldToNew (fromOldToNew);
                 }
 
-            return  m_rootDwgModelMap;
+            return  rootModelMap;
             }
         }
 
     // try creating the root model from the modelspace block:
-    m_rootDwgModelMap = this->GetOrCreateModelFromBlock (*modelspaceBlock.get(), m_rootTransformInfo.GetRootTransform());
-    if (!m_rootDwgModelMap.IsValid())
+    rootModelMap = this->GetOrCreateModelFromBlock (*modelspaceBlock.get(), m_rootTransformInfo.GetRootTransform());
+    if (!rootModelMap.IsValid())
         this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*modelspaceBlock).c_str());
     else
-        this->SetModelPropertiesFromModelspaceViewport (m_rootDwgModelMap.GetModel());
+        this->SetModelPropertiesFromModelspaceViewport (rootModelMap.GetModel());
 
-    return m_rootDwgModelMap;
+    return rootModelMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping DwgImporter::_ImportLayoutModel (DwgDbBlockTableRecordCR block)
+    {
+    // Units of paperspace models are from plot settings.
+    Transform   layoutTransform = Transform::FromIdentity ();
+    this->ScaleModelTransformBy (layoutTransform, block);
+    // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
+    this->AlignSheetToPaperOrigin (layoutTransform, block.GetLayoutId());
+
+    auto modelMap = this->GetOrCreateModelFromBlock (block, layoutTransform);
+    if (!modelMap.IsValid() || modelMap.GetModel() == nullptr)
+        this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(block).c_str());
+    else
+        this->SetModelPropertiesFromLayout (modelMap.GetModel(), block.GetLayoutId());
+    return  modelMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping DwgImporter::_ImportXrefModel (DwgDbBlockTableRecordCR block, DwgDbObjectIdCR insertId, DwgDbDatabaseP xRefDwg)
+    {
+    ResolvedModelMapping    modelMap;
+    DwgDbBlockReferencePtr  insert(insertId, DwgDbOpenMode::ForRead);
+    if (insert.OpenStatus() != DwgDbStatus::Success)
+        return  modelMap;
+
+    // open & check parent of this insert entity:
+    DwgDbObjectId               parentId = insert->GetOwnerId ();
+    DwgDbBlockTableRecordPtr    parentBlock (parentId, DwgDbOpenMode::ForRead);
+    if (parentBlock.OpenStatus() != DwgDbStatus::Success)
+        {
+        this->ReportError (IssueCategory::MissingData(), Issue::CantOpenObject(), Utf8PrintfString("the owner block of an xRef %ls", block.GetName().c_str()).c_str());
+        return  modelMap;
+        }
+
+    Transform   xtrans = this->GetRootTransform ();
+    DgnModelP   parentModel = nullptr;
+
+    // if this xref is inserted in a paperspace block, import paperspace first, then use paperspace transform:
+    bool    isParentPaperspace = parentBlock->IsLayout() && m_modelspaceId != parentId;
+    if (isParentPaperspace)
+        {
+        // get or create the paperspace model if not already created:
+        xtrans = Transform::FromIdentity ();
+        this->ScaleModelTransformBy (xtrans, *parentBlock.get());
+        // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
+        this->AlignSheetToPaperOrigin (xtrans, parentBlock->GetLayoutId());
+
+        modelMap = this->GetOrCreateModelFromBlock (*parentBlock.get(), xtrans);
+        if (!modelMap.IsValid() || (parentModel = modelMap.GetModel()) == nullptr)
+            {
+            this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*parentBlock).c_str());
+            return  modelMap;
+            }
+        // we now have a paperspace transform for current xref instance...
+        }
+
+    this->CompoundModelTransformBy (xtrans, *insert.get());
+
+    modelMap = this->GetOrCreateModelFromBlock (block, xtrans, insert.get(), xRefDwg);
+
+    DgnModelP   model = nullptr;
+    if (!modelMap.IsValid() || (model = modelMap.GetModel()) == nullptr)
+        {
+        this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(block).c_str());
+        return  modelMap;
+        }
+
+    // if the instance is in the modelspace, add it to modelspace xref list:
+    if (m_modelspaceId == parentId)
+        {
+        m_modelspaceXrefs.insert (model->GetModelId());
+        return  modelMap;
+        }
+
+    // if the instance is in a paperspace, add the info into paperspace xref list:
+    if (isParentPaperspace && nullptr != parentModel)
+        {
+        m_paperspaceXrefs.push_back (DwgXRefInPaperspace(insertId, parentId, parentModel->GetModelId()));
+        return  modelMap;
+        }
+
+    // close the parent block for the explode operation:
+    parentBlock->Close ();
+
+    // the instance is neither in the modelspace nor in a paperspace - drop it into the parent block:
+    if (DwgDbStatus::Success != insert->ExplodeToOwnerSpace())
+        this->ReportError (IssueCategory::Unknown(), Issue::Error(), Utf8PrintfString("failed dropping nested xRef %ls", block.GetName().c_str()).c_str());
+
+    return  modelMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgImporter::ImportModelsFrom (DwgDbBlockTableRecordR block, SubjectCR parentSubject, bool& hasPushedReferencesSubject)
+    {
+    auto name = block.GetName ();
+    if (name.IsEmpty())
+        {
+        this->ReportIssueV (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::ConfigUsingDefault(), IssueReporter::FmtModel(block).c_str());
+        name = L"Default";
+        }
+
+    // create a model for the DWG layout/paperspace
+    if (block.IsLayout())
+        {
+        LOG_MODEL.tracev("Creating DgnModel from DWG layout block %ls", name.c_str());
+        return  this->_ImportLayoutModel(block).IsValid() ? BSISUCCESS : BSIERROR;
+        }
+
+    // create a model for the DWG xref attachment
+    if (!block.IsExternalReference())
+        return  BSISUCCESS;
+
+    // load the DWG xRef file:
+    DwgXRefHolder   xref(block, *this);
+    if (xref.IsValid())
+        {
+        // add the new xref in local cache as well as in the syncInfo:
+        m_loadedXrefFiles.push_back (xref);
+        this->_AddFileInSyncInfo (xref.GetDatabaseR(), this->_GetDwgFileIdPolicy());
+        }
+    else
+        {
+        // can't load the xRef file - error out
+        Utf8String  filename = xref.GetResolvedPath().GetNameUtf8 ();
+        if (filename.empty())
+            filename = Utf8String (name.c_str());
+        this->ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), filename.c_str());
+        return  BSIERROR;
+        }
+
+    DwgDbObjectIdArray  ids;
+    if (DwgDbStatus::Success != block.GetBlockReferenceIds(ids))
+        {
+        /*------------------------------------------------------------------------------------------------
+        There could be legitimate reasons as well as file errors that no instances found for an xref block.
+        A nested xref would not have instances in the outermost master file for example.  Whatever has led
+        us here is not important - we will not add a model for an xref block that has no instances.  We will
+        create a model when we see an xref attachment while importing entities.
+        ------------------------------------------------------------------------------------------------*/
+        return  BSISUCCESS;
+        }
+
+    LOG_MODEL.tracev("Creating DgnModel(s) from DWG xRef block %ls with %d instances", name.c_str(), ids.size());
+
+    // the xref block has instances - create models for each of them:
+    for (auto const& id : ids)
+        {
+        DgnModelP   model;
+        auto modelMap = this->_ImportXrefModel (block, id, xref.GetDatabaseP());
+        if (!modelMap.IsValid() || (model = modelMap.GetModel()) == nullptr)
+            continue;
+
+        // cache the mapped model in the xref holder:
+        m_loadedXrefFiles.back().AddDgnModel (model->GetModelId());
+
+        // give the updater a chance to cache skipped models as we may not see xref inserts during importing phase:
+        this->_GetChangeDetector()._ShouldSkipModel (*this, modelMap, xref.GetDatabaseP());
+
+        if (!hasPushedReferencesSubject)
+            {
+            SubjectCPtr refsSubject = this->GetOrCreateModelSubject (parentSubject, model->GetName(), ModelSubjectType::References);
+            if (refsSubject.IsValid())
+                {
+                // set the root model subject as spatial parent
+                this->SetSpatialParentSubject (*refsSubject);
+                hasPushedReferencesSubject = true;
+                }
+            else
+                {
+                ReportError (IssueCategory::Unsupported(), Issue::Error(), Utf8PrintfString("Failed to create references subject. XRef[%s].", IssueReporter::FmtXReference(block).c_str()).c_str());
+                BeAssert (false && "Failed creating xrefrences subject!");
+                }
+            }
+        }
+
+    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1043,186 +1292,36 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
     if (DwgDbStatus::Success != blockTable.OpenStatus())
         return  BSIERROR;
 
-    // make sure the root model has been created from the modelspace block first
-    ResolvedModelMapping    modelMap = this->GetOrCreateRootModel (this->IsUpdating());
-    if (!modelMap.IsValid())
-        return  BSIERROR;
+    // should have created root model when initiating or finding the importer job:
+    BeAssert (this->GetRootModel().IsValid());
 
-    IDwgChangeDetector&     changeDetector = this->_GetChangeDetector ();
     bool        hasPushedReferencesSubject = false;
     SubjectCPtr parentSubject = this->GetSpatialParentSubject ();
-    BeAssert (parentSubject.IsValid() && "parent subject for spatial models not set yet!!");
+    if (!parentSubject.IsValid())
+        {
+        BeAssert (false && "parent subject for spatial models not set yet!!");
+        return  BSIERROR;
+        }
 
-    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-    if (!iter.IsValid())
+    DwgDbSymbolTableIteratorPtr iter = blockTable->NewIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
 
     // walk through all blocks and create models for paperspace and xref blocks:
-    for (iter.Start(); !iter.Done(); iter.Step())
+    for (iter->Start(); !iter->Done(); iter->Step())
         {
-        DwgDbObjectId   blockId = iter.GetRecordId ();
+        DwgDbObjectId   blockId = iter->GetRecordId ();
         if (!blockId.IsValid() || blockId == m_modelspaceId)
             continue;
 
-        DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForRead);
+        DwgDbBlockTableRecordPtr    block(blockId, DwgDbOpenMode::ForWrite);
         if (block.IsNull())
             continue;
 
-        DwgString       name = block.get()->GetName ();
-        if (name.IsEmpty())
-            {
-            this->ReportIssueV (IssueSeverity::Info, IssueCategory::UnexpectedData(), Issue::ConfigUsingDefault(), IssueReporter::FmtModel(*block).c_str());
-            name = L"Default";
-            }
-
-        // create layout models
-        if (block->IsLayout())
-            {
-            LOG_MODEL.tracev("Creating DgnModel from DWG layout block %ls", name.c_str());
-
-            // Units of paperspace models are from plot settings.
-            Transform   layoutTransform = Transform::FromIdentity ();
-            this->ScaleModelTransformBy (layoutTransform, *block.get());
-            // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
-            this->AlignSheetToPaperOrigin (layoutTransform, block->GetLayoutId());
-
-            modelMap= this->GetOrCreateModelFromBlock (*block.get(), layoutTransform);
-            if (!modelMap.IsValid() || modelMap.GetModel() == nullptr)
-                this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*block).c_str());
-            else
-                this->SetModelPropertiesFromLayout (modelMap.GetModel(), block->GetLayoutId());
-            continue;
-            }
-
-        // create xref models
-        if (block->IsExternalReference() && !block->IsOverlayReference())
-            {
-            // load the DWG xRef file:
-            DwgXRefHolder   xref(*block.get(), *this);
-            if (xref.IsValid())
-                {
-                // add the new xref in local cache as well as in the syncInfo:
-                m_loadedXrefFiles.push_back (xref);
-                this->_AddFileInSyncInfo (xref.GetDatabaseR(), this->_GetDwgFileIdPolicy());
-                }
-            else
-                {
-                // can't load the xRef file - error out
-                Utf8String  filename = xref.GetResolvedPath().GetNameUtf8 ();
-                if (filename.empty())
-                    filename = Utf8String (name.c_str());
-                this->ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), filename.c_str());
-                continue;
-                }
-
-            DwgDbObjectIdArray  ids;
-            if (DwgDbStatus::Success != block->GetBlockReferenceIds(ids))
-                {
-                /*------------------------------------------------------------------------------------------------
-                There could be legitimate reasons as well as file errors that no instances found for an xref block.
-                A nested xref would not have instances in the outermost master file for example.  Whatever has led
-                us here is not important - we will not add a model for an xref block that has no instances.  We will
-                create a model when we see an xref attachment while importing entities.
-                ------------------------------------------------------------------------------------------------*/
-                continue;
-                }
-
-            LOG_MODEL.tracev("Creating DgnModel from DWG xRef block %ls", name.c_str());
-
-            // the xref block has instances - create models for each of them:
-            for (auto const& id : ids)
-                {
-                DwgDbBlockReferencePtr  insert(id, DwgDbOpenMode::ForRead);
-                if (!insert.IsNull())
-                    {
-                    // open & check parent of this insert entity:
-                    DwgDbObjectId               parentId = insert->GetOwnerId ();
-                    DwgDbBlockTableRecordPtr    parentBlock (parentId, DwgDbOpenMode::ForRead);
-                    if (parentBlock.OpenStatus() != DwgDbStatus::Success)
-                        {
-                        this->ReportError (IssueCategory::MissingData(), Issue::CantOpenObject(), Utf8PrintfString("the owner block of an xRef %ls", name.c_str()).c_str());
-                        continue;
-                        }
-
-                    Transform   xtrans = this->GetRootTransform ();
-                    DgnModelP   parentModel = nullptr;
-
-                    // if this xref is inserted in a paperspace block, import paperspace first, then use paperspace transform:
-                    bool    isParentPaperspace = parentBlock->IsLayout() && m_modelspaceId != parentId;
-                    if (isParentPaperspace)
-                        {
-                        // get or create the paperspace model if not already created:
-                        xtrans = Transform::FromIdentity ();
-                        this->ScaleModelTransformBy (xtrans, *parentBlock.get());
-                        // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
-                        this->AlignSheetToPaperOrigin (xtrans, parentBlock->GetLayoutId());
-
-                        modelMap = this->GetOrCreateModelFromBlock (*parentBlock.get(), xtrans);
-                        if (!modelMap.IsValid() || (parentModel = modelMap.GetModel()) == nullptr)
-                            {
-                            this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*parentBlock).c_str());
-                            continue;
-                            }
-                        // we now have a paperspace transform for current xref instance...
-                        }
-
-                    this->CompoundModelTransformBy (xtrans, *insert.get());
-
-                    modelMap = this->GetOrCreateModelFromBlock (*block.get(), xtrans, insert.get(), xref.GetDatabaseP());
-
-                    DgnModelP   model = nullptr;
-                    if (!modelMap.IsValid() || (model = modelMap.GetModel()) == nullptr)
-                        {
-                        this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*block).c_str());
-                        continue;
-                        }
-
-                    // cache the mapped model in the xref holder:
-                    m_loadedXrefFiles.back().AddDgnModel (model->GetModelId());
-
-                    // give the updater a chance to cache skipped models as we may not see xref inserts during importing phase:
-                    changeDetector._ShouldSkipModel (*this, modelMap, xref.GetDatabaseP());
-
-                    if (!hasPushedReferencesSubject && parentSubject.IsValid())
-                        {
-                        SubjectCPtr refsSubject = this->GetOrCreateModelSubject (*parentSubject, model->GetName(), ModelSubjectType::References);
-                        if (refsSubject.IsValid())
-                            {
-                            // set the root model subject as spatial parent
-                            this->SetSpatialParentSubject (*refsSubject);
-                            hasPushedReferencesSubject = true;
-                            }
-                        else
-                            {
-                            ReportError (IssueCategory::Unsupported(), Issue::Error(), Utf8PrintfString("Failed to create references subject. Parent[%s]. XRef[%s].", IssueReporter::FmtModel(*parentBlock).c_str(), IssueReporter::FmtXReference(*block).c_str()).c_str());
-                            BeAssert (false && "Failed creating xrefrences subject!");
-                            }
-                        }
-
-                    // if the instance is in the modelspace, add it to modelspace xref list:
-                    if (m_modelspaceId == parentId)
-                        {
-                        m_modelspaceXrefs.insert (model->GetModelId());
-                        continue;
-                        }
-
-                    // if the instance is in a paperspace, add the info into paperspace xref list:
-                    if (isParentPaperspace && nullptr != parentModel)
-                        {
-                        m_paperspaceXrefs.push_back (DwgXRefInPaperspace(id, parentId, parentModel->GetModelId()));
-                        continue;
-                        }
-
-                    parentBlock->Close ();
-
-                    // the instance is neither in the modelspace nor in a paperspace - drop it into the parent block:
-                    if (DwgDbStatus::Success != insert->ExplodeToOwnerSpace())
-                        this->ReportError (IssueCategory::Unknown(), Issue::Error(), Utf8PrintfString("failed dropping nested xRef %ls", name.c_str()).c_str());
-                    }
-                }
-            }
+        // check and create model(s) from this block as appropriate:
+        this->ImportModelsFrom (*block, *parentSubject, hasPushedReferencesSubject);
         }
-    
+
     /*-----------------------------------------------------------------------------------
     Now we have passed the model discovery phase, we can update model transforms if the 
     root transform has been changed from previous import.  Raster models and some xRef
@@ -1675,7 +1774,7 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
 
     // 5. Map the root model into the DgnDb. Note that this will generally create a partition, which is relative to the job subject,
     //    So, the job subject and its framework must be created first.
-    this->GetOrCreateRootModel (false);
+    m_rootDwgModelMap = this->_GetOrCreateRootModel (false);
     if (!m_rootDwgModelMap.IsValid())
         {
         BeAssert (false && "No root DWG model!");
@@ -1721,7 +1820,7 @@ DwgImporter::ImportJobLoadStatus DwgImporter::FindJob ()
 
     this->GetDwgFileId (this->GetDwgDb(), true);
     this->GetOrCreateJobPartitions ();
-    this->GetOrCreateRootModel (true);
+    m_rootDwgModelMap = this->_GetOrCreateRootModel (true);
     if (!m_rootDwgModelMap.IsValid())
         {
         BeAssert (false && "Failed finding or creating root DWG model!");
@@ -1801,6 +1900,7 @@ void            DwgImporter::_FinishImport ()
         changeDetector._DetectDeletedModelsEnd (*this);
         changeDetector._DetectDeletedMaterials (*this);
         changeDetector._DetectDeletedViews (*this);
+        changeDetector._DetectDeletedGroups (*this);
 
         // update syncinfo for master DWG file
         DwgSyncInfo&    syncInfo = GetSyncInfo ();
@@ -1831,6 +1931,10 @@ void            DwgImporter::_FinishImport ()
         }
 
     m_dgndb->SaveSettings ();
+
+#ifdef DEBUG_DELETE_DOCUMENTS
+    this->_DetectDeletedDocuments ();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1913,6 +2017,13 @@ BentleyStatus   DwgImporter::Process ()
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Layouts");
+
+    timer.Start();
+    this->_ImportGroups ();
+    if (this->WasAborted())
+        return BSIERROR;
+
+    DwgImportLogging::LogPerformance(timer, "Import Groups");
 
     timer.Start ();
     this->_FinishImport ();
@@ -2303,3 +2414,26 @@ uint32_t        DwgImporter::Options::GetDgnLineWeight (DwgDbLineWeight dwgWeigh
     return  0;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter::ElementImportInputs::ElementImportInputs (DgnModelR model) 
+    : m_targetModel(model), m_spatialFilter(nullptr), m_parentEntity(nullptr)
+    {
+    m_transformToDgn.InitIdentity ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter::ElementImportInputs::ElementImportInputs (DgnModelR model, DwgDbEntityP entity, ElementImportInputs const& other) 
+    : m_targetModel(model)
+    {
+    this->SetClassId (other.GetClassId());
+    this->SetTransform (other.GetTransform());
+    this->SetEntityId (other.GetEntityId());
+    this->SetParentEntity (other.GetParentEntity());
+    this->SetSpatialFilter (other.GetSpatialFilter());
+    this->SetModelMapping (other.GetModelMapping());
+    this->GetEntityPtrR() = entity;
+    }

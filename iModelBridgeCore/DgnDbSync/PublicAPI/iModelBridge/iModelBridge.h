@@ -16,6 +16,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <WebServices/Client/ClientInfo.h>
+#include <iModelDmsSupport/iModelDmsSupport.h>
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -491,6 +492,8 @@ struct iModelBridge
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
         Utf8String   m_jobRunCorrelationId;
+        IDmsSupport* m_dmsSupport;
+
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -561,6 +564,8 @@ struct iModelBridge
         void SetAssetsDir(BeFileNameCR dir) {m_assetsDir=dir;}
         BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
+        void SetDrawingsDir(BeFileNameCR dir) {m_drawingsDirs = dir;}
+        void AddDrawingAndSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
         bvector<BeFileName> const& GetDrawingAndSheetFiles() const {return m_drawingAndSheetFiles;} //!< The list of files to search for drawings and sheets
         BeFileNameCR GetReportFileName() const {return m_reportFileName;} //!< Where to write a report of results and issues that occurred during the conversion. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues and logging".
         //! Once the BIM name has been set, the framework calls this to compute the report file name. This is also called automatically by Validate.
@@ -585,7 +590,8 @@ struct iModelBridge
         DgnElementId GetJobSubjectId() const {return m_jobSubjectId;} //!< Identifies the job Subject element
         bool DoDetectDeletedModelsAndElements() const {return m_doDetectDeletedModelsAndElements;}
         void SetDoDetectDeletedModelsAndElements(bool b) {m_doDetectDeletedModelsAndElements=b;}
-
+        void SetDmsSupportLibrary (IDmsSupport* dmsAccessor) { m_dmsSupport  = dmsAccessor;}
+        IDmsSupport* GetDmsSupportLibrary() { return m_dmsSupport; }
 	    //! Check if a document is assigned to this job or not.
         //! @param docId    Identifies the document uniquely in the source document management system. Normally, this will be a GUID (in string form). Some standalone converters may use local filenames instead.
 	    IMODEL_BRIDGE_EXPORT bool IsDocumentAssignedToJob(Utf8StringCR docId) const;
@@ -636,6 +642,9 @@ struct iModelBridge
     IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
 
     //! @}
+
+protected:
+    bool m_hadAnyChanges;
 
 public:
     //! Supply the relative path to the .db3 file that contains translatable strings used by the bridge.
@@ -909,6 +918,7 @@ public:
 
     //! @}
 
+    bool HadAnyChanges() const { return m_hadAnyChanges; }
     };
 
 //=======================================================================================

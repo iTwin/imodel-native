@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 static bset<Utf8String> s_loggedFileNames;
 
@@ -671,6 +671,41 @@ void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_OnGroupSeen (DwgImporter& importer, DgnElementId groupId)
+    {
+    if (groupId.IsValid())
+        m_groupsSeen.insert (groupId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DetectDeletedGroups (DwgImporter& importer)
+    {
+    auto groupModel = importer.GetDgnDb().Models().Get<GenericGroupModel>(importer.GetGroupModelId());
+    if (!groupModel.IsValid())
+        return;
+
+    auto&   elements = importer.GetDgnDb().Elements ();
+    auto&   syncInfo = importer.GetSyncInfo ();
+
+    for (auto groupId : groupModel->MakeIterator().BuildIdSet<DgnElementId>())
+        {
+        if (m_groupsSeen.find(groupId) == m_groupsSeen.end())
+            {
+            auto group = elements.Get<DgnElement> (groupId);
+            LOG.tracev ("Delete group %s (ID=%lld)", group.IsValid() ? group->GetUserLabel() : "??", groupId.GetValue());
+            elements.Delete (groupId);
+            syncInfo.DeleteGroup (groupId);
+            }
+        }
+
+    m_groupsSeen.clear ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId)
@@ -725,14 +760,59 @@ void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgImporter::_DetectDeletedDocuments ()
     {
-#ifdef WIP__OnRootFilesConverted
-    For each file in your syncinfo, call IsDocumentAssignedToJob to detect if the file is still assigned to the job.
-    For each file that is no longer assigned to your job, delete the models and elements that came from that file, and
-    then remove the record of that file from your syncinfo.
+    if (!this->IsUpdating())
+        return  BSISUCCESS;
 
-    // this->_GetChangeDetector()._DetectDeletedModelsInFile (*this, this->GetDwgDb());
-#endif
+    // this is called after the process is done, so, setup change detector again:
+    bool detectorPresent = this->_HaveChangeDetector ();
+    if (!detectorPresent)
+        {
+        this->_SetChangeDetector (true);
+        this->_GetChangeDetector()._Prepare (*this);
+        }
+
+    auto& detector = this->_GetChangeDetector ();
+    auto& db = this->GetDgnDb ();
+    auto& syncInfo = this->GetSyncInfo ();  
+    DwgSyncInfo::FileIterator files(db, nullptr);
+
+    for (auto file : files)
+        {
+        // check the file GUID per PW:
+        BeGuid  docGuid;
+        auto name = file.GetUniqueName ();
+        if (docGuid.FromString(name.c_str()) == BSISUCCESS && this->GetOptions().IsDocumentAssignedToJob(name))
+            continue;
+
+        // check existence of the physical file:
+        if (BeFileName(file.GetDwgName().c_str(), true).DoesPathExist())
+            continue;
+
+        // need to delete this file - walk through all model mappings in the sync info:
+        DwgSyncInfo::ModelIterator  modelMaps(db, "DwgFileId=?");
+        modelMaps.GetStatement()->BindInt (1, file.GetSyncId().GetValue());
+        for (auto modelMap : modelMaps)
+            {
+            // delete elements in DgnModel:
+            DwgSyncInfo::ElementIterator elements(db, "DwgModelSyncInfoId=?");
+            elements.GetStatement()->BindInt(1, modelMap.GetDwgModelSyncInfoId().GetValue());
+            detector._DetectDeletedElements (*this, elements);
+
+            // delete DgnModel from db:
+            auto model = db.Models().GetModel (modelMap.GetModelId());
+            model->Delete();
+
+            // delele the model mapping from the sync info:
+            syncInfo.DeleteModel (modelMap.GetDwgModelSyncInfoId());
+            }
+        // delete the file mapping from the sync info:
+        syncInfo.DeleteFile (file.GetSyncId());
+        }
+
+    if (!detectorPresent)
+        detector._Cleanup (*this);
+
     return BSISUCCESS;
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE

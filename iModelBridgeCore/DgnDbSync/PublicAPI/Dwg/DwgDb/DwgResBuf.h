@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbSync/Dwg/DwgDb/DwgResBuf.h $
+|     $Source: PublicAPI/Dwg/DwgDb/DwgResBuf.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include    <DgnDbSync/Dwg/DwgDb/BasicTypes.h>
+#include    <Dwg/DwgDb/BasicTypes.h>
 
 BEGIN_DWGDB_NAMESPACE
 

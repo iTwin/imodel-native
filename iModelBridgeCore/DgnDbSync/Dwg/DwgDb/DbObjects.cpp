@@ -21,12 +21,21 @@ DWGDB_OBJECT_DEFINE_MEMBERS2 (SolidBackground)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Sun)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (VisualStyle)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Layout)
+DWGDB_OBJECT_DEFINE_MEMBERS2 (Group)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialFilter)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialIndex)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SortentsTable)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Xrecord)
 
-#ifdef DWGTOOLKIT_RealDwg
+#ifdef DWGTOOLKIT_OpenDwg
+#define ReturnVoidOrStatus(_name_)  { ##_name_##; return DwgDbStatus::Success; }
+#define ReturnBoolOrStatus(_name_)  { bool b = ##_name_##; return b ? DwgDbStatus::Success : DwgDbStatus::UnknownError; }
+
+#elif DWGTOOLKIT_RealDwg
+#define ReturnVoidOrStatus(_name_)  return ToDwgDbStatus(##_name_##)
+#define ReturnBoolOrStatus(_name_)  return ToDwgDbStatus(##_name_##)
+
+
 // An unpublished API in acdbxx.dll
 typedef Acad::ErrorStatus (*acdbGetPaperImageOriginFunc)(AcDbPlotSettings* p, double& x, double& y);
 static char s_acdbGetPaperImageOrigin[] = "?acdbGetPaperImageOrigin@@YA?AW4ErrorStatus@Acad@@PEAVAcDbPlotSettings@@AEAN1@Z";
@@ -161,7 +170,10 @@ DwgDbObjectIterator::~DwgDbObjectIterator ()
     {
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_objectIterator)
+        {
         delete m_objectIterator;
+        m_objectIterator = nullptr;
+        }
 #endif
     }
 bool            DwgDbObjectIterator::IsValid () const { return nullptr != m_objectIterator; }
@@ -178,7 +190,10 @@ DwgDbDictionaryIterator::~DwgDbDictionaryIterator ()
     {
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_dictionaryIterator)
+        {
         delete m_dictionaryIterator;
+        m_dictionaryIterator = nullptr;
+        }
 #endif
     }
 bool            DwgDbDictionaryIterator::IsValid () const { return nullptr != m_dictionaryIterator; }
@@ -221,9 +236,31 @@ DwgDbStatus     DwgDbDictionary::GetNameAt (DwgStringR outName, DwgDbObjectIdCR 
 #endif
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbDictionary::SetAt (DwgStringCR name, DwgDbObjectP object, DwgDbObjectIdP entryId)
+    {
+    DwgDbStatus     status = DwgDbStatus::NotSupported;
+    DwgDbObjectId   id;
+#ifdef DWGTOOLKIT_OpenDwg
+    id = T_Super::setAt (name, object);
+    status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus   es = T_Super::setAt (name.c_str(), object, id);
+    status = ToDwgDbStatus (es);
+#endif
+    if (entryId != nullptr)
+        *entryId = id;
+    return  status;
+    }
+DwgDbStatus     DwgDbDictionary::SetName (DwgStringCR old, DwgStringCR newn) { ReturnBoolOrStatus(T_Super::setName(old, newn)); }
+DwgDbStatus     DwgDbDictionary::Remove (DwgStringCR name) { ReturnVoidOrStatus(T_Super::remove(name)); }
+DwgDbStatus     DwgDbDictionary::Remove (DwgDbObjectIdCR id) { ReturnVoidOrStatus(T_Super::remove(id)); }
 bool            DwgDbDictionary::Has (DwgStringCR name) const { return T_Super::has(name); }
 bool            DwgDbDictionary::Has (DwgDbObjectIdCR id) const { return T_Super::has(id); }
-DwgDbDictionaryIterator DwgDbDictionary::GetIterator () const { return DwgDbDictionaryIterator(T_Super::newIterator()); }
+DwgDbDictionaryIteratorPtr DwgDbDictionary::GetIterator () const { return new DwgDbDictionaryIterator(T_Super::newIterator()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/16
@@ -766,7 +803,10 @@ DwgDbFilteredBlockIterator::~DwgDbFilteredBlockIterator ()
     {
 #ifdef DWGTOOLKIT_RealDwg
     if (nullptr != m_filteredBlockIterator)
+        {
         delete m_filteredBlockIterator;
+        m_filteredBlockIterator = nullptr;
+        }
 #endif
     }
 
@@ -798,12 +838,12 @@ bool            DwgDbFilteredBlockIterator::IsValid () const { return nullptr !=
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbFilteredBlockIterator  DwgDbSpatialIndex::NewIterator (DwgDbSpatialFilterCP filter) const
+DwgDbFilteredBlockIteratorPtr DwgDbSpatialIndex::NewIterator (DwgDbSpatialFilterCP filter) const
     {
 #ifdef DWGTOOLKIT_OpenDwg
-    return T_Super::newIterator(filter).get();
+    return new DwgDbFilteredBlockIterator(T_Super::newIterator(filter).get());
 #elif DWGTOOLKIT_RealDwg
-    return T_Super::newIterator(filter);
+    return new DwgDbFilteredBlockIterator(T_Super::newIterator(filter));
 #endif
     }
 
@@ -1013,3 +1053,184 @@ size_t  DwgDbXrefGraph::GetNodeCount () const { return T_Super::numNodes(); }
 bool    DwgDbXrefGraph::MarkUnresolvedTrees () { return T_Super::markUnresolvedTrees(); }
 bool    DwgDbXrefGraph::FindCycles (DwgDbXrefGraphNodeP start) { return T_Super::findCycles(start); }
 void    DwgDbXrefGraph::Reset () { T_Super::reset(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbGroupIterator::~DwgDbGroupIterator ()
+    {
+#ifdef DWGTOOLKIT_RealDwg
+    if (nullptr != m_groupIterator)
+        {
+        delete m_groupIterator;
+        m_groupIterator = nullptr;
+        }
+#endif
+    }
+bool            DwgDbGroupIterator::IsValid () const { return nullptr != m_groupIterator; }
+void            DwgDbGroupIterator::Next () { nullptr!=m_groupIterator && m_groupIterator->next(); }
+bool            DwgDbGroupIterator::Done () const { return nullptr!=m_groupIterator && m_groupIterator->done(); }
+DwgDbObjectId   DwgDbGroupIterator::GetObjectId () const { return nullptr!=m_groupIterator ? m_groupIterator->objectId() : DwgDbObjectId(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGroup::Clear ()
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::clear ();
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::clear());
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t  DwgDbGroup::GetAllEntityIds (DwgDbObjectIdArrayR idsOut) const
+    {
+    DWGDB_Type(ObjectIdArray)   ids;
+    auto count = T_Super::allEntityIds (ids);
+    for (uint32_t i = 0; i < count; i++)
+        idsOut.push_back (ids.at(i));
+    return  count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGroup::Append (DwgDbObjectIdArrayCR idsIn)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+    DWGDB_Type(ObjectIdArray)   ids;
+    if (Util::GetObjectIdArray(ids, idsIn) > 0)
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        T_Super::append (ids);
+        status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (T_Super::append(ids));
+#endif
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGroup::Prepend (DwgDbObjectIdArrayCR idsIn)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+    DWGDB_Type(ObjectIdArray) ids;
+    if (Util::GetObjectIdArray(ids, idsIn) > 0)
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        T_Super::prepend (ids);
+        status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (T_Super::prepend(ids));
+#endif
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGroup::InsertAt (size_t at, DwgDbObjectIdArrayCR idsIn)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+    DWGDB_Type(ObjectIdArray) ids;
+    if (Util::GetObjectIdArray(ids, idsIn) > 0)
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        T_Super::insertAt (static_cast<OdInt32>(at), ids);
+        status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (T_Super::insertAt(static_cast<Adesk::UInt32>(at), ids));
+#endif
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGroup::Remove (DwgDbObjectIdArrayCR idsIn)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+    DWGDB_Type(ObjectIdArray) ids;
+    if (Util::GetObjectIdArray(ids, idsIn) > 0)
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        T_Super::remove (ids);
+        status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (T_Super::remove(ids));
+#endif
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGroup::RemoveAt (size_t at, DwgDbObjectIdArrayCR idsIn)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+    DWGDB_Type(ObjectIdArray) ids;
+    if (Util::GetObjectIdArray(ids, idsIn) > 0)
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        T_Super::removeAt (static_cast<OdUInt32>(at), ids);
+        status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (T_Super::removeAt(static_cast<Adesk::UInt32>(at), ids));
+#endif
+        }
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus   DwgDbGroup::SetVisibility (DwgDbVisibility visibility)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+#ifdef DWGTOOLKIT_OpenDwg
+    T_Super::setVisibility (static_cast<OdDb::Visibility>(visibility));
+    status = DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::setVisibility(static_cast<AcDb::Visibility>(visibility)));
+#endif
+    return  status;
+    }
+
+DwgDbGroupIteratorPtr DwgDbGroup::GetIterator () { return new DwgDbGroupIterator(T_Super::newIterator()); }
+DwgString     DwgDbGroup::GetName () const { return T_Super::name(); }
+DwgString     DwgDbGroup::GetDescription () const { return T_Super::description(); }
+bool          DwgDbGroup::IsAnonymous () const { return T_Super::isAnonymous(); }
+bool          DwgDbGroup::IsSelectable () const { return T_Super::isSelectable(); }
+bool          DwgDbGroup::IsNotAccessible () const { return T_Super::isNotAccessible(); }
+bool          DwgDbGroup::Has (DwgDbEntityCP entity) const { return T_Super::has(entity); }
+size_t        DwgDbGroup::GetNumEntities () const { return T_Super::numEntities(); }
+DwgDbStatus   DwgDbGroup::GetIndex (DwgDbObjectIdCR id, size_t& out) const { ReturnVoidOrStatus(T_Super::getIndex(id, (DwgDbUInt32R)out)); }
+DwgDbStatus   DwgDbGroup::Append (DwgDbObjectIdCR id) { ReturnVoidOrStatus(T_Super::append(id)); }
+DwgDbStatus   DwgDbGroup::Prepend (DwgDbObjectIdCR id) { ReturnVoidOrStatus(T_Super::prepend(id)); }
+DwgDbStatus   DwgDbGroup::InsertAt (size_t at, DwgDbObjectIdCR id) { ReturnVoidOrStatus(T_Super::insertAt((DwgDbUInt32)at, id)); }
+DwgDbStatus   DwgDbGroup::Remove (DwgDbObjectIdCR id) { ReturnVoidOrStatus(T_Super::remove(id)); }
+DwgDbStatus   DwgDbGroup::RemoveAt (size_t at) { ReturnVoidOrStatus(T_Super::removeAt((DwgDbUInt32)at)); }
+DwgDbStatus   DwgDbGroup::Replace (DwgDbObjectIdCR oldId, DwgDbObjectIdCR newId) { ReturnVoidOrStatus(T_Super::replace(oldId, newId)); }
+DwgDbStatus   DwgDbGroup::Reverse () { ReturnVoidOrStatus(T_Super::reverse()); }
+DwgDbStatus   DwgDbGroup::SetName (DwgStringCR name) { ReturnVoidOrStatus(T_Super::setName(name.c_str())); }
+DwgDbStatus   DwgDbGroup::SetDescription (DwgStringCR descr) { ReturnVoidOrStatus(T_Super::setDescription(descr.c_str())); }
+DwgDbStatus   DwgDbGroup::SetColor (DwgCmColorCR color) { ReturnVoidOrStatus(T_Super::setColor(color)); }
+DwgDbStatus   DwgDbGroup::SetColorIndex (uint16_t color) { ReturnVoidOrStatus(T_Super::setColorIndex(color)); }
+DwgDbStatus   DwgDbGroup::SetLayer (DwgDbObjectIdCR layerId) { ReturnVoidOrStatus(T_Super::setLayer(layerId)); }
+DwgDbStatus   DwgDbGroup::SetLinetype (DwgDbObjectIdCR linetypeId) { ReturnVoidOrStatus(T_Super::setLinetype(linetypeId)); }
+DwgDbStatus   DwgDbGroup::SetLinetypeScale (double scale) { ReturnVoidOrStatus(T_Super::setLinetypeScale(scale)); }
+DwgDbStatus   DwgDbGroup::SetMaterial (DwgDbObjectIdCR materialId) { ReturnVoidOrStatus(T_Super::setMaterial(materialId)); }
+DwgDbStatus   DwgDbGroup::SetSelectable (bool selectable) { ReturnVoidOrStatus(T_Super::setSelectable(selectable)); }
+DwgDbStatus   DwgDbGroup::Transfer (size_t from, size_t to, size_t num) { ReturnVoidOrStatus(T_Super::transfer((DwgDbUInt32)from, (DwgDbUInt32)to, (DwgDbUInt32)num)); }

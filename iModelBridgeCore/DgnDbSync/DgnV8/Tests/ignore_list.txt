@@ -1,102 +1,12 @@
-    #----------------------------------------------------------------------------------------
-#   Tests that are ignored on purpose
-#----------------------------------------------------------------------------------------
-# to be executed by testing team after the build, for EC Data and views verifications. 
-DataValidation_Tests.* 
-DataValidationTests.*
 
-
-ConverterTests.UpdateWithDeletedParent
-
-    # TFS#812546
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 01/29/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1081): error: Value of: child1.IsValid()
-    # Actual: false
-    # Expected: true
-
-# newly added sheet composition tests
-SheetCompositionTests.SheetNameTest
-SheetCompositionTests.SheetSizeTest
-SheetCompositionTests.HasDgnAttachment    
-SheetCompositionTests.HasSheetBorder
-SheetCompositionTests.HasDrawingBoundary
-
-DrawingTests.Cyclic2dModels_AttachToSheet
-
-    # TFS#875991
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 4
-    # To be equal to: ndrawings
-    # Which is: 5
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\DrawingTests.cpp(1150): error:       Expected: 3
-    # To be equal to: SelectCountFromECClass(*db, "BisCore" "." "Drawing")
-    # Which is: 4
-
-DrawingTests.SheetProperties
-
-    # TFS#875991
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 2
-    # To be equal to: ndrawings
-    # Which is: 3
-
-DrawingTests.SheetScale_WithMultiAttachmentOfDiffStoredScale
-
-    # TFS#875991
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 5
-    # To be equal to: ndrawings
-    # Which is: 8
-
-DrawingTests.BorderAttachmenttoSheet
-
-    # TFS#875991
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 3
-    # To be equal to: ndrawings
-    # Which is: 4
-
+DrawingTests.Sheet_SheetAttachment
 DrawingTests.SheetScale_WithMultiAttachmentOfSameStoredScale
-
-    # TFS#875991
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 3
-    # To be equal to: ndrawings
-    # Which is: 5
-
-DrawingTests.Basic3dAttachment
-
-    # TFS#875992
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 2
-    # To be equal to: ndrawings
-    # Which is: 3
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
-    # Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    # Which is: 1
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    # Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    # Which is: 1
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 2
-    # To be equal to: ndrawings
-    # Which is: 3
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
-    # Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    # Which is: 1
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    # Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    # Which is: 1
+DrawingTests.SheetScale_WithMultiAttachmentOfDiffStoredScale
+DrawingTests.Attach3dmodeltoSheet
+DrawingTests.BorderAttachmenttoSheet
+DrawingTests.AttachDwg
+DrawingTests.AttachNameViewtoSheet
+DrawingTests.Cyclic2dModels_AttachToSheet
 
 DimensionTests.NotetoSheet
 
@@ -110,122 +20,6 @@ DimensionTests.NotetoSheet
     # To be equal to: idlist.size()
     # Which is: 3
 
-LevelTests.LevelMaskfromSheetAttachment_toViewAttachment
-
-    # TFS#875990
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\LevelTests.cpp(54): error:       Expected: numGeometricModelsExpected
-    # Which is: 5
-    # To be equal to: CountGeometricModels(*db)
-    # Which is: 6
-
-DrawingTests.Sheet_SheetAttachment
-    # [ RUN      ] DrawingTests.Sheet_SheetAttachment
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 3
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 2
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 4
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 3
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 3
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 2
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
-    #       Which is: 1
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 2
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
-    #       Which is: 3
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 2
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # [  FAILED  ] DrawingTests.Sheet_SheetAttachment (637 ms)
-
-DrawingTests.Attach3dmodeltoSheet
-    # [ RUN      ] DrawingTests.Attach3dmodeltoSheet
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    #       Which is: 1
-    # To be equal to: ndrawings
-    #       Which is: 2
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # [  FAILED  ] DrawingTests.Attach3dmodeltoSheet (594 ms)
-
-DrawingTests.AttachDwg
-    # [ RUN      ] DrawingTests.AttachDwg
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    #       Which is: 3
-    # To be equal to: ndrawings
-    #       Which is: 6
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 4
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 0
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 3
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 4
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # [  FAILED  ] DrawingTests.AttachDwg (1342 ms)
-
-DrawingTests.AttachNameViewtoSheet
-    # [ RUN      ] DrawingTests.AttachNameViewtoSheet
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    #       Which is: 1
-    # To be equal to: ndrawings
-    #       Which is: 2
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 2
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 1
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
-    #       Which is: 1
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 0
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
-    #       Which is: 1
-    # To be equal to: stmt->GetValueInt(0)
-    #       Which is: 0
-    # [  FAILED  ] DrawingTests.AttachNameViewtoSheet (602 ms)
-
-ECConversionTests.ECXA2d
-    # [ RUN      ] ECConversionTests.ECXA2d
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ECTests.cpp(537): error:       Expected: stmt.Step()
-    #       Which is: 101
-    # To be equal to: DbResult::BE_SQLITE_ROW
-    #       Which is: 100
-    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ECTests.cpp(540): error: Value of: bimel.IsValid()
-    #   Actual: false
-    # Expected: true
-    # [  FAILED  ] ECConversionTests.ECXA2d (985 ms)
-
 NamedGroupTests.NamedGroupOf2dElement
     # [ RUN      ] NamedGroupTests.NamedGroupOf2dElement
     # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\GeomTestHelper.cpp(54): error: Value of: elem1.IsValid()
@@ -236,11 +30,55 @@ NamedGroupTests.NamedGroupOf2dElement
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
 
-ECConversionTests.ImportInstanceWithCalculatedSpecUsingRelated
+ConverterTests.UseConverterAsLibrary
+DrawingTests.Basic3dAttachment
+DrawingTests.Attachments_With2dRootModel
+DrawingTests.Cyclic2dModels
+SheetCompositionTests.SheetNameTest
+SheetCompositionTests.SheetSizeTest
+SheetCompositionTests.HasDgnAttachment
+SheetCompositionTests.HasDrawingBoundary
+LevelTests.LevelMaskfromSheetAttachment_toViewAttachment
 
-    # TFS#928654
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/07/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ECTests.cpp(1444): error: Value of: found
-    # Actual: false
-    # Expected: true
-    # Should have found an instance using a WHERE criteria after update
+ConverterTests.ElementCRUDInTile
+
+    # VSTS#34354
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/19/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
+    # Which is: false
+    # To be equal to: expectUpdate
+    # Which is: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
+    # Which is: false
+    # To be equal to: expectUpdate
+    # Which is: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
+    # Which is: false
+    # To be equal to: expectUpdate
+    # Which is: true
+
+TransformTests.Test1
+
+    # VSTS#34355
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/19/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
+    # Which is: true
+    # To be equal to: expectUpdate
+    # Which is: false
+
+ConverterTests.ElementCRUDTiled
+
+    # VSTS#34354
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/19/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
+    # Which is: false
+    # To be equal to: expectUpdate
+    # Which is: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
+    # Which is: false
+    # To be equal to: expectUpdate
+    # Which is: true
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
+    # Which is: false
+    # To be equal to: expectUpdate
+    # Which is: true

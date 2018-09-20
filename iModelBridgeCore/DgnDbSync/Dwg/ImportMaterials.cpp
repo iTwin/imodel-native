@@ -25,10 +25,10 @@
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 USING_NAMESPACE_IMAGEPP
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 static const double     s_finishExponent = 0.016;
 static const double     s_finishFactor = 2.5;
@@ -104,7 +104,9 @@ public:
     // update existing material from DWG
     BentleyStatus       Update (RenderMaterialR out);
     }; // MaterialFactory
-END_DGNDBSYNC_DWG_NAMESPACE
+
+END_DWG_NAMESPACE
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
@@ -864,8 +866,8 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
     if (materialTable.IsNull())
         return  BSIERROR;
 
-    DwgDbDictionaryIterator iter = materialTable->GetIterator ();
-    if (!iter.IsValid())
+    DwgDbDictionaryIteratorPtr iter = materialTable->GetIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
         return  BSIERROR;
     
     this->SetStepName (ProgressMessage::STEP_IMPORTING_MATERIALS());
@@ -877,16 +879,16 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
     Utf8PrintfString  paletteName ("Palette-%ls", this->GetRootDwgFileName().GetFileNameAndExtension().c_str());
 
     uint32_t    count = 0;
-    for (; !iter.Done(); iter.Next())
+    for (; !iter->Done(); iter->Next())
         {
         // skip ByLayer and ByBlock materials
-        if (iter.GetObjectId() == materialByLayer || iter.GetObjectId() == materialByBlock)
+        if (iter->GetObjectId() == materialByLayer || iter->GetObjectId() == materialByBlock)
             continue;
 
-        DwgDbMaterialPtr    material(iter.GetObjectId(), DwgDbOpenMode::ForRead);
+        DwgDbMaterialPtr    material(iter->GetObjectId(), DwgDbOpenMode::ForRead);
         if (material.IsNull())
             {
-            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter.GetObjectId().ToAscii()).c_str());
+            this->ReportError (IssueCategory::Unknown(), Issue::CantOpenObject(), Utf8PrintfString("material ID=%ld", iter->GetObjectId().ToAscii()).c_str());
             continue;
             }
 

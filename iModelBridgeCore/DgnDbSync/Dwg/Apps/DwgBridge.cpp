@@ -5,12 +5,12 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnDbSync/Dwg/DwgBridge.h>
-#include    <DgnDbSync/Dwg/DwgHelper.h>
+#include    <Dwg/DwgBridge.h>
+#include    <Dwg/DwgHelper.h>
 #include    <iModelBridge/iModelBridgeSacAdapter.h>
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 // Use the same file names created by the makefile:
 static WCharCP      s_configFileName = L"DwgImporter.logging.config.xml";
@@ -25,7 +25,7 @@ static DwgBridge*   s_dwgBridgeInstance = nullptr;
 #endif
 
 
-BEGIN_DGNDBSYNC_DWG_NAMESPACE
+BEGIN_DWG_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -317,7 +317,8 @@ void    DwgBridge::_CloseSource (BentleyStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgBridge::_DetectDeletedDocuments()
     {
-    return m_importer->_DetectDeletedDocuments();
+    m_importer->_DetectDeletedDocuments();
+    return m_importer->WasAborted() ? BSIERROR : BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,7 +364,7 @@ BentleyStatus   DwgBridge::RunAsStandaloneExe (int argc, WCharCP argv[])
     return  status;
     }
 
-END_DGNDBSYNC_DWG_NAMESPACE
+END_DWG_NAMESPACE
 
 
 /*---------------------------------------------------------------------------------**//**

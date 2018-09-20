@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Docs/main.doxpage $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // __PUBLISH_SECTION_START__
@@ -23,8 +23,8 @@ Welcome to the DwgImporter API from <a href="http://www.bentley.com/">Bentley Sy
 <p>To develop an iModelBridge with DwgImporter SDK, you may also need to consult iModelBridge SDK Documentation.
 
 The main classes/namespaces are:
-- @ref BentleyApi::Dgn::DgnDbSync::Dwg::DwgImporter
-- @ref BentleyApi::Dgn::DgnDbSync::Dwg::DwgSyncInfo
-- @ref BentleyApi::Dgn::DgnDbSync::Dwg::DwgBridge
+- @ref BentleyApi::Dwg::DwgImporter
+- @ref BentleyApi::Dwg::DwgSyncInfo
+- @ref BentleyApi::Dwg::DwgBridge
 - @ref BentleyApi::DwgDb
 */

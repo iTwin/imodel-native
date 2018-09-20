@@ -9,7 +9,7 @@
 
 #include "../DwgImportInternal.h"
 
-USING_NAMESPACE_DGNDBSYNC_DWG
+USING_NAMESPACE_DWG
 
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
