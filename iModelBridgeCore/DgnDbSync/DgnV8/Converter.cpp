@@ -1607,7 +1607,7 @@ void Converter::ValidateJob()
 static bool createSpatialMapForDgnClientFx()
     {
     Bentley::WString configVar;
-    return (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP"))
+    return (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP"));
     }
 
 /*---------------------------------------------------------------------------------**//**
