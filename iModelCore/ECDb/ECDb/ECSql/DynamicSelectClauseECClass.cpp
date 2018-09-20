@@ -155,6 +155,15 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             if (typeInfo.HasExtendedType())
                 primProp->SetExtendedTypeName(typeInfo.GetExtendedTypeName().c_str());
 
+            if (!FeatureManager::IsAvailable(ctx.GetECDb(), Feature::SystemPropertiesHaveIdExtendedType) && selectClauseItemPropNameExp != nullptr && selectClauseItemPropNameExp->GetSystemPropertyInfo().IsId())
+                {
+                // In 4.0.0.2 files, the respective system property has already the extended type name Id. So it
+                // gets added to the dynamic property automatically by the above code. For older files
+                // we have to do that explicitly here.
+                BeAssert(primProp->GetType() == PRIMITIVETYPE_Long);
+                primProp->SetExtendedTypeName(EXTENDEDTYPENAME_Id);
+                }
+
             generatedPropertyP = primProp;
             break;
             }
