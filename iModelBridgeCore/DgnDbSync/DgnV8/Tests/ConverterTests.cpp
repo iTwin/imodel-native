@@ -556,7 +556,7 @@ static void ValidateModelRange (DgnDbR db, Utf8Char* modelName, double x0, doubl
     
     RefCountedPtr<GeometricModel3d> model = FindModel (db, modelName);
     ASSERT_TRUE (model.IsValid());
-    BentleyApi::AxisAlignedBox3d modelRange = model->QueryModelRange();
+    BentleyApi::AxisAlignedBox3d modelRange = model->QueryElementsRange();
 
     // Compare ranges. Ignore z values because QueryModelRange adds some depth (z = 1.0 or -1.0), which is irrelevant for us.
     bool areEqual = true;

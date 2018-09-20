@@ -20,18 +20,6 @@ struct ConverterNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
         return BentleyApi::SUCCESS;
         }
 
-    virtual NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType t, BentleyApi::Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGEBOX: %s\n", msg);
-        printf("<<NOTIFICATION MessageBox: %s >>\n", msg);
-        return NotificationManager::MESSAGEBOX_VALUE_Ok;
-        }
-
-    virtual void _OutputPrompt(BentleyApi::Utf8CP msg) override
-        { // Log this as an error because we cannot prompt while running a unit test!
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->errorv("PROMPT (IGNORED): %s\n", msg);
-        }
-
     virtual bool _GetLogSQLiteErrors() override 
         {
         return BentleyApi::NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(BentleyApi::NativeLogging::LOG_INFO);
