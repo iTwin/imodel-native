@@ -7,7 +7,6 @@
     "iModel"
   ],
   "description":  "iModelJs core internals",
-  "repository": {},
   "author": {
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
