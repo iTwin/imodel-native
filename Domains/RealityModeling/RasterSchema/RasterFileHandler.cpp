@@ -194,18 +194,10 @@ RasterFileModel::~RasterFileModel()
     //DEBUG_PRINTF("RasterFileModel Destroyed");
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootPtr RasterFileModel::_GetTileTree(Dgn::RenderContextR context)
-    {
-    return GetTileTree(context.GetRenderSystem());
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-Dgn::TileTree::RootPtr RasterFileModel::_CreateTileTree(Dgn::Render::SystemP renderSys)
+Dgn::Cesium::RootPtr RasterFileModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR output)
     {
     if (m_loadFileFailed)   // We already tried and failed to open the file. do not try again.
         return nullptr;
@@ -226,13 +218,9 @@ Dgn::TileTree::RootPtr RasterFileModel::_CreateTileTree(Dgn::Render::SystemP ren
         return nullptr;
         }
 
-    RasterRootPtr rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this), renderSys);
-    rasterRoot->SetPickable(true);
-    if (!rasterRoot.IsValid())
-        {  
+    RasterRootPtr rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this));
+    if (rasterRoot.IsNull())
         m_loadFileFailed = true;
-        return nullptr;
-        }
          
     return rasterRoot.get();
     }

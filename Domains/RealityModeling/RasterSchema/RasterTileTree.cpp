@@ -8,11 +8,7 @@
 #include "RasterInternal.h"
 #include "RasterTileTree.h"
 
-USING_NAMESPACE_TILETREE
-
-//static const uint32_t DRAW_FINER_DELTA = 2;
-//static const uint32_t DRAW_COARSER_DELTA = 6;
-
+USING_NAMESPACE_DGN_CESIUM
 
 //---------------------------------------------------------------------------------------------
 //-------------------------------- RasterRoot -------------------------------------------------
@@ -21,9 +17,8 @@ USING_NAMESPACE_TILETREE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-RasterRoot::RasterRoot(RasterModel& model, Utf8CP rootUrl, Dgn::Render::SystemP system)
-    :TileTree::TriMeshTree::Root(model, Transform::FromIdentity(), rootUrl, system),
-     m_model(model)
+RasterRoot::RasterRoot(RasterModel& model, Utf8CP rootUrl)
+    : Cesium::TriMeshTree::Root(model.GetDgnDb(), Transform::FromIdentity(), rootUrl), m_model(model)
     {
     }
 
@@ -48,21 +43,10 @@ void RasterRoot::GenerateResolution(bvector<Resolution>& resolution, uint32_t wi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform RasterRoot::_GetTransform(RenderContextR context) const
-    {
-    Transform depthTransfo;
-    m_model.ComputeDepthTransformation(depthTransfo, context);
-    return depthTransfo;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorCP RasterRoot::_GetClipVector() const
     {
     return m_model.GetClip().GetClipVector();
     }
-
 
 //---------------------------------------------------------------------------------------------
 //-------------------------------- RasterTile -------------------------------------------------
@@ -80,45 +64,23 @@ RasterTile::RasterTile(RasterRootR root, TileId const& id, RasterTileCP parent)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-Utf8String RasterTile::_GetTileCacheKey() const
+Utf8String RasterTile::_GetName() const
     {
     return Utf8PrintfString("%d/%d/%d", m_id.resolution, m_id.x, m_id.y);
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mark.Schlosser   12/2017
-//----------------------------------------------------------------------------------------
-bool RasterTile::_HasGraphics() const
+/*---------------------------------------------------------------------------------**//**
+* ensure that this Tile's range includes its child's range.
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void RasterTile::ExtendRange(DRange3dCR childRange) const
     {
-    if (!IsReady())
-        return false;
-    for (auto& mesh : m_meshes)
-        {
-        for (auto& graphic : mesh->GetGraphics())
-            {
-            if (graphic.IsValid())
-                return true;
-            }
-        }
-    return false;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-void RasterTile::_DrawGraphics(TileTree::DrawArgsR args) const
-    {
-    if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
+    if (childRange.IsContained(m_range))
         return;
 
-    BeAssert(IsReady());
-    for (auto& mesh : m_meshes)
-        {
-        for (auto& graphic : mesh->GetGraphics())
-            {
-            if (graphic.IsValid())
-                args.m_graphics.Add(*graphic);
-            }
-        }
+    const_cast<ElementAlignedBox3dR>(m_range).Extend(childRange);
+
+    if (nullptr != m_parent)
+        static_cast<RasterTile const*>(m_parent)->ExtendRange(childRange);
     }
 

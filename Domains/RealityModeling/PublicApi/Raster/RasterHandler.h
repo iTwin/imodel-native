@@ -9,9 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Raster/RasterTypes.h>
-#include <DgnPlatform/MeshTile.h>
-#include <DgnPlatform/TileTree.h>
-
+#include <DgnPlatform/CesiumTileTree.h>
 
 BEGIN_BENTLEY_RASTER_NAMESPACE
 
@@ -70,7 +68,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel, Dgn::Render::IGetTileTreeForPublishing
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
     BE_JSON_NAME(depthBias)
@@ -87,11 +85,6 @@ protected:
     
     //! Destruct a RasterModel object.
     ~RasterModel();
-    RasterRootP Load(Dgn::Render::SystemP renderSys) const;
-
-    virtual void _OnFitView(Dgn::FitContextR) override;
-
-    virtual AxisAlignedBox3d _QueryModelRange() const override;
 
     //This how we make our raster pick-able
 //    virtual void _DrawModel(Dgn::ViewContextR) override;
@@ -124,7 +117,6 @@ public:
 
     void SetDepthBias(double val) { BeAssert(IsParallelToGround()); m_depthBias = val; }
     double GetDepthBias() const { return m_depthBias; }
-    void ComputeDepthTransformation(TransformR transfo, Dgn::ViewContextR context) const;
 
     };
 

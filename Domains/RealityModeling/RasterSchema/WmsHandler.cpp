@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterInternal.h>
 #include <Raster/WmsHandler.h>
-#include "RasterTileTree.h"
-#include "WmsSource.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RASTER
@@ -214,36 +212,6 @@ WmsModel::~WmsModel()
     {
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootPtr WmsModel::_GetTileTree(Dgn::RenderContextR context)
-    {
-    return GetTileTree(context.GetRenderSystem());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
-//----------------------------------------------------------------------------------------
-Dgn::TileTree::RootPtr WmsModel::_CreateTileTree(Dgn::Render::SystemP renderSys)
-    {
-#if 0 // for testing. North east coast.
-    //http://ows.geobase.ca/wms/geobase_en?service=wms&version=1.1.1&request=GetCapabilities
-
-    WmsMap mapInfo("http://ows.geobase.ca/wms/geobase_en",
-                   DRange2d::From(-78.18, 43.83, -69.48, 49.45),
-                   "1.1.1",
-                   "elevation:cded50k,reference:hydro,reference:roads,boundaries:geopolitical,reference:boundaries,nrwn:track,reference:placenames:capitals10m",
-                   "EPSG:4269");
-   RasterRootPtr rasterRoot = WmsSource::Create(mapInfo, const_cast<WmsModel&>(*this), renderSys);
-#else
-    RasterRootPtr rasterRoot = WmsSource::Create(m_map, const_cast<WmsModel&>(*this), renderSys);
-    rasterRoot->SetPickable(true);
-#endif    
-
-    return rasterRoot.get();
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
@@ -277,9 +245,6 @@ WmsMap const& WmsModel::GetMap() const
 //----------------------------------------------------------------------------------------
 Http::HttpStatus WmsModel::GetLastHttpError() const
     {
-    if (m_root.IsValid())
-        return static_cast<WmsSource*>(m_root.get())->GetLastHttpError();
-
     return Http::HttpStatus::None;
     }
 
@@ -288,39 +253,8 @@ Http::HttpStatus WmsModel::GetLastHttpError() const
 //----------------------------------------------------------------------------------------
 Http::HttpStatus WmsModel::Authenticate(Http::Credentials const& credentials, Http::Credentials const& proxyCredentials)
     {
-    auto rasterRoot = Load(nullptr);
-    if (nullptr == rasterRoot)
-        return Http::HttpStatus::None;
-
-    Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
-    Http::Request request(rasterRoot->_ConstructTileResource(*rasterRoot->GetRootTile()));
-    request.SetResponseBody(responseBody);
-
-    if (credentials.IsValid())
-        request.SetCredentials(credentials);
-
-    if (proxyCredentials.IsValid())
-        request.SetProxyCredentials(proxyCredentials);
-
-    Http::Response response = request.Perform().get();
-
-    if (Http::ConnectionStatus::OK != response.GetConnectionStatus())
-        return Http::HttpStatus::None;
-
-    Http::HttpStatus status = response.GetHttpStatus();
-    if (Http::HttpStatus::OK == status)
-        {
-        // Save the credentials for the session.
-        m_credentials = credentials;
-        m_proxyCredentials = proxyCredentials;
-
-        // Stop all pending tiles if any. We will recreate a new root with the new credentials.
-        //TBD: Should we clear the cache? It matters only if the new users have access to a different set of tiles.
-        m_root = nullptr;
-        m_root = nullptr;
-        }
-
-    return status;
+    BeAssert(false);
+    return Http::HttpStatus::None;
     }
 
 

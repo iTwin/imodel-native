@@ -20,7 +20,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/image.h>
 #include <GeomJsonWireFormat/JsonUtils.h>
-#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/CesiumTileTree.h>
 #include <folly/BeFolly.h>
 
 

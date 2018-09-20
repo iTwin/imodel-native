@@ -77,8 +77,7 @@ protected:
 
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
-    Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP renderSys) override;
-    Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
+    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override;
 
     bool _IsParallelToGround() const override;
     

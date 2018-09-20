@@ -2,11 +2,13 @@
 |
 |     $Source: RasterSchema/RasterFileSource.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
+
+#include "RasterTileTree.h"
 
 BEGIN_BENTLEY_RASTER_NAMESPACE
 
@@ -20,13 +22,13 @@ protected:
     RasterFileModel&    m_model;
     Transform           m_physicalToSource;  //! Transformation from raster file true origin to a lower-left origin. In pixel unit.    
     DMap4d              m_physicalToWorld;   //! Including units change and reprojection approximation if any.
+    Cesium::ChildTiles  m_children;
 
-    RasterFileSource(RasterFileR rasterFile, RasterFileModel& model, Dgn::Render::SystemP system);
+    RasterFileSource(RasterFileR rasterFile, RasterFileModel& model);
     ~RasterFileSource();
-    Utf8CP _GetName() const override {return "RasterFile";}
 
 public:
-    static RasterFileSourcePtr Create(Utf8StringCR resolvedName, RasterFileModel& model, Dgn::Render::SystemP system);
+    static RasterFileSourcePtr Create(Utf8StringCR resolvedName, RasterFileModel& model);
 
     Render::Image QueryTile(TileId const& id, bool& alphaBlend);
 
@@ -44,31 +46,28 @@ public:
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  9/2016
     //=======================================================================================
-    struct RasterTileLoader : TileTree::TileLoader
+    struct RasterTileLoader : Cesium::Loader
         {
         Render::Image m_image;  // filled by _ReadFromSource
 
         BentleyStatus DoGetFromSource();
 
-        RasterTileLoader(TileTree::TileR tile, TileTree::TileLoadStatePtr loads, Utf8StringCR cacheKey, Dgn::Render::SystemP renderSys) : TileTree::TileLoader("", tile, loads, cacheKey, renderSys) {}
+        RasterTileLoader(Cesium::TileR tile, Cesium::LoadStateR loads, Cesium::OutputR output) : Cesium::Loader("", tile, output, loads) { }
             
         virtual ~RasterTileLoader(){}
         
-        RasterFileSourceR GetFileSource() { return static_cast<RasterFileSourceR>(m_tile->GetRootR()); }
+        RasterFileSourceR GetFileSource() { return static_cast<RasterFileSourceR>(m_tile->GetRoot()); }
 
         folly::Future<BentleyStatus> _GetFromSource() override;        
         BentleyStatus _LoadTile() override;
         };
-protected:
     
-public:
-    typedef RasterFileSource root_type;
 
     RasterFileTile(RasterFileSourceR root, TileId id, RasterFileTileCP parent);
 
-    TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
+    Cesium::ChildTiles const* _GetChildren(bool load) const override;
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override { return new RasterTileLoader(*this, loads, "", renderSys); }
+    Cesium::LoaderPtr _CreateLoader(Cesium::LoadStateR loads, Cesium::OutputR output) override { return new RasterTileLoader(*this, loads, output); }
 };
 
 END_BENTLEY_RASTER_NAMESPACE

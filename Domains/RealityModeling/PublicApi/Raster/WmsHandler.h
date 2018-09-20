@@ -91,17 +91,13 @@ protected:
 
     bool _IsParallelToGround() const override { return true; }
 
-    Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP renderSys) override;
-    Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
+    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override { return nullptr; } // publishing not permitted...
 
     //! Create a WmsModel object, in preparation for loading it from the DgnDb. Called by MODELHANDLER_DECLARE_MEMBERS. 
     WmsModel(CreateParams const& params);
 
     //! Create a new WmsModel object to be stored in the DgnDb.
     WmsModel(CreateParams const& params, WmsMap const& prop);
-
-    // Do not permit TilePublisher to copy the server data to published tiles...
-    bool _AllowPublishing() const override { return false; }
 public:
     RASTER_EXPORT WmsMap const& GetMap() const;    
 

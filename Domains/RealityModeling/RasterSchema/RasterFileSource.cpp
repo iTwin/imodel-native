@@ -8,7 +8,7 @@
 #include "RasterInternal.h"
 #include "RasterFileSource.h"
 
-USING_NAMESPACE_TILETREE
+USING_NAMESPACE_DGN_CESIUM
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
@@ -66,20 +66,6 @@ BentleyStatus RasterFileTile::RasterTileLoader::DoGetFromSource()
     bool enableAlphaBlend = false;
     m_image = GetFileSource().QueryTile(rasterTile.GetTileId(), enableAlphaBlend); //&&MM validate that we are not copying bytes for nothing.
     
-#ifndef NDEBUG  // debug build only.
-    static bool s_missingTilesInRed = false;
-    if (s_missingTilesInRed && !m_image.IsValid())
-        {
-        ByteStream data(256 * 256 * 3);
-        Byte red[3] = {255,0,0};
-        for (uint32_t pixel = 0; pixel < 256 * 256; ++pixel)
-            memcpy(data.GetDataP() + pixel * 3, red, 3);
-
-        m_image = Render::Image(256, 256, std::move(data), Render::Image::Format::Rgb);
-        enableAlphaBlend = false;
-        }
-#endif  
-
     return m_image.IsValid() ? SUCCESS : ERROR;
     }
 
@@ -94,15 +80,12 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
     auto& root = rasterTile.GetRoot();
 
-    Render::Texture::CreateParams params;
-    params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
-    auto texture = GetRenderSystem()->_CreateTexture(m_image, root.GetDgnDb(), params);
+    auto texture = GetOutput().CreateTexture(m_image);
 
-    // ###TODO: is this needed?  auto gfParams = Render::GraphicParams::FromSymbology(ColorDef::White(), ColorDef::White(), 0);
-    Dgn::TileTree::TriMeshTree::TriMesh::CreateParams geomParams;
-    FPoint3d fpts[4]; // local storage for floating point corners
-    geomParams.FromTile(*texture, rasterTile.GetCorners(), fpts, root.GetDgnDb()); // ###TODO: gfParams?
-    root.CreateGeometry(rasterTile.m_meshes, geomParams, GetRenderSystem());
+    Cesium::TriMeshTree::TriMesh::CreateParams geomParams;
+    FPoint3d fpts[4];
+    geomParams.FromTile(*texture, rasterTile.GetCorners(), fpts);
+    root.CreateGeometry(rasterTile.m_meshes, geomParams, GetOutput());
 
     return SUCCESS;
     };
@@ -113,14 +96,14 @@ BentleyStatus RasterFileTile::RasterTileLoader::_LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-RasterFileSourcePtr RasterFileSource::Create(Utf8StringCR resolvedName, RasterFileModel& model, Dgn::Render::SystemP system)
+RasterFileSourcePtr RasterFileSource::Create(Utf8StringCR resolvedName, RasterFileModel& model)
     {
     // Open raster file
     auto rasterFile = RasterFile::Create(resolvedName);
     if (rasterFile.IsNull())
         return nullptr;  // Can't create model; probably that file name is invalid.
         
-    return new RasterFileSource(*rasterFile, model, system);
+    return new RasterFileSource(*rasterFile, model);
     }
 
 //----------------------------------------------------------------------------------------
@@ -135,10 +118,8 @@ RasterFileSource::~RasterFileSource()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-RasterFileSource::RasterFileSource(RasterFileR rasterFile, RasterFileModel& model, Dgn::Render::SystemP system)
-    :RasterRoot(model, ""/*rootUrl*/, system),
-     m_rasterFile(&rasterFile),
-     m_model(model)
+RasterFileSource::RasterFileSource(RasterFileR rasterFile, RasterFileModel& model)
+    :RasterRoot(model, ""/*rootUrl*/), m_rasterFile(&rasterFile), m_model(model)
     {  
     Point2d sizePixels;
     m_rasterFile->GetSize(&sizePixels);
@@ -273,32 +254,34 @@ RasterFileTile::RasterFileTile(RasterFileSourceR root, TileId id, RasterFileTile
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-TileTree::Tile::ChildTiles const* RasterFileTile::_GetChildren(bool load) const
+Cesium::ChildTiles const* RasterFileTile::_GetChildren(bool load) const
     {
-    if (!_HasChildren()) // is this is the highest resolution tile?
+    if (!HasChildren()) // is this is the highest resolution tile?
         return nullptr;
 
     if (load && m_children.empty())
         {
+        auto& root = (RasterFileSource&)m_root;
+
         // this Tile has children, but we haven't created them yet. Do so now
-        RasterRoot::Resolution const& childrenResolution = ((root_type&)m_root).GetResolution(m_id.resolution - 1);
+        RasterRoot::Resolution const& childrenResolution = root.GetResolution(m_id.resolution - 1);
 
         // Upper-Left child, we always have one 
         TileId childUpperLeft(m_id.resolution - 1, m_id.x << 1, m_id.y << 1);
-        m_children.push_back(new RasterFileTile((root_type&)m_root, childUpperLeft, this));
+        m_children.push_back(new RasterFileTile(root, childUpperLeft, this));
 
         // Upper-Right
         if (childUpperLeft.x + 1 < childrenResolution.GetTileCountX())
             {
             TileId childUpperRight(childUpperLeft.resolution, childUpperLeft.x + 1, childUpperLeft.y);
-            m_children.push_back(new RasterFileTile((root_type&)m_root, childUpperRight, this));
+            m_children.push_back(new RasterFileTile(root, childUpperRight, this));
             }
 
         // Lower-left
         if (childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
             {
             TileId childLowerLeft(childUpperLeft.resolution, childUpperLeft.x, childUpperLeft.y + 1);
-            m_children.push_back(new RasterFileTile((root_type&)m_root, childLowerLeft, this));
+            m_children.push_back(new RasterFileTile(root, childLowerLeft, this));
             }
 
         // Lower-Right
@@ -306,7 +289,7 @@ TileTree::Tile::ChildTiles const* RasterFileTile::_GetChildren(bool load) const
             childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
             {
             TileId childLowerRight(childUpperLeft.resolution, childUpperLeft.x + 1, childUpperLeft.y + 1);
-            m_children.push_back(new RasterFileTile((root_type&)m_root, childLowerRight, this));
+            m_children.push_back(new RasterFileTile(root, childLowerRight, this));
             }
         }
 

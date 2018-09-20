@@ -2,13 +2,13 @@
 |
 |     $Source: RasterSchema/RasterTileTree.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/CesiumTileTree.h>
 
 struct TileQuery;
 
@@ -40,7 +40,7 @@ struct TileId
 //! The root of a multi-resolution raster.
 // @bsiclass                                                    Mathieu.Marchand  9/2016
 //=======================================================================================
-struct RasterRoot : Dgn::TileTree::TriMeshTree::Root
+struct RasterRoot : Dgn::Cesium::TriMeshTree::Root
 {
 public:
     //=======================================================================================
@@ -84,11 +84,9 @@ protected:
 
     bvector<Resolution> m_resolution;
 
-    Utf8CP _GetName() const override { return m_rootResource.c_str(); }
-    Transform _GetTransform(Dgn::RenderContextR context) const override;
     Dgn::ClipVectorCP _GetClipVector() const override;
 public:
-    RasterRoot(RasterModel& model, Utf8CP rootUrl, Dgn::Render::SystemP system);
+    RasterRoot(RasterModel& model, Utf8CP rootUrl);
     ~RasterRoot() {ClearAllTiles();}
 
     RasterModel& GetModel() { return m_model; }
@@ -112,39 +110,31 @@ public:
 //! A raster tile. May or may not have its graphics loaded.
 // @bsiclass                                                    Mathieu.Marchand  9/2016
 //=======================================================================================
-struct RasterTile : Dgn::TileTree::Tile
+struct RasterTile : Dgn::Cesium::Tile
 {
 protected:
+    mutable Dgn::Cesium::ChildTiles m_children;
     TileId m_id;                                            //! tile id 
     Dgn::Render::GraphicBuilder::TileCorners m_corners;    //! 4 corners of tile, in world coordinates
-    Dgn::TileTree::TriMeshTree::TriMeshList m_meshes;
-
+    Dgn::Cesium::TriMeshTree::TriMeshList m_meshes;
     bool m_reprojected = true;                              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
-
     double m_maxSize = 362 / 2;                             //! the maximum size, in pixels, for a bounding sphere radius, that this Tile should occupy on the screen
     
+    void ExtendRange(DRange3dCR childRange) const;
 public:
     friend TileQuery;
     
     RasterTile(RasterRootR root, TileId const& id, RasterTileCP parent);
 
     RasterRootR GetRoot() { return static_cast<RasterRootR>(m_root); }
-
     TileId GetTileId() const { return m_id; }
+    bool HasChildren() const { return m_id.resolution > 0; }
 
     //! 4 corners of tile, in world coordinates
     Dgn::Render::GraphicBuilder::TileCorners const& GetCorners() const {return m_corners;}
 
-    bool _HasGraphics() const override;
 
-    bool _HasChildren() const override { return m_id.resolution > 0; }
-
-    void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
-
-    void _Invalidate() override { BeAssert(false); }
-
-    Utf8String _GetTileCacheKey() const override;
-
+    Utf8String _GetName() const override;
     virtual double _GetMaximumSize() const override 
         {
         static double s_qualityFactor = 1.15; // 1.0 is full quality.

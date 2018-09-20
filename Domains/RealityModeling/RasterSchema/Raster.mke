@@ -2,7 +2,7 @@
 #
 #     $Source: RasterSchema/Raster.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -37,13 +37,12 @@ rasterDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(RasterPublicApiSrc)RasterDomain.h                 \
                                   $(RasterPublicApiSrc)RasterFileHandler.h            \
                                   $(RasterPublicApiSrc)WmsHandler.h             \
-                                  $(BuildContext)PublicAPI/DgnPlatform/TileTree.h
+                                  $(BuildContext)PublicAPI/DgnPlatform/CesiumTileTree.h
 
 rasterDisplayDepends =  $(SrcRaster)RasterTileTree.h
 
 wmsDepends    = $(rasterDepends) \
-                $(rasterDisplayDepends) \
-                $(SrcRaster)WmsSource.h
+                $(rasterDisplayDepends)
                         
 rasterFileDepends    =  $(rasterDepends) \
                         $(rasterDisplayDepends) \
@@ -82,8 +81,6 @@ $(o)RasterDomain$(oext)         : $(SrcRaster)RasterDomain.cpp        $(rasterDe
 $(o)RasterTileTree$(oext)       : $(SrcRaster)RasterTileTree.cpp      $(rasterDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
 $(o)WmsHandler$(oext)           : $(SrcRaster)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
-
-$(o)WmsSource$(oext)            : $(SrcRaster)WmsSource.cpp           $(wmsDepends) ${MultiCompileDepends}
 
 $(o)RasterFile$(oext)           : $(SrcRaster)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
 
