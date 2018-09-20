@@ -1276,7 +1276,12 @@ NavNodesProviderPtr NodesCache::_GetDataSource(HierarchyLevelInfo const& info, b
 NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& info, bool removeIfInvalid) const
     {
     // Check if datasource exists
-    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetLocale().c_str(), info.GetVirtualParentNodeId(), true);
+    DataSourceInfo dsInfo; 
+    if (nullptr != info.GetVirtualParentNodeId())
+        dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetLocale().c_str(), info.GetVirtualParentNodeId(), true);
+    else
+        dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetLocale().c_str(), info.GetPhysicalParentNodeId(), false);
+
     if (!dsInfo.IsValid())
         return nullptr;
 
@@ -1295,7 +1300,7 @@ NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& info, bool 
 
     NavNodesProviderContextPtr context = m_contextFactory.Create(*connection, info.GetRulesetId().c_str(), info.GetLocale().c_str(),
         info.GetVirtualParentNodeId(), nullptr, IsUpdatesDisabled(info));
-    return context.IsValid() ? CachedVirtualNodeChildrenProvider::Create(*context, m_db, m_statements) : nullptr;
+    return context.IsValid() ? CachedVirtualNodeChildrenProvider::Create(*context, dsInfo, m_db, m_statements) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

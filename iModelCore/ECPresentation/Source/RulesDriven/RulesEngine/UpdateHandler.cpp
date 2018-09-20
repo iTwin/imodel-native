@@ -747,7 +747,20 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
 void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToCustomize, NavNodesProviderCR newNodeProvider) const
     {
     bool nodeChanged = false;
-    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetDataSourceInfo(), newNodeProvider.GetContext());
+
+    DataSourceInfo dsInfo = newNodeProvider.GetDataSourceInfo();
+    if (0 == dsInfo.GetDataSourceId())
+        {
+        DataSourceInfo ds(newNodeProvider.GetContext().GetConnection().GetId(),
+            newNodeProvider.GetContext().GetRuleset().GetRuleSetId(),
+            newNodeProvider.GetContext().IsLocalizationContext() ? newNodeProvider.GetContext().GetLocale() : "",
+            newNodeProvider.GetContext().GetPhysicalParentNodeId(), newNodeProvider.GetContext().GetVirtualParentNodeId());
+
+        NavNodesProviderCPtr dataSourceProvider = m_nodesCache.GetDataSource(ds, false);
+        dsInfo = dataSourceProvider->GetDataSourceInfo();
+        }
+    
+    DataSourceRelatedSettingsUpdater updater(dsInfo, newNodeProvider.GetContext());
 
     // if the old node was customized, we have to customize the new one as well;
     // otherwise the comparison is incorrect

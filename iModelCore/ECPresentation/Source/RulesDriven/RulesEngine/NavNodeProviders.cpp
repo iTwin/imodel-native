@@ -1555,9 +1555,10 @@ CachedStatementPtr CachedHierarchyLevelProvider::_GetCountStatement() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedVirtualNodeChildrenProvider::CachedVirtualNodeChildrenProvider(NavNodesProviderContextCR context, Db& cache, StatementCache& statements)
+CachedVirtualNodeChildrenProvider::CachedVirtualNodeChildrenProvider(NavNodesProviderContextCR context, DataSourceInfo dsInfo, Db& cache, StatementCache& statements)
     : SQLiteCacheNodesProvider(context, cache, statements)
     {
+    SetDataSourceInfo(dsInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**

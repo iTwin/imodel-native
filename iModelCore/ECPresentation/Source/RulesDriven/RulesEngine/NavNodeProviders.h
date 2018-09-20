@@ -554,16 +554,16 @@ public:
 struct CachedVirtualNodeChildrenProvider : SQLiteCacheNodesProvider
 {
 private:
-    CachedVirtualNodeChildrenProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&);
+    CachedVirtualNodeChildrenProvider(NavNodesProviderContextCR, DataSourceInfo dsInfo, BeSQLite::Db&, BeSQLite::StatementCache&);
 
 protected:
     BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
     BeSQLite::CachedStatementPtr _GetCountStatement() const override;
 
 public:
-    static RefCountedPtr<CachedVirtualNodeChildrenProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements)
+    static RefCountedPtr<CachedVirtualNodeChildrenProvider> Create(NavNodesProviderContextCR context, DataSourceInfo dsInfo, BeSQLite::Db& cache, BeSQLite::StatementCache& statements)
         {
-        return new CachedVirtualNodeChildrenProvider(context, cache, statements);
+        return new CachedVirtualNodeChildrenProvider(context, dsInfo, cache, statements);
         }
 };
 
