@@ -32,14 +32,16 @@ enum class Feature
     {
     ECVersions,
     NamedEnumerators,
-    UnitsAndFormats
+    UnitsAndFormats,
+    SystemPropertiesHaveIdExtendedType // corresponds to ECDbSystem schema version 5.0.1 or newer
     };
 
 //defines the minimum profile versions each feature requires
 #define FEATURE_MINIMUMVERSIONS { \
     {Feature::ECVersions, ProfileVersion(4, 0, 0, 2)}, \
     {Feature::NamedEnumerators, ProfileVersion(4, 0, 0, 2)}, \
-    {Feature::UnitsAndFormats, ProfileVersion(4, 0, 0, 2)} \
+    {Feature::UnitsAndFormats, ProfileVersion(4, 0, 0, 2)}, \
+    {Feature::SystemPropertiesHaveIdExtendedType, ProfileVersion(4, 0, 0, 2)} \
     }
 
 //=======================================================================================
