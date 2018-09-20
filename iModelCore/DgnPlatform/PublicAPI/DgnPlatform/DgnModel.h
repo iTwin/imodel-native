@@ -979,7 +979,7 @@ public:
     void InitLastElementModifiedTime(); //!< @private
 
     //! If this model supports producing Cesium 3D tiles, return a root of such a tile tree. The default implementation returns nullptr.
-    DGNPLATFORM_EXPORT virtual Cesium::RootPtr _CreateCesiumTileTree(Cesium::OutputR output);
+    DGNPLATFORM_EXPORT virtual Cesium::RootPtr _CreateCesiumTileTree();
 };
 
 //=======================================================================================

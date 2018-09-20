@@ -58,7 +58,7 @@ struct Texture : Render::Texture
 //=======================================================================================
 struct Output : RefCountedBase, NonCopyableClass
 {
-    virtual void _AddBatch(DRange3dCR range) = 0;
+    virtual void _AddBatch(DRange3dCR range, Render::FeatureTable&& features) = 0;
     virtual void _AddTriMesh(Render::TriMeshArgsCR) = 0;
     virtual void _AddPointCloud(Render::PointCloudArgsCR) = 0;
 
@@ -115,13 +115,13 @@ public:
     virtual Utf8String _GetName() const = 0;
     virtual double _GetMaximumSize() const = 0;
     virtual ChildTilesCP _GetChildren(bool create) const = 0;
-    virtual LoaderPtr _CreateLoader(LoadStateR) = 0;
+    virtual LoaderPtr _CreateLoader(LoadStateR, OutputR) = 0;
 };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/18
 //=======================================================================================
-struct LoadState : ICancellationToken, RefCountedBase, NonCopyableClass
+struct LoadState : RefCountedBase, NonCopyableClass
 {
 private:
     // Because ICancellationToken has to be passed around as a shared_ptr...
@@ -200,12 +200,11 @@ protected:
     DgnDbR m_db;
     Transform m_location;
     Utf8String m_rootResource;
-    OutputPtr m_output;
     mutable BeConditionVariable m_cv;
     mutable std::set<LoadStatePtr, LoadState::PtrComparator> m_activeLoads;
     bool m_isHttp;
 
-    DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootResource, OutputR output);
+    DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP rootResource);
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
@@ -217,14 +216,13 @@ public:
     DgnDbR GetDgnDb() const { return m_db; }
     TilePtr GetRootTile() const { return m_rootTile; }
     ElementAlignedBox3d GetRange() const { BeAssert(m_rootTile.IsValid()); return m_rootTile->GetRange(); }
-    OutputR GetOutput() const { return *m_output; }
     bool IsHttp() const { return m_isHttp; }
 
     TransformCR GetLocation() const { return m_location; }
     void SetLocation(TransformCR location) { m_location = location; }
 
     virtual Utf8String _ConstructTileResource(TileCR tile) const { return m_rootResource + tile._GetName(); }
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, LoadStateR loads);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, LoadStateR loads, OutputR output);
 
     void StartTileLoad(LoadStateR) const;
     void DoneTileLoad(LoadStateR) const;
@@ -241,16 +239,17 @@ struct Loader : RefCountedBase, NonCopyableClass
 protected:
     Utf8String m_resourceName;
     TilePtr m_tile;
+    OutputPtr m_output;
     LoadStatePtr m_loads;
     StreamBuffer m_tileBytes;
     Utf8String m_contentType;
 
-    Loader(Utf8StringCR resourceName, TileR tile, LoadStateR loads) : m_resourceName(resourceName), m_tile(&tile), m_loads(&loads) { }
+    Loader(Utf8StringCR resourceName, TileR tile, OutputR output, LoadStateR loads) : m_resourceName(resourceName), m_tile(&tile), m_output(&output), m_loads(&loads) { }
 
     BentleyStatus LoadTile();
 public:
     bool IsCanceledOrAbandoned() const { return m_loads->IsCanceled() || m_tile->IsAbandoned(); }
-    OutputR GetOutput() const { return m_tile->GetRoot().GetOutput(); }
+    OutputR GetOutput() const { return *m_output; }
 
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
     virtual BentleyStatus _LoadTile() = 0;

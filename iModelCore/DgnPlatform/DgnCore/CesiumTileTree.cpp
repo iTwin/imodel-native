@@ -16,7 +16,7 @@ BEGIN_DGN_CESIUM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, OutputR output) : m_db(db), m_location(location), m_output(&output)
+Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource) : m_db(db), m_location(location)
     {
     // unless a root directory is specified, we assume it's http.
     m_isHttp = true;
@@ -120,7 +120,7 @@ void Root::CancelAllTileLoads()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStateR loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStateR loads, OutputR output)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -128,7 +128,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStateR loads)
         return ERROR;
         }
 
-    auto loader = tile._CreateLoader(loads);
+    auto loader = tile._CreateLoader(loads, output);
     if (loader.IsNull())
         return ERROR;   
     
