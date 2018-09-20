@@ -860,6 +860,30 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                 Richard.Bois     08/2018
+//----------------------------------------------------------------------------------------
+bool ScalableMeshModel::AllowPublishing() const
+    {
+    return m_smPtr.IsValid() && m_smPtr->IsCesium3DTiles() && !m_textureInfo->IsUsingBingMap();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Richard.Bois     08/2018
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir) const
+    {
+    if (!AllowPublishing())
+        return;
+
+    if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir))
+        {
+        BeFileName oldRootFile = outputDir;
+        oldRootFile.AppendToPath(L"n_0.json");
+        BeFileName::BeMoveFile(oldRootFile, outFileName);
+        }
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::CloseFile()
