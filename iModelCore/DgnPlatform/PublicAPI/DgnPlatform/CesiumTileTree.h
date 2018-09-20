@@ -16,6 +16,7 @@
 #include <Bentley/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
 #include <folly/futures/Future.h>
+#include <forward_list>
 
 #define USING_NAMESPACE_DGN_CESIUM using namespace BentleyApi::Dgn::Cesium;
 
@@ -70,7 +71,7 @@ struct Output : RefCountedBase, NonCopyableClass
 
     Render::TexturePtr CreateTexture(Render::ImageSource&& source) const
         {
-        bool hasAlpha = source.GetFormat() == ImageSource::Format::Png;
+        bool hasAlpha = source.GetFormat() == Render::ImageSource::Format::Png;
         Render::Image image(source, hasAlpha ? Render::Image::Format::Rgba : Render::Image::Format::Rgb);
         return new Texture(std::move(source), image.GetWidth(), image.GetHeight());
         }
@@ -98,6 +99,7 @@ public:
     ElementAlignedBox3dCR GetRange() const { return m_range; }
     RootR GetRoot() { return m_root; }
     RootCR GetRoot() const { return m_root; }
+    TileCP GetParent() const { return m_parent; }
 
     bool IsNotLoaded() const { return LoadStatus::NotLoaded == GetLoadStatus(); }
     bool IsQueued() const { return LoadStatus::Queued == GetLoadStatus(); }
@@ -136,8 +138,10 @@ private:
 
     TileCPtr m_tile;
     std::shared_ptr<CancellationToken> m_cancellationToken;
-public:
+
     explicit LoadState(TileCR tile) : m_tile(&tile), m_cancellationToken(std::make_shared<CancellationToken>()) { }
+public:
+    static LoadStatePtr Create(TileCR tile) { return new LoadState(tile); }
 
     bool IsCanceled() const { return m_cancellationToken->IsCanceled(); }
     void SetCanceled() { m_cancellationToken->SetCanceled(); }
@@ -223,6 +227,7 @@ public:
 
     virtual Utf8String _ConstructTileResource(TileCR tile) const { return m_rootResource + tile._GetName(); }
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, LoadStateR loads, OutputR output);
+    virtual ClipVectorCP _GetClipVector() const { return nullptr; }
 
     void StartTileLoad(LoadStateR) const;
     void DoneTileLoad(LoadStateR) const;
@@ -264,6 +269,94 @@ public:
 
     folly::Future<BentleyStatus> Perform();
 };
+
+//=======================================================================================
+//! Tiles for reality models typically consist of one or more large textured meshes.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+namespace TriMeshTree
+{
+//=======================================================================================
+//! Creates a Render::GraphicPtr created from the mesh, and (for pickable tiles)
+//! holds the data required to describe the mesh for picking.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct TriMesh : RefCountedBase, NonCopyableClass
+{
+    struct CreateParams
+    {
+        int32_t m_numIndices = 0;
+        int32_t const* m_vertIndex = nullptr;
+        int32_t m_numPoints = 0;
+        FPoint3d const* m_points = nullptr;
+        FPoint3d const* m_normals = nullptr;
+        FPoint2d const* m_textureUV = nullptr;
+        Render::TexturePtr m_texture;
+
+        Render::QPoint3dList QuantizePoints() const;
+        Render::OctEncodedNormalList QuantizeNormals() const;
+        DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
+        DGNPLATFORM_EXPORT void FromTile(Render::TextureCR tile, Render::GraphicBuilder::TileCorners const& corners, FPoint3d* fpts);
+    };
+protected:
+    Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
+    Render::OctEncodedNormalList m_normals;
+    bvector<FPoint2d> m_textureUV;
+    bvector<int32_t> m_indices;
+
+    DGNPLATFORM_EXPORT Render::TriMeshArgs CreateTriMeshArgs(Render::TextureP texture, FPoint2d const* textureUV) const;
+public:
+    DGNPLATFORM_EXPORT TriMesh(CreateParams const&, OutputR output);
+    TriMesh() { }
+
+    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
+    bool IsEmpty() const {return m_points.empty();}
+};
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TriMesh);
+DEFINE_REF_COUNTED_PTR(TriMesh);
+
+typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
+
+//=======================================================================================
+//! The root of a TriMeshTree
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct Root : Cesium::Root
+{
+    DEFINE_T_SUPER(Cesium::Root);
+protected:
+    Root(DgnDbR db, TransformCR location, Utf8CP sceneFile) : T_Super(db, location, sceneFile) { }
+
+    void ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, OutputR output);
+public:
+    DGNPLATFORM_EXPORT void CreateGeometry(TriMeshList& triMeshList, TriMesh::CreateParams const& geomParams, OutputR output);
+};
+
+//=======================================================================================
+//! A TriMeshTree tile.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct Tile : Cesium::Tile
+{
+    DEFINE_T_SUPER(Cesium::Tile);
+
+protected:
+    double m_maxDiameter;
+    double m_factor=1.0;
+    ChildTiles m_children;
+    TriMeshList m_meshes;
+
+    Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : T_Super(root, parent), m_maxDiameter(maxDiameter) { }
+
+    ChildTiles const* _GetChildren(bool) const override {return IsReady() ? &m_children : nullptr;}
+    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
+public:
+    TriMeshList& GetGeometry() {return m_meshes;}
+    void ClearGeometry() {m_meshes.clear();}
+    Root& GetTriMeshRoot() {return static_cast<Root&>(GetRoot());}
+};
+} // namespace TriMeshTree
 
 //=======================================================================================
 // @bsistruct                                                       Ray.Bentley     08/2017

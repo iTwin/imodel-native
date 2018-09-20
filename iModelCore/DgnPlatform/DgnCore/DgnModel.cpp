@@ -2088,7 +2088,7 @@ uint64_t GeometricModel::GetLastElementModifiedTime() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Cesium::RootPtr GeometricModel::_CreateCesiumTileTree()
+Cesium::RootPtr GeometricModel::_CreateCesiumTileTree(Cesium::OutputR)
     {
     return nullptr;
     }

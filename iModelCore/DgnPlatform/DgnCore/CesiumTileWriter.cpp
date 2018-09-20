@@ -192,7 +192,7 @@ static folly::Future<BentleyStatus> requestTile(Context context, Cesium::OutputR
     {
     if (context.m_inputTile->IsNotLoaded())
         {
-        auto loadState = new Cesium::LoadState(*context.m_inputTile);
+        auto loadState = Cesium::LoadState::Create(*context.m_inputTile);
         Cesium::OutputPtr pOutput(&output);
         return context.m_requestTileQueue->Push([=]()
             {
@@ -258,7 +258,8 @@ static FutureWriteStatus generateChildTiles (WriteStatus parentStatus, Context c
 +---------------+---------------+---------------+---------------+---------------+------*/
 FutureWriteStatus writeCesiumTileset(Cesium::ICesiumPublisher* publisher, GeometricModelP model, double leafTolerance)
     {
-    auto tileRoot = model->_CreateCesiumTileTree();
+    auto output = CesiumTileOutput::Create(*model);
+    auto tileRoot = model->_CreateCesiumTileTree(*output);
     if (tileRoot.IsNull())
         return folly::makeFuture(WriteStatus::NoGeometry);
 
