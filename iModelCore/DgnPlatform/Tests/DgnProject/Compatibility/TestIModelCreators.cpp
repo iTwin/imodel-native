@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "TestIModelCreators.h"
 #include "Profiles.h"
+#include "TestDomain.h"
 
 USING_NAMESPACE_BENTLEY_EC
 //---------------------------------------------------------------------------------------
@@ -73,7 +74,7 @@ BentleyStatus TestIModelCreator::ImportSchemas(DgnDbR dgndb, std::vector<SchemaI
     ECSchemaReadContextPtr ctx = DeserializeSchemas(dgndb, schemas);
     if (ctx == nullptr)
         {
-        LOG.errorv("Failed to create new test file '%s': Could not deserialize ECSchemas to import.", dgndb.GetDbFileName());
+        LOG.errorv("Failed to create new/upgrade test file '%s': Could not deserialize ECSchemas to import.", dgndb.GetDbFileName());
         return ERROR;
         }
 
@@ -84,7 +85,7 @@ BentleyStatus TestIModelCreator::ImportSchemas(DgnDbR dgndb, std::vector<SchemaI
         }
 
     dgndb.AbandonChanges();
-    LOG.errorv("Failed to create new test file '%s': Could not import ECSchemas.", dgndb.GetDbFileName());
+    LOG.errorv("Failed to create new/upgrade test file '%s': Could not import ECSchemas.", dgndb.GetDbFileName());
     return ERROR;
     }
 
@@ -107,7 +108,7 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
             return ERROR;
             }
 
-        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite);
+        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade));
         params.SetProfileUpgradeOptions(DgnDb::ProfileUpgradeOptions::Upgrade);
         DgnDbPtr bim = nullptr;
         DbResult stat = BE_SQLITE_OK;
@@ -121,5 +122,74 @@ BentleyStatus TestIModelCreator::_UpgradeOldFiles() const
         LOG.infov("Created new upgraded test file '%s'.", targetPath.GetNameUtf8().c_str());
         }
 
+    return SUCCESS;
+    }
+
+
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus EC32EnumsProfileUpgradedTestIModelCreator::_UpgradeSchemas() const
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(DgnDbProfile::Get().GetCreatedDataFolder(), TESTIMODEL_EC32ENUMS_PROFILEUPGRADED, false))
+        {
+        if (testFile.GetAge() != ProfileState::Age::UpToDate)
+            {
+            BeAssert(false && "files to upgrade schemas for should be up-to-date profilewise.");
+            return ERROR;
+            }
+
+
+        DbResult stat = BE_SQLITE_OK;
+        DgnDbPtr bim = DgnDb::OpenDgnDb(&stat, testFile.GetSeedPath(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        if (BE_SQLITE_OK != stat)
+            {
+            LOG.errorv("Failed to upgrade schema in test file '%s': Could not open the test file read-write: %s", testFile.GetSeedPath().GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
+            return ERROR;
+            }
+
+
+        //Upgrade the enumerator names of the enums
+        if (SUCCESS != ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="Unknown" value="0"/>
+                                                            <ECEnumerator name="On" value="1"/>
+                                                            <ECEnumerator name="Off" value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator name="An" value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator name="Aus" value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml")))
+            {
+            LOG.errorv("Failed to upgrade schema in test file '%s'.", testFile.GetSeedPath().GetNameUtf8().c_str());
+            return ERROR;
+            }
+        }
+    return SUCCESS;
+    }
+
+
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus TestDomainTestIModelCreator::_Create()
+    {
+    if (SUCCESS != IModelEvolutionTestsDomain::Register(SchemaVersion(1, 0, 0), DgnDomain::Required::No, DgnDomain::Readonly::No))
+        return ERROR;
+
+    DgnDbPtr bim = CreateNewTestFile(m_fileName);
+    if (bim == nullptr)
+        return ERROR;
+
+    if (SchemaStatus::Success != IModelEvolutionTestsDomain::GetDomain().ImportSchema(*bim))
+        return ERROR;
+
+    bim->SaveChanges();
     return SUCCESS;
     }

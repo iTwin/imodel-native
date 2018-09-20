@@ -240,8 +240,11 @@ public:
 
     void AppendData(void const* pData, size_t dataSize)
         {
-        memcpy(m_pDataEnd, pData, dataSize);
-        m_pDataEnd += dataSize;
+        if (0 != dataSize)
+            {
+            memcpy(m_pDataEnd, pData, dataSize);
+            m_pDataEnd += dataSize;
+            }
         }
 
     template<typename T_Vertex, typename T_Args, typename T_ExtraData> void Init(T_Args const& args, T_ExtraData const& extraData, uint32_t nExtraRgba = 0)
@@ -570,8 +573,15 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
     size_t                  blockSize = auxChannel.GetBlockSize();
     Json::Value             inputs(Json::arrayValue);
     T_Range                 range = T_Range::NullRange();
-    uint32_t                nRgbaPerVertex = (sizeof(T_QPoint) + 3) / 4, nBytesPerVertex = 4 * nRgbaPerVertex, unusedSize = nBytesPerVertex - sizeof(T_QPoint);
     Json::Value             inputValues(Json::arrayValue);
+    Json::Value             indexValues(Json::arrayValue);
+    uint32_t                unusedSize = 0;
+    if (blockSize > 1)
+        {
+        uint32_t     nRgbaPerVertex = (sizeof(T_QPoint) + 3) / 4;
+        unusedSize = 4 * nRgbaPerVertex - sizeof(T_QPoint);
+        }
+
 
     for (auto const& data : auxChannel.GetData())
         {
@@ -589,7 +599,6 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
     
     Json::Value     channelValue(Json::objectValue);
         
-    channelValue["index"] = vertexTable.CurrSize() / 4;
     channelValue["name"] = auxChannel.GetName();
     channelValue["type"] = (int) auxChannel.GetDataType();
 
@@ -612,6 +621,7 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
         {
         // Quantize and push...
         double const* value = data->GetValues().data();
+        indexValues.append(vertexTable.CurrSize() / 4);
         for (size_t i=0; i<data->GetValues().size(); i += blockSize)
             {
             T_DPoint const* pointValue = reinterpret_cast<T_DPoint const*> (value + i);
@@ -620,7 +630,10 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
             vertexTable.AppendData(&quantized, sizeof(quantized));
             vertexTable.AppendData(&zero, unusedSize);
             }
+        vertexTable.AppendData(&zero, vertexTable.CurrSize() % 4);
         }
+    channelValue["indices"] = std::move(indexValues);
+
     return channelValue;
     }
 
@@ -629,16 +642,17 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
 +---------------+---------------+---------------+---------------+---------------+------*/
  Json::Value CreateVertexTableAuxNormalChannel(VertexTable& vertexTable, PolyfaceAuxChannelCR auxChannel, uint32_t numVertices)
     {
-    Json::Value             inputs(Json::arrayValue);
-    Json::Value             inputValues(Json::arrayValue);
-    uint32_t                zero = 0;
+    Json::Value         inputs(Json::arrayValue);
+    Json::Value         inputValues(Json::arrayValue);
+    Json::Value         indexValues(Json::arrayValue);
+    uint32_t            zero = 0;
+
 
     for (auto const& data : auxChannel.GetData())
         inputValues.append(data->GetInput());
     
     Json::Value     channelValue(Json::objectValue);
         
-    channelValue["index"] = vertexTable.CurrSize() / 4;                   
     channelValue["name"] = auxChannel.GetName();
     channelValue["type"] = (int) auxChannel.GetDataType();
     channelValue["inputs"] = std::move(inputValues);
@@ -647,6 +661,8 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
         {
         // Quantize and push...
         double const* value = data->GetValues().data();
+        indexValues.append(vertexTable.CurrSize() / 4);
+
         for (size_t i=0; i<data->GetValues().size(); i += 3)
             {
             DVec3d          normal = DVec3d::From(value[i], value[i+1], value[i+2]);
@@ -654,9 +670,11 @@ template<typename T_Range, typename T_DPoint, typename T_QPoint> Json::Value Cre
             uint16_t        encodedNormal = OctEncodedNormal::From(normal).Value();
 
             vertexTable.AppendData(&encodedNormal, sizeof(encodedNormal)); 
-            vertexTable.AppendData(&zero, 2);
             }
+        vertexTable.AppendData(&zero, vertexTable.CurrSize() % 4);
         }
+    channelValue["indices"] = std::move(indexValues);
+
     return channelValue;
     }
 };
@@ -730,12 +748,27 @@ MeshParams::MeshParams(TriMeshArgsCR args, bool isClassifier) : m_vertexParams(a
             m_type = normals ? SurfaceType::Lit : SurfaceType::Unlit;
         }
 
-    uint32_t        auxRgbaPerVertex = 0;
+    uint32_t        nAuxRgba = 0;
     for (auto const& channel : args.m_auxChannels)
-        auxRgbaPerVertex += (uint32_t) (channel->GetData().size() * ((sizeof(uint16_t) * channel->GetBlockSize() + 3) / 4));
+        {
+        uint32_t        rgbaPerValuePair;
+        switch (channel->GetDataType())
+            {
+            default:
+            case PolyfaceAuxChannel::DataType::Scalar:
+            case PolyfaceAuxChannel::DataType::Distance:
+            case PolyfaceAuxChannel::DataType::Covector:
+                rgbaPerValuePair = 1;       // Packed two values per RGBA.
+                break;
 
-    uint32_t        nAuxRgba = auxRgbaPerVertex * args.m_numPoints;
+            case PolyfaceAuxChannel::DataType::Vector:
+                rgbaPerValuePair = 4;        // Packed into two per value.
+                break;
+                break;
+            }
 
+        nAuxRgba += (uint32_t) channel->GetData().size() * rgbaPerValuePair * ((args.m_numPoints + 1) / 2);
+        }  
     switch (m_type)
         {
         case SurfaceType::Lit:          Init<LitMeshVertex>(args, nAuxRgba); break;

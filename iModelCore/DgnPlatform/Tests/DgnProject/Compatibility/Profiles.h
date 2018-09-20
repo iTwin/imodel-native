@@ -110,6 +110,7 @@ struct Profile : NonCopyableClass
 
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
 
+        BeFileNameCR GetCreatedDataFolder() const { return m_profileCreatedDataFolder; }
         BeFileNameCR GetTestDataFolder() const { return m_profilePulledTestDataFolder; }
         BeFileNameCR GetOutFolder() const { return m_profileOutFolder; }
 

@@ -1116,7 +1116,11 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryElementsRange();
         range = scaleSpatialRange(range);
         uint32_t nElements = 0;
-        populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
+        
+        populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);   
+        if (id.IsClassifier())
+            populateRootTile = true;    // The classifier algorithm currently cannot handle multiple tiles -- force the root to populate...
+
         rootTileEmpty = 0 == nElements;
         }
     else
