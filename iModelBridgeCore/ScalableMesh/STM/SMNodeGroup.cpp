@@ -623,20 +623,24 @@ uint64_t SMNodeGroup::GetRootTileID()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value* SMNodeGroup::DownloadNodeHeader(const uint64_t & id)
     {
+    uint64_t idToLoad = id;
     // *this* is the root tileset, try to load it if needed
-    if (!this->IsLoaded() && SUCCESS != this->Load(id))
-        return nullptr;
+    if (!this->IsLoaded())
+        {
+        if (SUCCESS != this->Load(id)) return nullptr;
+        if (m_isRoot) idToLoad = GetRootTileID();
+        }
 
     // Find the actual group that contains the node *id* (may not be the root tileset) and then load it if needed
-    auto group = m_groupCachePtr->GetGroupForNodeIDFromCache(id);
+    auto group = m_groupCachePtr->GetGroupForNodeIDFromCache(idToLoad);
     if (group == nullptr) return nullptr;
     if (!group->IsLoaded())
         {
         // Remove node from cache so that it gets replaced with appropriate node when loading the group
-        m_groupCachePtr->RemoveNodeFromCache(id);
-        if (SUCCESS != group->Load(id)) return nullptr;
+        m_groupCachePtr->RemoveNodeFromCache(idToLoad);
+        if (SUCCESS != group->Load(idToLoad)) return nullptr;
         }
-    return m_groupCachePtr->GetNodeFromCache(id);
+    return m_groupCachePtr->GetNodeFromCache(idToLoad);
     }
 
 /*---------------------------------------------------------------------------------**//**
