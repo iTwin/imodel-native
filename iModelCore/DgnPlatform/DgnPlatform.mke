@@ -323,7 +323,7 @@ $(CoreObjs)CacheTileWriter$(oext) :                 $(DgnCoreDir)CacheTileWriter
 
 $(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
 
-$(CoreObjs)CesiumTileWriter$(oext) :                $(DgnCoreDir)CesiumTileWriter.cpp $(DgnPlatformAPISrc)CesiumTileTree.h ${MultiCompileDepends}
+$(CoreObjs)CesiumTileTree$(oext) :                  $(DgnCoreDir)CesiumTileTree.cpp $(DgnPlatformAPISrc)CesiumTileTree.h ${MultiCompileDepends}
 
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 
