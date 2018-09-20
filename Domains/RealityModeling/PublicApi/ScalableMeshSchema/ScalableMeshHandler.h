@@ -252,7 +252,7 @@ struct ScalableMeshModel : IMeshSpatialModel
     BE_JSON_NAME(clip)
     BE_JSON_NAME(classifiers)
     BE_JSON_NAME(publishing)
-
+    BE_JSON_NAME(tilesetUrl)
 
     friend struct SMClipProvider;
 
@@ -273,8 +273,7 @@ public: //MST_TEMP
     mutable BentleyApi::AxisAlignedBox3d       m_range;
     mutable bool                                    m_displayTexture;       
 	mutable IScalableMeshTextureInfoPtr             m_textureInfo;
-    mutable IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;
-    mutable IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;
+    mutable IScalableMeshDisplayCacheManagerPtr     m_displayNodesCache;    
     mutable ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
     mutable DMatrix4d                               m_storageToUorsTransfo;
     mutable bool m_forceRedraw;

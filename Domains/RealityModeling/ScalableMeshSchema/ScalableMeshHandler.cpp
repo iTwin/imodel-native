@@ -47,8 +47,6 @@ USING_NAMESPACE_BENTLEY_RENDER
 #define PRINT_MSG(...)
 #endif
 
-#define SM_ACTIVATE_UPLOADER 0
-#define SM_ACTIVATE_LOAD_TEST 0
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     3/2017
@@ -137,10 +135,6 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(const BentleyApi::Dgn::DgnEleme
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
 
-    /*//NEEDS_WORK_MST - Removed
-    if (GetProgressiveQueryEngine().IsValid())
-        GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
-*/
     m_forceRedraw = true;
     return SUCCESS;
     }
@@ -264,28 +258,7 @@ void GetBingLogoInfo(Transform& correctedViewToView, ViewContextR context)
         {
         correctedViewToView.InitFrom(nonPrintableMargin.x, nonPrintableMargin.y, 0);
         }
-    }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.St-Pierre  12/2016
-//----------------------------------------------------------------------------------------
-IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEngine()
-    {
-    //NEEDS_WORK_MST - Removed
-    assert(!"Should not be called");
-
-    if (m_progressiveQueryEngine == nullptr)
-        {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager();
-        if (!((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->CanDisplay())
-            {
-            return nullptr;
-            }
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache, m_displayTexture);
-        }
-
-    return m_progressiveQueryEngine;
-    }
 
 void DoPick(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
             bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes, 
@@ -382,8 +355,7 @@ void ScalableMeshModel::ClearAllDisplayMem()
 
     IScalableMeshProgressiveQueryEngine::CancelAllQueries();
     ClearProgressiveQueriesInfo();
-    m_currentDrawingInfoPtr = nullptr;
-    m_progressiveQueryEngine = nullptr;
+    m_currentDrawingInfoPtr = nullptr;    
     m_smPtr->RemoveAllDisplayData();    
     RefreshClips();
     }
@@ -610,7 +582,6 @@ ScalableMeshModel::~ScalableMeshModel()
 
 void ScalableMeshModel::Cleanup(bool isModelDelete)
     {
-    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
     if (nullptr != m_currentDrawingInfoPtr.get())
     {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
@@ -630,8 +601,7 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
             m_smPtr->GetExtraFileNames(extraFileNames);
 
         //Close the 3SM file, to close extra clip files.
-		m_currentDrawingInfoPtr = nullptr;
-		m_progressiveQueryEngine = nullptr;        
+		m_currentDrawingInfoPtr = nullptr;		
         m_smPtr = nullptr;        
 
         for (auto& extraFileName : extraFileNames)
@@ -704,51 +674,14 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     m_basePath = clipFileBase;
     m_smPtr = IScalableMesh::GetFor(smFilename, Utf8String(clipFileBase.c_str()), false, true);
-
+    
     if (!m_smPtr.IsValid())
-        return;    
+        {        
+        if (Utf8String::IsNullOrEmpty(m_properties.m_fileId.c_str()))
+            m_properties.m_fileId = Utf8String(smFilename);
 
-#if SM_ACTIVATE_UPLOADER == 1 || SM_ACTIVATE_LOAD_TEST == 1
-    WString projectName = dgnProject.GetFileName().GetFileNameWithoutExtension();
-#endif
-
-#if SM_ACTIVATE_UPLOADER == 1
-    if (projectName.Contains(WString(L"upload_to_cloud")))
-        {
-        if (projectName.Equals(WString(L"upload_to_cloud_wsg")))
-            {
-            WString container(L"scalablemesh"); // WSG container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::WSG);
-            }
-        else if (projectName.Equals(WString(L"upload_to_cloud_azure")))
-            {
-            WString container(L"scalablemeshtest"); // Azure container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::Azure);
-            }
-        else if (projectName.Equals(WString(L"upload_to_cloud_local_curl")))
-            {
-            WString container(L"scalablemeshtest"); // local disk container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::LocalDiskCURL);
-            }
-        else if (projectName.Equals(WString(L"upload_to_cloud_local")))
-            {
-            WString container(L"scalablemeshtest"); // local disk container
-            m_smPtr->ConvertToCloud(container, smFilename.GetFileNameWithoutExtension(), SMCloudServerType::LocalDisk);
-            }
-        else
-            {
-            assert(false); // unknown service
-            }
+        return;
         }
-#endif
-
-#if SM_ACTIVATE_LOAD_TEST == 1
-    if (projectName.Contains(WString(L"load_test")))
-        {
-        size_t nbLoadedNodes = 0;
-        m_smPtr->LoadAllNodeData(nbLoadedNodes, 6);
-        }
-#endif
 
     //if (m_smPtr->IsTerrain())
         {
@@ -760,75 +693,10 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
              }
         }
     
-    const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
-
-    DPoint3d scale;
-    scale.x = 1;
-    scale.y = 1;
-    scale.z = 1;
-    
     DgnGCS* projGCS = dgnProject.GeoLocation().GetDgnGCS();
-    DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
+    m_smPtr->Reproject(projGCS, dgnProject);
 
-    if (gcs.HasGeoRef())
-        {
-        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
-        dgnGcsPtr->UorsFromCartesian(scale, scale);
-        scale.DifferenceOf(scale, globalOrigin);
-
-        if (projGCS != nullptr && !projGCS->IsEquivalent(*dgnGcsPtr))
-            {
-            dgnGcsPtr->SetReprojectElevation(true);
-
-            Transform trans = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
-                                                         0, scale.y, 0, globalOrigin.y,
-                                                         0, 0, scale.z, globalOrigin.z);
-
-            DRange3d smExtent, smExtentUors;
-            m_smPtr->GetRange(smExtent);
-            trans.Multiply(smExtentUors, smExtent);
-
-            DPoint3d extent;
-            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
-            Transform       approxTransform;
-
-            auto coordInterp = m_smPtr->IsCesium3DTiles() ? Dgn::GeoCoordInterpretation::XYZ : Dgn::GeoCoordInterpretation::Cartesian;
-
-            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *projGCS);
-            if (0 == status || 1 == status || 25 == status)
-                {
-                DRange3d smExtentInDestGCS1;
-                approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);
-                m_smToModelUorTransform = Transform::FromProduct(approxTransform, trans);
-
-                DRange3d smExtentInDestGCS;
-                m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);
-                }
-            else
-                {
-                m_smToModelUorTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
-                                                                   0, scale.y, 0, -globalOrigin.y,
-                                                                   0, 0, scale.y, -globalOrigin.z);
-                }
-            }
-        else
-            {
-            m_smToModelUorTransform = Transform::FromRowValues(scale.x, 0, 0, -globalOrigin.x,
-                                                               0, scale.y, 0, -globalOrigin.y,
-                                                               0, 0, scale.y, -globalOrigin.z);
-            }
-        }
-    else
-        {
-        if (projGCS != nullptr)
-            dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
-
-        m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
-        }
-
-    m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
-
-
+    m_smToModelUorTransform = m_smPtr->GetReprojectionTransform();
     
     m_storageToUorsTransfo = DMatrix4d::From(m_smToModelUorTransform);
 
@@ -892,15 +760,14 @@ void ScalableMeshModel::CloseFile()
 	{
 		m_loadedAllModels = false;
 	}
-    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+
     if (nullptr != m_currentDrawingInfoPtr.get())
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         m_currentDrawingInfoPtr->m_smPtr = nullptr;
         }
-
-    m_progressiveQueryEngine = nullptr;    
+    
     m_smPtr = nullptr;
     m_displayNodesCache = nullptr;
     m_tryOpen = false;
@@ -916,7 +783,7 @@ void ScalableMeshModel::CloseFile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     {    
-    if (!BeFileName::DoesPathExist(newFilename))
+    if (!BeFileName::DoesPathExist(newFilename) && !IsUrl(newFilename.c_str()))
         return ERROR;
             
     m_properties.m_fileId = Utf8String(newFilename);
@@ -1081,27 +948,12 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb, b
 
 void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
     {
-    GetProgressiveQueryEngine()->ClearOverviews(targetSM.get());
-    if (targetSM.get() == m_smPtr.get())
-        {
-        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
-        }
-#if 0
-    if (targetSM.get() == m_smPtr->GetTerrainSM().get())
-        {
-        if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_terrainQuery);
-        if (m_currentDrawingInfoPtr.IsValid())
-            {
-            m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
-            m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
-            }
-        }
-#endif
+    assert(!"Not done yet");
     }
 
 void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
     {
-    GetProgressiveQueryEngine()->InitScalableMesh(targetSM);
+    assert(!"Not done yet");    
     }
 
 //----------------------------------------------------------------------------------------
@@ -1119,13 +971,6 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     bvector<uint64_t> clipIds;
     for (auto& clip: previouslyActiveClips)
        clipIds.push_back(clip);
-
-/*//NEEDS_WORK_MST - Removed
-    auto tryProgressiveQueryEngine = GetProgressiveQueryEngine();
-    if (tryProgressiveQueryEngine.get() == nullptr) return;
-    GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
-    GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
-*/
     
     m_forceRedraw = true;
     }
@@ -1747,7 +1592,7 @@ void ScalableMeshModel::Properties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::Properties::FromJson(Json::Value const& v)
     {
-    m_fileId = v["FileId"].asString();
+    m_fileId = v.isMember("tilesetUrl") && !v["tilesetUrl"].asString().empty() ? v["tilesetUrl"].asString() : v["FileId"].asString();
     }
 
 //----------------------------------------------------------------------------------------
@@ -1761,11 +1606,17 @@ void ScalableMeshModel::_OnSaveJsonProperties()
 
     m_properties.ToJson(val);
 
+    if (m_smPtr != 0 && m_smPtr->IsCesium3DTiles())
+        {
+        Json::Value tilesetVal = m_properties.m_fileId.c_str();
+        SetJsonProperties(json_tilesetUrl(), tilesetVal);
+        }
+
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 
-    if (!m_classifiers.empty())
-        val[json_classifiers()] = m_classifiers.ToJson();
+    if (!m_classifiers.empty())     // Note - This originally was stored on the "scalableMesh" member...
+        SetJsonProperties(json_classifiers(), m_classifiers.ToJson());
 
     SetJsonProperties(json_scalablemesh(), val);
     }
@@ -2102,14 +1953,19 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     T_Super::_OnLoadedJsonProperties();
 
     Json::Value val(GetJsonProperties(json_scalablemesh()));
+    val[json_tilesetUrl()] = GetJsonProperties(json_tilesetUrl()).asString();
 
     m_properties.FromJson(val);
 
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
 
-    if (val.isMember(json_classifiers()))
-        m_classifiers.FromJson(val[json_classifiers()]);
+    Json::Value     classifiers = GetJsonProperties(json_classifiers());
+    if (classifiers.isNull())
+        classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.                                                                                                                                                             
+
+    if (!classifiers.isNull())
+        m_classifiers.FromJson(classifiers);
 
     if (m_smPtr == 0 && !m_tryOpen)
         {                

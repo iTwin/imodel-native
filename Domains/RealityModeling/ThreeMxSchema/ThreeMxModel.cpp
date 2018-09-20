@@ -185,7 +185,7 @@ void ThreeMxModel::_OnSaveJsonProperties()
         val[json_clip()] = m_clip->ToJson();
 
     if (!m_classifiers.empty())
-        val[json_classifiers()] = m_classifiers.ToJson();
+        SetJsonProperties(json_classifiers(), m_classifiers.ToJson());
 
     SetJsonProperties(json_threemx(), val);
     }
@@ -207,7 +207,11 @@ void ThreeMxModel::_OnLoadedJsonProperties()
 
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
+    
+    Json::Value     classifiers = GetJsonProperties(json_classifiers());
+    if (classifiers.isNull())
+        classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.                                                                                                                                                             
 
-    if (val.isMember(json_classifiers()))
-        m_classifiers.FromJson(val[json_classifiers()]);
+    if (!classifiers.isNull())
+        m_classifiers.FromJson(classifiers);
     }
