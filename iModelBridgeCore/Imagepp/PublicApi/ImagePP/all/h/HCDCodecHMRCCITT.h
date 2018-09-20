@@ -101,7 +101,7 @@ private:
 
     void            putspan(int32_t span, CCITTtableentry const* tab);
 
-    int32_t             findspan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab);
+    int32_t             findspan(Byte** bpp, int32_t bs, int32_t be, Byte const* tab);
 
     void            putbits(uint16_t bits, uint16_t length);
 

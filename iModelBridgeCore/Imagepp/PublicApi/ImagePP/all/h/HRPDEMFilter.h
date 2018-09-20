@@ -133,6 +133,7 @@ public:
 
     struct DEMFilterProcessor
         {
+        virtual ~DEMFilterProcessor() {}
         virtual void _ProcessPixels(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) = 0;
         virtual void _ProcessPixelsWithShading(HRAImageSampleR outData, HRAImageSampleCR inputData, double scalingX, double scalingY) = 0;
         };

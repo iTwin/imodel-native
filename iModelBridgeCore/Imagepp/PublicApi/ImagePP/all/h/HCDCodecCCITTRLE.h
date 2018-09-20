@@ -108,7 +108,7 @@ private:
         void EncodeLine();
 
         void FillSpan(Byte* cp, int32_t x, int32_t count);
-        int32_t  FindSpan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab) const;
+        int32_t  FindSpan(Byte** bpp, int32_t bs, int32_t be, Byte const* tab) const;
         int32_t  FindDiff(Byte* cp, int32_t bitStart, int32_t bitEnd, int32_t color) const;
 
         uint32_t           m_max_lrs;                    /*  max lrs allowed per scan line */

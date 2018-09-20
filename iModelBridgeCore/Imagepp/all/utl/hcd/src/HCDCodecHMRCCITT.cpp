@@ -535,7 +535,7 @@ Byte oneruns[256] = {
 //           zeros starting from the msb and is indexed by byte
 //           value.
 //-----------------------------------------------------------------------------
-inline int32_t HCDCodecHMRCCITT::findspan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab)
+inline int32_t HCDCodecHMRCCITT::findspan(Byte** bpp, int32_t bs, int32_t be, Byte const* tab)
     {
     Byte* bp = *bpp;
     int32_t bits = be - bs;

@@ -2281,7 +2281,7 @@ void HCDCodecCCITTRLE::CCITTRLEState::EncodeLine()
 //           zeros starting from the msb and is indexed by byte
 //           value.
 //-----------------------------------------------------------------------------
-int32_t HCDCodecCCITTRLE::CCITTRLEState::FindSpan(Byte** bpp, int32_t bs, int32_t be, register Byte const* tab) const
+int32_t HCDCodecCCITTRLE::CCITTRLEState::FindSpan(Byte** bpp, int32_t bs, int32_t be, Byte const* tab) const
     {
     Byte* bp = *bpp;
     int32_t bits = be - bs;
