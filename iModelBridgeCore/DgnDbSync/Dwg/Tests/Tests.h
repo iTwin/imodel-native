@@ -14,11 +14,10 @@ USING_NAMESPACE_DGNDBSYNC_DWG
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
 //=======================================================================================
-struct ImporterTestsHost : DgnViewLib::Host
+struct ImporterTestsHost : DgnPlatformLib::Host
 {
 protected:
     virtual void _SupplyProductName (BentleyApi::Utf8StringR name) override {name.assign("DwgImporterTests");}
-    virtual ViewManager& _SupplyViewManager() override;
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     //virtual NotificationAdmin& _SupplyNotificationAdmin() override;
     virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;

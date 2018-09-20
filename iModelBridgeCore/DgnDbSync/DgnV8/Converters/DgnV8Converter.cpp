@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/DgnV8Converter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbSync/DgnV8/ConverterApp.h>
@@ -52,8 +52,8 @@ void iModelBridge_getAffinity(WCharP buffer,
                               WCharCP affinityLibraryPathStr,
                               WCharCP sourceFileNameStr)
     {
-    BentleyB0200::BeFileName sourceFileName(sourceFileNameStr);
-    BentleyB0200::BeFileName affinityLibraryPath(affinityLibraryPathStr);
+    BentleyM0200::BeFileName sourceFileName(sourceFileNameStr);
+    BentleyM0200::BeFileName affinityLibraryPath(affinityLibraryPathStr);
     if (BSISUCCESS == Converter::CheckCanOpenFile(sourceFileName, affinityLibraryPath))
         {
         affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;

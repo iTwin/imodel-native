@@ -2,23 +2,13 @@
 |
 |     $Source: DgnV8/Tests/Admins.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Tests.h"
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 
 BEGIN_UNNAMED_NAMESPACE
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ConverterViewManager : ViewManager
-{
-protected:
-    virtual Display::SystemContext* _GetSystemContext() override {return nullptr;}
-    virtual bool _DoesHostHaveFocus() override {return true;}
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -53,7 +43,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewLib::Host::NotificationAdmin& ConverterTestsHost::_SupplyNotificationAdmin()
+DgnPlatformLib::Host::NotificationAdmin& ConverterTestsHost::_SupplyNotificationAdmin()
     {
     return *new ConverterNotificationAdmin();
     }
@@ -73,15 +63,7 @@ L10N::SqlangFiles ConverterTestsHost::_SupplySqlangFiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewManager& ConverterTestsHost::_SupplyViewManager()
-    {
-    return *new ConverterViewManager();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewLib::Host::IKnownLocationsAdmin& ConverterTestsHost::_SupplyIKnownLocationsAdmin()
+DgnPlatformLib::Host::IKnownLocationsAdmin& ConverterTestsHost::_SupplyIKnownLocationsAdmin()
     {
     return *new KnownDesktopLocationsAdmin();
     }

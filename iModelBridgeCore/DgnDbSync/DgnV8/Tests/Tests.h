@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/Tests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,14 +16,10 @@
 //=======================================================================================
 // @bsiclass                                    Sam.Wilson                      04/15
 //=======================================================================================
-struct ConverterTestsHost : DgnViewLib::Host
+struct ConverterTestsHost : DgnPlatformLib::Host
 {
 protected:
     virtual void _SupplyProductName (BentleyApi::Utf8StringR name) override {name.assign("SampleDgnV8ConverterTests");}
-    virtual ViewManager& _SupplyViewManager() override;
-#if defined (NOT_NOW_PARASOLID)
-    virtual SolidsKernelAdmin& _SupplySolidsKernelAdmin() override {return *new PSolidKernelAdmin();}
-#endif
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     virtual NotificationAdmin& _SupplyNotificationAdmin() override;
     virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;

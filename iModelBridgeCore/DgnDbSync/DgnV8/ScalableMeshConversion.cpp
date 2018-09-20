@@ -27,7 +27,7 @@ struct ScalableMeshModelInfo
     {
     ScalableMeshModel*                                   m_model;    
     DGNV8_BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementId m_elemId;
-    BentleyB0200::bvector<BentleyB0200::bpair<uint64_t, uint64_t>>     m_linksToGroundModels;
+    BentleyM0200::bvector<BentleyM0200::bpair<uint64_t, uint64_t>>     m_linksToGroundModels;
     Bentley::bvector<bool>                               m_linkedModelIdResolved;
     };
 
@@ -48,7 +48,7 @@ void ResolveLinkedModelId(ScalableMeshModel* model, DGNV8_BENTLEY_NAMESPACE_NAME
         {        
         uint64_t linkedElemId = modelIter.first;        
         bool     isModelFound = false;
-        BentleyB0200::bpair<uint64_t, uint64_t> linksToGround;
+        BentleyM0200::bpair<uint64_t, uint64_t> linksToGround;
 
         linksToGround.first = modelIter.first;
         linksToGround.second = modelIter.second;
@@ -197,7 +197,7 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
         modelSelector.Update();
         }
 
-    if (((ScalableMeshModel*)spatialModel)->_AllowPublishing())
+    if (((ScalableMeshModel*)spatialModel)->AllowPublishing())
         {
         // Schedule reality model tileset creation.
         converter.AddModelRequiringRealityTiles(modelId);

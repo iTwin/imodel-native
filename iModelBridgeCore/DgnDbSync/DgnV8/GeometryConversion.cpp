@@ -1769,13 +1769,7 @@ static BeSQLite::Db::AppData::Key const& GetKey()
 
 static GeometricPrimitivePtr GetPart(DgnGeometryPartId partId, DgnDbR db)
     {
-    auto cache = (PostInstancePartCacheAppData*) db.FindAppData(GetKey());
-
-    if (nullptr == cache)
-        {
-        cache = new PostInstancePartCacheAppData();
-        db.AddAppData(PostInstancePartCacheAppData::GetKey(), cache);
-        }
+    auto cache = db.ObtainAppData(GetKey(), []() { return new PostInstancePartCacheAppData(); });
 
     T_PartIdToGeom::iterator found = cache->m_map.find(partId);
 

@@ -320,7 +320,7 @@ void DrawingViewHelper::SetViewGeometry(DrawingViewDefinitionR viewDef)
         return;
         }
 
-    DRange3d viewedModelRange = m_drawingModel.QueryModelRange();
+    DRange3d viewedModelRange = m_drawingModel.QueryElementsRange();
 
     if (viewedModelRange.IsEmpty() || viewedModelRange.IsNull() || viewedModelRange.IsPoint())
         return;
@@ -344,7 +344,7 @@ void SpatialViewHelper::SetViewGeometry(SpatialViewDefinitionR spatialView)
         {
         auto model = GetDgnDb().Models().Get<SpatialModel>(modelid);
         if (model.IsValid())
-            viewedModelRange.Extend(model->QueryModelRange());
+            viewedModelRange.Extend(model->QueryElementsRange());
         }
 
     if (viewedModelRange.IsEmpty() || viewedModelRange.IsNull() || viewedModelRange.IsPoint())

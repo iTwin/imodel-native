@@ -9,7 +9,7 @@
 #include <RealityPlatformTools/SimpleRDSApi.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
 #include "DgnPlatform/WebMercator.h"
-
+#include <DgnPlatform/CesiumTileTree.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
@@ -127,7 +127,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         else
             {
             static double   s_leafTolerance = 0.0;      // Use the tolerance of the input tileset.
-            TileTree::IO::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
+            Cesium::ICesiumPublisher::WriteCesiumTileset(rootJsonFile, modelDir, *geometricModel, dbToEcefTransform, s_leafTolerance);
             }
 
         Utf8String url;

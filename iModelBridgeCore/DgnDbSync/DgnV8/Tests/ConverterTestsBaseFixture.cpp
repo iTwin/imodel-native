@@ -99,7 +99,7 @@ void ConverterTestBaseFixture::SetUp()
 //-----------------------------------------------------------------------------------------
 void ConverterTestBaseFixture::SetUpTestCase()
     {
-    DgnViewLib::Initialize(m_host, true); // this initializes the DgnDb libraries
+    DgnPlatformLib::Initialize(m_host, true); // this initializes the DgnDb libraries
     }
 
 //-----------------------------------------------------------------------------------------

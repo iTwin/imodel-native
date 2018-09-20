@@ -97,8 +97,6 @@ protected:
                 Utf8String(v8Details.GetDetailedMsg().c_str()).c_str());
             return T_HOST.GetNotificationAdmin()._OutputMessage(details);
             }
-
-        virtual void _OutputPrompt(Bentley::WCharCP prompt) override { T_HOST.GetNotificationAdmin()._OutputPrompt(Utf8String((WCharCP)prompt).c_str());}
         }; 
 
     struct Solids : DgnV8Api::PSolidKernelAdmin

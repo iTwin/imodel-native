@@ -762,7 +762,6 @@ void Converter::ConvertAllLineStyles(DgnV8Api::DgnFile&v8File)
     // This was required when the line style converter converted line styles to textures
     //  at conversion time.  We haven't done that in a long time so I think this is no longer
     //  required.
-    // DgnViewLib::GetHost().GetViewManager().Startup();
 
     DgnV8Api::LsMap* lsMap = DgnV8Api::LsMap::GetMapPtr(v8File, true);
 

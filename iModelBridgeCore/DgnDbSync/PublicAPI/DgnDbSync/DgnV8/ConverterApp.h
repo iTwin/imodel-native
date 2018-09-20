@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/ConverterApp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define NULL 0
@@ -14,7 +14,6 @@
 #include <DgnPlatform/DgnCoreAPI.h>
 #include <ThreeMx/ThreeMxApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnView/DgnViewLib.h>
 #include <BeSQLite/L10N.h>
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>

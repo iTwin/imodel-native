@@ -126,7 +126,7 @@ DgnDbPtr ImporterTests::OpenExistingDgnDb(BentleyApi::BeFileNameCR projectName, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ImporterTests::SetUpTestCase ()
     {
-    DgnViewLib::Initialize (s_testsHost, true);
+    DgnPlatformLib::Initialize (s_testsHost, true);
     DwgImporter::Initialize (nullptr);
     }
 

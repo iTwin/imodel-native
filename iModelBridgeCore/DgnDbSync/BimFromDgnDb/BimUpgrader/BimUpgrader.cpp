@@ -17,8 +17,6 @@
 #include <DgnPlatform/DgnIModel.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <BeSQLite/L10N.h>
-#include <DgnView/DgnViewAPI.h>
-#include <DgnView/DgnViewLib.h>
 #include "BimUpgrader.h"
 
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -70,22 +68,12 @@ struct KnownDesktopLocationsAdmin : BentleyB0200::Dgn::DgnPlatformLib::Host::IKn
     };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-struct BimUpgraderViewManager : ViewManager
-    {
-    bool _DoesHostHaveFocus() override { return true; }
-    virtual Display::SystemContext* _GetSystemContext() override { return nullptr; }
-    };
-
-//---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-struct BimUpgraderHost : BentleyB0200::Dgn::DgnViewLib::Host
+struct BimUpgraderHost : BentleyB0200::Dgn::DgnPlatformLib::Host
     {
     virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimUpgrader"); }
     virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
-    ViewManager& _SupplyViewManager() override { return *new BimUpgraderViewManager(); }
 
     virtual BentleyB0200::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
@@ -267,7 +255,7 @@ BentleyStatus BimUpgrader::_Initialize(int argc, WCharCP argv[])
 
     m_host = new BimUpgraderHost();
     m_host->SetProgressMeter(new PrintfProgressMeter());
-    DgnViewLib::Initialize(*m_host, false);
+    DgnPlatformLib::Initialize(*m_host, false);
     return SUCCESS;
 
     }
