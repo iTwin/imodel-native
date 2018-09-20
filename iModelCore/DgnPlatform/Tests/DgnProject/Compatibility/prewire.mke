@@ -1,0 +1,20 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/DgnProject/Compatibility/prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+   
+#----------------------------------------------------------------------
+# Deploy test ECSchemas
+#----------------------------------------------------------------------
+$(BuildContext)ECSchemas/Domain/IModelEvolutionTests.1.0.0.ecschema.xml : $(_MakeFilePath)ECSchemas/IModelEvolutionTests.1.0.0.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Domain/IModelEvolutionTests.1.0.1.ecschema.xml : $(_MakeFilePath)ECSchemas/IModelEvolutionTests.1.0.1.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas/Domain/IModelEvolutionTests.1.0.2.ecschema.xml : $(_MakeFilePath)ECSchemas/IModelEvolutionTests.1.0.2.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

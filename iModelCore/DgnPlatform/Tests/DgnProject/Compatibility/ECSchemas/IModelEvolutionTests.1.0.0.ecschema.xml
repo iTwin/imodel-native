@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="IModelEvolutionTests" alias="me" version="01.00.00" displayLabel="IModelEvolutionTests" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    
+    <ECEnumeration typeName="Material" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Wood"/>
+        <ECEnumerator value="1" displayLabel="Plastic" />
+        <ECEnumerator value="2" displayLabel="Metal" />
+     </ECEnumeration>
+
+    <ECEntityClass typeName="Toy">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Material" typeName="Material" />
+    </ECEntityClass>
+</ECSchema>

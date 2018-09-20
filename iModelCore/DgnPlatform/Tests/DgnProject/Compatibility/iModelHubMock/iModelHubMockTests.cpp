@@ -75,7 +75,7 @@ TEST_F(IModelHubMockTestFixture, AcquireBriefcase)
     auto id = GetMock()->CreateiModel("test");
     ASSERT_TRUE(id.IsValid());
     auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
-    auto status = GetMock()->AcquireBriefcase(id, briefcasePath);
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath));
     ASSERT_TRUE(BeFileName::DoesPathExist(briefcasePath));
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
@@ -123,7 +123,7 @@ TEST_F(IModelHubMockTestFixture, CreateAndPushChangeset)
     auto id = GetMock()->CreateiModel("test");
     ASSERT_TRUE(id.IsValid());
     auto briefcasePath = BeFileName(GetTempPath()).AppendToPath(L"briefcase.bim");
-    auto status = GetMock()->AcquireBriefcase(id, briefcasePath);
+    ASSERT_TRUE(GetMock()->AcquireBriefcase(id, briefcasePath));
 
     DbResult stat;
     auto db = DgnDb::OpenDgnDb(&stat, briefcasePath, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
@@ -133,7 +133,7 @@ TEST_F(IModelHubMockTestFixture, CreateAndPushChangeset)
     PhysicalPartitionPtr partition = PhysicalPartition::Create(*rootSubject, "myPartition");
     auto code = PhysicalPartition::CreateCode(*rootSubject, "myPartition");
     DgnDbStatus insStatus;
-    auto resStatus = db->BriefcaseManager().ReserveCode(code);
+    db->BriefcaseManager().ReserveCode(code);
     partition->Insert(&insStatus);
 
     ASSERT_TRUE(partition.IsValid());

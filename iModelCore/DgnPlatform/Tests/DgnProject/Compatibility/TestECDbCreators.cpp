@@ -68,7 +68,7 @@ BentleyStatus TestECDbCreator::ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem
     ECN::ECSchemaReadContextPtr ctx = DeserializeSchemas(ecdb, schemas);
     if (ctx == nullptr)
         {
-        LOG.errorv("Failed to create new test file '%s': Could not deserialize ECSchemas to import.", ecdb.GetDbFileName());
+        LOG.errorv("Failed to create new/upgrade test file '%s': Could not deserialize ECSchemas to import.", ecdb.GetDbFileName());
         return ERROR;
         }
 
@@ -80,7 +80,7 @@ BentleyStatus TestECDbCreator::ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem
         }
 
     sp.Cancel();
-    LOG.errorv("Failed to create new test file '%s': Could not import ECSchemas.", ecdb.GetDbFileName());
+    LOG.errorv("Failed to create new/upgrade test file '%s': Could not import ECSchemas.", ecdb.GetDbFileName());
     return ERROR;
     }
 
@@ -114,5 +114,50 @@ BentleyStatus TestECDbCreator::_UpgradeOldFiles() const
         LOG.infov("Created new upgraded test file '%s'.", targetPath.GetNameUtf8().c_str());
         }
 
+    return SUCCESS;
+    }
+
+//************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    07/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus EC32EnumsProfileUpgradedTestECDbCreator::_UpgradeSchemas() const
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(ECDbProfile::Get().GetCreatedDataFolder(), TESTECDB_EC32ENUMS_PROFILEUPGRADED, false))
+        {
+        if (testFile.GetAge() != ProfileState::Age::UpToDate)
+            {
+            BeAssert(false && "files to upgrade schemas for should be up-to-date profilewise.");
+            return ERROR;
+            }
+
+        ECDb ecdb;
+        DbResult stat = ecdb.OpenBeSQLiteDb(testFile.GetSeedPath(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+        if (BE_SQLITE_OK != stat)
+            {
+            LOG.errorv("Failed to upgrade schema in test file '%s': Could not open the test file read-write: %s", testFile.GetSeedPath().GetNameUtf8().c_str(), Db::InterpretDbResult(stat));
+            return ERROR;
+            }
+
+
+        //Upgrade the enumerator names of the enums
+        if (SUCCESS != ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
+                                                            <ECEnumerator name="Unknown" value="0"/>
+                                                            <ECEnumerator name="On" value="1"/>
+                                                            <ECEnumerator name="Off" value="2"/>
+                                                        </ECEnumeration>
+                                                        <ECEnumeration typeName="StringEnum_EnumeratorsWithDisplayLabel" displayLabel="String Enumeration with enumerators with display label" backingTypeName="string" isStrict="false">
+                                                            <ECEnumerator name="An" value="On" displayLabel="Turned On"/>
+                                                            <ECEnumerator name="Aus" value="Off" displayLabel="Turned Off"/>
+                                                        </ECEnumeration>
+                                                     </ECSchema>)xml")))
+            {
+            LOG.errorv("Failed to upgrade schema in test file '%s'.", testFile.GetSeedPath().GetNameUtf8().c_str());
+            return ERROR;
+            }
+        }
     return SUCCESS;
     }

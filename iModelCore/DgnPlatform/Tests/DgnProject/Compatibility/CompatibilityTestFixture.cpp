@@ -40,14 +40,6 @@ void CompatibilityTestFixture::Initialize()
         DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
         srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
 
-        BeFileName sqlangFile;
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-        sqlangFile.AppendToPath(L"sqlang");
-        sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-        BeSQLite::L10N::Shutdown();
-        BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
         s_isInitialized = true;
         }
     }
@@ -60,10 +52,15 @@ void CompatibilityTestFixture::Initialize()
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas)
+ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas, std::vector<BeFileName> const& additionalSearchPaths)
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
+    for (BeFileNameCR searchPath : additionalSearchPaths)
+        {
+        context->AddSchemaPath(searchPath.c_str());
+        }
+
     for (SchemaItem const& schemaItem : schemas)
         {
         ScopedDisableFailOnAssertion disableFailOnAssert;
