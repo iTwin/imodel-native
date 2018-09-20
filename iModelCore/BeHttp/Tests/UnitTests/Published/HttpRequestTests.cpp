@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpRequestTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,15 +12,27 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
-struct HttpRequestTests : public ::testing::Test{};
+struct HttpRequestTests : public ::testing::Test {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HttpRequestTests, Ctor_UrlWithArbitraryText_UrlIsSetToSameString)
+TEST_F(HttpRequestTests, Ctor_InvalidUrl_UrlSetToEmpty)
     {
+    BeTest::SetFailOnAssert(false);
     Request request("test url");
-    EXPECT_STREQ("test url", request.GetUrl().c_str());
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_STREQ("", request.GetUrl().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Robert.Lukasonok                      08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Ctor_ValidUrl_SameUrlRetained)
+    {
+    Request request("foo://bar");
+    EXPECT_STREQ("foo://bar", request.GetUrl().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -37,7 +49,7 @@ TEST_F(HttpRequestTests, Ctor_UrlWithUnsafeCharacters_CharactersAreEscaped)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, SetProxy_ProxyUrlWithUnsafeCharacters_CharactersAreEscaped)
     {
-    Request request("foo");
+    Request request("foo://bar");
     request.SetProxy(TEST_URL_UNSAFE_CHARS);
     EXPECT_STREQ(TEST_URL_UNSAFE_CHARS_ESCAPED, request.GetProxy().c_str());
     }

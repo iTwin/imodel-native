@@ -65,6 +65,7 @@
     <ClInclude Include="Scripts\ScriptRunner.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="BeHttp\ReadMe.txt" />
     <Text Include="Scripts\Executables\RegistryFix\readme.txt" />
     <Text Include="Scripts\Resources\Data\Test.txt" />
   </ItemGroup>

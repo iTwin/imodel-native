@@ -640,6 +640,9 @@ BentleyStatus CurlHttpRequest::SetupCurl ()
     SetupHeaders();
     curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_headers);
 
+    if (m_httpRequest.GetMethod().Equals("HEAD"))
+        curl_easy_setopt(m_curl, CURLOPT_NOBODY, 1L);
+
     return SUCCESS;
     }
 

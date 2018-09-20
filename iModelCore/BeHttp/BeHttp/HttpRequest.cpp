@@ -8,7 +8,9 @@
 #include <BeHttp/HttpRequest.h>
 #include <BeHttp/DefaultHttpHandler.h>
 #include <Bentley/Tasks/ThreadlessTaskScheduler.h>
-#include <folly/BeFolly.h>
+#include <Bentley/Tasks/AsyncTaskFollyAdapter.h>
+
+#include "WebLogging.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
@@ -22,6 +24,11 @@ Request::Request(Utf8String url, Utf8String method, IHttpHandlerPtr customHandle
     m_compressionOptions()
     {
     BeUri::EscapeUnsafeCharactersInUrl(m_url);
+    if (m_url.empty())
+        {
+        LOG.errorv("Request object received an invalid URI: \"%s\"", url.c_str());
+        BeAssert(false);
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -29,13 +36,5 @@ Request::Request(Utf8String url, Utf8String method, IHttpHandlerPtr customHandle
 //----------------------------------------------------------------------------------------
 folly::Future<Response> Request::Perform()
     {
-    auto follyPromise = std::make_shared<folly::Promise<Response>>();
-
-    PerformAsync()->Then(std::make_shared<ThreadlessTaskScheduler>(), [=] (Response& response)
-        {
-        follyPromise->setValue(response);
-        });
-
-    // We want all f.then(...) to execute on the CPU pool unless overridden with f.then(&otherExec, ...)
-    return follyPromise->getFuture().via(&BeFolly::ThreadPool::GetCpuPool());
+    return AsyncTaskFollyAdapter::ToFolly(PerformAsync());
     }

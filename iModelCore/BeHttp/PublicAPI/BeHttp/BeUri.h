@@ -19,22 +19,10 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 struct BeUri
     {
     private:
-        enum class UriPatternGroup
-            {
-            Scheme = 2,
-            Authority = 3,
-            Userinfo = 6,
-            Host = 7,
-            Port = 10,
-            Path = 11,
-            Query = 13,
-            Fragment = 15
-            };
-
         struct MatchResults;
 
     private:
-        static Utf8String GetUriComponent(UriPatternGroup group, const MatchResults& results);
+        static Utf8String GetUriComponent(size_t group, const MatchResults& results);
         static Utf8String EscapeUriComponent(Utf8String component);
 
     private:
@@ -53,10 +41,9 @@ struct BeUri
         BeUri() = default;
 
         //! Creates URI and percent-escapes any unsafe symbols in path, query, and fragment components.
-        //! IMPORTANT: Improperly formatted URIs may exhibit unexpected behaviors. For example,
-        //! missing authority prefix "//" in "localhost:8080" will cause the URI to be split into
-        //! scheme component "localhost" and path component "8080". For complete URI format specification,
-        //! consult <a href="https://tools.ietf.org/html/rfc3986#section-3">[RFC 3986] section 3</a>.
+        //! IMPORTANT: Make sure that the input string begins with a scheme. According to URI specification,
+        //! "localhost:1234" is parsed as a URI containing scheme component "localhost" and path component "1234".
+        //! Complete URI specification is available in <a href="https://tools.ietf.org/html/rfc3986#section-3">[RFC 3986] section 3</a>.
         BEHTTP_EXPORT BeUri(Utf8StringCR uri);
 
         //! Returns whether the uri is valid

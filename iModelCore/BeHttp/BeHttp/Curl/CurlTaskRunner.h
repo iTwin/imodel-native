@@ -90,6 +90,7 @@ struct CurlTaskRunner::Factory : IAsyncTaskRunnerFactory
         bset<std::shared_ptr<CurlTaskRunner>> m_runners;
 
     public:
+        virtual ~Factory() {}
         virtual std::shared_ptr<ITaskRunner> CreateRunner() override;
         void StopRunners();
         void WaitUntilRunnersStopped();
