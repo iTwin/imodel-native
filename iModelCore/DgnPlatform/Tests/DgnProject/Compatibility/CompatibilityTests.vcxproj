@@ -37,6 +37,9 @@
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.0.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.1.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.2.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="prewire.mke" />

@@ -15,6 +15,9 @@
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.0.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.1.ecschema.xml" />
+    <Xml Include="ECSchemas\IModelEvolutionTests.1.0.2.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompatibilityTestFixture.h" />

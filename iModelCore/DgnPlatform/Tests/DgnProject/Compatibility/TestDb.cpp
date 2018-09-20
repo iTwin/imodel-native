@@ -22,6 +22,7 @@ bool TestDb::VersionSupportsFeature(ProfileVersion const& ecdbVersion, ECDbFeatu
             case ECDbFeature::PersistedECVersions:
             case ECDbFeature::NamedEnumerators:
             case ECDbFeature::UnitsAndFormats:
+            case ECDbFeature::SystemPropertiesHaveIdExtendedType:
                 return ecdbVersion >= ProfileVersion(4, 0, 0, 2);
 
             default:

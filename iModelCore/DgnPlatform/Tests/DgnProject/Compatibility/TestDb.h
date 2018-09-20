@@ -18,7 +18,8 @@ enum class ECDbFeature
     {
     PersistedECVersions,
     NamedEnumerators,
-    UnitsAndFormats
+    UnitsAndFormats,
+    SystemPropertiesHaveIdExtendedType
     };
 
 //=======================================================================================

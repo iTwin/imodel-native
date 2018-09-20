@@ -232,6 +232,73 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, ECSqlColumnInfoForAliases)
+    {
+    auto assertColInfo = [] (TestDb const& testDb, ECSqlColumnInfo const& colInfo, bool hasAlias)
+        {
+        ASSERT_TRUE(colInfo.GetProperty() != nullptr) << testDb.GetDescription();
+        Utf8StringCR selectClauseItem = colInfo.GetProperty()->GetDisplayLabel();
+
+        EXPECT_EQ(hasAlias, colInfo.IsGeneratedProperty()) << selectClauseItem << " | " << testDb.GetDescription();
+        EXPECT_EQ(!hasAlias, colInfo.IsSystemProperty()) << selectClauseItem << " | " << testDb.GetDescription();
+        EXPECT_EQ(PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << selectClauseItem << " | " << testDb.GetDescription();
+
+        ASSERT_TRUE(colInfo.GetProperty()->GetIsPrimitive()) << selectClauseItem << " | " << testDb.GetDescription();
+        // Since ECDb 4.0.0.2 the Id system properties in the ECDbSystem schema have the extended type "Id"
+        // However, when using aliases, the generated prop gets that extended type regardless of the profile version.
+        // The test asserts that ruleset.
+        if (hasAlias || testDb.SupportsFeature(ECDbFeature::SystemPropertiesHaveIdExtendedType))
+            EXPECT_STREQ("Id", colInfo.GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str()) << selectClauseItem << " | " << testDb.GetDescription();
+        else
+            EXPECT_FALSE(colInfo.GetProperty()->HasExtendedType()) << selectClauseItem << " | " << testDb.GetDescription();
+        };
+
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT ECInstanceId, ECClassId, ECInstanceId id, ECClassId classId FROM ecdbf.FileInfo")) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << testDb.GetDescription();
+            assertColInfo(testDb, stmt.GetColumnInfo(0), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(1), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(2), true);
+            assertColInfo(testDb, stmt.GetColumnInfo(3), true);
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, ECInstanceId id, ECClassId classId, SourceECInstanceId sourceId, SourceECClassId sourceClassId, TargetECInstanceId targetId, TargetECClassId targetClassId FROM meta.ClassHasAllBaseClasses LIMIT 1")) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
+            assertColInfo(testDb, stmt.GetColumnInfo(0), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(1), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(2), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(3), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(4), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(5), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(6), true);
+            assertColInfo(testDb, stmt.GetColumnInfo(7), true);
+            assertColInfo(testDb, stmt.GetColumnInfo(8), true);
+            assertColInfo(testDb, stmt.GetColumnInfo(9), true);
+            assertColInfo(testDb, stmt.GetColumnInfo(10), true);
+            assertColInfo(testDb, stmt.GetColumnInfo(11), true);
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(testDb.GetDb(), "SELECT Schema.Id, Schema.RelECClassId, Schema.Id schemaId, Schema.RelECClassId schemaRelClassId FROM meta.ECClassDef LIMIT 1")) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << testDb.GetDescription();
+            assertColInfo(testDb, stmt.GetColumnInfo(0), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(1), false);
+            assertColInfo(testDb, stmt.GetColumnInfo(2), true);
+            assertColInfo(testDb, stmt.GetColumnInfo(3), true);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, EC31Enums)
