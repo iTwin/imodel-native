@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
 
-USING_NAMESPACE_TILETREE
+USING_NAMESPACE_DGN_CESIUM
 
 /*---------------------------------------------------------------------------------**//**
 * Must be called from client thread because it references "m_parent" which can become invalid
@@ -18,7 +18,7 @@ Utf8String Node::GetChildFile() const
     {
     Utf8String parentPath("/");
     if (m_parent)
-        parentPath = m_parent->_GetTileCacheKey();
+        parentPath = m_parent->_GetName();
 
     return parentPath.substr(0, parentPath.find_last_of("/")) + "/" + m_childPath;
     }
@@ -26,25 +26,16 @@ Utf8String Node::GetChildFile() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
+LoaderPtr Node::_CreateLoader(LoadStateR state, OutputR output)
     {
-    return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Node::_WantDebugRangeGraphics() const
-    {
-    static bool s_debugRange = false;
-    return s_debugRange;
+    return new Loader(GetRoot()._ConstructTileResource(*this), *this, state, output);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Scene::Scene(ThreeMxModelR model, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system)
-    : Scene(model.GetDgnDb(), model.GetModelId(), location, sceneFile, system)
+Scene::Scene(ThreeMxModelR model, TransformCR location, Utf8CP sceneFile)
+    : Scene(model.GetDgnDb(), location, sceneFile)
     {
     //
     }
@@ -53,8 +44,8 @@ Scene::Scene(ThreeMxModelR model, TransformCR location, Utf8CP sceneFile, Dgn::R
 * Used by DgnV8Converter simply to extract the scene name...
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Scene::Scene(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system)
-    : T_Super(db, modelId, location, sceneFile, system), m_sceneFile(sceneFile)
+Scene::Scene(DgnDbR db, TransformCR location, Utf8CP sceneFile)
+    : T_Super(db, location, sceneFile), m_sceneFile(sceneFile)
     {
     //
     }

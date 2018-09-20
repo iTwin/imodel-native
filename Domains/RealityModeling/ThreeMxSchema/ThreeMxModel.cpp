@@ -11,8 +11,7 @@
 DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
 HANDLER_DEFINE_MEMBERS(ModelHandler)
 
-USING_NAMESPACE_TILETREE
-
+USING_NAMESPACE_DGN_CESIUM
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
@@ -23,15 +22,15 @@ BentleyStatus Scene::ReadSceneFile()
 
     if (IsHttp())
         {
-        TileTree::HttpDataQuery query(m_sceneFile, nullptr);
+        HttpDataQuery query(m_sceneFile, nullptr);
         query.Perform().wait();
 
-        rootStream = std::move(query.GetData());
+        rootStream = StreamBuffer(std::move(query.GetData()));
         }
     else
         {
-        TileTree::FileDataQuery query(m_sceneFile, nullptr);
-        rootStream = std::move(query.Perform().get());
+        FileDataQuery query(m_sceneFile, nullptr);
+        rootStream = StreamBuffer(std::move(query.Perform().get()));
         }
 
     return rootStream.HasData() ? m_sceneInfo.Read(rootStream) : ERROR;
@@ -40,7 +39,7 @@ BentleyStatus Scene::ReadSceneFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Scene::LoadScene()
+BentleyStatus Scene::LoadScene(OutputR output)
     {
     if (SUCCESS != ReadSceneFile())
         return ERROR;
@@ -53,24 +52,12 @@ BentleyStatus Scene::LoadScene()
     cacheFileString.ReplaceAll(":", "_");
     cacheFileString.ReplaceAll(".", "_");
 
-    CreateCache(cacheFileString.c_str(), 1024*1024*1024); // 1 GB
-
     Node* root = new Node(*this, nullptr);
     root->m_childPath = m_sceneInfo.m_rootNodePath;
     m_rootTile = root;
 
-    auto result = _RequestTile(*root, nullptr, nullptr, BeDuration());
+    auto result = _RequestTile(*root, *LoadState::Create(*root), output);
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
-    return result.isReady() ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Scene::LoadNodeSynchronous(NodeR node)
-    {
-    auto result = _RequestTile(node, nullptr, nullptr, BeDuration());
-    result.wait();
     return result.isReady() ? SUCCESS : ERROR;
     }
 
@@ -139,15 +126,6 @@ ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SceneP ThreeMxModel::Load(SystemP renderSys) const
-    {
-    auto root = const_cast<ThreeMxModel&>(*this).GetTileTree(renderSys);
-    return static_cast<SceneP>(root);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP sceneFile, TransformCP trans, ClipVectorCP clip, ModelSpatialClassifiersCP classifiers)
     {
     DgnDbR db = modeledElement.GetDgnDb();
@@ -171,86 +149,24 @@ DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP sce
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
-    {
-    auto scene = Load(nullptr);
-    if (nullptr == scene)
-        {
-        BeAssert(false);
-        return AxisAlignedBox3d();
-        }
-
-    ElementAlignedBox3d range = scene->ComputeRange();
-    if (!range.IsValid())
-        return AxisAlignedBox3d();
-
-    Frustum box(range);
-    box.Multiply(scene->GetLocation());
-
-    AxisAlignedBox3d aaRange;
-    aaRange.Extend(box.m_pts, 8);
-
-    return aaRange;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreeMxModel::SetClip(Dgn::ClipVectorCP clip)
     {
     m_clip = clip;
-    if (m_root.IsValid())
-        static_cast<SceneP>(m_root.get())->SetClip(clip);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::SystemP system)
+Cesium::RootPtr ThreeMxModel::_CreateCesiumTileTree(Cesium::OutputR output)
     {
-    ScenePtr scene = new Scene(*this, m_location, m_sceneFile.c_str(), system);
-    scene->SetPickable(true);
-    if (SUCCESS != scene->LoadScene())
+    ScenePtr scene = new Scene(*this, m_location, m_sceneFile.c_str());
+    if (SUCCESS != scene->LoadScene(output))
         return nullptr;
 
     scene->SetClip(m_clip.get());
     return scene.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr ThreeMxModel::_GetTileTree(RenderContextR context)
-    {
-    return GetTileTree(context.GetRenderSystem());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_PickTerrainGraphics(PickContextR context) const
-    {
-    if (!m_root.IsValid())
-        return;
-
-    auto scene = static_cast<SceneP>(m_root.get());
-    PickContext::ActiveDescription descr(context, GetName());
-    scene->Pick(context, scene->GetLocation(), m_clip.get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_OnFitView(FitContextR context)
-    {
-    auto scene = Load(nullptr);
-    if (nullptr == scene)
-        return;
-
-    ElementAlignedBox3d rangeWorld = scene->ComputeRange();
-    context.ExtendFitRange(rangeWorld, scene->GetLocation());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -295,16 +211,3 @@ void ThreeMxModel::_OnLoadedJsonProperties()
     if (val.isMember(json_classifiers()))
         m_classifiers.FromJson(val[json_classifiers()]);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxModel::GeolocateFromSceneFile()
-    {
-    auto scene = Load(nullptr);
-    auto stat = scene->LocateFromSRS();
-    if (SUCCESS == stat)
-        m_location = scene->GetLocation();
-    return stat;
-    }
-

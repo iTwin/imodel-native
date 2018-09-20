@@ -69,18 +69,3 @@ Utf8String RasterTile::_GetName() const
     return Utf8PrintfString("%d/%d/%d", m_id.resolution, m_id.x, m_id.y);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* ensure that this Tile's range includes its child's range.
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RasterTile::ExtendRange(DRange3dCR childRange) const
-    {
-    if (childRange.IsContained(m_range))
-        return;
-
-    const_cast<ElementAlignedBox3dR>(m_range).Extend(childRange);
-
-    if (nullptr != m_parent)
-        static_cast<RasterTile const*>(m_parent)->ExtendRange(childRange);
-    }
-

@@ -11,7 +11,7 @@
 #define LOG_ERROR(...) {/* BeAssert(false); */ (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv(__VA_ARGS__);}
 
 BEGIN_UNNAMED_NAMESPACE
-USING_NAMESPACE_TILETREE
+USING_NAMESPACE_DGN_CESIUM
 
 static Utf8String GetMagicString() {return "3MXBO";}
 
@@ -131,7 +131,7 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP renderSys)
+BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Cesium::OutputR output)
     {
     BeAssert(IsQueued());
     m_loadStatus.store(LoadStatus::Loading);
@@ -189,7 +189,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             bvector<Utf8String> nodeResources;
             nodeName = node.get("id", "").asCString();
 
-            NodePtr nodeptr  = new Node(GetTriMeshRootR(), this);
+            NodePtr nodeptr  = new Node(GetTriMeshRoot(), this);
 
             if (!nodeptr->ReadHeader(node, nodeName, nodeResources))
                 return ERROR;
@@ -232,7 +232,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::BottomUp::No);
+            renderTextures[resourceName] = output.CreateTexture(std::move(jpeg));
             }
         }
 
@@ -278,7 +278,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             if (texName.empty())
                 continue;
 
-            TileTree::TriMeshTree::TriMesh::CreateParams geomParams;
+            TriMeshTree::TriMesh::CreateParams geomParams;
             geomParams.m_numPoints  = ctm.GetInteger(CTM_VERTEX_COUNT);
             geomParams.m_points     = ctm.GetFloatArray(CTM_VERTICES);
             geomParams.m_normals    = (ctm.GetInteger(CTM_HAS_NORMALS) == CTM_TRUE) ? ctm.GetFloatArray(CTM_NORMALS) : nullptr;
@@ -296,8 +296,8 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             auto texture = renderTextures.find(texName);
             geomParams.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
-            Dgn::TileTree::TriMeshTree::TriMeshList& triMeshList = ((Node*)m_children[nodeId->second].get())->GetGeometry();
-            scene.CreateGeometry(triMeshList, geomParams, renderSys);
+            TriMeshTree::TriMeshList& triMeshList = ((Node*)m_children[nodeId->second].get())->GetGeometry();
+            scene.CreateGeometry(triMeshList, geomParams, output);
             }
         }
 
@@ -307,20 +307,15 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP renderSys)
+BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene, Dgn::Cesium::OutputR output)
     {
     BeAssert(!IsReady());
 
-    if (SUCCESS != DoRead(in, scene, renderSys))
+    if (SUCCESS != DoRead(in, scene, output))
         {
         SetNotFound();
-//      BeAssert(false);
         return ERROR;
         }
-
-    // Because the parent and children are loaded as a unit, unloading a parent's children cause the parent itself to become 'unloaded' too.
-    // That will happen immediately if we don't initialize the 'children last used' timepoint.
-    m_childrenLastUsed = BeTimePoint::Now();
 
     // only after we've successfully read the entire node, mark it as ready so other threads can look at its child nodes.
     SetIsReady();

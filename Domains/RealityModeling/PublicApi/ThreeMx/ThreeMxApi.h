@@ -9,8 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/TileTree.h>
-#include <DgnPlatform/MeshTile.h>
+#include <DgnPlatform/CesiumTileTree.h>
 #include <DgnPlatform/ModelSpatialClassifier.h>
 
 #define BEGIN_BENTLEY_THREEMX_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace ThreeMx {
@@ -48,7 +47,7 @@ struct SceneInfo
     Utf8String m_reprojectionSystem;
     Utf8String m_rootNodePath;
     DPoint3d m_origin = DPoint3d::FromZero();
-    BentleyStatus Read(Dgn::TileTree::StreamBuffer&);
+    BentleyStatus Read(StreamBuffer&);
 };
 
 /*=================================================================================**//**
@@ -69,47 +68,45 @@ struct SceneInfo
 *
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Node : Dgn::TileTree::TriMeshTree::Tile
+struct Node : Dgn::Cesium::TriMeshTree::Tile
 {
-    DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Tile);
+    DEFINE_T_SUPER(Dgn::Cesium::TriMeshTree::Tile);
     friend struct Scene;
 
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  11/2016
     //=======================================================================================
-    struct Loader : Dgn::TileTree::TileLoader
+    struct Loader : Dgn::Cesium::Loader
         {
-        Loader(Utf8StringCR url, Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileLoader(url, tile, loads, tile._GetTileCacheKey(), renderSys) {}
-        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRootR(), GetRenderSystem());};
+        Loader(Utf8StringCR url, Dgn::Cesium::TileR tile, Dgn::Cesium::LoadStateR loads, Dgn::Cesium::OutputR output) : Dgn::Cesium::Loader(url, tile, output, loads) {}
+        BentleyStatus _LoadTile() override {return static_cast<NodeR>(*m_tile).Read3MXB(m_tileBytes, (SceneR)m_tile->GetRoot(), GetOutput());};
         };
 
 private:
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
-    BentleyStatus Read3MXB(Dgn::TileTree::StreamBuffer&, SceneR, Dgn::Render::SystemP renderSys);
+    BentleyStatus Read3MXB(StreamBuffer&, SceneR, Dgn::Cesium::OutputR);
     Utf8String GetChildFile() const;
-    BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene, Dgn::Render::SystemP renderSys);
+    BentleyStatus DoRead(StreamBuffer& in, SceneR scene, Dgn::Cesium::OutputR);
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
-    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
+    Dgn::Cesium::LoaderPtr _CreateLoader(Dgn::Cesium::LoadStateR, Dgn::Cesium::OutputR) override;
 
-    Utf8String _GetTileCacheKey() const override {return GetChildFile();}
-    bool _WantDebugRangeGraphics() const override;
+    Utf8String _GetName() const override {return GetChildFile();}
 public:
-    Node(Dgn::TileTree::TriMeshTree::Root& root, NodeP parent) : T_Super(root, parent) {}
+    Node(Dgn::Cesium::TriMeshTree::Root& root, NodeP parent) : T_Super(root, parent) {}
     Utf8String GetFilePath(SceneR) const;
-    bool _HasChildren() const override {return !m_childPath.empty();}
+    bool HasChildren() const {return !m_childPath.empty();}
     ElementAlignedBox3d ComputeRange();
 };
 
 /*=================================================================================**//**
-//! A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Scene : Dgn::TileTree::TriMeshTree::Root
+struct Scene : Dgn::Cesium::TriMeshTree::Root
 {
-    DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Root);
+    DEFINE_T_SUPER(Dgn::Cesium::TriMeshTree::Root);
     friend struct Node;
     friend struct ThreeMxModel;
 
@@ -119,18 +116,15 @@ private:
     Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
 
-    Utf8CP _GetName() const override { return m_rootResource.c_str(); }
     Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
-
 public:
-    THREEMX_EXPORT Scene(ThreeMxModelR model, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system);
-    THREEMX_EXPORT Scene(Dgn::DgnDbR db, Dgn::DgnModelId modelId, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system);
+    THREEMX_EXPORT Scene(ThreeMxModelR model, TransformCR location, Utf8CP sceneFile);
+    THREEMX_EXPORT Scene(Dgn::DgnDbR db, TransformCR location, Utf8CP sceneFile);
 
     ~Scene() {ClearAllTiles();}
 
     SceneInfo const& GetSceneInfo() const {return m_sceneInfo;}
-    BentleyStatus LoadNodeSynchronous(NodeR);
-    BentleyStatus LoadScene(); // synchronous
+    BentleyStatus LoadScene(Dgn::Cesium::OutputR); // synchronous
     void SetClip(Dgn::ClipVectorCP clip) { m_clip = clip; }
 
     THREEMX_EXPORT BentleyStatus ReadSceneFile(); //!< Read the scene file synchronously
@@ -157,7 +151,7 @@ private:
 //! to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGetTileTreeForPublishing
+struct ThreeMxModel : Dgn::SpatialModel
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
@@ -183,14 +177,9 @@ public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
-    Dgn::TileTree::RootPtr _GetTileTree(Dgn::RenderContextR) override;
-    THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::Render::SystemP) override;
-    THREEMX_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
+    Dgn::Cesium::RootPtr _CreateCesiumTileTree(Dgn::Cesium::OutputR) override;
     THREEMX_EXPORT void _OnSaveJsonProperties() override;
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
-    THREEMX_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
-    THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    // ###TODO_TILE_PUBLISH THREEMX_EXPORT BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override;
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
     //! @note New models are not valid until the have a scene file.
@@ -207,13 +196,6 @@ public:
 
     //! Set the spatial classifiers for this reality model.
     void SetClassifiers(Dgn::ModelSpatialClassifiersCR classifiers) { m_classifiers = classifiers; }
-
-    //! Set the location for this ThreeMxModel from the Spatial Reference System (SRS) data in the scene (.3mx) file.
-    //! Generally, this should be called once when the model is first created. On success, the location transformation of the model
-    //! is established to position the scene's geolocation into the BIM's GCS.
-    //! @return SUCCESS if the scene file was successfully read, it has a SRS, the BIM has a GCS, and we were able to compute a transform between them.
-    //! @note To save this value for future sessions, you must call this model's Update method.
-    THREEMX_EXPORT BentleyStatus GeolocateFromSceneFile();
 };
 
 //=======================================================================================

@@ -119,8 +119,6 @@ protected:
     Dgn::Cesium::TriMeshTree::TriMeshList m_meshes;
     bool m_reprojected = true;                              //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     double m_maxSize = 362 / 2;                             //! the maximum size, in pixels, for a bounding sphere radius, that this Tile should occupy on the screen
-    
-    void ExtendRange(DRange3dCR childRange) const;
 public:
     friend TileQuery;
     
