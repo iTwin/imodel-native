@@ -937,7 +937,7 @@ DRange3d Mesh::GetTriangleRange(TriangleCR triangle) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::CompressVertexQuantization()
     {
-    QPoint3d        min(0xffff, 0xffff, 0xffff), max(0, 0, 0), initialMin = min, initialMax = max;
+    QPoint3d        min(0xffff, 0xffff, 0xffff), max(0, 0, 0);// unused - , initialMin = min, initialMax = max;
 
     for (auto& vert : m_verts)
         {
