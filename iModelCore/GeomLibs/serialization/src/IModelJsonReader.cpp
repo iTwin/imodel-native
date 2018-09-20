@@ -113,7 +113,7 @@ bool derefNumeric (JsonValueCR source, char const *name, double &value, double d
 
 ValidatedDouble derefValidatedDouble (JsonValueCR source, char const *name, ValidatedDouble const &defaultValue)
     {
-    auto value = defaultValue;
+    // unused - auto value = defaultValue;
     auto jsonValue = source[name];
     if (jsonValue.isNumeric ())
         return ValidatedDouble (jsonValue.asDouble (), true);
