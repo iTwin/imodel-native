@@ -123,55 +123,7 @@ PointCloudModel::PointCloudModel(CreateParams const& params, PointCloudModel::Pr
 //----------------------------------------------------------------------------------------
 PointCloudModel::~PointCloudModel()
     {
-    m_viewportCache.clear();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2016
-//----------------------------------------------------------------------------------------
-Dgn::Render::Graphic* PointCloudModel::GetLowDensityGraphicP(DgnViewportCR vp) const
-    {
-    auto viewportItr = m_viewportCache.find(&vp);
-    if (viewportItr != m_viewportCache.end())
-        return viewportItr->second.m_lowDensityGraphic.get();
-
-    return nullptr;
-    }
-
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2016
-//----------------------------------------------------------------------------------------
-void PointCloudModel::SaveLowDensityGraphic(DgnViewportCR vp, Dgn::Render::Graphic* pGraphic)
-    {
-    // Insert or replace in cache.
-    m_viewportCache[&vp].m_lowDensityGraphic = pGraphic;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2016
-//----------------------------------------------------------------------------------------
-PtViewport* PointCloudModel::GetPtViewportP(DgnViewportCR vp) const
-    {
-    auto viewportItr = m_viewportCache.find(&vp);
-    if (viewportItr != m_viewportCache.end())
-        return viewportItr->second.m_ptViewport.get();
-    
-    ViewportCacheEntry entry;
-    entry.m_ptViewport = PtViewport::Create();
-    if (entry.m_ptViewport.IsNull())
-        return nullptr;    
-
-    m_viewportCache.insert(std::make_pair(&vp, entry));
-    return entry.m_ptViewport.get();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2016
-//----------------------------------------------------------------------------------------
-void PointCloudModel::_DropGraphicsForViewport(Dgn::DgnViewportCR viewport)
-    {
-    m_viewportCache.erase(&viewport);
+    //
     }
 
 //----------------------------------------------------------------------------------------
@@ -205,20 +157,6 @@ PointCloudSceneP PointCloudModel::GetPointCloudSceneP() const
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2016
-//----------------------------------------------------------------------------------------
-void PointCloudModel::_OnFitView(Dgn::FitContextR context)
-    {
-    DRange3d rangeWorld;
-    if (!GetRange(rangeWorld, Unit::Scene))
-        return;
-      
-    ElementAlignedBox3d box;
-    box.InitFrom(rangeWorld.low, rangeWorld.high);
-    context.ExtendFitRange(box, GetSceneToWorld());
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
 bool PointCloudModel::GetRange(DRange3dR range, PointCloudModel::Unit const& unit) const
@@ -232,18 +170,6 @@ bool PointCloudModel::GetRange(DRange3dR range, PointCloudModel::Unit const& uni
         GetSceneToWorld().Multiply(range, range);
 
     return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-AxisAlignedBox3d PointCloudModel::_QueryModelRange() const
-    {
-    DRange3d rangeWorld;
-    if (!GetRange(rangeWorld, Unit::World))
-        return AxisAlignedBox3d();
-
-    return AxisAlignedBox3d(rangeWorld);
     }
 
 //----------------------------------------------------------------------------------------
@@ -318,19 +244,7 @@ void PointCloudModel::_OnLoadedJsonProperties()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootPtr PointCloudModel::_CreateTileTree(Render::SystemP system)
+Dgn::Cesium::RootPtr PointCloudModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR output)
     {
-    if (nullptr != system)
-        return PointCloudTileTree::Root::Create(*this, *system);
-    else
-        return nullptr;
+    return PointCloudTileTree::Root::Create(*this, output);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::TileTree::RootPtr PointCloudModel::_GetTileTree(Dgn::RenderContextR context)
-    {
-    return GetTileTree(context.GetRenderSystem());
-    }
-

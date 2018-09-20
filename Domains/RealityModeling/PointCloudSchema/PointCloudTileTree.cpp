@@ -17,7 +17,35 @@ USING_NAMESPACE_POINTCLOUD_TILETREE
 
 static int  s_nominalTileSize = 512;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d bisectRange(DRange3dCR range, bool takeLow)
+    {
+    DVec3d diag = range.DiagonalVector();
+    DRange3d subRange = range;
 
+    double bisect;
+    double* replace;
+    if (diag.x > diag.y && diag.x > diag.z)
+        {
+        bisect = (range.low.x + range.high.x) / 2.0;
+        replace = takeLow ? &subRange.high.x : &subRange.low.x;
+        }
+    else if (diag.y > diag.z)
+        {
+        bisect = (range.low.y + range.high.y) / 2.0;
+        replace = takeLow ? &subRange.high.y : &subRange.low.y;
+        }
+    else
+        {
+        bisect = (range.low.z + range.high.z) / 2.0;
+        replace = takeLow ? &subRange.high.z : &subRange.low.z;
+        }
+
+    *replace = bisect;
+    return subRange;
+    }
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader)
 DEFINE_REF_COUNTED_PTR(Loader)
@@ -33,15 +61,17 @@ struct PointCloudFileThread : BeFolly::ThreadPool
     static PointCloudFileThread& Get() { static folly::Singleton<PointCloudFileThread> s_pool; return *s_pool.try_get_fast(); }
     };
 
+BEGIN_POINTCLOUD_TILETREE_NAMESPACE
+
 //=======================================================================================
 // @bsistruct                                                    Ray.Bentley    02/2017
 //=======================================================================================
-struct Loader : TileTree::TileLoader
+struct Loader : Cesium::Loader
 {
-    DEFINE_T_SUPER(TileTree::TileLoader);
+    DEFINE_T_SUPER(Cesium::Loader);
 
 private:
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys) { }
+    Loader(TileR tile, Cesium::LoadStateR loads, Cesium::OutputR output) : T_Super("", tile, output, loads) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -51,7 +81,7 @@ BentleyStatus _LoadTile() override
     TileR   tile = static_cast<TileR> (*m_tile);
 
     tile.Read(m_tileBytes);
-    return tile.AddGraphics (GetRenderSystem()); 
+    return tile.AddGraphics(GetOutput()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,8 +109,10 @@ BentleyStatus DoGetFromSource()
     static const size_t         s_maxTileBatchCount = 500000;
     static size_t               s_maxLeafPointCount = 20000;
     bool                        colorsPresent;
+
     static   BeMutex            s_queryMutex;
     BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
+
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
     size_t                      nBatchPoints = 0;
     bvector<FPoint3d>           batchPoints(s_maxTileBatchCount);
@@ -108,7 +140,6 @@ BentleyStatus DoGetFromSource()
                 }
             }
         }
-    m_saveToCache = true;
 
     if (points.size() < s_maxLeafPointCount)
         tile.SetIsLeaf();
@@ -151,15 +182,14 @@ BentleyStatus DoGetFromSource()
 
 
 public:
-    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
+    static Cesium::LoaderPtr Create(TileR tile, Cesium::LoadStateR loads, Cesium::OutputR output) { return new Loader(tile, loads, output); }
 };
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range)
-    : T_Super(octRoot, id, parent, false), m_points(QPoint3d::Params())
+Tile::Tile(Root& octRoot, TileId id, Tile const* parent, DRange3dCP range)
+    : T_Super(octRoot, parent), m_id(id), m_isLeaf(false), m_points(QPoint3d::Params())
     {
     static const double s_minToleranceRatio = 1000.0;
 
@@ -175,19 +205,18 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loadState, Dgn::Render::SystemP renderSys) 
+Cesium::LoaderPtr Tile::_CreateLoader(Cesium::LoadStateR loadState, Cesium::OutputR output)
     {                                                                        
-    return Loader::Create(*this, loadState, renderSys);
+    return Loader::Create(*this, loadState, output);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const 
+Cesium::TilePtr Tile::CreateChild(TileId childId) const
     {
     return Tile::Create(const_cast<RootR>(GetPointCloudRoot()), childId, *this);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -198,17 +227,9 @@ double Tile::_GetMaximumSize() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::_Invalidate()
-    {
-    m_graphic = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
+BentleyStatus Tile::Read (StreamBuffer& streamBuffer)
     {
     if (streamBuffer.empty())
         return ERROR;
@@ -253,38 +274,93 @@ BentleyStatus Tile::Read (TileTree::StreamBuffer& streamBuffer)
             }
 
         }
+
     return SUCCESS; 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Tile::AddGraphics (Dgn::Render::SystemP renderSys) 
+BentleyStatus Tile::AddGraphics(Cesium::OutputR output) 
     {
     if (!m_points.empty())
         {
-        auto&                       root   = static_cast<RootCR>(GetRoot());
-        Render::PointCloudArgs      args(QPoint3d::Params(m_range), static_cast<int32_t>(m_points.size()), &m_points.front(), reinterpret_cast<ByteCP>(m_colors.data()));
-        Render::GraphicPtr          graphic = renderSys->_CreatePointCloud(args, root.GetDgnDb());
-
-        graphic = CreateTileGraphic(*graphic, root.GetModelId());
-        SetGraphic(*graphic);
+        auto& root   = static_cast<RootCR>(GetRoot());
+        Render::PointCloudArgs args(QPoint3d::Params(m_range), static_cast<int32_t>(m_points.size()), &m_points.front(), reinterpret_cast<ByteCP>(m_colors.data()));
+        output._AddPointCloud(args);
         }
 
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d Tile::ComputeChildRange(Tile& child) const
+    {
+    // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
+    TileId relativeId = child.GetRelativeTileId();
+    BeAssert(2 > relativeId.m_i && 2 > relativeId.m_j && 2 > relativeId.m_k);
+
+    DRange3d range = bisectRange(GetRange(), 0 == relativeId.m_i);
+    range = bisectRange(range, 0 == relativeId.m_j);
+    range = bisectRange(range, 0 == relativeId.m_k);
+
+    return range;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Cesium::ChildTiles const* Tile::_GetChildren(bool load) const
+    {
+    if (m_isLeaf)
+        return nullptr;
+
+    if (load && m_children.empty())
+        {
+        for (int i = 0; i < 2; i++)
+            {
+            for (int j = 0; j < 2; j++)
+                {
+                for (int k = 0; k < 2; k++)
+                    {
+                    auto child = CreateChild(m_id.CreateChildId(i, j, k));
+                    if (child.IsValid())
+                        m_children.push_back(child.get());
+                    }
+                }
+            }
+        }
+
+    return m_children.empty() ? nullptr : &m_children;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileId Tile::GetRelativeTileId() const
+    {
+    auto tileId = GetTileId();
+    auto parent = static_cast<TileCP>(GetParent());
+    if (nullptr != parent)
+        tileId = tileId.GetRelativeId(parent->GetTileId());
+
+    return tileId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::LoadRootTile(DRange3dCR tileRange)
+void Root::LoadRootTile(DRange3dCR tileRange, Cesium::OutputR output)
     {
     m_rootTile = Tile::Create(*this, tileRange);
 
 #define LOAD_ASYNCH_ROOT
 #ifdef LOAD_ASYNCH_ROOT
     // Push to always request root tile --- this provides a low resolution proxy while the actual nodes load (but delays final display).
-    auto result = _RequestTile(*m_rootTile, nullptr, nullptr, BeDuration());
+    auto loadState = Cesium::LoadState::Create(*m_rootTile);
+    auto result = _RequestTile(*m_rootTile, *loadState, output);
     result.wait();
 #endif
     }
@@ -333,18 +409,9 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(PointCloudModelR model, TransformCR transform, Render::SystemR system)
-    : T_Super(model, transform, "", &system), m_model(model), m_name(model.GetName())
-    {
-    CreateCache(model.GetName().c_str(), 1024*1024*1024, false); // 1 GB
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootPtr Root::Create(PointCloudModelR model, Render::SystemR system)
+RootPtr Root::Create(PointCloudModelR model, Cesium::OutputR output)
     {
     DgnDb::VerifyClientThread();
 
@@ -357,13 +424,13 @@ RootPtr Root::Create(PointCloudModelR model, Render::SystemR system)
 
     transformToTile.InverseOf(transformFromTile);
 
-    RootPtr     root = new Root(model, transformFromTile, system);
+    RootPtr     root = new Root(model, transformFromTile);
     DRange3d    tileRange;
 
     transformToTile.Multiply(tileRange, dgnRange);
-    root->LoadRootTile(tileRange);
+    root->LoadRootTile(tileRange, output);
 
     return root;
     }
 
-
+END_POINTCLOUD_TILETREE_NAMESPACE

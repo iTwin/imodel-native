@@ -2,7 +2,7 @@
 #
 #     $Source: PointCloudSchema/PointCloud.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -87,8 +87,6 @@ $(o)PointCloudProgressiveDisplay$(oext) : $(SrcPointCloud)PointCloudProgressiveD
 $(o)PointCloudDomain$(oext)             : $(SrcPointCloud)PointCloudDomain.cpp               $(pointCloudDepends)  ${MultiCompileDepends} 
 
 $(o)PointCloudTileTree$(oext)           : $(SrcPointCloud)PointCloudTileTree.cpp             $(pointCloudDepends)  ${MultiCompileDepends} 
-
-$(o)PointCloudTilePublish$(oext)        : $(SrcPointCloud)PointCloudTilePublish.cpp          $(pointCloudDepends)  ${MultiCompileDepends} 
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
