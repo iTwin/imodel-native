@@ -106,6 +106,21 @@ void Tile::SetAbandoned()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* ensure that this Tile's range includes its child's range.
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::ExtendRange(DRange3dCR childRange) const
+    {
+    if (childRange.IsContained(m_range))
+        return;
+
+    const_cast<ElementAlignedBox3dR>(m_range).Extend(childRange);
+
+    if (nullptr != m_parent)
+        m_parent->ExtendRange(childRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::ClearAllTiles()
@@ -249,11 +264,12 @@ folly::Future<BentleyStatus> Loader::Perform()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, LoadStateR loads) : m_request(url), m_loads(&loads), m_responseBody(Http::HttpByteStreamBody::Create())
+HttpDataQuery::HttpDataQuery(Utf8StringCR url, LoadStateP loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
     m_request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 1);
-    m_request.SetCancellationToken(loads.GetCancellationToken());
+    if (nullptr != loads)
+        m_request.SetCancellationToken(loads->GetCancellationToken());
     }
 
 //----------------------------------------------------------------------------------------

@@ -114,6 +114,8 @@ public:
     void SetIsReady() { SetLoadStatus(LoadStatus::Ready); }
     void SetNotFound() { SetLoadStatus(LoadStatus::NotFound); }
 
+    DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
+
     virtual Utf8String _GetName() const = 0;
     virtual double _GetMaximumSize() const = 0;
     virtual ChildTilesCP _GetChildren(bool create) const = 0;
@@ -169,7 +171,8 @@ struct HttpDataQuery
     Http::Request m_request;
     LoadStatePtr m_loads;
 
-    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, LoadStateR loads);
+    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, LoadStateP loads);
+    HttpDataQuery(Utf8StringCR url, LoadStateR loads) : HttpDataQuery(url, &loads) { }
 
     Http::Request& GetRequest() {return m_request;}
 
@@ -188,7 +191,8 @@ struct FileDataQuery
     Utf8String m_fileName;
     LoadStatePtr m_loads;
 
-    FileDataQuery(Utf8StringCR fileName, LoadStateR loads) : m_fileName(fileName), m_loads(&loads) {}
+    FileDataQuery(Utf8StringCR fileName, LoadStateP loads) : m_fileName(fileName), m_loads(loads) {}
+    FileDataQuery(Utf8StringCR fileName, LoadStateR loads) : FileDataQuery(fileName, &loads) {}
 
     //! Read the entire file in a single chunk of memory.
     DGNPLATFORM_EXPORT folly::Future<ByteStream> Perform();
@@ -224,6 +228,7 @@ public:
 
     TransformCR GetLocation() const { return m_location; }
     void SetLocation(TransformCR location) { m_location = location; }
+    DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
 
     virtual Utf8String _ConstructTileResource(TileCR tile) const { return m_rootResource + tile._GetName(); }
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, LoadStateR loads, OutputR output);
