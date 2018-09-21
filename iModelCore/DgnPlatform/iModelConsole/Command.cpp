@@ -2555,7 +2555,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
     IModelConsole::WriteLine("Median: %.1f", ComputeQuantile(classStats, .5));
     IModelConsole::WriteLine("80%% quantile: %.1f:", ComputeQuantile(classStats, .8));
     //Mean
-    const double mean = std::accumulate(classStats.GetList().begin(), classStats.GetList().end(), 0, [] (double sum, ClassColumnStats const& stat) { return sum + stat.GetTotalColumnCount();}) / (1.0 * classStats.GetSize());
+    const double mean = std::accumulate(classStats.GetList().begin(), classStats.GetList().end(), 0.0, [] (double sum, ClassColumnStats const& stat) { return sum + stat.GetTotalColumnCount();}) / (1.0 * classStats.GetSize());
     IModelConsole::WriteLine("Mean: %.1f:", mean);
 
     //stddev
