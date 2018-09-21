@@ -711,7 +711,7 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
     if (dgnFile_isABDFile(file))
         {
         BeStringUtilities::Wcsncpy(buffer, bufferSize, L"AECOsimBuildingDesigner");
-        affinityLevel = BentleyB0200::Dgn::iModelBridge::Affinity::ExactMatch;
+        affinityLevel = BentleyM0200::Dgn::iModelBridge::Affinity::ExactMatch;
         return BSISUCCESS;
         }
 #endif
@@ -744,9 +744,9 @@ void XDomain::UnRegister(XDomain& xd)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr)
     {
-    affinityLevel = BentleyB0200::Dgn::iModelBridge::Affinity::None;
+    affinityLevel = BentleyM0200::Dgn::iModelBridge::Affinity::None;
 
-    BentleyB0200::BeFileName affinityLibraryPath(affinityLibraryPathStr);
+    BentleyM0200::BeFileName affinityLibraryPath(affinityLibraryPathStr);
     InitializeDgnv8Platform(affinityLibraryPath);
 
     // if no file handler recognizes this file, don't bother loading it:
@@ -766,7 +766,7 @@ void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, i
         return;
         }
 
-    BentleyB0200::BeFileName sourceFileName(sourceFileNameStr);
+    BentleyM0200::BeFileName sourceFileName(sourceFileNameStr);
     
     if (BSISUCCESS != Converter::GetAuthoringFileInfo(buffer, bufferSize, affinityLevel, sourceFileName))
         {

@@ -19,6 +19,7 @@
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnIModel.h>
 #include "iModelBridgeHelpers.h"
+#include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
