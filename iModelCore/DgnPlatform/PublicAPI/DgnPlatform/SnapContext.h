@@ -79,6 +79,7 @@ namespace SnapContext
 {
     struct Request : Json::Value {
         BE_JSON_NAME(id)
+        BE_JSON_NAME(testPoint)
         BE_JSON_NAME(closePoint)
         BE_JSON_NAME(worldToView)
         BE_JSON_NAME(viewFlags)
@@ -89,6 +90,7 @@ namespace SnapContext
         bool IsValid() const {return isMember(json_id()) && isMember(json_closePoint()) && isMember(json_worldToView());}
         DgnElementId GetElementId() const {DgnElementId elementId; elementId.FromJson((*this)[json_id()]); return elementId;}
         DMatrix4d GetWorldToView() const {return JsonUtils::ToDMatrix4d((*this)[json_worldToView()]);}
+        DPoint3d GetTestPoint() const {return JsonUtils::ToDPoint3d((*this)[json_testPoint()]);}
         DPoint3d GetClosePoint() const {return JsonUtils::ToDPoint3d((*this)[json_closePoint()]);}
         Render::ViewFlags GetViewFlags() const {Render::ViewFlags viewFlags; if (isMember(json_viewFlags())) viewFlags.FromJson((*this)[json_viewFlags()]); return viewFlags;}
         double GetSnapAperture() const {return (*this)[json_snapAperture()].asDouble(12.0);}

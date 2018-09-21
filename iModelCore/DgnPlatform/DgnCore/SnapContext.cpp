@@ -23,12 +23,13 @@ DPoint3d                m_hitPoint;
 DPoint3d                m_snapPoint;
 DVec3d                  m_snapNormal = DVec3d::FromZero();
 SnapHeat                m_heat = SNAP_HEAT_None;
-double                  m_viewDistance = 0.0;
 HitGeomType             m_geomType = HitGeomType::None;
 HitParentGeomType       m_parentGeomType = HitParentGeomType::None;
 DgnSubCategoryId        m_subCategoryId;
 Transform               m_localToWorld = Transform::FromIdentity();
 IGeometryPtr            m_geomPtr;
+double                  m_viewDistance = 0.0;
+bool                    m_interiorWasPickable = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   09/18
@@ -39,61 +40,91 @@ SnapData(SnapMode mode = SnapMode::Invalid, DPoint3dCR snapPoint = DPoint3d::Fro
 * @bsimethod                                                    BrienBastings   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IsInRange() const { return (SNAP_HEAT_InRange == m_heat && SnapMode::Nearest != m_mode); }
-bool IsCurveHit() const { return (m_geomPtr.IsValid() || HitGeomType::Point == m_geomType); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   09/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UpdateIfBetter(SnapData const& other)
+bool IsCloser(SnapData const& other)
+    {
+    if (DoubleOps::WithinTolerance(m_viewDistance, other.m_viewDistance, 0.01))
+        return false; // Keep current when distance is the same (snap priority is from set ordering from snapMode value)...
+
+    if (m_viewDistance < other.m_viewDistance)
+        return false; // Current is closer of the two hits...
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsPreferredSnap(SnapData const& snap, DPoint3dCR testPoint, DMatrix4dCR worldToView, double snapAperture)
+    {
+    if (SnapMode::Center != snap.m_mode)
+        return false;
+
+    if (HitParentGeomType::Wire != snap.m_parentGeomType && snap.m_interiorWasPickable)
+        return false;
+
+    DPoint4d viewPts[3];
+
+    worldToView.Multiply(&viewPts[0], &snap.m_snapPoint, nullptr, 1);
+    worldToView.Multiply(&viewPts[1], &snap.m_hitPoint, nullptr, 1);
+    worldToView.Multiply(&viewPts[2], &testPoint, nullptr, 1);
+
+    double edgeDist = 0.0, testDist = 0.0;
+
+    viewPts[0].RealDistanceXY(edgeDist, viewPts[1]);
+    viewPts[0].RealDistanceXY(testDist, viewPts[2]);
+
+    return (edgeDist > testDist && !DoubleOps::WithinTolerance(edgeDist, testDist, snapAperture * 0.4));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsBetter(SnapData const& other, DPoint3dCR testPoint, DMatrix4dCR worldToView, double snapAperture)
     {
     if (SnapMode::Invalid == other.m_mode)
         return false;
 
-    if (SnapMode::Invalid != m_mode)
+    if (SnapMode::Invalid == m_mode)
+        return true;
+
+    bool thisInRange = IsInRange();
+    bool otherInRange = other.IsInRange();
+
+    if (thisInRange && otherInRange)
         {
-        bool thisInRange = IsInRange();
-        bool otherInRange = other.IsInRange();
-        bool sameDistance = DoubleOps::WithinTolerance(m_viewDistance, other.m_viewDistance, 0.01);
-
-        if (thisInRange && otherInRange)
-            {
-            if (sameDistance)
-                return false; // Keep current when distance is the same (snap priority is set order i.e. snapMode)...
-
-            if (m_viewDistance < other.m_viewDistance)
-                return false; // Current is closest of 2 hot hits...
-            }
-        else if (thisInRange)
-            {
-            return false; // Current is hot, other is not...
-            }
-        else if (!otherInRange)
-            {
-            bool thisIsCurve = IsCurveHit();
-            bool otherIsCurve = other.IsCurveHit();
-
-            if (thisIsCurve && otherIsCurve)
-                {
-                if (sameDistance)
-                    return false; // Keep current when distance is the same (snap priority is set order i.e. snapMode)...
-
-                if (m_viewDistance < other.m_viewDistance)
-                    return false; // Current is closest of 2 non-hot curve hits...
-                }
-            else if (thisIsCurve)
-                {
-                return false; // Current is curve hit, other is not...
-                }
-            else if (!otherIsCurve)
-                {
-                if (sameDistance)
-                    return false; // Keep current when distance is the same (snap priority is set order i.e. snapMode)...
-
-                if (m_viewDistance < other.m_viewDistance)
-                    return false; // Current is closest of 2 non-hot/non-curve hits...
-                }
-            }
+        if (!IsCloser(other))
+            return false;
         }
+    else if (thisInRange)
+        {
+        return false; // Current is hot, other is not...
+        }
+    else if (!otherInRange)
+        {
+        if (IsPreferredSnap(*this, testPoint, worldToView, snapAperture))
+            return false;
+
+        if (IsPreferredSnap(other, testPoint, worldToView, snapAperture))
+            return true;
+
+        if (!IsCloser(other))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UpdateIfBetter(SnapData const& other, DPoint3dCR testPoint, DMatrix4dCR worldToView, double snapAperture)
+    {
+    if (!IsBetter(other, testPoint, worldToView, snapAperture))
+        return false;
 
     m_mode = other.m_mode;
     m_hitPoint = other.m_hitPoint;
@@ -2092,6 +2123,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
     if (nullptr == source)
         return output;
 
+    DPoint3d testPoint = input.GetTestPoint();
     DPoint3d closePoint = input.GetClosePoint();
     DMatrix4d worldToView = input.GetWorldToView(), viewToWorld; viewToWorld.QrInverseOf(worldToView);
     DMap4d worldToViewMap = DMap4d::From(worldToView, viewToWorld);
@@ -2134,6 +2166,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             currentSnap.m_geomType = helper.GetSnapGeomType();
             currentSnap.m_parentGeomType = helper.GetHitParentGeomType();
             currentSnap.m_subCategoryId = helper.GetHitGeometryParams().GetSubCategoryId();
+            currentSnap.m_interiorWasPickable = (RenderMode::Wireframe != viewFlags.GetRenderMode() || (FillDisplay::ByView == helper.GetHitGeometryParams().GetFillDisplay() && viewFlags.ShowFill()) || FillDisplay::ByView < helper.GetHitGeometryParams().GetFillDisplay());
 
             if (helper.IsSnapNormalValid())
                 currentSnap.m_snapNormal = helper.GetSnapNormalWorld();
@@ -2144,7 +2177,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             if (nullptr != helper.GetSnapCurveDetail().curve)
                 currentSnap.m_geomPtr = IGeometry::Create(helper.GetSnapCurvePrimitivePtr());
 
-            if (bestSnap.UpdateIfBetter(currentSnap))
+            if (bestSnap.UpdateIfBetter(currentSnap, testPoint, worldToViewMap.M0, snapAperture))
                break;
             }
         }
@@ -2159,7 +2192,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
         if (nullptr != source)
             originSnap.m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(source->GetCategoryId());
 
-        bestSnap.UpdateIfBetter(originSnap);
+        bestSnap.UpdateIfBetter(originSnap, testPoint, worldToViewMap.M0, snapAperture);
         }
 
     bestSnap.ToResponse(output);
