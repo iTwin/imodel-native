@@ -556,18 +556,20 @@ bool EvaluateCurve(SnapMode snapMode) const
                 {
                 CurveVectorCR curves = *m_hitGeom->GetAsCurveVector();
 
-                if (curves.IsAnyRegionType() && GetAreaCentroid(centroid, curves))
+                if (!GetCentroid(centroid, curves))
+                    return false;
+
+                m_snapCurveDetail.point = centroid;
+
+                if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive())
                     {
-                    m_snapCurveDetail.point = centroid;
-
-                    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive())
-                        {
+                    if (curves.IsAnyRegionType())
                         m_snapGeomType = HitGeomType::Surface;
-                        m_snapCurveDetail.curve = nullptr; // Don't flash single curve primitive when snapping to center of region...
-                        }
 
-                    return true;
+                    m_snapCurveDetail.curve = nullptr; // Don't flash single curve primitive when snapping to center of multi-curve path/region...
                     }
+
+                return true;
                 }
 
             if (!GetCentroid(centroid, *m_snapCurveDetail.curve))
@@ -1906,18 +1908,25 @@ static bool IsPhysicallyClosed(ICurvePrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool GetAreaCentroid(DPoint3dR centroid, CurveVectorCR curve)
+static bool GetCentroid(DPoint3dR centroid, CurveVectorCR curve)
     {
-    Transform   localToWorld, worldToLocal;
-    DRange3d    localRange;
+    if (curve.IsAnyRegionType())
+        {
+        Transform   localToWorld, worldToLocal;
+        DRange3d    localRange;
 
-    if (!curve.IsPlanar(localToWorld, worldToLocal, localRange))
-        return false;
+        if (curve.IsPlanar(localToWorld, worldToLocal, localRange))
+            {
+            DVec3d  normal;
+            double  area;
 
-    DVec3d      normal;
-    double      area;
+            return curve.CentroidNormalArea(centroid, normal, area);
+            }
+        }
 
-    return curve.CentroidNormalArea(centroid, normal, area);
+    double  length;
+
+    return curve.WireCentroid(length, centroid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1934,13 +1943,10 @@ static bool GetCentroid(DPoint3dR centroid, ICurvePrimitiveCR primitive)
         }
     else if (IsPhysicallyClosed(primitive))
         {
-        CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
-
-        curve->push_back(primitive.Clone());
+        CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, primitive.Clone());
 
         // For physically closed/planar curve use area centroid instead of wire centroid...
-        if (GetAreaCentroid(centroid, *curve))
-            return true;
+        return GetCentroid(centroid, *curve);
         }
 
     double  length;
