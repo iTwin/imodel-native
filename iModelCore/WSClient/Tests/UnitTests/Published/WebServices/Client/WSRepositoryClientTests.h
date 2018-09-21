@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSRepositoryClientTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,4 +13,5 @@
 class WSRepositoryClientTests : public BaseMockHttpHandlerTest
     {
     void SetUp() override;
+    void TearDown() override;
     };

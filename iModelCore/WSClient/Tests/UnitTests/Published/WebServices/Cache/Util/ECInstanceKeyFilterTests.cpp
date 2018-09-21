@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECInstanceKeyFilterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -463,6 +463,165 @@ TEST_F(ECInstanceKeyFilterTests, SetLimit_OnLabelFilter_ReturnsLimitedInstances)
     txn.Commit();
 
     ASSERT_EQ(1, result.size());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                Eimantas.Morkunas                      07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstanceKeyFilterTests, SetOffset_OnClassFilter_ReturnsOffsetInstances)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+    auto ecClass = txn.GetCache().GetAdapter().GetECClass("TestSchema", "TestClass");
+
+    ECInstanceKeyMultiMap instances;
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    auto secondInstance = instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(2))});
+
+    ECInstanceKeyMultiMap result;
+    ECInstanceKeyFilter filter(*ecClass);
+    filter.SetOffset(1);
+    ASSERT_EQ(SUCCESS, filter.Filter(txn, instances, result));
+
+    txn.Commit();
+
+    ASSERT_EQ(1, result.size());
+    EXPECT_CONTAINS(result, *secondInstance);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                Eimantas.Morkunas                      07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstanceKeyFilterTests, SetOffset_OnLabelFilter_ReturnsOffsetInstances)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestLabeledClass", "1"}, {{"Name", "Label"}});
+    instances.Add({"TestSchema.TestLabeledClass", "2"}, {{"Name", "Label"}});
+
+    CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponseRoot"), "KeyName");
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "1"}));
+    auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "2"}));
+
+    ECInstanceKeyMultiMap instancesToFilter;
+    instancesToFilter.insert(instanceKeyPair1);
+    instancesToFilter.insert(instanceKeyPair2);
+
+    ECInstanceKeyMultiMap result;
+    ECInstanceKeyFilter filter;
+    filter.AddLabelFilter("Label");
+    filter.SetOffset(1);
+    ASSERT_EQ(SUCCESS, filter.Filter(txn, instancesToFilter, result));
+
+    txn.Commit();
+
+    ASSERT_EQ(1, result.size());
+    EXPECT_CONTAINS(result, instanceKeyPair2);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                Eimantas.Morkunas                      07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstanceKeyFilterTests, SetOrderByClause_OnAnyPropertyLikeFilterWithSingleClass_ReturnsLimitedInstancesInOrder)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestLabeledClass", "1"}, {{"Name", "Label3"}});
+    instances.Add({"TestSchema.TestLabeledClass", "2"}, {{"Name", "Label2"}});
+    instances.Add({"TestSchema.TestLabeledClass", "3"}, {{"Name", "Label1"}});
+
+    CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponseRoot"), "KeyName");
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "1"}));
+    auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "2"}));
+    auto instanceKeyPair3 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "3"}));
+
+    ECInstanceKeyMultiMap instancesToFilter;
+    instancesToFilter.insert(instanceKeyPair1);
+    instancesToFilter.insert(instanceKeyPair2);
+    instancesToFilter.insert(instanceKeyPair3);
+
+    ECInstanceKeyMultiMap result;
+    ECInstanceKeyFilter filter;
+    bset<Utf8String> propertiesToFilter;
+    propertiesToFilter.insert("Name");
+    filter.AddAnyPropertiesLikeFilter(propertiesToFilter, "Label");
+    filter.SetOrderByClause("[Name] ASC");
+    filter.SetLimit(1);
+    ASSERT_EQ(SUCCESS, filter.Filter(txn, instancesToFilter, result));
+
+    txn.Commit();
+
+    ASSERT_EQ(1, result.size());
+    EXPECT_CONTAINS(result, instanceKeyPair3);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                Eimantas.Morkunas                      07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECInstanceKeyFilterTests, SetOrderByClause_OnAnyPropertyLikeFilterWithMultipleClasses_ReturnsLimitedInstancesInOrder)
+    {
+    auto ds = GetTestDataSourceV24();
+    auto txn = ds->StartCacheTransaction();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "1"}, {{"TestProperty", "BCD"}});
+    instances.Add({"TestSchema.TestClass", "2"}, {{"TestProperty", "ABC"}});
+    instances.Add({"TestSchema.TestFileClass3", "3"}, {{"TestName", "ABC"}});
+    instances.Add({"TestSchema.TestFileClass3", "4"}, {{"TestName", "BCD"}});
+
+    CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponceRoot"), "KeyName");
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+
+    auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestClass", "1"}));
+    auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestClass", "2"}));
+    auto instanceKeyPair3 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestFileClass3", "3"}));
+    auto instanceKeyPair4 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestFileClass3", "4"}));
+
+    ECInstanceKeyMultiMap instancesToFilter;
+    instancesToFilter.insert(instanceKeyPair1);
+    instancesToFilter.insert(instanceKeyPair2);
+    instancesToFilter.insert(instanceKeyPair3);
+    instancesToFilter.insert(instanceKeyPair4);
+
+    ECInstanceKeyMultiMap result;
+    ECInstanceKeyFilter filter;
+    filter.AddAnyPropertiesLikeFilter([] (ECClassCR ecClass)
+        {
+        bset<Utf8String> propertiesToSearch;
+        if (ecClass.GetName().Equals("TestClass"))
+            propertiesToSearch.insert("TestProperty");
+        else
+            propertiesToSearch.insert("TestName");
+
+        return propertiesToSearch;
+        }, "B");
+
+    filter.SetOrderByClause([] (ECClassCR ecClass, Utf8StringR outOrderByClause)
+        {
+        if (ecClass.GetName().Equals("TestClass"))
+            outOrderByClause = "[TestProperty] ASC";
+        else
+            outOrderByClause = "[TestName] DESC";
+
+        return SUCCESS;
+        });
+
+    filter.SetLimit(1);
+    ASSERT_EQ(SUCCESS, filter.Filter(txn, instancesToFilter, result));
+
+    txn.Commit();
+
+    ASSERT_EQ(2, result.size());
+    EXPECT_CONTAINS(result, instanceKeyPair2);
+    EXPECT_CONTAINS(result, instanceKeyPair4);
     }
 
 #endif

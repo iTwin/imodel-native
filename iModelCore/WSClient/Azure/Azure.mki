@@ -2,7 +2,7 @@
 #
 #     $Source: Azure/Azure.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -12,15 +12,18 @@ AzureMkiSourceDir = $(ClientSourceDirectory)Azure/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-AzureMkiHeaders =  $(AzureMkiPublicApiDir)AzureBlobStorageClient.h \
+AzureMkiHeaders =  $(AzureMkiPublicApiDir)AzureError.h \
+                   $(AzureMkiPublicApiDir)AzureBlobStorageClient.h \
                    $(AzureMkiPublicApiDir)EventServiceClient.h \
 				   $(AzureMkiPublicApiDir)AzureServiceBusSASDTO.h
 
 #--------------------------------------------------------------------------------------
 #   Compile
 #--------------------------------------------------------------------------------------
+$(o)AzureError$(oext)                       : $(AzureMkiSourceDir)AzureError.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+
 $(o)AzureBlobStorageClient$(oext)           : $(AzureMkiSourceDir)AzureBlobStorageClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
 
-$(o)EventServiceClient$(oext)           : $(AzureMkiSourceDir)EventServiceClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+$(o)EventServiceClient$(oext)               : $(AzureMkiSourceDir)EventServiceClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
 
-$(o)AzureServiceBusSASDTO$(oext)           : $(AzureMkiSourceDir)AzureServiceBusSASDTO.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+$(o)AzureServiceBusSASDTO$(oext)            : $(AzureMkiSourceDir)AzureServiceBusSASDTO.cpp $(AzureMkiHeaders) ${MultiCompileDepends}

@@ -107,7 +107,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Get IECDbAdapter for accessing common functionality
         virtual IECDbAdapterR GetAdapter() = 0;
 
-        //! Get IExtendedDataAdapter for accessing extended data for instances
+        //! Get IExtendedDataAdapter for accessing custom key-value pairs for cached instances.
+        //! Useful for adding addtional data to cached instances. Examples - extracted, generated, local information about instance.
         virtual IExtendedDataAdapter& GetExtendedDataAdapter() = 0;
 
         //! Get ECDb for accessing raw database
@@ -310,6 +311,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         virtual BentleyStatus RemoveTemporaryResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc) = 0;
         //! Removes all cached responses that match name
         virtual BentleyStatus RemoveResponses(Utf8StringCR name) = 0;
+        //! Removes all cached responses that starts with a given prefix
+        virtual BentleyStatus RemoveResponsesByPrefix(Utf8StringCR responsePrefix) = 0;
         //! Removes cached instance. Will also remove all held resources
         virtual CacheStatus RemoveInstance(ObjectIdCR objectId) = 0;
         //! Removes cached file from disk

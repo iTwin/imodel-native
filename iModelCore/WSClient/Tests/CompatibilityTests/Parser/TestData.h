@@ -26,6 +26,7 @@ struct TestRepository
 
     Utf8String serverUrl;
     Utf8String id;
+    BeVersion serviceVersion;
 
     Credentials credentials;
     SamlTokenPtr token;

@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Instances/NavigationBaseManager.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -35,6 +35,7 @@ struct NavigationBaseManager
             ECSqlStatementCache& statementCache
             );
 
+        bool IsNavigationBase(ECInstanceKeyCR instance);
         CacheNodeKey FindNavigationBase();
         CacheNodeKey FindOrCreateNavigationBase();
     };

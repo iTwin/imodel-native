@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/DownloadFilesTask.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -27,6 +27,7 @@ struct DownloadFilesTask : public CachingTaskBase
             std::shared_ptr<Utf8String> name;
             uint64_t size;
             uint64_t bytesDownloaded;
+            ICancellationTokenPtr cancellationToken;
             DownloadFileProperties() : name(std::make_shared<Utf8String>()) {}
             };
 
@@ -35,7 +36,7 @@ struct DownloadFilesTask : public CachingTaskBase
         size_t m_maxParalelDownloads;
 
         FileCache                       m_fileCacheLocation;
-        bset<ObjectId>                  m_filesToDownloadIds;
+        bmap<ObjectId, ICancellationTokenPtr>   m_filesToDownloadIds;
         bvector<DownloadFileProperties> m_filesToDownload;
         size_t                          m_nextFileToDownloadIndex;
 
@@ -57,7 +58,7 @@ struct DownloadFilesTask : public CachingTaskBase
             (
             CachingDataSourcePtr cachingDataSource,
             std::shared_ptr<FileDownloadManager> fileDownloadManager,
-            bset<ObjectId> filesToDownload,
+            bmap<ObjectId, ICancellationTokenPtr> filesToDownload,
             FileCache fileCacheLocation,
             size_t maxParalelDownloads,
             uint64_t minTimeBetweenProgressCallsMs,

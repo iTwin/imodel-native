@@ -33,8 +33,17 @@ IWSClientPtr WSClient::Create(std::shared_ptr<ClientConnection> connection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IWSClientPtr WSClient::Create(Utf8StringCR serverUrl, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
     {
+    return Create(serverUrl, BeVersion(), clientInfo, customHandler);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+IWSClientPtr WSClient::Create(Utf8StringCR serverUrl, BeVersionCR serviceVersion, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
+    {
     BeAssert(nullptr != clientInfo);
     auto configuration = std::make_shared<ClientConfiguration>(serverUrl, "", clientInfo, nullptr, customHandler);
+    configuration->SetServiceVersion(serviceVersion);
     return Create(std::make_shared<ClientConnection>(configuration));
     }
 

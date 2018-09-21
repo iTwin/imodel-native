@@ -18,46 +18,49 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
     static bmap<Utf8String, Error::Id> map;
     if (map.empty())
         {
-        map["iModelHub.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
-        map["iModelHub.InvalidPropertiesValues"]                   = Id::InvalidPropertiesValues;
-        map["iModelHub.UserDoesNotHavePermission"]                 = Id::UserDoesNotHavePermission;
-        map["iModelHub.InvalidBriefcase"]                          = Id::InvalidBriefcase;
-        map["iModelHub.BriefcaseDoesNotExist"]                     = Id::BriefcaseDoesNotExist;
-        map["iModelHub.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
-        map["iModelHub.AnotherUserPushing"]                        = Id::AnotherUserPushing;
-        map["iModelHub.ChangeSetAlreadyExists"]                    = Id::ChangeSetAlreadyExists;
-        map["iModelHub.UserAlreadyExists"]                         = Id::UserAlreadyExists;
-        map["iModelHub.UserDoesNotExist"]                          = Id::UserDoesNotExist;
-        map["iModelHub.ChangeSetDoesNotExist"]                     = Id::ChangeSetDoesNotExist;
-        map["iModelHub.FileIsNotUploaded"]                         = Id::FileIsNotUploaded;
-        map["iModelHub.iModelIsNotInitialized"]                    = Id::iModelIsNotInitialized;
-        map["iModelHub.ChangeSetPointsToBadSeed"]                  = Id::ChangeSetPointsToBadSeed;
-        map["iModelHub.iModelHubOperationFailed"]                  = Id::iModelHubOperationFailed;
-        map["iModelHub.PullIsRequired"]                            = Id::PullIsRequired;
-        map["iModelHub.MaximumNumberOfBriefcasesPerUser"]          = Id::MaximumNumberOfBriefcasesPerUser;
-        map["iModelHub.MaximumNumberOfBriefcasesPerUserPerMinute"] = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
-        map["iModelHub.DatabaseTemporarilyLocked"]                 = Id::DatabaseTemporarilyLocked;
-        map["iModelHub.iModelIsLocked"]                            = Id::iModelIsLocked;
-        map["iModelHub.CodesExist"]                                = Id::CodesExist;
-        map["iModelHub.LocksExist"]                                = Id::LocksExist;
-        map["iModelHub.iModelAlreadyExists"]                       = Id::iModelAlreadyExists;
-        map["iModelHub.iModelDoesNotExist"]                        = Id::iModelDoesNotExist;
-        map["iModelHub.FileDoesNotExist"]                          = Id::FileDoesNotExist;
-        map["iModelHub.FileAlreadyExists"]                         = Id::FileAlreadyExists;
-        map["iModelHub.LockDoesNotExist"]                          = Id::LockDoesNotExist;
-        map["iModelHub.LockOwnedByAnotherBriefcase"]               = Id::LockOwnedByAnotherBriefcase;
-        map["iModelHub.CodeStateInvalid"]                          = Id::CodeStateInvalid;
-        map["iModelHub.CodeReservedByAnotherBriefcase"]            = Id::CodeReservedByAnotherBriefcase;
-        map["iModelHub.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
-        map["iModelHub.EventTypeDoesNotExist"]                     = Id::EventTypeDoesNotExist;
-        map["iModelHub.EventSubscriptionDoesNotExist"]             = Id::EventSubscriptionDoesNotExist;
-        map["iModelHub.EventSubscriptionAlreadyExists"]            = Id::EventSubscriptionAlreadyExists;
-        map["iModelHub.ProjectAssociationIsNotEnabled"]            = Id::ProjectAssociationIsNotEnabled;
-        map["iModelHub.ProjectIdIsNotSpecified"]                   = Id::ProjectIdIsNotSpecified;
-        map["iModelHub.FailedToGetProjectPermissions"]             = Id::FailedToGetProjectPermissions;
-        map["iModelHub.ChangeSetAlreadyHasVersion"]                = Id::ChangeSetAlreadyHasVersion;
-        map["iModelHub.VersionAlreadyExists"]                      = Id::VersionAlreadyExists;
-        map["iModelHub.ConflictsAggregate"]                        = Id::ConflictsAggregate;
+        map["iModelHub.MissingRequiredProperties"]                  = Id::MissingRequiredProperties;
+        map["iModelHub.InvalidPropertiesValues"]                    = Id::InvalidPropertiesValues;
+        map["iModelHub.UserDoesNotHavePermission"]                  = Id::UserDoesNotHavePermission;
+        map["iModelHub.UserDoesNotHaveAccess"]                      = Id::UserDoesNotHaveAccess;
+        map["iModelHub.InvalidBriefcase"]                           = Id::InvalidBriefcase;
+        map["iModelHub.BriefcaseDoesNotExist"]                      = Id::BriefcaseDoesNotExist;
+        map["iModelHub.BriefcaseDoesNotBelongToUser"]               = Id::BriefcaseDoesNotBelongToUser;
+        map["iModelHub.AnotherUserPushing"]                         = Id::AnotherUserPushing;
+        map["iModelHub.ChangeSetAlreadyExists"]                     = Id::ChangeSetAlreadyExists;
+        map["iModelHub.ChangeSetDoesNotExist"]                      = Id::ChangeSetDoesNotExist;
+        map["iModelHub.FileIsNotUploaded"]                          = Id::FileIsNotUploaded;
+        map["iModelHub.iModelIsNotInitialized"]                     = Id::iModelIsNotInitialized;
+        map["iModelHub.ChangeSetPointsToBadSeed"]                   = Id::ChangeSetPointsToBadSeed;
+        map["iModelHub.OperationFailed"]                            = Id::OperationFailed;
+        map["iModelHub.PullIsRequired"]                             = Id::PullIsRequired;
+        map["iModelHub.MaximumNumberOfBriefcasesPerUser"]           = Id::MaximumNumberOfBriefcasesPerUser;
+        map["iModelHub.MaximumNumberOfBriefcasesPerUserPerMinute"]  = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
+        map["iModelHub.DatabaseTemporarilyLocked"]                  = Id::DatabaseTemporarilyLocked;
+        map["iModelHub.iModelIsLocked"]                             = Id::iModelIsLocked;
+        map["iModelHub.CodesExist"]                                 = Id::CodesExist;
+        map["iModelHub.LocksExist"]                                 = Id::LocksExist;
+        map["iModelHub.iModelAlreadyExists"]                        = Id::iModelAlreadyExists;
+        map["iModelHub.iModelDoesNotExist"]                         = Id::iModelDoesNotExist;
+        map["iModelHub.FileDoesNotExist"]                           = Id::FileDoesNotExist;
+        map["iModelHub.FileAlreadyExists"]                          = Id::FileAlreadyExists;
+        map["iModelHub.LockDoesNotExist"]                           = Id::LockDoesNotExist;
+        map["iModelHub.LockOwnedByAnotherBriefcase"]                = Id::LockOwnedByAnotherBriefcase;
+        map["iModelHub.CodeStateInvalid"]                           = Id::CodeStateInvalid;
+        map["iModelHub.CodeReservedByAnotherBriefcase"]             = Id::CodeReservedByAnotherBriefcase;
+        map["iModelHub.CodeDoesNotExist"]                           = Id::CodeDoesNotExist;
+        map["iModelHub.EventTypeDoesNotExist"]                      = Id::EventTypeDoesNotExist;
+        map["iModelHub.EventSubscriptionDoesNotExist"]              = Id::EventSubscriptionDoesNotExist;
+        map["iModelHub.EventSubscriptionAlreadyExists"]             = Id::EventSubscriptionAlreadyExists;
+        map["iModelHub.ProjectIdIsNotSpecified"]                    = Id::ProjectIdIsNotSpecified;
+        map["iModelHub.FailedToGetProjectPermissions"]              = Id::FailedToGetProjectPermissions;
+        map["iModelHub.FailedToGetProjectMembers"]                  = Id::FailedToGetProjectMembers;
+        map["iModelHub.ChangeSetAlreadyHasVersion"]                 = Id::ChangeSetAlreadyHasVersion;
+        map["iModelHub.VersionAlreadyExists"]                       = Id::VersionAlreadyExists;
+        map["iModelHub.JobSchedulingFailed"]                        = Id::JobSchedulingFailed;
+        map["iModelHub.ConflictsAggregate"]                         = Id::ConflictsAggregate;
+        map["iModelHub.FailedToGetProjectById"]                     = Id::FailedToGetProjectById;
+        
+        map["iModelHub.DatabaseOperationFailed"]                    = Id::DatabaseOperationFailed;
         }
 
     auto it = map.find(errorIdString);
@@ -178,11 +181,11 @@ Error::Error(RevisionStatus const& status)
         }
     }
 
-Error::Error(HttpErrorCR error)
+Error::Error(AzureErrorCR azureError)
     {
     m_id = Id::AzureError;
-    m_message = error.AsyncError::GetMessage();
-    m_description = error.AsyncError::GetDescription();
+    m_message = azureError.GetCode();
+    m_description = azureError.GetMessage();
     }
 
 Utf8StringCR Error::GetDefaultMessage(Error::Id id)

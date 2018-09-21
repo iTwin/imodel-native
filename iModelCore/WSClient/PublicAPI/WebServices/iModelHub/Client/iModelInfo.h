@@ -65,6 +65,9 @@ public:
     UserInfoPtr GetOwnerInfo() const {return m_ownerInfo;}
     bool IsInitialized() const { return m_isInitialized; }
 
+    void SetName(Utf8String name) { m_name = name; }
+    void SetDescription(Utf8String description) { m_description = description; }
+
     static void AddHasCreatorInfoSelect(Utf8StringR);
 };
 END_BENTLEY_IMODELHUB_NAMESPACE

@@ -50,7 +50,8 @@ std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceCache::DataSourceCache()
+DataSourceCache::DataSourceCache(IFileManagerPtr fileManager) :
+m_fileManager(fileManager ? fileManager : std::make_shared<FileManager>())
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -302,7 +303,7 @@ void DataSourceCache::SetupOpenState(CacheEnvironmentCR baseEnvironment)
     {
     BeFileName cachePath(m_db.GetDbFileName());
     CacheEnvironment actualEnvironment = FileStorage::CreateCacheEnvironment(cachePath, baseEnvironment);
-    m_state = std::make_shared<WSCacheState>(m_db, actualEnvironment);
+    m_state = std::make_shared<WSCacheState>(m_db, actualEnvironment, *m_fileManager);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -434,7 +435,7 @@ BentleyStatus DataSourceCache::Reset()
             }
         }
 
-    m_state = std::make_shared<WSCacheState>(m_db, GetState().GetFileCacheEnvironment());
+    m_state = std::make_shared<WSCacheState>(m_db, GetState().GetFileCacheEnvironment(), *m_fileManager);
     return SUCCESS;
     }
 
@@ -1309,6 +1310,8 @@ BentleyStatus DataSourceCache::ReadInstanceHierarchy(ECInstanceKeyCR instance, E
     CacheNodeKey nodeKey;
     if (GetState().GetRootManager().IsRootNode(instance))
         nodeKey = CacheNodeKey(instance);
+    else if (GetState().GetNavigationBaseManager().IsNavigationBase(instance))
+        nodeKey = GetState().GetNavigationBaseManager().FindNavigationBase();
     else
         nodeKey = GetState().GetObjectInfoManager().ReadCachedInstanceKey(instance).GetInfoKey();
 
@@ -1698,6 +1701,15 @@ BentleyStatus DataSourceCache::RemoveResponses(Utf8StringCR name)
     {
     LogCacheDataForMethod();
     return GetState().GetCachedResponseManager().DeleteResponses(name);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Eimantas.Morkunas    07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DataSourceCache::RemoveResponsesByPrefix(Utf8StringCR responsePrefix)
+    {
+    LogCacheDataForMethod();
+    return GetState().GetCachedResponseManager().DeleteResponsesByPrefix(responsePrefix);
     }
 
 /*--------------------------------------------------------------------------------------+

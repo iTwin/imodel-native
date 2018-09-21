@@ -160,6 +160,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor iModelBridgeConfiguration;
             WSCLIENT_EXPORT static const UrlDescriptor RecommendationServiceUrl;
             WSCLIENT_EXPORT static const UrlDescriptor ProjectSharedFederatedUIURL;
+            WSCLIENT_EXPORT static const UrlDescriptor IMSOpenID;
             };
     };
 

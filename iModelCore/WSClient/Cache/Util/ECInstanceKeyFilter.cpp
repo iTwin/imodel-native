@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Util/ECInstanceKeyFilter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,6 +45,14 @@ ECInstanceKeyFilter::ECInstanceKeyFilter(bset<ECClassCP> ecClasses, bool polymor
 void ECInstanceKeyFilter::SetLimit(int limit)
     {
     m_limit = limit;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::SetOffset(int offset)
+    {
+    m_offset = offset;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -148,12 +156,14 @@ ICancellationTokenPtr ct
 )
     {
     // No Filters added
-    if (m_whereClauseCallbacks.empty())
+    if (m_whereClauseCallbacks.empty() && nullptr == m_orderByClauseCallback)
         {
+        int i = 0;
         for (auto instanceId : instances)
             {
-            if (m_limit <= 0 || result.size() < m_limit)
+            if (i >= m_offset && (m_limit <= 0 || result.size() < m_limit))
                 result.insert({ecClass.GetId(), instanceId});
+            i++;
             }
 
         return SUCCESS;
@@ -162,6 +172,10 @@ ICancellationTokenPtr ct
     AddTmpWhereClauseCallbacks(instances);
 
     if (SUCCESS != BuildWhereClause(ecClass))
+        return ERROR;
+
+    m_orderByClause = "";
+    if (nullptr != m_orderByClauseCallback && SUCCESS != m_orderByClauseCallback(ecClass, m_orderByClause))
         return ERROR;
 
     if (SUCCESS != ExecuteDbQuery(txn, ecClass, result, ct))
@@ -262,8 +276,13 @@ ICancellationTokenPtr ct
         ecClass.GetECSqlName().c_str(),
         m_whereClause.c_str());
 
-    if (m_limit > 0)
-        sql += Utf8PrintfString(" LIMIT %d", m_limit);
+    if (!m_orderByClause.empty())
+        sql += Utf8String(" ORDER BY ") + m_orderByClause;
+
+    sql += Utf8PrintfString(" LIMIT %d", m_limit > 0 ? m_limit : INTMAX_MAX);
+
+    if (m_offset > 0)
+        sql += Utf8PrintfString(" OFFSET %d", m_offset);
 
     ECSqlStatement statement;
     if (SUCCESS != txn.GetCache().GetAdapter().PrepareStatement(statement, sql))
@@ -387,4 +406,24 @@ void ECInstanceKeyFilter::AddWhereClauseFilter(Utf8StringCR whereClause, const B
 void ECInstanceKeyFilter::AddWhereClauseFilter(const WhereClauseCallback& whereClauseCallback)
     {
     m_whereClauseCallbacks.push_back(whereClauseCallback);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::SetOrderByClause(Utf8StringCR orderByClause)
+    {
+    m_orderByClauseCallback = [=] (ECClassCR ecClass, Utf8StringR outOrderByClause)
+        {
+        outOrderByClause = orderByClause;
+        return SUCCESS;
+        };
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::SetOrderByClause(const OrderByClauseCallback& orderByClauseCallback)
+    {
+    m_orderByClauseCallback = orderByClauseCallback;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/MockQueryProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,13 @@ struct MockQueryProvider : public IQueryProvider
 
         MOCK_CONST_METHOD3 (DoUpdateFile, bool
             (
+            CacheTransactionCR txn,
+            ECInstanceKeyCR instanceKey,
+            bool isPersistent
+            ));
+
+        MOCK_CONST_METHOD3(IsFileRetrievalNeeded, ICancellationTokenPtr
+        (
             CacheTransactionCR txn,
             ECInstanceKeyCR instanceKey,
             bool isPersistent

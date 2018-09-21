@@ -67,6 +67,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WSObjectsReader::Instances
         std::shared_ptr<const WSObjectsReader> m_reader;
 
     public:
+        virtual ~Instances() {}
         WSCLIENT_EXPORT Instances(std::shared_ptr<const WSObjectsReader> reader);
 
         WSCLIENT_EXPORT bool IsValid() const;

@@ -24,7 +24,7 @@ WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
 IHTTPHANDLERPTR customHandler,
-void* securityStoreInitializer
+void*
 )
     {
     BeFileName temporaryDirectory(wTemporaryDirectory);
@@ -65,7 +65,7 @@ void* securityStoreInitializer
         &proxyUsername,
         &proxyPassword,
         customHandlerPtr,
-        securityStoreInitializer
+        nullptr
         );
     }
 
@@ -86,7 +86,7 @@ WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
 IHTTPHANDLERPTR customHandler,
-void* securityStoreInitializer
+void*
 )
     {
     Utf8String authenticatedToken;
@@ -104,7 +104,7 @@ void* securityStoreInitializer
         wproxyUsername,
         wproxyPassword,
         customHandler,
-        securityStoreInitializer
+        nullptr
         );
 
     if (api->AttemptLoginUsingToken(make_shared<SamlToken>(authenticatedToken)))
@@ -136,7 +136,7 @@ WCharCP wproxyUrl,
 WCharCP wproxyUsername,
 WCharCP wproxyPassword,
 IHTTPHANDLERPTR customHandler,
-void* securityStoreInitializer
+void*
 )
     {
     Utf8String username;
@@ -157,7 +157,7 @@ void* securityStoreInitializer
         wproxyUsername,
         wproxyPassword,
         customHandler,
-        securityStoreInitializer
+        nullptr
         );
 
     if (api->AttemptLoginUsingCredentials(Credentials(username, password)))
@@ -448,7 +448,7 @@ Utf8StringP proxyUrl,
 Utf8StringP proxyUsername,
 Utf8StringP proxyPassword,
 IHttpHandlerPtr customHandler,
-void*   secureStoreInitializer
+void*
 )
 : m_pathProvider(temporaryDirectory, assetsRootDirectory)
     {
@@ -468,7 +468,7 @@ void*   secureStoreInitializer
         applicationVersion,
         applicationGUID,
         applicationProductId,
-        secureStoreInitializer
+        nullptr
         );
     }
 
@@ -483,7 +483,7 @@ Utf8String applicationName,
 BeVersion applicationVersion,
 Utf8String applicationGUID,
 Utf8String applicationProductId,
-void* securityStoreInitializer
+void*
 )
     {
     m_lastStatusMessage = Utf8String("");
@@ -509,9 +509,6 @@ void* securityStoreInitializer
 #else
     UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &s_localState, bclient);
 #endif
-
-    if (securityStoreInitializer != nullptr)
-        SecureStore::Initialize(securityStoreInitializer);
 
 #if defined (__ANDROID__)
     // Ideally, Bentley::BeSystemInfo::GetDeviceId() would return a proper id (MEID, most likely) for android.

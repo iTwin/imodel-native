@@ -248,9 +248,8 @@ StatusTaskPtr iModelConnection::AzureFileUpload(BeFileNameCR filePath, FileAcces
         {
         if (!result.IsSuccess())
             {
-            HttpError error(result.GetError());
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
-            return StatusResult::Error(Error(error));
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            return StatusResult::Error(result.GetError());
             }
 
         return StatusResult::Success();
@@ -1380,17 +1379,27 @@ ICancellationTokenPtr                  cancellationToken
     {
     const Utf8String methodName = "iModelConnection::DownloadChangeSetsInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (changeSets.empty())
+        {
+        return CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(ChangeSets {}));
+        }
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback);
-    double singleCallbackPercentage = changeSets.empty() ? 100.0f : 100.0f / changeSets.size();
+    double totalSize = 0.0;
+    for (ChangeSetInfoPtr const& changeSet : changeSets)
+        {
+        totalSize += changeSet->GetFileSize();
+        }
+    MultiProgressCallbackHandlerPtr callbacksHandlerPtr = new MultiProgressCallbackHandler(callback, totalSize);
+
 
     bset<std::shared_ptr<AsyncTask>> tasks;
     bmap<Utf8String, int64_t> changeSetIdIndexMap;
     for (auto& changeSet : changeSets)
         {
         Http::Request::ProgressCallback changeSetCallback;
-        callbacksHandlerPtr->AddCallback(changeSetCallback, singleCallbackPercentage);
+        callbacksHandlerPtr->AddCallback(changeSetCallback);
         tasks.insert(DownloadChangeSetFile(changeSet, changeSetCallback, cancellationToken));
         changeSetIdIndexMap.Insert(changeSet->GetId(), changeSet->GetIndex());
         }
@@ -1688,9 +1697,8 @@ CodeCallbackFunction*               codesCallback
 #endif
                 if (!result.IsSuccess())
                     {
-                    HttpError error(result.GetError());
-                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
-                    finalResult->SetError(Error(error));
+                    LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+                    finalResult->SetError(result.GetError());
                     return;
                     }
 
@@ -2914,7 +2922,7 @@ ICancellationTokenPtr cancellationToken
     auto status = SetCodeSequencesJsonRequestToChangeSet(codeSequence, 0, 1, CodeSequence::Type::Maximum, *changeset, 
                                                          WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, 
+        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::OperationFailed, 
                                                                                       ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
 
     return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
@@ -2938,7 +2946,7 @@ ICancellationTokenPtr cancellationToken
     auto status = SetCodeSequencesJsonRequestToChangeSet(codeSequence, startIndex, incrementBy, CodeSequence::Type::NextAvailable, *changeset, 
                                                          WSChangeset::ChangeState::Created);
     if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, 
+        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::OperationFailed, 
                                                                                       ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
 
     return QueryCodeNextAvailableInternal(changeset, cancellationToken);

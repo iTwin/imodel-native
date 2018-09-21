@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/WSCacheState.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,7 @@
 
 #include <WebServices/Cache/Persistence/CacheEnvironment.h>
 #include <WebServices/Cache/Persistence/ChangeManager.h>
+#include <WebServices/Cache/Persistence/FileManager.h>
 #include <WebServices/Cache/Util/ObservableECDb.h>
 #include <WebServices/Cache/Util/ExtendedDataAdapter.h>
 
@@ -43,8 +44,10 @@ struct WSCacheState : public IECDbSchemaChangeListener
                 ECSchemaCP cacheSchema = nullptr;
 
             public:
-                Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys);
+                Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys, IFileManager& fileManager);
                 ECSchemaCP GetCacheSchema();
+
+                IFileManager&           fileManager;
 
                 ECDbAdapter             dbAdapter;
                 ECSqlStatementCache     statementCache;
@@ -70,6 +73,7 @@ struct WSCacheState : public IECDbSchemaChangeListener
     private:
         ObservableECDb& m_db;
         CacheEnvironment m_environment;
+        IFileManager& m_fileManager;
 
         std::shared_ptr<Core> m_core;
         ECInstanceKeyMultiMap m_activeSyncKeys;
@@ -80,8 +84,8 @@ struct WSCacheState : public IECDbSchemaChangeListener
 
     public:
         WSCacheState(const WSCacheState&) = delete;
-        WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment);
-        ~WSCacheState();
+        WSCacheState(ObservableECDb& db, CacheEnvironmentCR environment, IFileManager& fileManager);
+        virtual ~WSCacheState();
 
         virtual void OnSchemaChanged() override; // IECDbSchemaChangeListener
         void ClearRuntimeCaches();
@@ -89,6 +93,10 @@ struct WSCacheState : public IECDbSchemaChangeListener
         ECDbAdapter& GetECDbAdapter()
             {
             return GetCore().dbAdapter;
+            }
+        IFileManager& GetFileManager()
+            {
+            return GetCore().fileManager;
             }
         ExtendedDataAdapter& GetExtendedDataAdapter()
             {

@@ -10,17 +10,23 @@
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
 #include <BeHttp/ProxyHttpHandler.h>
 
-#define HEADER_SkipToken                "SkipToken"
-#define HEADER_MasAllowRedirect         "Mas-Allow-Redirect"
-#define HEADER_MasFileAccessUrlType     "Mas-File-Access-Url-Type"
-#define HEADER_MasUploadConfirmationId  "Mas-Upload-Confirmation-Id"
-#define HEADER_MasFileETag              "Mas-File-ETag"
-#define HEADER_MasServerHeader          "Mas-Server"
+#define HEADER_SkipToken                   "SkipToken"
+#define HEADER_MasAllowRedirect            "Mas-Allow-Redirect"
+#define HEADER_MasFileAccessUrlType        "Mas-File-Access-Url-Type"
+#define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
+#define HEADER_MasFileETag                 "Mas-File-ETag"
+#define HEADER_MasServerHeader             "Mas-Server"
 
-#define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
-#define VALUE_True                      "true"
+#define VALUE_FileAccessUrlType_Azure      "AzureBlobSasUrl"
+#define VALUE_True                         "true"
 
-#define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
+#define WARNING_UrlLengthLimitations       "<Warning> Url length might be problematic as it is longer than expected"
+
+#define SCHEMA_Policies                    "Policies"
+#define CLASS_PolicyAssertion              "PolicyAssertion"
+#define INSTANCE_PersistenceFileBackable   "Persistence.FileBackable"
+#define INSTANCE_PersistenceStreamBackable "Persistence.StreamBackable"
+#define PROPERTY_AdhocProperties           "AdhocProperties"
 
 const BeVersion WebApiV2::s_maxTestedWebApi(2, 8);
 
@@ -37,20 +43,79 @@ m_jobApi(JobApi::Create(configuration))
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WebApiV2::~WebApiV2()
-    {}
+WebApiV2::~WebApiV2() {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WebApiV2::IsSupported(WSInfoCR info)
     {
-    return
-        info.GetWebApiVersion() >= BeVersion(2, 0) &&
-        info.GetWebApiVersion() < BeVersion(3, 0) &&
-        info.GetType() == WSInfo::Type::BentleyWSG;
+    if (info.GetWebApiVersion() < BeVersion(2, 0))
+        return false;
+    
+    if (info.GetWebApiVersion() > s_maxTestedWebApi)
+        return false;
+
+    if (info.GetType() != WSInfo::Type::BentleyWSG)
+        return false;
+
+    return true;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMaxUploadSize) const
+    {
+    auto policiesJson = std::make_shared<rapidjson::Document>();
+    policiesJson->Parse<0>(response.GetBody().AsString().c_str());
+
+    auto reader = CreateJsonInstancesReader();
+    WSObjectsReader::Instances instances = reader->ReadInstances(policiesJson);
+
+    if (instances.IsEmpty())
+        {
+        LOG.error("GetMaxUploadSize: Response was empty");
+        return defaultMaxUploadSize;
+        }
+
+    WSObjectsReader::Instance instance = reader->GetInstance(0);
+    if (!instance.IsValid() ||
+        !instance.GetObjectId().schemaName.Equals(SCHEMA_Policies) ||
+        !instance.GetObjectId().className.Equals(CLASS_PolicyAssertion))
+        {
+        LOG.errorv("GetMaxUploadSize: Expected '%s' schema and '%s' class. Actually it was: '%s' schema and '%s' class", SCHEMA_Policies, CLASS_PolicyAssertion,
+                   instance.GetObjectId().schemaName.c_str(), instance.GetObjectId().className.c_str());
+        return defaultMaxUploadSize;
+        }
+
+    if(!instance.GetObjectId().GetRemoteId().Equals(INSTANCE_PersistenceFileBackable) &&
+       !instance.GetObjectId().GetRemoteId().Equals(INSTANCE_PersistenceStreamBackable))
+        {
+        LOG.errorv("GetMaxUploadSize: InstanceId was expected to be '%s' or '%s'. Actually it was: '%s'", INSTANCE_PersistenceFileBackable,
+                   INSTANCE_PersistenceStreamBackable, instance.GetObjectId().GetRemoteId().c_str());
+        return defaultMaxUploadSize;
+        }
+
+    if (!instance.GetProperties().HasMember(PROPERTY_AdhocProperties) ||
+        !instance.GetProperties()[PROPERTY_AdhocProperties].IsArray())
+        {
+        LOG.error("GetMaxUploadSize: AdhocProperties did not exist in the response");
+        return defaultMaxUploadSize;
+        }
+
+    auto adhocProperties = instance.GetProperties()[PROPERTY_AdhocProperties].GetArray();
+
+    for (auto itr = adhocProperties.Begin(); itr != adhocProperties.End(); ++itr)
+        {
+        auto adhocPropertyName = GetNullableString((*itr), "Name");
+        if (adhocPropertyName.Equals("MaxUploadSize"))
+            return BeRapidJsonUtilities::UInt64FromValue((*itr)["Value"], defaultMaxUploadSize);
+        }
+
+    LOG.error("GetMaxUploadSize: MaxUploadSize property did not exist in the response");
+    return defaultMaxUploadSize;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -66,17 +131,23 @@ BeVersion WebApiV2::GetMaxWebApiVersion() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
+Utf8String WebApiV2::GetVersionedUrl() const
     {
-    if (webApiVersion.IsEmpty())
-        webApiVersion = GetMaxWebApiVersion();
+    Utf8String version;
+    if (!m_configuration->GetServiceVersion().IsEmpty())
+        {
+        version = "sv" + m_configuration->GetServiceVersion().ToMajorMinorString();
+        }
+    else
+        {
+        version = "v" + GetMaxWebApiVersion().ToMajorMinorString();
+        }
 
     Utf8PrintfString url
         (
-        "%s/v%d.%d/",
+        "%s/%s/",
         m_configuration->GetServerUrl().c_str(),
-        webApiVersion.GetMajor(),
-        webApiVersion.GetMinor()
+        version.c_str()
         );
 
     return url;
@@ -85,17 +156,17 @@ Utf8String WebApiV2::GetWebApiUrl(BeVersion webApiVersion) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion) const
+Utf8String WebApiV2::GetRepositoryUrl(Utf8StringCR repositoryId) const
     {
-    return GetWebApiUrl(webApiVersion) + "Repositories/" + BeUri::EscapeString(repositoryId);
+    return GetVersionedUrl() + "Repositories/" + BeUri::EscapeString(repositoryId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString, BeVersion webApiVersion) const
+Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString) const
     {
-    Utf8String url = GetUrlWithoutLengthWarning(path, queryString, webApiVersion);
+    Utf8String url = GetUrlWithoutLengthWarning(path, queryString);
 
     BeAssert(url.size() < m_configuration->GetMaxUrlLength() && WARNING_UrlLengthLimitations);
     return url;
@@ -104,19 +175,15 @@ Utf8String WebApiV2::GetUrl(Utf8StringCR path, Utf8StringCR queryString, BeVersi
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString, BeVersion webApiVersion) const
+Utf8String WebApiV2::GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString) const
     {
-    Utf8String url = GetRepositoryUrl(m_configuration->GetRepositoryId(), webApiVersion);
+    Utf8String url = GetRepositoryUrl(m_configuration->GetRepositoryId());
 
     if (!path.empty())
-        {
         url += "/" + path;
-        }
 
     if (!queryString.empty())
-        {
         url += "?" + queryString;
-        }
 
     return url;
     }
@@ -128,9 +195,8 @@ Utf8String WebApiV2::CreateObjectSubPath(ObjectIdCR objectId) const
     {
     Utf8String param;
     if (!objectId.IsEmpty())
-        {
         param.Sprintf("%s/%s/%s", objectId.schemaName.c_str(), objectId.className.c_str(), objectId.remoteId.c_str());
-        }
+
     return param;
     }
 
@@ -164,9 +230,8 @@ Utf8String WebApiV2::CreatePostQueryPath(Utf8StringCR classSubPath) const
 Utf8String WebApiV2::CreateNavigationSubPath(ObjectIdCR parentId) const
     {
     if (parentId.IsEmpty())
-        {
         return "Navigation/NavNode";
-        }
+
     return CreateObjectSubPath(parentId) + "/NavNode";
     }
 
@@ -178,10 +243,26 @@ Utf8String WebApiV2::CreateSelectPropertiesQuery(const bset<Utf8String>& propert
     Utf8String value = StringUtils::Join(properties.begin(), properties.end(), ",");
     Utf8String query;
     if (!value.empty())
-        {
         query.Sprintf("$select=%s", value.c_str());
-        }
+
     return query;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+Http::Request WebApiV2::CreateGetRepositoryRequest() const
+    {
+    WSQuery query(SCHEMA_Policies, CLASS_PolicyAssertion);
+    query.SetFilter("Supported+eq+true");
+
+    std::deque<ObjectId> queryIds;
+    queryIds.push_back(ObjectId(SCHEMA_Policies, CLASS_PolicyAssertion, INSTANCE_PersistenceFileBackable));
+    queryIds.push_back(ObjectId(SCHEMA_Policies, CLASS_PolicyAssertion, INSTANCE_PersistenceStreamBackable));
+    query.AddFilterIdsIn(queryIds);
+
+    query.SetTop(1);
+    return CreateQueryRequest(query);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -344,21 +425,24 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
 AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
     {
     auto repository = WSRepositoryClient::ParseRepositoryUrl(GetUrl("/"));
+
+    const uint64_t defaultMaxUploadSize = 0;
+    repository.SetMaxUploadSize(defaultMaxUploadSize);
+
     if (!repository.IsValid())
         return CreateCompletedAsyncTask(WSRepositoryResult::Error(WSError::CreateServerNotSupportedError()));
 
     if (GetMaxWebApiVersion() < BeVersion(2, 7))
         return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
 
-    WSQuery query("Policies", "PolicyAssertion");
-    query.SetTop(1); //TODO:: add aditional options to add to repository info
-    Http::Request request = CreateQueryRequest(query);
+    Http::Request request = CreateGetRepositoryRequest();
     request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoryResult>([=] (Http::Response& response) mutable
         {
         if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
             return WSRepositoryResult::Error(response);
 
+        repository.SetMaxUploadSize(GetMaxUploadSize(response, defaultMaxUploadSize));
         repository.SetPluginVersion(GetRepositoryPluginVersion(response, m_configuration->GetPersistenceProviderId()));
         return WSRepositoryResult::Success(repository);
         });

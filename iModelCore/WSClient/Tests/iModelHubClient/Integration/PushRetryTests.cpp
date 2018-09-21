@@ -165,6 +165,15 @@ TEST_F(PushRetryTests, CreateChangeSetFails)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::Response XmlTimeoutResponse(Http::RequestCR request)
+    {
+    Utf8CP body = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>RequestTimedOut</Code><Message>TestMessage</Message></Error>";
+    return StubHttpResponse(HttpStatus::ReqestTimeout, body, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas             09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PushRetryTests, UploadFileFails)
@@ -183,14 +192,12 @@ TEST_F(PushRetryTests, UploadFileFails)
     std::shared_ptr<MockHttpHandler> blobStorageMockHandler = std::make_shared<MockHttpHandler>();
     blobStorageMockHandler->
         ExpectRequests(2)
-        .ForRequest(1, TimeoutResponse) // Upload file
+        .ForRequest(1, XmlTimeoutResponse) // Upload file
         .ForRequest(2, [=](Http::RequestCR request)
             {
             m_connection->SetRepositoryClient(m_originalClient);
             m_connection->SetAzureBlobStorageClient(oldBlobStorageClient);
-
-            // Upload file
-            return TimeoutResponse(request);
+            return XmlTimeoutResponse(request);
             });
     
     // Set other wsclient
@@ -202,6 +209,8 @@ TEST_F(PushRetryTests, UploadFileFails)
     // First push should fail
     ChangeSetsResult pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
     ASSERT_FAILURE(pushResult);
+    EXPECT_EQ("RequestTimedOut", pushResult.GetError().GetMessage());
+    EXPECT_EQ("TestMessage", pushResult.GetError().GetDescription());
 
     // Second push should succeed
     pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
@@ -301,7 +310,7 @@ TEST_F(PushRetryTests, DownloadedChangeSetInvalid)
                                 "\"className\" : \"AccessKey\","
                                 "\"properties\" : {"
                                     "\"UploadUrl\": \"\","
-                                    "\"DownloadUrl\" : \"DownloadUrl\""
+                                    "\"DownloadUrl\" : \"http://download.url\""
                                 "},"
                                 "\"eTag\" : \"GDZV8h4lHbFl9QQEPaMCf4WLZVE=\""
                         "},"

@@ -13,11 +13,17 @@ USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-IntegrationTestsSettings::IntegrationTestsSettings()
+BeFileName IntegrationTestsSettings::ResolveSettingsPath()
     {
     BeFileName fileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(fileName);
     fileName = fileName.AppendToPath(L"IntegrationTests.json");
+    return fileName;
+    }
+
+IntegrationTestsSettings::IntegrationTestsSettings()
+    {
+    BeFileName fileName = ResolveSettingsPath();
     ReadSettings(fileName);
     }
 
@@ -27,15 +33,15 @@ IntegrationTestsSettings& IntegrationTestsSettings::Instance()
     return s_instance;
     }
 
-void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
+Json::Value IntegrationTestsSettings::ReadSettingsJson(BeFileNameCR settingsFile)
     {
     BeFile file;
     if (BeFileStatus::Success != file.Open(settingsFile.c_str(), BeFileAccess::Read))
-        return;
+        return nullptr;
 
     ByteStream byteStream;
     if (BeFileStatus::Success != file.ReadEntireFile(byteStream))
-        return;
+        return nullptr;
 
     Utf8String contents((Utf8CP) byteStream.GetData(), byteStream.GetSize());
     file.Close();
@@ -43,7 +49,27 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
     Json::Reader reader;
     Json::Value settings;
     if (!reader.Parse(contents, settings))
-        return;
+        return nullptr;
+
+    return settings;
+    }
+
+UrlProvider::Environment IntegrationTestsSettings::ResolveEnvironment(Json::Value settings)
+    {
+    Utf8String environment = settings["Environment"].asString();
+    if ("DEV" == environment)
+        return UrlProvider::Environment::Dev;
+    else if ("QA" == environment)
+        return UrlProvider::Environment::Qa;
+    else if ("PROD" == environment)
+        return UrlProvider::Environment::Release;
+
+    return UrlProvider::Environment::Dev;
+    }
+
+void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
+    {
+    Json::Value settings = ReadSettingsJson(settingsFile);
 
     auto users = settings["Users"];
     for (auto user : users)
@@ -66,13 +92,8 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
     if (Utf8String::IsNullOrEmpty(m_url.c_str()))
         m_url = UrlProvider::Urls::iModelHubApi.Get();
     m_projectId = settings["ProjectId"].asString();
-    Utf8String environment = settings["Environment"].asString();
-    if ("DEV" == environment)
-        m_environment = UrlProvider::Environment::Dev;
-    else if ("QA" == environment)
-        m_environment = UrlProvider::Environment::Qa;
-    else if ("PROD" == environment)
-        m_environment = UrlProvider::Environment::Release;
+
+    m_environment = ResolveEnvironment(settings);
     }
 
 CredentialsCR IntegrationTestsSettings::GetValidAdminCredentials() const
@@ -131,4 +152,12 @@ ClientInfoPtr IntegrationTestsSettings::GetClientInfo() const
 UrlProvider::Environment IntegrationTestsSettings::GetEnvironment() const
     {
     return m_environment;
+    }
+
+UrlProvider::Environment IntegrationTestsSettings::ReadEnvironment()
+    {
+    BeFileName fileName = ResolveSettingsPath();
+    Json::Value settings = ReadSettingsJson(fileName);
+
+    return ResolveEnvironment(settings);
     }

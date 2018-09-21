@@ -28,11 +28,12 @@ struct WebApiV2 : public WebApi
         JobApiPtr m_jobApi;
 
     private:
+        uint64_t GetMaxUploadSize(Http::Response& response, uint64_t defaultMaxUploadSize = 0) const;
         BeVersion GetMaxWebApiVersion() const;
-        Utf8String GetWebApiUrl(BeVersion webApiVersion = BeVersion()) const;
-        Utf8String GetRepositoryUrl(Utf8StringCR repositoryId, BeVersion webApiVersion = BeVersion()) const;
-        Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "", BeVersion webApiVersion = BeVersion()) const;
-        Utf8String GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString = "", BeVersion webApiVersion = BeVersion()) const;
+        Utf8String GetVersionedUrl() const;
+        Utf8String GetRepositoryUrl(Utf8StringCR repositoryId) const;
+        Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "") const;
+        Utf8String GetUrlWithoutLengthWarning(Utf8StringCR path, Utf8StringCR queryString = "") const;
 
         Utf8String CreateObjectSubPath(ObjectIdCR objectId) const;
         Utf8String CreateFileSubPath(ObjectIdCR objectId) const;
@@ -41,6 +42,7 @@ struct WebApiV2 : public WebApi
         Utf8String CreateNavigationSubPath(ObjectIdCR parentId) const;
 
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
+        Http::Request CreateGetRepositoryRequest() const;
         Http::Request CreateQueryRequest(WSQueryCR query) const;
 
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;

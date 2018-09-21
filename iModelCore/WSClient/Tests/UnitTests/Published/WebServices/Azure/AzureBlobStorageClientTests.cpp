@@ -2,15 +2,18 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Azure/AzureBlobStorageClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AzureBlobStorageClientTests.h"
 
 #include <WebServices/Azure/AzureBlobStorageClient.h>
+#include <BeHttp/HttpHeaders.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_TASKS
+
+const Utf8String s_errorResponse = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>TestCode</Code><Message>TestMessage</Message></Error>";
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
@@ -22,12 +25,14 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ServerReturnsError_Return
     GetHandler().ExpectRequests(1);
     GetHandler().ForFirstRequest([=] (Http::RequestCR request)
         {
-        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        return StubHttpResponse(HttpStatus::BadRequest, s_errorResponse, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
         });
 
     auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", StubFilePath())->GetResult();
     ASSERT_FALSE(result.IsSuccess());
-    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
+    EXPECT_EQ(HttpStatus::BadRequest, result.GetError().GetHttpStatus());
+    EXPECT_EQ("TestMessage", result.GetError().GetMessage());
+    EXPECT_EQ("TestCode", result.GetError().GetCode());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -65,12 +70,14 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_Ret
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
-        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        return StubHttpResponse(HttpStatus::BadRequest, s_errorResponse, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
         });
 
-    auto result = client->SendUpdateFileRequest("SASUrl", StubFile())->GetResult();
+    auto result = client->SendUpdateFileRequest("https://test/foo", StubFile())->GetResult();
     ASSERT_FALSE(result.IsSuccess());
-    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
+    EXPECT_EQ(HttpStatus::BadRequest, result.GetError().GetHttpStatus());
+    EXPECT_EQ("TestMessage", result.GetError().GetMessage());
+    EXPECT_EQ("TestCode", result.GetError().GetCode());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -85,31 +92,31 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSu
     GetHandler().ExpectRequests(4);
     GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
-        EXPECT_STREQ("SASUrl&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
         EXPECT_EQ(chunkSize, request.GetRequestBody()->GetLength());
         return StubHttpResponse(HttpStatus::Created);
         });
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
-        EXPECT_STREQ("SASUrl&comp=block&blockid=MDAwMDE=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo&comp=block&blockid=MDAwMDE=", request.GetUrl().c_str());
         EXPECT_EQ(chunkSize, request.GetRequestBody()->GetLength());
         return StubHttpResponse(HttpStatus::Created);
         });
     GetHandler().ForRequest(3, [=] (Http::RequestCR request)
         {
-        EXPECT_STREQ("SASUrl&comp=block&blockid=MDAwMDI=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo&comp=block&blockid=MDAwMDI=", request.GetUrl().c_str());
         EXPECT_EQ(chunkSize - 200, request.GetRequestBody()->GetLength());
         return StubHttpResponse(HttpStatus::Created);
         });
     GetHandler().ForRequest(4, [] (Http::RequestCR request)
         {
-        EXPECT_STREQ("SASUrl&comp=blocklist", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo&comp=blocklist", request.GetUrl().c_str());
         EXPECT_STREQ("<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList><Latest>MDAwMDA=</Latest><Latest>MDAwMDE=</Latest><Latest>MDAwMDI=</Latest></BlockList>", request.GetRequestBody()->AsString().c_str());
         return StubHttpResponse(HttpStatus::Created, "", {{"ETag", "FooBoo"}});
         });
 
     BeFileName filePath = StubFileWithSize(chunkSize * 3 - 200); // two 4MB chunks and one smaller.
-    auto result = client->SendUpdateFileRequest("SASUrl", filePath)->GetResult();
+    auto result = client->SendUpdateFileRequest("https://test/foo", filePath)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
     }
@@ -166,7 +173,7 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ProgressCallbackPassed
         };
 
     BeFileName filePath = StubFileWithSize(fileSize);
-    auto result = client->SendUpdateFileRequest("SASUrl", filePath, onProgress)->GetResult();
+    auto result = client->SendUpdateFileRequest("https://test/foo", filePath, onProgress)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     }
 
@@ -181,18 +188,19 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_R
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
-        EXPECT_STREQ("SASUrl&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
         EXPECT_EQ(chunkSize, request.GetRequestBody()->GetLength());
         return StubHttpResponse(HttpStatus::OK);
         });
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
-        EXPECT_STREQ("SASUrl&comp=block&blockid=MDAwMDE=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo&comp=block&blockid=MDAwMDE=", request.GetUrl().c_str());
         EXPECT_EQ(chunkSize, request.GetRequestBody()->GetLength());
         return StubHttpResponse(HttpStatus::BadRequest);
         });
 
     BeFileName filePath = StubFileWithSize(chunkSize * 3 - 200); // two 4MB chunks and one smaller.
-    auto result = client->SendUpdateFileRequest("SASUrl", filePath)->GetResult();
+    auto result = client->SendUpdateFileRequest("https://test/foo", filePath)->GetResult();
     ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ("Http error: 400", result.GetError().GetDescription());
     }

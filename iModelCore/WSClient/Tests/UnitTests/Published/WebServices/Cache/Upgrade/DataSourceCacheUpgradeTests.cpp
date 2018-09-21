@@ -113,6 +113,18 @@ BeFileName GetSeedFilePath(BeFileName cachePath, Utf8StringCR fileName)
     return path.AppendToPath(BeFileName(fileName));
     }
 
+ECSchemaPtr GetLegacySchema()
+    {
+    Utf8String schemaXml =
+        R"xml(<ECSchema schemaName="LEGACY_SCHEMA" nameSpacePrefix="LS" version="1.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *ECSchemaReadContext::CreateContext());
+    return schema;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -176,6 +188,25 @@ TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_Server
     auto paths = GetSeedPaths(5, "data");
     auto client = MockWSRepositoryClient::Create();
 
+    StubInstances schemaDefs;
+    schemaDefs.Add({"MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"}, {{"Name", "LEGACY_SCHEMA"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi(BeVersion(1, 1))))));
+
+    EXPECT_CALL(*client, GetInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSRepositoryResult::Success(StubWSRepository()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponseNotModified()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"), An<BeFileNameCR>(), _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        GetLegacySchema()->WriteToXmlFile(filePath);
+        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        }));
+
     auto result = CachingDataSource::OpenOrCreate(client, paths.first, paths.second)->GetResult();
     ASSERT_THAT(result.IsSuccess(), true);
     auto ds = result.GetValue();
@@ -191,6 +222,25 @@ TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5UpgradeInte
     {
     auto paths = GetSeedPaths(5, "interrupted1");
     auto client = MockWSRepositoryClient::Create();
+
+    StubInstances schemaDefs;
+    schemaDefs.Add({"MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"}, {{"Name", "LEGACY_SCHEMA"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi(BeVersion(1, 1))))));
+
+    EXPECT_CALL(*client, GetInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSRepositoryResult::Success(StubWSRepository()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponseNotModified()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "LEGACY_SCHEMA"), An<BeFileNameCR>(), _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        GetLegacySchema()->WriteToXmlFile(filePath);
+        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        }));
 
     auto result = CachingDataSource::OpenOrCreate(client, paths.first, paths.second)->GetResult();
     ASSERT_THAT(result.IsSuccess(), true);

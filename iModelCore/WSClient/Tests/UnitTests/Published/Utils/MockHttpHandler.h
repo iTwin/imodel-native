@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/MockHttpHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,6 +37,8 @@ struct MockHttpHandler : public IHttpHandler
         MockHttpHandler();
         virtual ~MockHttpHandler() override;
         virtual AsyncTaskPtr<Http::Response> _PerformRequest(Http::RequestCR request) override;
+
+        void ValidateAndClearExpectations();
 
         uint32_t GetRequestsPerformed() const;
 

@@ -320,6 +320,7 @@
     <ClInclude Include="Connect\DelegationTokenProvider.h" />
     <ClInclude Include="Connect\WrapperTokenProvider.h" />
     <ClInclude Include="iModelHubClient\Error.xliff.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\FileManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\GlobalRequestOptions.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h" />
     <ClInclude Include="iModelHubClient\Events\EventManager.h" />

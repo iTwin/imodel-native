@@ -50,7 +50,8 @@ private:
     iModelAdmin                 m_iModelAdmin;
     GlobalConnectionPtr         m_globalConnectionPtr;
 
-    static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
+    static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath,
+                                                 Http::Request::ProgressCallbackCR callback = nullptr,
                                                  ICancellationTokenPtr cancellationToken = nullptr);
 
     Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler, Utf8StringCR url) : 
@@ -78,14 +79,6 @@ private:
                                                           bvector<ChangeSetInfoPtr> changeSetsToMerge, 
                                                           LocalBriefcaseFileNameCallback const & fileNameCallBack, 
                                                           Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
-
-    //! Opens iModel with schema upgrade and custom DomainUpgradeOptions
-    static DgnDbPtr OpenWithSchemaUpgradeInternal
-    (
-    BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
-    SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions = SchemaUpgradeOptions::DomainUpgradeOptions::CheckRequiredUpgrades,
-    RevisionProcessOption processOption = RevisionProcessOption::Merge
-    );
 
     void SetCredentialsForImodelBank();
 
@@ -187,6 +180,13 @@ public:
     IMODELHUBCLIENT_EXPORT iModelTaskPtr CreateNewiModel(Utf8StringCR projectId, DgnDbCR db, Utf8StringCR iModelName, Utf8StringCR description, 
                                                          bool waitForInitialized = true, Http::Request::ProgressCallbackCR  callback = nullptr, 
                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Update exsiting iModel's name and/or description on the server
+    //! @param[in] projectId Project Id to connect to.
+    //! @param[in] iModelInfo Information of iModel to be updated.
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo,
+                                                      ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Delete a iModel from server
     //! @param[in] projectId Project Id to connect to.

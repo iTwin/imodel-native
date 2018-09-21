@@ -52,7 +52,7 @@ TEST_F(CodesLocksTests, QueryLocksCodes)
 
     //Create two models in different briefcases. This should also acquire locks automatically.
     PhysicalModelPtr model = CreateModel(TestCodeName().c_str(), briefcase->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
 
     DgnCode code = CreateElementCode(db, TestCodeName(1).c_str(), TestCodeName().c_str());
     DgnCode code2 = CreateElementCode(db, TestCodeName(2).c_str(), TestCodeName().c_str());
@@ -145,9 +145,9 @@ TEST_F(CodesLocksTests, PushAndRelinquishCodesLocks)
     //Push changes.
     db1.SaveChanges();
     db2.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false)); // Don't release codes and locks.
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false)); // Don't release codes and locks.
     Utf8String changeSet1 = briefcase1->GetLastChangeSetPulled();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false)); // Don't release codes and locks.
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true, false)); // Don't release codes and locks.
     Utf8String changeSet2 = briefcase2->GetLastChangeSetPulled();
     ExpectCodeState(CreateCodeUsed(partition1_1->GetCode(), changeSet1), imodelManager1);
     ExpectCodeState(CreateCodeUsed(partition2_1->GetCode(), changeSet2), imodelManager2);
@@ -180,9 +180,9 @@ TEST_F(CodesLocksTests, PushAndRelinquishCodesLocks)
     EXPECT_EQ(DgnDbStatus::Success, partition2_1->Delete());
     db1.SaveChanges();
     db2.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false)); // Don't release codes and locks.
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, true, false)); // Don't release codes and locks.
     Utf8String changeSet3 = briefcase1->GetLastChangeSetPulled();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true, false));
     ASSERT_SUCCESS(briefcase2->GetiModelConnection().RelinquishCodesLocks(briefcase2->GetBriefcaseId())->GetResult()); // Release all codes and locks.
 
     Utf8String changeSet4 = briefcase2->GetLastChangeSetPulled();
@@ -202,7 +202,7 @@ TEST_F(CodesLocksTests, PushAndRelinquishCodesLocks)
     iModelHubHelpers::ExpectCodesCount(briefcase1, 2);
     ExpectCodeState(CreateCodeReserved(partition1_4->GetCode(), db1), imodelManager1);
     db1.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, true, false));
     ASSERT_SUCCESS(briefcase1->GetiModelConnection().RelinquishCodesLocks(briefcase1->GetBriefcaseId())->GetResult()); // Release all codes and locks.
     Utf8String changeSet5 = briefcase1->GetLastChangeSetPulled();
     iModelHubHelpers::ExpectCodesCount(briefcase1, 0);
@@ -295,7 +295,7 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     iModelHubHelpers::ExpectLocksCount(briefcase1, 0);
 
     // Briefcase1 should be able to push changes since nobody owns them.
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
     Utf8String changeSet1 = briefcase1->GetLastChangeSetPulled();
     iModelHubHelpers::ExpectCodesCount(briefcase1, 0);
     ExpectCodeState(CreateCodeUsed(modelElem1->GetCode(), changeSet1), imodelManager1);
@@ -366,7 +366,7 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     EXPECT_EQ(Error::Id::UserDoesNotHavePermission, result.GetError().GetId());
 
     // Briefcase2 should be able to push changes.
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false, false));
     Utf8String changeSet2 = briefcase2->GetLastChangeSetPulled();
 
     // Briefcase1 should be able to push his changes, single code conflict is returned.

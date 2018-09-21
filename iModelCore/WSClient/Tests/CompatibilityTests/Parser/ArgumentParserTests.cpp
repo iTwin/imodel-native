@@ -186,6 +186,7 @@ TEST_P(ArgumentParserTests_TempDirArg, Parse_ValidParameters_FillsTestDataAndRet
 
     EXPECT_EQ("URL", testData[0].create.serverUrl);
     EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
@@ -343,6 +344,7 @@ TEST_P(ArgumentParserTests_DownloadSchemas, Parse_ValidParameters_FillsTestDataA
     size_t it = param.inspectIndex;
     EXPECT_EQ("URL", testData[it].downloadSchemas.serverUrl);
     EXPECT_EQ("RId", testData[it].downloadSchemas.id);
+    EXPECT_EQ(BeVersion(), testData[it].downloadSchemas.serviceVersion);
     EXPECT_EQ(Credentials(), testData[it].downloadSchemas.credentials);
     EXPECT_EQ(nullptr, testData[it].downloadSchemas.token);
     EXPECT_EQ(nullptr, testData[it].downloadSchemas.environment);
@@ -379,6 +381,7 @@ TEST_P(ArgumentParserTests_CreateWithoutCredentials, Parse_ValidParameters_Fills
 
     EXPECT_EQ("URL", testData[0].create.serverUrl);
     EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
@@ -415,12 +418,50 @@ TEST_P(ArgumentParserTests_CreateWithLabelAndComment, Parse_ValidParameters_Fill
 
     EXPECT_EQ("URL", testData[0].create.serverUrl);
     EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
 
     EXPECT_EQ("label", testData[0].create.label);
     EXPECT_EQ("comment", testData[0].create.comment);
+    }
+
+struct ArgumentParserTests_CreateWithServiceVersion : TestWithParam<TestArgs> {};
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithServiceVersion, ValuesIn(GenerateParams(vector<TestArgs>{
+        {{"Foo.exe", "--createcache", "-sv", "4.2", "-url", "URL", "-l", "label", "-r", "RId"}},
+        {{"Foo.exe", "--createcache", "-l", "label", "-r", "RId", "-url", "URL", "-sv", "4.2"}}
+    })));
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ArgumentParserTests_CreateWithServiceVersion, Parse_ValidParameters_FillsTestDataAndReturnsZero)
+    {
+    auto args = GetParam().GetArgs();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_TRUE(workDir.empty());
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_FALSE(testData[0].upgrade.IsValid());
+    EXPECT_TRUE(testData[0].create.IsValid());
+
+    EXPECT_EQ("URL", testData[0].create.serverUrl);
+    EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(BeVersion(4, 2), testData[0].create.serviceVersion);
+    EXPECT_EQ(Credentials(), testData[0].create.credentials);
+    EXPECT_EQ(nullptr, testData[0].create.token);
+    EXPECT_EQ(nullptr, testData[0].create.environment);
     }
 
 struct ArgumentParserTests_CreateWithConfig : TestWithParam<TestArgs> {};
@@ -458,6 +499,7 @@ TEST_P(ArgumentParserTests_CreateWithConfig, Parse_ValidParameters_FillsTestData
 
     EXPECT_EQ("URL", testData[it].create.serverUrl);
     EXPECT_EQ("RId", testData[it].create.id);
+    EXPECT_EQ(BeVersion(), testData[it].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[it].create.credentials);
     EXPECT_EQ(nullptr, testData[it].create.token);
     EXPECT_EQ(nullptr, testData[it].create.environment);
@@ -495,6 +537,7 @@ TEST_P(ArgumentParserTests_CreateWithBasicAuth, Parse_ValidParameters_FillsTestD
 
     EXPECT_EQ("URL", testData[0].create.serverUrl);
     EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials("TestUser", "TestPass"), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
@@ -533,6 +576,7 @@ TEST_P(ArgumentParserTests_CreateWithImsAuth, Parse_ValidParameters_FillsTestDat
 
     EXPECT_EQ("URL", testData[0].create.serverUrl);
     EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials("TestUser", "TestPass"), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
 
@@ -573,6 +617,7 @@ TEST_P(ArgumentParserTests_CreateWithImsTokenAuth, Parse_ValidParameters_FillsTe
 
     EXPECT_EQ("URL", testData[0].create.serverUrl);
     EXPECT_EQ("RId", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_STREQ(s_xmlTokenStr.c_str(), testData[0].create.token->AsString().c_str());
     EXPECT_FALSE(testData[0].create.tokenPath.empty());
@@ -612,12 +657,14 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithBasicAuth, Parse_ValidParameters_
 
     EXPECT_EQ("URL1", testData[0].create.serverUrl);
     EXPECT_EQ("R1", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials("U1", "P1"), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
 
     EXPECT_EQ("URL2", testData[0].upgrade.serverUrl);
     EXPECT_EQ("R2", testData[0].upgrade.id);
+    EXPECT_EQ(BeVersion(), testData[0].upgrade.serviceVersion);
     EXPECT_EQ(Credentials("U2", "P2"), testData[0].upgrade.credentials);
     EXPECT_EQ(nullptr, testData[0].upgrade.token);
     EXPECT_EQ(nullptr, testData[0].upgrade.environment);
@@ -664,6 +711,7 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithDefaultParams, Parse_UpgradeCache
 
     EXPECT_EQ("URL2", testData[it].upgrade.serverUrl);
     EXPECT_EQ("R2", testData[it].upgrade.id);
+    EXPECT_EQ(BeVersion(), testData[it].upgrade.serviceVersion);
     EXPECT_EQ(Credentials("U2", "P2"), testData[it].upgrade.credentials);
     EXPECT_EQ(nullptr, testData[it].upgrade.token);
     EXPECT_EQ(nullptr, testData[it].upgrade.environment);
@@ -702,6 +750,7 @@ TEST_P(ArgumentParserTests_CreateWithSchemas, Parse_ValidParameters_FillsTestDat
     EXPECT_STREQ(BeFileName(TestArg::Folder("Test/").value).c_str(), testData[0].create.schemasDir.c_str());
     EXPECT_EQ("", testData[0].create.serverUrl);
     EXPECT_EQ("", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
@@ -739,6 +788,7 @@ TEST_P(ArgumentParserTests_UpgradeFromSchemas, Parse_ValidParameters_FillsTestDa
     EXPECT_STREQ(BeFileName(TestArg::Folder("Test/").value).c_str(), testData[0].create.schemasDir.c_str());
     EXPECT_EQ("", testData[0].create.serverUrl);
     EXPECT_EQ("", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
@@ -746,6 +796,7 @@ TEST_P(ArgumentParserTests_UpgradeFromSchemas, Parse_ValidParameters_FillsTestDa
     EXPECT_STREQ(L"", testData[0].upgrade.schemasDir.c_str());
     EXPECT_EQ("URL", testData[0].upgrade.serverUrl);
     EXPECT_EQ("R", testData[0].upgrade.id);
+    EXPECT_EQ(BeVersion(), testData[0].upgrade.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].upgrade.credentials);
     EXPECT_EQ(nullptr, testData[0].upgrade.token);
     EXPECT_EQ(nullptr, testData[0].upgrade.environment);
@@ -782,6 +833,7 @@ TEST_P(ArgumentParserTests_UpgradeToSchemas, Parse_ValidParameters_FillsTestData
     EXPECT_STREQ(L"", testData[0].create.schemasDir.c_str());
     EXPECT_EQ("URL", testData[0].create.serverUrl);
     EXPECT_EQ("R", testData[0].create.id);
+    EXPECT_EQ(BeVersion(), testData[0].create.serviceVersion);
     EXPECT_EQ(Credentials(), testData[0].create.credentials);
     EXPECT_EQ(nullptr, testData[0].create.token);
     EXPECT_EQ(nullptr, testData[0].create.environment);
@@ -812,6 +864,15 @@ INSTANTIATE_TEST_CASE_P(NoRepoId, ArgumentParserTests_InvalidParameters, ValuesI
         {{"Foo.exe", "--createcache", "-url", "URL"}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-token", TestArg::File(s_xmlTokenStr)}},
         {{"Foo.exe", "--createcache", "-url", "URL", "-imsenv", "PROD"}},
+    })));
+INSTANTIATE_TEST_CASE_P(InvalidServiceVersion, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
+        {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-sv", "nonVersion"}},
+        {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-sv", "1.2.3.4"}},
+        {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-sv", "1.2.3"}},
+        {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-sv", "1.2t"}},
+        {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-sv", "t1.2"}},
+        {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-sv", "1"}},
+        {{"Foo.exe", "--createcache", "-url", "URL", "-r", "RId", "-sv"}},
     })));
 INSTANTIATE_TEST_CASE_P(NoUserOrPass, ArgumentParserTests_InvalidParameters, ValuesIn(GenerateParams(vector<TestArgs>{
         {{"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic", "UserName"}},

@@ -21,6 +21,9 @@ struct IntegrationTestsSettings
         Utf8String m_projectId;
         Utf8String m_url;
         WebServices::UrlProvider::Environment m_environment;
+        static BeFileName ResolveSettingsPath();
+        static Json::Value ReadSettingsJson(BeFileNameCR settingsFile);
+        static WebServices::UrlProvider::Environment ResolveEnvironment(Json::Value settings);
         void ReadSettings(BeFileNameCR settingsFile);
         IntegrationTestsSettings();
     public:
@@ -33,6 +36,7 @@ struct IntegrationTestsSettings
         Utf8String GetProjectId() const;
         Utf8String GetServerUrl() const;
         WebServices::UrlProvider::Environment GetEnvironment() const;
+        static WebServices::UrlProvider::Environment ReadEnvironment();
         WebServices::ClientInfoPtr GetClientInfo() const;
     };
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

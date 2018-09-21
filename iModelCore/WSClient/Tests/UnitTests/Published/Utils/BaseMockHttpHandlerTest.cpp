@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/BaseMockHttpHandlerTest.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BaseMockHttpHandlerTest.h"
@@ -39,4 +39,13 @@ MockHttpHandler& BaseMockHttpHandlerTest::GetHandler() const
 std::shared_ptr<MockHttpHandler> BaseMockHttpHandlerTest::GetHandlerPtr() const
     {
     return m_handler;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void BaseMockHttpHandlerTest::TearDown()
+    {
+    m_handler->ValidateAndClearExpectations();
+    WSClientBaseTest::TearDown();
     }

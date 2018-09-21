@@ -9,6 +9,7 @@
 #include "DataSourceCacheTests.h"
 
 #include "../Util/MockECDbSchemaChangeListener.h"
+#include "StubFileManager.h"
 #include <Bentley/BeDebugLog.h>
 
 #ifdef USE_GTEST
@@ -167,7 +168,7 @@ TEST_F(DataSourceCacheTests, Close_OpenedDb_ClosesAndQueriesFailWithException)
         }
     EXPECT_TRUE(failed);
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -182,7 +183,7 @@ TEST_F(DataSourceCacheTests, Close_RegisteredSchemaChangeListener_CallsListenerA
     EXPECT_CALL(listener, OnSchemaChanged()).Times(1);
     cache.Close();
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -359,7 +360,7 @@ ECSchemaPtr CreateSchema(Utf8StringR schemaXml, ECSchemaReadContextR context)
     ECSchema::ReadFromXmlString(schemaOut, schemaXml.c_str(), context);
     return schemaOut;
     }
-    
+
 BeFileName GetSchemaPath(Utf8StringR schemaXml, WCharCP fileName, ECSchemaReadContextR context)
     {
     BeFileName schemaPath(GetTestsTempDir().AppendToPath(fileName));
@@ -367,7 +368,7 @@ BeFileName GetSchemaPath(Utf8StringR schemaXml, WCharCP fileName, ECSchemaReadCo
     EXPECT_EQ(SchemaWriteStatus::Success, status);
     return schemaPath;
     }
-    
+
 SchemaReadStatus LoadSchema(std::shared_ptr<DataSourceCache> cache, BeFileNameCR schemaPath, ECSchemaPtr& loadedSchemaOut)
     {
     auto context = ECSchemaReadContext::CreateContext();
@@ -385,7 +386,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
     {
     auto cache = GetTestCache();
     auto context = ECSchemaReadContext::CreateContext();
-    
+
     //Add Base Class Schema and Derived Class Schema
     Utf8String baseSchemaXml =
         R"xml(<ECSchema schemaName="BaseSchema" nameSpacePrefix="Base" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
@@ -415,13 +416,13 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
     ASSERT_EQ(SchemaReadStatus::Success, LoadSchema(cache, derivedSchemaPath, derivedSchema));
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
-    
+
     //Add object with Derived Schema class
     StubInstances instances;
-    instances.Add({ "DynamicSchema.TestSubClass", "Foo" }, { { "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" } });
-    ASSERT_EQ(SUCCESS, cache->CacheInstanceAndLinkToRoot({ "DynamicSchema.TestSubClass", "Foo" }, instances.ToWSObjectsResponse(), "foo_root"));
-    EXPECT_TRUE(cache->GetCachedObjectInfo({ "DynamicSchema.TestSubClass", "Foo" }).IsFullyCached());
-    ASSERT_TRUE(cache->FindInstance({ "DynamicSchema.TestSubClass", "Foo" }).IsValid());
+    instances.Add({"DynamicSchema.TestSubClass", "Foo"}, {{ "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" }});
+    ASSERT_EQ(SUCCESS, cache->CacheInstanceAndLinkToRoot({"DynamicSchema.TestSubClass", "Foo"}, instances.ToWSObjectsResponse(), "foo_root"));
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"DynamicSchema.TestSubClass", "Foo"}).IsFullyCached());
+    ASSERT_TRUE(cache->FindInstance({"DynamicSchema.TestSubClass", "Foo"}).IsValid());
     instances.Clear();
 
     //Add property to Schema class (Update Dynamic Schema)
@@ -435,18 +436,18 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
             <ECProperty propertyName = "D" typeName = "string" />
         </ECClass>
     </ECSchema>)xml";
-    
+
     ECSchemaPtr derivedSchema2;
     auto derivedSchema2Path = GetSchemaPath(derivedSchema2Xml, L"DynamicSchema", *context);
     ASSERT_EQ(SchemaReadStatus::Success, LoadSchema(cache, derivedSchema2Path, derivedSchema2));
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema2}));
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
-    
+
     //Update object with new property 
-    instances.Add({ "DynamicSchema.TestSubClass", "Foo" }, { { "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" }, { "D", "ValueD" } });
-    ASSERT_EQ(CacheStatus::OK, cache->UpdateInstance({ "DynamicSchema.TestSubClass", "Foo" }, instances.ToWSObjectsResponse()));
-    EXPECT_TRUE(cache->GetCachedObjectInfo({ "DynamicSchema.TestSubClass", "Foo" }).IsFullyCached());
-    ASSERT_TRUE(cache->FindInstance({ "DynamicSchema.TestSubClass", "Foo" }).IsValid());
+    instances.Add({"DynamicSchema.TestSubClass", "Foo"}, {{ "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" }, { "D", "ValueD" }});
+    ASSERT_EQ(CacheStatus::OK, cache->UpdateInstance({"DynamicSchema.TestSubClass", "Foo"}, instances.ToWSObjectsResponse()));
+    EXPECT_TRUE(cache->GetCachedObjectInfo({"DynamicSchema.TestSubClass", "Foo"}).IsFullyCached());
+    ASSERT_TRUE(cache->FindInstance({"DynamicSchema.TestSubClass", "Foo"}).IsValid());
 
     ECInstanceKeyMultiMap instancesOut;
     cache->ReadInstancesLinkedToRoot("foo_root", instancesOut);
@@ -1454,7 +1455,7 @@ TEST_F(DataSourceCacheTests, CacheInstancesAndLinkToRoot_NotExistingRelationship
 
     ASSERT_EQ(ERROR, cache->CacheInstancesAndLinkToRoot(instances.ToWSObjectsResponse(), "Root", nullptr, true));
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1731,6 +1732,36 @@ TEST_F(DataSourceCacheTests, RemoveFile_AdditionalFileUpInExternalDirectory_Remo
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveFile_FileIsLocked_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+
+    ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
+    BeFileName filePath = cache->ReadFilePath(fileId);
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(ERROR, cache->RemoveFile(fileId));
+    EXPECT_EQ(ERROR, cache->RemoveFile(fileId));
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::Success;
+
+    EXPECT_EQ(SUCCESS, cache->RemoveFile(fileId));
+
+    EXPECT_FALSE(filePath.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_RootPersistenceSetToFull_LeavesFile)
     {
     auto cache = GetTestCache();
@@ -1876,6 +1907,39 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExist
     EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
 
     EXPECT_TRUE(cache->ReadFilePath(instance).DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_FileIsLocked_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot(nullptr, CacheRootPersistence::Temporary));
+    ObjectId fileId = StubFileInCache(*cache, FileCache::Temporary);
+    BeFileName filePath = cache->ReadFilePath(fileId);
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    BeTest::SetFailOnAssert(false);
+    AsyncError error;
+    EXPECT_EQ(CacheStatus::Error, cache->RemoveFilesInTemporaryPersistence(nullptr, &error));
+    EXPECT_FALSE(error.GetMessage().empty());
+    EXPECT_EQ(CacheStatus::Error, cache->RemoveFilesInTemporaryPersistence());
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::Success;
+
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
+
+    EXPECT_FALSE(filePath.DoesPathExist());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2674,6 +2738,35 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedFileRemovedInNewRes
 
     ASSERT_FALSE(cache->FindInstance({"TestSchema.TestClass", "Foo"}).IsValid());
     EXPECT_FALSE(cachedFilePath.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedLockedFileRemovedInNewResults_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+    auto responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(), FileCache::Persistent));
+    BeFileName filePath = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    instances.Clear();
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(CacheStatus::Error, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_TRUE(filePath.DoesPathExist());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -5948,14 +6041,14 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileNameProperty_SuccessAndReturnsLabel)
     {
     auto cache = GetTestCache();
-    
+
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass2", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
-    
+
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
-    
+
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-    
+
     EXPECT_EQ("TestName", fileName);
     EXPECT_EQ(0, fileSize);
     }
@@ -5966,14 +6059,14 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFileSizeProperty_SuccessAndReturnsFileSize)
     {
     auto cache = GetTestCache();
-    
+
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass3", "Foo"}, {{"TestName", "TestName"}, {"TestSize", "42"}});
-    
+
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
-    
+
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-    
+
     EXPECT_EQ("", fileName);
     EXPECT_EQ(42, fileSize);
     }
@@ -5984,14 +6077,14 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
 TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
     {
     auto cache = GetTestCache();
-    
+
     auto instanceKey = StubInstanceInCache(*cache, {"TestSchema.TestFileClass4", "Foo"}, {{"Name", "TestName"}});
-    
+
     Utf8String fileName = "NoValue";
     uint64_t fileSize = 99;
 
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
-    
+
     EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
     }
@@ -7416,6 +7509,46 @@ TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceHasResponsesCachedUnd
     EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "F"})));
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_NavigationBaseInstanceHasResponsesCachedUnderIt_ReturnsInstancesUnderIt)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("Root"), "Foo");
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot(nullptr, ObjectId()));
+    auto instance = cache->FindInstance(ObjectId());
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, instances.ToWSObjectsResponse()));
+
+    CachedResponseKey responseKey2(instance, "Foo");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "C"});
+    instances.Add({"TestSchema.TestClass", "D"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, instances.ToWSObjectsResponse()));
+
+    CachedResponseKey responseKey3(cache->FindInstance({"TestSchema.TestClass", "C"}), "Foo");
+    instances.Clear();
+    instances.Add({"TestSchema.TestClass", "E"});
+    instances.Add({"TestSchema.TestClass", "F"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, instances.ToWSObjectsResponse()));
+
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(SUCCESS, cache->ReadInstanceHierarchy(instance, map));
+
+    EXPECT_EQ(4, map.size());
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "C"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "D"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "E"})));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance({"TestSchema.TestClass", "F"})));
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -7867,6 +8000,58 @@ TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesRespon
     EXPECT_THAT(cache->IsResponseCached(responseKey1), false);
     EXPECT_THAT(cache->IsResponseCached(responseKey2), false);
     EXPECT_THAT(cache->IsResponseCached(responseKey3), true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                   Eimantas.Morkunas                 07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_NoMatchingResponses_ReturnsSuccess)
+    {
+    auto cache = GetTestCache();
+
+    ASSERT_EQ(SUCCESS, cache->RemoveResponsesByPrefix("Foo"));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                   Eimantas.Morkunas                 07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_ResponsesMatchingPrefixExists_OnlyPrefixedResponsesRemoved)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "Test");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("A"), "Test2");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("B"), "Test3");
+    CachedResponseKey responseKey4(cache->FindOrCreateRoot("A"), "Other1");
+    CachedResponseKey responseKey5(cache->FindOrCreateRoot("C"), "Other2");
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey4, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey5, StubInstances().ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->RemoveResponsesByPrefix("Test"));
+
+    EXPECT_THAT(cache->IsResponseCached(responseKey1), false);
+    EXPECT_THAT(cache->IsResponseCached(responseKey2), false);
+    EXPECT_THAT(cache->IsResponseCached(responseKey3), false);
+    EXPECT_THAT(cache->IsResponseCached(responseKey4), true);
+    EXPECT_THAT(cache->IsResponseCached(responseKey5), true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                   Eimantas.Morkunas                 07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_ResponseContainingButNotStartingByPrefix_ResponseNotRemoved)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey(cache->FindOrCreateRoot("A"), "Test");
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->RemoveResponsesByPrefix("est"));
+
+    EXPECT_THAT(cache->IsResponseCached(responseKey), true);
     }
 
 /*--------------------------------------------------------------------------------------+

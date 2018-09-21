@@ -74,10 +74,10 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_Gets
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
-    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("TestUrl"))));
+    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("https://test/foo"))));
 
-    EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
-    EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ("https://test/foo", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ("https://test/foo", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -192,7 +192,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_Ig
 TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    Utf8String url = "testUrl";
+    Utf8String url = "https://test/foo";
     StubLocalState localState;
 
     bset<Utf8String> urlNames;
@@ -250,7 +250,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
 TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    Utf8String url = "testUrl";
+    Utf8String url = "https://test/foo";
     StubLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
@@ -308,8 +308,8 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_CleansUpCache)
     {
     auto client = std::make_shared<MockBuddiClient>();
-    Utf8String urlDev = "testUrl_Dev";
-    Utf8String urlQa = "testUrl_Qa";
+    Utf8String urlDev = "http://test/dev";
+    Utf8String urlQa = "http://test/qa";
     StubLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
@@ -335,13 +335,13 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotC
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("TestUrl"))));
+    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("https://test/foo"))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
-    EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ("https://test/foo", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
-    EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ("https://test/foo", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -360,7 +360,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
         return StubHttpResponse();
         });
 
-    Http::Request request("foo");
+    Http::Request request("https://test/foo");
     configurator->_PerformRequest(request)->Wait();
     }
 
@@ -380,7 +380,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
         return StubHttpResponse();
         });
 
-    Http::Request request("foo");
+    Http::Request request("https://test/foo");
     configurator->_PerformRequest(request)->Wait();
     }
 
@@ -400,7 +400,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
         return StubHttpResponse();
         });
 
-    Http::Request request("foo");
+    Http::Request request("https://test/foo");
     configurator->_PerformRequest(request)->Wait();
     }
 
@@ -422,7 +422,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithReleaseAndSetToQ
         return StubHttpResponse();
         });
 
-    Http::Request request("foo");
+    Http::Request request("https://test/foo");
     configurator->_PerformRequest(request)->Wait();
     }
 
@@ -444,7 +444,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQaAndSetToReleas
         return StubHttpResponse();
         });
 
-    Http::Request request("foo");
+    Http::Request request("https://test/foo");
     configurator->_PerformRequest(request)->Wait();
     }
 

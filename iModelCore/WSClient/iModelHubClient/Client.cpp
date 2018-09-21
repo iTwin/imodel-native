@@ -778,7 +778,7 @@ BriefcaseInfoTaskPtr Client::RestoreBriefcase(iModelInfoCR iModelInfo, BeSQLite:
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikolinuas            07/2017
 //---------------------------------------------------------------------------------------
-DgnDbPtr Client::OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
+DgnDbPtr OpenWithSchemaUpgradeInternal(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets, 
                                                SchemaUpgradeOptions::DomainUpgradeOptions domainUpgradeOptions, 
                                                RevisionProcessOption processOption)
     {
@@ -811,15 +811,26 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     if (!doSync)
         return connection->DownloadBriefcaseFile(filePath, briefcaseInfo.GetId(), briefcaseInfo.GetFileAccessKey(), callback, cancellationToken);
 
-    MultiProgressCallbackHandler handler(callback);
-    Http::Request::ProgressCallback briefcaseCallback, changeSetsCallback, changeSetsFallbackCallback;
-    handler.AddCallback(briefcaseCallback, 70.0f);
-    handler.AddCallback(changeSetsCallback, 20.0f);
-    handler.AddCallback(changeSetsFallbackCallback, 10.0f);
-
     Utf8String mergedChangeSetId = briefcaseInfo.GetMergedChangeSetId();
-    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, briefcaseInfo.GetFileId(), changeSetsCallback, cancellationToken);
+    auto changeSetsResult = ExecuteAsync(connection->GetChangeSetsAfterId(mergedChangeSetId, briefcaseInfo.GetFileId(), cancellationToken));
 
+
+    uint64_t changeSetsSize = 0;
+    for (auto changeSet : changeSetsResult->GetValue())
+        {
+        changeSetsSize += changeSet->GetFileSize();
+        }
+
+    uint64_t totalSize = 2 * changeSetsSize + briefcaseInfo.GetSize();
+
+    MultiProgressCallbackHandler handler(callback, totalSize);
+    Http::Request::ProgressCallback briefcaseCallback, changeSetsCallback, mergeCallback;
+    handler.AddCallback(briefcaseCallback);
+    handler.AddCallback(changeSetsCallback);
+    handler.AddCallback(mergeCallback);
+
+
+    auto changeSetsDownloadTask = connection->DownloadChangeSetsInternal(changeSetsResult->GetValue(), changeSetsCallback, cancellationToken);
     StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, briefcaseInfo.GetId(), briefcaseInfo.GetFileAccessKey(), briefcaseCallback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
@@ -837,77 +848,99 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return result;
         }
 
-    ChangeSetsResult pullChangeSetsResult = pullChangeSetsTask->GetResult();
-    if (!pullChangeSetsResult.IsSuccess())
+    ChangeSetsResult changeSetsDownloadResult = changeSetsDownloadTask->GetResult();
+    if (!changeSetsDownloadResult.IsSuccess())
         {
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
-        return StatusResult::Error(pullChangeSetsResult.GetError());
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, changeSetsDownloadResult.GetError().GetMessage().c_str());
+        return StatusResult::Error(changeSetsDownloadResult.GetError());
         }
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", mergedChangeSetId.c_str());
 
-    // If MergedChangeSetId and ParentChangeSetId do not match, query new changeSets
-    Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
-    if (!parentRevisionId.Equals(mergedChangeSetId))
-        {
-        // Override task and result so that previously downloaded changeSets will be removed. Otherwise they are overridden later and required changeSets are deleted.
-        pullChangeSetsTask = CreateCompletedAsyncTask<ChangeSetsResult>(ChangeSetsResult::Success(ChangeSets()));
-        pullChangeSetsResult = pullChangeSetsTask->GetResult();
-
-        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "MergedChangeSetId '%s' and ParentChangeSetId '%s' do not match.", mergedChangeSetId.c_str(), parentRevisionId.c_str());
-        pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, briefcaseInfo.GetFileId(), changeSetsFallbackCallback, cancellationToken);
-        pullChangeSetsResult = pullChangeSetsTask->GetResult();
-        if (!pullChangeSetsResult.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
-            return StatusResult::Error(pullChangeSetsResult.GetError());
-            }
-        }
 
     db->Txns().EnableTracking(true);
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
-    ChangeSets changeSets = pullChangeSetsResult.GetValue();
-    handler.SetFinished();
+    ChangeSets changeSets = changeSetsDownloadResult.GetValue();
 
-    return MergeChangeSetsIntoDgnDb(db, changeSets, filePath);
+    StatusResult mergeResult = MergeChangeSetsIntoDgnDb(db, changeSets, filePath, mergeCallback, cancellationToken);
+
+    handler.SetFinished();
+    return mergeResult;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2018
+//---------------------------------------------------------------------------------------
+DbResult MergeChangeSetWithReopen(Dgn::DgnDbPtr& db, BeFileNameCR filePath, DgnRevisionPtr changeSet)
+    {
+    db->CloseDb();
+
+    BeSQLite::DbResult status;
+    bvector<DgnRevisionPtr> changeSets;
+    changeSets.push_back(changeSet);
+    db = OpenWithSchemaUpgradeInternal(&status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck, RevisionProcessOption::Merge);
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
+StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath,
+                                              Http::Request::ProgressCallbackCR callback,
                                               ICancellationTokenPtr cancellationToken)
     {
     const Utf8String methodName = "Client::MergeChangeSetsIntoDgnDb";
 
-    RevisionStatus mergeStatus = RevisionStatus::Success;
-    if (ContainsSchemaChanges(changeSets, *db))
+    uint64_t totalSize = 0;
+    if (callback != nullptr)
         {
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets with DgnDb reopen.");
-        db->CloseDb();
-
-        BeSQLite::DbResult status;
-        db = OpenWithSchemaUpgradeInternal(&status, filePath, changeSets, SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);
-        if (BeSQLite::DbResult::BE_SQLITE_OK != status)
+        for (DgnRevisionPtr changeSet : changeSets)
             {
-            StatusResult result = StatusResult::Error(Error(db, status));
-            if (!result.IsSuccess())
-                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return result;
+            uint64_t fileSize;
+            auto status = changeSet->GetRevisionChangesFile().GetFileSize(fileSize);
+            if (BeFileNameStatus::Success != status)
+                return StatusResult::Error(Error(Error::Id::FileNotFound));
+            totalSize += fileSize;
             }
+
+        callback(0.0, totalSize);
         }
-    else
+
+    RevisionStatus mergeStatus = RevisionStatus::Success;
+
+    uint64_t sizeMerged = 0;
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets.");
+    if (!changeSets.empty())
         {
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets.");
-        if (!changeSets.empty())
+        for (DgnRevisionPtr changeSet : changeSets)
             {
-            for (auto changeSet : changeSets)
+            if (changeSet->ContainsSchemaChanges(*db))
+                {
+                LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets with DgnDb reopen.");
+                DbResult status = MergeChangeSetWithReopen(db, filePath, changeSet);
+                if (DbResult::BE_SQLITE_OK != status)
+                    {
+                    StatusResult result = StatusResult::Error(Error(db, status));
+                    if (!result.IsSuccess())
+                        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                    return result;
+                    }
+                }
+            else
                 {
                 mergeStatus = db->Revisions().MergeRevision(*changeSet);
                 if (mergeStatus != RevisionStatus::Success)
                     break; // TODO: Use the information on the changeSet that actually failed. 
+                }
+
+            if (callback != nullptr)
+                {
+                uint64_t fileSize;
+                changeSet->GetRevisionChangesFile().GetFileSize(fileSize);
+                sizeMerged += fileSize;
+                callback(sizeMerged, totalSize);
                 }
             }
         }
@@ -1056,6 +1089,41 @@ StatusTaskPtr Client::AbandonBriefcase(iModelInfoCR iModelInfo, BeSQLite::BeBrie
             LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
             return StatusResult::Success();
             }
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Vilius.Kazlauskas              09/2018
+//---------------------------------------------------------------------------------------
+StatusTaskPtr Client::UpdateiModel(Utf8StringCR projectId, iModelInfoCR iModelInfo, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::UpdateiModel";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    if (iModelInfo.GetId().empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel id.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::InvalidiModelId));
+        }
+
+    Json::Value iModelJson = iModelCreationJson(iModelInfo.GetName(), iModelInfo.GetDescription());
+    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
+
+    return client->SendUpdateObjectRequestWithOptions(ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelInfo.GetId()),
+                                               iModelJson[ServerSchema::Instance][ServerSchema::Properties], nullptr, BeFileName(), nullptr,
+                                               nullptr, cancellationToken)
+        ->Then<StatusResult>([=] (const WSUpdateObjectResult& result)
+        {
+        if (!result.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return StatusResult::Error(result.GetError());
+            }
+
+        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Success.");
+        return StatusResult::Success();
         });
     }
 
@@ -1309,10 +1377,18 @@ ICancellationTokenPtr cancellationToken
         BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
         }
 
-    MultiProgressCallbackHandler handler(callback);
-    Http::Request::ProgressCallback changeSetsCallback, seedFileCallback;
-    handler.AddCallback(changeSetsCallback, 20.0f);
-    handler.AddCallback(seedFileCallback, 80.0f);
+    uint64_t changeSetsSize = 0;
+    for (ChangeSetInfoPtr changeSet : changeSetsToMerge)
+        {
+        changeSetsSize += changeSet->GetFileSize();
+        }
+    uint64_t totalSize = 2 * changeSetsSize + fileInfo.GetSize();
+
+    MultiProgressCallbackHandler handler(callback, totalSize);
+    Http::Request::ProgressCallback changeSetsCallback, mergeCallback, seedFileCallback;
+    handler.AddCallback(changeSetsCallback);
+    handler.AddCallback(mergeCallback);
+    handler.AddCallback(seedFileCallback);
 
     auto SeedFileResult = connection->DownloadSeedFile(filePath, fileInfo.GetFileId().ToString(), seedFileCallback, cancellationToken)->GetResult();
     if (!SeedFileResult.IsSuccess())
@@ -1347,7 +1423,7 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result));
         }
 
-    auto margeStatus = MergeChangeSetsIntoDgnDb(db, changeSetsResult.GetValue(), filePath);
+    auto margeStatus = MergeChangeSetsIntoDgnDb(db, changeSetsResult.GetValue(), filePath, mergeCallback, cancellationToken);
     if (!margeStatus.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, margeStatus.GetError().GetMessage().c_str());

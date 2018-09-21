@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsBase.h"
+#include <WebServices\iModelHub\Client\ClientHelper.h>
+#include "../Helpers/Oidc/OidcSignInManager.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -53,6 +55,18 @@ struct iModelTests : public IntegrationTestsBase
     iModelResult CreateiModel(bool expectSuccess = true)
         {
         return IntegrationTestsBase::CreateiModel(m_db, expectSuccess);
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Vilius.Kazlauskas               09/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelResult CreateiModel(Utf8StringCR name, Utf8StringCR description = "")
+        {
+        TestsProgressCallback callback;
+        iModelHubHelpers::DeleteiModelByName(s_client, name);
+        iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, name, description, true, callback.Get())->GetResult();        
+        callback.Verify(true);
+        return createResult;
         }
     };
 
@@ -189,14 +203,9 @@ TEST_F(iModelTests, FilterGetiModels)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, SuccessfulCreateiModelWithASpaceInName)
     {
-    TestsProgressCallback callback;
     m_imodelName = "iModel With A Space In Name";
     Utf8String description = m_imodelName + " is created by iModelHubHost";
-    ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, m_imodelName));
-
-    iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, m_imodelName, description, true, callback.Get())->GetResult();
-    ASSERT_SUCCESS(createResult);
-    callback.Verify(true);
+    ASSERT_SUCCESS(CreateiModel(m_imodelName, description));
 
     iModelResult getResult = s_client->GetiModelByName(s_projectId, m_imodelName)->GetResult(); //Query by name fails
     ASSERT_SUCCESS(getResult);
@@ -216,4 +225,74 @@ TEST_F(iModelTests, UnsuccessfulCreateiModelFromBriefcase)
     iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, m_imodelName, description, true, callback.Get())->GetResult();
     ASSERT_FAILURE(createResult);
     EXPECT_EQ(Error::Id::FileIsBriefcase, createResult.GetError().GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, CreateiModelUsingOidcLogin)
+    {
+    ClientPtr oidcClient;
+    iModelHubHelpers::CreateOidcClient(oidcClient, IntegrationTestsSettings::Instance().GetValidAdminCredentials());
+    
+    iModelResult createResult = iModelHubHelpers::CreateNewiModel(oidcClient, m_db, s_projectId, true);
+    ASSERT_SUCCESS(createResult) << "iModel create using Oidc login failed";
+    auto creatediModelInfo = createResult.GetValue();
+    auto creatediModelId = creatediModelInfo->GetId();
+
+    iModelResult getResult = oidcClient->GetiModelById(s_projectId, creatediModelId)->GetResult();
+    ASSERT_SUCCESS(getResult) << "iModel creation using Oidc login failed";
+    EXPECT_TRUE(getResult.GetValue()->IsInitialized());
+    EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
+
+    EXPECT_SUCCESS (oidcClient->DeleteiModel(s_projectId, *creatediModelInfo)->GetResult());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Vilius.Kazlauskas               09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, UpdateiModel)
+    {
+    iModelResult createResult = CreateiModel();
+    ASSERT_SUCCESS(createResult);
+
+    Utf8String name2 = "TestiModel2";
+    ASSERT_SUCCESS(CreateiModel(name2));
+    
+    iModelResult imodelResult = s_client->GetiModelById(s_projectId, createResult.GetValue()->GetId())->GetResult();
+    ASSERT_SUCCESS(imodelResult);
+
+    // Rename to existing name
+    iModelInfoPtr imodel = imodelResult.GetValue();
+    imodel->SetName(name2);
+    StatusResult updateResult1 = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
+    ASSERT_FAILURE(updateResult1);
+    EXPECT_EQ(Error::Id::iModelAlreadyExists, updateResult1.GetError().GetId());
+    // Clean up
+    iModelHubHelpers::DeleteiModelByName(s_client, name2);
+    
+    // Rename to invalid name
+    imodel->SetName("");
+    StatusResult updateResult2 = s_client->UpdateiModel(s_projectId, *imodel)->GetResult();
+    ASSERT_FAILURE(updateResult2);
+    EXPECT_EQ(Error::Id::MissingRequiredProperties, updateResult2.GetError().GetId());
+
+    // Rename with a valid data
+    m_imodelName = GetTestiModelName() + "_Renamed";
+    Utf8String description = m_imodelName + "_Description";
+    ASSERT_SUCCESS(iModelHubHelpers::DeleteiModelByName(s_client, m_imodelName));
+    imodel->SetName(m_imodelName);
+    imodel->SetDescription(description);
+    ASSERT_SUCCESS(s_client->UpdateiModel(s_projectId, *imodel)->GetResult());
+
+    // Check if renamed properly and other properites have not changed
+    iModelResult updatediModelResult = s_client->GetiModelById(s_projectId, imodel->GetId())->GetResult();
+    ASSERT_SUCCESS(updatediModelResult);
+    iModelInfoPtr updatediModel = updatediModelResult.GetValue();
+    EXPECT_EQ(m_imodelName, updatediModel->GetName());
+    EXPECT_EQ(description, updatediModel->GetDescription());
+    EXPECT_EQ(imodel->GetId(), updatediModel->GetId());
+    EXPECT_EQ(imodel->GetCreatedDate(), updatediModel->GetCreatedDate());
+    EXPECT_EQ(imodel->GetUserCreated(), updatediModel->GetUserCreated());
+    EXPECT_EQ(imodel->GetServerURL(), updatediModel->GetServerURL());
     }

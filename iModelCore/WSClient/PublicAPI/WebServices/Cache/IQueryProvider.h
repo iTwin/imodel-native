@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/IQueryProvider.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,7 +38,17 @@ struct EXPORT_VTABLE_ATTRIBUTE IQueryProvider
             bool isPersistent
             ) const;
 
+        //! Returns non null cancellation token for file that needs retrieving from source. Returns nullptr if there is no need to retrieve file.
+        //! Returned token will be cancelled if file retrieval is no longer necessary.
+        WSCACHE_EXPORT virtual ICancellationTokenPtr IsFileRetrievalNeeded
+            (
+            CacheTransactionCR txn,
+            ECInstanceKeyCR instanceKey,
+            bool isPersistent
+            ) const;
+
         //! Return true if file for this instance should be downloaded. By default returns false.
+        //! DEPRECATED, use IsFileRetrievalNeeded(CacheTransactionCR, ECInstanceKeyCR, bool)
         WSCACHE_EXPORT virtual bool DoUpdateFile
             (
             CacheTransactionCR txn,

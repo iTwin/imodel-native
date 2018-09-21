@@ -442,7 +442,7 @@ CodeCallbackFunction* codesCallback
         case Error::Id::AnotherUserPushing:
         case Error::Id::PullIsRequired:
         case Error::Id::DatabaseTemporarilyLocked:
-        case Error::Id::iModelHubOperationFailed:
+        case Error::Id::OperationFailed:
             break;
         default:
             {

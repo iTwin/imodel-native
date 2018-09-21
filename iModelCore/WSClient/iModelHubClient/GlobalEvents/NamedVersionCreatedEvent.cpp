@@ -22,8 +22,9 @@ NamedVersionCreatedEvent::NamedVersionCreatedEvent
     const Utf8String iModelId,
     const Utf8String versionId,
     const Utf8String versionName,
-    const Utf8String changeSetId
-) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId)
+    const Utf8String changeSetId,
+    const Utf8String lockUrl
+) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId, lockUrl)
     {
     m_versionId = versionId;
     m_versionName = versionName;
@@ -42,7 +43,8 @@ RefCountedPtr<struct NamedVersionCreatedEvent> NamedVersionCreatedEvent::Create
     const Utf8String iModelId,
     const Utf8String versionId,
     const Utf8String versionName,
-    const Utf8String changeSetId
+    const Utf8String changeSetId,
+    const Utf8String lockUrl
 )
     {
     return new NamedVersionCreatedEvent
@@ -54,6 +56,7 @@ RefCountedPtr<struct NamedVersionCreatedEvent> NamedVersionCreatedEvent::Create
         iModelId,
         versionId,
         versionName,
-        changeSetId
+        changeSetId,
+        lockUrl
     );
     }

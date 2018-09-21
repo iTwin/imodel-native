@@ -25,8 +25,8 @@ struct MultiProgressCallbackHandlerTests : public Tests::BaseMockHttpHandlerTest
 //---------------------------------------------------------------------------------------
 TEST_F(MultiProgressCallbackHandlerTests, LockEventTests)
     {
-    static double s_transfered = 0.0f;
-    static double s_total = 0.0f;
+    static double s_transfered = 0.0;
+    static double s_total = 0.0;
 
     Http::Request::ProgressCallback mainCallback = [=](double bytesTransfered, double bytesTotal)
         {
@@ -34,24 +34,24 @@ TEST_F(MultiProgressCallbackHandlerTests, LockEventTests)
         s_total = bytesTotal;
         };
 
-    MultiProgressCallbackHandler handler(mainCallback);
+    MultiProgressCallbackHandler handler(mainCallback, 20.0);
     Http::Request::ProgressCallback twentyPercentageCallback, eightyPercentageCallback;
-    handler.AddCallback(twentyPercentageCallback, 20.0f);
-    handler.AddCallback(eightyPercentageCallback, 80.0f);
+    handler.AddCallback(twentyPercentageCallback);
+    handler.AddCallback(eightyPercentageCallback);
 
-    eightyPercentageCallback(50.0f, 100.0f);
-    EXPECT_EQ(40.0f, s_transfered);
-    EXPECT_EQ(100.0f, s_total);
+    eightyPercentageCallback(8.0, 16.0);
+    EXPECT_EQ(8.0, s_transfered);
+    EXPECT_EQ(20.0, s_total);
 
-    twentyPercentageCallback(1.0f, 4.0f);
-    EXPECT_EQ(45.0f, s_transfered);
-    EXPECT_EQ(100.0f, s_total);
+    twentyPercentageCallback(1.0, 4.0);
+    EXPECT_EQ(9.0, s_transfered);
+    EXPECT_EQ(20.0, s_total);
 
-    twentyPercentageCallback(4.0f, 4.0f);
-    EXPECT_EQ(60.0f, s_transfered);
-    EXPECT_EQ(100.0f, s_total);
+    twentyPercentageCallback(4.0, 4.0);
+    EXPECT_EQ(12.0, s_transfered);
+    EXPECT_EQ(20.0, s_total);
 
-    eightyPercentageCallback(1.0f, 1.0f);
-    EXPECT_EQ(100.0f, s_transfered);
-    EXPECT_EQ(100.0f, s_total);
+    eightyPercentageCallback(16.0, 16.0);
+    EXPECT_EQ(20.0, s_transfered);
+    EXPECT_EQ(20.0, s_total);
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/MockHttpHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "MockHttpHandler.h"
@@ -42,6 +42,14 @@ MockHttpHandler::MockHttpHandler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MockHttpHandler::~MockHttpHandler()
     {
+    ValidateAndClearExpectations();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void MockHttpHandler::ValidateAndClearExpectations()
+    {
     if (m_expectedRequests == EXPECTED_COUNT_ANY)
         return;
 
@@ -58,8 +66,10 @@ MockHttpHandler::~MockHttpHandler()
             m_file.c_str(), m_line,
             m_perfomedRequests,
             m_expectedRequests
-            ).c_str());
+        ).c_str());
         }
+
+    *this = MockHttpHandler();
     }
 
 /*--------------------------------------------------------------------------------------+

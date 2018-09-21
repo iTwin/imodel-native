@@ -45,13 +45,20 @@ protected:
     AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(const ICancellationTokenPtr cancellationToken) const;
     AsyncTaskPtr<WSChangesetResult> SendChangesetRequest(const std::shared_ptr<WSChangeset> changeset, const ICancellationTokenPtr cancellationToken) const;
     StatusTaskPtr SendDeleteObjectRequest(ObjectId eventSubscriptionObject) const;
+    enum class GetEventRequestType
+        {
+        Destructive,
+        Peek
+        }; 
     BaseEventReponseTaskPtr GetEventServiceResponse
     (
         int numOfRetries,
         const bool longpolling,
         EventServiceClientPtr eventServiceClient,
+        GetEventRequestType requestType,
         ICancellationTokenPtr cancellationToken
     );
+    
     };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

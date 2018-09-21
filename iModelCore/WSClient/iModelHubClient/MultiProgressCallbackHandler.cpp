@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/MultiProgressCallbackHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/iModelConnection.h>
@@ -16,24 +16,24 @@ BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             09/2017
 //---------------------------------------------------------------------------------------
-void MultiProgressCallbackHandler::AddCallback(Http::Request::ProgressCallback& callback, double percentageOfTotal)
+void MultiProgressCallbackHandler::AddCallback(Http::Request::ProgressCallback& callback)
     {
     BeMutexHolder lockProgress(m_progressMutex);
     int currentCount = m_progress.size();
 
-    m_progress.Insert(currentCount, 0.0f);
-    callback = [percentageOfTotal, this, currentCount](double bytesTransfered, double bytesTotal)
+    m_progress.Insert(currentCount, 0.0);
+    callback = [this, currentCount](double bytesTransfered, double bytesTotal)
         {
-        BeMutexHolder lockProgress(this->m_progressMutex);
-        this->m_progress[currentCount] = bytesTotal > 0 ? percentageOfTotal * (bytesTransfered / bytesTotal) : 0;
-        double totalProgress = 0.0f;
-        for (auto progressItem : this->m_progress)
             {
-            totalProgress += progressItem.second;
+            BeMutexHolder lockProgress(this->m_progressMutex);
+            double difference = bytesTransfered - this->m_progress[currentCount];
+            if (difference > 0.0)
+                m_bytesTransfered += bytesTransfered - this->m_progress[currentCount];
+            this->m_progress[currentCount] = bytesTransfered;
             }
 
         if (this->m_callback)
-            this->m_callback(totalProgress, 100);
+            this->m_callback(m_bytesTransfered, m_bytesTotal);
         };
     }
 

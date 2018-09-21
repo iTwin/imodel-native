@@ -87,7 +87,7 @@ TEST_F(CodeSpecLockTests, TwoBriefcasesCreateCodeSpecs)
 
     // First briefcase pushes his changes
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db1.SaveChanges());
-    EXPECT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, true));
+    EXPECT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, true));
 
     // Second briefcase is not able to get lock until pulled
     EXPECT_FALSE(IsCodeSpecLockAvailable(db2, &response));
@@ -103,7 +103,7 @@ TEST_F(CodeSpecLockTests, TwoBriefcasesCreateCodeSpecs)
 
     // Second briefcase pushes changes
     EXPECT_EQ(DbResult::BE_SQLITE_OK, db2.SaveChanges());
-    EXPECT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true));
+    EXPECT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false, true));
 
     // First briefcase should not be able to get lock until pulls
     EXPECT_FALSE(IsCodeSpecLockAvailable(db1, &response));
