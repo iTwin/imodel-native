@@ -256,9 +256,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <NMakeBuildCommandLine>bb -N0 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb         -r Bentley -f Bentley -p BentleyDll build</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -N0 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -r Bentley -f Bentley -p BentleyDll build</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -r Bentley -f Bentley -p BentleyDll rebuild BentleyDll -c</NMakeCleanCommandLine>
     <IncludePath>$(ProjectDir);$(ProjectDir)PublicAPI\;$(ProjectDir)Bentley\;$(ProjectDir)Bentley\nonport\;$(IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" Condition="'$(Platform)'=='x64'">
@@ -272,7 +272,7 @@
     <NMakePreprocessorDefinitions>ANDROID;__unix__;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <NMakePreprocessorDefinitions>_DEBUG;DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <NMakePreprocessorDefinitions>NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -280,6 +280,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <BuildLog>
