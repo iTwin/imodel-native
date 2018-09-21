@@ -334,7 +334,14 @@ BeFileNameStatus TestFile::CloneSeed(BeFileNameCR targetPath) const
             return stat;
         }
 
-    return BeFileName::BeCopyFile(m_seedPath, targetPath);
+    if (targetPath.DoesPathExist())
+        {
+        BeFileNameStatus stat = targetPath.BeDeleteFile();
+        if (BeFileNameStatus::Success != stat)
+            return stat;
+        }
+
+    return BeFileName::BeCopyFile(m_seedPath, targetPath, true);
     }
 
 //---------------------------------------------------------------------------------------

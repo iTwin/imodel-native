@@ -289,11 +289,21 @@
     </Part>
 
     <Part Name="BuildIModelEvolutionTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
+        <SubPart PartName="PrewireIModelEvolutionTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
-        <SubPart PartName="TestsSqlang"  PartFile="Units" Repository="Units" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="DgnPlatform/Compatibility" SourceName="Delivery/UnitTests/Objects/Compatibility"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PrewireIModelEvolutionTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\prewire.mke">
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="Core" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/IModelEvolutionTests.*.ecschema.xml
+            </Files>
         </Bindings>
     </Part>
 

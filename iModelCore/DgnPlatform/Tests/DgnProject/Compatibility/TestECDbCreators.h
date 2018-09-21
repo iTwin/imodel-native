@@ -31,13 +31,16 @@
 #define TESTECDB_EC32KOQS_SCHEMAUPGRADE "ec32koqs_schemaupgrade.ecdb"
 
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
-                              std::make_shared<EC32EnumsTestECDbCreator>(), \
                               std::make_shared<EC31EnumsTestECDbCreator>(), \
+                              std::make_shared<EC32EnumsTestECDbCreator>(), \
                               std::make_shared<EC32EnumsProfileUpgradedTestECDbCreator>(), \
-                              std::make_shared<EC31KoqsTestECDbCreator>(), \
                               std::make_shared<EC31EnumsSchemaUpgradeTestECDbCreator>(), \
+                              std::make_shared<EC32EnumsSchemaUpgradeTestECDbCreator>(), \
+                              std::make_shared<EC31KoqsTestECDbCreator>(), \
+                              std::make_shared<EC32KoqsTestECDbCreator>(), \
                               std::make_shared<EC31KoqsSchemaUpgradeTestECDbCreator>(), \
-                              std::make_shared<EC32EnumsSchemaUpgradeTestECDbCreator>()}
+                              std::make_shared<EC32KoqsSchemaUpgradeTestECDbCreator>(), \
+                              std::make_shared<EC32UnitsTestECDbCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -71,7 +74,6 @@ struct TestECDbCreator : TestFileCreator
 
     public:
         virtual ~TestECDbCreator() {}
-
     };
 
 //======================================================================================
@@ -87,7 +89,7 @@ struct EmptyTestECDbCreator final : TestECDbCreator
             }
 
     public:
-        explicit EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
+        EmptyTestECDbCreator() : TestECDbCreator(TESTECDB_EMPTY) {}
         ~EmptyTestECDbCreator() {}
     };
 
@@ -134,7 +136,7 @@ struct EC32EnumsProfileUpgradedTestECDbCreator final : TestECDbCreator
             if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
                 return ERROR;
 
-            //The actual upgrade to EC32 enums will happen on the respective EC32 version of this creator
+            //Initial import of EC3.1 enums. _UpgradeSchemas will then upgrade to EC32 enums
             return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
@@ -148,6 +150,8 @@ struct EC32EnumsProfileUpgradedTestECDbCreator final : TestECDbCreator
                                                         </ECEnumeration>
                                                      </ECSchema>)xml"));
             }
+
+        BentleyStatus _UpgradeSchemas() const override;
     public:
         explicit EC32EnumsProfileUpgradedTestECDbCreator() : TestECDbCreator(TESTECDB_EC32ENUMS_PROFILEUPGRADED) {}
         ~EC32EnumsProfileUpgradedTestECDbCreator() {}
@@ -225,11 +229,46 @@ struct EC31KoqsTestECDbCreator final : TestECDbCreator
  <KindOfQuantity typeName="TestKoq_SQFTfi8" persistenceUnit="SQ.FT(fi8)" relativeError="0.9"/>
  <KindOfQuantity typeName="TestKoq_SQFTfi8_SQFTreal4u" persistenceUnit="SQ.FT(fi8)" presentationUnits="SQ.FT(real4u)" relativeError="1.0"/>
 
+ <!-- KOQs which fail to deserialize with EC3.1 and are just dropped in EC3.2 -->
+ <KindOfQuantity typeName="TestKoq_LUX_M" persistenceUnit="LUX" presentationUnits="M" relativeError="1.1"/>
+ <KindOfQuantity typeName="TestKoq_M_LUX" persistenceUnit="M" presentationUnits="LUX" relativeError="1.2"/>
+ <KindOfQuantity typeName="TestKoq_M_SQFTreal4u" persistenceUnit="M" presentationUnits="SQ.FT(real4u)" relativeError="1.3"/>
+ <KindOfQuantity typeName="TestKoq_M_CM_LUX" persistenceUnit="M" presentationUnits="CM;LUX" relativeError="1.4"/>
+ <KindOfQuantity typeName="TestKoq_LUX_CM_MM" persistenceUnit="LUX" presentationUnits="CM;MM" relativeError="1.5"/>
+ <KindOfQuantity typeName="TestKoq_LUXreal4u_CM_MM" persistenceUnit="LUX(real4u)" presentationUnits="CM;MM" relativeError="1.6"/>
+
 </ECSchema>)xml"));
             }
     public:
         explicit EC31KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC31KOQS) {}
         ~EC31KoqsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32KoqsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                    <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithMandatoryComposite" displayLabel="My first test KOQ" persistenceUnit="u:CM" presentationUnits="f:DefaultRealU(4)[u:M]" relativeError="0.1"/>
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithOptionalComposite" description="My second test KOQ" persistenceUnit="u:CM" presentationUnits="f:AmerFI[u:FT|feet][u:IN|inches]" relativeError="0.2"/>
+                    <KindOfQuantity typeName="TestKoq_PresFormatWithoutComposite" persistenceUnit="u:CM" presentationUnits="f:AmerFI" relativeError="0.3"/>
+                    <KindOfQuantity typeName="TestKoq_NoPresFormat" persistenceUnit="u:KG" relativeError="0.4"/>
+                </ECSchema>)xml"));
+            }
+    public:
+        EC32KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32KOQS) {}
+        ~EC32KoqsTestECDbCreator() {}
     };
 
 //======================================================================================
@@ -421,3 +460,95 @@ struct EC32EnumsSchemaUpgradeTestECDbCreator final : TestECDbCreator
         ~EC32EnumsSchemaUpgradeTestECDbCreator() {}
     };
 
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32KoqsSchemaUpgradeTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            // ECObjects downgrades an EC3.2 file to EC3.1 during deserialization
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                                        <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                                                         <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                                         <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+
+                                                         <KindOfQuantity typeName="AREA" displayLabel="Area" persistenceUnit="u:SQ_M" presentationUnits="f:DefaultRealU(4)[u:SQ_M];f:DefaultRealU(4)[u:SQ_FT]" relativeError="0.0001"/>
+                                                         <ECEntityClass typeName="BaseA">
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                                         </ECEntityClass>
+                                                         <ECEntityClass typeName="BaseB">
+                                                            <ECCustomAttributes>
+                                                                <ClassMap xmlns="ECDbMap.02.00.00">
+                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                </ClassMap>
+                                                            </ECCustomAttributes>
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                                         </ECEntityClass>
+                                                         <ECEntityClass typeName="BaseC">
+                                                            <ECCustomAttributes>
+                                                                <ClassMap xmlns="ECDbMap.02.00.00">
+                                                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                                                </ClassMap>
+                                                                <ShareColumns xmlns="ECDbMap.02.00.00">
+                                                                    <MaxSharedColumnsBeforeOverflow>6</MaxSharedColumnsBeforeOverflow>
+                                                                    <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                                                                </ShareColumns>
+                                                            </ECCustomAttributes>
+                                                            <ECProperty propertyName="Code" typeName="int" />
+                                                            <ECProperty propertyName="Size" typeName="double" kindOfQuantity="AREA" />
+                                                         </ECEntityClass>
+                                                   </ECSchema>)xml"));
+            }
+    public:
+        EC32KoqsSchemaUpgradeTestECDbCreator() : TestECDbCreator(TESTECDB_EC32KOQS_SCHEMAUPGRADE) {}
+        ~EC32KoqsSchemaUpgradeTestECDbCreator() {}
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EC32UnitsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                    <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
+                    <UnitSystem typeName="MyMetric" displayLabel="Metric" description="Metric Units of measure" />
+                    <UnitSystem typeName="MyImperial" displayLabel="Imperial" description="Units of measure from the British Empire" />
+                    <Phenomenon typeName="MyArea" displayLabel="Area" definition="LENGTH*LENGTH" />
+                    <Unit typeName="MySquareM" displayLabel="Square Meter" definition="M*M" numerator="1.0" phenomenon="MyArea" unitSystem="MyMetric" />
+                    <Unit typeName="MySquareFt" displayLabel="Square Feet" definition="Ft*Ft" numerator="10.0" offset="0.4" phenomenon="MyArea" unitSystem="MyImperial" />
+                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                    </Format>
+                    <Format typeName="MyFormatWithComposite" displayLabel="My Format with composite" type="Decimal" formatTraits="keepSingleZero|keepDecimalPoint|showUnitLabel" precision="2" >
+                        <Composite spacer="-">
+                            <Unit label="hour">u:HR</Unit>
+                            <Unit label="min">u:MIN</Unit>
+                        </Composite>
+                    </Format>
+                    <KindOfQuantity typeName="KoqWithCustomFormat" persistenceUnit="u:M" presentationUnits="MyFormat[u:M]" relativeError="0.1"/>
+                    <KindOfQuantity typeName="KoqWithCustomUnit" persistenceUnit="MySquareM" presentationUnits="f:DefaultRealU(4)[MySquareM]" relativeError="0.2"/>
+                    <KindOfQuantity typeName="KoqWithCustomUnitAndFormat" persistenceUnit="MySquareFt" presentationUnits="MyFormat[MySquareFt]" relativeError="0.3"/>
+                </ECSchema>)xml"));
+            }
+    public:
+        EC32UnitsTestECDbCreator() : TestECDbCreator(TESTECDB_EC32UNITS) {}
+        ~EC32UnitsTestECDbCreator() {}
+    };

@@ -39,15 +39,15 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
 #------------------------------------------------------------------------
 # bsimethod                         Kyle.Abramowitz             05/2018
 #------------------------------------------------------------------------
-def pullAllNugets(path, pathToNugetPuller, name):
+def pullAllNugets(path, pathToNugetPuller, name, minimumVersion=None, ignoreVersionsSet=None):
     import nugetpkg
     from distutils.version import LooseVersion
 
     address = "http://nuget.bentley.com/nuget/default/"
     versions = nugetpkg.SearchVersionsFromServer(address, name)
     for v in versions:
-        # ignore stale versions until they have been deleted fromthe nuget server
-        if LooseVersion(v) < LooseVersion("2018.9.3.2"):
+        # ignore versions older than the passed minimum or if in the ignore set (until they have been deleted from the nuget server)
+        if (minimumVersion and LooseVersion(v) < LooseVersion(minimumVersion)) or (ignoreVersionsSet and v in ignoreVersionsSet):
             continue
         # Dowload and save all versions
         localDir = path
@@ -111,15 +111,19 @@ def main():
     nugetPath = sys.argv[3]
     nugetScript = sys.argv[4]
     sys.path.insert(0, nugetScript)
+
+    bim02devMinimumNugetVersion = "2018.9.14.1"
+    bim02devIgnoreNugetVersions = {"2018.9.19.1"}
+
     # Test runners are downloaded into src as pulling them in with every TMR might take too long
     # They are symlinked into the out dir afterwards
-    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_x64")
-    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_ec32_x64")
+    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
+    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_imodel02_x64")
     unzipNugets(nugetPathInSrc)
     # Test files can be downloaded in out folder directly
     testFileNugetPath = os.path.join(nugetPath, "testfiles")
-    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_x64")
-    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_ec32_x64")
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_imodel02_x64")
     unzipNugets(testFileNugetPath)
     # Copy test files from all nugets into a single central folder
     targetDir = os.path.join(artefactsPath, "TestFiles")

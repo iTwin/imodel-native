@@ -18,7 +18,8 @@ enum class ECDbFeature
     {
     PersistedECVersions,
     NamedEnumerators,
-    UnitsAndFormats
+    UnitsAndFormats,
+    SystemPropertiesHaveIdExtendedType
     };
 
 //=======================================================================================
@@ -29,13 +30,14 @@ struct TestDb
     {
 protected:
     TestFile const& m_testFile;
-    BeSQLite::ProfileState::Age m_age;
+    Nullable<BeSQLite::ProfileState::Age> m_age;
 
 private:
     virtual ECDbR _GetDb() const = 0;
     virtual DbResult _Open() = 0;
     virtual void _Close() = 0;
     virtual ECDb::OpenParams const& _GetOpenParams() const = 0;
+    virtual Utf8String _OpenParamsToString() const = 0;
 
 protected:
     explicit TestDb(TestFile const& testFile) : m_testFile(testFile) {}
@@ -50,7 +52,7 @@ protected:
     DbResult Open();
     void Close() { _Close(); }
 
-    BeSQLite::ProfileState::Age GetAge() const { return m_age; }
+    BeSQLite::ProfileState::Age GetAge() const { BeAssert(m_age != nullptr); return m_age.Value(); }
     bool IsUpgraded() const { return GetOpenParams().GetProfileUpgradeOptions() == ECDb::ProfileUpgradeOptions::Upgrade; }
     TestFile const& GetTestFile() const { return m_testFile; }
     ECDbR GetDb() const { return _GetDb(); }
@@ -68,10 +70,10 @@ protected:
     int GetSchemaCount() const;
     JsonValue GetSchemaItemCounts(Utf8CP schemaName) const;
     
-    void AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const;
-    void AssertEnum(ECN::ECEnumerationCR, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const;
-    void AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const;
-    void AssertKindOfQuantity(ECN::KindOfQuantityCR, Utf8CP expectedSchemaName, Utf8CP expectedKoqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const;
+    void AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::tuple<Utf8CP, ECN::ECValue, Utf8CP>> const& expectedEnumerators) const;
+    void AssertEnum(ECN::ECEnumerationCR, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::tuple<Utf8CP, ECN::ECValue, Utf8CP>> const& expectedEnumerators) const;
+    void AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationFormats, double expectedRelError) const;
+    void AssertKindOfQuantity(ECN::KindOfQuantityCR, Utf8CP expectedSchemaName, Utf8CP expectedKoqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationFormats, double expectedRelError) const;
     void AssertUnit(Utf8CP schemaName, Utf8CP unitName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedDefinition,
                     Nullable<double> expectedNumerator, Nullable<double> expectedDenominator, Nullable<double> expectedOffset, QualifiedName const& expectedUnitSystem, QualifiedName const& expectedPhenomenon, bool expectedIsConstant, QualifiedName const& expectedInvertingUnit) const;
     void AssertFormat(Utf8CP schemaName, Utf8CP formatName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, JsonValue const& expectedNumericSpec, JsonValue const& expectedCompSpec) const;
@@ -127,6 +129,8 @@ private:
         }
 
     ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
+    Utf8String _OpenParamsToString() const override;
+
 public:
     TestECDb(TestFile const& testFile, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::Readonly)): TestDb(testFile), m_openParams(openParams) {}
     ~TestECDb() { _Close(); }
@@ -184,6 +188,7 @@ struct TestIModel final : TestDb
             }
 
         ECDb::OpenParams const& _GetOpenParams() const override { return m_openParams; }
+        Utf8String _OpenParamsToString() const override;
 
     public:
         TestIModel(TestFile const& testFile, DgnDb::OpenParams const& openParams = DgnDb::OpenParams(DgnDb::OpenMode::Readonly)) : TestDb(testFile), m_openParams(openParams) {}

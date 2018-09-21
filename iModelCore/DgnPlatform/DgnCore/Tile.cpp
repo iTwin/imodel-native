@@ -81,6 +81,7 @@ private:
     double m_expansion; // NB: will be used in future?
     DRange3d m_range;
 
+    bool CompressMeshQuantization() const final { return true; }
     bool SeparatePrimitivesById() const final { return true; }
     PolyfaceHeaderPtr Preprocess(PolyfaceHeaderR pf) const final;
     bool Preprocess(Render::Primitives::PolyfaceList& polyface, Render::Primitives::StrokesList const& strokes) const final;
@@ -716,6 +717,18 @@ struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
     StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
 };
 
+struct DeferredGlyph
+{
+    Polyface m_polyface;
+    GeometryPtr m_geom;
+    double m_rangePixels;
+    bool m_isContained;
+
+    DeferredGlyph(Polyface& polyface, Geometry& geom, double rangePixels, bool isContained) : m_polyface(polyface), m_geom(&geom), m_rangePixels(rangePixels), m_isContained(isContained) {}
+};
+
+typedef bvector<DeferredGlyph> DeferredGlyphList;
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -730,6 +743,7 @@ private:
     DRange3d                m_contentRange = DRange3d::NullRange();
     bool                    m_maxGeometryCountExceeded = false;
     bool                    m_didDecimate = false;
+    DeferredGlyphList       m_deferredGlyphs;
 
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; } // Only decimate meshes with at least this many points.
     static constexpr double GetDecimatePolyfaceMinRatio() { return 0.25; } // Decimation must reduce point count by at least this percentage.
@@ -739,7 +753,7 @@ private:
 
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained, bool doDefer=true);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
@@ -774,6 +788,7 @@ public:
     void AddMeshes(GeometryList const& geometries, bool doRangeTest);
     void AddMeshes(GeometryR geom, bool doRangeTest);
     void AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances);
+    void AddDeferredGlyphMeshes();
 
     // Return a list of all meshes currently in the builder map
     MeshList GetMeshes();
@@ -1101,7 +1116,11 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryModelRange();
         range = scaleSpatialRange(range);
         uint32_t nElements = 0;
-        populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);
+        
+        populateRootTile = !range.IsNull() && isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex(), &nElements);   
+        if (id.IsClassifier())
+            populateRootTile = true;    // The classifier algorithm currently cannot handle multiple tiles -- force the root to populate...
+
         rootTileEmpty = 0 == nElements;
         }
     else
@@ -1800,10 +1819,12 @@ bool GeometryLoader::GenerateGeometry()
             return false;
         }
 
+    meshGenerator.AddDeferredGlyphMeshes();
+
     if (meshGenerator.DidDecimation())
         geometryList.MarkIncomplete();
 
-    // Facet all geoemtry
+    // Facet all geometry
     m_geometry.Meshes() = meshGenerator.GetMeshes();
     m_metadata.m_contentRange.Extend(meshGenerator.GetContentRange());
     if (!geometryList.IsComplete())
@@ -1841,6 +1862,15 @@ MeshGenerator::MeshGenerator(GeometryLoaderCR loader, GeometryOptionsCR options)
 MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderMap::Key const& key)
     {
     return m_builderMap[key];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddDeferredGlyphMeshes()
+    {
+    for (auto& deferredGlyph : m_deferredGlyphs)
+        AddPolyface(deferredGlyph.m_polyface, *deferredGlyph.m_geom, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1938,8 +1968,14 @@ void MeshGenerator::AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained, bool doDefer)
     {
+    if (nullptr != tilePolyface.m_glyphImage && doDefer)
+        {
+        m_deferredGlyphs.push_back(DeferredGlyph(tilePolyface, geom, rangePixels, isContained)); // defer processing these until we are finished so we can make texture atlas of glyphs
+        return;
+        }
+
     // TFS#817210
     PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
@@ -2105,7 +2141,7 @@ void MeshGenerator::ClipPoints(StrokesR strokes) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   02/17
+* @bsimethod                                                    Paul.Connelly   02/17                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
     {
@@ -2172,6 +2208,10 @@ MeshList MeshGenerator::GetMeshes()
 
     // Do not allow vertices outside of this tile's range to expand its content range
     clipContentRangeToTileRange(m_contentRange, GetTileRange());
+
+    if (m_loader.GetLoader().CompressMeshQuantization())
+        for (auto& mesh : meshes)
+            mesh->CompressVertexQuantization();
 
     meshes.m_features = std::move(m_featureTable);
 
