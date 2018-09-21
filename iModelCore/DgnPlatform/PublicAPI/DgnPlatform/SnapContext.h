@@ -82,7 +82,7 @@ namespace SnapContext
         BE_JSON_NAME(closePoint)
         BE_JSON_NAME(worldToView)
         BE_JSON_NAME(viewFlags)
-        BE_JSON_NAME(snapMode)
+        BE_JSON_NAME(snapModes)
         BE_JSON_NAME(snapAperture)
         BE_JSON_NAME(snapDivisor)
         BE_JSON_NAME(offSubCategories)
@@ -91,30 +91,68 @@ namespace SnapContext
         DMatrix4d GetWorldToView() const {return JsonUtils::ToDMatrix4d((*this)[json_worldToView()]);}
         DPoint3d GetClosePoint() const {return JsonUtils::ToDPoint3d((*this)[json_closePoint()]);}
         Render::ViewFlags GetViewFlags() const {Render::ViewFlags viewFlags; if (isMember(json_viewFlags())) viewFlags.FromJson((*this)[json_viewFlags()]); return viewFlags;}
-        SnapMode GetSnapMode() const {return (SnapMode) (*this)[json_snapMode()].asUInt((int) SnapMode::NearestKeypoint);}
         double GetSnapAperture() const {return (*this)[json_snapAperture()].asDouble(12.0);}
         int GetSnapDivisor() const {return (*this)[json_snapDivisor()].asUInt(2);}
-        JsonValueCR GetOffSubCategories() const {return (*this)[json_offSubCategories()];}
+
+        bset<SnapMode> GetSnapModes() const {
+            bset<SnapMode> snapModes;
+            auto& modes = (*this)[json_snapModes()];
+            if (modes.isNull() || !modes.isArray()) {
+              snapModes.insert(SnapMode::Nearest); // Default when a snapMode isn't supplied is nearest...
+              return snapModes;
+            }
+            uint32_t nEntries = (uint32_t) modes.size();
+            for (uint32_t i=0; i < nEntries; i++) {
+                SnapMode mode = (SnapMode) modes[i].asUInt();
+                switch (mode) { // Filter out exotic snap modes...
+                    case SnapMode::Nearest:
+                    case SnapMode::NearestKeypoint:
+                    case SnapMode::MidPoint:
+                    case SnapMode::Center:
+                    case SnapMode::Origin:
+                    case SnapMode::Bisector:
+                      snapModes.insert(mode);
+                      break;
+                }
+            }
+        return snapModes;
+        }
+
+        DgnElementIdSet GetOffSubCategories() const {
+            DgnElementIdSet offSubCategories;
+            auto& subcat = (*this)[json_offSubCategories()];
+            if (subcat.isNull() || !subcat.isArray())
+                return offSubCategories;
+            uint32_t nEntries = (uint32_t) subcat.size();
+            for (uint32_t i=0; i < nEntries; i++) {
+                DgnSubCategoryId subCategoryId;
+                subCategoryId.FromJson(subcat[i]);
+                offSubCategories.insert(subCategoryId);
+            }
+        return offSubCategories;
+        }
     };
 
     struct Response : Json::Value {
         BE_JSON_NAME(status)
+        BE_JSON_NAME(snapMode)
         BE_JSON_NAME(heat)
         BE_JSON_NAME(geomType)
         BE_JSON_NAME(parentGeomType)
         BE_JSON_NAME(subCategory)
-        BE_JSON_NAME(weight)
+        BE_JSON_NAME(hitPoint)
         BE_JSON_NAME(snapPoint)
         BE_JSON_NAME(normal)
         BE_JSON_NAME(curve)
         BE_JSON_NAME(localToWorld)
         void SetStatus(SnapStatus val) {(*this)[json_status()] = (uint32_t) val;}
+        void SetSnapMode(SnapMode val) {(*this)[json_snapMode()] = (uint32_t) val;}
+        void SetHitPoint(DPoint3dCR pt) {(*this)[json_hitPoint()] = JsonUtils::DPoint3dToJson(pt);}
         void SetSnapPoint(DPoint3dCR pt) {(*this)[json_snapPoint()] = JsonUtils::DPoint3dToJson(pt);}
         void SetHeat(SnapHeat val) {(*this)[json_heat()] = (uint32_t) val;}
         void SetGeomType(HitGeomType val) {(*this)[json_geomType()] = (uint32_t)  val;}
         void SetParentGeomType(HitParentGeomType val) {(*this)[json_parentGeomType()] = (uint32_t) val;}
         void SetSubCategory(Utf8StringCR val) {(*this)[json_subCategory()] = val;}
-        void SetWeight(uint32_t val) {(*this)[json_weight()] = val;}
         void SetNormal(DVec3dCR val) {(*this)[json_normal()] = JsonUtils::DVec3dToJson(val);}
         void SetLocalToWorld(TransformCR val) {(*this)[json_localToWorld()] = JsonUtils::FromTransform(val);}
         void SetCurve(JsonValueCR val) {(*this)[json_curve()] = val;}

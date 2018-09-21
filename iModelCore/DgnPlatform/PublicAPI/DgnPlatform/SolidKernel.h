@@ -81,7 +81,7 @@ public:
 enum class EntityType
     {
     Solid    = 0, //!< Body consisting of at least one solid region.
-    Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
+    Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces.
     Wire     = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
     Invalid  = 3, //!< Body no longer valid (ex. extracted or consumed by operation).
     };
@@ -118,7 +118,7 @@ EntityType GetEntityType() const {return _GetEntityType();}
 DRange3d GetEntityRange() const {return _GetEntityRange();}
 
 //! Get the body to world transform for this entity.
-//! The body to world translation allows for a body that will typically have a basis 
+//! The body to world translation allows for a body that will typically have a basis
 //! point of 0,0,0 to be displayed at any world location in the model.
 //! @return The body to world transform for the entity.
 Transform GetEntityTransform() const {return _GetEntityTransform();}
@@ -127,7 +127,7 @@ Transform GetEntityTransform() const {return _GetEntityTransform();}
 //! @param[in] transform The new solid to uor transform.
 bool SetEntityTransform (TransformCR transform) {return _SetEntityTransform(transform);}
 
-//! Modify the entity transform by pre-multiplying the current entity transform with the input transform. This method does 
+//! Modify the entity transform by pre-multiplying the current entity transform with the input transform. This method does
 //! not change the BRep data in any way, it only changes the body to world transform.
 //! @param[in] transform The transform to apply to the body.
 //! @note This method was added for increased discoverability compared to PreMultiplyEntityTransformInPlace.
@@ -156,7 +156,7 @@ IBRepEntityPtr Clone() const {return _Clone();}
 //! ISubEntity represents a topological entity that can refer to a
 //! single face, edge, or vertex of solid, sheet, or wire GeometricPrimitive.
 //! A sub-entity only remains valid for as long as the parent GeometricPrimitive exists.
-//! Modifications to the parent GeometricPrimitive may also invalidate a sub-entity, 
+//! Modifications to the parent GeometricPrimitive may also invalidate a sub-entity,
 //! for example, an edge is blended away.
 //=======================================================================================
 struct ISubEntity : BentleyApi::IRefCounted
@@ -216,22 +216,43 @@ DGNPLATFORM_EXPORT GeometricPrimitiveCPtr GetParentGeometry() const;
 //! @return A Render::Graphic representing this sub-entity.
 Render::GraphicPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
 
-//! Get pick location and uv parameter from a sub-entity representing a face. 
+//! Get pick location and uv parameter from a sub-entity representing a face.
 //! @return false if the sub-entity was not created from a method where locate information was meaningful.
 bool GetFaceLocation(DPoint3dR point, DPoint2dR uvParam) const {return _GetFaceLocation(point, uvParam);}
 
-//! Get pick location and u parameter from a sub-entity representing a edge. 
+//! Get pick location and u parameter from a sub-entity representing a edge.
 //! @return false if the sub-entity was not created from a method where locate information was meaningful.
 bool GetEdgeLocation(DPoint3dR point, double& uParam) const {return _GetEdgeLocation(point, uParam);}
 
-//! Get vertex location from a sub-entity representing a vertex. 
+//! Get vertex location from a sub-entity representing a vertex.
 //! @return false if vertex location wasn't set and couldn't be evaluated (ex. input sub-entity wasn't a vertex).
 bool GetVertexLocation(DPoint3dR point) const {return _GetVertexLocation(point);}
+
+//! Get location from a sub-entity representing a face, edge, or vertex.
+//! @return false if the sub-entity was not created from a method where locate information was meaningful.
+bool GetLocation(DPoint3dR point) const
+    {
+    DPoint2d param;
+    switch (GetSubEntityType())
+        {
+        case ISubEntity::SubEntityType::Face:
+            return GetFaceLocation(point, param);
+
+        case ISubEntity::SubEntityType::Edge:
+            return GetEdgeLocation(point, param.x);
+
+        case ISubEntity::SubEntityType::Vertex:
+            return GetVertexLocation(point);
+
+        default:
+            return false;
+        }
+    }
 
 }; // ISubEntity
 
 //=======================================================================================
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct IsSubEntityPtrEqual : std::binary_function <ISubEntityPtr, ISubEntityCP, bool>
     {
@@ -239,7 +260,7 @@ struct IsSubEntityPtrEqual : std::binary_function <ISubEntityPtr, ISubEntityCP, 
     };
 
 //=======================================================================================
-// @bsiclass 
+// @bsiclass
 //=======================================================================================
 struct IsParentGeometryPtrEqual : std::binary_function <ISubEntityPtr, GeometricPrimitiveCP, bool>
     {
@@ -248,8 +269,8 @@ struct IsParentGeometryPtrEqual : std::binary_function <ISubEntityPtr, Geometric
 
 //=======================================================================================
 //! BRepUtil provides support for the creation, querying, and modification of BReps.
-//! Coordinates and distances are always supplied and returned in uors. Operations between 
-//! entities such as BRepUtil::Modify::BooleanUnion will automatically take the 
+//! Coordinates and distances are always supplied and returned in uors. Operations between
+//! entities such as BRepUtil::Modify::BooleanUnion will automatically take the
 //! individual target and tool entity transforms into account.
 //! @bsiclass                                                   Brien.Bastings  07/12
 //=======================================================================================
@@ -496,15 +517,15 @@ struct Create
     //! @note The CurvePrimitives that define an open path or closed loop are expected to be connected head-to-tail and may not intersect except at a vertex. A vertex can be shared by at most 2 edges.
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector(IBRepEntityPtr& out, CurveVectorCR curve, uint32_t nodeId = 0L);
-    
+
     //! Represent a wire body or a single face planar sheet body as a CurveVector.
     //! @param[in] entity The wire or sheet body to try to convert.
-    //! @return nullptr if supplied entity was not a wire or single face planar sheet body that could be represented as a CurveVector. 
+    //! @return nullptr if supplied entity was not a wire or single face planar sheet body that could be represented as a CurveVector.
     DGNPLATFORM_EXPORT static CurveVectorPtr BodyToCurveVector(IBRepEntityCR entity);
 
     //! Represent a planar face as a CurveVector.
     //! @param[in] face The planar face to try to convert.
-    //! @return nullptr if supplied sub-entity was not a planar face that could be represented as a CurveVector. 
+    //! @return nullptr if supplied sub-entity was not a planar face that could be represented as a CurveVector.
     DGNPLATFORM_EXPORT static CurveVectorPtr PlanarFaceToCurveVector(ISubEntityCR face);
 
     //! Represent edges with the given offset distance on the supplied planar face as a CurveVector.
@@ -535,14 +556,14 @@ struct Create
     //! @note The CurvePrimitives that define an open path are expected to be connected head-to-tail and may not intersect except at a vertex. A vertex can be shared by at most 2 edges.
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus SweptBodyFromOpenCurveVector(IBRepEntityPtr& out, CurveVectorCR curve, DRange3dCR targetRange, DVec3dCP defaultNormal = nullptr, bool extend = true, uint32_t nodeId = 0L);
-    
+
     //! Create a new sheet or solid body from an ISolidPrimitive.
     //! @param[out] out The new body.
     //! @param[in] primitive The surface or solid to create a body from.
     //! @param[in] nodeId Assign topology ids to the faces of the body being created when nodeId is non-zero.
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromSolidPrimitive(IBRepEntityPtr& out, ISolidPrimitiveCR primitive, uint32_t nodeId = 0L);
-    
+
     //! Create a new sheet body from a MSBsplineSurface.
     //! @param[out] out The new body.
     //! @param[in] surface The surface to create a body from.
@@ -595,7 +616,7 @@ struct Create
 struct Modify
     {
     enum class BooleanMode
-        {                       
+        {
         Unite       = 0, //!< Unite target with one or more tool entities.
         Subtract    = 1, //!< Subtract one or more tool entities from target entity.
         Intersect   = 2, //!< Intersect target with one or more tool entities.
@@ -608,9 +629,9 @@ struct Modify
         AddNonCoincident  = 2, //!< Create step faces at edges where step would not be coincident with the adjacent face.
         AddAll            = 3, //!< Create step faces at all boundary edges.
         };
-    
+
     enum class CutDirectionMode
-        {                       
+        {
         Forward                 = 0, //!< Remove material in direction of surface normal.
         Backward                = 1, //!< Remove material in opposite direction of surface normal.
         Both                    = 2, //!< Remove material in both directions.
@@ -623,7 +644,7 @@ struct Modify
         };
 
     enum class ChamferMode
-        {                       
+        {
         Ranges                  = 0, //!< Chamfer ranges.
         Length                  = 1, //!< Chamfer length. Specify lengths using values1, values2 is unused and can be NULL.
         Distances               = 2, //!< Right/Left distances. Can pass NULL for values2 for equal distance.
@@ -843,14 +864,14 @@ struct Modify
     //! @param[in] direction The project direction (optional, uses curvature if nullptr).
     //! @param[in] extend Whether to extend an open curve to ensure that it splits the face.
     //! @return SUCCESS if imprint created.
-    DGNPLATFORM_EXPORT static BentleyStatus ImprintCurveVectorOnBody(IBRepEntityR target, CurveVectorCR curveVector, DVec3dCP direction = nullptr, bool extend = true); 
+    DGNPLATFORM_EXPORT static BentleyStatus ImprintCurveVectorOnBody(IBRepEntityR target, CurveVectorCR curveVector, DVec3dCP direction = nullptr, bool extend = true);
 
     //! Modify the target body by imprinting edges where the faces from the supplied tool body intersect.
     //! @param[in,out] target The target body to imprint (must be solid or sheet)
     //! @param[in] tool The tool body to imprint (must be solid or sheet).
     //! @param[in] extend Whether to extend a tool surface to ensure that it splits the face on the target.
     //! @return SUCCESS if imprint created.
-    DGNPLATFORM_EXPORT static BentleyStatus ImprintBodyOnBody(IBRepEntityR target, IBRepEntityCR tool, bool extend = true); 
+    DGNPLATFORM_EXPORT static BentleyStatus ImprintBodyOnBody(IBRepEntityR target, IBRepEntityCR tool, bool extend = true);
 
     //! Modify a planar face of a body by imprinting edges with the supplied offset distance.
     //! @param[in,out] face The target face sub-entity to imprint.
@@ -863,17 +884,17 @@ struct Modify
 
 //! Support for persistent topological ids on faces, edges, and vertices.
 //!
-//! A topology id provides a mechanism for identifying a ISubEntity that is independent of any IBRepEntity instance. 
-//! Useful for identifying a ISubEntity across sessions or different instances of a IBRepEntity in the same session. 
+//! A topology id provides a mechanism for identifying a ISubEntity that is independent of any IBRepEntity instance.
+//! Useful for identifying a ISubEntity across sessions or different instances of a IBRepEntity in the same session.
 //! In feature-based modeling topology ids allow the corresponding ISubEntity to be found again after re-evaluating the features.
 //!
-//! The foundation for topology identification is the FaceId. A FaceId is a (nodeId-entityId) pair that is assigned to each face 
-//! of a sheet or solid body. The nodeId typically denotes the operation that produced the face and the entityId is used to 
+//! The foundation for topology identification is the FaceId. A FaceId is a (nodeId-entityId) pair that is assigned to each face
+//! of a sheet or solid body. The nodeId typically denotes the operation that produced the face and the entityId is used to
 //! differentiate between all new faces produced.
-//! 
+//!
 //! Consider a newly created cube. It has 6 faces which we could assign a nodeId of 1, each face would then be assigned its
-//! own unique entityId from 1 to 6. Now consider cutting a circular slot that splits the top face of our cube (1-1), the single 
-//! circular face of the slot could be assigned (2-1), i.e. operation 2 and face 1. After creating the slot, FaceId (1-1) now 
+//! own unique entityId from 1 to 6. Now consider cutting a circular slot that splits the top face of our cube (1-1), the single
+//! circular face of the slot could be assigned (2-1), i.e. operation 2 and face 1. After creating the slot, FaceId (1-1) now
 //! identifies 2 faces, one on either side of the split; additional ids will be added to resolve the duplicate, (1-7, 1-1) and (1-8, 1-1).
 //! So FaceId (1-1) still exists but we now also have new "highest" FaceIds to uniquely identity the post-split geometry.
 //!
