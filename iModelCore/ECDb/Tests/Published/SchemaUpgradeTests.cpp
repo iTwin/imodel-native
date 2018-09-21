@@ -2680,9 +2680,9 @@ TEST_F(SchemaUpgradeTestFixture, AddNewECProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, AddECPropertyToBaseClass)
+TEST_F(SchemaUpgradeTestFixture, AddPropertyToBaseClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("AddPropertyToBaseClass.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2764,6 +2764,782 @@ TEST_F(SchemaUpgradeTestFixture, AddECPropertyToBaseClass)
                 "WHERE p.Name IN ('BaseProp1', 'Prop1', 'Prop2')"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
     ASSERT_EQ(3, stmt2.GetValueInt(0)) << "The three properties of ECClass Sub must map to 3 different columns";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_SharedColumns)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_SharedColumns.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Base" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row1, sub2Row1;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Prop1,Prop2) VALUES (10,'1-1', '1-2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row1, "INSERT INTO ts.Sub2(Code,PropA,PropB) VALUES (20,'1-A', 1)"));
+    m_ecdb.SaveChanges();
+
+    //Add property to Sub1
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Base" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row2, "INSERT INTO ts.Sub1(Code,Prop1,Prop2,Prop3) VALUES (11,'2-1', '2-2', 2)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":10,"Prop1":"1-1","Prop2":"1-2"},{"Code":11,"Prop1":"2-1","Prop2":"2-2","Prop3":2}])json"), GetHelper().ExecuteSelectECSql("SELECT Code, Prop1, Prop2, Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":20,"PropA":"1-A","PropB":1}])json"), GetHelper().ExecuteSelectECSql("SELECT Code, PropA, PropB FROM ts.Sub2"));
+
+    //Add property to BAse
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Base" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.02.00.00" />
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+    ECInstanceKey sub1Row3,sub2Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row3, "INSERT INTO ts.Sub1(Code,Name,Prop1,Prop2,Prop3) VALUES (12,'Object 12', '3-1', '3-2', 3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row2, "INSERT INTO ts.Sub2(Code,Name,PropA,PropB) VALUES (21,'Object 21', '2-A', 2)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":10,"Prop1":"1-1","Prop2":"1-2"},{"Code":11,"Prop1":"2-1","Prop2":"2-2","Prop3":2},{"Code":12, "Name":"Object 12","Prop1":"3-1","Prop2":"3-2","Prop3":3}])json"), GetHelper().ExecuteSelectECSql("SELECT Code, Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":20,"PropA":"1-A","PropB":1},{"Code":21,"Name":"Object 21","PropA":"2-A","PropB":2}])json"), GetHelper().ExecuteSelectECSql("SELECT Code, Name, PropA, PropB FROM ts.Sub2"));
+
+    // Expected Mapping:
+    //          ts_Base  
+    //          ps1    ps2     ps3     ps4     ps5
+    //Sub1      Code   Prop1   Prop2   Prop3   Name
+    //Sub2      Code   PropA   PropB           Name
+
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base", "Code")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps5"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base", "Name")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Base","ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Code")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps5"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop2")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps4"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop3")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Code")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps5"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropA")));
+    ASSERT_EQ(ExpectedColumn("ts_Base", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropB")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row1, sub2Row1;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2) VALUES (101,1,1,'Sub1 1','1', '2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row1, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,PropA,PropB) VALUES (201,1,1,'Sub2 1','A', 1)"));
+    m_ecdb.SaveChanges();
+
+    //Add property to Sub1
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2,Prop3) VALUES (102,2,2,'Sub1 2','1', '2', 3)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},{"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":201,"Origin": {"x":1.0,"y":1.0},"Name": "Sub2 1", "PropA":"A","PropB":1}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,PropA, PropB FROM ts.Sub2"));
+
+    //Add property to SubBase
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+                <ECProperty propertyName="Kind" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+    ECInstanceKey sub1Row3, sub2Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row3, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Kind,Prop1,Prop2,Prop3) VALUES (103,3,3,'Sub1 3',3,'1', '2', 3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row2, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,Kind,PropA,PropB) VALUES (202,2,2,'Sub2 2',2,'A', 2)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},
+            {"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3},
+            {"Code":103,"Origin": {"x":3.0,"y":3.0},"Name": "Sub1 3", "Kind":3, "Prop1":"1","Prop2":"2", "Prop3": 3}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,Kind,Prop1,Prop2,Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":201,"Origin": {"x":1.0,"y":1.0},"Name": "Sub2 1", "PropA":"A","PropB":1},
+                                {"Code":202,"Origin": {"x":2.0,"y":2.0},"Name": "Sub2 2", "Kind":2, "PropA":"A","PropB":2}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,Kind,PropA,PropB FROM ts.Sub2"));
+
+    // Expected Mapping:
+    //          ts_Element  ts_Geometric2dElement               
+    //          Code        Origin_X  Origin_Y  js1     js2     js3     js3     js4
+    //Sub1      Code        Origin.X  Origin.Y  Name    Prop1   Prop2   Prop3   Kind
+    //Sub2      Code        Origin.X  Origin.Y  Name    PropA   PropB           Kind
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Code")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Geometric2dElement", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}), 
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Geometric2dElement", "Origin")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "PhysicalElement", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "PhysicalElement", "Origin")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "PhysicalElement", "Name")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Sub1", "Origin")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js5"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Kind")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop2")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js4"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop3")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Sub2", "Origin")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js5"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Kind")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropA")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropB")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AllAddedPropsToOverflow)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AllAddedPropsToOverflow.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row1, sub2Row1;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2) VALUES (101,1,1,'Sub1 1','1', '2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row1, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,PropA,PropB) VALUES (201,1,1,'Sub2 1','A', 1)"));
+    m_ecdb.SaveChanges();
+
+    //Add property to Sub1
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2,Prop3) VALUES (102,2,2,'Sub1 2','1', '2', 3)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},{"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":201,"Origin": {"x":1.0,"y":1.0},"Name": "Sub2 1", "PropA":"A","PropB":1}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,PropA, PropB FROM ts.Sub2"));
+
+    //Add property to SubBase
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+                <ECProperty propertyName="Kind" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+    ECInstanceKey sub1Row3, sub2Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row3, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Kind,Prop1,Prop2,Prop3) VALUES (103,3,3,'Sub1 3',3,'1', '2', 3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row2, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,Kind,PropA,PropB) VALUES (202,2,2,'Sub2 2',2,'A', 2)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},
+            {"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3},
+            {"Code":103,"Origin": {"x":3.0,"y":3.0},"Name": "Sub1 3", "Kind":3, "Prop1":"1","Prop2":"2", "Prop3": 3}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,Kind,Prop1,Prop2,Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":201,"Origin": {"x":1.0,"y":1.0},"Name": "Sub2 1", "PropA":"A","PropB":1},
+                                {"Code":202,"Origin": {"x":2.0,"y":2.0},"Name": "Sub2 2", "Kind":2, "PropA":"A","PropB":2}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,Kind,PropA,PropB FROM ts.Sub2"));
+
+    // Expected Mapping:
+    //          ts_Element  ts_Geometric2dElement               ts_Geometric2dElement_Overflow
+    //          Code        Origin_X  Origin_Y  js1     js2     os1     os2     os3
+    //Sub1      Code        Origin.X  Origin.Y  Name    Prop1   Prop2   Prop3   Kind
+    //Sub2      Code        Origin.X  Origin.Y  Name    PropA   PropB           Kind
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Code")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Geometric2dElement", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Geometric2dElement", "Origin")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "PhysicalElement", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "PhysicalElement", "Origin")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "PhysicalElement", "Name"))) << "subclass of sharedcolumns holder";
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Sub1", "Origin")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement_Overflow", "os3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Kind"))) << "mapped to overflow table as it is the property added at last";
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement_Overflow", "os1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop2")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement_Overflow", "os2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop3")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Sub2", "Origin")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement_Overflow", "os3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Kind")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropA")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement_Overflow", "os1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropB")));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AddedBasePropToOverflow)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("AddPropertyToSubclassThenPropertyToBaseClass_TPH_JoinedTable_SharedCols_AddedBasePropToOverflow.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row1, sub2Row1;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2) VALUES (101,1,1,'Sub1 1','1', '2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row1, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,PropA,PropB) VALUES (201,1,1,'Sub2 1','A', 1)"));
+    m_ecdb.SaveChanges();
+
+    //Add property to Sub1
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey sub1Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row1, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Prop1,Prop2,Prop3) VALUES (102,2,2,'Sub1 2','1', '2', 3)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},{"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name, Prop1, Prop2, Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":201,"Origin": {"x":1.0,"y":1.0},"Name": "Sub2 1", "PropA":"A","PropB":1}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,PropA, PropB FROM ts.Sub2"));
+
+    //Add property to SubBase
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+           <ECEntityClass typeName="Element" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Code" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="GeometricElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+                </ECCustomAttributes>
+                <BaseClass>Element</BaseClass>
+           </ECEntityClass>
+           <ECEntityClass typeName="Geometric2dElement" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <BaseClass>GeometricElement</BaseClass>
+                <ECProperty propertyName="Origin" typeName="Point2d" />
+           </ECEntityClass>
+           <ECEntityClass typeName="PhysicalElement" modifier="Abstract" >
+                <BaseClass>Geometric2dElement</BaseClass>
+                <ECProperty propertyName="Name" typeName="string" />
+           </ECEntityClass>
+           <ECEntityClass typeName="SubBase" modifier="Abstract" >
+                <BaseClass>PhysicalElement</BaseClass>
+                <ECProperty propertyName="Kind" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub1" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+                <ECProperty propertyName="Prop2" typeName="string" />
+                <ECProperty propertyName="Prop3" typeName="int" />
+           </ECEntityClass>
+           <ECEntityClass typeName="Sub2" modifier="None" >
+              <BaseClass>SubBase</BaseClass>
+                <ECProperty propertyName="PropA" typeName="string" />
+                <ECProperty propertyName="PropB" typeName="int" />
+           </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+    ECInstanceKey sub1Row3, sub2Row2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub1Row3, "INSERT INTO ts.Sub1(Code,Origin.X,Origin.Y,Name,Kind,Prop1,Prop2,Prop3) VALUES (103,3,3,'Sub1 3',3,'1', '2', 3)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(sub2Row2, "INSERT INTO ts.Sub2(Code,Origin.X,Origin.Y,Name,Kind,PropA,PropB) VALUES (202,2,2,'Sub2 2',2,'A', 2)"));
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ASSERT_EQ(JsonValue(R"json([{"Code":101,"Origin": {"x":1.0,"y":1.0},"Name": "Sub1 1", "Prop1":"1","Prop2":"2"},
+            {"Code":102,"Origin": {"x":2.0,"y":2.0},"Name": "Sub1 2", "Prop1":"1","Prop2":"2", "Prop3": 3},
+            {"Code":103,"Origin": {"x":3.0,"y":3.0},"Name": "Sub1 3", "Kind":3, "Prop1":"1","Prop2":"2", "Prop3": 3}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,Kind,Prop1,Prop2,Prop3 FROM ts.Sub1"));
+    ASSERT_EQ(JsonValue(R"json([{"Code":201,"Origin": {"x":1.0,"y":1.0},"Name": "Sub2 1", "PropA":"A","PropB":1},
+                                {"Code":202,"Origin": {"x":2.0,"y":2.0},"Name": "Sub2 2", "Kind":2, "PropA":"A","PropB":2}])json"), GetHelper().ExecuteSelectECSql("SELECT Code,Origin,Name,Kind,PropA,PropB FROM ts.Sub2"));
+
+    // Expected Mapping:
+    //          ts_Element  ts_Geometric2dElement                               ts_Geometric2dElement_Overflow
+    //          Code        Origin_X  Origin_Y  js1     js2     js3     js4     os1
+    //Sub1      Code        Origin.X  Origin.Y  Name    Prop1   Prop2   Prop3   Kind
+    //Sub2      Code        Origin.X  Origin.Y  Name    PropA   PropB           Kind
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Code")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Geometric2dElement", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Geometric2dElement", "Origin")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "PhysicalElement", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "PhysicalElement", "Origin")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "PhysicalElement", "Name"))) << "subclass of sharedcolumns holder";
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Sub1", "Origin")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement_Overflow", "os1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Kind"))) << "mapped to overflow table as it is the property added at last";
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop2")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js4"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub1", "Prop3")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "Code"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Code")));
+    ASSERT_EQ(std::vector<ExpectedColumn>({ExpectedColumn("ts_Geometric2dElement", "Origin_X"), ExpectedColumn("ts_Geometric2dElement", "Origin_Y")}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Sub2", "Origin")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Name")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement_Overflow", "os1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "Kind")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropA")));
+    ASSERT_EQ(ExpectedColumn("ts_Geometric2dElement", "js3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub2", "PropB")));
     }
 
 //---------------------------------------------------------------------------------------
