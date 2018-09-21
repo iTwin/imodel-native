@@ -1352,33 +1352,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr, Env().Undefined());
-        struct NativeChangeSet : BeSQLite::ChangeSet
-            {
-            ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { return ConflictResolution::Skip; }
-            };
-
-        NativeChangeSet changeset;
-        {
         BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
-
-        RevisionChangesFileReader fs(changesetFilePath, GetDgnDb());
-        BeSQLite::ChangeGroup group;
-        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
-        DbResult r = fs.ToChangeGroup(group);
-        if (BE_SQLITE_OK != r)
-            return CreateBentleyReturnErrorObject(r, Utf8PrintfString("Failed to read ChangeSet file '%s' into a ChangeGroup object.", changesetFilePathStr.c_str()).c_str());
-        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
-
-        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
-        r = changeset.FromChangeGroup(group);
-        if (BE_SQLITE_OK != r)
-            return CreateBentleyReturnErrorObject(r, Utf8PrintfString("Failed to create ChangeSet object from ChangeGroup object for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
-        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
-        }
-
+        RevisionChangesFileReader changeStream(changesetFilePath, GetDgnDb());
         PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
-        if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeset)))
+        if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeStream)))
             return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR, Utf8PrintfString("Failed to extract ChangeSummary for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
         PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
