@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
  |
- |     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Client.h $
+ |     $Source: PublicAPI/Licensing/Client.h $
  |
  |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
@@ -57,6 +57,8 @@ public:
     // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
+    LICENSING_EXPORT BentleyStatus StartFeature();
+    LICENSING_EXPORT BentleyStatus StopFeature();
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

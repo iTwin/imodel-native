@@ -26,8 +26,6 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
-#define LICENSE_CLIENT_SCHEMA_VERSION       1.0
-
 #if defined(DEBUG)
 #define USAGE_HEARTBEAT_INTERVAL_MS         5*1000 
 #define POLICY_HEARTBEAT_INTERVAL_MS        30*60*1000
@@ -107,7 +105,9 @@ public:
 
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId=-1);
+    LICENSING_EXPORT BentleyStatus StartFeature();
+    LICENSING_EXPORT BentleyStatus StopFeature();
+    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
 
     // usageSCV usage file to send
     // The company ID in SAP. // TODO: figure out where to get this one from.

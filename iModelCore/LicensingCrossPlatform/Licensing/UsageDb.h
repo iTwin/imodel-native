@@ -12,6 +12,9 @@
 #include <BeSQLite/BeSQLite.h>
 #include "PolicyToken.h"
 
+#define LICENSE_CLIENT_SCHEMA_NAME      "LICENSINGSCHEMA"
+#define LICENSE_CLIENT_SCHEMA_VERSION   1.0
+
 USING_NAMESPACE_BENTLEY_SQLITE
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
@@ -24,7 +27,6 @@ struct UsageDb
 private:
 	Db m_db;
 
-private:
 	const Utf8String GRACESTART = "GRACESTART";
 
 	BentleyStatus OpenDb(BeFileNameCR filePath);
@@ -33,6 +35,10 @@ private:
 
 	BentleyStatus SetUpOfflineGraceTable();
     BentleyStatus SetUpTables();
+
+    BentleyStatus SetEimVerion();
+    BentleyStatus UpdateDb();
+    BentleyStatus UpdateDbTables();
 
     int64_t GetLastRowId();
 
@@ -43,15 +49,8 @@ public:
 
     LICENSING_EXPORT bool IsDbOpen();
 
-    LICENSING_EXPORT BentleyStatus InsertNewRecord(int64_t startTime, int64_t endTime);
-    
-    LICENSING_EXPORT int64_t GetLastRecordEndTime();
-
-    LICENSING_EXPORT BentleyStatus UpdateLastRecordEndTime(int64_t unixMilis);
-
-    LICENSING_EXPORT int64_t GetRecordCount();
-
     LICENSING_EXPORT BentleyStatus WriteUsageToCSVFile(BeFileNameCR path);
+    LICENSING_EXPORT BentleyStatus WriteFeatureToCSVFile(BeFileNameCR path);
 
 	LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles();
 	LICENSING_EXPORT std::list<Json::Value> GetPolicyFiles(Utf8String userId);
@@ -66,6 +65,9 @@ public:
 	LICENSING_EXPORT Utf8String GetOfflineGracePeriodStart();
 	LICENSING_EXPORT BentleyStatus ResetOfflineGracePeriod();
 
+    LICENSING_EXPORT Utf8String GetLastRecordedTime();
+    LICENSING_EXPORT int64_t GetRecordCount();
+
     LICENSING_EXPORT BentleyStatus CleanUpUsages();
 
     LICENSING_EXPORT BentleyStatus RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
@@ -73,6 +75,14 @@ public:
                                                Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
                                                Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
                                                Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType);
+
+    LICENSING_EXPORT BentleyStatus RecordFeature(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
+                                                 Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,
+                                                 Utf8StringCR securableId, int productId, Utf8String featureString, int64_t productVersion,
+                                                 Utf8StringCR projectId, Utf8String correlationId, Utf8StringCR eventTime, double schemaVersion,
+                                                 Utf8StringCR logPostingSource, Utf8StringCR country, Utf8StringCR usageType, Utf8StringCR featureId,
+                                                 Utf8StringCR startDate, Utf8String endDate, Utf8String userData);
+
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/Client.cpp $
+|     $Source: Licensing/Client.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -60,4 +60,20 @@ LicenseStatus Client::StartApplication()
 BentleyStatus Client::StopApplication()
     {
     return m_impl->StopApplication();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Client::StartFeature()
+    {
+    return m_impl->StartFeature();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Client::StopFeature()
+    {
+    return m_impl->StopFeature();
     }

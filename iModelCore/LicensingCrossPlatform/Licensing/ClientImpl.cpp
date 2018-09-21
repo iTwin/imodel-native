@@ -15,6 +15,10 @@
 #include <BeHttp/HttpError.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
+#if defined (BENTLEY_WIN32)
+#include <filesystem>
+#endif
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -85,6 +89,18 @@ LicenseStatus ClientImpl::StartApplication()
     LOG.trace("StartApplication");
 
     return licStatus;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ClientImpl::StartFeature()
+    {
+
+    // This is only a logging example
+    LOG.trace("StartFeature");
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -175,6 +191,16 @@ BentleyStatus ClientImpl::StopApplication()
     m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
 
     m_usageDb->Close();
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ClientImpl::StopFeature()
+    {
+    LOG.trace("StopFeature");
 
     return SUCCESS;
     }
@@ -340,8 +366,12 @@ folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageCSV, Utf8Stri
                 throw HttpError(response);
                 }
 
+#if defined (BENTLEY_WIN32)
+            std::tr2::sys::path pval(usageCSV.c_str());
+            remove(pval);
+#else
             BeFileName(usageCSV).BeDeleteFile();
-
+#endif
             return folly::makeFuture();
             });
         });
