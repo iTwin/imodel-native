@@ -656,7 +656,7 @@ DgnDbStatus JsInterop::QueryModelExtents(JsonValueR extentsJson, DgnDbR db, Json
     if (!geometricModel)
         return DgnDbStatus::WrongModel;
 
-    AxisAlignedBox3d extents = geometricModel->QueryModelRange();
+    AxisAlignedBox3d extents = geometricModel->QueryElementsRange();
     if (!extents.IsValid())
         return DgnDbStatus::NoGeometry;
 

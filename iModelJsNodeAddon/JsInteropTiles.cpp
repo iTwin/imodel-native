@@ -158,7 +158,7 @@ public:
     JsTexture* GetTexture(ImageCR, Texture::CreateParams const&);
     JsMaterial* GetMaterial(Material::CreateParams const& params);
 
-    static ResourceCache& Get(DgnDbR db) { return *db.ObtainAppdata(GetKey(), []() { return new ResourceCache(); }); }
+    static ResourceCache& Get(DgnDbR db) { return *db.ObtainAppData(GetKey(), []() { return new ResourceCache(); }); }
 
     ~ResourceCache() { m_textures.Clear(); m_gradients.Clear(); m_materials.Clear(); }
 };
