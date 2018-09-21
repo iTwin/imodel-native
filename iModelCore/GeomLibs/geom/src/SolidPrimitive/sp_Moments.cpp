@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_Moments.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -323,7 +323,7 @@ bool DgnConeDetail::ComputeSecondMomentVolumeProducts (TransformR localToWorld, 
 bool DgnTorusPipeDetail::ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR products) const
     {
     products = DMatrix4d::FromZero ();
-    double radiusA, radiusB, sweepRadians;
+    double radiusA = 0.0, radiusB = 0.0, sweepRadians = 0.0;
     RotMatrix spinAxes;
     DPoint3d center;
     if (TryGetFrame (center, spinAxes, radiusA, radiusB, sweepRadians)
