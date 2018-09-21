@@ -436,7 +436,6 @@ bool            SolveAnalytically (bool localTransformDifferent)
         outputGlobalOrigin.Negate();
         }
 
-#if defined CODE_IS_NO_OP // NEEDSWORK none of these calculations are used, are they important?
     Transform   UoInv;
     UoInv.InitIdentity();
     UoInv.ScaleMatrixColumns (UoInv, inverseScale, inverseScale, inverseScale);
@@ -447,7 +446,6 @@ bool            SolveAnalytically (bool localTransformDifferent)
     m_calculatedTransform.InitProduct (UoInv, HoInv);
     m_calculatedTransform.InitProduct (m_calculatedTransform, Hs);
     m_calculatedTransform.InitProduct (m_calculatedTransform, Us);
-#endif
 
     return true;
     }
