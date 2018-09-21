@@ -434,7 +434,7 @@ private:
 
     static GlyphCache& Get(DgnDbR db)
         {
-        return static_cast<GlyphCache&>(*db.FindOrAddAppData(GetKey(), []() { return new GlyphCache(); }));
+        return *db.ObtainAppData(GetKey(), []() { return new GlyphCache(); });
         }
 
     static IFacetOptionsPtr CreateFacetOptions(double tolerance);

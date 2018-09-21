@@ -2238,7 +2238,7 @@ MultiAspectMux* MultiAspectMux::Find(DgnElementCR el, ECClassCR cls)
 +---------------+---------------+---------------+---------------+---------------+------*/
 MultiAspectMux& MultiAspectMux::Get(DgnElementCR el, ECClassCR cls)
     {
-     return static_cast<MultiAspectMux&>(*el.FindOrAddAppData(GetKey(cls), [&]() { return new MultiAspectMux(cls); }));
+    return *el.ObtainAppData(GetKey(cls), [&]() { return new MultiAspectMux(cls); });
     }
 
 /*---------------------------------------------------------------------------------**//**

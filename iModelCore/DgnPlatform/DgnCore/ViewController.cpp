@@ -727,7 +727,7 @@ DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
         return DgnDbStatus::WrongModel;
         }
 
-    GetViewDefinitionR().LookAtVolume(model->QueryModelRange());
+    GetViewDefinitionR().LookAtVolume(model->QueryElementsRange());
     return DgnDbStatus::Success;
     }
 

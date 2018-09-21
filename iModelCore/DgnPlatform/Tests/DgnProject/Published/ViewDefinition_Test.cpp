@@ -34,7 +34,7 @@ OrthographicViewDefinitionPtr ViewDefinitionTests::InsertSpatialView(SpatialMode
 
     viewDef->SetIsPrivate(isPrivate);
     viewDef->SetStandardViewRotation(StandardView::Iso);
-    viewDef->LookAtVolume(model.QueryModelRange());
+    viewDef->LookAtVolume(model.QueryElementsRange());
     viewDef->Insert();
     BeAssert(viewDef->GetViewId().IsValid());
     return viewDef;

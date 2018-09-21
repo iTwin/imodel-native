@@ -649,6 +649,19 @@ public:
         return data;
         }
 
+    //! Find or add ApPData on this DgnModel.
+    //! If AppData with the specified key already exists, it is returned.
+    //! Otherwise the supplied function is invoked to create new AppData which will be added and returned.
+    //! @param[in] key The key identifying the type of AppData.
+    //! @params[in] createAppData a callable taking no arguments and returning an AppData*, invoked if no AppData corresponding to the supplied key currently exists on the model.
+    //! @return the AppData corresponding to the supplied key as a ref-counted pointer to the derived type.
+    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
+        {
+        using U = decltype(createAppData());
+        AppDataPtr data = FindOrAddAppData(key, createAppData);
+        return static_cast<U>(data.get());
+        }
+
     //! Remove AppData from this DgnModel
     //! @return SUCCESS if appData with key is found and was dropped.
     //! @remarks Calls the object's _OnCleanup method.
@@ -930,7 +943,7 @@ protected:
     DGNPLATFORM_EXPORT void UpdateLastElementModifiedTime();
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryElementsRange() const;//!< @private
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
     void _OnAppliedAddElement(DgnElementCR element) override {T_Super::_OnAppliedAddElement(element); AddToRangeIndex(element); UpdateLastElementModifiedTime();}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element); UpdateLastElementModifiedTime();}
@@ -952,8 +965,8 @@ public:
 
     RangeIndex::Tree* GetRangeIndex() const {return m_rangeIndex.get();}
 
-    //! Get the AxisAlignedBox3d of the contents of this model.
-    AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
+    //! Get the AxisAlignedBox3d of the geometric elements contained within this model.
+    AxisAlignedBox3d QueryElementsRange() const {return _QueryElementsRange();}
 
     //! Get a writable reference to the Formatter for this model.
     Formatter& GetFormatterR() {return m_displayInfo;}
@@ -964,6 +977,10 @@ public:
     //! Returns the time of the most recent modification to any element in this model, in unix milliseconds.
     DGNPLATFORM_EXPORT uint64_t GetLastElementModifiedTime() const;
     void InitLastElementModifiedTime(); //!< @private
+
+    //! If this model supports producing Cesium 3D tiles, return a root of such a tile tree. The default implementation returns nullptr.
+    //! The rootTileOutput is supplied for loading the root tile. It should not be stored and reused.
+    DGNPLATFORM_EXPORT virtual Cesium::RootPtr _CreateCesiumTileTree(Cesium::OutputR rootTileOutput);
 };
 
 //=======================================================================================
@@ -977,7 +994,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
@@ -996,7 +1013,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _FillRangeIndex() override;
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _QueryElementsRange() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };

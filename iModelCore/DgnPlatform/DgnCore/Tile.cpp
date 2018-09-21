@@ -78,7 +78,7 @@ struct ClassificationLoader : Loader
 {
     DEFINE_T_SUPER(Loader);
 private:
-    double m_expansion; // NB: will be used in future?
+    double m_expansion;
     DRange3d m_range;
 
     bool CompressMeshQuantization() const final { return true; }
@@ -822,8 +822,8 @@ struct TileCacheAppData : BeSQLite::Db::AppData
     static RealityData::CachePtr Get(DgnDbR db)
         {
         static BeSQLite::Db::AppData::Key s_key;
-        BeSQLite::Db::AppDataPtr appData = db.FindOrAddAppData(s_key, [&]() { return new TileCacheAppData(db); });
-        return static_cast<TileCacheAppData&>(*appData).m_cache;
+        auto data = db.ObtainAppData(s_key, [&]() { return new TileCacheAppData(db); });
+        return data->m_cache;
         }
 };
 
@@ -1113,7 +1113,7 @@ TreePtr Tree::Create(GeometricModelR model, Render::SystemR system, Id id)
         // - if a model occupies a small fraction of the extents, we must subdivide its tile tree excessively before we reach useful geometry; and
         // - some models contain junk elements in far orbit which blow out the project extents resulting in same problem - constrain that only to those models.
         // Classifiers are applied to all models (currently...) so they use project extents.
-        range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryModelRange();
+        range = id.IsClassifier() ? model.GetDgnDb().GeoLocation().GetProjectExtents() : model.QueryElementsRange();
         range = scaleSpatialRange(range);
         uint32_t nElements = 0;
         

@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GenericDomain.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnDomain.h>
+#include <DgnPlatform/Sheet.h>
 
 DGNPLATFORM_TYPEDEFS(GenericGroup)
 DGNPLATFORM_TYPEDEFS(GenericGroupModel)

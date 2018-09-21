@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/CesiumTileTree.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
@@ -1578,7 +1579,7 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
 * Note: Only returns a valid range if the range index is loaded.
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d GeometricModel::_QueryModelRange() const
+AxisAlignedBox3d GeometricModel::_QueryElementsRange() const
     {
     auto rangeIndex = GetRangeIndex();
     if (nullptr == rangeIndex)
@@ -1597,9 +1598,9 @@ AxisAlignedBox3d GeometricModel::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d GeometricModel3d::_QueryModelRange() const
+AxisAlignedBox3d GeometricModel3d::_QueryElementsRange() const
     {
-    auto range = T_Super::_QueryModelRange();   // if we have a range index already loaded, use it rather than querying
+    auto range = T_Super::_QueryElementsRange();   // if we have a range index already loaded, use it rather than querying
     if (range.IsValid()) // was it valid?
         return range;   // yes, we're done
 
@@ -1631,9 +1632,9 @@ AxisAlignedBox3d GeometricModel3d::_QueryModelRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
+AxisAlignedBox3d GeometricModel2d::_QueryElementsRange() const
     {
-    auto range = T_Super::_QueryModelRange();   // if we have a range index already loaded, use it rather than querying
+    auto range = T_Super::_QueryElementsRange();   // if we have a range index already loaded, use it rather than querying
     if (range.IsValid()) // was it valid?
         return range;   // yes, we're done
 
@@ -2082,5 +2083,13 @@ void GeometricModel::UpdateLastElementModifiedTime()
 uint64_t GeometricModel::GetLastElementModifiedTime() const
     {
     return m_lastModifiedTime.load();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Cesium::RootPtr GeometricModel::_CreateCesiumTileTree(Cesium::OutputR)
+    {
+    return nullptr;
     }
 

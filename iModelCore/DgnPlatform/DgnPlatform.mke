@@ -323,6 +323,10 @@ $(CoreObjs)CacheTileWriter$(oext) :                 $(DgnCoreDir)CacheTileWriter
 
 $(CoreObjs)TileReader$(oext) :                      $(DgnCoreDir)TileReader.cpp $(DgnPlatformAPISrc)Tile.h $(DgnPlatformAPISrc)TileReader.h $(DgnPlatformAPISrc)TileIO.h ${MultiCompileDepends}
 
+$(CoreObjs)CesiumTileTree$(oext) :                  $(DgnCoreDir)CesiumTileTree.cpp $(DgnPlatformAPISrc)CesiumTileTree.h ${MultiCompileDepends}
+
+$(CoreObjs)CesiumTileWriter$(oext) :                $(DgnCoreDir)CesiumTileWriter.cpp $(DgnPlatformAPISrc)CesiumTileTree.h ${MultiCompileDepends}
+
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 
 $(CoreObjs)VolumeElement$(oext) :                   $(DgnCoreDir)VolumeElement.cpp $(DgnPlatformAPISrc)VolumeElement.h ${MultiCompileDepends}
@@ -592,6 +596,8 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
 %if defined (BENTLEYCONFIG_PARASOLID)
 LINKER_LIBRARIES_DELAYLOADED = \
