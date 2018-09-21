@@ -91,9 +91,9 @@ TEST_F(LocksTests, QueryLocksTest)
 
     //Create two models in different briefcases. This should also acquire locks automatically.
     PhysicalModelPtr model1 = CreateModel(TestCodeName().c_str(), briefcase1->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
     PhysicalModelPtr model2 = CreateModel(TestCodeName(1).c_str(), briefcase2->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true, false));
 
      iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
      iModelHubHelpers::ExpectLocksCount(briefcase2, 4);
@@ -119,7 +119,7 @@ TEST_F(LocksTests, QueryUnavailableLocksTest)
 
     //Create a model and push it.
     auto model1 = CreateModel(TestCodeName().c_str(), briefcase1->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     //Both model and file locks should be unavailable to the second briefcase.
     iModelHubHelpers::ExpectUnavailableLocksCount(briefcase2, 4);
@@ -128,7 +128,7 @@ TEST_F(LocksTests, QueryUnavailableLocksTest)
     EXPECT_EQ(RepositoryStatus::Success, DemoteLock(*model1));
     iModelHubHelpers::ExpectUnavailableLocksCount(briefcase2, 4);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, false, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, false, true, false));
     iModelHubHelpers::ExpectUnavailableLocksCount(briefcase2, 2);
     }
 
@@ -148,7 +148,7 @@ TEST_F(LocksTests, QueryAvailableLocksTest)
 
     //Create a model and push it.
     auto model1 = CreateModel(TestCodeName().c_str(), briefcase1->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     //Locks are available for the briefcase that owns them
     IBriefcaseManager::Request req(IBriefcaseManager::ResponseOptions::None);
@@ -221,10 +221,10 @@ TEST_F(LocksTests, LocksStatesResponseTest)
 
     //Create a models and push them.
     auto model1 = CreateModel(TestCodeName().c_str(), briefcase1->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     auto model2 = CreateModel(TestCodeName(1).c_str(), briefcase1->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     LockRequest req;
     req.Insert(*model1, LockLevel::Exclusive);
@@ -284,7 +284,7 @@ TEST_F(LocksTests, ReleasedWithChangeSetLocksTest)
     //Create a model, this will automatically acquire neccessary locks
     auto model = CreateModel(TestCodeName().c_str(), briefcase->GetDgnDb());
      iModelHubHelpers::ExpectLocksCount(briefcase, 2);
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
      iModelHubHelpers::ExpectLocksCount(briefcase, 4);
     Utf8String lastChangeSetId = briefcase->GetLastChangeSetPulled();
 
@@ -333,9 +333,9 @@ TEST_F(LocksTests, ShouldNotBeAbleDeletingModelLockedByAnotherBriefcase)
 
     //Create two models in different briefcases. This should also acquire locks automatically.
     auto model1 = CreateModel(TestCodeName(1).c_str(), briefcase1->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
     auto model2 = CreateModel(TestCodeName(2).c_str(), briefcase2->GetDgnDb());
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true, false));
 
     iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
     iModelHubHelpers::ExpectLocksCount(briefcase2, 4);
@@ -366,7 +366,7 @@ TEST_F(LocksTests, FailingLocksResponseOptions)
     DgnModelPtr model1_1 = CreateModel(TestCodeName().c_str(), db1);
     DgnModelPtr model1_2 = CreateModel(TestCodeName(1).c_str(), db1);
      iModelHubHelpers::ExpectLocksCount(briefcase1, 2);
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
      iModelHubHelpers::ExpectLocksCount(briefcase1, 6);
 
     EXPECT_EQ(DgnDbStatus::Success, model1_1->Delete());
@@ -435,7 +435,7 @@ TEST_F(LocksTests, RelinquishOtherUserLocks)
     iModelHubHelpers::ExpectLocksCount(briefcase1, 0);
 
     // Briefcase1 should be able to push changes since nobody owns them.
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
     Utf8String changeSet1 = briefcase1->GetLastChangeSetPulled();
      iModelHubHelpers::ExpectLocksCount(briefcase1, 6);
 
@@ -542,7 +542,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementReleaseLocksOnPush)
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
     
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, true));
 
     // After push with release locks, no locks should be held
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
@@ -557,7 +557,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementReleaseLocksOnPush)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, true, true);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, true));
 
     // After push no locks should be left
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
@@ -581,7 +581,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementDoNotReleaseLocks)
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
     
     // Locks should be set after push
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
@@ -605,7 +605,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementDoNotReleaseLocks)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, true, true);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
 
     // After push locks should be set
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
@@ -629,7 +629,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementModelExclusivelyLocked)
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, true));
 
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, false, false);
@@ -651,7 +651,7 @@ TEST_F(LocksTests, WorkflowCreateNewElementModelExclusivelyLocked)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
 
     // After new element is created user only exclusive model lock should exist in the server
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
@@ -688,7 +688,7 @@ TEST_F(LocksTests, WorkflowUpdateElement)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, true));
 
     // After push there should be no locks left
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
@@ -708,7 +708,7 @@ TEST_F(LocksTests, WorkflowUpdateElement)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Shared, true, true);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, true);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, true));
 
     // After push locks should be cleared
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
@@ -736,7 +736,7 @@ TEST_F(LocksTests, WorkflowUpdateElementWithExclusiveModelLock)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, false);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, true));
 
     // After push there should be no locks left
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, false, false);
@@ -763,7 +763,7 @@ TEST_F(LocksTests, WorkflowUpdateElementWithExclusiveModelLock)
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
 
     // After push locks should not be cleared
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
@@ -798,7 +798,7 @@ TEST_F(LocksTests, IndirectChangesShouldNotBeExtractedAsRequiredLocks)
     TestElementDrivesElementHandler::SetCallback(this);
     TestElementDrivesElementHandler::Insert(db, root->GetElementId(), dependent->GetElementId());
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, true));
 
     // Set the dependent as the element that we will update in the _OnRootChanged call
     m_onRootChangedElement = dependent;
@@ -811,7 +811,7 @@ TEST_F(LocksTests, IndirectChangesShouldNotBeExtractedAsRequiredLocks)
     DgnDbStatus status;
     EXPECT_TRUE(db.Elements().Update<DgnElement>(*rootEdit).IsValid());
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
     
     // Check lock for dependent element was not acquired
     EXPECT_TRUE(m_indirectElementUpdated);

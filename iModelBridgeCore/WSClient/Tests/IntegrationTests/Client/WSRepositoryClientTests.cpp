@@ -159,6 +159,7 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApiV26_InfoSucceeds)
 
     Utf8String serverUrl = "https://bsw-wsg.bentley.com/ws26";
     Utf8String repositoryId = "BentleyCONNECT.SampleAzureSqlDb--Main";
+    uint64_t maxUploadSize = 31457280; // Specific to "https://bsw-wsg.bentley.com/ws26"
     Credentials credentials("admin", "admin");
 
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -171,6 +172,7 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApiV26_InfoSucceeds)
     EXPECT_STREQ(repositoryId.c_str(), result.GetValue().GetId().c_str());
     EXPECT_STREQ(serverUrl.c_str(), result.GetValue().GetServerUrl().c_str());
     EXPECT_FALSE(result.GetValue().GetPluginVersion().IsEmpty());
+    EXPECT_EQ(maxUploadSize, result.GetValue().GetMaxUploadSize());
     }
 
 /*--------------------------------------------------------------------------------------+

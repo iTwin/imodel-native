@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Connect/ImsClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -186,7 +186,6 @@ TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForVal
     BeTest::SetFailOnAssert(true);
     }
 
-
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                 Tomas.Tamasauskas                       08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -219,4 +218,88 @@ TEST_F(ImsClientTests, GetA2PUrl)
     url = client->GetA2PUrl("https://thisshouldfail.bentley.com/", token, BeGuid(true).ToString());
     ASSERT_EQ("https://thisshouldfail.bentley.com/", url);
     BeTest::SetFailOnAssert(true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/  
+TEST_F(ImsClientTests, Login_DevImsAppliesToTest_RetrievesValidToken)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
+
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
+    auto client = ImsClient::Create(StubClientInfo(), proxy);
+
+    SamlTokenResult result;
+
+    // Tests
+    result = client->RequestToken(credentials, "sso://wsfed_desktop/test")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/test")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/  
+TEST_F(ImsClientTests, Login_QaImsAppliesToTest_RetrievesValidToken)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
+
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
+    auto client = ImsClient::Create(StubClientInfo(), proxy);
+
+    SamlTokenResult result;
+
+    // Tests
+    result = client->RequestToken(credentials, "sso://wsfed_desktop/test")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/test")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     12/15
++---------------+---------------+---------------+---------------+---------------+------*/  
+TEST_F(ImsClientTests, Login_ReleaseImsAppliesToTest_RetrievesValidToken)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
+
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Release, UrlProvider::DefaultTimeout, &localState, nullptr, proxy);
+
+    auto client = ImsClient::Create(StubClientInfo(), proxy);
+
+    SamlTokenResult result;
+
+    // Tests
+    result = client->RequestToken(credentials, "sso://wsfed_desktop/test")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/test")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
     }

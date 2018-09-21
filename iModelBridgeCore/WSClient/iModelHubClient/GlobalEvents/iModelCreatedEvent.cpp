@@ -19,8 +19,9 @@ iModelCreatedEvent::iModelCreatedEvent
     const Utf8String fromEventSubscriptionId,
     const Utf8String toEventSubscriptionId,
     const Utf8String projectId,
-    const Utf8String iModelId
-) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId)
+    const Utf8String iModelId,
+    const Utf8String lockUrl
+) : GenericGlobalEvent(eventTopic, fromEventSubscriptionId, toEventSubscriptionId, projectId, iModelId, lockUrl)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -32,7 +33,8 @@ RefCountedPtr<struct iModelCreatedEvent> iModelCreatedEvent::Create
     const Utf8String fromEventSubscriptionId,
     const Utf8String toEventSubscriptionId,
     const Utf8String projectId,
-    const Utf8String iModelId
+    const Utf8String iModelId,
+    const Utf8String lockUrl
 )
     {
     return new iModelCreatedEvent
@@ -41,6 +43,7 @@ RefCountedPtr<struct iModelCreatedEvent> iModelCreatedEvent::Create
         fromEventSubscriptionId,
         toEventSubscriptionId,
         projectId,
-        iModelId
+        iModelId,
+        lockUrl
     );
     }

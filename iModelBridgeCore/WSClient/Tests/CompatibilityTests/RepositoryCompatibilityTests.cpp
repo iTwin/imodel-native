@@ -156,7 +156,7 @@ IWSRepositoryClientPtr CreateClient(TestRepository& repository)
         httpHandler = s_signInManager->GetAuthenticationHandler(repository.serverUrl, httpHandler);
         }
 
-    auto client = WSRepositoryClient::Create(repository.serverUrl, repository.id, StubValidClientInfo(), nullptr, httpHandler);
+    auto client = WSRepositoryClient::Create(repository.serverUrl, repository.serviceVersion, repository.id, StubValidClientInfo(), nullptr, httpHandler);
 
     if (!repository.environment && !repository.credentials.IsEmpty())
         {
@@ -211,7 +211,8 @@ TEST_P(RepositoryCompatibilityTests_DownloadSchemas, Download)
             properties["VersionMinor"].GetInt());
 
         BeFileName schemaFilePath(schemasFolder);
-        schemaFilePath.AppendToPath(BeFileName(key.GetFullSchemaName() + ".ecschema.xml"));
+        Utf8PrintfString fullSchemaName("%s.%2d.%2d", key.m_schemaName.c_str(), key.m_versionRead, key.m_versionMinor);
+        schemaFilePath.AppendToPath(BeFileName(fullSchemaName + ".ecschema.xml"));
 
         EXPECT_TRUE(client->SendGetFileRequest(schema.GetObjectId(), schemaFilePath)->GetResult().IsSuccess());
         }
@@ -265,13 +266,7 @@ TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     ASSERT_TRUE(createResult.IsSuccess());
 
     // Force close
-    IDataSourceCache* cache = nullptr;
-    auto task = createResult.GetValue()->GetCacheAccessThread()->ExecuteAsync([&]
-        {
-        cache = &createResult.GetValue()->StartCacheTransaction().GetCache();
-        });
-    task->Wait();
-    cache->Close();
+    createResult.GetValue()->Close();
     createResult = CachingDataSource::OpenResult();
 
     // Open connection for upgrade
@@ -279,7 +274,7 @@ TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     client = CreateClient(repository);
     auto openResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(openResult.IsSuccess());
-    auto ds = createResult.GetValue();
+    auto ds = openResult.GetValue();
 
     // Pull new schemas if any
     auto updateResult = ds->UpdateSchemas(nullptr)->GetResult();

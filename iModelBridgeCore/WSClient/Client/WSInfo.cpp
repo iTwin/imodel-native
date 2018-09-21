@@ -10,6 +10,7 @@
 #define INFO_ServerVersion              "serverVersion"
 #define INFO_Serialized_ServerVersion   "version"
 #define INFO_Serialized_WebApiVersion   "webApi"
+#define INFO_Serialized_ServiceVersion  "serviceVersion"
 #define INFO_Serialized_ServerType      "type"
 #define Info_MasServerHeader            "Mas-Server"
 #define Info_WSGServerHeader            "WsgServer"
@@ -36,33 +37,41 @@ m_type(serverType)
     {}
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2014
-* @remarks Note: Temporary useWsgVersionHeader until WSG defect 651740 is fixed for BIMReviewSharing
+* @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSInfo::WSInfo(Http::ResponseCR response) : WSInfo()
+WSInfo::WSInfo(BeVersion serverVersion, BeVersion webApiVersion, BeVersion serviceVersion, Type serverType) :
+m_serverVersion(serverVersion),
+m_webApiVersion(webApiVersion),
+m_serviceVersion(serviceVersion),
+m_type(serverType)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WSInfo::WSInfo(Http::ResponseCR response) : WSInfo(response, {}) {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WSInfo::WSInfo(Http::ResponseCR response, BeVersion serviceVersion) : WSInfo()
     {
     if (!response.IsSuccess())
-        {
         return;
-        }
+
+    m_serviceVersion = serviceVersion;
 
     ParseHeaders(response.GetHeaders(), m_type, m_serverVersion, m_webApiVersion);
     if (IsValid())
-        {
         return;
-        }
 
     ParseInfoPage(response, m_type, m_serverVersion, m_webApiVersion);
     if (IsValid())
-        {
         return;
-        }
 
     ParseAboutPage(response, m_type, m_serverVersion, m_webApiVersion);
     if (IsValid())
-        {
         return;
-        }
 
     m_type = Type::Unknown;
     m_serverVersion = BeVersion();
@@ -76,12 +85,11 @@ WSInfo::WSInfo(Utf8StringCR serialized) : WSInfo()
     {
     Json::Value json;
     if (!Json::Reader::Parse(serialized, json))
-        {
         return;
-        }
 
     m_serverVersion = BeVersion(json[INFO_Serialized_ServerVersion].asCString());
     m_webApiVersion = BeVersion(json[INFO_Serialized_WebApiVersion].asCString());
+    m_serviceVersion = BeVersion(json[INFO_Serialized_ServiceVersion].asCString());
     m_type = static_cast<Type>(json[INFO_Serialized_ServerType].asInt());
     }
 
@@ -94,6 +102,7 @@ Utf8String WSInfo::ToString() const
 
     json[INFO_Serialized_ServerVersion] = m_serverVersion.ToString();
     json[INFO_Serialized_WebApiVersion] = m_webApiVersion.ToString();
+    json[INFO_Serialized_ServiceVersion] = m_serviceVersion.ToString();
     json[INFO_Serialized_ServerType] = static_cast<int>(m_type);
 
     return Json::FastWriter::ToString(json);

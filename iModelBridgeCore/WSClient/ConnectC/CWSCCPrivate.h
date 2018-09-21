@@ -2,7 +2,7 @@
 |
 |     $Source: ConnectC/CWSCCPrivate.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,7 +68,7 @@ class ConnectWebServicesClientC_internal
             BeVersion applicationVersion,
             Utf8String applicationGUID,
             Utf8String applicationProductId,
-            void* securityStoreInitializer
+            void* reserved = nullptr
             );
 
     public:
@@ -84,7 +84,7 @@ class ConnectWebServicesClientC_internal
             Utf8StringP proxyUsername = nullptr,
             Utf8StringP proxyPassword = nullptr,
             IHttpHandlerPtr customHandler = nullptr,
-            void* securityStoreInitializer = nullptr
+            void* reserved = nullptr
             );
 
         ~ConnectWebServicesClientC_internal ();

@@ -8,7 +8,6 @@ WebsiteSeedFileTests.CreateSeedFile
 #   Tests that are failing
 #----------------------------------------------------------------------------------------
 SeedFileTests.ReplaceWithoutLockediModel
-CodesTests.ExternalCodesPushTest
 
 #----------------------------------------------------------------------------------------
 #   Tests that require seed file replacement
@@ -25,3 +24,8 @@ SeedFileTests.FileReplaceInProgressCodesLocksChangeSetsDenied
 SeedFileTests.ReplaceCodesLocksChangeSets
 SeedFileTests.EmptyFileReplaceOtherUser
 SeedFileTests.ReplaceWithLockediModel
+
+#----------------------------------------------------------------------------------------
+#   URL Validator - Should run after other tests have finished
+#----------------------------------------------------------------------------------------
+UrlValidator.WhitelistCheck

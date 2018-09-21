@@ -70,7 +70,7 @@ void InitializeTests()
     BeSQLite::BeSQLiteLib::Initialize(temp);
     BeSQLite::EC::ECDb::Initialize(temp, &assets);
     Http::HttpClient::Initialize(assets);
-    UrlProvider::Initialize(IntegrationTestsSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
+    UrlProvider::Initialize(IntegrationTestsSettings::ReadEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
     //auto mockHandler = std::make_shared<MockIMSHttpHandler>();
     //UrlProvider::SetHttpHandler(mockHandler);
     //ClientHelper::Initialize(IntegrationTestsSettings::Instance().GetClientInfo(), StubLocalState::Instance(), mockHandler);

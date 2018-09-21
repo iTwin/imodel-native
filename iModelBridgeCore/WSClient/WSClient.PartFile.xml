@@ -286,6 +286,7 @@
         <SubPart PartName="iModelHubClient-Library"/>
         <SubPart PartName="iModelHubClient-PublicAPI"/>
         <SubPart PartName="iModelHubPrewireForIntegrationTests" />
+        <SubPart PartName="OidcNativeClient" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Helpers" SourceName="Delivery/iModelHubNativeTests/Objects/Helpers"/>
@@ -305,6 +306,7 @@
             <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/SchemaVersionTest.02.02.02.ecschema.xml</Files>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list_dev.txt</Files>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list_qa.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/whitelist.txt</Files>
         </Bindings>
     </Part>
 
@@ -336,6 +338,33 @@
         <Bindings>
             <Files>
                 Delivery\IMHSClientExe.exe
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="OidcNativeClient" DeferType="BuildUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests/iModelHubClient/OidcNativeClientPrewire.mke">
+        <NuGetPackage>Testing.OidcNativeClient</NuGetPackage>
+        <Bindings>
+            <Libs>Nuget\native\OidcInterop$(libext)</Libs>
+            <Assemblies>
+                Nuget\native\HtmlAgilityPack$(shlibext)
+                Nuget\native\IdentityModel$(shlibext)
+                Nuget\native\IdentityModel.OidcClient$(shlibext)
+                Nuget\native\Microsoft.Extensions.DependencyInjection.Abstractions$(shlibext)
+                Nuget\native\Microsoft.Extensions.Logging.Abstractions$(shlibext)
+                Nuget\native\Microsoft.Extensions.Logging$(shlibext)
+                Nuget\native\Microsoft.IdentityModel.Logging$(shlibext)
+                Nuget\native\Microsoft.IdentityModel.Tokens$(shlibext)
+                Nuget\native\Newtonsoft.Json$(shlibext)
+                Nuget\native\OidcClient$(shlibext)
+                Nuget\native\OidcInterop$(shlibext)
+                Nuget\native\System.IdentityModel.Tokens.Jwt$(shlibext)
+                Nuget\native\System.Net.Http$(shlibext)
+                Nuget\native\WebDriver$(shlibext)
+            </Assemblies>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">
+                Delivery/chromedriver.exe
+                Delivery/iModelHubNativeTests.exe.config
             </Files>
         </Bindings>
     </Part>

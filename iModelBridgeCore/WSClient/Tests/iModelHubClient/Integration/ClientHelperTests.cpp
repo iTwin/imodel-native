@@ -52,7 +52,7 @@ std::shared_ptr<MockHttpHandler> ClientHelperTests::s_handler = nullptr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientHelperTests, SetsUrl)
     {
-    Utf8String testUrl = "TestUrl";
+    Utf8String testUrl = "https://test.foo";
     s_helper->SetUrl(testUrl);
     ClientPtr client = s_helper->SignInWithStaticHeader("TestHeader");
     EXPECT_EQ(testUrl, client->GetServerUrl());
@@ -63,18 +63,18 @@ TEST_F(ClientHelperTests, SetsUrl)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClientHelperTests, SetsStaticAuthorizationHeader)
     {
-    Utf8String testUrl = "TestUrl";
+    Utf8String testUrl = "https://test.foo";
     Utf8String testHeader = "TestHeader";
     s_helper->SetUrl(testUrl);
     ClientPtr client = s_helper->SignInWithStaticHeader(testHeader);
 
-    Http::Request request("");
+    Http::Request request(testUrl);
     s_handler->ExpectRequest([&](Http::RequestCR req) {
-        return Http::Response(HttpStatus::OK, "TestUrl", "Mas-Server:Bentley-WSG/02.06.00.00,Bentley-WebAPI/2.6", "");
+        return Http::Response(HttpStatus::OK, testUrl, "Mas-Server:Bentley-WSG/02.06.00.00,Bentley-WebAPI/2.6", "");
     });
     s_handler->ExpectRequest([&](Http::RequestCR req) {
         request = req;
-        return Http::Response(HttpStatus::OK, "TestUrl", "", "{}");
+        return Http::Response(HttpStatus::OK, testUrl, "", "{}");
     });
 
     client->GetiModels(IntegrationTestsSettings::Instance().GetProjectId())->GetResult();

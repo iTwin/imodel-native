@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <WebServices/Client/WSClient.h>
 #include <WebServices/iModelHub/Common.h>
+#include <WebServices/Azure/AzureError.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 struct Error : public Tasks::AsyncError
@@ -22,6 +23,7 @@ public:
         MissingRequiredProperties = 1,
         InvalidPropertiesValues,
         UserDoesNotHavePermission,
+        UserDoesNotHaveAccess,
         InvalidBriefcase,
         BriefcaseDoesNotExist,
         BriefcaseDoesNotBelongToUser,
@@ -31,34 +33,36 @@ public:
         FileIsNotUploaded,
         iModelIsNotInitialized,
         ChangeSetPointsToBadSeed,
-        iModelHubOperationFailed,
+        OperationFailed,
         PullIsRequired,
         MaximumNumberOfBriefcasesPerUser,
         MaximumNumberOfBriefcasesPerUserPerMinute,
         DatabaseTemporarilyLocked,
+        iModelIsLocked,
+        CodesExist,
+        LocksExist,
         iModelAlreadyExists,
         iModelDoesNotExist,
+        FileDoesNotExist,
+        FileAlreadyExists,
         LockDoesNotExist,
-        LocksExist,
         LockOwnedByAnotherBriefcase,
-        UserAlreadyExists,
-        UserDoesNotExist,
         CodeStateInvalid,
         CodeReservedByAnotherBriefcase,
         CodeDoesNotExist,
-        CodesExist,
-        FileDoesNotExist,
-        iModelIsLocked,
         EventTypeDoesNotExist,
         EventSubscriptionDoesNotExist,
         EventSubscriptionAlreadyExists,
-        ProjectAssociationIsNotEnabled,
         ProjectIdIsNotSpecified,
         FailedToGetProjectPermissions,
+        FailedToGetProjectMembers,
         ChangeSetAlreadyHasVersion,
         VersionAlreadyExists,
-        QueryIdsNotSpecified,
+        JobSchedulingFailed,
         ConflictsAggregate,
+        FailedToGetProjectById,
+        
+        DatabaseOperationFailed,
 
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,
@@ -69,10 +73,11 @@ public:
 
         //iModel Hub Client API Errors
         NoRepositoriesFound = 200,
+        UserDoesNotExist,
+        QueryIdsNotSpecified,
         FileIsNotBriefcase,
         CredentialsNotSet,
         FileNotFound,
-        FileAlreadyExists,
         iModelHubClientNotInitialized,
         InvalidServerURL,
         InvalidiModelName,
@@ -93,6 +98,7 @@ public:
         EventCallbackAlreadySubscribed,
         EventCallbackNotSpecified,
         ExecutionTimeout,
+        EventInvalid,
 
         //WebServices Errors
         LoginFailed = 400,
@@ -134,7 +140,7 @@ public:
     IMODELHUBCLIENT_EXPORT Error(WebServices::WSErrorCR error);
     IMODELHUBCLIENT_EXPORT Error(Dgn::RevisionStatus const& status);
 
-    IMODELHUBCLIENT_EXPORT Error(Http::HttpErrorCR error);
+    IMODELHUBCLIENT_EXPORT Error(WebServices::AzureErrorCR azureError);
 
     JsonValueCR GetExtendedData() const {return m_wsError ? m_wsError->GetData() : Json::Value::GetNull();}
     Error::Id GetId() const {return m_id;}

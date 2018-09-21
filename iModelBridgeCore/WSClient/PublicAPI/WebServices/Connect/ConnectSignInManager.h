@@ -13,6 +13,7 @@
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <BeSecurity/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

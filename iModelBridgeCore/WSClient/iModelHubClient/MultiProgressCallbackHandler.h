@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/MultiProgressCallbackHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,13 +22,15 @@ typedef RefCountedPtr<struct MultiProgressCallbackHandler> MultiProgressCallback
 struct MultiProgressCallbackHandler : RefCountedBase
 {
 private:
+    double m_bytesTotal = 0.0;
+    double m_bytesTransfered = 0.0;
     Http::Request::ProgressCallbackCR m_callback;
     bmap<int, double> m_progress;
     BeMutex m_progressMutex;
 public:
-    MultiProgressCallbackHandler(Http::Request::ProgressCallbackCR callback) : m_callback(callback) {}
-    IMODELHUBCLIENT_EXPORT void AddCallback(Http::Request::ProgressCallback& callback, double percentageOfTotal);
-    void SetFinished() const { if (m_callback) { m_callback(100.0f, 100.0f); } };
+    MultiProgressCallbackHandler(Http::Request::ProgressCallbackCR callback, double bytesTotal) : m_callback(callback), m_bytesTotal(bytesTotal) {}
+    IMODELHUBCLIENT_EXPORT void AddCallback(Http::Request::ProgressCallback& callback);
+    void SetFinished() const { if (m_callback) { m_callback(m_bytesTotal, m_bytesTotal); } };
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

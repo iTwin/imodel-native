@@ -611,6 +611,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
     StubInstances schemas;
     schemas.Add({"MetaSchema.ECSchemaDef", "A"}, {{"Name", "Bentley_Standard_CustomAttributes"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
     schemas.Add({"MetaSchema.ECSchemaDef", "B"}, {{"Name", "CustomSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
+    schemas.Add({"MetaSchema.ECSchemaDef", "C"}, {{"Name", "ECDbMap"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
 
     EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
         .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
@@ -7092,7 +7093,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSupplied_CachesIniti
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(DoAll(SetArgReferee<1>(responseKeys), Return(CacheStatus::OK)));
 
     EXPECT_CALL(*provider, GetQueries(_, newInstanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, newInstanceKey, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, newInstanceKey, _)).WillOnce(Return(nullptr));
 
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
@@ -7123,7 +7124,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesWithSyncRecursivelyF
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
     EXPECT_CALL(*provider, GetQueries(_, _, _)).Times(0);
-    EXPECT_CALL(*provider, DoUpdateFile(_, newInstanceKey, _)).Times(1);
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, newInstanceKey, _)).Times(1).WillRepeatedly(Return(nullptr));
 
     auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
@@ -7148,7 +7149,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesSupplied_CachesIni
     EXPECT_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillOnce(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
 
     EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillOnce(Return(nullptr));
 
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
@@ -7179,7 +7180,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesContainsInvalid_Sk
     EXPECT_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillOnce(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
 
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
      
@@ -7299,7 +7300,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_AlreadyCachedInstanceReturnedFromQ
     IQueryProvider::Query query(CachedResponseKey(instanceKey, "Foo"), std::make_shared<WSQuery>("Schema", "Class"));
 
     EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(StubBVector(query)));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillOnce(Return(nullptr));
 
     // Second query
     EXPECT_CALL(*cache, ReadResponseCacheTag(query.key, _)).WillOnce(Return(""));
@@ -7392,8 +7393,8 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesPathToChild_
 
     EXPECT_CALL(*provider, GetQueries(_, instanceKeyParent, _)).WillOnce(Return(StubBVector({queryParent})));
     EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _)).WillOnce(Return(StubBVector({queryB})));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyParent, _)).WillOnce(Return(false));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKeyParent, _)).WillOnce(Return(nullptr));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKeyB, _)).WillOnce(Return(nullptr));
 
     StubInstances remoteInstances;
     remoteInstances.Add(objectIdB);
@@ -7439,7 +7440,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesChildAndPath
     IQueryProvider::Query query(responseKeyA, std::make_shared<WSQuery>("SchemaA", "ClassA"));
 
     EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKeyB, _)).WillOnce(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).Times(2)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
@@ -7482,7 +7483,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesNonExistingC
     IQueryProvider::Query query(responseKeyA, std::make_shared<WSQuery>("SchemaA", "ClassA"));
 
     EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKeyB, _)).WillOnce(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).Times(2)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
@@ -7514,7 +7515,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_D
     EXPECT_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillOnce(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
 
     EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillOnce(Return(true));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillOnce(Return(SimpleCancellationToken::Create()));
 
     // Download & cache file
     EXPECT_CALL(*cache, ReadFileCacheTag(objectId)).WillOnce(Return("TestTag"));
@@ -7553,7 +7554,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFileBu
     EXPECT_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillOnce(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
 
     EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillOnce(Return(true));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillOnce(Return(SimpleCancellationToken::Create()));
 
     // Download & cache file
     EXPECT_CALL(*cache, ReadFileProperties(instanceKey, _, _)).WillRepeatedly(Return(SUCCESS));
@@ -7588,7 +7589,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InstanceCachedAsPersistent_GetQuer
     EXPECT_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillOnce(DoAll(SetArgReferee<0>(responseKeys), Return(SUCCESS)));
 
     EXPECT_CALL(*provider, GetQueries(_, newInstanceKey, true)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, newInstanceKey, true)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, newInstanceKey, true)).WillOnce(Return(nullptr));
 
     auto result = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
@@ -7737,7 +7738,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
     ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     ON_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillByDefault(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
     ON_CALL(*provider, GetQueries(_, instanceKey, _)).WillByDefault(Return(bvector<IQueryProvider::Query>()));
-    ON_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillByDefault(Return(false));
+    ON_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillByDefault(Return(nullptr));
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
     int progressCalled = 0;
@@ -7841,7 +7842,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
 
     EXPECT_CALL(*provider, GetQueries(_, instanceA, _)).WillOnce(Return(StubBVector({queryA})));
     EXPECT_CALL(*provider, GetQueries(_, instanceB, _)).WillOnce(Return(StubBVector({queryB})));
-    ON_CALL(*provider, DoUpdateFile(_, _, _)).WillByDefault(Return(false));
+    ON_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillByDefault(Return(nullptr));
 
     int progressCalled = 0;
     ICachingDataSource::Progress expectedProgress[] = {
@@ -7880,7 +7881,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
     ON_CALL(*cache, FindInstance(objectId)).WillByDefault(Return(instanceKey));
     ON_CALL(*cache, UpdateInstances(_, _, _, _)).WillByDefault(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
     ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    ON_CALL(*provider, DoUpdateFile(_, instanceKey, _)).WillByDefault(Return(true));
+    ON_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillByDefault(Return(SimpleCancellationToken::Create()));
     ON_CALL(*provider, GetQueries(_, instanceKey, _)).WillByDefault(Return(bvector<IQueryProvider::Query>()));
 
     // Download & cache file
@@ -7942,7 +7943,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsQueryReturnsT
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
     IQueryProvider::Query query(responseKey, std::make_shared<WSQuery>("TestSchema", "TestClass"));
     EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(StubBVector({query})));
 
@@ -7988,7 +7989,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsTwoQueriesRet
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instanceA.ToWSObjectsResult())));
 
@@ -8046,7 +8047,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
 
@@ -8094,7 +8095,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
 
@@ -8137,7 +8138,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithNoQuery_Progres
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
 
@@ -8173,7 +8174,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstance_ProgressC
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
 
@@ -8218,7 +8219,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstanceThatReturn
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesB.ToWSObjectsResult())));
@@ -8273,7 +8274,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstancesThatRetur
     // Act & Assert
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
     EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryA1.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));

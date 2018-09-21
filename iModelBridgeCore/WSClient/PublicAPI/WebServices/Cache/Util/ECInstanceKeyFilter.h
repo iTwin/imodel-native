@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Util/ECInstanceKeyFilter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -24,6 +24,8 @@ public:
     typedef std::function<BentleyStatus(ECSqlStatement& statement, int firstArgIndex)> BindArgsCallback;
     typedef std::function<BentleyStatus(ECClassCR ecClass, Utf8StringR outWhereClause, BindArgsCallback& outBindArgs)> WhereClauseCallback;
 
+    typedef std::function<BentleyStatus(ECClassCR ecClass, Utf8StringR outOrderByClause)> OrderByClauseCallback;
+
 private:
     typedef std::function<BentleyStatus(ECSqlStatement& statement)> BindArgsWOIndexCallback;
 
@@ -32,6 +34,7 @@ private:
     bset<ECClassCP> m_classesToFilter;
 
     int m_limit = 0;
+    int m_offset = 0;
 
     bvector<WhereClauseCallback> m_whereClauseCallbacks;
     bvector<WhereClauseCallback> m_tmpWhereClauseCallbacks;
@@ -39,6 +42,9 @@ private:
     int m_nextBindingIndex = 0;
     Utf8String m_whereClause;
     bvector<BindArgsWOIndexCallback> m_bindArgsCallbacks;
+
+    OrderByClauseCallback m_orderByClauseCallback;
+    Utf8String m_orderByClause;
 
 private:
     bool IsClassInFilter(ECClassCR ecClass);
@@ -54,7 +60,7 @@ private:
 
     void AddTmpWhereClauseCallbacks(const ECInstanceIdSet& instances);
 
-    BentleyStatus BuildWhereClause (ECClassCR ecClass);
+    BentleyStatus BuildWhereClause(ECClassCR ecClass);
     BentleyStatus AddWhereClauseSentence(ECClassCR ecClass, const WhereClauseCallback& whereClauseCallback);
 
     BentleyStatus ExecuteDbQuery
@@ -78,7 +84,13 @@ public:
     WSCACHE_EXPORT void AddWhereClauseFilter(Utf8StringCR whereClause, const BindArgsCallback& bindArgsCallback);
     WSCACHE_EXPORT void AddWhereClauseFilter(const WhereClauseCallback& whereClauseCallback);
 
+    WSCACHE_EXPORT void SetOrderByClause(Utf8StringCR orderByClause);
+    WSCACHE_EXPORT void SetOrderByClause(const OrderByClauseCallback& orderByClauseCallback);
+
+    //! Note: limit is applied per class
     WSCACHE_EXPORT void SetLimit(int limit);
+    //! Note: offset is applied per class
+    WSCACHE_EXPORT void SetOffset(int offset);
 
     WSCACHE_EXPORT BentleyStatus Filter
         (

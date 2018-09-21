@@ -12,13 +12,13 @@
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 struct TestsProgressCallback
     {
-    private:
+    protected:
         double m_lastProgressBytesTransfered = 0.0;
         double m_lastProgressBytesTotal = 0.0;
         int m_progressRetryCount = 0;
 
     public:
-        Http::Request::ProgressCallback Get();
+        virtual Http::Request::ProgressCallback Get();
         void Verify(bool completed = true);
     };
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

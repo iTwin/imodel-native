@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSQueryTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSQueryTests.h"
@@ -132,6 +132,33 @@ TEST_F(WSQueryTests, ToQueryString_SelectOptionSet_FormatsOption)
     WSQuery query("Foo", "Boo");
     query.SetSelect("TestSelect");
     EXPECT_STREQ("$select=TestSelect", query.ToQueryString().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSQueryTests, ToQueryString_AddSelectEmpty_Ignores)
+    {
+    WSQuery query("Foo", "Boo");
+    query.AddSelect("");
+    query.AddSelect("");
+    query.AddSelect("");
+    EXPECT_STREQ("", query.ToQueryString().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSQueryTests, ToQueryString_AddSelectEmptyOnNonEmpty_Ignores)
+    {
+    WSQuery query("Foo", "Boo");
+    query.AddSelect("A");
+    query.AddSelect("");
+    query.AddSelect("");
+    query.AddSelect("B");
+    query.AddSelect("");
+    query.AddSelect("");
+    EXPECT_STREQ("$select=A,B", query.ToQueryString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

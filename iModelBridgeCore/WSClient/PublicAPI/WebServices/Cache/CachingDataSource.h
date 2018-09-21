@@ -160,6 +160,14 @@ struct CachingDataSource :
             ICancellationTokenPtr ct
             );
 
+        AsyncTaskPtr<BatchResult> DownloadAndCacheFiles
+        (
+            bmap<ObjectId, ICancellationTokenPtr> filesToDownload,
+            FileCache fileCacheLocation,
+            CachingDataSource::ProgressCallback onProgress,
+            ICancellationTokenPtr ct
+        );
+
         Utf8String GetInitialSkipToken() const;
 
     public:

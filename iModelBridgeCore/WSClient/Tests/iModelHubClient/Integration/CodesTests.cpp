@@ -184,7 +184,7 @@ TEST_F(CodesTests, ReserveStyleCodes)
     pStyle = nullptr;
 
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
     ExpectCodeState(CreateCodeUsed(MakeStyleCode(TestCodeName(1).c_str(), db), GetParentRevisionId(*briefcase)), manager);
 
     pStyle = nullptr;
@@ -208,7 +208,7 @@ TEST_F(CodesTests, ReserveModelCode)
     ExpectCodeState(CreateCodeReserved(modeledElemCode, db), manager);
 
     db.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
     iModelHubHelpers::ExpectCodesCount(briefcase, 0);
     ExpectCodeState(CreateCodeUsed(modeledElemCode, GetParentRevisionId(*briefcase)), manager);
 
@@ -228,7 +228,7 @@ TEST_F(CodesTests, ReserveModelCode)
 
     EXPECT_EQ(DgnDbStatus::Success, persistentModeledElement->Delete());
     briefcase->GetDgnDb().SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
     ExpectNoCodeWithState(CreateCodeDiscarded(MakeModelCode(TestCodeName().c_str(), db), GetParentRevisionId(*briefcase)), manager);
     }
 
@@ -256,7 +256,7 @@ TEST_F(CodesTests, CodesWithChangeSets)
 
     // Commit the change as a changeSet
     briefcase->GetDgnDb().SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
 
     // The used code should not be marked as such
     ExpectCodeState(CreateCodeUsed(usedCode, GetParentRevisionId(*briefcase)), manager);
@@ -270,7 +270,7 @@ TEST_F(CodesTests, CodesWithChangeSets)
 
     // Commit the changeSet
     briefcase->GetDgnDb().SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
     Utf8String cs2 = GetParentRevisionId(*briefcase);
 
     // "Used" is now discarded; "Unused" is now used; both in the same changeSet
@@ -304,7 +304,7 @@ TEST_F(CodesTests, CodesWithChangeSets)
     EXPECT_STATUS(CodeUsed, db.BriefcaseManager().ReleaseCodes(codes));
     EXPECT_STATUS(CodeUsed, db.BriefcaseManager().RelinquishCodes());
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
     Utf8String cs3 = GetParentRevisionId(*briefcase);
     ExpectNoCodeWithState(CreateCodeDiscarded(unusedCode, cs3), manager);
     ExpectNoCodeWithState(CreateCodeDiscarded(usedCode, cs2), manager);
@@ -345,7 +345,7 @@ TEST_F(CodesTests, CodesWithSpecialSymbols)
 
     // Commit the change as a changeSet
     briefcase->GetDgnDb().SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
 
     ExpectCodeState(CreateCodeUsed(code1, GetParentRevisionId(*briefcase)), manager);
     ExpectCodeState(CreateCodeReserved(code2, db), manager);
@@ -358,7 +358,7 @@ TEST_F(CodesTests, CodesWithSpecialSymbols)
 
     // Commit the changeSet
     briefcase->GetDgnDb().SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false, false));
 
     Utf8String cs = GetParentRevisionId(*briefcase);
     ExpectCodeState(CreateCodeUsed(code2, cs), manager);
@@ -397,7 +397,7 @@ TEST_F(CodesTests, QueryUnavailableCodesTest)
     //Use the code
     EXPECT_EQ(DgnDbStatus::Success, InsertStyle(TestCodeName(1).c_str(), db1));
     db1.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     //Used code should be unavailable
     Utf8String cs1 = GetParentRevisionId(*briefcase1);
@@ -412,7 +412,7 @@ TEST_F(CodesTests, QueryUnavailableCodesTest)
     pStyle = nullptr;
 
     db1.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     //Discarded code should be available
     Utf8String cs2 = GetParentRevisionId(*briefcase1);
@@ -460,7 +460,7 @@ TEST_F(CodesTests, QueryAvailableCodesTest)
     //Use a code
     InsertStyle(TestCodeName().c_str(), db1, true);
     db1.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     //Used code is available
     EXPECT_SUCCESS(briefcase2->PullAndMerge()->GetResult());
@@ -496,7 +496,7 @@ TEST_F(CodesTests, QueryAvailableCodesTest)
     EXPECT_TRUE(pStyle->Update().IsValid());
     pStyle = nullptr;
     db1.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     //Discarded codes should be available
     EXPECT_SUCCESS(briefcase2->PullAndMerge()->GetResult());
@@ -648,7 +648,7 @@ TEST_F(CodesTests, PlantScenario)
     EXPECT_TRUE(equipmentCodeSpec->GetScope().IsFederationGuidRequired());
 
     db.SaveChanges("1");
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     BeSQLite::BeGuid unitGuid(true);
     BeSQLite::BeGuid equipment1Guid(true);
@@ -686,7 +686,7 @@ TEST_F(CodesTests, PlantScenario)
     EXPECT_TRUE(db.BriefcaseManager().AreCodesReserved(codesToReserve1));
 
     db.SaveChanges("2");
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
 
     //RelinquishLocks – this should not affect ReservedCodes
     db.BriefcaseManager().RelinquishLocks();
@@ -747,7 +747,7 @@ TEST_F(CodesTests, RelinquishOtherUserCodes)
     // Briefcase1 acquires modelCode4 and makes it used.
     auto model4 = CreateModel(TestCodeName(4).c_str(), db1);
     db1.SaveChanges();
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false, false));
     Utf8String changeSet1 = briefcase1->GetLastChangeSetPulled();
     iModelHubHelpers::ExpectCodesCount(briefcase1, 3);
     ExpectCodeState(CreateCodeReserved(modelCode1, db1), imodelManager1);
@@ -788,7 +788,7 @@ TEST_F(CodesTests, RelinquishOtherUserCodes)
     EXPECT_EQ(Error::Id::UserDoesNotHavePermission, result.GetError().GetId());
 
     // Briefcase2 pushes his changes.
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, true));
     Utf8String changeSet2 = briefcase2->GetLastChangeSetPulled();
     iModelHubHelpers::ExpectCodesCount(briefcase1, 1);
     iModelHubHelpers::ExpectCodesCount(briefcase2, 0);

@@ -481,6 +481,23 @@ struct WSRepositoryClient : public IWSRepositoryClient
             IHttpHandlerPtr customHandler = nullptr
             );
 
+        //! @param[in] serverUrl - address to supported server/site
+        //! @param[in] serviceVersion - service version to use. Non-empty value forces /svX.Y/ URLs.
+        //! @param[in] repositoryId - repository identifier
+        //! @param[in] clientInfo - client infomation for licensing and other information
+        //! @param[in] customHandler - custom http handler for testing purposes.
+        //! @param[in] schemaProvider - schema provider for WSG 1.x servers in order to override their schemas
+        //! Note: schema is required for server with WebApi v1.1 as it does not provide one
+        WSCLIENT_EXPORT static std::shared_ptr<WSRepositoryClient> Create
+            (
+            Utf8StringCR serverUrl,
+            BeVersionCR serviceVersion,
+            Utf8StringCR repositoryId,
+            ClientInfoPtr clientInfo,
+            IWSSchemaProviderPtr schemaProvider = nullptr,
+            IHttpHandlerPtr customHandler = nullptr
+            );
+
         //! Parses repository URL to WSRepository. Includes server URL, repository ID, location and plugin ID.
         //! @param[in] url - URL to repository
         //! @param[out] remainingPathOut - remaining URL path and/or query after repository identifier

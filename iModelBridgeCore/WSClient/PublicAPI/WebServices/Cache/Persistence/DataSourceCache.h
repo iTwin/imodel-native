@@ -15,6 +15,7 @@
 //    BeSQLiteLib::Initialize (tempDir) override;
 
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
+#include <WebServices/Cache/Persistence/FileManager.h>
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 #include <WebServices/Cache/Util/ObservableECDb.h>
 
@@ -28,6 +29,7 @@ struct DataSourceCache : public IDataSourceCache
     {
     private:
         ObservableECDb m_db;
+        IFileManagerPtr m_fileManager;
         std::shared_ptr<struct WSCacheState> m_state;
 
     private:
@@ -47,7 +49,7 @@ struct DataSourceCache : public IDataSourceCache
         //--------------------------------------------------------------------------------------------------------------------------------+
         //  Misc
         //--------------------------------------------------------------------------------------------------------------------------------+
-        WSCACHE_EXPORT DataSourceCache();
+        WSCACHE_EXPORT DataSourceCache(IFileManagerPtr fileManager = nullptr);
         WSCACHE_EXPORT virtual ~DataSourceCache();
 
         WSCACHE_EXPORT BentleyStatus Create
@@ -209,6 +211,7 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT BentleyStatus RemoveResponse(CachedResponseKeyCR responseKey) override;
         WSCACHE_EXPORT BentleyStatus RemoveTemporaryResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc) override;
         WSCACHE_EXPORT BentleyStatus RemoveResponses(Utf8StringCR name) override;
+        WSCACHE_EXPORT BentleyStatus RemoveResponsesByPrefix(Utf8StringCR responsePrefix) override;
         WSCACHE_EXPORT CacheStatus RemoveInstance(ObjectIdCR objectId) override;
         WSCACHE_EXPORT BentleyStatus RemoveFile(ObjectIdCR objectId) override;
         WSCACHE_EXPORT CacheStatus RemoveFilesInTemporaryPersistence(DateTimeCP maxLastAccessDate = nullptr, AsyncError* errorOut = nullptr) override;

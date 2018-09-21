@@ -25,7 +25,8 @@ protected:
         Utf8String fromEventSubscriptionId,
         Utf8String toEventSubscriptionId,
         Utf8String projectId,
-        Utf8String iModelId
+        Utf8String iModelId,
+        Utf8String lockUrl
     );
 
 public:
@@ -35,7 +36,8 @@ public:
         Utf8String fromEventSubscriptionId,
         Utf8String toEventSubscriptionId,
         Utf8String projectId,
-        Utf8String iModelId
+        Utf8String iModelId,
+        Utf8String lockUrl
     );
 
     GlobalEvent::GlobalEventType GetEventType() override { return GlobalEvent::GlobalEventType::HardiModelDeleteEvent; }

@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -298,6 +298,25 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name)
         });
 
     statement->BindText(1, name.c_str(), IECSqlBinder::MakeCopy::No);
+
+    return m_hierarchyManager.DeleteInstances(*statement);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::DeleteResponsesByPrefix(Utf8StringCR responsePrefix)
+    {
+    auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteResponsesByPrefix", [=]
+        {
+        return
+            "SELECT ECClassId, ECInstanceId "
+            "FROM ONLY " ECSql_CachedResponseInfo " "
+            "WHERE [" CLASS_CachedResponseInfo_PROPERTY_Name "] LIKE ? ";
+        });
+
+    Utf8String wildcardedPrefix = responsePrefix + "%";
+    statement->BindText(1, wildcardedPrefix.c_str(), IECSqlBinder::MakeCopy::No);
 
     return m_hierarchyManager.DeleteInstances(*statement);
     }

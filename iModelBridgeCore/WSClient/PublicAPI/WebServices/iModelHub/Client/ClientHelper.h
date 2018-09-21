@@ -30,7 +30,7 @@ struct ClientHelper
 private:
     IJsonLocalState* m_localState;
     ClientInfoPtr m_clientInfo;
-    ConnectSignInManagerPtr m_signinMgr;
+    IConnectSignInManagerPtr m_signinMgr;
     static ClientHelper* s_instance;
     static BeMutex s_mutex;
     IHttpHandlerPtr m_customHandler;
@@ -61,22 +61,22 @@ public:
     //! @return a connected client if signin succeeds
     IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithCredentials(AsyncError* errorOut, Credentials credentials);
 
-    //! Sign in with token
+    //! Sign in with Saml token
     //! @param errorOut     Optional. If not null, an explanation of signin failure is returned here.
     //! @param token        User token.
     //! @return a connected client if signin succeeds
     IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithToken(AsyncError* errorOut, SamlTokenPtr token);
 
-    //! Sign in with ConnectSignInManager
-    //! @param signInManagerPtr Connect sign-in manager
+    //! Sign in with IConnectSignInManager
+    //! @param signInManagerPtr Sign-in manager
     //! @return a connected client if signin succeeds
-    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithManager(ConnectSignInManagerPtr signInManagerPtr);
+    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithManager(IConnectSignInManagerPtr signInManagerPtr);
 
-    //! Sign in with ConnectSignInManager
-    //! @param signInManagerPtr Connect sign-in manager
+    //! Sign in with IConnectSignInManager
+    //! @param signInManagerPtr Sign-in manager
     //! @param environment      Environment
     //! @return a connected client if signin succeeds
-    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithManager(ConnectSignInManagerPtr signInManagerPtr, WebServices::UrlProvider::Environment environment);
+    IMODELHUBCLIENT_EXPORT iModel::Hub::ClientPtr SignInWithManager(IConnectSignInManagerPtr signInManagerPtr, WebServices::UrlProvider::Environment environment);
 
     //! Look up a BCS project ID from a BCS project number
     //! @param wserrorOut     Optional. If not null, then details about a query failure are returned here if the failure is due to a communications error or some 

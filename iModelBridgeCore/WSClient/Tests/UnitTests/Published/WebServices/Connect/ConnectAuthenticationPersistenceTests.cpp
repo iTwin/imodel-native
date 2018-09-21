@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectAuthenticationPersistenceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -46,33 +46,6 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSam
     persistence->SetToken(token);
     ASSERT_NE(nullptr, persistence->GetToken());
     EXPECT_EQ(token->AsString(), persistence->GetToken()->AsString());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredInOldLocation_SavesToSecureStoreAndDeletesThemFromOldLocation)
-    {
-    StubLocalState localState;
-    auto secureStore = std::make_shared<StubSecureStore>();
-    ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
-    auto persistence = ConnectAuthenticationPersistence::GetShared();
-
-    localState.SaveJsonValue("Connect", "Username", "TestUsername");
-    secureStore->legacyValues["ConnectLogin"]["TestUsername"] = "TestPassword";
-    secureStore->legacyValues["ConnectToken"]["Token"] = "TestToken";
-
-    auto credentials = persistence->GetCredentials();
-    EXPECT_STREQ("TestUsername", credentials.GetUsername().c_str());
-    EXPECT_STREQ("TestPassword", credentials.GetPassword().c_str());
-
-    EXPECT_TRUE(localState.GetJsonValue("Connect", "Username").isNull());
-    EXPECT_STREQ("", secureStore->legacyValues["ConnectLogin"]["TestUsername"].asCString());
-    EXPECT_STREQ("", secureStore->legacyValues["ConnectToken"]["Token"].asCString());
-
-    EXPECT_STREQ("TestUsername", secureStore->values["Connect"]["Username"].asString().c_str());
-    EXPECT_STREQ("TestPassword", secureStore->values["Connect"]["Password"].asString().c_str());
-    EXPECT_STREQ("TestToken", secureStore->values["Connect"]["Token"].asString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

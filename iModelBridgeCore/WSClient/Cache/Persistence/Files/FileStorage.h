@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileStorage.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,7 @@
 #include <WebServices/Cache/Util/ValueIncrementor.h>
 #include <WebServices/Cache/Persistence/DataSourceCacheCommon.h>
 #include <WebServices/Cache/Persistence/IDataSourceCache.h>
+#include <WebServices/Cache/Persistence/FileManager.h>
 #include "FileInfo.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -23,6 +24,7 @@ struct FileStorage
     private:
         CacheEnvironment m_environment;
         std::shared_ptr<ValueIncrementor> m_folderNameIncrementor;
+        IFileManager& m_fileManager;
 
     private:
         static BeFileName CreateFileStoragePath(BeFileName rootDir, WStringCR cacheName);
@@ -31,23 +33,26 @@ struct FileStorage
         BentleyStatus StoreFile(FileInfoR info, BeFileNameCR filePath, FileCache location, BeFileNameCP relativeDir, bool copyFile);
         BentleyStatus FixFileNameIfNeeded(FileCache location, BeFileNameCR relativeDir, Utf8String& fileName);
 
-        static BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
-        static BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
+        BentleyStatus RollbackFile(BeFileNameCR backupPath, BeFileNameCR originalPath);
+        BentleyStatus ReplaceFileWithRollback(BeFileNameCR fileToRollback, BeFileNameCR moveFromFile, BeFileNameCR moveToFile, bool copyFile);
 
         //! Remove file and do parent folder cleanup
-        CacheStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath = nullptr) const;
+        CacheStatus RemoveStoredFile(BeFileNameCR filePath, FileCache location, BeFileNameCR relativePath, BeFileNameCP newFilePath = nullptr);
 
+        //! Remove file if exists
+        CacheStatus RemoveFile(BeFileNameCR filePath);
         //! Remove directory relative paths if they don't contain any files.
-        static void CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir);
+        void CleanupDirsNotContainingFiles(BeFileNameCR baseDir, BeFileName relativeDir);
         //! Check if directory or any sub-directories contain any files
-        static bool DoesDirContainFiles(BeFileNameCR dir);
+        bool DoesDirContainFiles(BeFileNameCR dir);
 
     public:
         FileStorage
             (
             ECDbAdapter& dbAdapter,
             ECSqlStatementCache& statementCache,
-            CacheEnvironmentCR environment
+            CacheEnvironmentCR environment,
+            IFileManager& fileManager
             );
 
         BentleyStatus SetFileCacheLocation(FileInfo& info, FileCache location, BeFileNameCP externalRelativeDir = nullptr);

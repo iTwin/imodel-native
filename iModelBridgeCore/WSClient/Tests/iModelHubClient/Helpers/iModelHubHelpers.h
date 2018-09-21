@@ -22,7 +22,8 @@ Utf8String GenerateErrorMessage(iModel::Hub::Error const& e);
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 namespace iModelHubHelpers
     {
-    void CreateClient(ClientPtr& client, CredentialsCR credentials);
+    void CreateClient(ClientPtr& client, CredentialsCR credentials); 
+    void CreateOidcClient(ClientPtr& client, CredentialsCR credentials);
     WebServices::IWSRepositoryClientPtr CreateWSClient(iModelInfoPtr imodel, std::shared_ptr<MockHttpHandler> mockHandler);
     void CreateProjectWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR projectId);
 
@@ -48,7 +49,7 @@ namespace iModelHubHelpers
     void ExpectLocksCountByLevelAndId(BriefcasePtr briefcase, int expectedCount, bool byBriefcaseId, LockableIdSet& ids, LockLevel expectedLevel);
     void ExpectCodesCountByIds(BriefcaseR briefcase, int expectedCount, bool byBriefcaseId, DgnCodeSet& codes);
 
-    ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool relinquish = true, bool expectSuccess = true);
+    ChangeSetsResult PullMergeAndPush(BriefcasePtr briefcase, bool shouldPush, bool shouldPull = false, bool relinquish = true, bool expectSuccess = true);
     StatusResult AddChangeSets(BriefcasePtr briefcase, uint32_t count = 1, uint32_t statingNumber = 0, bool needsPull = false, bool expectSuccess = true);
     void AcquireAndAddChangeSets(ClientPtr client, iModelInfoPtr info, uint32_t count = 1);
     void CreateNamedVersion(VersionInfoPtr& result, iModelConnectionPtr connection, Utf8StringCR name, int index);

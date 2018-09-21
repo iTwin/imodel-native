@@ -32,7 +32,8 @@ protected:
         Utf8String iModelId,
         Utf8String changeSetId,
         Utf8String changeSetIndex,
-        int        briefcaseId
+        int        briefcaseId,
+        Utf8String lockUrl
     );
 
 public:
@@ -45,7 +46,8 @@ public:
         Utf8String iModelId,
         Utf8String changeSetId,
         Utf8String changeSetIndex,
-        int        briefcaseId
+        int        briefcaseId,
+        Utf8String lockUrl
     );
 
     GlobalEvent::GlobalEventType GetEventType() override { return GlobalEvent::GlobalEventType::ChangeSetCreatedEvent; }

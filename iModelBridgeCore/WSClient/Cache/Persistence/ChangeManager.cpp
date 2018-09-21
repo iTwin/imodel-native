@@ -197,9 +197,7 @@ ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR propert
         }
 
     if (SUCCESS != SetupNewRevision(info))
-        {
         return ECInstanceKey();
-        }
 
     info.SetObjectCacheDate(DateTime::GetCurrentTimeUtc());
     info.SetRemoteId(newObjectId.remoteId);
@@ -209,11 +207,10 @@ ECInstanceKey ChangeManager::CreateObject(ECClassCR ecClass, JsonValueCR propert
 
     rapidjson::Document propertiesRapidJson;
     JsonUtil::ToRapidJson(properties, propertiesRapidJson);
+    RemoveCacheSpecificProperties(propertiesRapidJson);
 
     if (SUCCESS != m_instanceCacheHelper.CacheInstance(info, propertiesRapidJson))
-        {
         return ECInstanceKey();
-        }
 
     return info.GetInstanceKey();
     }
@@ -241,20 +238,14 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
         return ERROR;
 
     if (info.GetChangeStatus() == ChangeStatus::NoChange)
-        {
         if (SUCCESS != m_changeInfoManager.SaveBackupInstance(info, instanceJson))
             return ERROR;
-        }
 
     if (SUCCESS != SetupNewRevision(info))
-        {
         return ERROR;
-        }
 
     if (info.GetChangeStatus() != ChangeStatus::Created)
-        {
         info.SetChangeStatus(ChangeStatus::Modified);
-        }
 
     info.SetObjectCacheDate(DateTime::GetCurrentTimeUtc());
     info.SetSyncStatus(syncStatus);
@@ -264,13 +255,12 @@ BentleyStatus ChangeManager::ModifyObject(ECInstanceKeyCR instanceKey, JsonValue
 
     rapidjson::Document instanceRapidJson;
     JsonUtil::ToRapidJson(instanceJson, instanceRapidJson);
+    RemoveCacheSpecificProperties(propertiesRapidJson);
 
     JsonUtil::DeepCopy(propertiesRapidJson, instanceRapidJson);
 
     if (SUCCESS != m_instanceCacheHelper.UpdateExistingInstanceData(info, instanceRapidJson))
-        {
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -1274,11 +1264,9 @@ BentleyStatus ChangeManager::ReadObjectPropertiesForModification(ECInstanceKeyCR
 BentleyStatus ChangeManager::ReadObjectProperties(ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut)
     {
     if (SUCCESS != m_dbAdapter.GetJsonInstance(propertiesJsonOut, instanceKey))
-        {
         return ERROR;
-        }
 
-    RemoveCacheSpecificProperties(propertiesJsonOut);
+    RemoveECDbSpecificProperties(propertiesJsonOut);
 
     // Graphite03 ECDb is incapable of storing NULLABLE structs and arrays so it returns structs with empty array properties.
     // This causes errors to be returned from the server.
@@ -1291,21 +1279,25 @@ BentleyStatus ChangeManager::ReadObjectProperties(ECInstanceKeyCR instanceKey, J
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeManager::RemoveCacheSpecificProperties(JsonValueR propertiesJson)
+void ChangeManager::RemoveECDbSpecificProperties(JsonValueR propertiesJson)
     {
     for (Utf8StringCR member : propertiesJson.getMemberNames())
         {
         // Remove ECDb ECInstance JSON properties
         if (member[0] == '$')
-            {
             propertiesJson.removeMember(member);
-            }
 
         if (ECJsonSystemNames::IsTopLevelSystemMember(member))
-            {
             propertiesJson.removeMember(member);
-            }
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangeManager::RemoveCacheSpecificProperties(RapidJsonValueR propertiesJson)
+    {
+    propertiesJson.RemoveMember(DataSourceCache_PROPERTY_RemoteId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1317,9 +1309,7 @@ void ChangeManager::RemoveReadOnlyProperties(JsonValueR propertiesJson, ECClassC
         {
         ECPropertyCP ecProperty = ecClass.GetPropertyP(member.c_str());
         if (nullptr != ecProperty && ecProperty->GetIsReadOnly())
-            {
             propertiesJson.removeMember(member);
-            }
         }
     }
 

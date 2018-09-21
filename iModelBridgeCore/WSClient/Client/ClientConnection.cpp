@@ -61,6 +61,13 @@ ICancellationTokenPtr ct
     return m_infoProvider->GetServerInfo(forceQuery, ct)
         ->Then<WSInfoResult>([thisPtr] (WSInfoResult& result)
         {
+        if (!result.IsSuccess())
+            return result;
+
+        auto webApi = thisPtr->GetWebApi(result.GetValue());
+        if (nullptr == webApi)
+            return WSInfoResult::Error(WSError::CreateServerNotSupportedError());
+
         return result;
         });
     }

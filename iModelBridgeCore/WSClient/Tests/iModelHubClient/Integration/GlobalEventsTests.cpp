@@ -233,7 +233,7 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     auto model = CreateModel(GetTestInfo().name(), briefcase->GetDgnDb());
     CreateElement(*model, DgnCode(), false);
 
-    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true));
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
     expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::ChangeSetCreatedEvent, s_projectId, createResult.GetValue()->GetId()));
 
     VersionInfoPtr version;
@@ -253,4 +253,76 @@ TEST_F(GlobalEventsTests, GetMultipleEventTypes)
     expectedEventsList.push_back(ExpectedEventIdentifier(GlobalEvent::GlobalEventType::HardiModelDeleteEvent, s_projectId, createResult.GetValue()->GetId()));
 
     CheckAllEventsReceived(subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId(), eventManager, expectedEventsList);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                Karolis.Uzkuraitis                  08/2018
+//---------------------------------------------------------------------------------------
+TEST_F(GlobalEventsTests, EventPeekAndDelete)
+    {
+    auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
+    bset<GlobalEvent::GlobalEventType> eventTypes;
+    eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
+    auto eventManager = globalConnection->GetGlobalEventManager();
+
+    const BeGuid newGuid(true);
+    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
+    auto subscriptionId = subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId();
+    EXPECT_SUCCESS(subscrResult->GetResult());
+    m_unsubscribeSubscriptionInstances.insert(subscriptionId);
+
+    iModelResult createResult = CreateiModel();
+    ExpectedEventIdentifier eventIdentifier = ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId());
+    iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
+
+    // First peek should return the same event
+    auto peekedEventResult = eventManager->PeekEvent(subscriptionId, false)->GetResult();
+    auto peekedEvent = peekedEventResult.GetValue();
+    EXPECT_EQ(eventIdentifier.eventType, peekedEvent->GetEventType());
+    EXPECT_EQ(eventIdentifier.iModelId, peekedEvent->GetiModelId());
+    EXPECT_EQ(eventIdentifier.projectId, peekedEvent->GetProjectId());
+
+    // Delete event
+    auto deletionResult = eventManager->DeleteEvent(peekedEvent)->GetResult();
+    EXPECT_SUCCESS(deletionResult);
+
+    // Second delete should fail
+    deletionResult = eventManager->DeleteEvent(peekedEvent)->GetResult();
+    EXPECT_FAILURE(deletionResult);
+
+    // Next peek should return nothing
+    peekedEventResult = eventManager->PeekEvent(subscriptionId, false)->GetResult();
+    EXPECT_FAILURE(peekedEventResult);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                Karolis.Uzkuraitis                  05/2018
+//---------------------------------------------------------------------------------------
+TEST_F(GlobalEventsTests, DeleteNotPeekedEvent)
+    {
+    auto globalConnection = s_serviceAccountClient->GlobalConnection()->GetResult().GetValue();
+    bset<GlobalEvent::GlobalEventType> eventTypes;
+    eventTypes.insert(GlobalEvent::GlobalEventType::iModelCreatedEvent);
+    auto eventManager = globalConnection->GetGlobalEventManager();
+
+    const BeGuid newGuid(true);
+    auto subscrResult = eventManager->SubscribeToEvents(newGuid, &eventTypes);
+    EXPECT_SUCCESS(subscrResult->GetResult());
+    auto subscriptionId = subscrResult->GetResult().GetValue()->GetSubscriptionInstanceId();
+    m_unsubscribeSubscriptionInstances.insert(subscriptionId);
+
+    auto createResult = CreateiModel();
+    ExpectedEventIdentifier eventIdentifier = ExpectedEventIdentifier(GlobalEvent::GlobalEventType::iModelCreatedEvent, s_projectId, createResult.GetValue()->GetId());
+    iModelHubHelpers::DeleteiModelByName(s_client, GetTestiModelName());
+
+    //Get event
+    auto eventResult = eventManager->GetEvent(subscriptionId, false)->GetResult();
+    auto gotEvent = eventResult.GetValue();
+    EXPECT_EQ(eventIdentifier.eventType, gotEvent->GetEventType());
+    EXPECT_EQ(eventIdentifier.iModelId, gotEvent->GetiModelId());
+    EXPECT_EQ(eventIdentifier.projectId, gotEvent->GetProjectId());
+
+    // Deleting event that was not peeked should fail
+    auto deletionResult = eventManager->DeleteEvent(gotEvent)->GetResult();
+    EXPECT_FAILURE(deletionResult);
     }

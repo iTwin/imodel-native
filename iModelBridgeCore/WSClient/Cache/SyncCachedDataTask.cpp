@@ -148,13 +148,13 @@ void SyncCachedDataTask::CacheFiles()
 
     auto txn = m_ds->StartCacheTransaction();
 
-    bset<ObjectId> filesToDownload;
-    for (ECInstanceKeyCR instanceKey : m_filesToDownload)
+    bmap<ObjectId, ICancellationTokenPtr> filesToDownload;
+    for (auto fileEntry : m_filesToDownload)
         {
-        auto objectId = txn.GetCache().FindInstance(instanceKey);
+        auto objectId = txn.GetCache().FindInstance(fileEntry.first);
         if (!objectId.IsValid())
             continue;
-        filesToDownload.insert(objectId);
+        filesToDownload.Insert(objectId, fileEntry.second);
         }
 
     txn.Commit();
@@ -293,10 +293,14 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
                 m_queriesToCache.insert(m_queriesToCache.end(), cacheQueryPtr);
                 }
             }
-
-        if (queryProviderPtr->DoUpdateFile(txn, instanceKey, isPersistent))
+        auto ct = queryProviderPtr->IsFileRetrievalNeeded(txn, instanceKey, isPersistent);
+        if (ct)
             {
-            m_filesToDownload.insert(instanceKey);
+            auto it = m_filesToDownload.find(instanceKey);
+            if (it == m_filesToDownload.end())
+                m_filesToDownload.Insert(instanceKey, ct);
+            else
+                it->second = ConjunctiveCancellationToken::Create(it->second, ct);
 
             uint64_t fileSize = 0;
             txn.GetCache().ReadFileProperties(instanceKey, nullptr, &fileSize);

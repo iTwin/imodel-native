@@ -34,6 +34,8 @@ struct ClientConfiguration
     private:
         const Utf8String m_serverUrl;
         const Utf8String m_repositoryId;
+        BeVersion m_serviceVersion;
+
         const std::shared_ptr<HeaderProvider> m_headerProvider;
         const IWSSchemaProviderPtr m_schemaProvider;
         const std::shared_ptr<HttpClient> m_httpClient;
@@ -56,6 +58,9 @@ struct ClientConfiguration
         HttpClientR GetHttpClient() const;
         IHttpHandlerPtr GetHttpHandler() const;
         BeFileName GetDefaultSchemaPath(WSInfoCR info) const;
+
+        void SetServiceVersion(BeVersion version) { m_serviceVersion  = version; }
+        BeVersionCR GetServiceVersion() const { return m_serviceVersion; }
 
         void SetMaxUrlLength(size_t length) {m_maxUrlLength = length;}
         size_t GetMaxUrlLength() const {return m_maxUrlLength;}

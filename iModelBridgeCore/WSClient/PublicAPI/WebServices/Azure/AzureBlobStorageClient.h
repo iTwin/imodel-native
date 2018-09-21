@@ -2,14 +2,14 @@
 |
 |     $Source: PublicAPI/WebServices/Azure/AzureBlobStorageClient.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include "../Client/WebServicesClient.h"
-#include <BeHttp/HttpError.h>
+#include <WebServices/Azure/AzureError.h>
 #include <BeHttp/HttpResponse.h>
 #include <Bentley/Tasks/AsyncResult.h>
 
@@ -24,7 +24,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 typedef std::shared_ptr<struct IAzureBlobStorageClient> IAzureBlobStorageClientPtr;
 typedef std::shared_ptr<struct AzureBlobStorageClient> AzureBlobStorageClientPtr;
 // Return success values or error Http::Response. Convert Http::Response to HttpError if simple information is needed.
-typedef AsyncResult<struct AzureFileResponse, Http::Response> AzureResult;
+typedef AsyncResult<struct AzureFileResponse, AzureError> AzureResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass

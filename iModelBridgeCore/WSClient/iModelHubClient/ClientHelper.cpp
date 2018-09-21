@@ -117,8 +117,9 @@ ClientPtr ClientHelper::SignInWithCredentials(AsyncError* errorOut, Credentials 
     {
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
-    m_signinMgr = ConnectSignInManager::Create(m_clientInfo, m_customHandler, m_localState);
-    auto signInResult = ExecuteAsync(m_signinMgr->SignInWithCredentials(credentials));
+    auto signInManager = ConnectSignInManager::Create(m_clientInfo, m_customHandler, m_localState);
+    m_signinMgr = signInManager;
+    auto signInResult = ExecuteAsync(signInManager->SignInWithCredentials(credentials));
     if (!signInResult->IsSuccess())
         {
         error = AsyncError(signInResult->GetError().GetMessage(), signInResult->GetError().GetDescription());
@@ -135,8 +136,9 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
     {
     Tasks::AsyncError ALLOW_NULL_OUTPUT(error, errorOut);
 
-    m_signinMgr = ConnectSignInManager::Create(m_clientInfo, m_customHandler, m_localState);
-    auto signInResult = ExecuteAsync(m_signinMgr->SignInWithToken(token));
+    auto signInManager = ConnectSignInManager::Create(m_clientInfo, m_customHandler, m_localState);
+    m_signinMgr = signInManager;
+    auto signInResult = ExecuteAsync(signInManager->SignInWithToken(token));
     if (!signInResult->IsSuccess())
         {
         error = AsyncError(signInResult->GetError().GetMessage(), signInResult->GetError().GetDescription());
@@ -149,7 +151,7 @@ ClientPtr ClientHelper::SignInWithToken(AsyncError* errorOut, SamlTokenPtr token
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas            03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
+ClientPtr ClientHelper::SignInWithManager(IConnectSignInManagerPtr managerPtr)
     {
     m_signinMgr = managerPtr;
 
@@ -162,7 +164,7 @@ ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas            03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientPtr ClientHelper::SignInWithManager(ConnectSignInManagerPtr managerPtr, WebServices::UrlProvider::Environment environment)
+ClientPtr ClientHelper::SignInWithManager(IConnectSignInManagerPtr managerPtr, WebServices::UrlProvider::Environment environment)
     {
     UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, m_localState);
     return SignInWithManager(managerPtr);

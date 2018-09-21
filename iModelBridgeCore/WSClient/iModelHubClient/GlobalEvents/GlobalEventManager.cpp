@@ -62,19 +62,41 @@ GlobalEventSubscriptionTaskPtr GlobalEventManager::ModifySubscription(const Glob
 //---------------------------------------------------------------------------------------
 GlobalEventTaskPtr GlobalEventManager::GetEvent(const GlobalEventSubscriptionId instanceId, bool longPooling, const ICancellationTokenPtr cancellationToken)
     {
-    const Utf8String methodName = "GlobalConnection::GetEvent";
+    const Utf8String methodName = "GlobalEventManager::GetEvent";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    const double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    return AsyncTaskAddMethodLogging<GlobalEventResult>(GetEventInternal(instanceId, longPooling, GetEventRequestType::Destructive, cancellationToken), methodName, start);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Karolis.Uzkuraitis            05/2018
+//---------------------------------------------------------------------------------------
+GlobalEventTaskPtr GlobalEventManager::PeekEvent(const GlobalEventSubscriptionId instanceId, bool longPooling, const ICancellationTokenPtr cancellationToken)
+    {
+    const Utf8String methodName = "GlobalEventManager::PeekEvent";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    const double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    return AsyncTaskAddMethodLogging<GlobalEventResult>(GetEventInternal(instanceId, longPooling, GetEventRequestType::Peek, cancellationToken), methodName, start);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Karolis.Uzkuraitis            08/2018
+//---------------------------------------------------------------------------------------
+GlobalEventTaskPtr GlobalEventManager::GetEventInternal(const GlobalEventSubscriptionId instanceId, bool longPooling, GetEventRequestType requestType, const ICancellationTokenPtr cancellationToken)
+    {
+    const Utf8String methodName = "GlobalEventManager::GetEventInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     const double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     UpdateSASTokenForSubscription(instanceId);
 
-    return GetEventServiceResponse(3, longPooling, m_eventServiceClients[instanceId], cancellationToken)->Then<GlobalEventResult>
+    return GetEventServiceResponse(3, longPooling, m_eventServiceClients[instanceId], requestType, cancellationToken)->Then<GlobalEventResult>
         ([=] (EventReponseResult& result)
         {
         if (result.IsSuccess())
             {
             Http::Response response = result.GetValue();
-            GlobalEventPtr ptr = GlobalEventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
+            GlobalEventPtr ptr = GlobalEventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString(), response.GetHeaders().GetLocation());
             if (ptr == nullptr)
                 {
                 LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
@@ -87,6 +109,34 @@ GlobalEventTaskPtr GlobalEventManager::GetEvent(const GlobalEventSubscriptionId 
         LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
         return GlobalEventResult::Error(result.GetError());
         });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Karolis.Uzkuraitis            08/2018
+//---------------------------------------------------------------------------------------
+StatusTaskPtr GlobalEventManager::DeleteEvent(GlobalEventPtr globalEvent)
+    {
+    const Utf8String methodName = "GlobalEventManager::DeleteEvent";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    const double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    if(globalEvent.IsNull() || globalEvent->m_lockUrl.size() == 0)
+        {
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::EventInvalid));
+        }
+
+    auto subscriptionId = globalEvent->GetFromEventSubscriptionId();
+    UpdateSASTokenForSubscription(subscriptionId);
+
+    return AsyncTaskAddMethodLogging<StatusResult>(m_eventServiceClients[subscriptionId]->MakeDeleteEventRequest(globalEvent->m_lockUrl)->Then<StatusResult>
+        ([=] (EventServiceResult const& result)
+        {
+        if (!result.IsSuccess())
+            {
+            return StatusResult::Error(result.GetError());
+            }
+        return StatusResult::Success();
+        }), methodName, start);
     }
 
 //---------------------------------------------------------------------------------------

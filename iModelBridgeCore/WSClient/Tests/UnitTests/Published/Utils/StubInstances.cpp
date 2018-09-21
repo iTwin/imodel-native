@@ -79,6 +79,14 @@ WSObjectsResponse StubInstances::ToWSObjectsResponse(Utf8StringCR eTag, Utf8Stri
     return WSObjectsResponse(reader, body, HttpStatus::OK, eTag, skipToken);
     }
 
+WSObjectsResponse StubInstances::ToWSObjectsResponseNotModified(Utf8StringCR eTag, Utf8StringCR skipToken) const
+    {
+    auto body = HttpStringBody::Create(ToJsonWebApiV2());
+    auto reader = WSObjectsReaderV2::Create();
+
+    return WSObjectsResponse(reader, body, HttpStatus::NotModified, eTag, skipToken);
+    }
+
 WSObjectsResult StubInstances::ToWSObjectsResult(Utf8StringCR eTag, Utf8StringCR skipToken) const
     {
     return WSObjectsResult::Success(ToWSObjectsResponse(eTag, skipToken));

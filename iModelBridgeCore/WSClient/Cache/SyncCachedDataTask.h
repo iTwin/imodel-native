@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -51,7 +51,7 @@ struct SyncCachedDataTask : public CachingTaskBase
 
         bvector<Instance>        			       m_initialInstances;
         std::deque<std::shared_ptr<CacheQuery>>    m_queriesToCache;
-        bset<ECInstanceKey>                 m_filesToDownload;
+        bmap<ECInstanceKey, ICancellationTokenPtr> m_filesToDownload;
 
         bset<ECInstanceKey>                     m_instancesWithQueriesProvided;
         std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;             

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/CacheQueryHelperTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -273,4 +273,58 @@ TEST_F(CacheQueryHelperTests, ECSqlSelectPropertiesByWhereClause_OptionsWithInst
     auto ecSql = CacheQueryHelper::ECSql::SelectPropertiesByWhereClause(infos.front(), "NULL");
 
     EXPECT_STREQ("SELECT NULL FROM ONLY [TestSchema].[Table] instance WHERE NULL ", ecSql.c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                 Eimantas.Morkunas                   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CacheQueryHelperTests, ECSqlCreateOrderByClause_NoSortProperties_EmptyOrderByClause)
+    {
+    auto schema = GetTestSchema();
+    ECClassCP ecClass = schema->GetClassCP("Table");
+
+    ISelectProvider::SortProperties properties;
+    auto orderBy = CacheQueryHelper::ECSql::CreateOrderByClause(properties, *ecClass, "alias");
+
+    EXPECT_TRUE(orderBy.empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                 Eimantas.Morkunas                   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CacheQueryHelperTests, ECSqlCreateOrderByClause_ClassWithSortProperties_CorrectOrderByClause)
+    {
+    auto schema = GetTestSchema();
+    ECClassCP ecClass = schema->GetClassCP("Table");
+
+    bvector<DataReadOptions::OrderedProperty> properties;
+    properties.push_back(DataReadOptions::OrderedProperty("Legs", false));
+    properties.push_back(DataReadOptions::OrderedProperty("Name", true));
+
+    DataReadOptions options;
+    options.AddOrderByClassAndProperties(*ecClass, properties);
+
+    auto orderBy = CacheQueryHelper::ECSql::CreateOrderByClause(options.GetSortProperties(*ecClass), *ecClass, "alias");
+
+    EXPECT_STREQ("alias.[Legs] DESC, LOWER (alias.[Name]) ASC", orderBy.c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                 Eimantas.Morkunas                   08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CacheQueryHelperTests, ECSqlCreateOrderByClause_SortOrderReversed_CorrectOrderByClause)
+    {
+    auto schema = GetTestSchema();
+    ECClassCP ecClass = schema->GetClassCP("Table");
+
+    bvector<DataReadOptions::OrderedProperty> properties;
+    properties.push_back(DataReadOptions::OrderedProperty("Legs", false));
+    properties.push_back(DataReadOptions::OrderedProperty("Name", true));
+
+    DataReadOptions options;
+    options.AddOrderByClassAndProperties(*ecClass, properties);
+
+    auto orderBy = CacheQueryHelper::ECSql::CreateOrderByClause(options.GetSortProperties(*ecClass), *ecClass, "alias", true);
+
+    EXPECT_STREQ("alias.[Legs] ASC, LOWER (alias.[Name]) DESC", orderBy.c_str());
     }

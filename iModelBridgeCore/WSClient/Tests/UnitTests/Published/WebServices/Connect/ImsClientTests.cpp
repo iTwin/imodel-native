@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ImsClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImsClientTests.h"
@@ -27,7 +27,7 @@ TEST_F(ImsClientTests, GetToken_DefaultUrls_SendsRequestToRetrieveToken)
     {
     GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
-        EXPECT_STREQ("TestUrl", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo", request.GetUrl().c_str());
         EXPECT_EQ("Basic " + Base64Utilities::Encode("Foo:Boo"), request.GetHeaders().GetAuthorization());
         return StubHttpResponse();
         });
@@ -254,7 +254,7 @@ TEST_F(ImsClientTests, GetFederatedSignInUrl_NoDomainParameter_UrlHasNoOfhParame
     const Utf8String platformType("mobile");
 #endif
 
-    Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
+    Utf8String signInUrl("https://test/foo?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
     signInUrl += platformType + "%2FTestAppProductId";
 
     auto info = StubClientInfo();
@@ -273,7 +273,7 @@ TEST_F(ImsClientTests, GetFederatedSignInUrl_DomainParameter_UrlHasOfhParameter)
 #endif
 
     const Utf8String domainName("bentley");
-    Utf8String signInUrl("TestUrl?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
+    Utf8String signInUrl("https://test/foo?wa=wsignin1.0&wtrealm=sso%3A%2F%2Fwsfed_");
     signInUrl += platformType + "%2FTestAppProductId&ofh=" + Base64Utilities::Encode(domainName);
 
     auto info = StubClientInfo();

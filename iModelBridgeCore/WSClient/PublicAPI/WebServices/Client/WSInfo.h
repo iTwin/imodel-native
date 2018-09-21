@@ -38,6 +38,7 @@ struct WSInfo
         Type m_type;
         BeVersion m_serverVersion;
         BeVersion m_webApiVersion;
+        BeVersion m_serviceVersion;
 
     private:
         static void ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
@@ -52,9 +53,13 @@ struct WSInfo
         WSCLIENT_EXPORT WSInfo();
         //! Construct info with values
         WSCLIENT_EXPORT WSInfo(BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
+        //! Construct info with values
+        WSCLIENT_EXPORT WSInfo(BeVersion serverVersion, BeVersion webApiVersion, BeVersion serviceVersion, Type serverType);
 
         //! Create info from server response
         WSCLIENT_EXPORT WSInfo(Http::ResponseCR response);
+        //! Create info from server response for service version connection
+        WSCLIENT_EXPORT WSInfo(Http::ResponseCR response, BeVersion serviceVersion);
         
         //! Deserialize string info
         WSCLIENT_EXPORT WSInfo(Utf8StringCR serialized);
@@ -76,6 +81,9 @@ struct WSInfo
 
         WSCLIENT_EXPORT bool IsNavigationPropertySelectForAllClassesSupported() const;
         WSCLIENT_EXPORT bool IsSchemaDownloadFullySupported() const;
+
+        //! Returns service version being used. Returns empty if service version is not used. 
+        BeVersionCR GetServiceVersion() const { return m_serviceVersion; };
 
         //! Serialize info to string
         WSCLIENT_EXPORT Utf8String ToString() const;

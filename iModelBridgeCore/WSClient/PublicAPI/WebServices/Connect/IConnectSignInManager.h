@@ -14,11 +14,8 @@
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/IConnectionClientInterface.h>
 #include <BeHttp/AuthenticationHandler.h>
-#include <BeSecurity/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_SECURITY
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass

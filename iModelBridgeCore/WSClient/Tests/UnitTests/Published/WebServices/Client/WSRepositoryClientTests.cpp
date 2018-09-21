@@ -24,14 +24,94 @@ using namespace ::testing;
 using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-#define HEADER_MasFileETag          "Mas-File-ETag"
-#define HEADER_MasConnectionInfo    "Mas-Connection-Info"
-#define HEADER_MasFileAccessUrlType "Mas-File-Access-Url-Type"
-#define HEADER_Location             "Location"
+#define HEADER_MasFileETag                 "Mas-File-ETag"
+#define HEADER_MasConnectionInfo           "Mas-Connection-Info"
+#define HEADER_MasFileAccessUrlType        "Mas-File-Access-Url-Type"
+#define HEADER_Location                    "Location"
+
+#define INSTANCE_PersistenceFileBackable   "Persistence.FileBackable"
+#define INSTANCE_PersistenceStreamBackable "Persistence.StreamBackable"
+
+enum class VersionType
+    {
+    WebApi,
+    Service
+    };
 
 void WSRepositoryClientTests::SetUp()
     {
+    BaseMockHttpHandlerTest::SetUp();
     ServerInfoProvider::InvalidateAllInfo();
+    }
+
+void WSRepositoryClientTests::TearDown()
+    {
+    ServerInfoProvider::InvalidateAllInfo();
+    BaseMockHttpHandlerTest::TearDown();
+    }
+
+Utf8String StubGetMaxUploadSizeResponseBody(uint64_t maxUploadSize, Utf8String instanceId = INSTANCE_PersistenceFileBackable)
+    {
+    Utf8String maxUploadSizeProperty = maxUploadSize > 0 ? Utf8PrintfString(R"(,
+        {
+        "Name": "MaxUploadSize",
+        "Value": "%i",
+        "Type": 2
+        })", maxUploadSize)
+        : Utf8String();
+
+    return Utf8PrintfString(R"({
+        "instances": [
+            {
+            "instanceId": "%s",
+            "schemaName": "Policies",
+            "className": "PolicyAssertion",
+            "properties" :
+                {
+                "Supported": true,
+                "AdhocProperties": [
+                    {
+                    "Name": "SupportsWrite",
+                    "Value": "True",
+                    "Type": 5
+                    }
+                    %s
+                ]
+                }
+            }]
+        })", instanceId.c_str(), maxUploadSizeProperty.c_str());
+    }
+
+void AddMaxUploadSizeRequestUrlSubPath(Utf8StringR unescapedPath)
+    {
+    Utf8String subPath = "/Policies/PolicyAssertion?$filter=(Supported+eq+true)+and+$id+in+['Persistence.FileBackable','Persistence.StreamBackable']&$top=1";
+    unescapedPath.append(subPath);
+
+    BeUri escapedUri(unescapedPath);
+    unescapedPath = escapedUri.ToString();
+    }
+
+void TestGetMaxUploadSize(shared_ptr<MockHttpHandler> handlerPtr, BeVersion webApiVersion, Utf8String responseBody, uint64_t expectedMaxUploadSize)
+    {
+    MockHttpHandler& handler = (*handlerPtr);
+
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, handlerPtr);
+
+    handler.ExpectRequests(2);
+    handler.ForRequest(1, StubWSInfoHttpResponseWebApi(webApiVersion));
+    handler.ForRequest(2, [=] (Http::RequestCR request)
+        {
+        Utf8String expectedUri = Utf8PrintfString("https://srv.com/ws/v%s/Repositories/testPluginId--locationId", webApiVersion.ToMajorMinorString().c_str());
+        AddMaxUploadSizeRequestUrlSubPath(expectedUri);
+        EXPECT_STRCASEEQ(expectedUri.c_str(), request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::OK, responseBody);
+        });
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ(expectedMaxUploadSize, repository.GetMaxUploadSize());
     }
 
 Json::Value StubWSObjectCreationJson()
@@ -51,7 +131,7 @@ void Expect4_jSrS(MockHttpHandler& handler, HttpStatus status)
     {
     handler.ExpectRequests(4);
     handler.ForRequest(1, StubWSInfoHttpResponseWebApi27());
-    std::map<Utf8String, Utf8String> headers {{"Operation-Location", "FooBooBar"}};
+    std::map<Utf8String, Utf8String> headers {{"Operation-Location", "https://test/foo"}};
     handler.ForRequest(2, StubHttpResponse(HttpStatus::Accepted, "", headers));
 
     DateTime dateTime;
@@ -105,6 +185,46 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseIsOkNoPluginVersion_Retu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WithServiceVersionAndWebApi20ResponseIsOkNoPluginVersion_ReturnsRepositoryInfoWithNoPluginVersion)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}};
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
+    EXPECT_EQ("testPluginId--locationId", repository.GetId());
+    EXPECT_EQ("locationId", repository.GetLocation());
+    EXPECT_EQ("testPluginId", repository.GetPluginId());
+    EXPECT_TRUE(repository.GetPluginVersion().IsEmpty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi20Response_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ(0, repository.GetMaxUploadSize());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -115,7 +235,77 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAnd
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
-        EXPECT_STRCASEEQ("https://srv.com/ws/v2.8/Repositories/testPluginId--locationId/Policies/PolicyAssertion?$top=1", request.GetUrl().c_str());
+        Utf8String expectedUri = "https://srv.com/ws/v2.8/Repositories/testPluginId--locationId";
+        AddMaxUploadSizeRequestUrlSubPath(expectedUri);
+        EXPECT_STRCASEEQ(expectedUri.c_str(), request.GetUrl().c_str());
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
+    EXPECT_EQ("testPluginId--locationId", repository.GetId());
+    EXPECT_EQ("locationId", repository.GetLocation());
+    EXPECT_EQ("testPluginId", repository.GetPluginId());
+    EXPECT_EQ(BeVersion(1, 2), repository.GetPluginVersion());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithFileBackableSupported_ReturnsRepositoryInfoWithMaxUploadSize)
+    {
+    uint64_t maxUploadSize = rand();
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 8}, StubGetMaxUploadSizeResponseBody(maxUploadSize, INSTANCE_PersistenceFileBackable), maxUploadSize);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithStreamBackableSupported_ReturnsRepositoryInfoWithMaxUploadSize)
+    {
+    uint64_t maxUploadSize = rand();
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 8}, StubGetMaxUploadSizeResponseBody(maxUploadSize, INSTANCE_PersistenceStreamBackable), maxUploadSize);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithFileUploadIsNotSupported_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+    {
+    Utf8String responseBody = Utf8PrintfString(R"({
+            "instances": []
+        })");
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 8}, responseBody, 0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi27ResponseIsOkWithoutMaxUploadSize_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+    {
+    TestGetMaxUploadSize(GetHandlerPtr(), {2, 7}, StubGetMaxUploadSizeResponseBody(0), 0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WithServiceVersionAndWebApi28ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6,testPluginId/1.2"}};
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        Utf8String expectedUri = "https://srv.com/ws/sv4.2/Repositories/testPluginId--locationId";
+        AddMaxUploadSizeRequestUrlSubPath(expectedUri);
+        EXPECT_STRCASEEQ(expectedUri.c_str(), request.GetUrl().c_str());
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         return StubHttpResponse(HttpStatus::OK, "", headers);
         });
@@ -797,6 +987,42 @@ TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WebApiV2AndInvalidObjectId_
 
     auto result = client->SendGetObjectRequest(ObjectId("", "Foo", ""))->GetResult();
     EXPECT_EQ(result.GetError().GetId(), WSError::Id::NotSupported);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WithEmptyServiceVersionAndWebApiV2_SendsWebApiVersionUrl)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {0, 0}, "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/testSchema/testClass/testId", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->SendGetObjectRequest({"testSchema", "testClass", "testId"})->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetObjectRequest_WithServiceVersionAndWebApiV2_SendsServiceVersionUrl)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", {4, 2}, "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/sv4.2/Repositories/foo/testSchema/testClass/testId", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    client->SendGetObjectRequest({"testSchema", "testClass", "testId"})->Wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2534,6 +2760,51 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectAndAzureUploadFails_ParsesError)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {HEADER_Location, "https://foozure.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
+                {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
+        });
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
+        Utf8CP body = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>BlobNotFound</Code><Message>TestMessage</Message></Error>";
+        return StubHttpResponse(HttpStatus::NotFound, body, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
+        });
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
+        return StubHttpResponse(HttpStatus::OK);
+        });
+    GetHandler().ExpectRequest([=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("PUT", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    ASSERT_FALSE(response.IsSuccess());
+    EXPECT_EQ(WSError::Id::FileNotFound, response.GetError().GetId());
+    EXPECT_EQ("TestMessage", response.GetError().GetDescription());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectWithoutConfirmationIdAndAzureUploadSuccessful_DoesNotSendConfirmationToServer)
@@ -2755,15 +3026,47 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsOb
     }
 
 #ifdef USE_GTEST
+
+struct WSRepositoryClientTests_InvalidUrls : TestWithParam<Utf8String> {};
+INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_InvalidUrls, ValuesIn(vector<Utf8String>{
+        "httpbbb://foo.com/v2.5/repositories/A--B/",
+        "http://foo.com/v2.5/repositories/AbbbB/",
+        "http://foo.com/svb2.5/repositories/A--B/",
+        "http://foo.com/b2.5/repositories/A--B/",
+        "http://foo.com/v2.a5/repositories/A--B/",
+        "http://foo.com/v2.5b/repositories/A--B/",
+        "http://foo.com/v2.5/rs/A--B/",
+        "http://foo.com/sv2.a5/repositories/A--B/"
+    }));
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(WSRepositoryClientTests_InvalidUrls, ParseRepositoryUrl_InvalidRepositoryUrl_ReturnsInvalid)
+    {
+    auto param = GetParam();
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl(param);
+    EXPECT_FALSE(repository.IsValid());
+    EXPECT_EQ("", repository.GetServerUrl());
+    EXPECT_EQ("", repository.GetId());
+    EXPECT_EQ("", repository.GetPluginId());
+    EXPECT_EQ("", repository.GetLocation());
+    EXPECT_EQ(BeVersion(), repository.GetServiceVersion());
+    }
+
 struct WSRepositoryClientTests_VariousServerUrls : TestWithParam<vector<Utf8String>> {};
-INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
-        // Host
+INSTANTIATE_TEST_CASE_P(Host, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
         {"http://foo.boo.com/foo/v2.5/repositories/A--B/", "http://foo.boo.com/foo"},
-        {"https://foo-boo.com/foo/v2.5/Repositories/A--B/", "https://foo-boo.com/foo"},
-        // Service path
+        {"https://foo-boo.com/foo/v2.5/Repositories/A--B/", "https://foo-boo.com/foo"}
+    }));
+INSTANTIATE_TEST_CASE_P(ServiceVersion, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
+        {"http://foo.boo.com/foo/sv4.2/repositories/A--B/", "http://foo.boo.com/foo"},
+        {"https://foo-boo.com/foo/sv4.2/Repositories/A--B/", "https://foo-boo.com/foo"}
+    }));
+INSTANTIATE_TEST_CASE_P(ServicePath, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
         {"https://foo.com/ws250/v2.5/repositories/A--B/", "https://foo.com/ws250"},
         {"https://foo.com/ws2/v2.5/repositories/A--B/", "https://foo.com/ws2"}
-    }));
+    })); 
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -2779,15 +3082,20 @@ TEST_P(WSRepositoryClientTests_VariousServerUrls, ParseRepositoryUrl_RepositoryU
     }
 
 struct WSRepositoryClientTests_ServerUrlEndings : TestWithParam<Utf8String> {};
-INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_ServerUrlEndings, Values(
-    // Web API version
+INSTANTIATE_TEST_CASE_P(WebApiVersions, WSRepositoryClientTests_ServerUrlEndings, Values(
     "https://foo.com/foo/v1.0/repositories/A--B/",
     "https://foo.com/foo/v2.5/repositories/A--B/",
-    "https://foo.com/foo/v1234.5678/repositories/A--B/",
-    // Repositories
+    "https://foo.com/foo/v1234.5678/repositories/A--B/"
+    ));
+INSTANTIATE_TEST_CASE_P(ServiceVersions, WSRepositoryClientTests_ServerUrlEndings, Values(
+    "https://foo.com/foo/sv1.0/repositories/A--B/",
+    "https://foo.com/foo/sv2.5/repositories/A--B/",
+    "https://foo.com/foo/sv1234.5678/repositories/A--B/"
+));
+INSTANTIATE_TEST_CASE_P(Repositories, WSRepositoryClientTests_ServerUrlEndings, Values(
     "https://foo.com/foo/v2.5/Repositories/A--B/",
     "https://foo.com/foo/v2.5/RePosiTorieS/A--B/"
-    ));
+));
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -2869,4 +3177,25 @@ TEST_P(WSRepositoryClientTests_Location, ParseRepositoryUrl_Url_LocationParsed)
     EXPECT_STREQ("https://foo.com/boo", repository.GetServerUrl().c_str());
     EXPECT_STREQ("A", repository.GetPluginId().c_str());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, ParseRepositoryUrl_RepositoryUrlWithWebApiVersion_ServiceVersionEmpty)
+    {
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl("http://foo.boo.com/foo/v4.2/repositories/A--B/");
+    EXPECT_TRUE(repository.IsValid());
+    EXPECT_EQ(BeVersion(), repository.GetServiceVersion());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, ParseRepositoryUrl_RepositoryUrlWithServiceVersion_ServiceVersionExtracted)
+    {
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl("http://foo.boo.com/foo/sv4.2/repositories/A--B/");
+    EXPECT_TRUE(repository.IsValid());
+    EXPECT_EQ(BeVersion(4, 2), repository.GetServiceVersion());
+    }
+
 #endif
