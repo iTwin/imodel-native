@@ -1345,7 +1345,18 @@ bool ProcessSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, T
     primitive.GetFaceIndices(faceIndices);
 
     if (faceIndices.size() < 2)
+        {
+        // Save point on surface to correct "close point" from readPixels...
+        if (m_closePtLocalCorrected.IsDisconnect())
+            {
+            SolidLocationDetail location;
+
+            if (primitive.ClosestPoint(localPoint, location))
+                m_closePtLocalCorrected = location.GetXYZ();
+            }
+
         return ProcessSingleFaceSolidPrimitive(primitive, localPoint, worldToLocal, parentGeomType);
+        }
 
     SolidLocationDetail location;
 
