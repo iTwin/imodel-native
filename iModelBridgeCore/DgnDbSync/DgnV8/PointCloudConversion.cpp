@@ -86,6 +86,12 @@ static void setPointCloudSymbology(PointCloud::PointCloudModel& pointCloudModel,
     }
 
 //-----------------------------------------------------------------------------------------
+// Return true if sourceFile is newer than outputFile
+// @bsimethod                                                   Eric.Paquet         10/2016
+//-----------------------------------------------------------------------------------------
+extern bool SourceFileIsNewer(BeFileNameCR sourceFileName, BeFileNameCR outputFileName); // Defined in RasterConversion.cpp
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         10/2016
 //-----------------------------------------------------------------------------------------
 BentleyStatus CopyPointCloudToBimLocation(BeFileNameR outputFileName, DgnDbCR db, BeFileNameCR sourceFileName)
@@ -95,10 +101,20 @@ BentleyStatus CopyPointCloudToBimLocation(BeFileNameR outputFileName, DgnDbCR db
     WString fileName = sourceFileName.GetFileNameAndExtension();
     outputFileName = dbFileName.GetDirectoryName();
     outputFileName.AppendToPath(fileName.c_str());
-    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(sourceFileName, outputFileName);
-    if (fileStatus != BeFileNameStatus::Success && fileStatus != BeFileNameStatus::AlreadyExists)
+    if (outputFileName.DoesPathExist() && !SourceFileIsNewer(sourceFileName, outputFileName))
         {
-        return ERROR;
+        // The output file already exists and it is newer (or equal time). No need to copy.
+        return SUCCESS;
+        }
+
+    // Don't try to copy file if source == destination
+    if ((0 != BeStringUtilities::Wcsicmp(sourceFileName.c_str(), outputFileName.c_str())))
+        {
+        BeFileNameStatus fileStatus = BeFileName::BeCopyFile(sourceFileName, outputFileName);
+        if (fileStatus != BeFileNameStatus::Success && fileStatus != BeFileNameStatus::AlreadyExists)
+            {
+            return ERROR;
+            }
         }
     return SUCCESS;
     }
