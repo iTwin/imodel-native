@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/LocalState.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
+#include <Bentley/bmap.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -34,5 +35,42 @@ struct ILocalState
         void SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) {_SaveValue(nameSpace, key, value);}
         Utf8String GetValue(Utf8CP nameSpace, Utf8CP key) const {return _GetValue(nameSpace, key);}
     };
-    
+
+//=======================================================================================
+//! Implementation for runtime-only storage, without using any file persistence.
+//  @bsiclass                                           Vincas.Razma            09/18
+//=======================================================================================
+struct RuntimeLocalState : ILocalState
+    {
+    protected:
+        bmap<bpair<Utf8String, Utf8String>, Utf8String> m_values;
+
+    protected:
+        virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+            {
+            bpair<Utf8String, Utf8String> identifier(nameSpace, key);
+            if (value.empty())
+                m_values.erase(identifier);
+            else
+                m_values[identifier] = value;
+            };
+
+        virtual Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+            {
+            bpair<Utf8String, Utf8String> identifier(nameSpace, key);
+
+            auto iterator = m_values.find(identifier);
+            if (iterator == m_values.end())
+                return "";
+
+            return iterator->second;
+            };
+    public:
+        //! Get internal values map - {Namespace,Key} to {Value}
+        const bmap<bpair<Utf8String, Utf8String>, Utf8String>& GetValues() const { return m_values; }
+        //! Get internal values map - {Namespace,Key} to {Value}
+        bmap<bpair<Utf8String, Utf8String>, Utf8String>& GetValues() { return m_values; }
+    };
+
+
 END_BENTLEY_NAMESPACE
