@@ -20,20 +20,20 @@ BEGIN_BENTLEY_NAMESPACE
 //=======================================================================================
 struct ILocalState 
     {
-    protected:
-        virtual ~ILocalState () {}
-    
-        //! Saves the Utf8String value in the local state. Set to empty to delete value.
-        //! @note The nameSpace and key pair must be unique.
-        virtual void _SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) = 0;
+protected:
+    virtual ~ILocalState () {}
 
-        //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
-        //! @note The nameSpace and key pair uniquely identifies the value.
-        virtual Utf8String _GetValue (Utf8CP nameSpace, Utf8CP key) const = 0;
+    //! Saves the Utf8String value in the local state. Set to empty to delete value.
+    //! @note The nameSpace and key pair must be unique.
+    virtual void _SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) = 0;
 
-    public:
-        void SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) {_SaveValue(nameSpace, key, value);}
-        Utf8String GetValue(Utf8CP nameSpace, Utf8CP key) const {return _GetValue(nameSpace, key);}
+    //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
+    //! @note The nameSpace and key pair uniquely identifies the value.
+    virtual Utf8String _GetValue (Utf8CP nameSpace, Utf8CP key) const = 0;
+
+public:
+    void SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) {_SaveValue(nameSpace, key, value);}
+    Utf8String GetValue(Utf8CP nameSpace, Utf8CP key) const {return _GetValue(nameSpace, key);}
     };
 
 //=======================================================================================
@@ -42,34 +42,36 @@ struct ILocalState
 //=======================================================================================
 struct RuntimeLocalState : ILocalState
     {
-    protected:
-        bmap<bpair<Utf8String, Utf8String>, Utf8String> m_values;
+public:
+    typedef bmap<bpair<Utf8String, Utf8String>, Utf8String> Values;
+protected:
+    Values m_values;
 
-    protected:
-        virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
-            {
-            bpair<Utf8String, Utf8String> identifier(nameSpace, key);
-            if (value.empty())
-                m_values.erase(identifier);
-            else
-                m_values[identifier] = value;
-            };
+protected:
+    virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+        {
+        bpair<Utf8String, Utf8String> identifier(nameSpace, key);
+        if (value.empty())
+            m_values.erase(identifier);
+        else
+            m_values[identifier] = value;
+        };
 
-        virtual Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
-            {
-            bpair<Utf8String, Utf8String> identifier(nameSpace, key);
+    virtual Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+        {
+        bpair<Utf8String, Utf8String> identifier(nameSpace, key);
 
-            auto iterator = m_values.find(identifier);
-            if (iterator == m_values.end())
-                return "";
+        auto iterator = m_values.find(identifier);
+        if (iterator == m_values.end())
+            return "";
 
-            return iterator->second;
-            };
-    public:
-        //! Get internal values map - {Namespace,Key} to {Value}
-        const bmap<bpair<Utf8String, Utf8String>, Utf8String>& GetValues() const { return m_values; }
-        //! Get internal values map - {Namespace,Key} to {Value}
-        bmap<bpair<Utf8String, Utf8String>, Utf8String>& GetValues() { return m_values; }
+        return iterator->second;
+        };
+public:
+    //! Get internal values map - {Namespace,Key} to {Value}
+    const Values& GetValues() const { return m_values; }
+    //! Get internal values map - {Namespace,Key} to {Value}
+    Values& GetValues() { return m_values; }
     };
 
 
