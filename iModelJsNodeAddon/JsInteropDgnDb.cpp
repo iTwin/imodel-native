@@ -207,8 +207,8 @@ DgnDbStatus JsInterop::GetSchemaItem(JsonValueR mjson, DgnDbR dgndb, Utf8CP sche
     if (nullptr != ecClass)
         {
         auto nonConstWorkaround = const_cast<ECClassP>(ecClass);
-        auto result = nonConstWorkaround->WriteJson(mjson, true, true);
-        if(result == SchemaWriteStatus::Success)
+        auto result = nonConstWorkaround->ToJson(mjson, true, true);
+        if(result == true)
             return DgnDbStatus::Success;
         else
             return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
@@ -217,8 +217,8 @@ DgnDbStatus JsInterop::GetSchemaItem(JsonValueR mjson, DgnDbR dgndb, Utf8CP sche
     const auto kindOfQuantity = schemaManager.GetKindOfQuantity(schemaName, itemName);
     if (nullptr != kindOfQuantity)
         {
-        auto result = kindOfQuantity->WriteJson(mjson, true);
-        if (result == SchemaWriteStatus::Success)
+        auto result = kindOfQuantity->ToJson(mjson, true);
+        if (result == true)
             return DgnDbStatus::Success;
         else
             return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
@@ -227,8 +227,8 @@ DgnDbStatus JsInterop::GetSchemaItem(JsonValueR mjson, DgnDbR dgndb, Utf8CP sche
     const auto enumeration = schemaManager.GetEnumeration(schemaName, itemName);
     if (nullptr != enumeration)
         {
-        auto result = enumeration->WriteJson(mjson, true);
-        if (result == SchemaWriteStatus::Success)
+        auto result = enumeration->ToJson(mjson, true);
+        if (result == true)
             return DgnDbStatus::Success;
         else
             return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
@@ -237,8 +237,8 @@ DgnDbStatus JsInterop::GetSchemaItem(JsonValueR mjson, DgnDbR dgndb, Utf8CP sche
     const auto category = schemaManager.GetPropertyCategory(schemaName, itemName);
     if (nullptr != category)
         {
-        auto result = category->WriteJson(mjson, true);
-        if (result == SchemaWriteStatus::Success)
+        auto result = category->ToJson(mjson, true);
+        if (result == true)
             return DgnDbStatus::Success;
         else
             return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
@@ -257,7 +257,7 @@ DgnDbStatus JsInterop::GetSchema(JsonValueR mjson, DgnDbR dgndb, Utf8CP name)
         return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
 
     auto result = schema->WriteToJsonValue(mjson);
-    if (result == SchemaWriteStatus::Success)
+    if (result == true)
         return DgnDbStatus::Success;
 
     return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
