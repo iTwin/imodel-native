@@ -436,8 +436,19 @@ Render::TriMeshArgs TriMeshTree::TriMesh::CreateTriMeshArgs(Render::TextureP tex
 +---------------+---------------+---------------+---------------+---------------+------*/
 TriMeshTree::TriMesh::TriMesh(CreateParams const& args, OutputR output)
     {
+    m_indices.resize(args.m_numIndices);
+    memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
+    m_points = args.QuantizePoints();
+    if (nullptr != args.m_normals)
+        m_normals = args.QuantizeNormals();
+
     auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
     output._AddTriMesh(trimesh);
+
+    // ###TODO: Don't make these members - just use local variables...
+    m_indices.clear();
+    m_points.clear();
+    m_normals.clear();
     }
 
 /*----------------------------------------------------------------------------------*//**
