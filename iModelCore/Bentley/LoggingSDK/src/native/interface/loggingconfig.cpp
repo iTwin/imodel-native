@@ -118,14 +118,14 @@ LoggingProviderType type
 #if defined (BENTLEY_WIN32)
         case ( LOG4CXX_LOGGING_PROVIDER ):
             {
-            pProvider = LoggingConfig::LoadProvider ( L"bentleylog4cxxB02.dll" );
+            pProvider = LoggingConfig::LoadProvider ( L"bentleylog4cxxM02.dll" );
             if (NULL==pProvider)
                 return ActivateProvider (CONSOLE_LOGGING_PROVIDER);
             break;
             }
         case ( MANAGED_LOGGING_PROVIDER ):
             {
-            pProvider = LoggingConfig::LoadProvider ( L"Bentley.logging.interopB02.dll" );
+            pProvider = LoggingConfig::LoadProvider ( L"Bentley.logging.interopM02.dll" );
             break;
             }
         case ( CONSOLE_LOGGING_PROVIDER ):
