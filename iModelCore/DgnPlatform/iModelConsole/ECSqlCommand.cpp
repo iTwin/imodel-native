@@ -256,20 +256,25 @@ Utf8String ECSqlCommand::ValueToString(IECSqlValue const& value)
 //static
 Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECEnumerationCR ecEnum)
     {
-    if (ecEnum.GetType() == PRIMITIVETYPE_String) //For string enums the actual value is already the enum value name
-        return PrimitiveToString(value, PRIMITIVETYPE_String);
+    const bool isIntEnum = ecEnum.GetType() == PRIMITIVETYPE_Integer;
+    Nullable<int> actualIntValue;
+    Utf8CP actualStrValue = nullptr;
+    if (isIntEnum)
+        actualIntValue = value.GetInt();
+    else
+        actualStrValue = value.GetText();
 
-    BeAssert(ecEnum.GetType() == PRIMITIVETYPE_Integer && "Unsupported ECEnum data type");
+    ECEnumeratorCP enumValue = nullptr;
+    if (isIntEnum)
+        enumValue = ecEnum.FindEnumerator(actualIntValue.Value());
+    else
+        enumValue = ecEnum.FindEnumerator(actualStrValue);
 
-    const int actualValue = value.GetInt();
-    for (ECEnumerator const* enumValue : ecEnum.GetEnumerators())
-        {
-        if (actualValue == enumValue->GetInteger())
-            return enumValue->GetDisplayLabel();
-        }
+    if (enumValue != nullptr)
+        return Utf8PrintfString("%s.%s", ecEnum.GetName().c_str(), enumValue->GetName().c_str());
 
-    //no enum value matches -> print out the integer value as is
-    return PrimitiveToString(value, PRIMITIVETYPE_Integer);
+    //no enum value matches -> print out the value as is
+    return PrimitiveToString(value, isIntEnum ? PRIMITIVETYPE_Integer : PRIMITIVETYPE_String);
     }
 
 //---------------------------------------------------------------------------------------

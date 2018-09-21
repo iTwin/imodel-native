@@ -118,12 +118,12 @@ def main():
     # Test runners are downloaded into src as pulling them in with every TMR might take too long
     # They are symlinked into the out dir afterwards
     pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
-    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_bim20_imodeljs_x64")
+    pullAllNugets(nugetPathInSrc, nugetScript, "iModelEvolutionTestRunnerNuget_imodel02_x64")
     unzipNugets(nugetPathInSrc)
     # Test files can be downloaded in out folder directly
     testFileNugetPath = os.path.join(nugetPath, "testfiles")
     pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim0200dev_x64", bim02devMinimumNugetVersion, bim02devIgnoreNugetVersions)
-    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_bim20_imodeljs_x64")
+    pullAllNugets(testFileNugetPath, nugetScript, "iModelEvolutionTestFilesNuget_imodel02_x64")
     unzipNugets(testFileNugetPath)
     # Copy test files from all nugets into a single central folder
     targetDir = os.path.join(artefactsPath, "TestFiles")

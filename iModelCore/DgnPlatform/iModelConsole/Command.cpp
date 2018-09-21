@@ -94,8 +94,9 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
 //---------------------------------------------------------------------------------------
 Utf8String OpenCommand::_GetUsage() const
     {
-    return " .open [readonly|readwrite] [attachchanges] <iModel/ECDb/BeSQLite file>\r\n"
+    return " .open [readonly|readwrite|upgrade] [attachchanges] <iModel/ECDb/BeSQLite file>\r\n"
         COMMAND_USAGE_IDENT "Opens iModel, ECDb, or BeSQLite file. Default open mode: read-only.\r\n"
+        COMMAND_USAGE_IDENT "if upgrade is specified, the file is upgraded if necessary.\r\n"
         COMMAND_USAGE_IDENT "if attachchanges is specified, the Change Cache file is attached (and created if necessary).\r\n";
     }
 
@@ -121,6 +122,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     //default mode: read-only
     Db::OpenMode openMode = Db::OpenMode::Readonly;
+    Db::ProfileUpgradeOptions profileUpgradeOptions = Db::ProfileUpgradeOptions::None;
     bool attachChangeCache = false;
     bool openAsECDb = false;
 
@@ -132,9 +134,21 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             Utf8String const& arg = args[i];
 
             if (arg.EqualsI("readwrite"))
+                {
                 openMode = Db::OpenMode::ReadWrite;
+                profileUpgradeOptions = Db::ProfileUpgradeOptions::None;
+                }
+            else if (arg.EqualsI("upgrade"))
+                {
+                openMode = Db::OpenMode::ReadWrite;
+                profileUpgradeOptions = Db::ProfileUpgradeOptions::Upgrade;
+                }
             else if (arg.EqualsI("asecdb"))
+                {
                 openAsECDb = true;
+                openMode = Db::OpenMode::Readonly;
+                profileUpgradeOptions = Db::ProfileUpgradeOptions::None;
+                }
             else if (arg.EqualsI("attachchanges"))
                 attachChangeCache = true;
             }
@@ -149,12 +163,18 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
+    Utf8CP openModeStr = nullptr;
+    if (openMode == Db::OpenMode::Readonly)
+        openModeStr = "read-only";
+    else if (profileUpgradeOptions == Db::ProfileUpgradeOptions::None)
+        openModeStr = "read-write";
+    else
+        openModeStr = "read-write with profile upgrade";
+
     Utf8CP attachChangeMessage = attachChangeCache ? " and attached Change Cache file" : "";
-    //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or iModel file, we close it
-    //again and use respective API to open it higher-level
+    //open as plain BeSQlite file first to retrieve profile infos. 
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
-    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode)))
+    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::Readonly)))
         {
         sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
         IModelConsole::WriteErrorLine("Could not open file '%s'. File might not be a iModel file, ECDb file, or BeSQLite file.", filePath.GetNameUtf8().c_str());
@@ -169,13 +189,14 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
+    sqliteFile->GetHandleR().CloseDb();
+
     const bool isIModelFile = profileInfos.find(SessionFile::ProfileInfo::Type::IModel) != profileInfos.end();
     if (isIModelFile && !openAsECDb)
         {
-        sqliteFile->GetHandleR().CloseDb();
-
         DbResult stat;
         Dgn::DgnDb::OpenParams params(openMode);
+        params.SetProfileUpgradeOptions(profileUpgradeOptions);
         Dgn::DgnDbPtr iModel = Dgn::DgnDb::OpenDgnDb(&stat, filePath, params);
         if (BE_SQLITE_OK != stat)
             {
@@ -199,10 +220,8 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (profileInfos.find(SessionFile::ProfileInfo::Type::ECDb) != profileInfos.end())
         {
-        sqliteFile->GetHandleR().CloseDb();
-
         std::unique_ptr<ECDbFile> ecdbFile = std::make_unique<ECDbFile>();
-        if (BE_SQLITE_OK != ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode)))
+        if (BE_SQLITE_OK != ecdbFile->GetECDbHandleP()->OpenBeSQLiteDb(filePath, ECDb::OpenParams(openMode, profileUpgradeOptions)))
             {
             ecdbFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
             IModelConsole::WriteErrorLine("Could not open file '%s'.", filePath.GetNameUtf8().c_str());
@@ -223,6 +242,13 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             IModelConsole::WriteLine("Opened iModel file as ECDb file '%s' in %s mode. This can damage the file as iModel validation logic is bypassed.", filePath.GetNameUtf8().c_str(), openModeStr);
         else
             IModelConsole::WriteLine("Opened ECDb file '%s' in %s mode%s.", filePath.GetNameUtf8().c_str(), openModeStr, attachChangeMessage);
+        return;
+        }
+
+    if (BE_SQLITE_OK != sqliteFile->GetHandleR().OpenBeSQLiteDb(filePath, Db::OpenParams(openMode, profileUpgradeOptions)))
+        {
+        IModelConsole::WriteErrorLine("Could not open file '%s': %s", filePath.GetNameUtf8().c_str(), sqliteFile->GetHandle().GetLastError().c_str());
+        sqliteFile->GetHandleR().CloseDb();//seems that open errors do not automatically close the handle again
         return;
         }
 
@@ -766,8 +792,6 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        IModelConsoleChangeSet changeset;
-
         const bool fromFile = args.size() == 2;
         if (fromFile)
             {
@@ -784,44 +808,37 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                 return;
                 }
 
-            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
-            Dgn::RevisionChangesFileReader fs(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
-            BeSQLite::ChangeGroup group;
-            if (BE_SQLITE_OK != fs.ToChangeGroup(group))
+            Dgn::RevisionChangesFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
+            PERFLOG_START("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
+            ECInstanceKey changeSummaryKey;
+            if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeStream)) != SUCCESS)
                 {
-                IModelConsole::WriteErrorLine("Failed to extract change summary. Could not read ChangeSet file %s into a ChangeGroup.", changesetFilePath.GetNameUtf8().c_str());
+                IModelConsole::WriteErrorLine("Failed to extract change summary.");
                 return;
                 }
-            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
-
-            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
-            if (BE_SQLITE_OK != changeset.FromChangeGroup(group))
-                {
-                IModelConsole::WriteErrorLine("Failed to extract change summary. Could not create ChangeSet object from ChangeGroup object for ChangeSet file '%s'.", changesetFilePath.GetNameUtf8().c_str());
-                return;
-                }
-            PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
+            PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
+            IModelConsole::WriteLine("Successfully extracted ChangeSummary (Id: %s) from ChangeSet file.", changeSummaryKey.GetInstanceId().ToString().c_str());
+            return;
             }
-        else
+
+        IModelConsoleChangeSet changeset;
+        IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
+        if (tracker == nullptr)
             {
-            IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
-            if (tracker == nullptr)
-                {
-                IModelConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
-                return;
-                }
+            IModelConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
+            return;
+            }
 
-            if (!tracker->HasChanges())
-                {
-                IModelConsole::WriteErrorLine("No changes tracked.");
-                return;
-                }
+        if (!tracker->HasChanges())
+            {
+            IModelConsole::WriteErrorLine("No changes tracked.");
+            return;
+            }
 
-            if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
-                {
-                IModelConsole::WriteErrorLine("Failed to retrieve changeset from local changes.");
-                return;
-                }
+        if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
+            {
+            IModelConsole::WriteErrorLine("Failed to retrieve changeset from local changes.");
+            return;
             }
 
         PERFLOG_START("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
@@ -833,13 +850,6 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             }
         PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
-        if (fromFile)
-            {
-            IModelConsole::WriteLine("Successfully extracted ChangeSummary (Id: %s) from ChangeSet file.", changeSummaryKey.GetInstanceId().ToString().c_str());
-            return;
-            }
-
-        IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
         const bool trackingWasOn = tracker->IsTracking();
         tracker->EndTracking();//end the changeset
         IModelConsole::WriteLine("Successfully created revision and extracted ChangeSummary (Id: %s) from it.", changeSummaryKey.GetInstanceId().ToString().c_str());
@@ -1828,11 +1838,11 @@ void MetadataCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 //static
 Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
     {
+    Utf8CP extendedTypeName = nullptr;
     if (prop.GetIsPrimitive() || prop.GetIsPrimitiveArray())
         {
         ECEnumerationCP ecEnum = nullptr;
         Nullable<PrimitiveType> primType;
-        Utf8String extendedTypeName;
         PrimitiveECPropertyCP primProp = prop.GetAsPrimitiveProperty();
         bool isArray = false;
         if (primProp != nullptr)
@@ -1842,7 +1852,7 @@ Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
                 primType = primProp->GetType();
 
             if (primProp->HasExtendedType())
-                extendedTypeName = primProp->GetExtendedTypeName();
+                extendedTypeName = primProp->GetExtendedTypeName().c_str();
             }
         else
             {
@@ -1854,7 +1864,7 @@ Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
                 primType = primArrayProp->GetPrimitiveElementType();
 
             if (primArrayProp->HasExtendedType())
-                extendedTypeName = primArrayProp->GetExtendedTypeName();
+                extendedTypeName = primArrayProp->GetExtendedTypeName().c_str();
             }
 
         Utf8String typeName;
@@ -1910,8 +1920,8 @@ Utf8String MetadataCommand::GetPropertyTypeName(ECN::ECPropertyCR prop)
         if (isArray)
             typeName.append("[]");
 
-        if (!extendedTypeName.empty())
-            typeName.append(" Extended Type: ").append(extendedTypeName);
+        if (!Utf8String::IsNullOrEmpty(extendedTypeName))
+            typeName.append(" | Extended Type: ").append(extendedTypeName);
 
         return typeName;
         }
