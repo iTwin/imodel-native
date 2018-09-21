@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeJsonCpp/BeJsonUtilities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,12 +22,13 @@ typedef Json::Value const& JsonValueCR;
 typedef Json::Value const* JsonValueCP;
 
 //=======================================================================================
+//! DEPRECATED! Use JsonLocalState instead.
 //! ILocalState wrapper that handles JSON - string conversion.
 //  @bsiclass                                           Grigas.Petraitis        12/14
 //=======================================================================================
 struct IJsonLocalState : ILocalState
     {
-    public:
+public:
      //! Saves the supplied JSON value as string in the local state. Set null to delete.
     virtual void SaveJsonValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) 
         {
@@ -48,10 +49,43 @@ struct IJsonLocalState : ILocalState
     };
 
 //=======================================================================================
+//! Concrete JsonLocalState implementation. Pass local state to use specific storage.
+//  @bsiclass                                           Vincas.Razma            09/18
+//=======================================================================================
+struct JsonLocalState : IJsonLocalState
+    {
+private:
+    ILocalState* m_localState;
+
+protected:
+    virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override { m_localState->SaveValue(nameSpace, key, value); };
+    virtual Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override { return m_localState->GetValue(nameSpace, key); };
+
+public:
+    JsonLocalState(ILocalState& localState) : m_localState(&localState){};
+    };
+
+//=======================================================================================
+//! Simple JsonLocalState implementation for saving values without file storage.
+//  @bsiclass                                           Vincas.Razma            09/18
+//=======================================================================================
+struct RuntimeJsonLocalState : JsonLocalState
+    {
+protected:
+    RuntimeLocalState m_runtimeLocalState;
+
+public:
+    RuntimeJsonLocalState() : JsonLocalState(m_runtimeLocalState) {};
+
+    const RuntimeLocalState::Values& GetValues() const { return m_runtimeLocalState.GetValues(); }
+    RuntimeLocalState::Values& GetValues() { return m_runtimeLocalState.GetValues(); }
+    };
+
+//=======================================================================================
 // @bsiclass                                                    Shaun.Sewall     10/2012
 //=======================================================================================
 struct BeJsonUtilities
-{
+    {
 public:
     //! Returns true if all required members are present on the specified Json::Value object.
     //! @param[in] valueObj the Json::Value object to check
@@ -108,6 +142,6 @@ public:
     //! @return a pointer to the string within the stringValue or to the defaultCString parameter.  Therefore, attention must be
     //!         paid to the lifetime of stringValue and defaultCString.
     static Utf8CP CStringFromStringValue(JsonValueCR stringValue, Utf8CP defaultCString);
-};
+    };
 
 END_BENTLEY_NAMESPACE
