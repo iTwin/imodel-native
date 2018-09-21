@@ -792,8 +792,6 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        IModelConsoleChangeSet changeset;
-
         const bool fromFile = args.size() == 2;
         if (fromFile)
             {
@@ -810,44 +808,37 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                 return;
                 }
 
-            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
-            Dgn::RevisionChangesFileReader fs(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
-            BeSQLite::ChangeGroup group;
-            if (BE_SQLITE_OK != fs.ToChangeGroup(group))
+            Dgn::RevisionChangesFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
+            PERFLOG_START("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
+            ECInstanceKey changeSummaryKey;
+            if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeStream)) != SUCCESS)
                 {
-                IModelConsole::WriteErrorLine("Failed to extract change summary. Could not read ChangeSet file %s into a ChangeGroup.", changesetFilePath.GetNameUtf8().c_str());
+                IModelConsole::WriteErrorLine("Failed to extract change summary.");
                 return;
                 }
-            PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
-
-            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
-            if (BE_SQLITE_OK != changeset.FromChangeGroup(group))
-                {
-                IModelConsole::WriteErrorLine("Failed to extract change summary. Could not create ChangeSet object from ChangeGroup object for ChangeSet file '%s'.", changesetFilePath.GetNameUtf8().c_str());
-                return;
-                }
-            PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
+            PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
+            IModelConsole::WriteLine("Successfully extracted ChangeSummary (Id: %s) from ChangeSet file.", changeSummaryKey.GetInstanceId().ToString().c_str());
+            return;
             }
-        else
+
+        IModelConsoleChangeSet changeset;
+        IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
+        if (tracker == nullptr)
             {
-            IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
-            if (tracker == nullptr)
-                {
-                IModelConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
-                return;
-                }
+            IModelConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
+            return;
+            }
 
-            if (!tracker->HasChanges())
-                {
-                IModelConsole::WriteErrorLine("No changes tracked.");
-                return;
-                }
+        if (!tracker->HasChanges())
+            {
+            IModelConsole::WriteErrorLine("No changes tracked.");
+            return;
+            }
 
-            if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
-                {
-                IModelConsole::WriteErrorLine("Failed to retrieve changeset from local changes.");
-                return;
-                }
+        if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
+            {
+            IModelConsole::WriteErrorLine("Failed to retrieve changeset from local changes.");
+            return;
             }
 
         PERFLOG_START("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
@@ -859,13 +850,6 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             }
         PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
-        if (fromFile)
-            {
-            IModelConsole::WriteLine("Successfully extracted ChangeSummary (Id: %s) from ChangeSet file.", changeSummaryKey.GetInstanceId().ToString().c_str());
-            return;
-            }
-
-        IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
         const bool trackingWasOn = tracker->IsTracking();
         tracker->EndTracking();//end the changeset
         IModelConsole::WriteLine("Successfully created revision and extracted ChangeSummary (Id: %s) from it.", changeSummaryKey.GetInstanceId().ToString().c_str());
@@ -2555,7 +2539,7 @@ void SchemaStatsCommand::ComputeClassHierarchyStats(Session& session, std::vecto
     IModelConsole::WriteLine("Median: %.1f", ComputeQuantile(classStats, .5));
     IModelConsole::WriteLine("80%% quantile: %.1f:", ComputeQuantile(classStats, .8));
     //Mean
-    const double mean = std::accumulate(classStats.GetList().begin(), classStats.GetList().end(), 0, [] (double sum, ClassColumnStats const& stat) { return sum + stat.GetTotalColumnCount();}) / (1.0 * classStats.GetSize());
+    const double mean = std::accumulate(classStats.GetList().begin(), classStats.GetList().end(), 0.0, [] (double sum, ClassColumnStats const& stat) { return sum + stat.GetTotalColumnCount();}) / (1.0 * classStats.GetSize());
     IModelConsole::WriteLine("Mean: %.1f:", mean);
 
     //stddev
