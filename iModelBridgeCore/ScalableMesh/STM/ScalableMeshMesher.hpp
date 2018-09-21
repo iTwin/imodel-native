@@ -46,6 +46,44 @@ extern bool s_useSpecialTriangulationOnGrids;
 //#define TILE_Y2 220088.85
 
 
+
+template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXTENT>::CreateGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node, const DPoint3d* points, int nbPoints, const long* ptsIndice, int nbPtsIndice) const
+    {
+    bvector<int> componentPointsId;
+
+    // SM_NEED_WORKS : textures
+    if (nbPtsIndice > 0)
+        {        
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
+        MTGGraph* newGraph = new MTGGraph();
+        CreateGraphFromIndexBuffer(newGraph, ptsIndice, nbPtsIndice, nbPoints, componentPointsId, points);
+        //PrintGraph(LOG_PATH_STR, std::to_string(node->GetBlockID().m_integerID).c_str(), node->GetGraphPtr());
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> linearFeaturesPtr = node->GetLinearFeaturesPtr();        
+
+        bvector<bvector<int32_t>> featureDefs;
+
+        if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(featureDefs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
+        for (size_t i = 0; i < featureDefs.size(); ++i)
+            {
+            TagFeatureEdges(newGraph, (const DTMFeatureType)featureDefs[i][0], featureDefs[i].size() - 1, &featureDefs[i][1]);
+            }
+        graphPtr->SetData(newGraph);
+        graphPtr->SetDirty();
+        }
+
+    if (componentPointsId.size() > 0)
+        {
+        if (node->m_nodeHeader.m_meshComponents == nullptr) node->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
+        else if (node->m_nodeHeader.m_numberOfMeshComponents != componentPointsId.size())
+            {
+            delete[] node->m_nodeHeader.m_meshComponents;
+            node->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
+            }
+        node->m_nodeHeader.m_numberOfMeshComponents = componentPointsId.size();
+        memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size() * sizeof(int));
+        }
+    }
+
 /**----------------------------------------------------------------------------
  Initiates a filtering of the node. Ther filtering process
  will compute the sub-resolution and the view oriented parameters.
@@ -66,10 +104,31 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
    // LOG_SET_PATH("e:\\Elenie\\mesh\\")
    // LOG_SET_PATH_W("e:\\Elenie\\mesh\\")
+            
+    //If already mesh just compute the content extent.
+    if (node->IsExistingMesh())
+        {
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
+        assert(pointsPtr->size() > 0);
+
+        node->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create((*pointsPtr)[0].x, (*pointsPtr)[0].y, (*pointsPtr)[0].z, (*pointsPtr)[0].x, (*pointsPtr)[0].y, (*pointsPtr)[0].z);
+                
+        for (size_t ind = 1; ind < pointsPtr->size(); ind++)
+            {
+            node->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::MergeExtents(node->m_nodeHeader.m_contentExtent, ExtentOp<EXTENT>::Create(PointOp<POINT>::GetX((*pointsPtr)[ind]), PointOp<POINT>::GetY((*pointsPtr)[ind]), PointOp<POINT>::GetZ((*pointsPtr)[ind]),
+                                                                                                                                             PointOp<POINT>::GetX((*pointsPtr)[ind]), PointOp<POINT>::GetY((*pointsPtr)[ind]), PointOp<POINT>::GetZ((*pointsPtr)[ind])));
+            }
+
+        node->SetDirty(true);
+        
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr(node->GetPtsIndicePtr());
+
+        CreateGraph(node, &(*pointsPtr)[0], (int)pointsPtr->size(), (const long*)&(*ptsIndicePtr)[0], (int)ptsIndicePtr->size());                
+        return true;
+        }
+    
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-
 
     if (pointsPtr->size() > 4)
         {
@@ -449,36 +508,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 ClipMeshToNodeRange<POINT, EXTENT>(faceIndexes, nodePts, pts, node->m_nodeHeader.m_contentExtent, nodeRange, meshP);
                 
                 pointsPtr->push_back(&nodePts[0], nodePts.size());
-                bvector<int> componentPointsId;
-                // SM_NEED_WORKS : textures
-                if (faceIndexes.size() > 0)
-                    {
-                    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
-                    MTGGraph* newGraph = new MTGGraph();
-                    CreateGraphFromIndexBuffer(newGraph, (const long*)&faceIndexes[0], (int)faceIndexes.size(), (int)nodePts.size(), componentPointsId, &pts[0]);
-                    //PrintGraph(LOG_PATH_STR, std::to_string(node->GetBlockID().m_integerID).c_str(), node->GetGraphPtr());
-                     linearFeaturesPtr = node->GetLinearFeaturesPtr();
-                    defs.clear();
-                    if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
-                    for (size_t i = 0; i < defs.size(); ++i)
-                        {
-                        TagFeatureEdges(newGraph, (const DTMFeatureType)defs[i][0], defs[i].size() - 1, &defs[i][1]);
-                        }
-                    graphPtr->SetData(newGraph);
-                    graphPtr->SetDirty();
 
-                    }
-                if (componentPointsId.size() > 0)
-                    {
-                    if (node->m_nodeHeader.m_meshComponents == nullptr) node->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
-                    else if (node->m_nodeHeader.m_numberOfMeshComponents != componentPointsId.size())
-                        {
-                        delete[] node->m_nodeHeader.m_meshComponents;
-                        node->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
-                        }
-                    node->m_nodeHeader.m_numberOfMeshComponents = componentPointsId.size();
-                    memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
-                    }
+                CreateGraph(node, &pts[0], (int)nodePts.size(), (const long*)&faceIndexes[0], (int)faceIndexes.size());
 
                 if (faceIndexes.size() > 0)
                     node->PushPtsIndices(/*meshP->GetFaceIndexes()*/&faceIndexes[0], faceIndexes.size());

@@ -185,10 +185,20 @@ const double* IScalableMeshViewDependentQueryParams::GetRootToViewMatrix() const
     return _GetRootToViewMatrix();
     }
 
+bool IScalableMeshViewDependentMeshQueryParams::ShouldLoadContours() const
+{
+    return _ShouldLoadContours();
+}
+
 void IScalableMeshViewDependentQueryParams::SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint)
     {
     _SetMinScreenPixelsPerPoint(minScreenPixelsPerPoint);
     }
+
+void IScalableMeshViewDependentMeshQueryParams::SetLoadContours(bool loadContours)
+{
+    _SetLoadContours(loadContours);
+}
 
 void IScalableMeshViewDependentQueryParams::SetRootToViewMatrix(const double rootToViewMatrix[][4])
     {
@@ -2225,6 +2235,147 @@ void ScalableMeshMesh::ApplyClipMesh(const DifferenceSet& d)
 #endif
     }
 
+void ScalableMeshMeshWithGraph::FindTrianglesAroundLabel(bvector<bvector<DPoint3d>>& triangles, int labelValue)
+{
+    MTGARRAY_SET_LOOP(edgeId, m_graphData)
+    {
+        int v = -1;
+        m_graphData->TryGetLabel(edgeId, 0, v);
+        if (v == labelValue)
+        {
+            MTGARRAY_VERTEX_LOOP(edgeId2, m_graphData, edgeId)
+            {
+                bvector<DPoint3d> facePts;
+                int triangle[3] = { 0 };
+                m_graphData->TryGetLabel(m_graphData->EdgeMate(edgeId2), 0, (int&)triangle[0]);
+                m_graphData->TryGetLabel(m_graphData->FSucc(m_graphData->EdgeMate(edgeId2)), 0, (int&)triangle[1]);
+                m_graphData->TryGetLabel(m_graphData->EdgeMate(m_graphData->FSucc(m_graphData->EdgeMate(edgeId2))), 0, (int&)triangle[2]);
+                facePts.push_back(m_points[triangle[0] - 1]);
+                facePts.push_back(m_points[triangle[1] - 1]);
+                facePts.push_back(m_points[triangle[2] - 1]);
+                triangles.push_back(facePts);
+            }
+        MTGARRAY_END_VERTEX_LOOP(edgeId2, m_graphData, edgeId)
+            break;
+        }
+    }
+    MTGARRAY_END_SET_LOOP(edgeId, m_graphData)
+}
+
+static size_t s_nbIterations = 5;
+
+void ScalableMeshMeshWithGraph::SmoothToGeometry(const GeometryGuide& source, bvector<size_t>& affectedIndices, bvector<DPoint3d>& affectedIndicesCoords, double smoothness)
+{
+    bvector<bool> isPointMoveable(m_nbPoints, affectedIndices.empty());
+    bvector<bool> isPointInReturnSet(m_nbPoints, false);
+    for (auto& idx : affectedIndices)
+    {
+        isPointMoveable[idx] = true;
+        isPointInReturnSet[idx] = true;
+    }
+
+    bvector<double> weight(m_nbPoints, 0.0);
+    bvector<bvector<bvector<int>>> listOfFaces(m_nbPoints);
+    for (size_t i = 0; i < (size_t)m_nbFaceIndexes; i += 3)
+    {
+        bvector<int> vec;
+        vec.push_back(m_faceIndexes[i]-1);
+        vec.push_back(m_faceIndexes[i+1]-1);
+        vec.push_back(m_faceIndexes[i+2]-1);
+        listOfFaces[m_faceIndexes[i]-1].push_back(vec);
+        listOfFaces[m_faceIndexes[i+1]-1].push_back(vec);
+        listOfFaces[m_faceIndexes[i + 2]-1].push_back(vec);
+    }
+
+    for (size_t i = 0; i < s_nbIterations; ++i)
+    {
+        //for each point, compute force of smoothing for this iteration
+        for (int p = 0; p < m_nbPoints; ++p)
+        {
+            if (isPointMoveable[p])
+            {
+                double distance = source.DistanceTo(m_points[p]);
+                DVec3d targetNorm = source.NormalAt(m_points[p]);
+
+                bvector<bvector<DPoint3d>> tris;
+                //FindTrianglesAroundLabel(tris, p + 1);
+                for (auto& vec : listOfFaces[p])
+                {
+                    bvector<DPoint3d> coords;
+                    coords.push_back(m_points[vec[0]]);
+                    coords.push_back(m_points[vec[1]]);
+                    coords.push_back(m_points[vec[2]]);
+                    tris.push_back(coords);
+                }
+                double avgAngleAround = DBL_MIN;
+                DVec3d ptNorm;
+                for (auto& tri : tris)
+                {
+                    DPlane3d faceP = DPlane3d::From3Points(tri[0], tri[1], tri[2]);
+                    DVec3d faceNorm = faceP.normal;
+                    faceNorm.Normalize();
+                    if (DBL_MIN == avgAngleAround)
+                    {
+                        ptNorm = faceNorm;
+                        avgAngleAround = 0;
+                    }
+                    else
+                        avgAngleAround += faceNorm.SmallerUnorientedAngleTo(ptNorm);
+                }
+                avgAngleAround /= tris.size();
+                double angleToPlane = ptNorm.SmallerUnorientedAngleTo(targetNorm);
+
+                weight[p] = (1 / pow(5*distance, 2)) * min(2.0,(1 / (avgAngleAround / (0.1*msGeomConst_piOver2))) * (1 / pow(angleToPlane / (0.1*msGeomConst_piOver2),2)));
+                if (weight[p] < 1e-4) weight[p] = 0.0;
+            }
+        }
+
+        //average with neighbors
+        for (int p = 0; p < m_nbPoints; ++p)
+        {
+            double totalWt = 0;
+            size_t nSum = 0;
+            for (auto& vec : listOfFaces[p])
+            {
+                for (auto&pt : vec)
+                    if (pt != p)
+                    {
+                        totalWt += min(1.0,weight[pt]);
+                        nSum++;
+                    }
+            }
+
+            weight[p] = 0.5*(weight[p] + (totalWt / nSum));
+            if (weight[p] < 1e-4) weight[p] = 0.0;
+        }
+
+        //apply displacement
+        for (int p = 0; p < m_nbPoints; ++p)
+        {
+            if (weight[p] > 0.0)
+            {
+                DPoint3d projectedPt = source.Project(m_points[p]);
+                DVec3d direction = DVec3d::FromStartEnd(m_points[p], projectedPt);
+                double factor = min(1.0,smoothness * abs(weight[p]));
+                direction.Scale(factor);
+                m_points[p].SumOf(m_points[p], direction);
+            }
+        }
+    }
+
+    //collect updated positions
+    for (int p = 0; p < m_nbPoints; ++p)
+        if (!isPointInReturnSet[p] && weight[p] > 0.0)
+        {
+            affectedIndices.push_back(p);
+            isPointInReturnSet[p] = true;
+        }
+
+    affectedIndicesCoords.resize(affectedIndices.size());
+    for (size_t i = 0; i < affectedIndices.size(); ++i)
+        affectedIndicesCoords[i] = m_points[affectedIndices[i]];
+}
+
 //=======================================================================================
 // @description Recomputes UVs based on interpolating coordinates within the node extent.
 //              This assumes that texture is square and covers the node entirely.
@@ -2370,6 +2521,16 @@ void IScalableMeshMeshQueryParams::SetUseAllResolutions(bool useAllResolutions)
     _SetUseAllResolutions(useAllResolutions);
     }
 
+bool IScalableMeshMeshQueryParams::GetReturnNodesWithNoMesh()
+{
+    return _GetReturnNodesWithNoMesh();
+ }
+
+void IScalableMeshMeshQueryParams::SetReturnNodesWithNoMesh(bool returnEmptyNodes)
+{
+    return _SetReturnNodesWithNoMesh(returnEmptyNodes);
+ }
+
 IScalableMeshViewDependentMeshQueryParams::IScalableMeshViewDependentMeshQueryParams()
     {
     }
@@ -2446,6 +2607,21 @@ StatusInt IScalableMeshViewDependentMeshQueryParams::SetStopQueryCallback(StopQu
 void IScalableMeshViewDependentMeshQueryParams::SetViewClipVector(ClipVectorPtr& viewClipVector)
     {
     _SetViewClipVector(viewClipVector);
+    }
+
+void IScalableMeshViewDependentMeshQueryParams::SetContourInterval(double major, double minor)
+    {
+    _SetContourInterval(major, minor);
+    }
+
+double IScalableMeshViewDependentMeshQueryParams::GetMajorContourInterval() const
+    {
+    return _GetMajorContourInterval();
+    }
+
+double IScalableMeshViewDependentMeshQueryParams::GetMinorContourInterval() const
+    {
+    return _GetMinorContourInterval();
     }
 
 IScalableMeshViewDependentMeshQueryParamsPtr IScalableMeshViewDependentMeshQueryParams::CreateParams()
@@ -2786,6 +2962,10 @@ IScalableMeshNodePtr  IScalableMeshNode::GetParentNode() const
     return _GetParentNode();
     }
 
+IScalableMeshNodeEditPtr IScalableMeshNode::EditNode()
+    {
+    return _EditNode();
+    }
 
 bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
     {
@@ -2862,6 +3042,11 @@ bool IScalableMeshNode::HasClip(uint64_t clipId) const
     {
     return _HasClip(clipId);
     }
+
+bool IScalableMeshNode::HasAnyClip() const
+{
+    return _HasAnyClip();
+}
 
 bool IScalableMeshNode::IsClippingUpToDate() const
     {
@@ -2971,6 +3156,11 @@ StatusInt  IScalableMeshNodeEdit::SetResolution(float geometricResolution, float
     return _SetResolution(geometricResolution, textureResolution);
     }
 
+void   IScalableMeshNodeEdit::ReplaceIndices(const bvector<size_t>& posToChange, const bvector<DPoint3d>& newCoordinates)
+{
+    return _ReplaceIndices(posToChange, newCoordinates);
+}
+
 /*=========================IScalableMeshCachedDisplayNode===============================*/
 StatusInt IScalableMeshCachedDisplayNode::GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool, uint64_t>>& textureIds) const
     {
@@ -2992,6 +3182,11 @@ void      IScalableMeshCachedDisplayNode::SetIsInVideoMemory(bool isInVideoMemor
     return _SetIsInVideoMemory(isInVideoMemory);
     }
 
+bool      IScalableMeshCachedDisplayNode::GetContours(bvector<bvector<DPoint3d>>& contours)
+{
+    return _GetContours(contours);
+}
+
 IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
     {
     if (smP == nullptr)
@@ -3005,11 +3200,129 @@ IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_
     return ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, smP);
     }
 
+
     
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */
 /*==================================================================*/
 
+GeometryGuide::GeometryGuide(const DPlane3d& plane)
+{
+    m_type = Type::Plane;
+    m_planeDef = plane;
+}
+
+GeometryGuide::GeometryGuide(DPoint3d center, DVec3d direction, double radius, double height)
+{
+    m_type = Type::Cylinder;
+    m_cylinderCenter = center;
+    m_cylinderDir = direction;
+    m_cylinderDir.Normalize();
+    DPoint3d height1;
+    height1.SumOf(m_cylinderCenter, m_cylinderDir);
+    m_cylinderDir.Scale(height);
+    m_cylinderRadius = radius;
+    m_transformToCylinder.InitFromPlaneNormalToLine(center, height1, 2, false);
+    m_transformToCylinder.InverseOf(m_transformToCylinder);
+}
+
+double GeometryGuide::DistanceTo(const DPoint3d& pt) const
+{
+    switch (m_type)
+    {
+    case Type::Plane:
+        return m_planeDef.Evaluate(pt);
+    case Type::Cylinder:
+        DPoint3d cylPt = pt;
+        m_transformToCylinder.Multiply(cylPt);
+        if (cylPt.z >= 0 && cylPt.z <= m_cylinderDir.Magnitude())
+            return sqrt(cylPt.x*cylPt.x + cylPt.y*cylPt.y) - m_cylinderRadius;
+        else
+            return (cylPt.z > 0 ? cylPt.z - m_cylinderDir.Magnitude() : cylPt.z) + max(0.0, cylPt.x*cylPt.x + cylPt.y*cylPt.y - m_cylinderRadius*m_cylinderRadius);
+    default:
+        return DBL_MAX;
+    }
+}
+
+void GeometryGuide::TransformWith(const Transform& tr)
+{
+    switch (m_type)
+    {
+    case Type::Plane:
+        tr.Multiply(m_planeDef);
+        break;
+    case Type::Cylinder:
+        break;
+    default:
+        break;
+    }
+}
+
+DPoint3d GeometryGuide::Project(const DPoint3d& pt) const
+{
+    DPoint3d projectedPt = DPoint3d::From(0,0,0);
+    switch (m_type)
+    {
+    case Type::Plane:
+        m_planeDef.ProjectPoint(projectedPt, pt);
+        break;
+    case Type::Cylinder:
+        DPoint3d cylPt = pt;
+        m_transformToCylinder.Multiply(cylPt);
+        /*if (cylPt.z > m_cylinderDir.Magnitude())
+        {
+            projectedPt.z = m_cylinderDir.Magnitude();
+        }
+        else if(cylPt.z < 0)
+        {
+            projectedPt.z = 0;
+        }
+        else*/ projectedPt.z = cylPt.z;
+        cylPt.z = 0;
+        cylPt.Normalize();
+        cylPt.Scale(m_cylinderRadius);
+        projectedPt.x = cylPt.x;
+        projectedPt.y = cylPt.y;
+        Transform tr;
+        tr.InverseOf(m_transformToCylinder);
+        tr.Multiply(projectedPt);
+        break;
+    default:
+        break;
+    }
+    return projectedPt;
+}
+
+DVec3d GeometryGuide::NormalAt(const DPoint3d& pt) const
+{
+    DVec3d normal = DVec3d::From(0, 0, 0);
+    switch (m_type)
+    {
+    case Type::Plane:
+        normal = m_planeDef.normal;
+        break;
+    case Type::Cylinder:
+        DPoint3d cylPt = pt;
+        m_transformToCylinder.Multiply(cylPt);
+        if (cylPt.z >= 0 && cylPt.z <= m_cylinderDir.Magnitude())
+        {
+            normal = DVec3d::From(2 * cylPt.x, 2 * cylPt.y, 0);
+            Transform tr;
+            tr.InverseOf(m_transformToCylinder);
+            tr.Multiply(normal);
+        }
+        else if (cylPt.z > 0)
+            normal = m_cylinderDir;
+        else
+        {
+            normal = m_cylinderDir;
+            normal.Negate();
+        }
+    default:
+        break;
+    }
+    return normal;
+}
 
 /*==================================================================*/
 /*        TEMPLATES - DECLARATION - BEGIN                           */
@@ -3045,6 +3358,8 @@ template class ScalableMeshCachedDisplayNode<DPoint3d>;
 template class ScalableMeshNodeEdit<DPoint3d>;   
 
 template class ScalableMeshNodeWithReprojection<DPoint3d>;
+
+template class ScalableMeshContourCachedDisplayNode<DPoint3d>;
 
 template int BuildQueryObject<DPoint3d>(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
     ISMPointIndexQuery<DPoint3d, Extent3dType>*&                        pQueryObject,

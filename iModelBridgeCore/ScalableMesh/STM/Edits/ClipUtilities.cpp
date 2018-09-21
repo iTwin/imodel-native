@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
 const wchar_t* s_path = L"C:\\work\\2017q3\\tmp\\";
-
+   
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {
     s += tag;
@@ -1812,6 +1812,8 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
 #else
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
 #endif
+                if(!isMask.empty())
+                    newClip->back()->SetIsMask(isMask[&primitive - &clip->front()]);
                 clipPolys.push_back(newClip);
                 polyfaceIndices.push_back(i);
                 }

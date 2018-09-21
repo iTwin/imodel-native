@@ -206,47 +206,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const;
         
-    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM()
-        {
-        std::lock_guard<std::mutex> lock(m_dtmLock); //don't want to add item twice
-        RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> poolMemItemPtr;
-
-
-        if (!SMMemoryPool::GetInstance()->template GetItem<BcDTMPtr>(poolMemItemPtr, m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex))
-            {
-            RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(
-#ifndef VANCOUVER_API   
-                new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
-#else
-            SMMemoryPoolGenericBlobItem<BcDTMPtr>::CreateItem(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
-#endif
-);
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
-            m_dtmPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_dtmPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemItemPtr = storedMemoryPoolItem.get();
-
-            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
-            IScalableMeshNodePtr nodeP(
-#ifndef VANCOUVER_API
-                new ScalableMeshNode<POINT>(nodePtr)
-#else
-                ScalableMeshNode<POINT>::CreateItem(nodePtr)
-#endif
-                );
-            auto meshP = nodeP->GetMesh(flags);
-            if (meshP != nullptr)
-                {
-                auto ptrP = storedMemoryPoolItem->EditData();
-                if (ptrP == nullptr) storedMemoryPoolItem->SetData(new BcDTMPtr(BcDTM::Create()));
-                meshP->GetAsBcDTM(*storedMemoryPoolItem->EditData());
-                }
-            }
-
-        return poolMemItemPtr;
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM();
+        
     /**----------------------------------------------------------------------------
     Returns the 2.5d mesher used for meshing the points
 
@@ -294,8 +255,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     BENTLEY_SM_EXPORT void AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bvector<bvector<DPoint2d>>& uvs, bvector<bvector<uint8_t>>& tex, bool shouldCreateGraph);
 #endif
 
-    size_t                   AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
-    BENTLEY_SM_EXPORT size_t AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+    size_t                   AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
+    BENTLEY_SM_EXPORT size_t AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
 
 #ifdef WIP_MESH_IMPORT
     BENTLEY_SM_EXPORT void GetMetadata();
@@ -344,6 +305,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
 #endif
+
+    bool HasAnyClip();
 
     bool HasClip(uint64_t clipId);
 
@@ -786,6 +749,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void AddEdit(RefCountedPtr<EditOperation>& editDef);
 
+    BENTLEY_SM_EXPORT bool IsExistingMesh() const;
 
     // The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
     void PushTexture(const Byte* texture, size_t size);              
@@ -973,9 +937,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
         BENTLEY_SM_EXPORT void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 //#ifdef WIP_MESH_IMPORT                           
-        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="");
+        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="", bool isMesh3d = true);
 
-        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+        BENTLEY_SM_EXPORT void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs, bool isMesh3d);
 //#endif
 
         BENTLEY_SM_EXPORT void PropagateFullMeshDown();

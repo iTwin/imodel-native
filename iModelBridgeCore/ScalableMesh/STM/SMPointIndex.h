@@ -2065,7 +2065,10 @@ public:
             }
         }
 
-
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+    {
+        return new ISMPointIndexQuery<POINT, EXTENT>();
+    }
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
     /*======================================================================================================
@@ -2229,6 +2232,10 @@ public:
         return false;
         }
 
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+    {
+        return new ISMPointIndexSpatialLimitWrapQuery<POINT, EXTENT>(m_limit,m_wrappedQuery->Clone());
+    }
 
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
@@ -2367,6 +2374,11 @@ public:
             }
         }*/
 
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+    {
+        return new HGFLevelPointIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel, m_returnAllPtsForLowestLevel, m_maxNumberOfPoints);
+    }
+
     };
 
 /*======================================================================================================
@@ -2504,6 +2516,11 @@ public:
             return false;
             }
         }*/
+
+virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+{
+    return new HGFLevelPointIndexByShapeQuery<POINT, EXTENT>(m_areaShape, m_requestedLevel, m_returnAllPtsForLowestLevel, m_maxNumberOfPoints);
+}
 };
     
 /*======================================================================================================
@@ -2567,6 +2584,11 @@ public:
         // Request to continue till level is set
         return (!m_levelSet);
         }
+
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+    {
+        return new HGFAutoLevelPointIndexQuery<POINT, EXTENT>(m_extent, m_levelBias);
+    }
 
     };
 
@@ -2682,6 +2704,11 @@ public:
         m_index = NULL;
         return true;
         };*/
+
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+    {
+        return new HGFNeighborNodesPointIndexQuery<POINT, EXTENT>(m_node);
+    }
     };
 
 
@@ -2844,6 +2871,8 @@ public:
     virtual bool IsCorrectForCurrentView(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                          const EXTENT& pi_visibleExtent,                                         
                                          double        pi_RootToViewMatrix[][4]) const = 0;
+
+    virtual ISMPointIndexQuery<POINT, EXTENT>* Clone() = 0;
     };
 
 
@@ -3025,6 +3054,11 @@ template<class POINT, class EXTENT> class SMLeafPointIndexQuery : public ISMPoin
                     return false;
                     }
             };
+
+        virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
+        {
+            return new SMLeafPointIndexQuery<POINT, EXTENT>(m_extent, m_returnAllPtsForLowestLevel, m_maxNumberOfPoints);
+        }
     };
 
 
