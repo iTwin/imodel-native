@@ -387,7 +387,7 @@ void LsSymbolComponent::SaveSymbolDataToJson(Json::Value& result, DPoint3dCR bas
     if (size.z != 0)
         result["sizeZ"] = size.z;
 
-    result["geomPartId"] = geomPartId.ToHexStr(); // ###INT64TOHEXSTR Was geomPartId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
+    result["geomPartId"] = geomPartId.ToHexStr();
     result["symFlags"] = flags;
 
     if (storedScale != 0)

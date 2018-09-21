@@ -274,7 +274,7 @@ void ViewDefinition::SetAuxiliaryCoordinateSystem(DgnElementId acsId)
     BeAssert(!IsPersistent());
 
     if (acsId.IsValid())
-        SetDetail(json_acs(), Json::Value(acsId.ToHexStr())); // ###INT64TOHEXSTR Was acsId.GetValue() which fails on imodel-js, asUInt64 still works with ToHexStr.
+        SetDetail(json_acs(), Json::Value(acsId.ToHexStr()));
     else
         RemoveDetail(json_acs());
     }
