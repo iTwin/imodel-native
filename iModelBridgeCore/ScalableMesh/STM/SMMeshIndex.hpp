@@ -3820,7 +3820,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericBlobItem<Bc
 
 
 
-template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> SMMeshIndexNode<POINT, EXTENT>::GetGraphPtr(bool loadGraph = true)
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> SMMeshIndexNode<POINT, EXTENT>::GetGraphPtr(bool loadGraph)
     {
     std::lock_guard<std::mutex> lock(m_graphMutex); //don't want to add item twice
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> poolMemItemPtr;
