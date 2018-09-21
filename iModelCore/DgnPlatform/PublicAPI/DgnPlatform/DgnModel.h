@@ -655,7 +655,7 @@ public:
     //! @param[in] key The key identifying the type of AppData.
     //! @params[in] createAppData a callable taking no arguments and returning an AppData*, invoked if no AppData corresponding to the supplied key currently exists on the model.
     //! @return the AppData corresponding to the supplied key as a ref-counted pointer to the derived type.
-    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) const -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
+    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
         {
         using U = decltype(createAppData());
         AppDataPtr data = FindOrAddAppData(key, createAppData);
