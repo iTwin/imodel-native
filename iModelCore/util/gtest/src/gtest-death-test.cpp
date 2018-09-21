@@ -923,16 +923,12 @@ struct ExecDeathTestArgs {
   int close_fd;       // File descriptor to close; the read end of a pipe
 };
 
-#  if GTEST_OS_MAC
+#  if GTEST_OS_MAC && !GTEST_OS_IOS_SIMULATOR
 inline char** GetEnviron() {
   // When Google Test is built as a framework on MacOS X, the environ variable
   // is unavailable. Apple's documentation (man environ) recommends using
   // _NSGetEnviron() instead.
-#   if GTEST_OS_IOS_SIMULATOR
-  return NULL;
-#   else
   return *_NSGetEnviron();
-#   endif
 }
 #  else
 // Some POSIX platforms expect you to declare environ. extern "C" makes
@@ -966,7 +962,11 @@ static int ExecDeathTestChildMain(void* child_arg) {
   // unsafe.  Since execve() doesn't search the PATH, the user must
   // invoke the test program via a valid path that contains at least
   // one path separator.
+#   if GTEST_OS_IOS_SIMULATOR
+  execv(args->argv[0], args->argv);
+#   else
   execve(args->argv[0], args->argv, GetEnviron());
+#   endif
   DeathTestAbort(std::string("execve(") + args->argv[0] + ", ...) in " +
                  original_dir + " failed: " +
                  GetLastErrnoDescription());
