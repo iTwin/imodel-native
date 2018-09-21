@@ -61,10 +61,12 @@ struct SecureStore : public ISecureStore
         BESECURITY_EXPORT SecureStore(ILocalState& localState);
         BESECURITY_EXPORT ~SecureStore();
 
+        //! DEPRECATED. Use Encrypt() and custom storage.
         //! Stores value for given key in namespace. If value is empty, key-value pair is deleted. If key or namespace is empty nothing is done.
         //! Value is encrypted with Encrypt() and stored to local state.
         BESECURITY_EXPORT void SaveValue (Utf8CP nameSpace, Utf8CP key, Utf8CP value) override;
 
+        //! DEPRECATED. Use Decrypt() and custom storage.
         //! Loads value for given key in namespace. See SaveValue() for more info. Empty string is returned when value not found or other error occurs.
         //! Value is loaded from local state and decrypted with Decrypt().
         BESECURITY_EXPORT Utf8String LoadValue (Utf8CP nameSpace, Utf8CP key) override;
