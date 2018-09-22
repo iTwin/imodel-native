@@ -814,6 +814,10 @@ Count IScalableMesh::GetCountInRange (const DRange2d& range, const CountType& ty
     }
 
 
+void      IScalableMesh::RegenerateClips(bool forceRegenerate)
+{
+    return _RegenerateClips(forceRegenerate);
+}
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::ScalableMeshBase
@@ -912,6 +916,78 @@ bool ScalableMeshBase::LoadGCSFrom()
     return LoadGCSFrom(wktStr);
 }
 
+template <class POINT> void ScalableMesh<POINT>::_RegenerateClips(bool forceRegenerate)
+{
+    if (nullptr == m_scmIndexPtr) return;
+    auto store = m_scmIndexPtr->GetDataStore();
+
+    if (store->DoesClipFileExist() && forceRegenerate)
+    {
+        SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
+        store->EraseClipFile();
+    }
+
+    SetIsInsertingClips(true);
+
+    bvector<uint64_t> existingClipIds;
+    GetAllClipIds(existingClipIds);
+
+    for (auto& id : existingClipIds)
+    {
+        bvector<DPoint3d> clipData;
+        m_scmIndexPtr->GetClipRegistry()->GetClip(id, clipData);
+        DRange3d extent = DRange3d::NullRange();
+        if (!clipData.empty())
+            extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
+        else
+        {
+            SMClipGeometryType geom;
+            SMNonDestructiveClipType type;
+            bool isActive;
+            m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, clipData, geom, type, isActive);
+            if (geom == SMClipGeometryType::BoundedVolume)
+            {
+                ClipVectorPtr cp;
+                m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, cp, geom, type, isActive);
+                if (cp.IsValid())
+                {
+                    for (ClipPrimitivePtr& primitive : *cp)
+                        primitive->SetIsMask(false);
+                    cp->GetRange(extent, nullptr);
+                }
+                if (extent.Volume() == 0)
+                {
+                    if (extent.XLength() == 0)
+                    {
+                        extent.low.x -= 1.e-5;
+                        extent.high.x += 1.e-5;
+                    }
+                    if (extent.YLength() == 0)
+                    {
+                        extent.low.y -= 1.e-5;
+                        extent.high.y += 1.e-5;
+                    }
+                    if (extent.ZLength() == 0)
+                    {
+                        extent.low.z -= 1.e-5;
+                        extent.high.z += 1.e-5;
+                    }
+                }
+            }
+
+        }
+
+        Transform t = Transform::FromIdentity();
+        if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, id, extent, true, t);
+
+    }
+
+    SetIsInsertingClips(false);
+    SaveEditFiles();
+}
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
@@ -936,7 +1012,7 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 
 		if (changed->ShouldRegenerateStaleClipFiles() && !store->DoesClipFileExist())
 		{
-			SetIsInsertingClips(true);
+			/*SetIsInsertingClips(true);
 
 			bvector<uint64_t> existingClipIds;
 			GetAllClipIds(existingClipIds);
@@ -994,7 +1070,8 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 			}
 
 			SetIsInsertingClips(false);
-			SaveEditFiles();
+			SaveEditFiles();*/
+            _RegenerateClips();
 		}
 	});
     }
@@ -1333,6 +1410,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
 
     SMMemoryPool::CleanVideoMemoryPool();
 
+    _SetIsInsertingClips(false);
     SaveEditFiles();
 
     m_scmIndexPtr = 0;

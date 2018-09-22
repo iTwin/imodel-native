@@ -1304,6 +1304,21 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::DoesClipFileExist() const
 	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
 }
 
+template <class EXTENT> void SMStreamingStore<EXTENT>::EraseClipFile() const
+{
+    if (!IsProjectFilesPathSet())
+        return;
+
+    WString sqlFileName;
+    if (!GetSisterSQLiteFileName(sqlFileName, SMStoreDataType::DiffSet))
+        return;
+
+    if (!DoesClipFileExist())
+        return;
+
+    _wremove(sqlFileName.c_str());
+}
+
 template <class EXTENT> void SMStreamingStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
    {
 	m_clipProvider = provider;

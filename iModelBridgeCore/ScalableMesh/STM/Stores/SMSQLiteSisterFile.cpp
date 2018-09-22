@@ -113,6 +113,56 @@ void SMSQLiteSisterFile::CopyClipSisterFile(SMStoreDataType dataType) const
 
 	BeFileName::BeCopyFile(sqlFileNameSource.c_str(), sqlFileName.c_str());
 }
+
+void SMSQLiteSisterFile::CloseSisterFile(SMStoreDataType dataType)
+{
+    SMSQLiteFilePtr sqlFilePtr;
+
+    switch (dataType)
+    {
+    case SMStoreDataType::LinearFeature:
+    case SMStoreDataType::Graph:
+    {
+        std::lock_guard<std::mutex> lock(m_featureOpen);
+        if (m_smFeatureSQLiteFile.IsValid() && m_smFeatureSQLiteFile->IsOpen())
+        {
+            m_smFeatureSQLiteFile->Close();
+            m_smFeatureSQLiteFile = nullptr;
+        }
+
+    }
+    break;
+
+    case SMStoreDataType::DiffSet:
+    {
+        std::lock_guard<std::mutex> lock(m_clipOpen);
+        if (m_smClipSQLiteFile.IsValid() && m_smClipSQLiteFile->IsOpen())
+        {
+            m_smClipSQLiteFile->Close();
+            m_smClipSQLiteFile = nullptr;
+        }
+    }
+    break;
+
+    case SMStoreDataType::ClipDefinition:
+    case SMStoreDataType::Skirt:
+    case SMStoreDataType::CoveragePolygon:
+    case SMStoreDataType::CoverageName:
+    {
+        std::lock_guard<std::mutex> lock(m_defOpen);
+        if (m_smClipDefinitionSQLiteFile.IsValid() && m_smClipDefinitionSQLiteFile->IsOpen())
+        {
+            m_smClipDefinitionSQLiteFile->Close();
+            m_smClipDefinitionSQLiteFile = nullptr;
+        }
+    }
+    break;
+
+    default:
+        assert(!"Unknown datatype");
+        break;
+    }
+}
    
 SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath)
     {

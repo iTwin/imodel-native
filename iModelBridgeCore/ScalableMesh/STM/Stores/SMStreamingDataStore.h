@@ -270,6 +270,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
 		virtual bool DoesClipFileExist() const override;
 
+        virtual void EraseClipFile() const override;
+
 		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
 
 		virtual void WriteClipDataToProjectFilePath() override;
