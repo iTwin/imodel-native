@@ -671,6 +671,7 @@ void UnitNameMappings::AddMappings()
     AddECMapping("HZ", "UNITS:HZ");
     AddECMapping("IN", "UNITS:IN");
     AddECMapping("IN/DAY", "UNITS:IN_PER_DAY");
+    AddECMapping("IN/DEGREE", "UNITS:IN_PER_DEGREE");
     AddECMapping("IN/FT", "UNITS:IN_PER_FT");
     AddECMapping("IN/HR", "UNITS:IN_PER_HR");
     AddECMapping("IN/MIN", "UNITS:IN_PER_MIN");
