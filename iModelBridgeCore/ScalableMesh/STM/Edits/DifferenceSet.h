@@ -6,7 +6,7 @@
 |       $Date: 2015/09/08 10:27:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -49,8 +49,20 @@ struct DifferenceSet
         else upToDate = false;
         }
 
-    DifferenceSet& operator=(const DifferenceSet& d)
+    virtual ~DifferenceSet()
         {
+        }
+    
+    DifferenceSet& operator=(const DifferenceSet& d)
+        {        
+        //TFS# 919528 - Ensure that the capacity is reset to zero to avoid the capacity to grow up uncontrollably over time.
+        addedVertices = bvector<DPoint3d>();
+        removedVertices = bvector<int32_t>();
+        addedFaces = bvector<int32_t>();    
+        removedFaces = bvector<int32_t>();
+        addedUvs = bvector<DPoint2d>();
+        addedUvIndices = bvector<int32_t>();
+        
         clientID = d.clientID;
         firstIndex = d.firstIndex;
         addedVertices = d.addedVertices;
@@ -69,6 +81,8 @@ struct DifferenceSet
         {
         return addedFaces.empty() && removedFaces.empty();
         }
+		
+    void Empty();
 
     uint64_t WriteToBinaryStream(void*& serialized);
     void LoadFromBinaryStream(void* serialized, uint64_t ct);

@@ -3043,6 +3043,11 @@ bool IScalableMeshNode::HasClip(uint64_t clipId) const
     return _HasClip(clipId);
     }
 
+bool IScalableMeshNode::HasAnyClip() const
+{
+    return _HasAnyClip();
+}
+
 bool IScalableMeshNode::IsClippingUpToDate() const
     {
     return _IsClippingUpToDate();
@@ -3255,7 +3260,7 @@ void GeometryGuide::TransformWith(const Transform& tr)
 
 DPoint3d GeometryGuide::Project(const DPoint3d& pt) const
 {
-    DPoint3d projectedPt;
+    DPoint3d projectedPt = DPoint3d::From(0,0,0);
     switch (m_type)
     {
     case Type::Plane:
@@ -3290,7 +3295,7 @@ DPoint3d GeometryGuide::Project(const DPoint3d& pt) const
 
 DVec3d GeometryGuide::NormalAt(const DPoint3d& pt) const
 {
-    DVec3d normal;
+    DVec3d normal = DVec3d::From(0, 0, 0);
     switch (m_type)
     {
     case Type::Plane:

@@ -578,7 +578,7 @@ bool MeshHandler::Copy(/*TypeInfoCIter           pi_typeInfoIter,*/
 
     int maxTriangles = m_rDTM.GetTrianglesCount() * 2;
 
-    Bentley::TerrainModel::DTMMeshEnumeratorPtr en = Bentley::TerrainModel::DTMMeshEnumerator::Create(const_cast<BcDTM&>(m_rDTM));
+    BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(const_cast<BcDTM&>(m_rDTM));
 
     en->SetMaxTriangles(maxTriangles);
 

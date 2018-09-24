@@ -233,6 +233,8 @@ struct IScalableMesh :  IRefCounted
 
         virtual void _ReFilter() = 0;
 
+        virtual void                               _RegenerateClips(bool forceRegenerate = false) = 0;
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
@@ -320,6 +322,8 @@ struct IScalableMesh :  IRefCounted
 
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) = 0;
+#else
+        virtual BentleyStatus                      _Reproject(BentleyApi::Dgn::DgnGCSCP targetCS, DgnDbR dgnProject) = 0;
 #endif
 
         virtual Transform              _GetReprojectionTransform() const = 0;
@@ -437,6 +441,8 @@ struct IScalableMesh :  IRefCounted
 
         Count                  GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const;
 
+        BENTLEY_SM_EXPORT void                   RegenerateClips(bool forceRegenerate = false);
+
         BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
         BENTLEY_SM_EXPORT bool                   AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID);
@@ -517,6 +523,8 @@ struct IScalableMesh :  IRefCounted
 
 #ifdef VANCOUVER_API
         BENTLEY_SM_EXPORT BentleyStatus          Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel);
+#else
+        BENTLEY_SM_EXPORT BentleyStatus          Reproject(BentleyApi::Dgn::DgnGCSCP targetCS, DgnDbR dgnProject);
 #endif
 
         BENTLEY_SM_EXPORT Transform              GetReprojectionTransform() const;

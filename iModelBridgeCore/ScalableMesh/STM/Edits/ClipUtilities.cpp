@@ -2216,7 +2216,11 @@ void MeshClipper::SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives
         mapOfVector[id].id = id;
         if (nullptr == mapOfVector[id].clip)
         {
+#ifdef VANCOUVER_API
             vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive));
+#else
+            vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive.get()));
+#endif
             mapOfVector[id].clip = vectorDefs.back().get();
         }
         else const_cast<ClipVector*>(mapOfVector[id].clip)->push_back(primitive);
@@ -2242,7 +2246,11 @@ void MeshClipper::SetClipGeometry(const bmap<size_t, uint64_t>& idsForPrimitives
         mapOfVector[id].id =id;
         if (nullptr == mapOfVector[id].clip)
             {
+#ifdef VANCOUVER_API
             vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive));
+#else
+            vectorDefs.push_back(ClipVector::CreateFromPrimitive(primitive.get()));
+#endif
             mapOfVector[id].clip = vectorDefs.back().get();
             }
         else const_cast<ClipVector*>(mapOfVector[id].clip)->push_back(primitive);

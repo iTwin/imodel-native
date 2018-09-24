@@ -205,6 +205,9 @@ int                    ScalableMeshGroup::_GetRangeInSpecificGCS(DPoint3d& lowPt
     }
 
 
+void                               ScalableMeshGroup::_RegenerateClips(bool forceRegenerate)
+{
+}
 uint64_t                           ScalableMeshGroup::_AddClip(const DPoint3d* pts, size_t ptsSize)
     {
     return 0;
@@ -547,6 +550,12 @@ BentleyStatus                      ScalableMeshGroup::_Reproject(GeoCoordinates:
     {
     return ERROR;
     }
+#else
+BentleyStatus                      ScalableMeshGroup::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
+    {
+    return ERROR;
+    }
+
 #endif
 
 Transform                          ScalableMeshGroup::_GetReprojectionTransform() const

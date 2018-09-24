@@ -882,6 +882,7 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
     if (!m_tileTreeMap.empty())
         {
         assert(parentNodeID != uint32_t(-1));
+        assert(m_tileTreeMap.count(parentNodeID) == 1);
         auto parentTilePtr = m_tileTreeMap[parentNodeID];
         assert(parentTilePtr != nullptr);
 
@@ -905,10 +906,10 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
 
             // Keep the index before updating the parent tile
             m_tilesetRootNode["index"] = parentNodeTileChildren.size();
+            m_tileTreeMap[parentNodeID] = &parentNodeTile;
 
             auto& childTile = parentNodeTileChildren.append(tile);
             childTile.removeMember("children");
-            childTile.removeMember("SMHeader");
 
             childTile["content"]["url"] = Utf8String(("n_" + std::to_string(this->GetID()) + ".json").c_str());
             }
@@ -921,7 +922,6 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
 void SMNodeGroup::AppendChildGroup(SMNodeGroupPtr childGroup)
     {
     Json::Value childReferenceNode;
-    childReferenceNode["SMRootID"] = childGroup->m_tilesetRootNode["SMHeader"]["id"];
     childReferenceNode["boundingVolume"] = childGroup->m_tilesetRootNode["boundingVolume"];
     childReferenceNode["geometricError"] = childGroup->m_tilesetRootNode["geometricError"];
     childReferenceNode["refine"] = childGroup->m_tilesetRootNode["refine"];

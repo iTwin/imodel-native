@@ -69,6 +69,17 @@ void ComputeAndRemoveIntersections(bvector<bvector<DPoint3d>>& polygons, bvector
     ids.swap(outIds);
 }
 
+template<typename T> void FreeItemMemory(T* item)
+    {
+    return;
+    }
+
+template<> void FreeItemMemory<DifferenceSet>(DifferenceSet* item)
+    {
+    item->Empty();
+    return;
+    }
+
 template<typename T> size_t GetSizeInMemory(T* item)
     {
     return sizeof(T);

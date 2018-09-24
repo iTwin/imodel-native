@@ -2883,6 +2883,10 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
     LOAD_NODE
 
     bvector<IScalableMeshNodePtr> neighbors;
+
+    if (!(relativePosX >= -1 && relativePosX <= 1 && relativePosY >= -1 && relativePosY <= 1 && relativePosZ >= -1 && relativePosZ <= 1))
+        return neighbors;
+
     size_t neighborInd = 0;
     //see HGFSpatialIndex.hpp for node neighbor relations
     if (relativePosZ == -1) neighborInd += 8;
@@ -3150,6 +3154,13 @@ template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) con
     if (m_meshNode == nullptr) return false;
     return m_meshNode->HasClip(clip);
     }
+
+template <class POINT> bool ScalableMeshNode<POINT>::_HasAnyClip() const
+{
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
+    if (m_meshNode == nullptr) return false;
+    return m_meshNode->m_nbClips > 0;
+}
 
 template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     {

@@ -10,9 +10,9 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
         
-        
+           
 #include <ScalableMeshPCH.h>
-#include "ImagePPHeaders.h"   
+#include "ImagePPHeaders.h"
 
 /*----------------------------------------------------------------------+
 | Include MicroStation SDK header files

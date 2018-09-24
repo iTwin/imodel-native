@@ -3775,6 +3775,50 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
         }
     return poolMemItemPtr;
     }
+ 
+
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> SMMeshIndexNode<POINT, EXTENT>::GetTileDTM()
+    {
+    std::lock_guard<std::mutex> lock(m_dtmLock); //don't want to add item twice
+    RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> poolMemItemPtr;
+
+
+    if (!SMMemoryPool::GetInstance()->GetItem<BcDTMPtr>(poolMemItemPtr, m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex))
+        {
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(
+#ifndef VANCOUVER_API   
+            new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
+#else
+            SMMemoryPoolGenericBlobItem<BcDTMPtr>::CreateItem(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
+#endif
+        );
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+        m_dtmPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        assert(m_dtmPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemItemPtr = storedMemoryPoolItem.get();
+
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
+        IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+            new ScalableMeshNode<POINT>(nodePtr)
+#else
+            ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+        );
+        auto meshP = nodeP->GetMesh(flags);
+        if (meshP != nullptr)
+            {
+            auto ptrP = storedMemoryPoolItem->EditData();
+            if (ptrP == nullptr) storedMemoryPoolItem->SetData(new BcDTMPtr(BcDTM::Create()));
+            meshP->GetAsBcDTM(*storedMemoryPoolItem->EditData());
+            }
+        }
+
+    return poolMemItemPtr;
+    }
+
+
 
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> SMMeshIndexNode<POINT, EXTENT>::GetGraphPtr(bool loadGraph = true)
     {
@@ -4360,6 +4404,16 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
             }
         }
     }
+
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 09/18
+//=======================================================================================
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasAnyClip()
+{
+    RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
+    if (!diffsetPtr.IsValid()) return false;
+    return true;
+}
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 02/16

@@ -64,6 +64,9 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshDb.h"
 #include <ScalableMesh/IScalableMeshPublisher.h>
 
+#ifndef VANCOUVER_API
+#include <DgnPlatform\DgnGeoCoord.h>
+#endif
 
 
 
@@ -567,6 +570,11 @@ BentleyStatus   IScalableMesh::Reproject(GeoCoordinates::BaseGCSCP targetCS, Dgn
     {
     return _Reproject(targetCS, dgnModel);
     }
+#else
+BentleyStatus   IScalableMesh::Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
+    {
+    return _Reproject(targetCS, dgnProject);
+    }
 #endif
 
 IScalableMeshPtr IScalableMesh::GetGroup()
@@ -806,6 +814,10 @@ Count IScalableMesh::GetCountInRange (const DRange2d& range, const CountType& ty
     }
 
 
+void      IScalableMesh::RegenerateClips(bool forceRegenerate)
+{
+    return _RegenerateClips(forceRegenerate);
+}
 
 /*----------------------------------------------------------------------------+
 |ScalableMeshBase::ScalableMeshBase
@@ -904,6 +916,78 @@ bool ScalableMeshBase::LoadGCSFrom()
     return LoadGCSFrom(wktStr);
 }
 
+template <class POINT> void ScalableMesh<POINT>::_RegenerateClips(bool forceRegenerate)
+{
+    if (nullptr == m_scmIndexPtr) return;
+    auto store = m_scmIndexPtr->GetDataStore();
+
+    if (store->DoesClipFileExist() && forceRegenerate)
+    {
+        SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
+        store->EraseClipFile();
+    }
+
+    SetIsInsertingClips(true);
+
+    bvector<uint64_t> existingClipIds;
+    GetAllClipIds(existingClipIds);
+
+    for (auto& id : existingClipIds)
+    {
+        bvector<DPoint3d> clipData;
+        m_scmIndexPtr->GetClipRegistry()->GetClip(id, clipData);
+        DRange3d extent = DRange3d::NullRange();
+        if (!clipData.empty())
+            extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
+        else
+        {
+            SMClipGeometryType geom;
+            SMNonDestructiveClipType type;
+            bool isActive;
+            m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, clipData, geom, type, isActive);
+            if (geom == SMClipGeometryType::BoundedVolume)
+            {
+                ClipVectorPtr cp;
+                m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(id, cp, geom, type, isActive);
+                if (cp.IsValid())
+                {
+                    for (ClipPrimitivePtr& primitive : *cp)
+                        primitive->SetIsMask(false);
+                    cp->GetRange(extent, nullptr);
+                }
+                if (extent.Volume() == 0)
+                {
+                    if (extent.XLength() == 0)
+                    {
+                        extent.low.x -= 1.e-5;
+                        extent.high.x += 1.e-5;
+                    }
+                    if (extent.YLength() == 0)
+                    {
+                        extent.low.y -= 1.e-5;
+                        extent.high.y += 1.e-5;
+                    }
+                    if (extent.ZLength() == 0)
+                    {
+                        extent.low.z -= 1.e-5;
+                        extent.high.z += 1.e-5;
+                    }
+                }
+            }
+
+        }
+
+        Transform t = Transform::FromIdentity();
+        if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, id, extent, true, t);
+
+    }
+
+    SetIsInsertingClips(false);
+    SaveEditFiles();
+}
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
@@ -928,7 +1012,7 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 
 		if (changed->ShouldRegenerateStaleClipFiles() && !store->DoesClipFileExist())
 		{
-			SetIsInsertingClips(true);
+			/*SetIsInsertingClips(true);
 
 			bvector<uint64_t> existingClipIds;
 			GetAllClipIds(existingClipIds);
@@ -986,7 +1070,8 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 			}
 
 			SetIsInsertingClips(false);
-			SaveEditFiles();
+			SaveEditFiles();*/
+            _RegenerateClips();
 		}
 	});
     }
@@ -1177,17 +1262,6 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 0,
                 0);
 
-#if 0
-            if (false/*stream_settings->IsGCSStringSet()*/)
-                {
-                // even if it is 3DTiles, the GCS is extracted so the data is not nessessarily xyz
-                m_isCesium3DTiles = false;
-
-                if (!LoadGCSFrom(stream_settings->GetGCSString()))
-                    return BSIERROR; // Error loading layer gcs
-                }
-            else
-#endif
                 {
                 if (!LoadGCSFrom(WString(L"ll84")))
                     return BSIERROR; // Error loading layer gcs
@@ -1336,6 +1410,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
 
     SMMemoryPool::CleanVideoMemoryPool();
 
+    _SetIsInsertingClips(false);
     SaveEditFiles();
 
     m_scmIndexPtr = 0;
@@ -3605,6 +3680,92 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                                                          0, scaleUorPerMeters, 0, globalOrigin2.y,
                                                          0, 0, scaleUorPerMeters, globalOrigin2.z);
             }
+        }
+
+    return _SetReprojection(*targetCS, computedTransform);
+    }
+#else
+template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
+    {
+    Transform computedTransform = Transform::FromIdentity();
+
+    // Greate a GCS from the ScalableMesh
+    GeoCoords::GCS gcs(this->GetGCS());
+
+    DPoint3d scale;
+    scale.x = 1;
+    scale.y = 1;
+    scale.z = 1;
+
+    DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
+
+    if (gcs.HasGeoRef())
+        {
+        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
+        dgnGcsPtr->UorsFromCartesian(scale, scale);
+        scale.DifferenceOf(scale, globalOrigin);
+
+        if (targetCS != nullptr && !targetCS->IsEquivalent(*dgnGcsPtr))
+            {
+            dgnGcsPtr->SetReprojectElevation(true);
+
+            Transform trans = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                       0, scale.y, 0, globalOrigin.y,
+                                                       0, 0, scale.z, globalOrigin.z);
+
+            DRange3d smExtent, smExtentUors;
+            this->GetRange(smExtent);
+            trans.Multiply(smExtentUors, smExtent);
+
+            DPoint3d extent;
+            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
+            Transform       approxTransform;
+
+            auto coordInterp = this->IsCesium3DTiles() ? Dgn::GeoCoordInterpretation::XYZ : Dgn::GeoCoordInterpretation::Cartesian;
+
+            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *targetCS);
+            if (0 == status || 1 == status || 25 == status)
+                {
+                DRange3d smExtentInDestGCS1;
+                approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);
+                computedTransform = Transform::FromProduct(approxTransform, trans);
+
+                DRange3d smExtentInDestGCS;
+                computedTransform.Multiply(smExtentInDestGCS, smExtent);
+                }
+            else
+                {
+                computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                             0, scale.y, 0, globalOrigin.y,
+                                                             0, 0, scale.y, globalOrigin.z);
+                }
+            }
+        else if (targetCS == nullptr && this->IsCesium3DTiles() && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
+            {
+            // Fall back on the GCS saved in the SM metadata for Cesium tilesets
+            auto ecefGCS = m_sourceGCS;
+            if (!LoadGCSFrom(m_streamingSettings->GetGCSString()))
+                return BSIERROR; // Error loading layer gcs
+
+                                 // Reproject data using this new GCS
+            auto newGCS = m_sourceGCS;
+            std::swap(m_sourceGCS, ecefGCS);
+            DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnProject));
+            return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
+            }
+        else
+            {
+            computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                         0, scale.y, 0, globalOrigin.y,
+                                                         0, 0, scale.y, globalOrigin.z);
+            }
+        }
+    else
+        {
+        if (targetCS != nullptr)
+            dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
+
+        computedTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
         }
 
     return _SetReprojection(*targetCS, computedTransform);

@@ -64,6 +64,7 @@ BENTLEY_SM_EXPORT extern uint32_t s_max_group_depth;
 BENTLEY_SM_EXPORT extern uint32_t s_max_group_common_ancestor;
 
 struct SMGroupGlobalParameters : public BENTLEY_NAMESPACE_NAME::RefCountedBase {
+
 public:
     enum StrategyType
         {
@@ -481,6 +482,11 @@ BENTLEY_SM_EXPORT extern SMGroupingStrategy<DRange3d>* s_groupingStrategy;
 class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
+
+#ifndef VANCOUVER_API
+    private:
+        virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); }
+#endif
 
     public:
         typedef std::pair<uint64_t, SMNodeGroup*> DistributeData;
@@ -1299,7 +1305,6 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(SMIndexNodeHeade
             Json::Value& parentJSON = *pi_pParentGroup->m_tileTreeMap[pi_parentHeader.m_id.m_integerID];
             Json::Value& correspondingChildJSON = parentJSON["children"][(Json::Value::ArrayIndex)childJSONIndex];
             assert(correspondingChildJSON.isMember("boundingVolume"));
-            correspondingChildJSON["SMRootID"] = pi_childHeader.m_id.m_integerID;
             }
         }
     }

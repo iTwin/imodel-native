@@ -336,6 +336,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
 
+        virtual void                               _RegenerateClips(bool forceRegenerate = false) override;
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
@@ -377,6 +378,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
+#else
+        virtual BentleyStatus                      _Reproject(DgnGCSCP targetCS, DgnDbR dgnProject) override;
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 
@@ -551,6 +554,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                   _IsShareable() const override;
 
 
+        virtual void                               _RegenerateClips(bool forceRegenerate = false) override {}
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
             {
@@ -633,6 +637,11 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             }
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override
+            {
+            return ERROR;
+            }
+#else
+        virtual BentleyStatus                      _Reproject(DgnGCSCP targetCS, DgnDbR dgnProject) override
             {
             return ERROR;
             }

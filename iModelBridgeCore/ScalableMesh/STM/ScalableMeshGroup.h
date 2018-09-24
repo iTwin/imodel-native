@@ -186,6 +186,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
 
+
+        virtual void                               _RegenerateClips(bool forceRegenerate = false) override;
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
@@ -218,6 +220,8 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
 #ifdef VANCOUVER_API
         virtual BentleyStatus                      _Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel) override;
+#else
+        virtual BentleyStatus                      _Reproject(DgnGCSCP targetCS, DgnDbR dgnProject) override;
 #endif
         virtual Transform                          _GetReprojectionTransform() const override;
 

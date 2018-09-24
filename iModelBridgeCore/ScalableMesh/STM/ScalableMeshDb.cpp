@@ -56,17 +56,12 @@ ProfileState ScalableMeshDb::_CheckProfileVersion() const
     return ProfileState::UpToDate();
     }
 
-
 DbResult ScalableMeshDb::_UpgradeProfile()
     {
-    bool update = m_smFile->UpdateDatabase();
+    DbResult updateResult = m_smFile->UpdateDatabase();
 
-    if (!update)
-        return BE_SQLITE_ERROR;     
-
-    return BE_SQLITE_OK;
+    return updateResult;
     }
-
 
 #else
 static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
