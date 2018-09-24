@@ -409,7 +409,7 @@ ClassMappingStatus DbMappingManager::Classes::MapNavigationProperty(SchemaImport
         if (!MapStrategyExtendedInfo::IsForeignKeyMapping(relMapStrategy))
             {
             //Schema upgrade case. Rel was mapped previously w/o nav prop and amounted to link table. That cannot be changed now
-            ctx.Issues().ReportV("Failed to map navigation property '%s.%s'. Its ECRelationshipClass '%s' cannot be mapped as link table relationship.",
+            ctx.Issues().ReportV("Failed to map navigation property '%s.%s'. Its ECRelationshipClass '%s' is mapped as link table relationship.",
                                 navProp.GetClass().GetFullName(), navProp.GetName().c_str(), navRel->GetFullName());
             return ClassMappingStatus::Error;
             }

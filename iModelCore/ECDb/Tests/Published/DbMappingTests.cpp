@@ -505,8 +505,65 @@ TEST_F(DbMappingTestFixture, SubQueringEndTableRelationship)
     ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT TargetECClassId FROM (SELECT * FROM (SELECT * FROM ts.ElementOwnsAspect))"));
     ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT * FROM (SELECT * FROM ts.ElementRefsElement))"));
     ASSERT_EQ(ECSqlStatus::Success, PrepareECSql("SELECT * FROM (SELECT * FROM (SELECT * FROM ts.ElementOwnsAspect))"));
-
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                       09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, NavPropToWrongEnd)
+    {
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf"/>
+                <ECEntityClass typeName="Foo">
+                    <ECNavigationProperty propertyName="FileInfo" relationshipName="FooHasFileInfo" direction="backward" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="FooHasFileInfo" modifier="Sealed" strength="holding">
+                    <Source multiplicity="(0..1)" roleLabel="holds" polymorphic="false">
+                        <Class class="Foo"/>
+                    </Source>
+                    <Target multiplicity="(0..1)" roleLabel="is held by" polymorphic="false">
+                        <Class class="ecdbf:ExternalFileInfo"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml"))) << "Cannot define nav prop to end which does not list its class as constraint class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf"/>
+                <ECEntityClass typeName="Foo">
+                    <ECNavigationProperty propertyName="FileInfo" relationshipName="FooHasFileInfo" direction="forward" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="FooHasFileInfo" modifier="Sealed" strength="holding">
+                    <Source multiplicity="(0..1)" roleLabel="holds" polymorphic="false">
+                        <Class class="Foo"/>
+                    </Source>
+                    <Target multiplicity="(0..1)" roleLabel="is held by" polymorphic="false">
+                        <Class class="ecdbf:ExternalFileInfo"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml"))) << "Rel is mapped as link table as no nav prop points to FK end.";
+
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbFileInfo" version="02.00.01" alias="ecdbf"/>
+                <ECEntityClass typeName="Foo">
+                    <ECNavigationProperty propertyName="FileInfo" relationshipName="FooHasFileInfo" direction="forward" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="FooHasFileInfo" modifier="Sealed" strength="holding" strengthDirection="Backward">
+                    <Source multiplicity="(0..1)" roleLabel="holds" polymorphic="false">
+                        <Class class="Foo"/>
+                    </Source>
+                    <Target multiplicity="(0..1)" roleLabel="is held by" polymorphic="false">
+                        <Class class="ecdbf:ExternalFileInfo"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml"))) << "Nav prop maps to FK end of relationship because strengthDirection is Backward";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
