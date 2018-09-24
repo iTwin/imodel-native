@@ -414,7 +414,9 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
     // If MS_SMARTSOLID is not defined, Vancouver will look for a "schema" sub-directory next to the process's EXE to provide ParaSolid with its schema files.
     // In DgnDb, we place ParaSolid schemas in a "PSolidSchemas" sub-directory for clarity, so we need to inject a better path.
     // Further, might as well ensure V8 uses the schema from the V8 delivery, and not ours.
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, L"MS_SMARTSOLID"))
+    Bentley::WString parasolidCfgVarValue;
+    bool hasPsolidDir = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(parasolidCfgVarValue, L"MS_SMARTSOLID")) && BeFileName::DoesPathExist(parasolidCfgVarValue.c_str());
+    if (!hasPsolidDir)
         {
         WString smartSolidDir = v8RootDir;
         
