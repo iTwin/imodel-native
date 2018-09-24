@@ -335,6 +335,20 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
     return SuperCURL::downloadBlobSync(url, source, readSize, size, session);
     }
 
+DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer * source, const DataSource::SessionName &session)
+    {
+    auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
+
+    auto azureToken = session.getKeyRemapFunction()();
+
+    if (!azureToken.empty())
+        uriEncodedBlobUrl += ("?" + azureToken).c_str();
+
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
+
+    return SuperCURL::downloadBlobSync(url, source, session);
+    }
+
 DataSourceStatus DataSourceAccountAzureCURL::uploadBlobSync(DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
     {
     DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + blobPath);

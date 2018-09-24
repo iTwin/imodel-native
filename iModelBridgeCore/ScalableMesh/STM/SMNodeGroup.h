@@ -715,7 +715,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
-        DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
+        DataSource *InitializeDataSource();
 #endif
 
         StatusInt Load();
@@ -806,17 +806,17 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
-        bool DownloadFromID(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize)
+        bool DownloadFromID(std::vector<DataSourceBuffer::BufferData>& dest)
             {
             wchar_t buffer[10000];
             swprintf(buffer, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
 
-            return DownloadBlob(dest, readSize, DataSourceURL(buffer));
+            return DownloadBlob(dest, DataSourceURL(buffer));
             }
 
         bool DownloadCesiumTileset(const DataSourceURL& url, Json::Value& tileset);
 
-        bool DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize &readSize, const DataSourceURL& url);
+        bool DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, const DataSourceURL& url);
 #endif
 
         uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData);

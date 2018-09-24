@@ -30,6 +30,7 @@ public:
 
     DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);
     DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
+    DataSourceStatus            read                    (std::vector<Buffer>& dest);
     DataSourceStatus            close                   (void);
 };
 

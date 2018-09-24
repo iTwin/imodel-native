@@ -33,6 +33,12 @@ DataSourceStatus DataSourceWSG::read(Buffer *dest, DataSize destSize, DataSize &
     return status;
 }
 
+DataSourceStatus DataSourceWSG::read(std::vector<Buffer>& dest)
+    {
+    // Pass to superclass for read (Note: Real reads are down through download calls)
+    return Super::read(dest);
+    }
+
 DataSourceStatus DataSourceWSG::close(void)
 {
     return Super::close();
