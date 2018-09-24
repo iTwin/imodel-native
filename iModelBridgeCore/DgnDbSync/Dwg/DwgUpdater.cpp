@@ -784,10 +784,6 @@ BentleyStatus DwgImporter::_DetectDeletedDocuments ()
         if (docGuid.FromString(name.c_str()) == BSISUCCESS && this->GetOptions().IsDocumentAssignedToJob(name))
             continue;
 
-        // check existence of the physical file:
-        if (BeFileName(file.GetDwgName().c_str(), true).DoesPathExist())
-            continue;
-
         // need to delete this file - walk through all model mappings in the sync info:
         DwgSyncInfo::ModelIterator  modelMaps(db, "DwgFileId=?");
         modelMaps.GetStatement()->BindInt (1, file.GetSyncId().GetValue());
