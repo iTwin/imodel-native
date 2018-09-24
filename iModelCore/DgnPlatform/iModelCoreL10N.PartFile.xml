@@ -39,7 +39,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-en" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-en" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-en" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-en" PartFile="Units" Repository="Units"/>
     </Part>
 
     <Part Name="iModelCoreSqlang-en"
