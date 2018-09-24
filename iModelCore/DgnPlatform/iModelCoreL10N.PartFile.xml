@@ -48,7 +48,6 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="ECPresentation-Xliffs" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="Units-Xliffs" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_en.sqlang.db3</Files>
         </Bindings>
@@ -61,7 +60,6 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="ECPresentation-Xliffs" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="Units-Xliffs" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_pseudo.sqlang.db3</Files>
         </Bindings>
@@ -74,7 +72,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-cs" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-cs" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-cs" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-cs" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_cs.sqlang.db3</Files>
         </Bindings>
@@ -87,7 +84,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-de" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-de" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-de" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-de" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_de.sqlang.db3</Files>
         </Bindings>
@@ -100,7 +96,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-es" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-es" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-es" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-es" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_es.sqlang.db3</Files>
         </Bindings>
@@ -113,7 +108,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-fi" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-fi" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-fi" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-fi" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_fi.sqlang.db3</Files>
         </Bindings>
@@ -126,7 +120,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-fr" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-fr" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-fr" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-fr" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_fr.sqlang.db3</Files>
         </Bindings>
@@ -139,7 +132,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-it" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-it" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-it" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-it" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_it.sqlang.db3</Files>
         </Bindings>
@@ -152,7 +144,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-ja" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-ja" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-ja" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-ja" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_ja.sqlang.db3</Files>
         </Bindings>
@@ -165,7 +156,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-ko" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-ko" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-ko" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-ko" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_ko.sqlang.db3</Files>
         </Bindings>
@@ -178,7 +168,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-nl" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-nl" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-nl" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-nl" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_nl.sqlang.db3</Files>
         </Bindings>
@@ -191,7 +180,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-pl" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-pl" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-pl" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-pl" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_pl.sqlang.db3</Files>
         </Bindings>
@@ -204,7 +192,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-pt" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-pt" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-pt" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-pt" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_pt.sqlang.db3</Files>
         </Bindings>
@@ -217,7 +204,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-ru" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-ru" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-ru" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-ru" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_ru.sqlang.db3</Files>
         </Bindings>
@@ -230,7 +216,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-sv" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-sv" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-sv" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-sv" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_sv.sqlang.db3</Files>
         </Bindings>
@@ -243,7 +228,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-tr" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-tr" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-tr" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-tr" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_tr.sqlang.db3</Files>
         </Bindings>
@@ -256,7 +240,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-zh-cn" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-zh-cn" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-zh-cn" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-zh-cn" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_zh-cn.sqlang.db3</Files>
         </Bindings>
@@ -269,7 +252,6 @@
         <SubPart PartName="L10N-DgnPlatformXliffs-zh-tw" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="L10N-BeHttpXliffs-zh-tw" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="L10N-ECPresentationXliffs-zh-tw" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-zh-tw" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_zh-tw.sqlang.db3</Files>
         </Bindings>
