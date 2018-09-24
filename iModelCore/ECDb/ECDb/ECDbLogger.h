@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbLogger.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,7 +28,7 @@ private:
     ~ECDbLogger ();
 
 public:
-    static BentleyApi::NativeLogging::ILogger& Get ();
+    static BentleyApi::NativeLogging::ILogger& Get();
 
     static void LogSqliteError(BeSQLite::Db const&, BeSQLite::DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr);
     };

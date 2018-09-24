@@ -2821,8 +2821,19 @@ BentleyStatus SchemaReader::LegacyUnitsHelper::AssignPersistenceUnitAndPresentat
 
     if (ECObjectsStatus::Success != koq.FromFUSDescriptors(legacyPersUnit, legacyPresUnits, *m_formatsSchema, *m_unitsSchema))
         {
+        Utf8String legacyPresUnitsString;
+        bool isFirstPresUnit = true;
+        for (Utf8CP presUnit : legacyPresUnits)
+            {
+            if (!isFirstPresUnit)
+                legacyPresUnitsString.append("; ");
+
+            legacyPresUnitsString.append(presUnit);
+            isFirstPresUnit = false;
+            }
+
         LOG.errorv("Failed to read KindOfQuantity '%s'. It is a legacy KindOfQuantity which requires to upgrade the persistence and presentation units in memory. "
-                   "Could not convert the legacy persistence and presentation units.", koq.GetFullName().c_str());
+                   "Could not convert the legacy persistence '%s' and presentation units '%s'.", koq.GetFullName().c_str(), legacyPersUnit, legacyPresUnitsString.c_str());
         return ERROR;
         }
 
