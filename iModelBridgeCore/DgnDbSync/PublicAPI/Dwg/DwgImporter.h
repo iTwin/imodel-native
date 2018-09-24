@@ -1171,7 +1171,7 @@ protected:
     //! Insert or update imported DgnElement and source DWG entity in DwgSynchInfo
     DWG_EXPORT BentleyStatus  InsertOrUpdateResultsInSyncInfo (ElementImportResults& results, IDwgChangeDetector::DetectionResults const& updatePlan, DwgDbEntityCR entity, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId);
     //! Create a new or update an existing element from an entity based on the sync info
-    BentleyStatus   ImportOrUpdateEntity (ElementImportInputs& inputs);
+    DWG_EXPORT BentleyStatus  ImportOrUpdateEntity (ElementImportInputs& inputs);
 
     //! @name  Importing layouts
     //! @{
