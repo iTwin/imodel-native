@@ -1881,26 +1881,29 @@ void            DwgImporter::_FinishImport ()
         {
         DwgDbDatabaseP  dwg = m_dwgdb.get ();
 
-        // begin element/mode deletion marked up by the change detector:
-        if (nullptr != dwg)
+        if (this->GetOptions().DoDetectDeletedModelsAndElements())
             {
-            changeDetector._DetectDeletedElementsInFile (*this, *dwg);
-            changeDetector._DetectDeletedModelsInFile (*this, *dwg);
-            }
-        for (auto& xref : m_loadedXrefFiles)
-            {
-            if (nullptr != (dwg = xref.GetDatabaseP()))
+            // begin element/mode deletion marked up by the change detector:
+            if (nullptr != dwg)
                 {
                 changeDetector._DetectDeletedElementsInFile (*this, *dwg);
                 changeDetector._DetectDeletedModelsInFile (*this, *dwg);
                 }
+            for (auto& xref : m_loadedXrefFiles)
+                {
+                if (nullptr != (dwg = xref.GetDatabaseP()))
+                    {
+                    changeDetector._DetectDeletedElementsInFile (*this, *dwg);
+                    changeDetector._DetectDeletedModelsInFile (*this, *dwg);
+                    }
+                }
+            // done per file deletion
+            changeDetector._DetectDeletedElementsEnd (*this);
+            changeDetector._DetectDeletedModelsEnd (*this);
+            changeDetector._DetectDeletedMaterials (*this);
+            changeDetector._DetectDeletedViews (*this);
+            changeDetector._DetectDeletedGroups (*this);
             }
-        // done per file deletion
-        changeDetector._DetectDeletedElementsEnd (*this);
-        changeDetector._DetectDeletedModelsEnd (*this);
-        changeDetector._DetectDeletedMaterials (*this);
-        changeDetector._DetectDeletedViews (*this);
-        changeDetector._DetectDeletedGroups (*this);
 
         // update syncinfo for master DWG file
         DwgSyncInfo&    syncInfo = GetSyncInfo ();
