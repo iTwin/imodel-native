@@ -55,18 +55,58 @@ BentleyStatus Converter::GenerateWebMercatorModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::GenerateWebMercatorModel()
+    {
+    LinkModelPtr rdsModel = GetDgnDb().GetRealityDataSourcesModel();
+    Utf8String name("Bing Aerial");
+    DgnCode code = CodeSpec::CreateCode(BIS_CODESPEC_LinkElement, *rdsModel->GetModeledElement(), name);
+    DgnElementId existing = GetDgnDb().Elements().QueryElementIdByCode(code);
+    if (existing.IsValid())
+        return SUCCESS;
+
+    RepositoryLinkPtr aerialLink = RepositoryLink::Create(*rdsModel, nullptr, "Bing Aerial");
+    if (!aerialLink.IsValid() ||  !aerialLink->Insert().IsValid())
+        return ERROR;
+
+    // set up the Bing Aerial map properties Json.
+    BentleyApi::Json::Value jsonParameters;
+    jsonParameters[WebMercator::WebMercatorModel::json_providerName()] = WebMercator::BingImageryProvider::prop_BingProvider();
+    jsonParameters[WebMercator::WebMercatorModel::json_groundBias()] = -1.0;
+    jsonParameters[WebMercator::WebMercatorModel::json_transparency()] = 0.0;
+    BentleyApi::Json::Value& bingAerialJson = jsonParameters[WebMercator::WebMercatorModel::json_providerData()];
+
+    bingAerialJson[WebMercator::WebMercatorModel::json_mapType()] = (int) WebMercator::MapType::Aerial;
+    WebMercator::WebMercatorModel::CreateParams createParams (GetDgnDb(), aerialLink->GetElementId(), jsonParameters);
+
+    WebMercator::WebMercatorModelPtr model = new WebMercator::WebMercatorModel (createParams);
+    DgnDbStatus insertStatus = model->Insert();
+    BeAssert (DgnDbStatus::Success == insertStatus);
+    return DgnDbStatus::Success == insertStatus ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateRealityModelTilesets()
     {
     bool doUpload = false, doLocal = false;
-
     Bentley::WString uploadConfigVar;
     Bentley::WString serverConfigVar;
+    Utf8String      localUrlPrefix("http://localhost:8080/");
+
     if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))                          
+        {
         doUpload = true;
+        }
     else
         {
         if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(serverConfigVar, L"DGNDB_REALITY_MODEL_TEMPDIR"))
             doLocal = true;
+
+        Bentley::WString     localUrlPrefixConfigVar;
+
+        if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(localUrlPrefixConfigVar, L"DGNDB_REALITY_MODEL_URL_PREFIX"))
+            localUrlPrefix = Utf8String(localUrlPrefixConfigVar.c_str());
         }
 
     if (!doUpload && !doLocal)
@@ -236,7 +276,7 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             }
         else
             {
-            url = Utf8String("http://localhost:8080/") + Utf8String(dbFileName).c_str() + "/" + model->GetModelId().ToString() + Utf8String("/TileRoot.json");
+            url =  localUrlPrefix + Utf8String(dbFileName).c_str() + "/" + model->GetModelId().ToString() + Utf8String("/TileRoot.json");
             }
     
         // For scalable meshes with in projects with no ECEF we need to record the transform or we have no way to get from tileset (ECEF) to DB.

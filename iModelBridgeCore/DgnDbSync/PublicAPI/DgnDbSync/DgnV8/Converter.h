@@ -952,6 +952,7 @@ protected:
     bool                 m_addDebugDgnCodes = false;
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
+    bool                 m_hadAnyChanges = false;
     uint32_t             m_elementsConverted = 0;
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
@@ -996,6 +997,7 @@ protected:
     bset<DgnModelId>    m_unchangedModels;
     bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;;
 
+    void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
 
@@ -2059,6 +2061,7 @@ public:
     //! @private
     DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
 
+    bool HadAnyChanges() const { return m_hadAnyChanges; }
 };
 
 //=======================================================================================

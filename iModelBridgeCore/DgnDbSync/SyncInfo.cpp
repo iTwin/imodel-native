@@ -1595,7 +1595,7 @@ DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-bool SyncInfo::TryGetECSchema(ECN::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName) const
+bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName) const
     {
     //first check whether we need to capture this schema or not
     CachedStatementPtr stmt = nullptr;
@@ -1611,8 +1611,8 @@ bool SyncInfo::TryGetECSchema(ECN::SchemaKey& schemaKey, ECSchemaMappingType& ma
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
 
-    schemaKey.m_schemaName = v8SchemaName;
-    schemaKey.m_versionRead = (uint32_t) stmt->GetValueInt(0);
+    schemaKey.m_schemaName = WString(v8SchemaName).c_str();
+    schemaKey.m_versionMajor = (uint32_t) stmt->GetValueInt(0);
     schemaKey.m_versionMinor = (uint32_t) stmt->GetValueInt(1);
     schemaKey.m_checkSum = (uint32_t) stmt->GetValueInt(2);
     mappingType = (ECSchemaMappingType) stmt->GetValueInt(3);

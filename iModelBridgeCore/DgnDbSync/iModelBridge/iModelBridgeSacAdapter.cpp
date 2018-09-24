@@ -169,7 +169,9 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
     BeFileName outputFileName = bridge._GetParams().GetBriefcaseName();
     BeFileName inputFileName  = bridge._GetParams().GetInputFileName();     // may be empty (in edge case, where only deleted file detection is needed)
 
-    DgnDbPtr db;
+    DgnDbPtr db; 
+    time_t mtime;
+
     if (!outputFileName.DoesPathExist())
         {
         bvector<DgnModelId> dont_care;
@@ -185,6 +187,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
         {
         BeSQLite::DbResult dbres;
         bool _hadDomainSchemaChanges = false;
+        BeFileName::GetFileTime(nullptr, nullptr, &mtime, outputFileName);
         db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges, outputFileName);
         if (!db.IsValid())
             {
@@ -233,6 +236,9 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             return BSIERROR;
             }
         }
+
+    if (!bridge.HadAnyChanges())
+        outputFileName.SetFileTime(nullptr, &mtime);
 
     if (saparams.GetExpirationDate().IsValid())
         db->SaveExpirationDate(saparams.GetExpirationDate());

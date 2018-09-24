@@ -1132,7 +1132,7 @@ void UpdateWithSpatialDataTransform(BentleyApi::DPoint3dCR xlat, double rot, boo
     m_params.SetSpatialDataTransform(jobTrans);
     
     m_count = 0;
-    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, expectedChanges);
 
     if (expectedChanges)
         {

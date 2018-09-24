@@ -573,7 +573,7 @@ TEST_F(ECConversionTests, UpdateWithChangedSchema)
     v8editor.Save();
     }
 
-    DoUpdate(m_dgnDbFileName, m_v8FileName, true);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, true, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -732,9 +732,20 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaReferencingNewSchemas)
 
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*refSchema, *(v8editor.m_file)));
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance, eh, v8editor.m_defaultModel, schema2->GetName().c_str(), L"Child");
+
     v8editor.Save();
 
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
     }
 
 //---------------------------------------------------------------------------------------
@@ -781,6 +792,12 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
     v8editor.Open(m_v8FileName);
 
     EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema2, *(v8editor.m_file)));
+    DgnV8Api::ElementId eid2;
+    v8editor.AddLine(&eid2, nullptr, DPoint3d::FromOne());
+    DgnV8Api::ElementHandle eh2(eid2, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
+    v8editor.CreateInstanceOnElement(createdDgnECInstance2, eh2, v8editor.m_defaultModel, schema2->GetName().c_str(), L"Child");
+
     v8editor.Save();
 
     {
@@ -797,6 +814,10 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
     ASSERT_TRUE(nullptr != ecSchema);
 
     ASSERT_TRUE(nullptr != ecSchema->GetClassCP("NewClass"));
+
+    ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("Child"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -822,17 +843,18 @@ TEST_F(ECConversionTests, UpdateWithNewElementWithInstance)
     v8editor.Save();
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
+    DgnV8Api::ElementId eid2;
 
     {
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid);
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    v8editor.AddLine(&eid2);
+    DgnV8Api::ElementHandle eh(eid2, v8editor.m_defaultModel);
     DgnV8Api::DgnElementECInstancePtr createdDgnECInstance2;
     EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance2, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
     v8editor.Save();
     }
 
     DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    VerifyElement(eid2, "TestClass", true);
     EXPECT_EQ(1, m_count);
     }
 

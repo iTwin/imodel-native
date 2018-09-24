@@ -270,6 +270,8 @@ BentleyStatus BimFromJsonImpl::ImportJson(Json::Value& entry)
         reader = new BaselineReader(this);
     else if (objectType.Equals(JSON_TYPE_PropertyData))
         reader = new PropertyDataReader(this);
+    else if (objectType.Equals(JSON_TYPE_EmbeddedFile))
+        reader = new EmbeddedFileReader(this);
     else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
         reader = new GenericElementAspectReader(this);
     else if (objectType.Equals(JSON_TYPE_TextAnnotationData))

@@ -567,6 +567,7 @@ SubjectCPtr RootModelConverterApp::_InitializeJob()
 BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
     {
     m_converter->Process();
+    m_hadAnyChanges = m_converter->HadAnyChanges();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }
 

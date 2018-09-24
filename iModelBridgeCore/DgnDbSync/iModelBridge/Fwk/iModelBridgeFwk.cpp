@@ -1221,10 +1221,11 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
     NativeLogging::Provider::Log4cxxProvider*    m_provider;
     WString                                      m_connectProjectId;
     WString                                      m_iModelId;
+    WString                                      m_bridgeName;
     public:
     LoggingContext(iModelBridgeFwk::JobDefArgs const& jobDef, Utf8StringCR projectId, Utf8StringCR iModelId, NativeLogging::Provider::Log4cxxProvider* provider)
         :m_jobRunCorrelationId(jobDef.m_jobRunCorrelationId.c_str(), true), m_provider(provider), m_connectProjectId(projectId.c_str(), true), m_iModelId(iModelId.c_str(), true),
-        m_jobRequestId(jobDef.m_jobRunCorrelationId.c_str(), true)
+        m_jobRequestId(jobDef.m_jobRunCorrelationId.c_str(), true), m_bridgeName(jobDef.m_bridgeRegSubKey)
         {
         if (NULL == m_provider)
             return;
@@ -1236,6 +1237,8 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
             m_provider->AddContext(L"ConnectProjectId", m_connectProjectId.c_str());
         if (!m_iModelId.empty())
             m_provider->AddContext(L"iModelId", m_iModelId.c_str());
+        if (!m_bridgeName.empty())
+            m_provider->AddContext(L"iModelBridgeName", m_bridgeName.c_str());
         }
 
     ~LoggingContext()
@@ -1250,6 +1253,8 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
             m_provider->RemoveContext(L"ConnectProjectId");
         if (!m_jobRunCorrelationId.empty())
             m_provider->RemoveContext(L"iModelId");
+        if (!m_bridgeName.empty())
+            m_provider->RemoveContext(L"iModelBridgeName");
         }
     };
 

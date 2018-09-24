@@ -360,6 +360,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
         // if enough information is supplied, read either CONNECT or V8i configuration files to define the macros.
         if (!isV8i)
             {
+            s_macros->DefineBuiltinMacro (L"_DGNV8CONVERTER", L"1");
             s_macros->ReadCONNECTConfigurationFiles(workSpaceOrUser.c_str(), workSetOrProject.c_str(), configRootDir.c_str(), installDir.c_str(), msConfigFileName.c_str(), fallbackConnectConfigDir.c_str(), assignmentArgs, debugOutput, debugLevel);
             }
         else

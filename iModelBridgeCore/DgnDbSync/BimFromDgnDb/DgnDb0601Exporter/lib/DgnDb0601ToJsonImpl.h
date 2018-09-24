@@ -134,6 +134,7 @@ struct DgnDb0601ToJsonImpl : DgnPlatformLib::Host
         BentleyStatus ExportConstraint(ECN::ECClassId constraintClassId, BentleyApi::BeSQLite::EC::ECInstanceId constraintId);
         BentleyStatus ExportLinkTables(Utf8CP schemaName, Utf8CP className, Utf8CP newClassName = nullptr);
         BentleyStatus ExportPropertyData();
+        BentleyStatus ExportEmbeddedFiles();
         DgnElementId CreateCodeSpec(uint8_t codeSpecType, Utf8CP name);
         DgnElementId CreateSubjectElement(Utf8CP subjectName);
         DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject);

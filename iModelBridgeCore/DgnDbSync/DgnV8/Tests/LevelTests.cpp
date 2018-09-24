@@ -39,7 +39,7 @@ TEST_F(LevelTests, NoLevelChangesInTile)
         ASSERT_EQ( DgnV8Api::LevelCacheErrorCode::None , lc.Write() );
         }
 
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false); // update should fail because of the level change in the tile
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false); // update should fail because of the level change in the tile
     }
 
 /*---------------------------------------------------------------------------------**//**

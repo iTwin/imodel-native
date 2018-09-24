@@ -385,11 +385,11 @@ void Converter::ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, 
 
     clone->CopyFrom((BentleyApi::MSBsplineSurfaceCR) v8Entity);
     }
-//#define TEST_AUXDATA
+// #define TEST_AUXDATA
 //#define TEST_AUXDATA_HEIGHT
 //#define TEST_AUXDATA_RADIAL_WAVES
+//#define TEST_AUXDATA_SPHERICAL_WITH_NORMALS
 //#define TEST_AUXDATA_WAVES
-//#define TEST_AUXDATA_FILE
 //#define TEST_AUXDATA_TO_JSON
 //#define TEST_AUXDATA_CANTILEVER
 
@@ -398,7 +398,7 @@ void Converter::ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, 
 
 PolyfaceAuxDataPtr              s_testAuxData;
 ThematicGradientSettingsPtr     s_testAuxDataSettings;
-static void getTestAuxData(Bentley::PolyfaceQueryCR polyface);
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange, double v8ToDbScale);
 #endif
 
 
@@ -1981,7 +1981,10 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
 #ifdef TEST_AUXDATA
-    getTestAuxData(meshData);
+    DRange1d scalarRange;
+
+    getTestAuxData(meshData, scalarRange, m_conversionScale.ColumnXMagnitude());
+    s_testAuxDataSettings = new ThematicGradientSettings(scalarRange);
 #endif   
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
@@ -2016,9 +2019,9 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
 
                     if (ovr)
                         DgnV8Api::DgnColorMap::ExtractElementColorInfo(&mappedColor, nullptr, nullptr, nullptr, nullptr, ovr->GetColor(), dgnFile);
-                    }
+                    }                                                                                    
                 else if (DgnV8Api::COLOR_BYLEVEL == tableColors[iColor])
-                    {
+                    {                                                                                      
                     DgnV8Api::LevelHandle level = m_context->GetCurrentModel()->GetLevelCacheR().GetLevel(m_context->GetCurrentDisplayParams()->GetLevel());
 
                     if (level.IsValid())
@@ -5528,153 +5531,38 @@ void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::Text
 
 #ifdef TEST_AUXDATA
 
-#ifdef TEST_AUXDATA_FILE
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Ray.Bentley     04/2018
-//---------------------------------------------------------------------------------------
-static GeometricPrimitivePtr createFromTestFile ()
-    {
-    BeFile          beFile;
-    bvector<Byte>   bytes;
-    
-//  if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\Model1982.json", BeFileAccess::Read) &&
-    if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\ExpansionJoint.json", BeFileAccess::Read) &&
-        BeFileStatus::Success == beFile.ReadEntireFile(bytes))
-        {
-        Utf8String              string((Utf8CP) bytes.data());
-        Json::Value             value = Json::Reader::DoParse(string);
-        JsonValueCR             nodes = value["Nodes"];
-        JsonValueCR             elements = value["Elements"];
-        JsonValueCR             results = value["Results"];
-        bmap<int32_t, int32_t>  idToIndex;
-        PolyfaceHeaderPtr       polyface = PolyfaceHeader::CreateVariableSizeIndexed();
-
-        // Points...
-        for (int32_t i=0, count = nodes.size(); i<count; i++)
-            {
-            JsonValueCR     node = nodes[i];
-            JsonValueCR     coords = node["Coordinates"];
-            
-            polyface->Point().push_back(DPoint3d::From(coords[0].asDouble(), coords[1].asDouble(), coords[2].asDouble()));
-            idToIndex.Insert(node["Id"].asInt(), (int32_t) polyface->Point().size());
-            }
-        // Point Indices...
-        for (int32_t i=0, count = elements.size(); i<count; i++)
-            {
-            JsonValueCR     nodeIds = elements[i]["NodeIds"];
-
-            for (int32_t j=0, nodeCount = std::min(4, (int) nodeIds.size()); j<nodeCount; j++)
-                polyface->PointIndex().push_back(idToIndex[nodeIds[j].asInt()]);
-
-            polyface->PointIndex().push_back(0);
-            }
-        if (results.isArray())
-            {
-            PolyfaceAuxData::Channels     channels;
-
-            // Results...
-            for (int32_t i=0, count = results.size(); i<count; i++)
-                {
-                JsonValueCR     result = results[i]; 
-                JsonValueCR     nodeResults = result["NodeResults"];
-                bvector<double> displacementValues(3 * polyface->Point().size(), 0.0);
-                bvector<double> reactionValues(polyface->Point().size(), 0.0); 
-                
-                for (int32_t j=0, nodeCount = nodeResults.size(); j<nodeCount; j++)
-                    {
-                    JsonValueCR     nodeResult = nodeResults[j];
-
-                    if (nodeResult.isMember("Displacement"))
-                        {
-                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
-                        int32_t displacementIndex = 3 * index;
-                        JsonValueCR     displacementValue = nodeResult["Displacement"];
-
-                        displacementValues[displacementIndex++] = displacementValue["Ux"].asDouble();
-                        displacementValues[displacementIndex++] = displacementValue["Uy"].asDouble();
-                        displacementValues[displacementIndex++] = displacementValue["Uz"].asDouble();
-
-                        reactionValues[index] = displacementValue["Uy"].asDouble();
-                        }
-                    
-#ifdef USE_REACTION
-                    if (nodeResult.isMember("Reaction"))
-                        {
-                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
-                        JsonValueCR     reactionValue = nodeResult["Reaction"];
-
-                        reactionValues[index++] = reactionValue["Fy"].asDouble();
-                        }
-#endif
-                    }
-
-                if (!displacementValues.empty())
-                    {
-                    // Add a zero for animation...
-                    bvector<double>     zeroValues(displacementValues.size(), 0.0);
-                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
-                    
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
-
-                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Vector, Utf8PrintfString("Displacement_%d", i).c_str(), "", std::move(dataVector)));
-                    }
-                if (!reactionValues.empty())
-                    {
-                    // Add a zero for animation...
-                    bvector<double>     zeroValues(reactionValues.size(), 0.0);
-                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
-                    
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(reactionValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
-
-                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Scalar, Utf8PrintfString("Reaction_%d", i).c_str(), "", std::move(dataVector)));
-                    }
-                }
-            if (!channels.empty())
-                {
-                bvector<int32_t>        indices = polyface->PointIndex();
-                PolyfaceAuxDataPtr      auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
-
-                polyface->SetAuxData(auxData);
-                }
-            }
-        return GeometricPrimitive::Create(polyface);
-        }
-    return nullptr;
-    }
-#endif
 
 #ifdef TEST_AUXDATA_RADIAL_WAVES
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getTestAuxData(BentleyApi::PolyfaceQueryCR polyface)
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange, double scaleFactor)
     {
-    bvector<int32_t>    indices(polyface.PointIndex().size());
-    bvector<double>     zeroScalarData(polyface.Point().size(), 0.0), scalarData;
-    bvector<double>     zeroDisplacementData(3*polyface.Point().size(), 0.0), displacementData;
-    DRange3d            range = DRange3d::From(polyface.Point());
+    bvector<int32_t>    indices(polyface.GetPointIndexCount());
+    bvector<double>     zeroScalarData(polyface.GetPointCount(), 0.0), scalarData;
+    bvector<double>     zeroDisplacementData(3*polyface.GetPointCount(), 0.0), displacementData;
+    DPoint3dCP          points = DoInterop(polyface.GetPointCP());
+    DRange3d            range = DRange3d::From(points, polyface.GetPointCount());
     DPoint3d            center = DPoint3d::FromInterpolate(range.low, .5, range.high);
     double              radius = range.DiagonalDistance() / 2.0;
     double              maxHeight = radius/10.0;
 
-    memcpy (indices.data(), polyface.PointIndex().data(), indices.size() * sizeof(int32_t));
-    for(auto& point : polyface.Point())
+    memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
+        
+    for(size_t i=0; i<polyface.GetPointCount(); i++)
         {
+        DPoint3dCR  point = points[i];
         double      height = maxHeight * sin(point.Distance(center) / radius * msGeomConst_2pi);
 
-        scalarData.push_back(height);
+        scalarData.push_back(scaleFactor * height);
         displacementData.push_back(0.0);
         displacementData.push_back(0.0);
         displacementData.push_back(height);
         }
     scalarRange = DRange1d::From(scalarData.data(), scalarData.size());
 
-    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector;
+    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector, normalDataVector;
 
     displacementDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroDisplacementData)));
     displacementDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementData)));
@@ -5686,11 +5574,83 @@ static void getTestAuxData(BentleyApi::PolyfaceQueryCR polyface)
 
 
     PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Displacement", nullptr, std::move(displacementDataVector));
-    PolyfaceAuxChannelPtr       scalarChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "scalar", nullptr, std::move(scalarDataVector));
+    PolyfaceAuxChannelPtr       scalarChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Scalar", nullptr, std::move(scalarDataVector));
+
     PolyfaceAuxData::Channels   channels;
 
     channels.push_back (displacementChannel);
     channels.push_back (scalarChannel);
+    s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+    }
+#endif
+
+#ifdef TEST_AUXDATA_SPHERICAL_WITH_NORMALS
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange, double v8ToDbScale)
+    {
+    bvector<int32_t>    indices(polyface.GetPointIndexCount());
+    bvector<double>     zeroScalarData(polyface.GetPointCount(), 0.0), scalarData;
+    bvector<double>     zeroDisplacementData(3*polyface.GetPointCount(), 0.0), displacementData;
+    bvector<double>     initialNormalData, normalData;
+    DPoint3dCP          points = DoInterop(polyface.GetPointCP());
+    DRange3d            range = DRange3d::From(points, polyface.GetPointCount());
+    DPoint3d            center = DPoint3d::FromInterpolate(range.low, .5, range.high);
+    double              radius = range.DiagonalDistance() / 2.0;
+    double              maxHeight = radius/10.0;
+
+    memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
+        
+    for(size_t i=0; i<polyface.GetPointCount(); i++)
+        {
+        DPoint3dCR  point = points[i];
+        DVec3d      delta = DVec3d::FromStartEnd(point, center);
+        double      x = point.Distance(center);
+        double      height = sqrt(radius * radius - x * x); 
+        DVec3d      normal;
+
+        scalarData.push_back(height);
+        displacementData.push_back(0.0);
+        displacementData.push_back(0.0);
+        displacementData.push_back(height);
+
+        normal = DVec3d::From(delta.x, delta.y, height);
+        normal.Normalize();
+        normalData.push_back(normal.x);
+        normalData.push_back(normal.y);
+        normalData.push_back(normal.z);
+
+        initialNormalData.push_back(0.0);
+        initialNormalData.push_back(0.0);
+        initialNormalData.push_back(1.0);
+        }
+    scalarRange = DRange1d::From(scalarData.data(), scalarData.size());
+
+    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector, normalDataVector;
+
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroDisplacementData)));
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementData)));
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroDisplacementData)));
+
+    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroScalarData)));
+    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(scalarData)));
+    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroScalarData)));
+
+    normalDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(initialNormalData)));
+    normalDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(normalData)));
+    normalDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(initialNormalData)));
+
+    PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Displacement", nullptr, std::move(displacementDataVector));
+    PolyfaceAuxChannelPtr       scalarChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Scalar", nullptr, std::move(scalarDataVector));
+    PolyfaceAuxChannelPtr       normalChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Covector, "Normal", nullptr, std::move(normalDataVector));
+
+    PolyfaceAuxData::Channels   channels;
+
+    channels.push_back (displacementChannel);
+    channels.push_back (scalarChannel);
+    channels.push_back (normalChannel);
     s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
     }
 #endif
@@ -5700,9 +5660,9 @@ static void getTestAuxData(BentleyApi::PolyfaceQueryCR polyface)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getTestAuxData(PolyfaceQueryCR polyface, DRange1dR scalarRange)
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange)
     {
-    bvector<int32_t>  indices(polyface.PointIndex().size());
+    bvector<int32_t>  indices(polyface.GetPointIndexCount());
     bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector;
     DRange3d            range = DRange3d::From(polyface.Point());
     double              rangeDiagonal = range.DiagonalDistance();
@@ -5750,14 +5710,16 @@ static void getTestAuxData(PolyfaceQueryCR polyface, DRange1dR scalarRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getTestAuxData(PolyfaceQueryCR polyface, DRange1dCR scalarRange)
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange)
     {
     bvector<double>      zeroData, heightData;
-    bvector<int32_t>    indices(polyface.PointIndex().size());
+    bvector<int32_t>    indices(polyface.GetPointIndexCount());
+    DPoint3dCP          points = DoInterop(polyface.GetPointCP());
 
-    memcpy (indices.data(), polyface.PointIndex().data(), indices.size() * sizeof(int32_t));
-    for(auto& point : polyface.Point())
+    memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
+    for(size_t i=0; i<polyface.GetPointCount(); i++)
         {
+        DPoint3dCR  point = points[i];
         zeroData.push_back(0.0);
         heightData.push_back(point.z);
         }
@@ -5772,7 +5734,7 @@ static void getTestAuxData(PolyfaceQueryCR polyface, DRange1dCR scalarRange)
     channels.push_back (heightChannel);
     PolyfaceAuxDataPtr              auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
     
-    polyface.SetAuxData(auxData);
+    s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
     }
 #endif
 #ifdef TEST_AUXDATA_CANTILEVER
@@ -5795,7 +5757,7 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface)
     double              zOrigin = (range.low.z + range.high.z) / 2.0;
     static double       s_exageration = 5.0;
 
-    memcpy (indices.data(), polyface.GetPointIndexCP(), sizeof(int32_t) * polyface.GetPointIndexCount());
+    memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
     for(uint32_t i=0; i<nPoints; i++)
         {                            
         Bentley::DPoint3dCR point = polyface.GetPointCP()[i];             

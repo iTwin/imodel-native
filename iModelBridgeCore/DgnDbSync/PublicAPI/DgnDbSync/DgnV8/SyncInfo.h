@@ -754,7 +754,7 @@ public:
     //! @name ECSchemas
     //! @{
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
-    DGNDBSYNC_EXPORT bool TryGetECSchema(ECN::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName) const;
+    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName) const;
     DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
     DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const;
     //! @}
