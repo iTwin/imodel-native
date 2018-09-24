@@ -221,6 +221,40 @@ mutable bool                    m_findArcCenters = true;
 protected:
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EvaluateDefaultNormal() const
+    {
+    if (!m_hitGeom.IsValid())
+        return false;
+
+    if (HitParentGeomType::Wire != m_hitParentGeomType)
+        return false;
+
+    CurveVectorPtr curves;
+
+    if (GeometricPrimitive::GeometryType::CurveVector == m_hitGeom->GetGeometryType())
+        curves = m_hitGeom->GetAsCurveVector();
+    else if (m_hitCurveDerived.IsValid())
+        curves = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, m_hitCurveDerived);
+
+    if (!curves.IsValid())
+        return false;
+
+    Transform   localToWorld, worldToLocal;
+    DRange3d    localRange;
+    DVec3d      defaultNormal = DVec3d::UnitZ(); // Use placement z as default normal for geometry without a well-defined up direction...
+
+    if (!curves->IsPlanarWithDefaultNormal(localToWorld, worldToLocal, localRange, &defaultNormal))
+        return false;
+
+    m_snapNormalLocal = localToWorld.ColumnZ();
+    m_snapNormalLocal.Normalize();
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool EvaluateInterior(SnapMode snapMode) const
@@ -2032,7 +2066,9 @@ bool ComputeSnapLocation(SnapMode snapMode, bool findArcCenters) const
     if (!EvaluateCurve(snapMode))
         return false;
 
-    EvaluateInterior(snapMode);
+    if (!EvaluateInterior(snapMode))
+        EvaluateDefaultNormal();
+
     return true;
     }
 
