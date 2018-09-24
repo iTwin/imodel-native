@@ -928,7 +928,7 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
         json.AddMember("name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
         json.AddMember("label", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
         json.AddMember("persistenceUnit", rapidjson::Value(koq.GetPersistenceUnit()->GetName().c_str(), allocator), allocator);
-        json.AddMember("currentFusId", rapidjson::Value(koq.GetDefaultPresentationFormat()->GetName().c_str(), allocator), allocator);
+        json.AddMember("currentFormatId", rapidjson::Value(koq.GetDefaultPresentationFormat()->GetName().c_str(), allocator), allocator);
         return json;
         }
 
