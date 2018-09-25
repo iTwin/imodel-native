@@ -11,3 +11,11 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 #----------------------------------------------------------------------------------------
 
 
+
+RulesDrivenECPresentationManagerContentTests.ContentRelatedInstances_RelationshipClassNames
+
+    # VSTS#35171
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/25/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\Published\RulesEngine\PresentationManagerContentTests.cpp(33): error: Value of: nullptr != m_schema
+    # Actual: false
+    # Expected: true
