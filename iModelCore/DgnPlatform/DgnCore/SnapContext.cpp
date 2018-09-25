@@ -26,8 +26,10 @@ SnapHeat                m_heat = SNAP_HEAT_None;
 HitGeomType             m_geomType = HitGeomType::None;
 HitParentGeomType       m_parentGeomType = HitParentGeomType::None;
 DgnSubCategoryId        m_subCategoryId;
-Transform               m_localToWorld = Transform::FromIdentity();
 IGeometryPtr            m_geomPtr;
+IGeometryPtr            m_intersectGeomPtr;
+DgnElementId            m_intersectId;
+Transform               m_localToWorld = Transform::FromIdentity();
 double                  m_viewDistance = 0.0;
 bool                    m_interiorWasPickable = false;
 
@@ -137,6 +139,8 @@ bool UpdateIfBetter(SnapData const& other, DPoint3dCR testPoint, DMatrix4dCR wor
     m_subCategoryId = other.m_subCategoryId;
     m_localToWorld = other.m_localToWorld;
     m_geomPtr = other.m_geomPtr;
+    m_intersectGeomPtr = other.m_intersectGeomPtr;
+    m_intersectId = other.m_intersectId;
 
     return IsInRange(); // Stop looking when we get a hot snap in range...
     }
@@ -171,14 +175,24 @@ void ToResponse(SnapContext::Response& output) const
     if (!m_geomPtr.IsValid())
         return;
 
+    if (!m_localToWorld.IsIdentity() && !m_geomPtr->TryTransformInPlace(m_localToWorld))
+        return;
+
     Json::Value geomValue;
     if (!IModelJson::TryGeometryToIModelJsonValue(geomValue, *m_geomPtr))
         return;
 
     output.SetCurve(geomValue);
 
-    if (!m_localToWorld.IsIdentity())
-        output.SetLocalToWorld(m_localToWorld);
+    if (!m_intersectId.IsValid() || !m_intersectGeomPtr.IsValid())
+        return;
+
+    Json::Value geomValue2;
+    if (!IModelJson::TryGeometryToIModelJsonValue(geomValue2, *m_intersectGeomPtr))
+        return;
+
+    output.SetIntersectCurve(geomValue2);
+    output.SetIntersectId(m_intersectId);
     }
 
 }; // SnapData
@@ -219,6 +233,40 @@ mutable DVec3d                  m_snapNormalLocal = DVec3d::FromZero();
 mutable bool                    m_findArcCenters = true;
 
 protected:
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EvaluateDefaultNormal() const
+    {
+    if (!m_hitGeom.IsValid())
+        return false;
+
+    if (HitParentGeomType::Wire != m_hitParentGeomType)
+        return false;
+
+    CurveVectorPtr curves;
+
+    if (GeometricPrimitive::GeometryType::CurveVector == m_hitGeom->GetGeometryType())
+        curves = m_hitGeom->GetAsCurveVector();
+    else if (m_hitCurveDerived.IsValid())
+        curves = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, m_hitCurveDerived);
+
+    if (!curves.IsValid())
+        return false;
+
+    Transform   localToWorld, worldToLocal;
+    DRange3d    localRange;
+    DVec3d      defaultNormal = DVec3d::UnitZ(); // Use placement z as default normal for geometry without a well-defined up direction...
+
+    if (!curves->IsPlanarWithDefaultNormal(localToWorld, worldToLocal, localRange, &defaultNormal))
+        return false;
+
+    m_snapNormalLocal = localToWorld.ColumnZ();
+    m_snapNormalLocal.Normalize();
+
+    return true;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
@@ -2032,7 +2080,9 @@ bool ComputeSnapLocation(SnapMode snapMode, bool findArcCenters) const
     if (!EvaluateCurve(snapMode))
         return false;
 
-    EvaluateInterior(snapMode);
+    if (!EvaluateInterior(snapMode))
+        EvaluateDefaultNormal();
+
     return true;
     }
 
@@ -2142,15 +2192,22 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
     // Hot distance in view coordinates (pixels). Locate aperture * hot distance factor...
     double snapAperture = input.GetSnapAperture();
     int snapDivisor = input.GetSnapDivisor();
-    bool doPlacementOriginSnap = (nullptr != source && 0 != snapModes.erase(SnapMode::Origin));
-    bool doCenterSnap = (snapModes.end() != snapModes.find(SnapMode::Center)); // Let center snap handle arc centers...
-    SnapData bestSnap;
+    bool doPlacementOriginSnap = (nullptr != source && 0 != snapModes.erase(SnapMode::Origin)); // When using placement origin, remove origin from geometry snap modes...
+    bool doCenterSnap = (snapModes.end() != snapModes.find(SnapMode::Center)); // Let center snap handle arc centers when present in multi-snap...
+    SnapData bestSnap, intersectSnap;
+
+    DgnElementIdSet intersectCandidates;
+    if (snapModes.end() != snapModes.find(SnapMode::Intersection))
+        intersectCandidates = input.GetIntersectCandidates(elementId);
+    if (intersectCandidates.empty())
+        snapModes.erase(SnapMode::Intersection);
+
+    ViewFlags viewFlags = input.GetViewFlags();
+    DgnElementIdSet offSubCategories = input.GetOffSubCategories();
 
     if (!snapModes.empty())
         {
         SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap);
-        ViewFlags viewFlags = input.GetViewFlags();
-        DgnElementIdSet offSubCategories = input.GetOffSubCategories();
 
         SnapStatus status = helper.GetClosestCurve(*source, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
 
@@ -2167,7 +2224,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
 
         for (SnapMode snapMode : snapModes)
             {
-            if (!helper.ComputeSnapLocation(snapMode, !doCenterSnap))
+            if (!helper.ComputeSnapLocation(SnapMode::Intersection == snapMode ? SnapMode::Nearest : snapMode, !doCenterSnap))
                 continue;
 
             SnapData currentSnap(snapMode, helper.GetSnapPointWorld());
@@ -2188,6 +2245,13 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             if (nullptr != helper.GetSnapCurveDetail().curve)
                 currentSnap.m_geomPtr = IGeometry::Create(helper.GetSnapCurvePrimitivePtr());
 
+            if (SnapMode::Intersection == snapMode)
+                {
+                if (currentSnap.m_geomPtr.IsValid())
+                    intersectSnap = currentSnap;
+                continue;
+                }
+
             if (bestSnap.UpdateIfBetter(currentSnap, testPoint, worldToViewMap.M0, snapAperture))
                break;
             }
@@ -2204,6 +2268,68 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             originSnap.m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(source->GetCategoryId());
 
         bestSnap.UpdateIfBetter(originSnap, testPoint, worldToViewMap.M0, snapAperture);
+        }
+
+    if (SnapMode::Invalid != intersectSnap.m_mode && !bestSnap.IsInRange())
+        {
+        for (DgnElementId candidateId : intersectCandidates)
+            {
+            DgnElementCPtr candidateElement = db.Elements().GetElement(candidateId);
+            GeometrySourceCP candidateSource = candidateElement.IsValid() ? candidateElement->ToGeometrySource() : nullptr;
+            if (nullptr == candidateSource)
+                continue;
+
+            SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap);
+
+            SnapStatus status = helper.GetClosestCurve(*candidateSource, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+
+            if (SnapStatus::Aborted == status)
+                break;
+
+            if (SnapStatus::Success != status || !helper.GetSnapCurvePrimitivePtr().IsValid())
+                continue;
+
+            ICurvePrimitivePtr curveA = intersectSnap.m_geomPtr->GetAsICurvePrimitive()->Clone(intersectSnap.m_localToWorld);
+            ICurvePrimitivePtr curveB = helper.GetSnapCurvePrimitivePtr()->Clone(helper.GetHitLocalToWorld());
+
+            CurveVectorPtr intersectionsA = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+            CurveVectorPtr intersectionsB = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+            CurveCurve::IntersectionsXY(*intersectionsA, *intersectionsB, curveA.get(), curveB.get(), &worldToViewMap.M0);
+            
+            /* NEEDSWORK: ClosestPointBoundedXY needs to special case single point partials and not convert to bspline (which fails for "point partial" from linestring)!!!
+            CurveVectorPtr newChildVector = CurveVector::Create(intersectionsA->GetBoundaryType());
+            for (size_t iCurve = 0, nCurve = intersectionsA->size(); iCurve < nCurve; iCurve++)
+                {
+                ICurvePrimitivePtr curve = intersectionsA->at(iCurve);
+                if (!curve.IsValid())
+                    continue;
+
+                PartialCurveDetailCP detail = nullptr;
+                if (nullptr == (detail = curve->GetPartialCurveDetailCP()) || !detail->IsSingleFraction())
+                    continue;
+
+                DPoint3d pointS, pointE;
+                if (!curve->FractionToPoint(detail->fraction0, pointS) || !curve->FractionToPoint(detail->fraction1, pointE))
+                    continue;
+
+                newChildVector->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(pointS, pointE)));
+                }
+            intersectionsA = newChildVector;
+            */
+
+            CurveLocationDetail intersectDetail;
+            if (!intersectionsA->ClosestPointBoundedXY(closePoint, &worldToViewMap.M0, intersectDetail))
+                continue;
+
+            intersectSnap.m_snapPoint = intersectDetail.point;
+            intersectSnap.m_heat = SnapGeometryHelper::GetHeat(intersectSnap.m_snapPoint, closePoint, worldToViewMap.M0, snapAperture, false, &intersectSnap.m_viewDistance);
+            intersectSnap.m_intersectGeomPtr = IGeometry::Create(curveB); // Saved in world coords...
+            intersectSnap.m_intersectId = candidateId;
+
+            if (bestSnap.UpdateIfBetter(intersectSnap, testPoint, worldToViewMap.M0, snapAperture))
+                break;
+            }
         }
 
     bestSnap.ToResponse(output);

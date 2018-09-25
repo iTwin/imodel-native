@@ -23,6 +23,7 @@
 #define TESTECDB_EC32ENUMS_PROFILEUPGRADED "ec32enums_profileupgraded.ecdb"
 #define TESTECDB_EC32ENUMS "ec32enums.ecdb"
 #define TESTECDB_EC31KOQS "ec31koqs.ecdb"
+#define TESTECDB_EC31THREADPITCHKOQS "ec31threadpitchkoqs.ecdb"
 #define TESTECDB_EC32KOQS "ec32koqs.ecdb"
 #define TESTECDB_EC32UNITS "ec32units.ecdb"
 #define TESTECDB_EC31ENUMS_SCHEMAUPGRADE "ec31enums_schemaupgrade.ecdb"
@@ -37,6 +38,7 @@
                               std::make_shared<EC31EnumsSchemaUpgradeTestECDbCreator>(), \
                               std::make_shared<EC32EnumsSchemaUpgradeTestECDbCreator>(), \
                               std::make_shared<EC31KoqsTestECDbCreator>(), \
+                              std::make_shared<EC31ThreadPitchKoqsTestECDbCreator>(), \
                               std::make_shared<EC32KoqsTestECDbCreator>(), \
                               std::make_shared<EC31KoqsSchemaUpgradeTestECDbCreator>(), \
                               std::make_shared<EC32KoqsSchemaUpgradeTestECDbCreator>(), \
@@ -242,6 +244,34 @@ struct EC31KoqsTestECDbCreator final : TestECDbCreator
     public:
         explicit EC31KoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC31KOQS) {}
         ~EC31KoqsTestECDbCreator() {}
+    };
+
+//======================================================================================
+// Thread pitch units were only added later to the legacy units handling. So we 
+// dedicate a separate test for them
+// @bsiclass                                               Krischan.Eberle      09/2018
+//======================================================================================
+struct EC31ThreadPitchKoqsTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            if (BE_SQLITE_OK != CreateNewTestFile(ecdb, m_fileName))
+                return ERROR;
+
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <KindOfQuantity typeName="TestKoq_IN_DEGREE" persistenceUnit="IN/DEGREE" presentationUnits="" relativeError="1.0"/>
+                                <KindOfQuantity typeName="TestKoq_IN_DEGREE_DEFAULTREALU" persistenceUnit="IN/DEGREE(DefaultRealU)" presentationUnits="" relativeError="1.1"/>
+                                <KindOfQuantity typeName="TestKoq_M_REVOLUTION" persistenceUnit="M/REVOLUTION" presentationUnits="" relativeError="1.2"/>
+                                <KindOfQuantity typeName="TestKoq_M_REVOLUTION_DEFAULTREALU" persistenceUnit="M/REVOLUTION(DefaultRealU)" presentationUnits="" relativeError="1.3"/>
+                            </ECSchema>)xml"));
+            }
+
+    public:
+        explicit EC31ThreadPitchKoqsTestECDbCreator() : TestECDbCreator(TESTECDB_EC31THREADPITCHKOQS) {}
+        ~EC31ThreadPitchKoqsTestECDbCreator() {}
     };
 
 //======================================================================================

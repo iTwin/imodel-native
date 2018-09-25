@@ -22,6 +22,7 @@
 #define TESTIMODEL_EC32ENUMS_PROFILEUPGRADED "ec32enums_profileupgraded.bim"
 #define TESTIMODEL_EC32ENUMS "ec32enums.bim"
 #define TESTIMODEL_EC31KOQS "ec31koqs.bim"
+#define TESTIMODEL_EC31THREADPITCHKOQS "ec31threadpitchkoqs.ecdb"
 #define TESTIMODEL_EC32KOQS "ec32koqs.bim"
 #define TESTIMODEL_EC32UNITS "ec32units.bim"
 #define TESTIMODEL_EC31ENUMS_SCHEMAUPGRADE "ec31enums_schemaupgrade.bim"
@@ -37,6 +38,7 @@
                               std::make_shared<EC31EnumsSchemaUpgradeTestIModelCreator>(), \
                               std::make_shared<EC32EnumsSchemaUpgradeTestIModelCreator>(), \
                               std::make_shared<EC31KoqsTestIModelCreator>(), \
+                              std::make_shared<EC31ThreadPitchKoqsTestIModelCreator>(), \
                               std::make_shared<EC32KoqsTestIModelCreator>(), \
                               std::make_shared<EC31KoqsSchemaUpgradeTestIModelCreator>(), \
                               std::make_shared<EC32KoqsSchemaUpgradeTestIModelCreator>(), \
@@ -242,6 +244,34 @@ struct EC31KoqsTestIModelCreator final : TestIModelCreator
     public:
         explicit EC31KoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC31KOQS) {}
         ~EC31KoqsTestIModelCreator() {}
+    };
+
+//======================================================================================
+// Thread pitch units were only added later to the legacy units handling. So we 
+// dedicate a separate test for them
+// @bsiclass                                               Krischan.Eberle      09/2018
+//======================================================================================
+struct EC31ThreadPitchKoqsTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            DgnDbPtr bim = CreateNewTestFile(m_fileName);
+            if (bim == nullptr)
+                return ERROR;
+
+            return ImportSchema(*bim, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <KindOfQuantity typeName="TestKoq_IN_DEGREE" persistenceUnit="IN/DEGREE" presentationUnits="" relativeError="1.0"/>
+                                <KindOfQuantity typeName="TestKoq_IN_DEGREE_DEFAULTREALU" persistenceUnit="IN/DEGREE(DefaultRealU)" presentationUnits="" relativeError="1.1"/>
+                                <KindOfQuantity typeName="TestKoq_M_REVOLUTION" persistenceUnit="M/REVOLUTION" presentationUnits="" relativeError="1.2"/>
+                                <KindOfQuantity typeName="TestKoq_M_REVOLUTION_DEFAULTREALU" persistenceUnit="M/REVOLUTION(DefaultRealU)" presentationUnits="" relativeError="1.3"/>
+                            </ECSchema>)xml"));
+            }
+
+    public:
+        explicit EC31ThreadPitchKoqsTestIModelCreator() : TestIModelCreator(TESTIMODEL_EC31THREADPITCHKOQS) {}
+        ~EC31ThreadPitchKoqsTestIModelCreator() {}
     };
 
 //======================================================================================
