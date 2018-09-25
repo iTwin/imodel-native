@@ -360,8 +360,8 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
         return StubHttpResponse();
         });
 
-    Http::Request request("https://test/foo");
-    configurator->_PerformRequest(request)->Wait();
+    Http::Request request("https://test/foo", "GET", configurator);
+    request.Perform().wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -380,8 +380,8 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
         return StubHttpResponse();
         });
 
-    Http::Request request("https://test/foo");
-    configurator->_PerformRequest(request)->Wait();
+    Http::Request request("https://test/foo", "GET", configurator);
+    request.Perform().wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -400,8 +400,8 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
         return StubHttpResponse();
         });
 
-    Http::Request request("https://test/foo");
-    configurator->_PerformRequest(request)->Wait();
+    Http::Request request("https://test/foo", "GET", configurator);
+    request.Perform().wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -422,8 +422,8 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithReleaseAndSetToQ
         return StubHttpResponse();
         });
 
-    Http::Request request("https://test/foo");
-    configurator->_PerformRequest(request)->Wait();
+    Http::Request request("https://test/foo", "GET", configurator);
+    request.Perform().wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -444,8 +444,8 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQaAndSetToReleas
         return StubHttpResponse();
         });
 
-    Http::Request request("https://test/foo");
-    configurator->_PerformRequest(request)->Wait();
+    Http::Request request("https://test/foo", "GET", configurator);
+    request.Perform().wait();
     }
 
 /*--------------------------------------------------------------------------------------+
