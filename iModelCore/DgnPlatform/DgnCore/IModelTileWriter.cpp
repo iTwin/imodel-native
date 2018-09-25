@@ -1535,12 +1535,17 @@ BentleyStatus IModelTileWriter::AddTextureJson(TextureMappingCR mapping, Json::V
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IModelTileWriter::WriteFeatureTable(FeatureTableCR featureTable)
     {
+    uint32_t startPosition = m_buffer.GetSize();
+
     auto packed = featureTable.Pack();
     auto const& bytes = packed.GetBytes();
-    m_buffer.Append(bytes.GetSize());
+
+    m_buffer.Append(startPosition); // Overwritten below.
     m_buffer.Append(packed.GetMaxFeatures());
     m_buffer.Append(packed.GetNumFeatures());
     m_buffer.Append(bytes.data(), bytes.GetSize());
+
+    WriteLength(startPosition, startPosition);
     }
 
 /*---------------------------------------------------------------------------------**//**
