@@ -142,14 +142,16 @@ TEST_F(RuntimeJsonLocalStateTests, CtorCopy_UsingNonEmpty_StatesDoNotShareMemory
 //---------------------------------------------------------------------------------------
 TEST_F(RuntimeJsonLocalStateTests, CtorMove_UsingNonEmpty_StatesDoNotShareMemory)
     {
-    auto a = new RuntimeJsonLocalState();
+    char buffer[sizeof(RuntimeJsonLocalState)];
+    auto a = new (buffer) RuntimeJsonLocalState();
     a->SaveJsonValue("Foo", "Boo", "A");
+    EXPECT_EQ(Json::Value("A"), a->GetJsonValue("Foo", "Boo"));
 
     RuntimeJsonLocalState b(std::move(*a));
     b.SaveJsonValue("Foo", "Boo", "B");
 
-    delete a;
-    memset(a, 0x0, sizeof(*a));
+    a->~RuntimeJsonLocalState();
+    memset(buffer, 0x0, sizeof(RuntimeJsonLocalState));
 
     EXPECT_EQ(Json::Value("B"), b.GetJsonValue("Foo", "Boo"));
     }
@@ -190,14 +192,16 @@ TEST_F(RuntimeJsonLocalStateTests, OperCopyAssignment_UsingEmptyTemp_StatesDoNot
 //---------------------------------------------------------------------------------------
 TEST_F(RuntimeJsonLocalStateTests, OperMoveAssignment_UsingNonEmpty_StatesDoNotShareMemory)
     {
-    auto a = new RuntimeJsonLocalState();
+    char buffer[sizeof(RuntimeJsonLocalState)];
+    auto a = new (buffer) RuntimeJsonLocalState();
     a->SaveJsonValue("Foo", "Boo", "A");
+    EXPECT_EQ(Json::Value("A"), a->GetJsonValue("Foo", "Boo"));
 
     RuntimeJsonLocalState b = std::move(*a);
     b.SaveJsonValue("Foo", "Boo", "B");
 
-    delete a;
-    memset(a, 0x0, sizeof(*a));
+    a->~RuntimeJsonLocalState();
+    memset(buffer, 0x0, sizeof(RuntimeJsonLocalState));
 
     EXPECT_EQ(Json::Value("B"), b.GetJsonValue("Foo", "Boo"));
     }
