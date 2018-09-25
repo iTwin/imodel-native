@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Files/FileInfo.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -51,8 +51,10 @@ struct FileInfo : public ChangeInfo
 
         //! Get absolute file path. Returns empty if path not fully set
         BeFileName GetFilePath() const;
-        //! Set file path. Set fileName to empty if file is not yet cached
+        //! Set file path. use ClearFilePath() to set file not cached
         void SetFilePath(FileCache location, BeFileName relativeDir, Utf8StringCR fileName);
+        //! Mark file to be not cached
+        void ClearFilePath();
 
         //! Get relative path for the file
         BeFileName GetRelativePath() const;
