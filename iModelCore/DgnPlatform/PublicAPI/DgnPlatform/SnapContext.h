@@ -87,6 +87,7 @@ namespace SnapContext
         BE_JSON_NAME(snapAperture)
         BE_JSON_NAME(snapDivisor)
         BE_JSON_NAME(offSubCategories)
+        BE_JSON_NAME(intersectCandidates)
         bool IsValid() const {return isMember(json_id()) && isMember(json_closePoint()) && isMember(json_worldToView());}
         DgnElementId GetElementId() const {DgnElementId elementId; elementId.FromJson((*this)[json_id()]); return elementId;}
         DMatrix4d GetWorldToView() const {return JsonUtils::ToDMatrix4d((*this)[json_worldToView()]);}
@@ -113,6 +114,7 @@ namespace SnapContext
                     case SnapMode::Center:
                     case SnapMode::Origin:
                     case SnapMode::Bisector:
+                    case SnapMode::Intersection:
                       snapModes.insert(mode);
                       break;
                 }
@@ -133,6 +135,21 @@ namespace SnapContext
             }
         return offSubCategories;
         }
+
+        DgnElementIdSet GetIntersectCandidates(DgnElementId hitId) const {
+            DgnElementIdSet elements;
+            auto& candidates = (*this)[json_intersectCandidates()];
+            if (candidates.isNull() || !candidates.isArray())
+                return elements;
+            uint32_t nEntries = (uint32_t) candidates.size();
+            for (uint32_t i=0; i < nEntries; i++) {
+                DgnElementId elemId;
+                elemId.FromJson(candidates[i]);
+                if (elemId != hitId)
+                    elements.insert(elemId);
+            }
+        return elements;
+        }
     };
 
     struct Response : Json::Value {
@@ -146,7 +163,8 @@ namespace SnapContext
         BE_JSON_NAME(snapPoint)
         BE_JSON_NAME(normal)
         BE_JSON_NAME(curve)
-        BE_JSON_NAME(localToWorld)
+        BE_JSON_NAME(intersectCurve)
+        BE_JSON_NAME(intersectId)
         void SetStatus(SnapStatus val) {(*this)[json_status()] = (uint32_t) val;}
         void SetSnapMode(SnapMode val) {(*this)[json_snapMode()] = (uint32_t) val;}
         void SetHitPoint(DPoint3dCR pt) {(*this)[json_hitPoint()] = JsonUtils::DPoint3dToJson(pt);}
@@ -156,8 +174,9 @@ namespace SnapContext
         void SetParentGeomType(HitParentGeomType val) {(*this)[json_parentGeomType()] = (uint32_t) val;}
         void SetSubCategory(Utf8StringCR val) {(*this)[json_subCategory()] = val;}
         void SetNormal(DVec3dCR val) {(*this)[json_normal()] = JsonUtils::DVec3dToJson(val);}
-        void SetLocalToWorld(TransformCR val) {(*this)[json_localToWorld()] = JsonUtils::FromTransform(val);}
         void SetCurve(JsonValueCR val) {(*this)[json_curve()] = val;}
+        void SetIntersectCurve(JsonValueCR val) {(*this)[json_intersectCurve()] = val;}
+        void SetIntersectId(DgnElementId id) {(*this)[json_intersectId()] = id.ToHexStr();}
     };
 
     //! Get the KeypointType for a SnapMode.
