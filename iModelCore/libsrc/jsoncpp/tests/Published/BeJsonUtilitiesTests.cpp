@@ -21,7 +21,7 @@ TEST_F(JsonLocalStateTests, GetJsonValue_EmptyState_ReturnsNull)
     {
     RuntimeLocalState localState;
     JsonLocalState jsonLocalState(localState);
-    
+
     EXPECT_EQ(Json::Value::GetNull(), jsonLocalState.GetJsonValue("Foo", "Boo"));
 
     EXPECT_EQ(0, localState.GetValues().size());
@@ -120,4 +120,84 @@ TEST_F(RuntimeJsonLocalStateTests, SaveJsonValue_NullValueRemoved_RemovesValue)
     EXPECT_STREQ("", jsonLocalState.GetValue("Foo", "Boo").c_str());
 
     EXPECT_EQ(Json::Value::GetNull(), jsonLocalState.GetJsonValue("Foo", "Boo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
+TEST_F(RuntimeJsonLocalStateTests, CtorCopy_UsingNonEmpty_StatesDoNotShareMemory)
+    {
+    RuntimeJsonLocalState a;
+    a.SaveJsonValue("Foo", "Boo", "A");
+
+    RuntimeJsonLocalState b(a);
+    b.SaveJsonValue("Foo", "Boo", "B");
+
+    EXPECT_EQ(Json::Value("A"), a.GetJsonValue("Foo", "Boo"));
+    EXPECT_EQ(Json::Value("B"), b.GetJsonValue("Foo", "Boo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
+TEST_F(RuntimeJsonLocalStateTests, CtorMove_UsingNonEmpty_StatesDoNotShareMemory)
+    {
+    auto a = new RuntimeJsonLocalState();
+    a->SaveJsonValue("Foo", "Boo", "A");
+
+    RuntimeJsonLocalState b(std::move(*a));
+    b.SaveJsonValue("Foo", "Boo", "B");
+
+    delete a;
+    memset(a, 0x0, sizeof(*a));
+
+    EXPECT_EQ(Json::Value("B"), b.GetJsonValue("Foo", "Boo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
+TEST_F(RuntimeJsonLocalStateTests, OperCopyAssignment_UsingNonEmpty_StatesDoNotShareMemory)
+    {
+    RuntimeJsonLocalState a;
+    a.SaveJsonValue("Foo", "Boo", "A");
+
+    RuntimeJsonLocalState b = a;
+    b.SaveJsonValue("Foo", "Boo", "B");
+
+    EXPECT_EQ(Json::Value("A"), a.GetJsonValue("Foo", "Boo"));
+    EXPECT_EQ(Json::Value("B"), b.GetJsonValue("Foo", "Boo"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
+TEST_F(RuntimeJsonLocalStateTests, OperCopyAssignment_UsingEmptyTemp_StatesDoNotShareMemory)
+    {
+    RuntimeJsonLocalState b;
+    b.SaveJsonValue("Foo", "Boo", "A");
+
+    b = RuntimeJsonLocalState();
+
+    EXPECT_EQ(Json::Value::GetNull(), b.GetJsonValue("Foo", "Boo"));
+
+    b.SaveJsonValue("Foo", "Boo", "B");
+    EXPECT_EQ(Json::Value("B"), b.GetJsonValue("Foo", "Boo"));
+    }
+    
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
+TEST_F(RuntimeJsonLocalStateTests, OperMoveAssignment_UsingNonEmpty_StatesDoNotShareMemory)
+    {
+    auto a = new RuntimeJsonLocalState();
+    a->SaveJsonValue("Foo", "Boo", "A");
+
+    RuntimeJsonLocalState b = std::move(*a);
+    b.SaveJsonValue("Foo", "Boo", "B");
+
+    delete a;
+    memset(a, 0x0, sizeof(*a));
+
+    EXPECT_EQ(Json::Value("B"), b.GetJsonValue("Foo", "Boo"));
     }

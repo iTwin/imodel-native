@@ -76,7 +76,9 @@ protected:
 
 public:
     RuntimeJsonLocalState() : JsonLocalState(m_runtimeLocalState) {};
-
+    RuntimeJsonLocalState(const RuntimeJsonLocalState& other) : JsonLocalState(m_runtimeLocalState), m_runtimeLocalState (other.m_runtimeLocalState ) {};
+    RuntimeJsonLocalState& operator=(const RuntimeJsonLocalState& other) { m_runtimeLocalState = other.m_runtimeLocalState; return *this; };
+    
     const RuntimeLocalState::Values& GetValues() const { return m_runtimeLocalState.GetValues(); }
     RuntimeLocalState::Values& GetValues() { return m_runtimeLocalState.GetValues(); }
     };
