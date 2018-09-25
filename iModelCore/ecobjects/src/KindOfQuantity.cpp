@@ -764,6 +764,11 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         // Add schema references. Always need units for the persistence unit.
         SchemaKey key("Units", 1, 0, 0);
         auto unitsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+        if (!unitsSchema.IsValid())
+            {
+            LOG.errorv("Failed to find '%s' schema to add as a reference schema for '%s'.", key.GetName().c_str(), GetSchema().GetName().c_str());
+            return SchemaReadStatus::ReferencedSchemaNotFound;
+            }
         if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
             { 
             LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old units.",
@@ -777,6 +782,11 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
         key = SchemaKey("Formats", 1, 0, 0);
         auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+        if (!formatsSchema.IsValid())
+            {
+            LOG.errorv("Failed to find '%s' schema to add as a reference schema for '%s'.", key.GetName().c_str(), GetSchema().GetName().c_str());
+            return SchemaReadStatus::ReferencedSchemaNotFound;
+            }
         if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
             { 
             LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve old formats.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
