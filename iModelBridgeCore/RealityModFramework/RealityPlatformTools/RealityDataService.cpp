@@ -1256,7 +1256,8 @@ void RealityDataFileDownload::Retry()
 //=====================================================================================
 int RealityDataFileDownload::ProcessProgress(uint64_t currentProgress)
     { 
-    if ((m_downloader != nullptr) && (currentProgress > m_transferProgress))
+    if ((m_downloader != nullptr) && (m_downloader->m_pProgressFunc != NULL) 
+        && (currentProgress > m_transferProgress))
         {
         if (NULL != m_downloader->m_pHeartbeatFunc && m_downloader->m_pHeartbeatFunc() != 0)
             return 1;
