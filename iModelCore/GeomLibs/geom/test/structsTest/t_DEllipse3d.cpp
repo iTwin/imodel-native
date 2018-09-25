@@ -3134,4 +3134,148 @@ TEST(DEllipse3d,CutConeExamples)
         }
     Check::ClearGeometry ("DEllipse3d.CutConeExamples");
     }
-
+//
+// Flatten the z of an ellipse.
+// Return the flattened ellipse, with axes rotated to major, minor structure (longest first)
+// Returned ellipse always has the flattened vectors, but is marked invalid if it has degnerated into a line.
+// @param singleStroke if true, the strokes array can contain only 2 points which are the extrema of the line.
+//           if false, the strokes start and end with the arc start end, and may contain additional points where
+//           the projection reached an extrema other than at its endpoints
+// @param arc [in] arc to flatten
+// @param strokes [out] if flattened the ellipse is a line, these are the viewed strokes on z=0
+// @return the flattened ellipse.
+//
+ValidatedDEllipse3d FlattenDEllipse3dZ (DEllipse3d arc, bvector<DPoint3d> &strokes, bool singleStroke)
+    {
+    auto arc0 = arc;
+    arc0.center.z = arc0.vector0.z = arc0.vector90.z = 0.0;
+    auto arc1 = DEllipse3d::FromMajorMinor (arc0);
+    strokes.clear ();
+    static double s_flattenFactor = 1.0e-8;
+    if (arc1.vector90.Magnitude () > s_flattenFactor * arc1.vector0.Magnitude ())
+        return ValidatedDEllipse3d (arc1, true);
+    // arc1 strokes from center+vector0 to center-vector0 and back.
+    // Get all the relevant points ....
+    double pi = Angle::Pi ();
+    bvector<double>fractions;   // fractional positions on the ray <center + alpha * vector0>
+    DPoint3d point0 = arc1.FractionToPoint (0.0);
+    DPoint3d point1 = arc1.FractionToPoint (1.0);
+    DPoint3d pointA = arc1.center + arc1.vector0;
+    DPoint3d pointB = arc1.center - arc1.vector0;
+    strokes.push_back (point0);
+    fractions.push_back(0.0);
+    double factor = 1.0 / arc1.vector0.Magnitude ();
+    fractions.push_back (factor * arc1.vector0.DotProduct (point0 - arc1.center));
+    if (arc1.IsAngleInSweep (0.0))
+        {
+        strokes.push_back (pointA);
+        fractions.push_back (1.0);
+        }
+    if (arc1.IsAngleInSweep (pi))
+        {
+        strokes.push_back (pointB);
+        fractions.push_back (-1.0);
+        }
+    strokes.push_back (point1);
+    fractions.push_back (factor * arc1.vector0.DotProduct (point1 - arc1.center));
+    if (strokes.size () != 2 && singleStroke)
+        {
+        // at least one of the major and minor axis points is within the arc.
+        // sort the fractions.
+        std::sort (fractions.begin (), fractions.end ());
+        if (singleStroke)
+            {
+            strokes.clear ();
+            strokes.push_back (arc1.center + fractions.front () * arc1.vector0);
+            strokes.push_back (arc1.center + fractions.back () * arc1.vector0);
+            }
+        }
+    return ValidatedDEllipse3d (arc1, false);
+    }
+TEST(DEllipse3d,FlattenZ)
+    {
+    double z0 = 0.3;
+    double xShift = 0.1;
+    DVec3d ticShift = DVec3d::From (0.5 * xShift, 0,0);
+    for (double y0 :{0.0, 0.2}) // for y0=0, the 3d starter arc is circular.
+        {
+        SaveAndRestoreCheckTransform shifter (0,3,0);
+        for (double x0 : {1.0, 0.5, 0.0, -0.5, -1.0})
+            {
+            SaveAndRestoreCheckTransform shifter (3,0,0);
+            // make a tilted true circle
+            auto arc = DEllipse3d::From (0,0,1,
+                            x0, y0, z0, 
+                            0, sqrt (x0 * x0 + z0 * z0), 0.0,
+                            0.4, 6.0);
+            Check::SaveTransformed (arc);
+            bvector<DPoint3d> strokes;
+            auto arc0 = FlattenDEllipse3dZ (arc, strokes, true);
+            if (arc0.IsValid ())
+                Check::SaveTransformed (arc0);
+            else
+                {
+                // Draw the strokes of the (true, false) projection flavors, shifted to left and right, with extra line shooting up to show true start of strokes.
+                Check::Shift (-xShift, 0, 0);
+                Check::SaveTransformed (DSegment3d::From (strokes.front (), strokes.front () - ticShift));
+                Check::SaveTransformed (DSegment3d::From (strokes.back (), strokes.back () + ticShift));
+                Check::SaveTransformed (strokes);
+        
+                Check::Shift (2 * xShift, 0, 0);
+                auto arcB = FlattenDEllipse3dZ (arc, strokes, false);
+                Check::SaveTransformed (DSegment3d::From (strokes.front (), strokes.front () - ticShift));
+                Check::SaveTransformed (DSegment3d::From (strokes.back (), strokes.back () + ticShift));
+                Check::SaveTransformed (strokes);
+                }
+            }
+        }
+    Check::ClearGeometry ("DEllipse3d.FlattenZ");
+    }
+// Return (X, a * dX/ds) for s theta = theta0 + s * dTheta
+static DRay3d ScaledTangentAtCirclePoint (
+double r,       // circle radius
+double theta0, // angular position on circle (radians)
+double dTheta, // angular step for approximation interval. (radians)
+double a        // additional scale factor for derivative -- e.g. to scale for bezier edge
+)
+    {
+    double b = a * r * dTheta;
+    return DRay3d::FromOriginAndVector (
+        DPoint3d::From (r * cos(theta0), r * sin(theta0), 0),
+        DVec3d::From (- b * sin(theta0), b * cos(theta0), 0));
+    }
+static bvector<DPoint3d> QuadraticBezierCirclePoints (double r, double theta0, double dTheta)
+    {
+    auto ray0 = ScaledTangentAtCirclePoint (r, theta0, dTheta, 0.5);
+    auto ray1 = ScaledTangentAtCirclePoint (r, theta0 + dTheta, -dTheta, 0.5);
+    // mid point of bezier is intersecton of  the rays ...
+    double fractionA, fractionB;
+    DPoint3d pointA, pointB;
+    DRay3d::ClosestApproachUnboundedRayUnboundedRay (fractionA, fractionB, pointA, pointB, ray0, ray1);
+    return bvector<DPoint3d> {ray0.origin, pointA, ray1.origin};
+    }
+TEST(DEllipse3d,BezierApproximation)
+    {
+    // quadratic bezier . . .
+    double r = 1.0;
+    for (double dTheta : {0.4, 0.2, 0.1})
+        {
+        SaveAndRestoreCheckTransform shifter (2,0,0);
+        double dTheta1 = 0.5 * dTheta;
+        auto bezier02 = QuadraticBezierCirclePoints (r, 0.0, dTheta);
+        auto bezier01 = QuadraticBezierCirclePoints (r, 0.0, dTheta1);
+        auto bezier12 = QuadraticBezierCirclePoints (r, dTheta1, dTheta1);
+        auto arc = DEllipse3d::From (0,0,0, r,0,0, 0,r,0, 0.0, dTheta);
+        Check::SaveTransformed (bezier02);
+        Check::SaveTransformed (bezier01);
+        Check::SaveTransformed (bezier12);
+        Check::SaveTransformed (arc);
+        double d02 = PolylineOps::Length (bezier02);
+        double d012 = PolylineOps::Length (bezier01) + PolylineOps::Length (bezier12);
+        printf (" (dTheta %.8lg) (bezierHalvingLengthRatio %.8lg) (tangent ratio %.6g)\n", dTheta,
+                    d012/ d02,
+                    2.0 * tan (dTheta1/2.0) / tan (dTheta/2)
+                    );
+        }
+    Check::ClearGeometry ("DEllipse3d.BezierApproximation");
+    }
