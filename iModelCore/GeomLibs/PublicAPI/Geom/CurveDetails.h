@@ -158,6 +158,11 @@ GEOMDLLIMPEXP void SetComponentFractionFromFraction (double globalFraction, size
 
 //! Sort to gather CurveLocationDetail's with same curve, and then by fraction within those curves.
 GEOMDLLIMPEXP static void SortByCurveAndFraction (bvector<CurveLocationDetail> &detail);
+//! Return a detail for the closest point, considering only those within searchRadius.
+GEOMDLLIMPEXP static ValidatedCurveLocationDetail ClosestPoint (bvector<CurveLocationDetail> &details, DPoint3dCR xyz, double searchRadius);
+//! Return a detail pair whose detailA or detailB is closest, considering only those within searchRadius.
+//! (Both parts of each pair are considered.)
+GEOMDLLIMPEXP static ValidatedCurveLocationDetailPair ClosestPoint (bvector<CurveLocationDetailPair> &details, DPoint3dCR xyz, double searchRadius);
 };
 
 //! Pair of CurveLocationDetail structs, as produced by curve-curve intersection code.

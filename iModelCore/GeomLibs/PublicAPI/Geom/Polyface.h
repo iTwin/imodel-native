@@ -1257,7 +1257,6 @@ GEOMDLLIMPEXP double BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes);
 //!    formulas that will give correct results (and confidence indicators) when "some" facets are missing
 //! @param [in] polyface facets for integration
 //! @param [out] pData array (allocated by caller) of various integrals:
-//!<pre>
 //! <ul>
 //!    <li>pData[0], pData[1], pData[2] = view along respective axes.   Use signed area, so result should be zero
 //!              if all facets are present to cancel.
@@ -1265,7 +1264,6 @@ GEOMDLLIMPEXP double BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes);
 //!             setting tolerances.
 //!    <li>pData[6] = full 3d area.
 //! </ul>
-//!</pre>
 //! @param [out] directionalProducts array of products integrals wrt origin.  Allocated by caller.
 //! @param [out] origin origin used for directonal integrals.    (Directional integrals are "from the principal" planes through this origin.)
 GEOMDLLIMPEXP void DirectionalVolumeIntegrals
@@ -1406,7 +1404,6 @@ struct PolyfaceIndexedHeapRangeTree *treeB     //!< optional range tree for poly
 
 //! Search for smallest distance between any two facets that have no shared vertices.
 //! The filter normalTestRadians is used as follows to filter out facets that are close but "off to the side" instead of "above".
-//!<pre>
 //!<ul>
 //!<li> Compute the vector between two close points.
 //!<li> Compute the angles between that vector and the normals.
@@ -2067,7 +2064,6 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateUnifiedIndexMesh (PolyfaceQueryCR s
 //! Inspect and correct the direction of "at vertex" normals relative to the ordering of vertices around facets.
 //! Returns true if any changes were made.
 //! The summary vector will contain entries indicating:
-//!<pre>
 //!<ul>
 //!<li>Early exit if fails assertion "Mesh should (but does not) have both NormalIndex and Normal () data"
 //!<li>Quiet warning, not a change trigger: "Ignoring facet whose facet normal cannot be computed from vertex coordinates"
@@ -2326,7 +2322,7 @@ OffsetOptions () :
 };
 
 //! Compute offset(s) of a mesh surface.
-//! Optionally combine two offsets to form a cloed volume.
+//! Optionally combine two offsets to form a closed volume.
 //!<ul>
 //!<li>Example: to Thicken by 1.0 towards the "outside" use distances (1.0, 0.0)
 //!<li>Example: to thicken by 1.0 towards the "inside" use distances (0.0, 1.0)

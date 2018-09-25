@@ -535,6 +535,7 @@ typedef ValidatedValue <double> ValidatedDouble;
 typedef ValidatedValue <DSegment1d> ValidatedDSegment1d;
 typedef ValidatedValue <DSegment3d> ValidatedDSegment3d;
 typedef ValidatedValue <CurveLocationDetail> ValidatedCurveLocationDetail;
+typedef ValidatedValue <CurveLocationDetailPair> ValidatedCurveLocationDetailPair;
 typedef ValidatedValue <PathLocationDetail> ValidatedPathLocationDetail;
 typedef ValidatedValue <DEllipse3d> ValidatedDEllipse3d;
 typedef ValidatedValue <DRay3d> ValidatedDRay3d;
