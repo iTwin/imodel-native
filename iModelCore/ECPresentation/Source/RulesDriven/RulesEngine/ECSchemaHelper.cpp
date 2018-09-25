@@ -1262,10 +1262,35 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
     ECRelatedInstanceDirection direction, Utf8StringCR baseClassNames, RelatedClassPathCR relatedClassPath, InstanceFilteringParams const* filteringParams) const
     {
     SupportedEntityClassInfos baseClassInfos = GetECClassesFromClassList(baseClassNames, false);
-    SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(relationshipNames);
+
     bvector<ECRelationshipClassCP> relationships;
-    std::transform(relationshipInfos.begin(), relationshipInfos.end(), std::back_inserter(relationships), 
-        [](SupportedRelationshipClassInfo const& info){return &info.GetClass();});
+    if (relationshipNames.empty())
+        {
+        bmap<ECRelationshipClassCP, int> relationshipCounter;
+        RelationshipClassPathOptions params(sourceClass, (int)direction, 0, "", "", baseClassNames.c_str(), relationshipCounter);
+        bvector<bpair<RelatedClassPath, bool>> relationshipPaths = GetRelationshipClassPaths(params);
+        for (bpair<RelatedClassPath, bool> const& entry : relationshipPaths)
+            {
+            if (!entry.second)
+                continue;
+
+            if (entry.first.size() != 1)
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            ECRelationshipClassCP relationship = entry.first[0].GetRelationship();
+            if (relationships.end() == std::find(relationships.begin(), relationships.end(), relationship))
+                relationships.push_back(relationship);
+            }
+        }
+    else
+        {
+        SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(relationshipNames);
+        std::transform(relationshipInfos.begin(), relationshipInfos.end(), std::back_inserter(relationships),
+            [](SupportedRelationshipClassInfo const& info) { return &info.GetClass(); });
+        }
 
     PolymorphicallyRelatedClassesCache::Key key = {&sourceClass, direction, relationships};
     bvector<RelatedClass> const* polymorphicallyRelatedClasses = m_polymorphicallyRelatedClassesCache->Get(key);
@@ -1368,7 +1393,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
                     break;
                     }
                 }
-            if (!derivesFromBase)
+            if (!derivesFromBase && !baseClassInfos.empty())
                 continue;
 
             RelatedClass derivedPath(sourceClass, *derivedClass, *relationships[0], true);

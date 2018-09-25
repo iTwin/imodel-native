@@ -964,8 +964,8 @@ rapidjson::Value DefaultECPresentationSerializer::_AsJson(KindOfQuantityCR koq,
     rapidjson::Value json(rapidjson::kObjectType);
     json.AddMember("Name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
     json.AddMember("DisplayLabel", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
-    json.AddMember("PersistenceUnit", rapidjson::Value(koq.GetPersistenceUnit().ToText(true).c_str(), allocator), allocator);
-    json.AddMember("CurrentFusId", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText(true).c_str(), allocator), allocator);
+    json.AddMember("PersistenceUnit", rapidjson::Value(koq.GetPersistenceUnit()->GetName().c_str(), allocator), allocator);
+    json.AddMember("CurrentFormatId", rapidjson::Value(koq.GetDefaultPresentationFormat()->GetName().c_str(), allocator), allocator);
     return json;
     }
 

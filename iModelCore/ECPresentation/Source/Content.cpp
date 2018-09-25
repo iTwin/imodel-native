@@ -1157,8 +1157,8 @@ BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formatte
         return ERROR;
     
     // determine the presentation unit
-    Formatting::FormatUnitSet fus = koq->GetDefaultPresentationUnit();
-    if (nullptr == fus.GetUnit() || nullptr == fus.GetNamedFormatSpec())
+    NamedFormatCP format = koq->GetDefaultPresentationFormat();
+    if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
         {
         BeAssert(false);
         return ERROR;
@@ -1166,7 +1166,7 @@ BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formatte
 
     // apply formatting
     ECQuantityFormattingStatus status;
-    formattedValue = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, *fus.GetUnit(), *fus.GetNamedFormatSpec(), &status);
+    formattedValue = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, *format->GetCompositeMajorUnit(), *format, &status);
     if (ECQuantityFormattingStatus::Success != status)
         {
         formattedValue.clear();

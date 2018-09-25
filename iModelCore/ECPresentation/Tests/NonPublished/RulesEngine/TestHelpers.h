@@ -380,7 +380,7 @@ protected:
 
 public:
     TestNodesCache(IConnectionCacheCR connections, INodesProviderContextFactory* nodesProviderContextFactory = nullptr) 
-        : m_nodesProviderContextFactory(nodesProviderContextFactory), m_connections(connections)
+        : m_nodesProviderContextFactory(nodesProviderContextFactory), m_connections(connections), m_nodeIds(1), m_datasourceIds(1)
         {}
     void SetGetNodeHandler(GetNodeHandler handler) {m_getNodeHandler = handler;}
     void SetGetHierarchyDataSourceHandler(GetHierarchyDataSourceHandler handler) {m_getHierarchyDataSourceHandler = handler;}
