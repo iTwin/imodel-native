@@ -25,7 +25,7 @@
 
     <Part Name="DgnDb0601ToJson" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601Exporter/lib/DgnDb0601ToJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="B02">
         <SubPart PartName="DgnDb0601Assemblies"/>
-        <SubPart PartName="DgnDb0601Assemblies-static"/>
+        <SubPart PartName="DgnDb0601Assemblies-static" LibType="Static"/>
         <SubPart PartFile="DgnDbSync" PartName="BimFromDgnDbPublicAPI"/>
         <Bindings>
             <Libs ProductDirectoryName="BimFromDgnDbLibs" Required="false">Delivery/$(libprefix)DgnDb0601ToJson$(libext)</Libs>
