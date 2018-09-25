@@ -23,3 +23,19 @@ JsonUpdaterTests.Options
     # at com.bentley.unittest.BeAndroidTestRunner.runTest(BeAndroidTestRunner.java:63)
     # at android.test.InstrumentationTestRunner.onStart(InstrumentationTestRunner.java:560)
     # at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:1932)
+
+ECSqlStatementTestFixture.InsertWithMixParameters
+
+    # VSTS#35169
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/25/2018
+    # 2017-12-09 13:34:27,810 ERROR [0x00000470] ECObjectsNative - Validation Error - KindOfQuantity 'ECSqlTest:Length' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-09 13:34:27,810 ERROR [0x00000470] ECObjectsNative - Validation Error - KindOfQuantity 'ECSqlTest:Volume' persistence FormatUnitSet has a problem: Unknown name of the unit
+    # 2017-12-09 13:34:27,810 ERROR [0x00000470] ECObjectsNative - Schema validation failed for schema 'ECSqlTest.01.00.00'.  It is supposed to be EC Version 3.1 but it does not meet the rules for that EC version.  See log for details.
+    # 2017-12-09 13:34:27,810 ERROR [0x00000470] ECObjectsNative - Failed to read XML file: c:\build\outA\mds06t_2017-12-09_12-33-49\out\Winx64\Product\ECDb-Gtest\Assets\Documents\ECDb\Schemas\ECSqlTest.01.00.ecschema.xml
+    # c:\build\src\mds06t\ECDb\Tests\BackDoor\ECDbTestFixture.cpp(79): error: Value of: false
+    # Actual: false
+    # Expected: true
+    # Importing schema ECSqlTest.01.00.ecschema.xml failed
+    # c:\build\src\mds06t\ECDb\Tests\Published\ECSqlStatementTests.cpp(4432): error:       Expected: SUCCESS
+    # To be equal to: SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml"))
+    # Which is: ERROR
