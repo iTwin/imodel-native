@@ -11,27 +11,3 @@ SchemaDeserializationTest.CanLoadCaInstanceWhichAppearsBeforeCaDefinition
 #JsonEcInstanceWriter needs to take a class locater in order to resolve a rel class id into a rel class name in the JSON wire format
 NavigationPropertyValueTests.InstanceWithNavProp_Long
 
-SchemaCopyTest.TestKindOfQuantity
-
-    # VSTS#35170
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/25/2018
-    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    # *********************** STACK TRACE ************************
-    # [17] _C_specific_handler (0x7ffbb15abff0)
-    # [16] _chkstk (0x7ffbb9169f60)
-    # [15] RtlLookupFunctionEntry (0x7ffbb90d91a0)
-    # [14] KiUserExceptionDispatcher (0x7ffbb91690d0)
-    # [13] BentleyB0200::ECNTests::SchemaCopyTest_TestKindOfQuantity_Test::TestBody (0x7ff7b3c90940)
-    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff7b3d22e80)
-    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7b3d22d10)
-    # [10] testing::Test::Run (0x7ff7b3d332b0)
-    # [9] testing::TestInfo::Run (0x7ff7b3d335c0)
-    # [8] testing::TestCase::Run (0x7ff7b3d333d0)
-    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff7b3d33880)
-    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7b3d22f20)
-    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7b3d22e00)
-    # [4] testing::UnitTest::Run (0x7ff7b3d33760)
-    # [3] main (0x7ff7b3ac9480)
-    # [2] __scrt_common_main_seh (0x7ff7b3d41cac)
-    # [1] BaseThreadInitThunk (0x7ffbb6e02760)
-    # [0] RtlUserThreadStart (0x7ffbb9130d30)
