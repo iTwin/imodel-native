@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurvePrimitivePartialCurve.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -529,8 +529,14 @@ bool _PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double startFr
 using ICurvePrimitive::_ClosestPointBounded;    // suppresses C4266
 bool _ClosestPointBounded (DPoint3dCR spacePoint, double &fraction, DPoint3dR curvePoint, bool extend0, bool extend1) const override
     {
-    // Ugh.. convert to curve is expensive.  ALSO JUST PLAIN WRONG -- PARAMETERIZATION MIGHT NOT MATCH
     MSBsplineCurve curve;
+    if (m_detail.IsSingleFraction ())
+        {
+        // fractional output is in the partial curve space, i.e. 0.0
+        this->FractionToPoint (m_detail.fraction0, curvePoint);
+        fraction = 0.0;
+        return true;
+        }
     if (GetMSBsplineCurve (curve, 0.0, 1.0))
         {
         curve.ClosestPoint (curvePoint, fraction, spacePoint);
@@ -552,6 +558,23 @@ bool _ClosestPointBoundedXY(
         bool extend1
         ) const override
         {
+        if (m_detail.IsSingleFraction ())
+            {
+        // fractional output is in the partial curve space, i.e. 0.0
+            DPoint3d xyzA = spacePoint;
+            DPoint3d xyzB;
+            double fractionOnPartialCurve = 0.0;
+            this->FractionToPoint (fractionOnPartialCurve, xyzB);
+            location = CurveLocationDetail (this, 0.0, xyzB);
+            if (worldToLocal)
+                {
+                worldToLocal->MultiplyAndRenormalize (xyzA, xyzA);
+                worldToLocal->MultiplyAndRenormalize (xyzB, xyzB);
+                }
+            location.a = xyzA.DistanceXY (xyzB);
+            location.SetSingleComponentData ();
+            return true;
+            }
         // Ugh.. convert to curve is expensive.  ALSO JUST PLAIN WRONG -- PARAMETERIZATION MIGHT NOT MATCH
         MSBsplineCurve curve;
         if (GetMSBsplineCurve (curve, 0.0, 1.0))

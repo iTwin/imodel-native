@@ -3221,3 +3221,34 @@ TEST(Train,Envelope)
 
     Check::ClearGeometry ("Train.Envelope");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CCIXY,ClosestPointToPartialCurve)
+    {
+    auto cp0 = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,10,0));
+    auto cv0 = CurveVector::Create (cp0);
+
+    // crossing curves
+    auto cpA = ICurvePrimitive::CreateLine (DSegment3d::From (10,0,0, 2,8,0));
+    auto cpB = ICurvePrimitive::CreateLineString (bvector<DPoint3d> {DPoint3d::From (10,0,0), DPoint3d::From (10,6,0), DPoint3d::From (0,3,0)});
+    auto cpC = ICurvePrimitive::CreateArc (DEllipse3d::FromPointsOnArc (DPoint3d::From (10,0,0), DPoint3d::From (2,5,0), DPoint3d::From (6,0,0)));
+    for (auto cp : {cpA, cpB, cpC})
+        {
+        SaveAndRestoreCheckTransform shifter (20, 0, 0);
+        auto cv1 = CurveVector::Create (cp);
+        CurveVectorPtr intersectionsA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        CurveVectorPtr intersectionsB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        CurveCurve::IntersectionsXY (*intersectionsA, *intersectionsB, *cv0, *cv1, nullptr);
+        DPoint3d spacePoint = DPoint3d::From (3,4,0);
+        CurveLocationDetail intersectionDetail;
+        Check::SaveTransformedMarker (spacePoint);
+        Check::True (intersectionsA->ClosestPointBoundedXY (spacePoint, nullptr, intersectionDetail));
+        Check::SaveTransformedMarker (intersectionDetail.point, -0.05);
+        Check::SaveTransformed (DSegment3d::From (spacePoint, intersectionDetail.point));
+        Check::SaveTransformed (*cv0);
+        Check::SaveTransformed (*cv1);
+        }
+    Check::ClearGeometry ("CCIXY.ClosestPointToPartialCurve");
+    }
