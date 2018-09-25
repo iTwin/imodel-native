@@ -477,8 +477,14 @@ TEST_F(ECDbCompatibilityTestFixture, EC31KindOfQuantities)
             EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) != nullptr) << testDb.GetDescription();
 
             testDb.AssertUnit("Units", "COULOMB", "C", nullptr, "A*S", nullptr, nullptr, nullptr, QualifiedName("Units", "SI"), QualifiedName("Units", "ELECTRIC_CHARGE"), false, QualifiedName());
+            //specifically test for thread pitch units which were added later to the unit schema.
+            testDb.AssertUnit("Units", "IN_PER_DEGREE", "in/degree", nullptr, "IN*ARC_DEG(-1)", nullptr, nullptr, nullptr, QualifiedName("Units", "USCUSTOM"), QualifiedName("Units", "THREAD_PITCH"), false, QualifiedName());
+            testDb.AssertUnit("Units", "M_PER_REVOLUTION", "m/r", nullptr, "M*REVOLUTION(-1)", nullptr, nullptr, nullptr, QualifiedName("Units", "INTERNATIONAL"), QualifiedName("Units", "THREAD_PITCH"), false, QualifiedName());
+
+            testDb.AssertUnitSystem("Units", "INTERNATIONAL", nullptr, nullptr);
             testDb.AssertUnitSystem("Units", "SI", nullptr, nullptr);
             testDb.AssertPhenomenon("Units", "LUMINOSITY", "Luminosity", nullptr, "LUMINOSITY");
+            testDb.AssertPhenomenon("Units", "THREAD_PITCH", "Thread Pitch", nullptr, "LENGTH*ANGLE(-1)");
             testDb.AssertFormat("Formats", "AmerFI", "FeetInches", nullptr, JsonValue(R"json({"type": "Fractional", "formatTraits": ["keepSingleZero", "keepDecimalPoint", "showUnitLabel"], "precision": 8, "uomSeparator":""})json"),
                                 JsonValue(R"json({"includeZero":true, "spacer":"", "units": [{"name":"FT", "label":"'"}, {"name":"IN", "label":"\""}]})json"));
 
@@ -496,6 +502,36 @@ TEST_F(ECDbCompatibilityTestFixture, EC31KindOfQuantities)
                 EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(testDb.GetDb(), "SELECT * FROM meta.FormatCompositeUnitDef")) << testDb.GetDescription();
                 stmt.Finalize();
                 }
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, EC31ThreadPitchKindOfQuantities)
+    {
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC31THREADPITCHKOQS))
+        {
+        for (std::unique_ptr<TestECDb> testDbPtr : TestECDb::GetPermutationsFor(testFile))
+            {
+            TestECDb& testDb = *testDbPtr;
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            testDb.AssertKindOfQuantity("TestSchema", "TestKoq_IN_DEGREE", nullptr, nullptr, "u:IN_PER_DEGREE", JsonValue(), 1.0);
+            testDb.AssertKindOfQuantity("TestSchema", "TestKoq_IN_DEGREE_DEFAULTREALU", nullptr, nullptr, "u:IN_PER_DEGREE", JsonValue(R"json(["f:DefaultRealU[u:IN_PER_DEGREE]"])json"), 1.1);
+            testDb.AssertKindOfQuantity("TestSchema", "TestKoq_M_REVOLUTION", nullptr, nullptr, "u:M_PER_REVOLUTION", JsonValue(), 1.2);
+            testDb.AssertKindOfQuantity("TestSchema", "TestKoq_M_REVOLUTION_DEFAULTREALU", nullptr, nullptr, "u:M_PER_REVOLUTION", JsonValue(R"json(["f:DefaultRealU[u:M_PER_REVOLUTION]"])json"), 1.3);
+
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Units", false) != nullptr) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Formats", false) != nullptr) << testDb.GetDescription();
+
+            testDb.AssertUnit("Units", "IN_PER_DEGREE", "in/degree", nullptr, "IN*ARC_DEG(-1)", nullptr, nullptr, nullptr, QualifiedName("Units", "USCUSTOM"), QualifiedName("Units", "THREAD_PITCH"), false, QualifiedName());
+            testDb.AssertUnit("Units", "M_PER_REVOLUTION", "m/r", nullptr, "M*REVOLUTION(-1)", nullptr, nullptr, nullptr, QualifiedName("Units", "INTERNATIONAL"), QualifiedName("Units", "THREAD_PITCH"), false, QualifiedName());
+            testDb.AssertUnitSystem("Units", "INTERNATIONAL", nullptr, nullptr);
+            testDb.AssertPhenomenon("Units", "THREAD_PITCH", "Thread Pitch", nullptr, "LENGTH*ANGLE(-1)");
             }
         }
     }
