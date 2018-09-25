@@ -8,13 +8,18 @@
 
     <Part Name="Cif_InternalSDK" BentleyBuildMakeFile="ORDBridge/Cif.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SdkSource>Cif_InternalSDK</SdkSource>
+        <RequiredRepository>Cif</RequiredRepository>
         <Bindings>
             <PublicAPI Domain="CifApi" />
             <Files ProductDirectoryName="CifDlls" SubPartDirectory="CifSdk/Dlls" Required="true">
                 Delivery/CifSdk/Dlls/*.dll
             </Files>
             <Directory SourceName="Delivery/CifSdk/Libs" Required="false" SubPartDirectory="CifLibs" />
-            <Directory SourceName="Delivery/CifSdk/ECSchemas" ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas" SubPartDirectory="CifSdk/ECSchemas" Required="true"/>
+            <Files ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas/CIF" Required="true">
+                Delivery/CifSdk/ECSchemas/*.ecschema.xml
+                Delivery/CifSdk/ECSchemas/*.ecschema.liveMapping.xml
+                Delivery/CifSdk/ECSchemas/Model/*.ecschema.xml
+            </Files>
         </Bindings>
     </Part>
     

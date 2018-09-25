@@ -2,7 +2,7 @@
 #
 #     $Source: ORDBridge/Cif.Prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -397,7 +397,7 @@ $(modifiedCifHeadersOutputBaseDir).stamp : $[@wildcard $(modifiedV8HeadersOutput
 $(Delivery)CifSdk/Dlls : $(CifSdk)Dlls
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(Delivery)CifSdk/ECSchemas : $(CifSdk)ECSchemas
+$(Delivery)CifSdk/ECSchemas : $(SrcRoot)Cif/src/ECSchemas
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(Delivery)CifSdk/Libs : $(CifSdk)Libs
