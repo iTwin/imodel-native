@@ -2147,7 +2147,7 @@ bvector<NavNodeCPtr> NodesCache::GetFilteredNodes(IConnectionCR connection, Utf8
                        "  JOIN [" NODESCACHE_TABLENAME_NodeKeys "] k ON [k].[NodeId] = [n].[Id] "
                        "  JOIN [" NODESCACHE_TABLENAME_DataSources "] ds ON [ds].[Id] = [n].[DataSourceId] "
                        "  LEFT JOIN [" NODESCACHE_TABLENAME_ExpandedNodes "] ex ON [n].[Id] = [ex].[NodeId] "
-                       " WHERE [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? AND [ds].[Locale] = ? AND [n].[Label] LIKE ? "
+                       " WHERE [ds].[ConnectionId] = ? AND [ds].[RulesetId] = ? AND [ds].[Locale] = ? AND [n].[Label] LIKE ? ESCAPE \'\\\'"
                        " ORDER BY [n].[Id]";
 
     bvector<NavNodeCPtr> nodeList;

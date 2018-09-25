@@ -10,6 +10,7 @@
 #include <ECPresentation/DefaultECPresentationSerializer.h>
 #include "../Localization/Xliffs/ECPresentation.xliff.h"
 #include "ValueHelpers.h"
+#include <regex>
 
 IECPresentationManager* IECPresentationManager::s_instance = nullptr;
 IECPresentationSerializer const* IECPresentationManager::s_serializer = nullptr;
@@ -517,7 +518,13 @@ folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNode
         BeAssert(false && "Unknown connection");
         return bvector<NodesPathElement>();
         }
-    return _GetFilteredNodes(*connection, filterText, options).then([&](bvector<NavNodeCPtr> filteredNodes)
+
+    Utf8String escapedString(filterText);
+    escapedString.ReplaceAll("\\", "\\\\");
+    escapedString.ReplaceAll("%", "\\%");
+    escapedString.ReplaceAll("_", "\\_");
+
+    return _GetFilteredNodes(*connection, escapedString.c_str(), options).then([&](bvector<NavNodeCPtr> filteredNodes)
         {
         bvector<NavNodeCPtr> roots;
         bmap<uint64_t, bvector<NavNodeCPtr>> hierarchy;

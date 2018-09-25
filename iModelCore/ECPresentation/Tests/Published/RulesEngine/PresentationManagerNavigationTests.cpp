@@ -5318,6 +5318,104 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesFrom
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas             09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesMatchingPercentSymbol)
+    {    
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("%")); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, m_widgetClass->GetFullName(), "MyID"));
+
+    // request for filtered nodes paths
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    bvector<NodesPathElement> nodes = IECPresentationManager::GetManager().GetFilteredNodesPaths(s_project->GetECDb(), "%", options).get();
+
+    // make sure we have 1 node
+    ASSERT_EQ(1, nodes.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas             09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, ReturnsFilteredNodesMatchingUnderscoreSymbol)
+    {    
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("MyID", ECValue("_")); });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, m_widgetClass->GetFullName(), "MyID"));
+
+    // request for filtered nodes paths
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    bvector<NodesPathElement> nodes = IECPresentationManager::GetManager().GetFilteredNodesPaths(s_project->GetECDb(), "_", options).get();
+
+    // make sure we have 1 node
+    ASSERT_EQ(1, nodes.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas             09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnFilteredNodesNotMatchingPercentSymbol)
+    {    
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+
+    // request for filtered nodes paths
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    bvector<NodesPathElement> nodes = IECPresentationManager::GetManager().GetFilteredNodesPaths(s_project->GetECDb(), "%", options).get();
+
+    // make sure we have 0 nodes
+    ASSERT_EQ(0, nodes.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Haroldas.Vitunskas             09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, DoesNotReturnFilteredNodesNotMatchingUnderscoreSymbol)
+    {    
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+
+    // request for filtered nodes paths
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    bvector<NodesPathElement> nodes = IECPresentationManager::GetManager().GetFilteredNodesPaths(s_project->GetECDb(), "_", options).get();
+
+    // make sure we have 0 nodes
+    ASSERT_EQ(0, nodes.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Aidas.Vaiksnoras               01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_OverridesInstanceLabelAsFirstNotEmptyParameter)

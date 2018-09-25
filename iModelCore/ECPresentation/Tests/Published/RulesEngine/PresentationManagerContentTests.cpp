@@ -619,6 +619,51 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest                                       Haroldas.Vitunskas              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithEscapedFilters)
+    {
+    // insert some widget instances
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("abc"));});
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("%"));});
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("abc%def"));});
+
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instance1, instance2, instance3});
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", false));
+    rules->AddPresentationRule(*rule);
+
+    // get the descriptor
+    RulesDrivenECPresentationManager::ContentOptions options("DescriptorOverride_WithEscapedFilters");
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // get the default content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+    
+    // validate the default content set
+    RulesEngineTestHelpers::ValidateContentSet({instance1.get(), instance2.get(), instance3.get()}, *content);
+
+    // create the override
+    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
+    ovr->SetFilterExpression("Widget_MyID LIKE \"%\\%%\"");
+
+    // get the content with descriptor override
+    content = IECPresentationManager::GetManager().GetContent(*ovr, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // make sure the records in the content set are filtered
+    RulesEngineTestHelpers::ValidateContentSet({instance2.get(), instance3.get()}, *content);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest                                       Grigas.Petraitis                08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(DescriptorOverride_FiltersByDisplayLabel, R"*(
