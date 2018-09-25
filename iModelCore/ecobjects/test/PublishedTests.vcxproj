@@ -69,6 +69,7 @@
     <ClCompile Include="Published\ECClassTests.cpp" />
     <ClCompile Include="Published\ECDBufferTests.cpp" />
     <ClCompile Include="Published\ECExpressionTests.cpp" />
+    <ClCompile Include="Published\ECInstanceJsonWriterTests.cpp" />
     <ClCompile Include="Published\ECJsonUtilitiesTests.cpp" />
     <ClCompile Include="Published\ECQuantityFormattingTests.cpp" />
     <ClCompile Include="Published\ECSchemaValidatorTests.cpp" />

@@ -168,6 +168,9 @@
     <ClCompile Include="Published\SchemaConverterTests.cpp">
       <Filter>Source Files\SchemaConverter</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECInstanceJsonWriterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">

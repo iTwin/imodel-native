@@ -2,6 +2,8 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
+# VSTS#34672 Strict ECEnumeration allows invalid values
+PropertyTests.GetEnumeratorValueFromInstance
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
