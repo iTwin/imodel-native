@@ -2783,6 +2783,27 @@ public:
 };
 
 //=======================================================================================
+//! An entry in a PackedFeatureTable. The subcategory ID is stored as a 24-bit index into
+//! an array of subcategory IDs stored elsewhere.
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct PackedFeature
+{
+private:
+    uint64_t m_elementId;
+    uint32_t m_subCategoryIndexAndClass;
+public:
+    PackedFeature(DgnElementId elemId, uint32_t subCategoryIndex, DgnGeometryClass geomClass) : PackedFeature(elemId.GetValueUnchecked(), subCategoryIndex | (static_cast<uint32_t>(geomClass) << 24)) { }
+    PackedFeature(uint64_t elemId, uint32_t subCategoryIndexAndClass) : m_elementId(elemId), m_subCategoryIndexAndClass(subCategoryIndexAndClass) { }
+
+    DgnElementId GetElementId() const { return DgnElementId(m_elementId); }
+    uint32_t GetSubCategoryIndex() const { return m_subCategoryIndexAndClass & 0x00ffffff; }
+    DgnGeometryClass GetClass() const { return static_cast<DgnGeometryClass>((m_subCategoryIndexAndClass >> 24) & 0x000000ff); }
+
+    static constexpr size_t PackedSize() { return sizeof(uint64_t) + sizeof(uint32_t); }
+};
+
+//=======================================================================================
 //! Defines a look-up table for Features within a batched Graphic. Consecutive 32-bit
 //! indices are assigned to each unique Feature. Primitives within the Graphic can
 //! use per-vertex indices to specify the distribution of Features within the primitive.
@@ -2863,6 +2884,75 @@ public:
     void SetMaxFeatures(uint32_t maxFeatures) { m_maxFeatures = maxFeatures; }
     bpair<Map::iterator, uint32_t> Insert(Feature feature, uint32_t index) { return m_map.Insert(feature, index); }
     void SetModelId(DgnModelId modelId) { m_modelId = modelId; }
+
+    DGNPLATFORM_EXPORT PackedFeatureTable Pack() const;
+};
+
+//=======================================================================================
+//! Packed, immutable representation of a FeatureTable, for serialization to binary format.
+// @bsistruct                                                   Paul.Connelly   09/18
+//=======================================================================================
+struct PackedFeatureTable
+{
+    friend struct FeatureTable;
+private:
+    DgnModelId m_modelId;
+    ByteStream m_bytes;
+    uint32_t m_maxFeatures;
+    uint32_t m_numFeatures;
+
+    PackedFeatureTable(ByteStream&& bytes, uint32_t numFeatures, DgnModelId modelId, uint32_t maxFeatures) : m_modelId(modelId),
+        m_bytes(std::move(bytes)), m_maxFeatures(maxFeatures), m_numFeatures(numFeatures) { }
+
+    uint64_t ReadUInt64(size_t byteOffset) const
+        {
+        // NB: No padding is inserted to enable 64-bit-aligned access, primarily because javascript cannot read 64-bit integers, aligned or otherwise.
+        BeAssert(0 == byteOffset % 4);
+        BeAssert(byteOffset + sizeof(uint64_t) <= m_bytes.size());
+        auto u32s = reinterpret_cast<uint32_t const*>(m_bytes.data() + byteOffset);
+        uint64_t lo = u32s[0];
+        uint64_t hi = u32s[1];
+        return lo | (hi << 32);
+        }
+
+    size_t GetSubCategoriesOffset() const { return m_numFeatures * PackedFeature::PackedSize(); }
+    DgnSubCategoryId GetSubCategoryId(uint32_t index) const
+        {
+        size_t byteOffset = GetSubCategoriesOffset() + index * sizeof(uint64_t);
+        return DgnSubCategoryId(ReadUInt64(byteOffset));
+        }
+    DgnElementId GetElementId(uint32_t index) const
+        {
+        size_t byteOffset = index * PackedFeature::PackedSize();
+        return DgnElementId(ReadUInt64(byteOffset));
+        }
+    uint32_t GetSubCategoryIndexAndClass(uint32_t index) const
+        {
+        size_t byteOffset = index * PackedFeature::PackedSize() + sizeof(uint64_t);
+        return *reinterpret_cast<uint32_t const*>(m_bytes.data() + byteOffset);
+        }
+public:
+    PackedFeatureTable(PackedFeatureTable&& src) : m_modelId(src.m_modelId), m_bytes(std::move(src.m_bytes)), m_maxFeatures(src.m_maxFeatures), m_numFeatures(src.m_numFeatures) { }
+    PackedFeatureTable(PackedFeatureTableCR) = delete;
+
+    uint32_t GetNumFeatures() const { return m_numFeatures; }
+    uint32_t GetMaxFeatures() const { return m_maxFeatures; }
+    DgnModelId GetModelId() const { return m_modelId; }
+    ByteStreamCR GetBytes() const { return m_bytes; }
+
+    PackedFeature GetPackedFeature(uint32_t index) const
+        {
+        BeAssert(index < m_numFeatures);
+        return PackedFeature(GetElementId(index).GetValueUnchecked(), GetSubCategoryIndexAndClass(index));
+        }
+
+    Feature GetFeature(uint32_t index) const
+        {
+        auto packed = GetPackedFeature(index);
+        return Feature(packed.GetElementId(), GetSubCategoryId(packed.GetSubCategoryIndex()), packed.GetClass());
+        }
+
+    DGNPLATFORM_EXPORT FeatureTable Unpack() const;
 };
 
 //=======================================================================================

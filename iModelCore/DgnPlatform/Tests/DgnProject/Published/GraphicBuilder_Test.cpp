@@ -79,6 +79,56 @@ void ExpectEqualBytes(ByteStream const& a, ByteStream const& b)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpectEqualFeatureTables(FeatureTableCR base, FeatureTableCR comp, bool expectEqualIndices = false)
+    {
+    EXPECT_EQ(base.size(), comp.size());
+    EXPECT_EQ(base.GetMaxFeatures(), comp.GetMaxFeatures());
+    EXPECT_EQ(base.IsUniform(), comp.IsUniform());
+
+    for (auto kvp : base)
+        {
+        uint32_t compIndex;
+        EXPECT_TRUE(comp.FindIndex(compIndex, kvp.first));
+        if (expectEqualIndices)
+            EXPECT_EQ(kvp.second, compIndex);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FeatureTableTests, PackAndUnpack)
+    {
+#define MAKE_FEATURE(EID, SCID, CLS) Feature(DgnElementId(static_cast<uint64_t>(EID)), DgnSubCategoryId(static_cast<uint64_t>(SCID)), DgnGeometryClass:: CLS)
+
+    uint64_t largeIdBase = 0xABCDABCDABCDABCD;
+    Feature features[] =
+        {
+        MAKE_FEATURE(1, 1, Primary),
+        MAKE_FEATURE(2, 1, Primary),
+        MAKE_FEATURE(3, 1, Construction),
+        MAKE_FEATURE(4, largeIdBase, Primary),
+        MAKE_FEATURE(largeIdBase+1, 99, Construction),
+        MAKE_FEATURE(largeIdBase-1, 200, Primary),
+        MAKE_FEATURE(largeIdBase-5, largeIdBase+5, Construction),
+        MAKE_FEATURE(2, largeIdBase, Primary),
+        MAKE_FEATURE(1, 1, Construction),
+        };
+
+    FeatureTable table(DgnModelId(static_cast<uint64_t>(1234)), 100);
+    for (auto const& feature : features)
+        table.GetIndex(feature);
+
+    EXPECT_EQ(_countof(features), table.GetNumIndices());
+    PackedFeatureTable packed = table.Pack();
+    ExpectEqualFeatureTables(table, packed.Unpack(), true);
+
+#undef MAKE_FEATURE
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   10/17
 //=======================================================================================
@@ -349,7 +399,6 @@ protected:
     void ExpectEqualGeometry(StreamBufferR baseline, StreamBufferR comparand);
     void ExpectEqualGeometry(Render::Primitives::GeometryCollectionR base, Render::Primitives::GeometryCollectionR comp);
     void ExpectEqualMeshLists(MeshListCR, MeshListCR);
-    void ExpectEqualFeatureTables(FeatureTableCR, FeatureTableCR, bool expectEqualIndices=false);
     void ExpectEqualMeshes(MeshCR, MeshCR);
     void ExpectEqualColorTables(ColorTableCR, ColorTableCR);
     void ExpectEqualMeshPrimitives(MeshCR, MeshCR);
@@ -413,24 +462,6 @@ void MeshBuilderTest::ExpectEqualMeshLists(MeshListCR base, MeshListCR comp)
         {
         for (size_t i = 0; i < base.size(); i++)
             ExpectEqualMeshes(*base[i], *comp[i]);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilderTest::ExpectEqualFeatureTables(FeatureTableCR base, FeatureTableCR comp, bool expectEqualIndices)
-    {
-    EXPECT_EQ(base.size(), comp.size());
-    EXPECT_EQ(base.GetMaxFeatures(), comp.GetMaxFeatures());
-    EXPECT_EQ(base.IsUniform(), comp.IsUniform());
-
-    for (auto kvp : base)
-        {
-        uint32_t compIndex;
-        EXPECT_TRUE(comp.FindIndex(compIndex, kvp.first));
-        if (expectEqualIndices)
-            EXPECT_EQ(kvp.second, compIndex);
         }
     }
 

@@ -411,3 +411,51 @@ MaterialPtr System::_GetMaterial(RenderMaterialId id, DgnDbR db) const
     return mat;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+PackedFeatureTable FeatureTable::Pack() const
+    {
+    ByteStream bytes(static_cast<uint32_t>(PackedFeature::PackedSize() * m_map.size()));
+    bmap<DgnSubCategoryId, uint32_t> subCategories;
+    auto getSubCategoryIndex = [&](DgnSubCategoryId id)
+        {
+        auto nextIndex = static_cast<uint32_t>(subCategories.size());
+        auto iter = subCategories.Insert(id, nextIndex);
+        return iter.first->second;
+        };
+
+    for (auto const& kvp : m_map)
+        {
+        FeatureCR feature = kvp.first;
+        uint32_t featureIndex = kvp.second;
+        PackedFeature packedFeature(feature.GetElementId(), getSubCategoryIndex(feature.GetSubCategoryId()), feature.GetClass());
+        size_t byteOffset = featureIndex * PackedFeature::PackedSize();
+        memcpy(bytes.data() + byteOffset, &packedFeature, PackedFeature::PackedSize());
+        }
+
+    size_t subCategoriesOffset = bytes.size();
+    size_t nSubCategoryBytes = subCategories.size() * sizeof(uint64_t);
+    bytes.resize(bytes.size() + nSubCategoryBytes);
+    for (auto const& kvp : subCategories)
+        {
+        uint64_t id = kvp.first.GetValueUnchecked();
+        size_t byteIndex = kvp.second * sizeof(id);
+        memcpy(bytes.data() + subCategoriesOffset + byteIndex, &id, sizeof(id));
+        }
+
+    return PackedFeatureTable(std::move(bytes), GetNumIndices(), GetModelId(), GetMaxFeatures());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+FeatureTable PackedFeatureTable::Unpack() const
+    {
+    FeatureTable table(GetModelId(), GetMaxFeatures());
+    for (uint32_t i = 0; i < GetNumFeatures(); i++)
+        table.Insert(GetFeature(i), i);
+
+    return table;
+    }
+
