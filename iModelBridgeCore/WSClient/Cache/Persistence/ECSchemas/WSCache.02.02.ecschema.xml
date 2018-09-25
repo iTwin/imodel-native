@@ -78,7 +78,18 @@
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="ObjectInfo" relationshipName="ObjectInfoToCachedFileInfo" direction="Backward" />
+        <ECNavigationProperty propertyName="ObjectInfo" relationshipName="ObjectInfoToCachedFileInfo" direction="backward" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="StaleFileInfo">
+        <ECNavigationProperty propertyName="FileInfo" relationshipName="StaleFileInfoToFileInfo" direction="backward" />
+        <ECProperty propertyName="StaleDate" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="CachedObjectInfo">
@@ -307,6 +318,15 @@
         </Source>
         <Target multiplicity="(0..1)" polymorphic="false" roleLabel="FileInfoOwnership">
             <Class class="ecdbf:FileInfoOwnership"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="StaleFileInfoToFileInfo" strength="holding" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="FileInfo">
+            <Class class="ecdbf:ExternalFileInfo"/>
+        </Source>
+        <Target multiplicity="(1..1)" polymorphic="false" roleLabel="StaleFileInfo">
+            <Class class="StaleFileInfo"/>
         </Target>
     </ECRelationshipClass>
 

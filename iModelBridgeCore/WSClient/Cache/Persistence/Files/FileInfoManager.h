@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -39,11 +39,15 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         ECRelationshipClassCP   m_cachedFileInfoToFileInfoClass;
         ECRelationshipClassCP   m_cachedFileInfoToFileInfoOwnershipClass;
 
+        ECClassCP               m_staleFileInfoClass;
+        ECRelationshipClassCP   m_staleFileInfoToFileInfoClass;
+
         ECClassCP               m_externalFileInfoClass;
         ECClassCP               m_externalFileInfoOwnershipClass;
 
         ECSqlAdapterLoader<JsonInserter>                        m_cachedFileInfoInserter;
         ECSqlAdapterLoader<JsonUpdater, JsonUpdater::Options>   m_cachedFileInfoUpdater;
+        ECSqlAdapterLoader<JsonInserter>                        m_staleFileInfoInserter;
         ECSqlAdapterLoader<JsonInserter>                        m_externalFileInfoInserter;
         ECSqlAdapterLoader<JsonUpdater, JsonUpdater::Options>   m_externalFileInfoUpdater;
 
@@ -52,6 +56,8 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         Json::Value ReadExternalFileInfo(CachedInstanceKeyCR cachedKey);
         ECInstanceKey InsertFileInfoOwnership(ECInstanceKeyCR ownerKey, ECInstanceKeyCR fileInfoKey);
         BentleyStatus CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip);
+        BentleyStatus RemoveFileGracefully(FileInfoR info);
+		BentleyStatus InsertStaleFileInfo(FileInfoCR info);
 
     public:
         FileInfoManager
@@ -74,11 +80,13 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         CacheStatus DeleteFilesNotHeldByNodes
             (
             const ECInstanceKeyMultiMap& holdingNodes,
-            DateTimeCP maxLastAccessDate = nullptr,
-            AsyncError* errorOut = nullptr
+            DateTimeCP maxLastAccessDate = nullptr
             );
 
         BeFileName ReadFilePath(CachedInstanceKeyCR cachedKey);
+
+        BentleyStatus ReadStaleFilePaths(bset<BeFileName>& pathsOut);
+        BentleyStatus CleanupStaleFiles();
 
         // FileInfo::IAbsolutePathProvider
         BeFileName GetAbsoluteFilePath(FileCache location, BeFileNameCR relativePath) const override;
