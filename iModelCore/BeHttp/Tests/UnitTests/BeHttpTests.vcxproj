@@ -86,9 +86,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -N0 -ax64 -r BeHttp -f BeHttp -p BeHttp-Gtest re BeHttpLibrary UnitTests-Published GTest</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb         -ax64 -r BeHttp -f BeHttp -p BeHttp-Gtest re BeHttp-Gtest -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -N0 -ax64 -r BeHttp -f BeHttp -p BeHttp-Gtest re BeHttpLibrary UnitTests-Published GTest -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp-Gtest re BeHttpLibrary UnitTests-Published GTest</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp-Gtest re BeHttp-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r BeHttp -f BeHttp -p BeHttp-Gtest re BeHttpLibrary UnitTests-Published GTest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\BeHttp-Gtest\BeHttpTest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
