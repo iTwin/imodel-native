@@ -57,7 +57,7 @@ struct FileInfoManager : public IECDbAdapter::DeleteListener, public FileInfo::I
         ECInstanceKey InsertFileInfoOwnership(ECInstanceKeyCR ownerKey, ECInstanceKeyCR fileInfoKey);
         BentleyStatus CheckMaxLastAccessDate(BeFileNameCR fileName, DateTimeCP maxLastAccessDate, bool &shouldSkip);
         BentleyStatus RemoveFileGracefully(FileInfoR info);
-		BentleyStatus InsertStaleFileInfo(FileInfoCR info);
+        BentleyStatus InsertStaleFileInfo(FileInfoCR info);
 
     public:
         FileInfoManager
