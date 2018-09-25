@@ -35,6 +35,7 @@ struct JsInterop
     BE_JSON_NAME(client)
     BE_JSON_NAME(description)
     BE_JSON_NAME(ecefLocation)
+    BE_JSON_NAME(element)
     BE_JSON_NAME(fileName)
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
@@ -73,6 +74,8 @@ public:
     static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value &props);
     static DgnDbStatus UpdateElement(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteElement(DgnDbR db, Utf8StringCR eidStr);
+    static DgnDbStatus InsertElementAspect(DgnDbR db, JsonValueCR aspectProps);
+    static DgnDbStatus DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr);
     static DbResult InsertLinkTableRelationship(JsonValueR results, DgnDbR db, Json::Value& props);
     static DbResult UpdateLinkTableRelationship(DgnDbR db, Json::Value& props);
     static DbResult DeleteLinkTableRelationship(DgnDbR db, Json::Value& props);

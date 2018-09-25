@@ -369,8 +369,8 @@ void JsInterop::UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents)
  @bsimethod                                    Keith.Bentley                    06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::UpdateIModelProps(DgnDbR dgndb, JsonValueCR props)
-	{
-	auto& geolocation = dgndb.GeoLocation();
+    {
+    auto& geolocation = dgndb.GeoLocation();
     if (props.isMember(json_projectExtents()))
         {
         AxisAlignedBox3d extents;
@@ -388,7 +388,7 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, JsonValueCR props)
         }
     
     geolocation.Save();
-	}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
@@ -404,6 +404,117 @@ DgnDbStatus JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)
         return DgnDbStatus::MissingId;
 
     return elPersist->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::InsertElementAspect(DgnDbR db, JsonValueCR aspectProps)
+    {
+    DgnElement::RelatedElement relatedElement;
+    relatedElement.FromJson(db, aspectProps[json_element()]);
+    if (!relatedElement.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    DgnElementCPtr element = db.Elements().GetElement(relatedElement.m_id);
+    if (!element.IsValid())
+        return DgnDbStatus::MissingId;
+
+    DgnClassId aspectClassId = ECJsonUtilities::GetClassIdFromClassNameJson(aspectProps[DgnElement::json_classFullName()], db.GetClassLocater());
+    if (!aspectClassId.IsValid())
+        return DgnDbStatus::WrongClass;
+
+    ECClassCP aspectClass = db.Schemas().GetClass(aspectClassId);
+    if (nullptr == aspectClass)
+        return DgnDbStatus::BadSchema;
+
+    bool isMultiAspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+
+    StandaloneECInstancePtr aspect = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    if (!aspect.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    std::function<bool(Utf8CP)> shouldConvertProperty = [aspectClass](Utf8CP propName) 
+        {
+        if ((0 == strcmp(propName, DgnElement::json_classFullName())) || (0 == strcmp(propName, json_element()))) return false;
+        return nullptr != aspectClass->GetPropertyP(propName);
+        };
+    if (BentleyStatus::SUCCESS != ECN::JsonECInstanceConverter::JsonToECInstance(*aspect, aspectProps, db.GetClassLocater(), shouldConvertProperty))
+        return DgnDbStatus::BadRequest;
+
+    DgnElementPtr elementEdit = element->CopyForEdit();
+    if (!elementEdit.IsValid())
+        return DgnDbStatus::WriteError;
+
+    if (isMultiAspect)
+        {
+        if (DgnDbStatus::Success != DgnElement::GenericMultiAspect::AddAspect(*elementEdit, *aspect))
+            return DgnDbStatus::WriteError;
+        }
+    else
+        {
+        if (DgnDbStatus::Success != DgnElement::GenericUniqueAspect::SetAspect(*elementEdit, *aspect))
+            return DgnDbStatus::WriteError;
+        }
+
+    return elementEdit->Update().IsValid() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::DeleteElementAspect(DgnDbR db, Utf8StringCR aspectIdStr)
+    {
+    ECInstanceId aspectId(BeInt64Id::FromString(aspectIdStr.c_str()).GetValue());
+    if (!aspectId.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement(
+        "SELECT ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE ECInstanceId=? UNION "
+        "SELECT ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)  " WHERE ECInstanceId=?");
+    if (!statement.IsValid())
+        return DgnDbStatus::SQLiteError;
+
+    statement->BindId(1, aspectId);
+    statement->BindId(2, aspectId);
+    if (BE_SQLITE_ROW != statement->Step())
+        return DgnDbStatus::NotFound;
+
+    DgnClassId aspectClassId = statement->GetValueId<DgnClassId>(0);
+    DgnElementId elementId = statement->GetValueId<DgnElementId>(1);
+
+    ECClassCP aspectClass = db.Schemas().GetClass(aspectClassId);
+    if (nullptr == aspectClass)
+        return DgnDbStatus::BadSchema;
+
+    bool isMultiAspect = aspectClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+
+    DgnElementCPtr element = db.Elements().GetElement(elementId);
+    if (!element.IsValid())
+        return DgnDbStatus::MissingId;
+
+    DgnElementPtr elementEdit = element->CopyForEdit();
+    if (!elementEdit.IsValid())
+        return DgnDbStatus::WriteError;
+
+    if (isMultiAspect)
+        {
+        DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*elementEdit, *aspectClass, aspectId);
+        if (nullptr == aspect)
+            return DgnDbStatus::NotFound;
+
+        aspect->Delete();
+        }
+    else
+        {
+        DgnElement::UniqueAspect* aspect = DgnElement::UniqueAspect::GetAspectP(*elementEdit, *aspectClass);
+        if (nullptr == aspect)
+            return DgnDbStatus::NotFound;
+
+        aspect->Delete();
+        }
+
+    return elementEdit->Update().IsValid() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**

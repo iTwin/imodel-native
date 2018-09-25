@@ -893,7 +893,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, optsJsonStr, Env().Undefined());
         Json::Value opts = Json::Value::From(optsJsonStr);
-        Json::Value elementJson;  // ouput
+        Json::Value elementJson;  // output
         auto status = JsInterop::GetElement(elementJson, GetDgnDb(), opts);
 
         Napi::Value jsValue = NapiUtils::Convert(Env(), elementJson);
@@ -1132,6 +1132,23 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, elemIdStr, Env().Undefined());
         auto status = JsInterop::DeleteElement(GetDgnDb(), elemIdStr);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value InsertElementAspect(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, aspectPropsJsonStr, Env().Undefined());
+        Json::Value aspectProps = Json::Value::From(aspectPropsJsonStr);
+        DgnDbStatus status = JsInterop::InsertElementAspect(GetDgnDb(), aspectProps);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value DeleteElementAspect(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, aspectIdStr, Env().Undefined());
+        DgnDbStatus status = JsInterop::DeleteElementAspect(GetDgnDb(), aspectIdStr);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -1767,6 +1784,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
+            InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
@@ -1793,11 +1811,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
-			InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
+	    InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
             InstanceMethod("insertElement", &NativeDgnDb::InsertElement),
+            InstanceMethod("insertElementAspect", &NativeDgnDb::InsertElementAspect),
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
