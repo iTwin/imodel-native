@@ -8,7 +8,7 @@
 #include "ConverterInternal.h"
 #include <RealityPlatformTools/SimpleRDSApi.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
-#include "DgnPlatform/WebMercator.h"
+#include <DgnPlatform/WebMercator.h>
 
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
