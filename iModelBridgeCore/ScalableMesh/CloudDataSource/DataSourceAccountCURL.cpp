@@ -140,8 +140,6 @@ DataSourceStatus DataSourceAccountCURL::setAccount(const AccountName & account, 
 
 void DataSourceAccountCURL::setPrefixPath(const DataSourceURL &prefix)
     {
-    //// Default is local or network files
-    //isLocalOrNetworkAccount = true;
     DataSourceAccount::setPrefixPath(prefix);
     }
 
@@ -158,15 +156,12 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSource &dataSource,
 DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
     {
     DataSourceStatus status;
-    if (isLocalOrNetworkAccount)
-        {
-        url = L"file:///" + url;
-        }
     struct CURLHandle::CURLDataMemoryBuffer buffer;
     struct CURLHandle::CURLDataResponseHeader response_header;
 
-    buffer.data = dest;
+    buffer.data.raw_data = dest;
     buffer.size = 0;
+    buffer.max_size = size;
 
     Utf8String utf8URL (url.c_str());
 
@@ -175,7 +170,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     CURL* curl = curl_handle->get();
     curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
     curl_easy_setopt(curl, CURLOPT_UPLOAD, 0L); // Make sure the upload flag is set to false
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallbackRaw);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
@@ -230,6 +225,71 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     return status;
     }
 
+DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer* vector, const DataSource::SessionName &session)
+    {
+    DataSourceStatus status;
+    struct CURLHandle::CURLDataMemoryBuffer buffer;
+    struct CURLHandle::CURLDataResponseHeader response_header;
+
+    buffer.data.vector = vector;
+    buffer.size = 0;
+
+    Utf8String utf8URL(url.c_str());
+
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+
+    CURL* curl = curl_handle->get();
+    curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 0L); // Make sure the upload flag is set to false
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallbackVector);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
+    curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 524288L);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+
+    setupCertificateAuthorities(curl);
+    setupProxyToCurl(curl);
+
+    auto res = curl_easy_perform(curl);
+    if (CURLE_OK != res)
+        {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        //assert(!"cURL error, download failed");
+        status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+        }
+
+    if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
+        {
+        //assert(!"HTTP error, download failed or resource not found");
+        status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
+        }
+
+#ifdef LOG_CURL
+    {
+    BeFile file;
+    uint32_t NbCharsWritten = 0;
+    if (BeFileStatus::Success == file.Open(L"C:\\cds_log.txt", BeFileAccess::Write, BeFileSharing::None) || BeFileStatus::Success == file.Create(L"C:\\cds_log.txt"))
+        {
+        utf8URL += "\r\n";
+        file.Write(&NbCharsWritten, utf8URL.c_str(), (uint32_t)utf8URL.size());
+        char message[10000];
+        sprintf(message, "Date: %s\r\nServer: %s\r\ncurl_easy_perform() result message: %s\r\nHTTP result code: %s\r\n",
+            response_header.data["Date"].c_str(), response_header.data["Server"].c_str(), curl_easy_strerror(res), response_header.data["HTTP"].c_str());
+        std::string curl_message(message);
+        file.Write(&NbCharsWritten, curl_message.c_str(), (uint32_t)curl_message.size());
+        }
+    }
+#endif
+
+    if (!response_header.data.empty()) response_header.data.clear();
+
+    curl_handle->free_header_list();
+
+    return status;
+    }
 void DataSourceAccountCURL::setupProxyToCurl(CURL* curl)
     {
     assert(curl != nullptr);
@@ -262,21 +322,8 @@ void DataSourceAccountCURL::setupCertificateAuthorities(CURL* curl)
 
 DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSourceURL &url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
     {
-    if (isLocalOrNetworkAccount)
-        {
-#ifndef NDEBUG
-        BeFileName file(url.c_str());
-#ifndef VANCOUVER_API
-        assert(false == file.DoesPathExist()); // file should not exist
-#else
-        assert(false == BeFileName::DoesPathExist(url.c_str()));
-#endif
-#endif
-        url = L"file:///" + url;
-        }
-
     struct CURLHandle::CURLDataMemoryBuffer buffer;
-    buffer.data = source;
+    buffer.data.raw_data = source;
     buffer.size = size;
     struct CURLHandle::CURLDataResponseHeader response_header;
 
@@ -340,6 +387,65 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSource &dataSource, D
     return uploadBlobSync(url, dataSource.getSubPath().c_str(), source, size);
     }
 
+DataSourceStatus DataSourceAccountCURL::uploadBlobSync(const DataSourceURL &url, DataSourceBuffer* source)
+    {
+    struct CURLHandle::CURLDataMemoryBuffer buffer;
+    buffer.data.raw_data = source->getBuffer()->data();
+    buffer.size = source->getSize();
+    struct CURLHandle::CURLDataResponseHeader response_header;
+
+    Utf8String utf8URL = Utf8String(url.c_str());
+    std::string contentLength = "Content-Length " + std::to_string(source->getSize());
+    std::string contentDisposition = "Content-Disposition: attachment; filename=\"";
+    contentDisposition += Utf8String(utf8URL.c_str()).c_str();
+    contentDisposition += "\"";
+
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURL* curl = curl_handle->get();
+
+    curl_handle->add_item_to_header("Content-Type: text/plain");
+    curl_handle->add_item_to_header(contentLength.c_str());
+    curl_handle->add_item_to_header(contentDisposition.c_str());
+
+
+    curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
+    //curl_easy_setopt(curl, CURLOPT_HEADEROPT,  CURLHEADER_SEPARATE); // This is for connections with a proxy
+    //curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+    //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);        // &&RB TODO : Ask Francis.Boily about his server certificate
+    //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLDummyWriteDataCallback); // No output to console
+    curl_easy_setopt(curl, CURLOPT_READFUNCTION, CURLHandle::CURLReadDataCallback);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, CURLHandle::CURLWriteHeaderCallback);
+    curl_easy_setopt(curl, CURLOPT_READDATA, buffer);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+    curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, source->getSize());
+
+    setupCertificateAuthorities(curl);
+    setupProxyToCurl(curl);
+
+
+    /* put it! */
+    CURLcode res = curl_easy_perform(curl);
+
+    /* check for errors */
+    if (CURLE_OK != res)
+        {
+        //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+        }
+
+    //curl_easy_setopt(curl, CURLOPT_UPLOAD, 0L);
+    //DataSourceBuffer::BufferData * download_buffer = new DataSourceBuffer::BufferData[size];
+    //DataSourceBuffer::BufferSize readSize;
+    //DataSourceAccountCURL::downloadBlobSync(url, download_buffer, readSize, size);
+
+    curl_handle->free_header_list();
+
+    return DataSourceStatus();
+    }
+
 size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * contents, size_t size, size_t nmemb, void * userp)
     {
     if (userp == nullptr) return 0;
@@ -376,19 +482,26 @@ size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * content
     return size * nmemb;
     }
 
-size_t DataSourceAccountCURL::CURLHandle::CURLWriteDataCallback(void * contents, size_t size, size_t nmemb, void * userp)
+size_t DataSourceAccountCURL::CURLHandle::CURLWriteDataCallbackRaw(void * contents, size_t size, size_t nmemb, void * userp)
     {
     size_t realsize = size * nmemb;
     struct CURLDataMemoryBuffer *mem = (struct CURLDataMemoryBuffer *)userp;
     
-    //assert(mem->memory->capacity() >= mem->memory->size() + realsize);
-    
-    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
-    //mem->memory->insert(mem->memory->end(), (uint8_t*)contents, (uint8_t*)contents + realsize);
-    memcpy(&mem->data[0], (uint8_t*)contents, realsize);
-    mem->data += realsize;
+    memcpy(&mem->data.raw_data[0], (uint8_t*)contents, realsize);
+    mem->data.raw_data += realsize;
     mem->size += realsize;
     
+    return realsize;
+    }
+
+size_t DataSourceAccountCURL::CURLHandle::CURLWriteDataCallbackVector(void * contents, size_t size, size_t nmemb, void * userp)
+    {
+    size_t realsize = size * nmemb;
+    struct CURLDataMemoryBuffer *mem = (struct CURLDataMemoryBuffer *)userp;
+
+    mem->data.vector->append((uint8_t*)contents, realsize);
+    mem->size += realsize;
+
     return realsize;
     }
 
@@ -407,8 +520,8 @@ size_t DataSourceAccountCURL::CURLHandle::CURLReadDataCallback(char * bufptr, si
         return 0;
     if (mem->size)
         {
-        memcpy(bufptr, &mem->data[0], sizeToRead);
-        mem->data += sizeToRead;
+        memcpy(bufptr, &mem->data.raw_data[0], sizeToRead);
+        mem->data.raw_data += sizeToRead;
         mem->size -= sizeToRead;
 
         return sizeToRead;

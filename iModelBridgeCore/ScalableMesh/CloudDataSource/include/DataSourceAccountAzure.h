@@ -87,6 +87,7 @@ class DataSourceAccountAzureCURL : public DataSourceAccountCURL
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
         DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL & blobPath, DataSourceBuffer * source, const DataSource::SessionName &session);
         DataSourceStatus                    uploadBlobSync                      (DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
     };

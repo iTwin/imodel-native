@@ -26,18 +26,30 @@ struct CacheWriter : public RefCountedBase, std::mutex, std::condition_variable
         DataSourceURL m_url;
         DataSourceBuffer::BufferData *m_dest;
         DataSourceBuffer::BufferSize m_size;
+        bool m_managesData;
         CacheData(const DataSourceURL& url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size) 
             : m_url(url),
-              m_size(size)
+              m_size(size),
+              m_managesData(true)
             {
             m_dest = new DataSourceBuffer::BufferData[m_size];
             memcpy(m_dest, dest, size);
             }
-        ~CacheData() 
+        CacheData(const DataSourceURL& url, std::vector<DataSourceBuffer::BufferData>& dest)
+            : m_url(url),
+            m_size(dest.size()),
+            m_managesData(false)
+            {
+            m_dest = dest.data();
+            }
+        ~CacheData()
             { 
-            delete[] m_dest; 
+            if (m_managesData)
+                {
+                delete[] m_dest;
+                }
             m_dest = nullptr;
-            m_size = 0; 
+            m_size = 0;
             }
         };
 
@@ -168,7 +180,9 @@ protected:
     bool                            isCached                (void);
 
     DataSourceStatus                readFromCache           (DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+    DataSourceStatus                readFromCache           (std::vector<DataSourceBuffer::BufferData>& dest);
     DataSourceStatus                writeToCache            (DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
+    DataSourceStatus                writeToCache            (std::vector<DataSourceBuffer::BufferData>& source);
 
     void                            setWriteToCache         (bool write);
     bool                            getWriteToCache         (void);
@@ -190,6 +204,7 @@ public:
     DataSourceStatus                close                   (void);
 
     DataSourceStatus                read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
+    DataSourceStatus                read                    (std::vector<Buffer>& dest);
     DataSourceStatus                write                   (Buffer * source, DataSize size);
 
 };

@@ -76,15 +76,33 @@ DataSourceBuffer::BufferData * DataSourceBuffer::getSegment(SegmentIndex index)
     return nullptr;
 }
 
+DataSourceBuffer::BufferVectorData * DataSourceBuffer::getBuffer()
+    {
+
+    assert(!isSegmented()); // Should use segemented buffers instead
+
+    return &buffer;
+    }
+
 void DataSourceBuffer::setExternalBuffer(BufferData *extBuffer)
 {
     externalBuffer = extBuffer;
 }
 
+void DataSourceBuffer::setExternalVector(std::vector<BufferData>* extVector)
+    {
+    externalVector = extVector;
+    }
+
 DataSourceBuffer::BufferData *DataSourceBuffer::getExternalBuffer(void)
 {
     return externalBuffer;
 }
+
+std::vector<DataSourceBuffer::BufferData>* DataSourceBuffer::getExternalVector(void)
+    {
+    return externalVector;
+    }
 
 void DataSourceBuffer::setExternalBufferSize(BufferSize size)
 {
@@ -129,9 +147,17 @@ DataSourceBuffer::DataSourceBuffer(BufferSize size, BufferData * extBuffer)
         }
 }
 
+DataSourceBuffer::DataSourceBuffer(std::vector<BufferData>& extBuffer)
+    {
+    clear();
+    initializeSegments(0);
+    setExternalVector(&extBuffer);
+    }
+
 DataSourceBuffer::~DataSourceBuffer()
     {
     std::unique_lock<std::mutex> lock(mutex);
+    clear();
     }
 
 ActivitySemaphore &DataSourceBuffer::getActivitySemaphore(void)
@@ -153,7 +179,7 @@ DataSourceLocator & DataSourceBuffer::getLocator(void)
 DataSourceBuffer::SegmentIndex DataSourceBuffer::getNumSegments(void)
 {
     if (getSegmentSize() == 0)
-        return 0;
+        return 1;
 
     SegmentIndex numSegments = static_cast<SegmentIndex>(getSize() / getSegmentSize());
 
@@ -179,7 +205,7 @@ DataSourceStatus DataSourceBuffer::clear(void)
 
     setExternalBuffer(nullptr);
     setExternalBufferSize(0);
-
+    setExternalVector(nullptr);
     setSegmentSize(0);
 
     return DataSourceStatus();
@@ -191,10 +217,20 @@ DataSourceStatus DataSourceBuffer::append(const BufferData *source, BufferSize s
     {
         return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
+    try
+        {
+        if (getExternalVector())
+            {
+            getExternalVector()->insert(getExternalVector()->end(), source, source + size);
+            return DataSourceStatus();
+            }
 
-    std::vector<BufferData>    sourceBuffer(source, &source[size]);
-
-    buffer.insert(buffer.end(), sourceBuffer.begin(), sourceBuffer.end());
+        buffer.insert(buffer.end(), source, source + size);
+        }
+    catch (...)
+        {
+        return DataSourceStatus(DataSourceStatus::Status_Error_Memory_Allocation);
+        }
 
     return DataSourceStatus();
 }

@@ -73,15 +73,18 @@ protected:
 				}
 
             struct CURLDataMemoryBuffer {
-                DataSourceBuffer::BufferData* data;
+                union DataType { public: DataSourceBuffer::BufferData* raw_data; DataSourceBuffer* vector; };
+                DataType                      data;
                 size_t                        size;
+                size_t                        max_size;
                 };
             struct CURLDataResponseHeader {
                 std::map<std::string, std::string> data;
                 };
 
             static size_t CURLWriteHeaderCallback(void *contents, size_t size, size_t nmemb, void *userp);
-            static size_t CURLWriteDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
+            static size_t CURLWriteDataCallbackRaw(void *contents, size_t size, size_t nmemb, void *userp);
+            static size_t CURLWriteDataCallbackVector(void *contents, size_t size, size_t nmemb, void *userp);
             static size_t CURLDummyWriteDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
             static size_t CURLReadDataCallback(char *bufptr, size_t size, size_t nitems, void *userp);
             static void   OpenSSLLockingFunction(int mode, int n, const char * file, int line);
@@ -108,8 +111,6 @@ protected:
 
     DataSourceBuffer::BufferSize            defaultSegmentSize;
     DataSourceBuffer::Timeout               defaultTimeout;
-
-    bool                                    isLocalOrNetworkAccount = false;
 
     Utf8String proxyUser;
     Utf8String proxyPassword;
@@ -139,8 +140,10 @@ public:
 
         DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
         DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &url, DataSourceBuffer* buffer, const DataSource::SessionName &session);
         DataSourceStatus                    uploadBlobSync                      (DataSourceURL & url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    uploadBlobSync                      (const DataSourceURL & dataSource, DataSourceBuffer* source);
 
         CLOUD_EXPORT void                   setProxy                            (const Utf8String& proxyUserIn, const Utf8String& proxyPasswordIn, const Utf8String& proxyServerUrlIn);
         CLOUD_EXPORT void                   setCertificateAuthoritiesUrl        (const Utf8String& certificateAuthoritiesUrlIn);

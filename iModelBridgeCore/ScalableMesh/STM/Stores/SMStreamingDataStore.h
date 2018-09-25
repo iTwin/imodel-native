@@ -183,8 +183,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             
         SMNodeGroupPtr GetGroup(HPMBlockID blockID);
             
-        void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const;
-        void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize);
+        void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t maxCountData) const;
+        void GetNodeHeaderBinary(const HPMBlockID& blockID, std::vector<DataSourceBuffer::BufferData>& dest);
 
         void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader);
 
@@ -212,7 +212,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             }
 #endif
 #ifndef LINUX_SCALABLEMESH_BUILD
-        DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
+        DataSource *InitializeDataSource() const;
 
         BENTLEY_SM_EXPORT void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
         BENTLEY_SM_EXPORT DataSourceAccount *GetDataSourceAccount(void) const;
@@ -270,6 +270,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
 		virtual bool DoesClipFileExist() const override;
 
+        virtual void EraseClipFile() const override;
+
 		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
 
 		virtual void WriteClipDataToProjectFilePath() override;
@@ -321,7 +323,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         void SetLoading();
 #ifndef LINUX_SCALABLEMESH_BUILD
-        DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
+        DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session);
 
         void Load(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType dataType, uint64_t dataSize = uint64_t(-1));
 #endif
@@ -360,7 +362,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
     protected:
 #ifndef LINUX_SCALABLEMESH_BUILD
-        DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown);
+        DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::vector<DataSourceBuffer::BufferData>& destination);
 #endif
     protected:
 
@@ -464,7 +466,7 @@ struct StreamingTextureBlock : public StreamingDataBlock
         StreamingTextureBlock(const int& width, const int& height, const int& numChannels);
 
 #ifndef LINUX_SCALABLEMESH_BUILD
-        void Load(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, uint64_t blockSizeKnown = uint64_t(-1));
+        void Load(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session);
 
         void Store(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID);
 #endif

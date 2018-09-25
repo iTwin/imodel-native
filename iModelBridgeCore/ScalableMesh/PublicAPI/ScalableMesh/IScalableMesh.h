@@ -233,6 +233,8 @@ struct IScalableMesh :  IRefCounted
 
         virtual void _ReFilter() = 0;
 
+        virtual void                               _RegenerateClips(bool forceRegenerate = false) = 0;
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
@@ -438,6 +440,8 @@ struct IScalableMesh :  IRefCounted
         int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
         Count                  GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const;
+
+        BENTLEY_SM_EXPORT void                   RegenerateClips(bool forceRegenerate = false);
 
         BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
