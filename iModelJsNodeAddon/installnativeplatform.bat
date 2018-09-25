@@ -4,7 +4,7 @@ SETLOCAL
 if not defined OutRoot goto :badOutRoot
 
 if [%1] == [] (
-  if not defined imodeljsDir(
+  if not defined imodeljsDir (
     echo testing
   )
   set tempDir=%imodeljsDir%
