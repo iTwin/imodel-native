@@ -185,6 +185,7 @@
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
         <SubPart PartName="__GatherDgnV8ConverterNotices"/>
         <SubPart PartName="DgnV8BridgeInstallFiles"/>
+        <SubPart PartName="StaticAppData"  PartFile="MstnAppData"      Repository="miscdev-mstnappdata"    />
         <InstallerWixFile SourceFile="DgnV8/Converters/Dgnv8BridgeInstaller/Dgnv8BridgeInstaller"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="MstnBridgeDirList" />
@@ -221,6 +222,7 @@
         <ProductDirectory Name="Libs"                           Deliver="false"/>
         <ProductDirectory Name="Libs" LibType="Static"          Deliver="false"/>
         <ProductDirectory Name="MergeModules" Deliver="false"/>
+        <ProductDirectory Name="WorkSpace" RelativeTo="DgnV8Dlls" />
     </ProductDirectoryList>
 
 
