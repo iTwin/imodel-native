@@ -387,7 +387,10 @@ TEST_F(ECSqlExecutionFrameworkTests, DateTimeTests)
 
     ASSERT_STATEMENT_PREPARE("INSERT INTO ecsql.P (DtUnspec) VALUES (CURRENT_TIMESTAMP)", ECSqlStatus::InvalidECSql);
 
-    ASSERT_STATEMENT_PREPARE("INSERT INTO ecsql.P (Dt) VALUES (CURRENT_TIME)", ECSqlStatus::InvalidECSql);
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (Dt) VALUES (CURRENT_TIME)");
+    STATEMENT_EXECUTE_SUCCESS();
+
+    ASSERT_STATEMENT_PREPARE("INSERT INTO ecsql.P (DtUnspec) VALUES (CURRENT_TIME)", ECSqlStatus::InvalidECSql);
 
     //*** Parameters ****
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.P (I, Dt, DtUtc, DtUnspec, DateOnly) VALUES (123, ?, ?, ?, ?)");
@@ -656,7 +659,10 @@ TEST_F(ECSqlExecutionFrameworkTests, MiscTests)
     STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.PSA (Dt) VALUES (TIMESTAMP '2012-01-18T13:02:55')");
     STATEMENT_EXECUTE_SUCCESS();
 
-    ASSERT_STATEMENT_PREPARE("INSERT INTO ecsql.PSA (Dt) VALUES (TIME '13:35:16')", ECSqlStatus::InvalidECSql); //"TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects."
+    STATEMENT_PREPARE_SUCCESS("INSERT INTO ecsql.PSA (Dt) VALUES (TIME '13:35:16')");
+    STATEMENT_EXECUTE_SUCCESS();
+
+    ASSERT_STATEMENT_PREPARE("INSERT INTO ecsql.PSA (DtUtc) VALUES (TIME '13:35:16')", ECSqlStatus::InvalidECSql); // Time can only be assigned to DateTime::Component::TimeOfDay
 
     ASSERT_STATEMENT_PREPARE("INSERT INTO ecsql.PSA (Dt) VALUES (LOCALTIME)", ECSqlStatus::InvalidECSql); // "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.
 

@@ -58,29 +58,35 @@ DateTime IECSqlValue::GetDateTime() const
         if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
             {
             Utf8CP metaDataStr = nullptr;
-            if (metadata.GetComponent() == DateTime::Component::Date)
-                metaDataStr = "DateTime::Component::Date";
-            else
+            switch (metadata.GetComponent())
                 {
-                BeAssert(metadata.GetComponent() == DateTime::Component::DateAndTime && "DateTime::Component has changed. This code must be adjusted.");
-                switch (metadata.GetKind())
+                    case DateTime::Component::Date:
+                        metaDataStr = "DateTime::Component::Date";
+                        break;
+                    case DateTime::Component::TimeOfDay:
+                        metaDataStr = "DateTime::Component::TimeOfDay";
+                        break;
+                    default:
                     {
-                        case DateTime::Kind::Utc:
-                            metaDataStr = "DateTime::Kind::Utc";
-                            break;
-                        case DateTime::Kind::Unspecified:
-                            metaDataStr = "DateTime::Kind::Unspecified";
-                            break;
-                        case DateTime::Kind::Local:
-                            metaDataStr = "DateTime::Kind::Local";
-                            break;
-                        default:
-                            metaDataStr = "DateTime::Kind invalid";
-                            BeAssert(false && "DateTime::Kind has changed. This code must be adjusted.");
-                            break;
+                    BeAssert(metadata.GetComponent() == DateTime::Component::DateAndTime && "DateTime::Component has changed. This code must be adjusted.");
+                    switch (metadata.GetKind())
+                        {
+                            case DateTime::Kind::Utc:
+                                metaDataStr = "DateTime::Kind::Utc";
+                                break;
+                            case DateTime::Kind::Unspecified:
+                                metaDataStr = "DateTime::Kind::Unspecified";
+                                break;
+                            case DateTime::Kind::Local:
+                                metaDataStr = "DateTime::Kind::Local";
+                                break;
+                            default:
+                                metaDataStr = "DateTime::Kind invalid";
+                                BeAssert(false && "DateTime::Kind has changed. This code must be adjusted.");
+                                break;
+                        }
                     }
                 }
-
             LOG.errorv("ECSqlStatement::GetDateTime> Could not convert JulianDays value (%.1f, %s) into DateTime.", DateTime::MsecToRationalDay(jdMsec), metaDataStr);
             }
 

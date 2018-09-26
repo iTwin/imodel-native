@@ -137,15 +137,17 @@ bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessag
 bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Info const& rhs) const
     {
     BeAssert(m_dateTimeInfo != nullptr && "DateTime ECSqlTypeInfo always have m_dateTimeInfo set");
-    if (!m_dateTimeInfo.Value().IsValid() || !rhs.IsValid())
+    if (!m_dateTimeInfo.Value().IsValid() || !rhs.IsValid() || m_dateTimeInfo.Value() == rhs)
         return true;
 
-    //We allow date-only to interact with datetimes of any kind
-    if (m_dateTimeInfo.Value().GetComponent() == DateTime::Component::Date ||
-        rhs.GetComponent() == DateTime::Component::Date)
+    //We allow date-only to interact with date and time (but not with time of day)
+    if (m_dateTimeInfo.Value().GetComponent() == DateTime::Component::Date && rhs.GetComponent() == DateTime::Component::DateAndTime)
         return true;
 
-    return m_dateTimeInfo.Value().GetKind() == rhs.GetKind();
+    if (m_dateTimeInfo.Value().GetComponent() == DateTime::Component::DateAndTime && rhs.GetComponent() == DateTime::Component::Date)
+        return true;
+
+    return false;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -1072,6 +1072,8 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(std::unique_ptr<ValueExp>& exp,
             fctName = FunctionCallExp::CURRENT_DATE();
         else if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
             fctName = FunctionCallExp::CURRENT_TIMESTAMP();
+        else if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_TIME)
+            fctName = FunctionCallExp::CURRENT_TIME();
         else
             {
             Issues().ReportV("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
@@ -1083,7 +1085,7 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(std::unique_ptr<ValueExp>& exp,
         }
 
     Utf8CP unparsedValue = parseNode.getChild(1)->getTokenValue().c_str();
-    if (columnTypeNode->getTokenID() == SQL_TOKEN_DATE || columnTypeNode->getTokenID() == SQL_TOKEN_TIMESTAMP)
+    if (columnTypeNode->getTokenID() == SQL_TOKEN_DATE || columnTypeNode->getTokenID() == SQL_TOKEN_TIMESTAMP || columnTypeNode->getTokenID() == SQL_TOKEN_TIME)
         return LiteralValueExp::Create(exp, *m_context, unparsedValue, ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_DateTime));
 
     exp = nullptr;
@@ -2706,6 +2708,8 @@ Utf8CP ECSqlParser::SqlDataTypeKeywordToString(sal_uInt32 keywordId)
                 return "REAL";
             case SQL_TOKEN_STRING:
                 return "STRING";
+            case SQL_TOKEN_TIME:
+                return "TIME";
             case SQL_TOKEN_TIMESTAMP:
                 return "TIMESTAMP";
             case SQL_TOKEN_VARCHAR:
