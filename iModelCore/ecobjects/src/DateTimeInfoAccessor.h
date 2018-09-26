@@ -2,13 +2,13 @@
 |
 |     $Source: src/DateTimeInfoAccessor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <ECObjects/ECObjects.h>
-#include <Bentley/NonCopyableClass.h>
+#include <Bentley/Nullable.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -16,15 +16,15 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! DateTimeInfoAccessor allows to access the DateTimeInfo custom attribute on a date time ECProperty
 //! @bsiclass
 //=======================================================================================    
-struct DateTimeInfoAccessor final : NonCopyableClass
+struct DateTimeInfoAccessor final
     {
     private:
         //static class
         DateTimeInfoAccessor() = delete;
         ~DateTimeInfoAccessor() = delete;
 
-        static bool TryParseKind(bool& isKindNull, DateTime::Kind& kind, ECValueCR ecValue);
-        static bool TryParseComponent(bool& isComponentNull, DateTime::Component& component, ECValueCR ecValue);
+        static bool TryParseKind(Nullable<DateTime::Kind>& kind, ECValueCR ecValue);
+        static bool TryParseComponent(Nullable<DateTime::Component>& component, ECValueCR ecValue);
 
         static void LogPropertyNotFoundError(Utf8CP propertyName);
 

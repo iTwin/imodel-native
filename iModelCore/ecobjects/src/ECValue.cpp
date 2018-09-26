@@ -350,19 +350,17 @@ bool ECValue::DateTimeInfo::MetadataMatches(DateTime::Info const& caDateTimeMeta
     {
     //if ECValue doesn't have meta data (e.g. in case when SetDateTimeTicks was used to populate it),
     //no metadata check will be done. I.e. the CA metadata will implicitly become the CA of the ECValue.
-    if (!IsMetadataSet() || !caDateTimeMetadata.IsValid())
+    if (!IsMetadataSet() || !caDateTimeMetadata.IsValid() || m_info == caDateTimeMetadata)
         return true;
 
-    //if either side is DateTime::Component::Date, the two dates are always matching. This
-    //is to allow assigning Dates to any kind of DateTime property and to assign any kind of DateTime 
-    //to a Date property
-    if (IsMetadataSet() && m_info.GetComponent() == DateTime::Component::Date)
+    // Date and DateAndTime are compatible
+    if (m_info.GetComponent() == DateTime::Component::Date && caDateTimeMetadata.GetComponent() == DateTime::Component::DateAndTime)
         return true;
 
-    if (caDateTimeMetadata.IsValid() && caDateTimeMetadata.GetComponent() == DateTime::Component::Date)
+    if (caDateTimeMetadata.GetComponent() == DateTime::Component::Date && m_info.GetComponent() == DateTime::Component::DateAndTime)
         return true;
 
-    return m_info == caDateTimeMetadata;
+    return false;
     }
 
 
