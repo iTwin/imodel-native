@@ -68,6 +68,7 @@ struct WSChangeset
         //! Specify Format::MultipleInstance for multiple instances with telated instances changeset format.
         WSCLIENT_EXPORT WSChangeset(Format format = Format::MultipleInstances);
 
+        //! DEPRECATED- Use GetRequestOptions instead
         //! Get set request options for changeset
         WSCLIENT_EXPORT void SetRequestOptions(RequestOptions options);
 
@@ -207,6 +208,13 @@ struct WSChangeset::Options
     friend struct WSChangeset;
 
     public:
+        enum class FailureStrategy
+            {
+            Null,
+            Continue,
+            Stop
+            };
+
         enum class ResponseContent
             {
             Null,
@@ -215,28 +223,41 @@ struct WSChangeset::Options
             InstanceId
             };
 
-    private:
-        enum class OptRefreshInstances
+        enum class RefreshInstances
             {
-            Null, 
-            Refresh, 
+            Null,
+            Refresh,
             DontRefresh
             };
 
     private:
+        FailureStrategy m_failureStrategy = FailureStrategy::Null;
         ResponseContent m_responseContent = ResponseContent::Null;
-        OptRefreshInstances m_refreshInstances = OptRefreshInstances::Null;
-        std::map<Utf8String, Utf8String> m_customOptions;
+        RefreshInstances m_refreshInstances = RefreshInstances::Null;
+        Json::Value m_customOptions = Json::objectValue;
         mutable size_t m_baseSize = 0;
 
     private:
+        static Utf8CP GetFailureStrategyStr(FailureStrategy failureStrategy);
         static Utf8CP GetResponseContentStr(ResponseContent option);
         size_t CalculateSize() const;
         void ToJson(JsonValueR jsonOut) const;
 
     public:
+        //! Get FailureStrategy option.
+        WSCLIENT_EXPORT FailureStrategy GetFailureStrategy() const;
+
+        //! Set FailureStrategy option.
+        WSCLIENT_EXPORT void SetFailureStrategy(FailureStrategy value);
+
+        //! Get ResponseContent option.
+        WSCLIENT_EXPORT ResponseContent GetResponseContent() const;
+
         //! Set ResponseContent option.
         WSCLIENT_EXPORT void SetResponseContent(ResponseContent value);
+
+        //! Get RefreshInstances option.
+        WSCLIENT_EXPORT RefreshInstances GetRefreshInstances() const;
 
         //! Set RefreshInstances option.
         //! If RefreshInstances is set to true, newly created or modified instances will be returned refreshed. 
@@ -244,6 +265,9 @@ struct WSChangeset::Options
         //! If refresh operation fails, instance will have property "refreshed" set to false. 
         WSCLIENT_EXPORT void SetRefreshInstances(bool value);
         
+        //! Get custom options.
+        WSCLIENT_EXPORT Json::Value GetCustomOptions() const;
+
         //! Set custom option.
         //! CustomOptions can be used to pass any user data for ec plugin via extended parameters
         //! Will overwrite values with same name.
@@ -251,6 +275,15 @@ struct WSChangeset::Options
 
         //! Remove custom option.
         WSCLIENT_EXPORT void RemoveCustomOption(Utf8StringCR name);
+
+        bool operator ==(const Options& other) const
+            {
+            return
+                other.m_failureStrategy == m_failureStrategy &&
+                other.m_responseContent == m_responseContent &&
+                other.m_refreshInstances == m_refreshInstances &&
+                other.m_customOptions == m_customOptions;
+            };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
