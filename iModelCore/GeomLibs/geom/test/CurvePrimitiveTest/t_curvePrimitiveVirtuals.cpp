@@ -176,7 +176,7 @@ void ExerciseClosestPoint (ICurvePrimitivePtr &curve, double fraction)
     DPoint3d xyzA;
     DVec3d tangentA;
     curve->FractionToPoint (fraction, xyzA, tangentA);
-    auto plane = DPlane3d::FromOriginAndNormal (xyzA, tangentA);
+    // unused - auto plane = DPlane3d::FromOriginAndNormal (xyzA, tangentA);
     CurveLocationDetail detail;
     if (Check::True (curve->ClosestPointBounded (xyzA, detail, false, false), "ClosestPoint"))
         Check::Near (detail.fraction, fraction, "ClosestPoint fraction");
