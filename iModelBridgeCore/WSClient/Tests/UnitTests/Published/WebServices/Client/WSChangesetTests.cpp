@@ -737,6 +737,51 @@ TEST_F(WSChangesetTests, ToRequestString_RemoveRequestOptions_ReturnsChangesetAn
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::FailureStrategy::Null, changeset.GetRequestOptions().GetFailureStrategy());
+    EXPECT_EQ(WSChangeset::Options::ResponseContent::Null, changeset.GetRequestOptions().GetResponseContent());
+    EXPECT_TRUE(changeset.GetRequestOptions().GetCustomOptions().empty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSChangesetTests, ToRequestString_OptionsFailureStrategySet_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Continue);
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":
+            {
+            "FailureStrategy":"Continue"
+            }
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::FailureStrategy::Continue, changeset.GetRequestOptions().GetFailureStrategy());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSChangesetTests, ToRequestString_OptionsFailureStrategyRemoved_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Stop);
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Null);
+
+    auto expectedJson = ToJson(R"({
+        "instances":[],
+        "requestOptions":{}
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::FailureStrategy::Null, changeset.GetRequestOptions().GetFailureStrategy());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -758,6 +803,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsResponseContentSet_ReturnsChange
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::ResponseContent::InstanceId, changeset.GetRequestOptions().GetResponseContent());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -779,6 +825,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsRefreshInstanceSet_ReturnsChange
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::RefreshInstances::Refresh, changeset.GetRequestOptions().GetRefreshInstances());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -801,6 +848,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsTwoCustomOptionsSet_ReturnsChang
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(ToJson(R"({"A":"1","B":"2"})"), changeset.GetRequestOptions().GetCustomOptions());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -823,6 +871,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsOwerwriten_ReturnsC
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(ToJson(R"({"A":"2"})"), changeset.GetRequestOptions().GetCustomOptions());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -840,6 +889,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsRemoved_ReturnsChan
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_TRUE(changeset.GetRequestOptions().GetCustomOptions().empty());
     }
 
 /*--------------------------------------------------------------------------------------+
