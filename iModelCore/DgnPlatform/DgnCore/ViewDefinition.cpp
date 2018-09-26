@@ -1317,7 +1317,7 @@ void DisplayStyle::_OnSaveJsonProperties()
         int i=0;
         for (auto const& it : m_subCategoryOverrides)
             {
-            ovrJson[i][json_subCategory()] = it.first.GetValue();
+            ovrJson[i][json_subCategory()] = it.first.ToHexStr();
             it.second.ToJson(ovrJson[i++]);
             }
         SetStyle(json_subCategoryOvr(), ovrJson);
