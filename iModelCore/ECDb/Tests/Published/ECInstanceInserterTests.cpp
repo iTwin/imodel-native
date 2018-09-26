@@ -722,6 +722,81 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
     stmt.Finalize();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  09/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECInstanceInserterTests, InsertTimeOfDayValues)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="CalendarEntry" modifier="None">
+                <ECProperty propertyName="StartTime" typeName="dateTime">
+                </ECProperty>
+                <ECProperty propertyName="EndTime" typeName="dateTime" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECClassCP calendarEntryClass = m_ecdb.Schemas().GetClass("TestSchema", "CalendarEntry");
+    ASSERT_TRUE(calendarEntryClass != nullptr);
+    IECInstancePtr inst = calendarEntryClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECValue val(DateTime::CreateTimeOfDay(8, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("StartTime", val));
+    val = ECValue(DateTime::CreateTimeOfDay(17, 30, 45, 500));
+    ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("EndTime", val));
+
+    ECInstanceKey key1, key2;
+
+    {
+    ECInstanceInserter inserter(m_ecdb, *calendarEntryClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key1, *inst));
+
+    inst = calendarEntryClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    val = ECValue(DateTime::CreateTimeOfDay(0, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("StartTime", val));
+    val = ECValue(DateTime::CreateTimeOfDay(24, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, inst->SetValue("EndTime", val));
+    ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key2, *inst));
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    // WIP: Once we can use the TimeOfDay component in the schema, we need to adjust the expected time strings
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T08:00:00.000\", \"EndTime\":\"2000-01-01T17:30:45.500\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key1.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T00:00:00.000\", \"EndTime\":\"2000-01-02T00:00:00.000\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key2.GetInstanceId().ToString().c_str()).c_str()));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,StartTime,EndTime FROM ts.CalendarEntry"));
+    ECInstanceECSqlSelectAdapter adapter(stmt);
+    ASSERT_TRUE(adapter.IsValid());
+    auto assertTimeOfDay = [] (DateTime const& expectedStartTime, DateTime const& expectedEndTime, IECInstanceCR instance)
+        {
+        ECValue v;
+        ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(v, "StartTime"));
+        DateTime actualStartTime = v.GetDateTime();
+        EXPECT_FALSE(actualStartTime.IsTimeOfDay()) << "Schema has changed to use TimeOfDay CA";
+        ASSERT_EQ(expectedStartTime, actualStartTime.GetTimeOfDay());
+
+        ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(v, "EndTime"));
+        DateTime actualEndTime = v.GetDateTime();
+        EXPECT_FALSE(actualStartTime.IsTimeOfDay()) << "Schema has changed to use TimeOfDay CA";
+        ASSERT_EQ(expectedEndTime, actualEndTime.GetTimeOfDay());
+        };
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        IECInstancePtr inst = adapter.GetInstance();
+        ASSERT_TRUE(inst != nullptr);
+        if (inst->GetInstanceId().EqualsIAscii(key1.GetInstanceId().ToString()))
+            assertTimeOfDay(DateTime::CreateTimeOfDay(8, 0), DateTime::CreateTimeOfDay(17, 30, 45, 500), *inst);
+        else
+            assertTimeOfDay(DateTime::CreateTimeOfDay(0, 0), DateTime::CreateTimeOfDay(0, 0), *inst); // 24:00 times can only be passed, but not read out as that will always amout to 00:00
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // Test for TFS 112251, the Adapter should check for the class before operation
@@ -769,5 +844,6 @@ TEST_F(ECSqlAdapterTestFixture, CheckClassBeforeOperation)
     JsonUpdater jsonUpdater(m_ecdb, *employee, nullptr);
     ASSERT_EQ(BE_SQLITE_ERROR, jsonUpdater.Update(instanceKey.GetInstanceId(), jsonInput));
     }
+
 
 END_ECDBUNITTESTS_NAMESPACE
