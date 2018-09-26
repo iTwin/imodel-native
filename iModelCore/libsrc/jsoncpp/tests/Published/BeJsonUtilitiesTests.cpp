@@ -142,7 +142,7 @@ TEST_F(RuntimeJsonLocalStateTests, CtorCopy_UsingNonEmpty_StatesDoNotShareMemory
 //---------------------------------------------------------------------------------------
 TEST_F(RuntimeJsonLocalStateTests, CtorMove_UsingNonEmpty_StatesDoNotShareMemory)
     {
-    char buffer[sizeof(RuntimeJsonLocalState)];
+    alignas(RuntimeJsonLocalState) uint8_t buffer[sizeof(RuntimeJsonLocalState)];
     auto a = new (buffer) RuntimeJsonLocalState();
     a->SaveJsonValue("Foo", "Boo", "A");
     EXPECT_EQ(Json::Value("A"), a->GetJsonValue("Foo", "Boo"));
@@ -192,7 +192,7 @@ TEST_F(RuntimeJsonLocalStateTests, OperCopyAssignment_UsingEmptyTemp_StatesDoNot
 //---------------------------------------------------------------------------------------
 TEST_F(RuntimeJsonLocalStateTests, OperMoveAssignment_UsingNonEmpty_StatesDoNotShareMemory)
     {
-    char buffer[sizeof(RuntimeJsonLocalState)];
+    alignas(RuntimeJsonLocalState) uint8_t buffer[sizeof(RuntimeJsonLocalState)];
     auto a = new (buffer) RuntimeJsonLocalState();
     a->SaveJsonValue("Foo", "Boo", "A");
     EXPECT_EQ(Json::Value("A"), a->GetJsonValue("Foo", "Boo"));

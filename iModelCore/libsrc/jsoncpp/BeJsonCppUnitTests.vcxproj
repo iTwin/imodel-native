@@ -39,6 +39,9 @@
   <ItemGroup>
     <Xml Include="BeJsonCpp.PartFile.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\BeJsonCpp\BeJsonUtilities.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{32E7C461-A6E1-4908-A98C-4B481109925E}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
