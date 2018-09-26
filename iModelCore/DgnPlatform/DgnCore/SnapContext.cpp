@@ -2310,6 +2310,10 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             if (!intersectionsA->ClosestPointBoundedXY(closePoint, &worldToViewMap.M0, intersectDetail))
                 continue;
 
+            PartialCurveDetailCP partialCurve = (intersectDetail.curve ? intersectDetail.curve->GetPartialCurveDetailCP() : nullptr);
+            if (!partialCurve || !partialCurve->IsSingleFraction())
+                continue; // Reject intersection that isn't a single point...
+
             intersectSnap.m_snapPoint = intersectDetail.point;
             intersectSnap.m_heat = SnapGeometryHelper::GetHeat(intersectSnap.m_snapPoint, closePoint, worldToViewMap.M0, snapAperture, false, &intersectSnap.m_viewDistance);
             intersectSnap.m_intersectGeomPtr = IGeometry::Create(curveB); // Saved in world coords...
