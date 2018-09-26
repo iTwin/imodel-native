@@ -612,7 +612,7 @@ void CheckDerivatives (ICurvePrimitivePtr curve, double f, double tolFactor = 1.
         i++;
         }
     DVec3d dY = (X[2] - X[0]) / (2.0 * df);
-    DVec3d dYA = (X[1] - X[0]) / df;
+    // unused - DVec3d dYA = (X[1] - X[0]) / df;
     DVec3d dYB = (X[2] - X[1]) / df;
     // unused - DVec3d ddYAB = (dYB - dYA) / df;
     DVec3d ddZ = (dX[2] - dX[0]) / (2.0 * df);
