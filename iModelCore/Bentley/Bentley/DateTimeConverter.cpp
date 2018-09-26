@@ -2,13 +2,14 @@
 |
 |     $Source: Bentley/DateTimeConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DateTimeConverter.h"
 
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/ScopedArray.h>
+#include <Bentley/Nullable.h>
 #include <Logging/bentleylogging.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -140,29 +141,13 @@ BentleyStatus DateTimeConverter::ComputeJulianDay(uint64_t& julianDayInMsec, int
     //(no loss of accuracy here)
 
     //*** compute time component
-    const uint64_t timeComponentInSecs = hour * INT64_C(3600) + minute * INT64_C(60) + second;
+    const uint64_t timeComponentInSecs = hour * UINT64_C(3600) + minute * UINT64_C(60) + second;
 
     const uint64_t julianDayInSecs = dateComponentInSecs + timeComponentInSecs;
 
     //convert to millisecs and add the input millisec component
     julianDayInMsec = julianDayInSecs * 1000 + millisecond;
     return SUCCESS;
-
-    //ARCHIVE: Alternate algorithm from http://www.tondering.dk/claus/cal/julperiod.php
-    //for which roundtrip also works for leap years BC. (e.g -1000-03-01)
-    //See also http://www.cs.utsa.edu/~cs1063/projects/Spring2011/Project1/jdn-explanation.html
-    /*
-    //rebase to March 1st -4800  (4801BC).
-    //-> think of Jan and Feb as being month 13 and 14 of the previous year
-    //a = 1 for Jan / Feb. a = 0 for rest
-    const int a = (14 - month) / 12;
-    const int m = month + 12*a - 3;
-    //years since 4800
-    const int y = year + 4800 - a;
-    const Int64 jdd = day + (153*m + 2) / 5 + 365 * y + y/4 - y/100 + y/400 - 32045;
-
-    const Int64 dateComponentInSecs = jdd * SECS_IN_DAY - 43200LL;
-    */
     }
 
 //---------------------------------------------------------------------------------------
@@ -196,38 +181,45 @@ BentleyStatus DateTimeConverter::ConvertFromJulianDay(DateTime& dateTime, uint64
 BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t julianDayInMsec, DateTime::Info const& targetInfo)
     {
     const uint64_t HALFDAY_IN_MSECS = MSECS_IN_DAY / 2;
-    //date fraction of julian day
-    //Strip time fraction. As JD is based on noon, the JD value is shifted by half a day so that z represents an unambiguous day.
-    //(technically this is the same as rounding the JD value to the next full day number)
-    const uint64_t zRaw = (julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY;
-    
-    //out of bounds check for this algo. local operands would have to be adjusted to int64_t.
-    //but int32 suffices for the next 1,000,000 years
-    if (zRaw > std::numeric_limits<int32_t>::max())
-        return ERROR; 
 
-    const int32_t z = (int32_t) zRaw;
-    BeAssert(z >= 0);
-    const int32_t g = (int32_t) ((z - 1867216.25) / 36524.25);
-    const int32_t a = z + 1 + g - g / 4;
-    const int32_t b = a + 1524;
-    const int32_t c = (int32_t) ((b - 122.1) / 365.25);
-    const int32_t d = (int32_t) (c * 365.25);
-    const int32_t e = (int32_t) ((b - d) / 30.6001);
-    const int32_t f = (int32_t) (30.6001 * e);
+    uint8_t day = 0;
+    uint8_t month = 0;
+    int16_t year = 0;
+    if (targetInfo.GetComponent() != DateTime::Component::TimeOfDay)
+        {
+        //date fraction of julian day
+        //Strip time fraction. As JD is based on noon, the JD value is shifted by half a day so that z represents an unambiguous day.
+        //(technically this is the same as rounding the JD value to the next full day number)
+        const uint64_t zRaw = (julianDayInMsec + HALFDAY_IN_MSECS) / MSECS_IN_DAY;
 
-    const int32_t dayRaw = b - d - f;
-    const int32_t monthRaw = e < 14 ? e - 1 : e - 13;
-    const int32_t yearRaw = monthRaw > 2 ? c - 4716 : c - 4715;
+        //out of bounds check for this algo. local operands would have to be adjusted to int64_t.
+        //but int32 suffices for the next 1,000,000 years
+        if (zRaw > std::numeric_limits<int32_t>::max())
+            return ERROR;
 
-    if (dayRaw < 0 || dayRaw > std::numeric_limits<uint8_t>::max() || 
-        monthRaw < 0 || monthRaw > std::numeric_limits<uint8_t>::max() ||
-        yearRaw < std::numeric_limits<int16_t>::min() || yearRaw > std::numeric_limits<int16_t>::max())
-        return ERROR;
+        const int32_t z = (int32_t) zRaw;
+        BeAssert(z >= 0);
+        const int32_t g = (int32_t) ((z - 1867216.25) / 36524.25);
+        const int32_t a = z + 1 + g - g / 4;
+        const int32_t b = a + 1524;
+        const int32_t c = (int32_t) ((b - 122.1) / 365.25);
+        const int32_t d = (int32_t) (c * 365.25);
+        const int32_t e = (int32_t) ((b - d) / 30.6001);
+        const int32_t f = (int32_t) (30.6001 * e);
 
-    const uint8_t day = (uint8_t) dayRaw;
-    const uint8_t month = (uint8_t) monthRaw;
-    const int16_t year = (int16_t) yearRaw;
+        const int32_t dayRaw = b - d - f;
+        const int32_t monthRaw = e < 14 ? e - 1 : e - 13;
+        const int32_t yearRaw = monthRaw > 2 ? c - 4716 : c - 4715;
+
+        if (dayRaw < 0 || dayRaw > std::numeric_limits<uint8_t>::max() ||
+            monthRaw < 0 || monthRaw > std::numeric_limits<uint8_t>::max() ||
+            yearRaw < std::numeric_limits<int16_t>::min() || yearRaw > std::numeric_limits<int16_t>::max())
+            return ERROR;
+
+        day = (uint8_t) dayRaw;
+        month = (uint8_t) monthRaw;
+        year = (int16_t) yearRaw;
+        }
 
     if (targetInfo.GetComponent() == DateTime::Component::Date)
         {
@@ -245,7 +237,7 @@ BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t jul
     uint8_t second = 0;
     uint16_t msec = 0;
     //if time fraction is 0, all components are 0
-    if (timeFraction != INT64_C(0))
+    if (timeFraction != UINT64_C(0))
         {
         msec = timeFraction % 1000;
 
@@ -263,31 +255,12 @@ BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t jul
         BeAssert(hour < 24);
         }
 
-    dateTime = DateTime(targetInfo.GetKind(), year, month, day, hour, minute, second, msec);
+    if (targetInfo.GetComponent() == DateTime::Component::TimeOfDay)
+        dateTime = DateTime::CreateTimeOfDay(hour, minute, second, msec);
+    else
+        dateTime = DateTime(targetInfo.GetKind(), year, month, day, hour, minute, second, msec);
+
     return dateTime.IsValid() ? SUCCESS : ERROR;
-
-    //ARCHIVE: Alternate algorithm from http://www.tondering.dk/claus/cal/julperiod.php
-    //for which roundtrip also works for leap years BC. (e.g -1000-03-01)
-        /*
-    const double jd = 1.0 * julianDayInHns / HECTONANOSECS_IN_DAY;
-    const int j = static_cast<int> (jd + 0.5) + 32044; // days since -4800
-    const int g = j / 146097; //Gregorian quadricentennial cycles since epoch (146097 days per cycle)
-    const int dg = j % 146097; //days since current cycle
-    const int c = (dg / 36524 + 1) * 3 / 4; //number of Gregorian centennial cycles since current cycle (0 to 3) (36524 days per centennial cycle)
-    const int dc =  dg - c * 36524; //days since current cycle
-    BeAssert (dc >= 0);
-    const int b = dc / 1461;//Julian quadrennials since Gregorian century (0 to 24) (1461 days in 4 years)
-    const int db = dc % 1461; //days in the Gregorian century
-    const int a = (db / 365 + 1) * 3 / 4;
-    const int da = db - a * 365;
-    const int y = g * 400 + c* 100 + b * 4 + a; // full years since March 1st, 4801BC 00:00 UTC
-    const int m = (da * 5 + 308) / 153 - 2; // full months since last March 1st 00:00 UTC
-    const int d = da - (m + 4) * 153 / 5 + 122; //days since first of month 00:00 UTC incl fractions
-
-    const Int16 year = y - 4800 + (m + 2) / 12;
-    const UInt16 month = (m + 2) % 12 + 1;
-    const UInt16 day = d + 1;
-    */
     }
 
 
@@ -366,8 +339,8 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime(int64_t& 
     }
 
 
-//************************ Iso8601Regex ********************************
-//Regex taken from and modified: http://my.safaribooksonline.com/book/programming/regular-expressions/9780596802837/4dot-validation-and-formatting/id2983571
+//************************ DateTimeStringConverter ********************************
+
 //---------------------------------------------------------------------------------------
 //! @remarks This pattern supports T and a space as delimiter of the date and time component, e.g.
 //! both <c>2013-09-15T12:05:39</> and <c>2013-09-15 12:05:39</> can be parsed correctly.
@@ -375,36 +348,45 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime(int64_t& 
 //! SQL-99 date time literals (specifies the space delimiter)
 // @bsimethod                                    Krischan.Eberle                  05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP const Iso8601Regex::PATTERN =
-"^([+-]?[\\d]{4})" //Group 1: Year (Group 0 is entire match) - Pattern starts with ^ as no leading stuff is supported
-"-?" //date component delimiter '-' is optional
-"(1[0-2]|0[1-9])" //Group 2: Month
-"-?" //date component delimiter '-' is optional
-"(3[0-1]|0[1-9]|[1-2][\\d])" //Group 3: Day
-"(?:"                          //Non-capture group: Entire time component
-"[T ]" //both T and space are supported as delimiters so that SQL-99 date time literals can be parsed, too. (see comment above)
-"(2[0-3]|[0-1][\\d])" //Group 4: Hour
-":?" //time component delimiter ':' is optional
-"([0-5][\\d])" //Group 5: Minute
-"(?:" //non-capture group: Second component is optional
-":?" //time component delimiter ':' is optional
-"([0-5][\\d])" //Group 6: Second
-"(\\.[\\d]+)?" //Group 7: Second fraction
-")?"
-"(Z|[+-](?:2[0-3]|[0-1][\\d]):?[0-5][\\d])?" //Group 8: time zone (time zone delimiter ':' is optional)
-")?$"; // string has to end here. This is necessary as the time component is optional and therefore invalid time components would match the regex which they must not however.
+//Group 1: Year (Group 0 is entire match) - Pattern starts with ^ as no leading stuff is supported
+//Group 2: Month
+//Group 3: Day
+//Non-capture group: Entire time component
+//both T and space are supported as delimiters so that SQL-99 date time literals can be parsed, too. (see comment above)
+//Group 4: Hour, can also be 24 as 24:00 (if used as end time)
+//time component delimiter ':' is optional
+//Group 5: Minute
+//non-capture group: Second component is optional
+//time component delimiter ':' is optional
+//Group 6: Second
+//Group 7: Second fraction
+//Group 8: time zone (time zone delimiter ':' is optional)
+// string has to end here. This is necessary as the time component is optional and therefore invalid time components would match the regex which they must not however.
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Iso8601Regex::Match(Matches& matches, Utf8CP iso8601DateTime) const
-    {
-    return std::regex_search(iso8601DateTime, matches, m_regex);
-    }
+#define DATETIME_REGEXPATTERN "^([+-]?[\\d]{4})" \
+                            "-?" \
+                            "(1[0-2]|0[1-9])" \
+                            "-?" \
+                            "(3[0-1]|0[1-9]|[1-2][\\d])" \
+                            "(?:"  \
+                            "[T ]" \
+                            "(2[0-4]|[0-1][\\d])" \
+                            ":?" \
+                            "([0-5][\\d])" \
+                            "(?:" \
+                            ":?" \
+                            "([0-5][\\d])" \
+                            "(\\.[\\d]+)?" \
+                            ")?" \
+                            "(Z|[+-](?:2[0-3]|[0-1][\\d]):?[0-5][\\d])?" \
+                            ")?$"
 
-//************************ DateTimeStringConverter ********************************
+#define TIMEOFDAY_REGEXPATTERN "^(2[0-4]|[0-1][\\d]):?([0-5][\\d])(?::?([0-5][\\d])(\\.[\\d]+)?)?$"
+
 #define ISO8601_TIMEZONE_UTC "Z"
+
+#define ISO8601_DATE_FORMAT "%.4" PRIi16 "-%.2" PRIu8 "-%.2" PRIu8
+#define ISO8601_TIME_FORMAT "%.2" PRIu8 ":%.2" PRIu8 ":%06.3lf"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
@@ -416,38 +398,22 @@ Utf8String DateTimeStringConverter::ToIso8601(DateTimeCR dateTime)
         return Utf8String();
 
     if (dateTime.GetInfo().GetComponent() == DateTime::Component::Date)
-        {
-        Utf8CP isoFormat = "%.4d-%.2d-%.2d";
-        size_t approxSize = 11;
-        Utf8String str;
-        str.reserve(approxSize);
-        str.Sprintf(isoFormat, dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay());
-        return str;
-        }
+        return Utf8PrintfString(ISO8601_DATE_FORMAT, dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay());
 
-    BeAssert(dateTime.GetInfo().GetComponent() == DateTime::Component::DateAndTime);
 
     double effectiveSeconds = dateTime.GetSecond() + dateTime.GetMillisecond() / 1000.0;
     BeAssert(effectiveSeconds < (dateTime.GetSecond() + 1.0));
-    
-    Utf8CP isoFormat = "%.4d-%.2d-%.2dT%.2d:%.2d:%06.3lf%s";
-    size_t approxSize = 23;
 
-    Utf8CP timeZoneIndicator = "";
+    if (dateTime.IsTimeOfDay())
+        return Utf8PrintfString(ISO8601_TIME_FORMAT, dateTime.GetHour(), dateTime.GetMinute(), effectiveSeconds);
+
+    BeAssert(dateTime.GetInfo().GetComponent() == DateTime::Component::DateAndTime);
+
     //if date is in UTC suffix the string with Z according to ISO
     //for local and unspecified dates don't suffix anything (compliant with ISO, too)
-    if (dateTime.GetInfo().GetKind() == DateTime::Kind::Utc)
-        {
-        timeZoneIndicator = ISO8601_TIMEZONE_UTC;
-        approxSize = 24;
-        }
-
-    Utf8String str;
-    str.reserve(approxSize);
-    str.Sprintf(isoFormat, dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay(),
+    Utf8CP timeZoneIndicator = dateTime.GetInfo().GetKind() == DateTime::Kind::Utc ? ISO8601_TIMEZONE_UTC : "";
+    return Utf8PrintfString(ISO8601_DATE_FORMAT "T" ISO8601_TIME_FORMAT "%s", dateTime.GetYear(), dateTime.GetMonth(), dateTime.GetDay(),
                 dateTime.GetHour(), dateTime.GetMinute(), effectiveSeconds, timeZoneIndicator);
-
-    return str;
     }
 
 //---------------------------------------------------------------------------------------
@@ -459,47 +425,58 @@ BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP is
     if (Utf8String::IsNullOrEmpty(iso8601DateTime))
         return ERROR;
 
-    Iso8601Regex::Matches matches;
-    static const Iso8601Regex regex;
-    const bool hasMatches = regex.Match(matches, iso8601DateTime);
-    size_t matchCount = 0;
-    if (!hasMatches || (matchCount = matches.size()) == 0 || matchCount != Iso8601Regex::EXPECTED_MATCH_COUNT)
-        return ERROR;
+    std::match_results<Utf8CP> matches;
+    std::regex regex(DATETIME_REGEXPATTERN);
+    const bool hasMatches = regex_search(iso8601DateTime, matches, regex);
+    if (!hasMatches || matches.size() == 0)
+        return FromIso8601TimeOfDay(dateTime, iso8601DateTime);
 
     //Parse date component
-    BeAssert(RegexGroupMatched(matches, Iso8601Regex::YEAR_GROUPINDEX) && RegexGroupMatched(matches, Iso8601Regex::MONTH_GROUPINDEX) && RegexGroupMatched(matches, Iso8601Regex::DAY_GROUPINDEX) && "All three date components are mandatory");
-    int intValue = 0;
-    TryRetrieveValueFromRegexMatch(intValue, matches, Iso8601Regex::YEAR_GROUPINDEX);
-    int16_t year = (int16_t) intValue;
+    const size_t yearGroupIndex = 1;
+    const size_t monthGroupIndex = 2;
+    const size_t dayGroupIndex = 3;
+    const size_t hourGroupIndex = 4;
+    const size_t minGroupIndex = 5;
+    const size_t secGroupIndex = 6;
+    const size_t secFractionGroupIndex = 7;
+    const size_t timezoneGroupIndex = 8;
 
-    uint8_t month = 0;
-    TryRetrieveValueFromRegexMatch(month, matches, Iso8601Regex::MONTH_GROUPINDEX);
+    int16_t year = 0;
+    uint8_t month = 0, day = 0;
+    if (!TryRetrieveValueFromRegexMatch(year, matches, yearGroupIndex)) // year is required
+        return ERROR;
 
-    uint8_t day = 0;
-    TryRetrieveValueFromRegexMatch(day, matches, Iso8601Regex::DAY_GROUPINDEX);
+    if (!TryRetrieveValueFromRegexMatch(month, matches, monthGroupIndex))
+        return ERROR;
+
+    if (!TryRetrieveValueFromRegexMatch(day, matches, dayGroupIndex))
+        return ERROR;
 
     //Parse time component (if specified in input string)
     uint8_t hour = 0;
-    if (!TryRetrieveValueFromRegexMatch(hour, matches, Iso8601Regex::HOUR_GROUPINDEX))
+    if (!TryRetrieveValueFromRegexMatch(hour, matches, hourGroupIndex))
         {
-        //no time component specified.
-        BeAssert(!RegexGroupMatched(matches, Iso8601Regex::MINUTE_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::SECOND_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::TIMEZONE_GROUPINDEX));
+        //no time component specified -> error out, if no date component specified either or if other time components are specified
+        if (RegexGroupMatched(matches, minGroupIndex) ||
+            RegexGroupMatched(matches, secGroupIndex) || RegexGroupMatched(matches, secFractionGroupIndex) ||
+            RegexGroupMatched(matches, timezoneGroupIndex))
+            return ERROR;
+
+        BeAssert(month > 0 && day > 0);
         dateTime = DateTime(year, month, day);
         return dateTime.IsValid() ? SUCCESS : ERROR;
         }
 
-    //if hour component is given, minute must be given too (all the rest is optional)
-    BeAssert(RegexGroupMatched(matches, Iso8601Regex::MINUTE_GROUPINDEX));
-
     uint8_t minute = 0;
-    TryRetrieveValueFromRegexMatch(minute, matches, Iso8601Regex::MINUTE_GROUPINDEX);
+    if (!TryRetrieveValueFromRegexMatch(minute, matches, minGroupIndex))
+        return ERROR;  // minute must be given too (all the rest is optional)
 
     uint8_t second = 0;
     uint16_t msecond = 0;
-    if (TryRetrieveValueFromRegexMatch(second, matches, Iso8601Regex::SECOND_GROUPINDEX))
+    if (TryRetrieveValueFromRegexMatch(second, matches, secGroupIndex))
         {
         double secondFraction = 0.0;
-        if (TryRetrieveValueFromRegexMatch(secondFraction, matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX))
+        if (TryRetrieveValueFromRegexMatch(secondFraction, matches, secFractionGroupIndex))
             {
             BeAssert(secondFraction >= 0.0 && secondFraction < 1.0);
             msecond = (uint16_t) (secondFraction * 1000 + 0.5);
@@ -514,12 +491,17 @@ BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP is
     else
         {
         //if seconds are not specified, second fraction must not exist either
-        BeAssert(!RegexGroupMatched(matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX));
+        if (RegexGroupMatched(matches, secFractionGroupIndex))
+            return ERROR;
         }
 
+    if (hour == 24 && (minute != 0 || second != 0 || msecond != 0))
+        return ERROR;
+
+    // now we know that this is a date and time.
     DateTime::Kind kind = DateTime::Kind::Unspecified;
     Utf8String timezoneIndicator;
-    if (TryRetrieveValueFromRegexMatch(timezoneIndicator, matches, Iso8601Regex::TIMEZONE_GROUPINDEX))
+    if (TryRetrieveValueFromRegexMatch(timezoneIndicator, matches, timezoneGroupIndex))
         {
         BeAssert(!timezoneIndicator.empty());
         if (timezoneIndicator.StartsWithIAscii(ISO8601_TIMEZONE_UTC))
@@ -536,7 +518,66 @@ BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP is
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::RegexGroupMatched(Iso8601Regex::Matches const& matches, size_t groupIndex)
+BentleyStatus DateTimeStringConverter::FromIso8601TimeOfDay(DateTimeR dateTime, Utf8CP iso8601TimeOfDay)
+    {
+    if (Utf8String::IsNullOrEmpty(iso8601TimeOfDay))
+        return ERROR;
+
+    std::match_results<Utf8CP> matches;
+    std::regex regex(TIMEOFDAY_REGEXPATTERN);
+    const bool hasMatches = regex_search(iso8601TimeOfDay, matches, regex);
+    if (!hasMatches || matches.size() == 0)
+        return ERROR;
+
+    const size_t hourGroupIndex = 1;
+    const size_t minGroupIndex = 2;
+    const size_t secGroupIndex = 3;
+    const size_t secFractionGroupIndex = 4;
+
+    uint8_t hour = 0;
+    if (!TryRetrieveValueFromRegexMatch(hour, matches, hourGroupIndex))
+        return ERROR; // hour is required
+
+    uint8_t minute = 0;
+    if (!TryRetrieveValueFromRegexMatch(minute, matches, minGroupIndex))
+        return ERROR;  // minute must be given too (all the rest is optional)
+
+    uint8_t second = 0;
+    uint16_t msecond = 0;
+    if (TryRetrieveValueFromRegexMatch(second, matches, secGroupIndex))
+        {
+        double secondFraction = 0.0;
+        if (TryRetrieveValueFromRegexMatch(secondFraction, matches, secFractionGroupIndex))
+            {
+            BeAssert(secondFraction >= 0.0 && secondFraction < 1.0);
+            msecond = (uint16_t) (secondFraction * 1000 + 0.5);
+            // Due to rounding up of some microsecond value (0.99956 for example ... yes it happened) we may end up with 1000 as value
+            // Which should be set to 0 and increase the seconds by one which may result in 60 seconds that would 
+            // require augmenting the minutes and so on ... till we may end up changing the year.
+            // This would be a pain for a mere half of a millisecond so we will simple downgrade 1000 to 999 in this improbable case
+            if (1000 == msecond)
+                msecond = 999;
+            }
+        }
+    else
+        {
+        //if seconds are not specified, second fraction must not exist either
+        if (RegexGroupMatched(matches, secFractionGroupIndex))
+            return ERROR;
+        }
+
+    if (hour == 24 && (minute != 0 || second != 0 || msecond != 0))
+        return ERROR;
+
+    dateTime = DateTime::CreateTimeOfDay(hour, minute, second, msecond);
+    return dateTime.IsValid() ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  02/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool DateTimeStringConverter::RegexGroupMatched(std::match_results<Utf8CP> const& matches, size_t groupIndex)
     {
     return matches[groupIndex].length() > 0 && matches[groupIndex].matched;
     }
@@ -545,14 +586,13 @@ bool DateTimeStringConverter::RegexGroupMatched(Iso8601Regex::Matches const& mat
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(int& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(int16_t& matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex)
     {
     if (!RegexGroupMatched(matches, groupIndex))
-        {
         return false;
-        }
 
-    matchValue = atoi(matches[groupIndex].str().c_str());
+    int matchValueInt = atoi(matches[groupIndex].str().c_str());
+    matchValue = (int16_t) matchValueInt;
     return true;
     }
 
@@ -560,7 +600,7 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(int& matchValue, Is
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(uint8_t& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(uint8_t& matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex)
     {
     if (!RegexGroupMatched(matches, groupIndex))
         {
@@ -568,7 +608,7 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(uint8_t& matchValue
         }
 
     int matchValueInt = atoi(matches[groupIndex].str().c_str());
-    matchValue = static_cast<uint8_t> (matchValueInt);
+    matchValue = (uint8_t) (matchValueInt);
     return true;
     }
 
@@ -577,7 +617,7 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(uint8_t& matchValue
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(double& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(double& matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex)
     {
     if (!RegexGroupMatched(matches, groupIndex))
         {
@@ -592,7 +632,7 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(double& matchValue,
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(Utf8StringR matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex)
+bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(Utf8StringR matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex)
     {
     if (!RegexGroupMatched(matches, groupIndex))
         {

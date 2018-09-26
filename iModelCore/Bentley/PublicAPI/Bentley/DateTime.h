@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/DateTime.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,8 @@ BEGIN_BENTLEY_NAMESPACE
 //! 
 //! A DateTime also holds additional metadata about the actual date time in its DateTime::Info member.
 //!
+//! This class can be used for dates (without time component), timestamps / date times, and
+//! times (without date component), also known as time of day. DateTime::Component indicates what kind of DateTime the object represents.
 //! @ingroup GROUP_Time
 //! @nosubgrouping
 //=======================================================================================    
@@ -35,13 +37,15 @@ struct DateTime
             };
 
         //=======================================================================================    
-        //! Specifies whether a DateTime represents a date (without time component) or a date time
+        //! Specifies whether a DateTime represents a date (without time component), a time
+        //! (without date component) or a date time
         // @bsiclass                                                 Krischan.Eberle      02/2013
         //=======================================================================================    
         enum class Component
             {
             Date = 0, //!< The DateTime represents a date only (without time component)
             DateAndTime = 1,//!< The DateTime represents a date and a time
+            TimeOfDay = 2, //!< The DateTime represents a time only (without date component)
             };
 
         //=======================================================================================    
@@ -79,21 +83,23 @@ struct DateTime
         struct Info
             {
             private:
-                Kind m_kind;
-                Component m_component;
-                bool m_isValid;
+                Kind m_kind = Kind::Unspecified;
+                Component m_component = Component::DateAndTime;
+                bool m_isValid = false;
 
                 Info(Kind kind, Component component) : m_isValid(true), m_kind(kind), m_component(component) {}
 
             public:
                 //! Creates an uninitialized Info instance
-                Info() : m_isValid(false), m_kind(Kind::Unspecified), m_component(Component::DateAndTime) {}
+                Info() {}
 
                 //! Creates an Info object for a DateTime
                 //! @param[in] kind DateTime kind
                 static Info CreateForDateTime(Kind kind) { return Info(kind, Component::DateAndTime); }
                 //! Creates an Info object for a Date
                 static Info CreateForDate() { return Info(Kind::Unspecified, Component::Date); }
+                //! Creates an Info object for a TimeOfDay
+                static Info CreateForTimeOfDay() { return Info(Kind::Unspecified, Component::TimeOfDay); }
 
                 //! Compares the given Info object with this Info object.
                 //! @param [in] rhs Info object to compare with this Info object
@@ -118,38 +124,52 @@ struct DateTime
 
     private:
         Info m_info;
-        int16_t m_year;
-        uint8_t m_month;
-        uint8_t m_day;
-        uint8_t m_hour;
-        uint8_t m_minute;
-        uint8_t m_second;
-        uint16_t m_millisecond;
+        int16_t m_year = 0;
+        uint8_t m_month = 0;
+        uint8_t m_day = 0;
+        uint8_t m_hour = 0;
+        uint8_t m_minute = 0;
+        uint8_t m_second = 0;
+        uint16_t m_millisecond = 0;
+
+        // a time of day internally is a full-blown DateTime object, with the date
+        // component set to a default date (2000-01-01), which is ignored for all TimeOfDay related matters.
+        static constexpr uint16_t s_timeOfDayDummyYear = 2000;
+        static constexpr uint8_t s_timeOfDayDummyMonth= 1;
+        static constexpr uint8_t s_timeOfDayDummyDay = 1;
 
         //! Initializes a new instance of the DateTime struct.
         //! @param [in] info the DateTime::Info for this DateTime
         //! @param [in] year The year
         //! @param [in] month The month (1 through 12) 
         //! @param [in] day The day in the month (1 through the number of days in @p month) 
-        //! @param [in] hour The hours (0 through 23)
+        //! @param [in] hour The hours (0 through 23, or 24 as 24:00 if end of day)
         //! @param [in] minute The minutes (0 through 59)
         //! @param [in] second The seconds (0 through 59)
         //! @param [in] millisecond The milliseconds (0 through 999)
         DateTime(Info const& info, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint16_t millisecond)
             : m_info(info), m_year(year), m_month(month), m_day(day), m_hour(hour), m_minute(minute), m_second(second), m_millisecond(millisecond)
             {
-            if (!m_info.IsValid() || m_month < 1 || m_month > 12 || m_day < 1 || m_day > GetMaxDay(m_year, m_month) ||
-                m_hour > 23 || m_minute > 59 || m_second > 59 || m_millisecond > 999)
+            if (!IsValidDateTime(info, year, month, day, hour, minute, second, millisecond))
                 {
                 BeAssert(false && "Invalid parameters to DateTime ctor");
                 m_info = Info(); //make DateTime object invalid
                 }
             }
 
+        static bool IsValidDateTime(Info const& info, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint16_t millisecond)
+            {
+            if (!info.IsValid() || month < 1 || month > 12 || day < 1 || day > GetMaxDay(year, month) ||
+                hour > 24 || minute > 59 || second > 59 || millisecond > 999)
+                return false;
+
+            return hour < 24 || (minute == 0 && second == 0 && millisecond == 0);
+            }
+
     public:
         //! Initializes a new empty instance of the DateTime struct.
         //! @remarks DateTime::IsValid returns false in that case, as it doesn't represent any date time.
-        DateTime() : m_year(0), m_month(0), m_day(0), m_hour(0), m_minute(0), m_second(0), m_millisecond(0) {}
+        DateTime() {}
 
         //! Initializes a new instance of the DateTime struct.
         //! @remarks This creates a "date-only" DateTime, i.e.
@@ -165,17 +185,29 @@ struct DateTime
         //! @param [in] year The year
         //! @param [in] month The month (1 through 12) 
         //! @param [in] day The day in the month (1 through the number of days in @p month) 
-        //! @param [in] hour The hours (0 through 23)
+        //! @param [in] hour The hours (0 through 23 or 24 as 24:00 if end of day)
         //! @param [in] minute The minutes (0 through 59)
         //! @param [in] second The seconds (0 through 59)
         //! @param [in] millisecond The milliseconds (0 through 999)
         DateTime(Kind kind, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second = 0, uint16_t millisecond = 0)
             : DateTime(Info::CreateForDateTime(kind), year, month, day, hour, minute, second, millisecond) {}
 
+        //! Initializes a new "time of day" DateTime
+        //! @param [in] hour The hours (0 through 23 or 24 as 24:00 if end of day)
+        //! @param [in] minute The minutes (0 through 59)
+        //! @param [in] second The seconds (0 through 59)
+        //! @param [in] millisecond The milliseconds (0 through 999)
+        //! @return "time of day" DateTime object
+        static DateTime CreateTimeOfDay(uint8_t hour, uint8_t minute, uint8_t second = 0, uint16_t millisecond = 0) { return DateTime(Info::CreateForTimeOfDay(), s_timeOfDayDummyYear, s_timeOfDayDummyMonth, s_timeOfDayDummyDay, hour, minute, second, millisecond); }
+
         //! Indicates whether this DateTime instance is a valid date/time or not.
         //! @remarks Using the default constructor creates an invalid date time as none of the components have been set.
         //! @return true, if the DateTime instance is valid, false otherwise
         bool IsValid() const { return m_info.IsValid(); }
+
+        //! Indicates whether this DateTime instance represents a "time of day", i.e. a time without date component.
+        //! @return true, if this DateTime is a "time of day", false otherwise.
+        bool IsTimeOfDay() const { return IsValid() && m_info.GetComponent() == Component::TimeOfDay; }
 
         //! Compares the given DateTime with this DateTime.
         //! @param [in] rhs DateTime to compare with this DateTime
@@ -210,27 +242,27 @@ struct DateTime
         //! @return DateTime::Info of this DateTime object.
         Info const& GetInfo() const { BeAssert(IsValid()); return m_info; }
 
-        //! Gets the year component of this DateTime object.
+        //! Gets the year component of this DateTime object (not applicable for DateTime::Component::TimeOfDay).
         //! @return Year (negative if BCE, positive otherwise).
         int16_t GetYear() const { BeAssert(IsValid()); return m_year; }
 
-        //! Gets the month component of this DateTime object.
+        //! Gets the month component of this DateTime object (not applicable for DateTime::Component::TimeOfDay).
         //! @return Month (1 through 12).
         uint8_t GetMonth() const { BeAssert(IsValid()); return m_month; }
 
-        //! Gets the day component of this DateTime object.
+        //! Gets the day component of this DateTime object (not applicable for DateTime::Component::TimeOfDay).
         //! @return Day in the month (1 through the number in GetMonth) 
         uint8_t GetDay() const { BeAssert(IsValid()); return m_day; }
 
-        //! Gets the hour component of this DateTime object.
+        //! Gets the hour component of this DateTime object (not applicable for DateTime::Component::Date).
         //! @return Hours (0 through 59) 
         uint8_t GetHour() const { BeAssert(IsValid()); return m_hour; }
 
-        //! Gets the minute component of this DateTime object.
+        //! Gets the minute component of this DateTime object (not applicable for DateTime::Component::Date).
         //! @return Minutes (0 through 59) 
         uint8_t GetMinute() const { BeAssert(IsValid()); return m_minute; }
 
-        //! Gets the second component of this DateTime object.
+        //! Gets the second component of this DateTime object (not applicable for DateTime::Component::Date).
         //! @return Seconds (0 through 59) 
         uint8_t GetSecond() const { BeAssert(IsValid()); return m_second; }
 
@@ -238,14 +270,19 @@ struct DateTime
         //! @return Milliseconds (0 through 999) 
         uint16_t GetMillisecond() const { BeAssert(IsValid()); return m_millisecond; }
 
-        //! Gets the day of the week of this DateTime object.
+        //! Gets the day of the week of this DateTime object (not applicable for DateTime::Component::TimeOfDay).
         //! @remarks Only call this method if the DateTime is valid (see DateTime::IsValid)
         //! @return Day of the week
         BENTLEYDLL_EXPORT DayOfWeek GetDayOfWeek() const;
 
-        //! Gets the day of the year of this DateTime object.
+        //! Gets the day of the year of this DateTime object (not applicable for DateTime::Component::TimeOfDay).
         //! @return Day of the year or 0 if the DateTime object is not valid (see DateTime::IsValid)
         BENTLEYDLL_EXPORT uint16_t GetDayOfYear() const;
+
+        //! Extracts the time of day from this DateTime object (not applicable for DateTime::Component::Date)
+        //! @return TimeOfDay or an invalid DateTime object, if this DateTime is invalid or has
+        //! DateTime::Component::Date
+        DateTime GetTimeOfDay() const { return (IsValid() && m_info.GetComponent() != Component::Date) ? CreateTimeOfDay(m_hour, m_minute, m_second, m_millisecond) : DateTime(); }
 
         //! Indicates whether the specified year is a leap year or not
         //! @return true, if @p year is a leap year. false, otherwise.
@@ -359,14 +396,22 @@ struct DateTime
         //! Converts this local DateTime to UTC
         //! @param  [out] utcDateTime Resulting DateTime object in UTC 
         //! @return SUCCESS if successful. ERROR in case of errors, e.g.
-        //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
+        //!         if this date time instance is invalid (see DateTime::IsValid) or
+        //!         does not have DateTime::Component::DateTime
+        //!         or if computation of local time zone offset failed.
         BENTLEYDLL_EXPORT BentleyStatus ToUtc(DateTime& utcDateTime) const;
 
         //! Converts this UTC DateTime to local time
         //! @param  [out] localDateTime Resulting DateTime object in local time
         //! @return SUCCESS if successful. ERROR in case of errors, e.g.
-        //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
+        //!         if this date time instance is invalid (see DateTime::IsValid) or
+        //!         does not have DateTime::Component::DateTime or if computation of local time zone offset failed.
         BENTLEYDLL_EXPORT BentleyStatus ToLocalTime(DateTime& localDateTime) const;
+
+        //! The method computes the milliseconds since midnight for this DateTime (not applicable for DateTime::Component::Date).
+        //! @param [out] msecs The milliseconds since midnight.
+        //! @return SUCCESS if successful. ERROR if the DateTime has DateTime::Component::Date.
+        BENTLEYDLL_EXPORT BentleyStatus ToMillisecondsSinceMidnight(uint32_t& msecs) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Converts a number in msecs into a rational day number
