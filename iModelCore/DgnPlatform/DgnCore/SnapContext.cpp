@@ -25,6 +25,7 @@ DVec3d                  m_snapNormal = DVec3d::FromZero();
 SnapHeat                m_heat = SNAP_HEAT_None;
 HitGeomType             m_geomType = HitGeomType::None;
 HitParentGeomType       m_parentGeomType = HitParentGeomType::None;
+DgnCategoryId           m_categoryId;
 DgnSubCategoryId        m_subCategoryId;
 IGeometryPtr            m_geomPtr;
 IGeometryPtr            m_intersectGeomPtr;
@@ -136,6 +137,7 @@ bool UpdateIfBetter(SnapData const& other, DPoint3dCR testPoint, DMatrix4dCR wor
     m_viewDistance = other.m_viewDistance;
     m_geomType = other.m_geomType;
     m_parentGeomType = other.m_parentGeomType;
+    m_categoryId = other.m_categoryId;
     m_subCategoryId = other.m_subCategoryId;
     m_localToWorld = other.m_localToWorld;
     m_geomPtr = other.m_geomPtr;
@@ -163,8 +165,11 @@ void ToResponse(SnapContext::Response& output) const
     output.SetGeomType(m_geomType);
     output.SetParentGeomType(m_parentGeomType);
 
-    if (m_subCategoryId.IsValid())
+    if (m_categoryId.IsValid() && m_subCategoryId.IsValid())
+        {
+        output.SetCategory(m_categoryId.ToHexStr());
         output.SetSubCategory(m_subCategoryId.ToHexStr());
+        }
 
     if (!m_hitPoint.IsDisconnect())
         output.SetHitPoint(m_hitPoint);
@@ -2233,6 +2238,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             currentSnap.m_heat = SnapGeometryHelper::GetHeat(currentSnap.m_snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode, &currentSnap.m_viewDistance);
             currentSnap.m_geomType = helper.GetSnapGeomType();
             currentSnap.m_parentGeomType = helper.GetHitParentGeomType();
+            currentSnap.m_categoryId = helper.GetHitGeometryParams().GetCategoryId();
             currentSnap.m_subCategoryId = helper.GetHitGeometryParams().GetSubCategoryId();
             currentSnap.m_interiorWasPickable = (RenderMode::Wireframe != viewFlags.GetRenderMode() || (FillDisplay::ByView == helper.GetHitGeometryParams().GetFillDisplay() && viewFlags.ShowFill()) || FillDisplay::ByView < helper.GetHitGeometryParams().GetFillDisplay());
 
@@ -2265,7 +2271,10 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
         originSnap.m_heat = SnapGeometryHelper::GetHeat(originSnap.m_snapPoint, closePoint, worldToViewMap.M0, snapAperture, true, &originSnap.m_viewDistance);
 
         if (nullptr != source)
-            originSnap.m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(source->GetCategoryId());
+            {
+            originSnap.m_categoryId = source->GetCategoryId();
+            originSnap.m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(originSnap.m_categoryId);
+            }
 
         bestSnap.UpdateIfBetter(originSnap, testPoint, worldToViewMap.M0, snapAperture);
         }
@@ -2297,27 +2306,6 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
 
             CurveCurve::IntersectionsXY(*intersectionsA, *intersectionsB, curveA.get(), curveB.get(), &worldToViewMap.M0);
             
-            /* NEEDSWORK: ClosestPointBoundedXY needs to special case single point partials and not convert to bspline (which fails for "point partial" from linestring)!!!
-            CurveVectorPtr newChildVector = CurveVector::Create(intersectionsA->GetBoundaryType());
-            for (size_t iCurve = 0, nCurve = intersectionsA->size(); iCurve < nCurve; iCurve++)
-                {
-                ICurvePrimitivePtr curve = intersectionsA->at(iCurve);
-                if (!curve.IsValid())
-                    continue;
-
-                PartialCurveDetailCP detail = nullptr;
-                if (nullptr == (detail = curve->GetPartialCurveDetailCP()) || !detail->IsSingleFraction())
-                    continue;
-
-                DPoint3d pointS, pointE;
-                if (!curve->FractionToPoint(detail->fraction0, pointS) || !curve->FractionToPoint(detail->fraction1, pointE))
-                    continue;
-
-                newChildVector->push_back(ICurvePrimitive::CreateLine(DSegment3d::From(pointS, pointE)));
-                }
-            intersectionsA = newChildVector;
-            */
-
             CurveLocationDetail intersectDetail;
             if (!intersectionsA->ClosestPointBoundedXY(closePoint, &worldToViewMap.M0, intersectDetail))
                 continue;

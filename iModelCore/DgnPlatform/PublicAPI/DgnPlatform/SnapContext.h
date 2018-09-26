@@ -158,6 +158,7 @@ namespace SnapContext
         BE_JSON_NAME(heat)
         BE_JSON_NAME(geomType)
         BE_JSON_NAME(parentGeomType)
+        BE_JSON_NAME(category)
         BE_JSON_NAME(subCategory)
         BE_JSON_NAME(hitPoint)
         BE_JSON_NAME(snapPoint)
@@ -172,6 +173,7 @@ namespace SnapContext
         void SetHeat(SnapHeat val) {(*this)[json_heat()] = (uint32_t) val;}
         void SetGeomType(HitGeomType val) {(*this)[json_geomType()] = (uint32_t)  val;}
         void SetParentGeomType(HitParentGeomType val) {(*this)[json_parentGeomType()] = (uint32_t) val;}
+        void SetCategory(Utf8StringCR val) {(*this)[json_category()] = val;}
         void SetSubCategory(Utf8StringCR val) {(*this)[json_subCategory()] = val;}
         void SetNormal(DVec3dCR val) {(*this)[json_normal()] = JsonUtils::DVec3dToJson(val);}
         void SetCurve(JsonValueCR val) {(*this)[json_curve()] = val;}
