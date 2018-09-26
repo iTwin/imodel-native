@@ -1,12 +1,12 @@
 {
   "name": "@bentley/imodeljs-native-platform-api",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE.pdf",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
     "Bentley",
     "iModel"
   ],
-  "description":  "iModelJs core internals",
+  "description": "iModel.js native module",
   "author": {
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
