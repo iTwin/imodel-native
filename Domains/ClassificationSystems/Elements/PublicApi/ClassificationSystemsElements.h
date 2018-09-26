@@ -25,7 +25,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 //=======================================================================================
 //! A Classification System element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement, BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IBCSSerializable
+struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem final : Dgn::DefinitionElement, BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IBCSSerializable
     {
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem, Dgn::DefinitionElement);
     private:
@@ -68,7 +68,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement, BE
 //=======================================================================================
 //! A ClassificationSystem Class Definition element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE Classification final : Dgn::DefinitionElement
     {
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_Classification, Dgn::DefinitionElement);
     private:
@@ -138,7 +138,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
 //=======================================================================================
 //! A ClassificationSystem Class Definition Group element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup : Dgn::GroupInformationElement
+struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup final : Dgn::GroupInformationElement
     {
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup, Dgn::GroupInformationElement);
 
