@@ -2232,12 +2232,12 @@ Utf8CP getLinearUnitName(Utf8StringCR unit)
 Utf8CP getAreaUnitName(Utf8StringCR unit)
     {
     if (unit.EqualsIAscii("English"))
-        return "SQ.FT";
+        return "SQ_FT";
     if (unit.EqualsIAscii("Metric"))
-        return "SQ.M";
+        return "SQ_M";
     if (unit.EqualsIAscii("USSurvey"))
-        return "SQ.US_SURVEY_FT";
-    return "SQ.M";
+        return "SQ_US_SURVEY_FT";
+    return "SQ_M";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2246,12 +2246,12 @@ Utf8CP getAreaUnitName(Utf8StringCR unit)
 Utf8CP getVolumeUnitName(Utf8StringCR unit)
     {
     if (unit.EqualsIAscii("English"))
-        return "CUB.FT";
+        return "CUB_FT";
     if (unit.EqualsIAscii("Metric"))
-        return "CUB.M";
+        return "CUB_M";
     if (unit.EqualsIAscii("USSurvey"))
-        return "CUB.FT";
-    return "CUB.M";
+        return "CUB_FT";
+    return "CUB_M";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2512,7 +2512,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
 
         toImport->WriteToXmlFile(flatPath.GetName());
 #endif
-        if (toImport->OriginalECXmlVersionLessThan(ECVersion::V3_1) && !ECSchemaConverter::Convert(*toImport))
+        if (toImport->OriginalECXmlVersionLessThan(ECVersion::V3_1) && !ECSchemaConverter::Convert(*toImport, m_importer->m_schemaReadContext.get(), false))
             {
             GetLogger().fatalv("Failed to convert schema %s to EC3.1.  Unable to continue.", toImport->GetName().c_str());
             return ERROR;

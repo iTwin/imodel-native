@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/Base64Utilities.h>
-#include "DGnDb0601ToJsonImpl.h"
+#include "DgnDb0601ToJsonImpl.h"
 #include <limits>
 #include <DgnDb06Api/DgnPlatform/WebMercator.h>
 #include <DgnDb06Api/DgnPlatform/DgnIModel.h>

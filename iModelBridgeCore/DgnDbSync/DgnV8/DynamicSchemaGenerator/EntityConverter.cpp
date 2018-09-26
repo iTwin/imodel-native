@@ -122,10 +122,10 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, incomingRule))
                     return BSIERROR;
                 }
-            // If the base is physical and the derived class is drawing, then make the derived class Physical
+            // If the base is physical and the derived class is drawing, then make the derived class Physical.  We will try to turn any instances into aspects
             else if (BisConversionRule::ToDrawingGraphic == existingRule && BisConversionRule::ToPhysicalElement == incomingRule)
                 {
-                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::ToPhysicalElement))
+                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::ToPhysicalElement, true))
                     return BSIERROR;
                 }
             else if (BisConversionRule::ToGroup == incomingRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))

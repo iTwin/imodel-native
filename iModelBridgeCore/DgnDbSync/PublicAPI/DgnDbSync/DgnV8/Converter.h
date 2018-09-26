@@ -1380,6 +1380,7 @@ public:
     DGNDBSYNC_EXPORT virtual DgnDbStatus _CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping,
                                                                            SyncInfo::V8ElementSource const& attachmentMapping,
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                                           DgnV8Api::ElementHandle& eh,
                                                                            DgnCategoryId categoryId, GeometryBuilder& builder);
     DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,

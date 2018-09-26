@@ -442,7 +442,7 @@
         <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
     </Part>
 
-    <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64">
+    <Part Name="BimFromDgnDbPublicApi" BentleyBuildMakeFile="BimFromDgnDb/BimFromDgnDb.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64">
         <Bindings>
             <PublicAPI Domain="BimFromDgnDb" />
         </Bindings>
@@ -454,7 +454,7 @@
         <SubPart PartName="BimFromDgnDb-Xliffs"/>
     </Part>
     
-    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+    <Part Name="BimFromJsonLib" BentleyBuildMakeFile="BimFromDgnDb/BimImporter/lib/BimFromJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"      Repository="DgnPlatform"/>
         <SubPart PartName="ECPresentation"  PartFile="ECPresentation"   Repository="ECPresentation"/>
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"       Repository="DgnDisplay" />
@@ -497,7 +497,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+    <Part Name="BimFromDgnDb" BentleyBuildMakeFile="BimFromDgnDb/src/BimFromDgnDb.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="B02">
         <SubPart PartName="BimFromJson"/>
         <SubPart PartName="DgnDb0601ToJson" PartFile="BimUpgrader" />
         <Bindings>

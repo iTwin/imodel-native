@@ -663,29 +663,16 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         return BSIERROR;
 
     DgnViewId existingViewId;
-    bool doUpdate = false;
     if (IsUpdating())
         {
         // For imodels that were created during the EAP, but before this table was implemented, need to do a check
         if (GetSyncInfo().ViewTableExists())
             {
             double lastModified;
-            if (GetSyncInfo().TryFindView(existingViewId, lastModified, viewInfo))
-                {
-                if (lastModified == viewInfo.GetElementRef()->GetLastModified())
-                    {
-                    GetChangeDetector()._OnViewSeen(*this, existingViewId);
-                    return BSISUCCESS;
-                    }
-                doUpdate = true;
-                }
+            GetSyncInfo().TryFindView(existingViewId, lastModified, viewInfo);
             }
-        else
-            {
-            auto viewId = ViewDefinition::QueryViewId(*definitionModel, name);
-            if (viewId.IsValid())
-                doUpdate = true;
-            }
+        if (!existingViewId.IsValid())
+            existingViewId = ViewDefinition::QueryViewId(*definitionModel, name);
         }
 
     DgnFilePtr v8File = viewInfo.GetRootDgnFileP(); // the file needs to have a non-zero reference count so LoadRootModelById will work.
@@ -772,7 +759,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     parms.m_rot = (RotMatrixCR)v8Rotation;
 
     ViewDefinitionPtr view;
-    if (doUpdate)
+    if (IsUpdating() && existingViewId.IsValid())
         view = viewFactory._UpdateView(*this, parms, existingViewId);
     else
         view = viewFactory._MakeView(*this, parms);
@@ -784,7 +771,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
     ConvertViewACS(view, viewInfo, *v8Model, trans, name);
 
-    if (doUpdate)
+    if (IsUpdating() && existingViewId.IsValid())
         {
         if (!view->Update().IsValid())
             {
@@ -811,7 +798,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     if (!viewId.IsValid())
         viewId = view->GetViewId();
     GetChangeDetector()._OnViewSeen(*this, viewId);
-    if (doUpdate)
+    if (IsUpdating() && existingViewId.IsValid())
         GetSyncInfo().UpdateView(viewId, viewInfo);
     else
         GetSyncInfo().InsertView(viewId, viewInfo);
