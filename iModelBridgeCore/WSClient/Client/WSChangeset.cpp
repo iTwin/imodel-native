@@ -72,7 +72,7 @@ size_t WSChangeset::CalculateSize() const
         size -= 2; // size of "{}"
         }
 
-    if (nullptr != m_options)
+    if (nullptr != m_options && !m_options->IsServerDefault())
         {
         size += Utf8String(R"(",requestOptions":)").size();
         size += m_options->CalculateSize();
@@ -162,7 +162,7 @@ void WSChangeset::ToMultipleInstancesRequestJson(JsonValueR changesetJson) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSChangeset::ToOptionsRequestJson(JsonValueR changesetJson) const
     {
-    if (m_options == nullptr)
+    if (nullptr == m_options || m_options->IsServerDefault())
         return;
 
     Json::Value& optionsJson = changesetJson["requestOptions"];
@@ -823,38 +823,6 @@ Utf8CP WSChangeset::Options::GetResponseContentStr(ResponseContent response)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::Options::ToJson(JsonValueR jsonOut) const
-    {
-    if (FailureStrategy::Null == m_failureStrategy &&
-        ResponseContent::Null == m_responseContent &&
-        RefreshInstances::Null == m_refreshInstances &&
-        m_customOptions.empty())
-        {
-        jsonOut = Json::objectValue;
-        return;
-        }
-
-    if (FailureStrategy::Null != m_failureStrategy)
-        jsonOut["FailureStrategy"] = GetFailureStrategyStr(m_failureStrategy);
-
-    if (ResponseContent::Null != m_responseContent)
-        jsonOut["ResponseContent"] = GetResponseContentStr(m_responseContent);
-
-    if (RefreshInstances::Null != m_refreshInstances)
-        {
-        if (RefreshInstances::Refresh == m_refreshInstances)
-            jsonOut["RefreshInstances"] = true;
-        else
-            jsonOut["RefreshInstances"] = false;
-        }
-
-    if (!m_customOptions.empty())
-        jsonOut["CustomOptions"] = m_customOptions;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    julius.cepukenas 09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 size_t WSChangeset::Options::CalculateSize() const
     {
     if (0 != m_baseSize)
@@ -865,4 +833,45 @@ size_t WSChangeset::Options::CalculateSize() const
     m_baseSize = Json::FastWriter::ToString(requestOptions).size();
 
     return m_baseSize;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WSChangeset::Options::IsServerDefault() const
+    {
+    return
+        FailureStrategy::ServerDefault == m_failureStrategy &&
+        ResponseContent::ServerDefault == m_responseContent &&
+        RefreshInstances::ServerDefault == m_refreshInstances &&
+        m_customOptions.empty();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::ToJson(JsonValueR jsonOut) const
+    {
+    if (IsServerDefault())
+        {
+        jsonOut = Json::objectValue;
+        return;
+        }
+
+    if (FailureStrategy::ServerDefault != m_failureStrategy)
+        jsonOut["FailureStrategy"] = GetFailureStrategyStr(m_failureStrategy);
+
+    if (ResponseContent::ServerDefault != m_responseContent)
+        jsonOut["ResponseContent"] = GetResponseContentStr(m_responseContent);
+
+    if (RefreshInstances::ServerDefault != m_refreshInstances)
+        {
+        if (RefreshInstances::Refresh == m_refreshInstances)
+            jsonOut["RefreshInstances"] = true;
+        else
+            jsonOut["RefreshInstances"] = false;
+        }
+
+    if (!m_customOptions.empty())
+        jsonOut["CustomOptions"] = m_customOptions;
     }
