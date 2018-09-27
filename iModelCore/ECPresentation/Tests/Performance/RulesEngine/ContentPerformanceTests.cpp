@@ -72,14 +72,14 @@ struct ContentPerformanceTests : RulesEnginePerformanceTests
         return ruleset;
         }
 
-    void GetContent(SelectionInfo const&, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName);
+    void GetContent(SelectionInfo const&, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName);
     void GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize, int flags);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName)
+void ContentPerformanceTests::GetContent(SelectionInfo const& selection, KeySetCR inputKeys, Utf8CP type, int expectedContentSize, int flags, Utf8CP passName)
     {
     // start the timer
     Utf8PrintfString timerName("%s: %s pass", BeTest::GetNameOfCurrentTest(), passName);
@@ -87,7 +87,7 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP 
 
     // get the descriptor
     RulesDrivenECPresentationManager::ContentOptions options = CreateContentOptions();
-    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, *input, nullptr, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor = m_manager->GetContentDescriptor(m_project, type, inputKeys, &selection, options.GetJson()).get();
 
     if (descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
         {
@@ -110,15 +110,15 @@ void ContentPerformanceTests::GetContent(SelectionInfo const& selection, Utf8CP 
 void ContentPerformanceTests::GetContentForAllGeometricElements(Utf8CP type, int expectedContentSize, int flags = 0)
     {
     // getting content for all geometric elements in the dataset
-    NavNodeKeyList keys;
+    bvector<ECClassInstanceKey> keys;
     ECSqlStatement stmt;
     stmt.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM [BisCore].[GeometricElement]");
     while (BeSQLite::DbResult::BE_SQLITE_ROW == stmt.Step())
-        keys.push_back(ECInstanceNodeKey::Create(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
-    SelectionInfo selection("", false, *NavNodeKeyListContainer::Create(keys));
+        keys.push_back(ECClassInstanceKey(m_project.Schemas().GetClass(stmt.GetValueId<ECClassId>(0)), stmt.GetValueId<ECInstanceId>(1)));
+    SelectionInfoCPtr selection = SelectionInfo::Create("", false);
 
-    GetContent(selection, type, expectedContentSize, flags, "First");
-    GetContent(selection, type, expectedContentSize, flags, "Second");
+    GetContent(*selection, *KeySet::Create(keys), type, expectedContentSize, flags, "First");
+    GetContent(*selection, *KeySet::Create(keys), type, expectedContentSize, flags, "Second");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -147,9 +147,9 @@ TEST_F(ContentPerformanceTests, GetDescriptorForAllElementSubclasses)
     ECClassCP elementClass = m_project.Schemas().GetClass("BisCore", "Element");
     bset<ECClassCP> allElementClassesSet = GetDerivedClasses(m_project, *elementClass);
     bvector<ECClassCP> allElementClasses(allElementClassesSet.begin(), allElementClassesSet.end());
-    NavNodeKeyList keys;
+    bvector<ECClassInstanceKey> keys;
     for (ECClassCP ecClass : allElementClasses)
-        keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId()));
+        keys.push_back(ECClassInstanceKey(m_project.Schemas().GetClass(ecClass->GetId()), ECInstanceId()));
 
     KeySetCPtr input = KeySet::Create(keys);
     
