@@ -2,7 +2,7 @@
 |
 |     $Source: src/DateTimeInfoAccessor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -43,10 +43,9 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTime::Info& dateTimeInfo, ECPr
         return ECObjectsStatus::PropertyNotFound;
         }
 
-    bool isKindNull = true;
-    DateTime::Kind kind = DateTime::Kind::Unspecified;
+    Nullable<DateTime::Kind> kind;
     //parsing returns false in error case
-    if (!TryParseKind(isKindNull, kind, caVal))
+    if (!TryParseKind(kind, caVal))
         return ECObjectsStatus::ParseError;
 
     //Retrieve DateTimeComponent
@@ -58,26 +57,36 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTime::Info& dateTimeInfo, ECPr
         return ECObjectsStatus::PropertyNotFound;
         }
 
-    bool isComponentNull = true;
-    DateTime::Component component = DateTime::Component::DateAndTime;
+    Nullable<DateTime::Component> component;
     //parsing returns false in error case
-    if (!TryParseComponent(isComponentNull, component, caVal))
+    if (!TryParseComponent(component, caVal))
         return ECObjectsStatus::ParseError;
 
-    if (!isComponentNull && component == DateTime::Component::Date)
+    if (component != nullptr)
         {
-        if (!isKindNull)
+        if (component != DateTime::Component::DateAndTime && kind != nullptr)
             {
-            LOG.errorv("Invalid 'DateTimeInfo' custom attribute on ECProperty '%s.%s'. DateTimeKind must remain unset if DateTimeComponent is set to 'Date'.", dateTimeProperty.GetClass().GetFullName(), dateTimeProperty.GetName().c_str());
+            LOG.errorv("Invalid 'DateTimeInfo' custom attribute on ECProperty '%s.%s'. DateTimeKind must remain unset unless DateTimeComponent is set to 'DateAndTime'.", dateTimeProperty.GetClass().GetFullName(), dateTimeProperty.GetName().c_str());
             return ECObjectsStatus::ParseError;
             }
 
-        dateTimeInfo = DateTime::Info::CreateForDate();
-        return ECObjectsStatus::Success;
+        if (component == DateTime::Component::Date)
+            {
+            dateTimeInfo = DateTime::Info::CreateForDate();
+            return ECObjectsStatus::Success;
+            }
+
+        if (component == DateTime::Component::TimeOfDay)
+            {
+            dateTimeInfo = DateTime::Info::CreateForTimeOfDay();
+            return ECObjectsStatus::Success;
+            }
+
+        BeAssert(component == DateTime::Component::DateAndTime);
         }
 
-    if (!isKindNull)
-        dateTimeInfo = DateTime::Info::CreateForDateTime(kind);
+    if (kind != nullptr)
+        dateTimeInfo = DateTime::Info::CreateForDateTime(kind.Value());
 
     return ECObjectsStatus::Success;
     }
@@ -86,15 +95,13 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTime::Info& dateTimeInfo, ECPr
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeInfoAccessor::TryParseKind(bool& isKindNull, DateTime::Kind& kind, ECValueCR ecValue)
+bool DateTimeInfoAccessor::TryParseKind(Nullable<DateTime::Kind>& kind, ECValueCR ecValue)
     {
-    if (ecValue.IsNull())
-        {
-        isKindNull = true;
-        return true;
-        }
+    kind = nullptr;
 
-    isKindNull = false;
+    if (ecValue.IsNull())
+        return true;
+
     /* In case DateTimeKind property is switched to an int enum
     if (ecValue.IsInteger())
         {
@@ -122,10 +129,7 @@ bool DateTimeInfoAccessor::TryParseKind(bool& isKindNull, DateTime::Kind& kind, 
         {
         Utf8CP kindStr = ecValue.GetUtf8CP();
         if (Utf8String::IsNullOrEmpty(kindStr))
-            {
-            isKindNull = true;
             return true;
-            }
 
         if (BeStringUtilities::StricmpAscii(kindStr, "Unspecified") == 0)
             {
@@ -150,12 +154,8 @@ bool DateTimeInfoAccessor::TryParseKind(bool& isKindNull, DateTime::Kind& kind, 
 
     Utf16CP kindStr = ecValue.GetUtf16CP();
     if (kindStr == nullptr || BeStringUtilities::Utf16Len(kindStr) == 0)
-        {
-        isKindNull = true;
         return true;
-        }
 
-    isKindNull = false;
     if (BeStringUtilities::CompareUtf16WChar(kindStr, L"Unspecified") == 0)
         {
         kind = DateTime::Kind::Unspecified;
@@ -182,15 +182,11 @@ bool DateTimeInfoAccessor::TryParseKind(bool& isKindNull, DateTime::Kind& kind, 
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool DateTimeInfoAccessor::TryParseComponent(bool& isComponentNull, DateTime::Component& component, ECValueCR ecValue)
+bool DateTimeInfoAccessor::TryParseComponent(Nullable<DateTime::Component>& component, ECValueCR ecValue)
     {
+    component = nullptr;
     if (ecValue.IsNull())
-        {
-        isComponentNull = true;
         return true;
-        }
-
-    isComponentNull = false;
 
     /* In case DateTimeComponent property is switched to an int enum
     if (ecValue.IsInteger())
@@ -216,10 +212,7 @@ bool DateTimeInfoAccessor::TryParseComponent(bool& isComponentNull, DateTime::Co
         {
         Utf8CP componentStr = ecValue.GetUtf8CP();
         if (Utf8String::IsNullOrEmpty(componentStr))
-            {
-            isComponentNull = true;
             return true;
-            }
 
         if (BeStringUtilities::StricmpAscii(componentStr, "DateTime") == 0)
             {
@@ -233,17 +226,19 @@ bool DateTimeInfoAccessor::TryParseComponent(bool& isComponentNull, DateTime::Co
             return true;
             }
 
+        if (BeStringUtilities::StricmpAscii(componentStr, "TimeOfDay") == 0)
+            {
+            component = DateTime::Component::TimeOfDay;
+            return true;
+            }
+
         return false;
         }
 
     Utf16CP componentStr = ecValue.GetUtf16CP();
     if (componentStr == nullptr || BeStringUtilities::Utf16Len(componentStr) == 0)
-        {
-        isComponentNull = true;
         return true;
-        }
 
-    isComponentNull = false;
     if (BeStringUtilities::CompareUtf16WChar(componentStr, L"DateTime") == 0)
         {
         component = DateTime::Component::DateAndTime;
@@ -253,6 +248,12 @@ bool DateTimeInfoAccessor::TryParseComponent(bool& isComponentNull, DateTime::Co
     if (BeStringUtilities::CompareUtf16WChar(componentStr, L"Date") == 0)
         {
         component = DateTime::Component::Date;
+        return true;
+        }
+
+    if (BeStringUtilities::CompareUtf16WChar(componentStr, L"TimeOfDay") == 0)
+        {
+        component = DateTime::Component::TimeOfDay;
         return true;
         }
 
