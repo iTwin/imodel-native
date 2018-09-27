@@ -367,7 +367,7 @@ bool tryValueToLineString (JsonValueCR value, ICurvePrimitivePtr &result)
     {
     if (value.isNull ())
         return false;
-    if (value.isArray () && value.size () > 1)
+    if (value.isArray () && value.size () > 0)
         {
         auto ls = ICurvePrimitive::CreateLineString (nullptr, 0);
         for (uint32_t i = 0; i < value.size (); i++)
@@ -387,7 +387,7 @@ bool tryValueToPointString (JsonValueCR value, ICurvePrimitivePtr &result)
     {
     if (value.isNull ())
         return false;
-    if (value.isArray () && value.size () > 1)
+    if (value.isArray () && value.size () > 0)
         {
         bvector<DPoint3d> points;
         for (uint32_t i = 0; i < value.size (); i++)
