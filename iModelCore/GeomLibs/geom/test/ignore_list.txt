@@ -11,11 +11,6 @@ General.GFormat
 
 MGeometry.ConvexHullManyPoints # fails on iOS - 0 test is seeing very tiny negative number for i=893; notified Earlin
 
-# Sept 3 EDL -- missing input files.  (JP will fix)
-CurveOffset.RebarReduceCCW
-CurveOffset.RebarUnion
-
-
 
 #CurvePrimitive.SizeSampler # Fails after merge - notified Earlir
 
