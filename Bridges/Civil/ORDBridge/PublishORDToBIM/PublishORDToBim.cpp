@@ -51,18 +51,8 @@ static int runBridge(int argc, WCharCP argv[])
     if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
         {
         fprintf(stderr, "No Civil data found.\n");
-        if (iModelBridgeAffinityLevel::Low == affinityLevel)
-            return RESULT_AFFINITY_CHECK_LOW;
-        else if (iModelBridgeAffinityLevel::Medium == affinityLevel)
-            return RESULT_AFFINITY_CHECK_MEDIUM;
-        else if (iModelBridgeAffinityLevel::High == affinityLevel)
-            return RESULT_AFFINITY_CHECK_HIGH;
-        else
-            {
-            if (iModelBridgeAffinityLevel::None != affinityLevel)
-                BeAssert("Unrecognized affinity level.");
+        if (iModelBridgeAffinityLevel::None == affinityLevel)
             return RESULT_AFFINITY_CHECK_NONE;
-            }
         }
 
     auto retVal = iModelBridgeSacAdapter::Execute(*iModelBridgeP, saparams);
