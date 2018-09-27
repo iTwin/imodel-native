@@ -92,7 +92,20 @@ BeFileName      DmsSession::GetDefaultWorkspacePath(bool isv8i)
     if (isv8i)
         applicationResourcePath.AppendToPath(L"Dgnv8\\v8iConfig");
     else
-        applicationResourcePath.AppendToPath(L"Dgnv8\\CEconfig");
+        applicationResourcePath.AppendToPath(L"Dgnv8\\");
+    return applicationResourcePath;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName      DmsSession::GetDefaultConfigPath(bool isv8i) const
+    {
+    BeFileName applicationResourcePath = Desktop::FileSystem::GetExecutableDir();
+    if (isv8i)
+        applicationResourcePath.AppendToPath(L"Dgnv8\\v8iConfig\\Config\\mslocal.cfg");
+    else
+        applicationResourcePath.AppendToPath(L"Dgnv8\\Config\\mslocal.cfg");
     return applicationResourcePath;
     }
 

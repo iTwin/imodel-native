@@ -109,7 +109,8 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
             return DgnDocumentManager::_CreateMoniker(portableName, fullRefFileName.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
 
         }
-
+    else
+        searchPath = searchPathIn;
     
     return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
     }

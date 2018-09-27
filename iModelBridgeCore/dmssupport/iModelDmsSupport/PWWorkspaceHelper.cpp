@@ -51,12 +51,12 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int
     StatusInt status = SUCCESS;
     wchar_t workspaceFilePath[1024] = {0};
     if (!workspace_GenerateMSConfigurationFile3(0,
-                                                folderId,
-                                                documentId,
+                                                (long)folderId,
+                                                (long)documentId,
                                                 destination.c_str(),//workspaceDir,
                                                 NULL, // additionalCfg
                                                 m_session.GetApplicationResourcePath(isv8i).c_str(), // path to MSTN
-                                                NULL, // defaultCfgFile
+                                                NULL,//m_session.GetDefaultConfigPath(isv8i).c_str(), // defaultCfgFile
                                                 NULL, //commandLineArgs,
                                                 NULL, // fnCallback
                                                 NULL, // callbackData
