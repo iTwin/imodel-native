@@ -1267,16 +1267,24 @@ void DisplayStyle::_OnLoadedJsonProperties()
     {
     m_viewFlags.FromJson(GetStyle(json_viewflags()));
 
-    JsonValueCR overrides = GetStyle(json_subCategoryOvr());
+    JsonValueR overrides = GetStylesR()[json_subCategoryOvr()];
     for (Json::ArrayIndex i = 0; i<overrides.size(); ++i)
         {
-        JsonValueCR val = overrides[i];
-        DgnSubCategoryId subCategoryId(val[json_subCategory()].asUInt64());
+        JsonValueR val = overrides[i];
+
+        JsonValueR subCatIdJson = val[json_subCategory()];
+        DgnSubCategoryId subCategoryId(subCatIdJson.asUInt64());
         if (!subCategoryId.IsValid())
             {
             BeDataAssert(false && "SubCategoryOverride refers to missing SubCategory");
             continue;
             }
+
+        // Retroactively fix IDs which were previously stored as 64-bit integers rather than as ID strings -
+        // otherwise the front-end cannot decipher them.
+        if (!subCatIdJson.isString())
+            subCatIdJson = subCategoryId.ToHexStr();
+
         OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
         }
     }
@@ -1317,7 +1325,7 @@ void DisplayStyle::_OnSaveJsonProperties()
         int i=0;
         for (auto const& it : m_subCategoryOverrides)
             {
-            ovrJson[i][json_subCategory()] = it.first.GetValue();
+            ovrJson[i][json_subCategory()] = it.first.ToHexStr();
             it.second.ToJson(ovrJson[i++]);
             }
         SetStyle(json_subCategoryOvr(), ovrJson);
