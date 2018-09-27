@@ -70,6 +70,10 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedFileInfo_PROPERTY_UpdateDate                    "UpdateDate"
 #define CLASS_CachedFileInfo_PROPERTY_ObjectInfo                    "ObjectInfo"
 
+#define CLASS_StaleFileInfo                                         "StaleFileInfo"
+#define CLASS_StaleFileInfo_PROPERTY_FileInfo                       "FileInfo"
+#define CLASS_StaleFileInfo_PROPERTY_StaleDate                      "StaleDate"
+
 #define CLASS_ChangeInfo                                            "ChangeInfo"
 #define CLASS_ChangeInfo_PROPERTY_ChangeStatus                      "ChangeStatus"
 #define CLASS_ChangeInfo_PROPERTY_SyncStatus                        "SyncStatus"
@@ -93,6 +97,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ObjectInfoToCachedFileInfo                            "ObjectInfoToCachedFileInfo"
 #define CLASS_CachedFileInfoToFileInfo                              "CachedFileInfoToFileInfo"
 #define CLASS_CachedFileInfoToFileInfoOwnership                     "CachedFileInfoToFileInfoOwnership"
+#define CLASS_StaleFileInfoToFileInfo                               "StaleFileInfoToFileInfo"
 
 #define CLASS_ExtendedData                                          "ExtendedData"
 #define CLASS_NodeToExtendedData                                    "NodeToExtendedData"
@@ -104,6 +109,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define ECSql_CachedRelationshipInfo                                "[WSC].[" CLASS_CachedRelationshipInfo "]"
 #define ECSql_CachedObjectInfo                                      "[WSC].[" CLASS_CachedObjectInfo "]"
 #define ECSql_CachedFileInfo                                        "[WSC].[" CLASS_CachedFileInfo "]"
+#define ECSql_StaleFileInfo                                         "[WSC].[" CLASS_StaleFileInfo "]"
+#define ECSql_StaleFileInfoToFileInfo                               "[WSC].[" CLASS_StaleFileInfoToFileInfo "]"
 #define ECSql_ChangeInfo                                            "[WSC].[" CLASS_ChangeInfo "]"
 #define ECSql_InstanceBackup                                        "[WSC].[" CLASS_InstanceBackup "]"
 #define ECSql_RootToNode                                            "[WSC].[" CLASS_RootToNode "]"

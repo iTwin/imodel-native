@@ -107,6 +107,7 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV21ToV23.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.cpp" />
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
@@ -262,6 +263,7 @@
     <ClInclude Include="Cache\Compatibility\Schemas.h" />
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV21ToV23.h" />
     <ClInclude Include="Client\RepositoryInfoProvider.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
