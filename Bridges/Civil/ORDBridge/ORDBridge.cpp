@@ -18,9 +18,27 @@ BEGIN_ORDBRIDGE_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus ORDBridge::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
-    WString arg(argv[iArg]);
-    if (arg.StartsWith(L"--DGN"))
+    if (argv[iArg] == wcsstr(argv[iArg], L"--root-model="))
+        {
+        BentleyApi::Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelChoice rmc;
+
+        Utf8String value = GetArgValue(argv[iArg]);
+        if (value.EqualsI(".default"))
+            rmc.SetUseDefaultModel();
+        else if (value.EqualsI(".active"))
+            rmc.SetUseActiveViewGroup();
+        else
+            rmc = BentleyApi::Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelChoice(value);
+
+        m_params.SetRootModelChoice(rmc);
         return iModelBridge::CmdLineArgStatus::Success;
+        }
+    else
+        {
+        WString arg(argv[iArg]);
+        if (arg.StartsWith(L"--DGN"))
+            return iModelBridge::CmdLineArgStatus::Success;
+        }
 
     return iModelBridge::CmdLineArgStatus::NotRecognized;
     }
