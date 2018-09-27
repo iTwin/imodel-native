@@ -2106,7 +2106,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatT
 
 #ifndef LINUX_SCALABLEMESH_BUILD
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress/* = true*/)
     : m_dataSourceAccount(dataSourceAccount),
       m_dataSourceSessionName(session),
       m_dataSourceURL(url.c_str()),

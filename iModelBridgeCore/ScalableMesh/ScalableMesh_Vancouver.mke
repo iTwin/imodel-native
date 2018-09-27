@@ -557,6 +557,9 @@ LINKER_LIBRARIES            = \
 %elif defined (BUILD_USING_VS2015)
     $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+%elif defined (BUILD_USING_VS2017)
+    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
 %endif
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
