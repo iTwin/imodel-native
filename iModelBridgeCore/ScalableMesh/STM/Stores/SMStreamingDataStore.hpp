@@ -2814,8 +2814,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
                 auto& uvDecodeMatrixJson = uvQuantizedAttr["decodeMatrix"];
                 auto& uvDecodeMin = uvQuantizedAttr["decodedMin"];
                 auto& uvDecodeMax = uvQuantizedAttr["decodedMax"];
-                DPoint2d decMin = { uvDecodeMin[0].asFloat(), uvDecodeMin[1].asFloat() };
-                DPoint2d decMax = { uvDecodeMax[0].asFloat(), uvDecodeMax[1].asFloat() };
+                DPoint2d decMin = { std::max(0.0f, uvDecodeMin[0].asFloat()), std::max(0.0f, uvDecodeMin[1].asFloat()) };
+                DPoint2d decMax = { std::min(1.0f, uvDecodeMax[0].asFloat()), std::min(1.0f, uvDecodeMax[1].asFloat()) };
 
                 const FPoint3d scale = { uvDecodeMatrixJson[0].asFloat(), uvDecodeMatrixJson[4].asFloat() };
                 const FPoint3d translate = { uvDecodeMatrixJson[6].asFloat(), uvDecodeMatrixJson[7].asFloat() };
