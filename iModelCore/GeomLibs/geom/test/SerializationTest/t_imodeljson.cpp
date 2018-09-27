@@ -63,6 +63,7 @@ TEST(IModelJson,ReadFiles)
             L"arc",
             L"lineSegment",
             L"lineString",
+            L"pointString",
             L"path",
             L"loop",
             L"parityRegion",
