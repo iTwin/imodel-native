@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/DateTimeConverter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,64 +90,22 @@ struct DateTimeConverter : NonCopyableClass
     };
 
 //=======================================================================================    
-//! Regex that parses an ISO 8601 Date Time string
-//! @remarks This encapsulates the non-portable regex code
-//! @bsiclass                                                   Krischan.Eberle   05/2013
-//=======================================================================================    
-struct Iso8601Regex : NonCopyableClass
-    {
-    public:
-        typedef std::match_results<Utf8CP> Matches;
-
-        static const size_t YEAR_GROUPINDEX = 1;
-        static const size_t MONTH_GROUPINDEX = 2;
-        static const size_t DAY_GROUPINDEX = 3;
-        static const size_t HOUR_GROUPINDEX = 4;
-        static const size_t MINUTE_GROUPINDEX = 5;
-        static const size_t SECOND_GROUPINDEX = 6;
-        static const size_t SECONDFRACTION_GROUPINDEX = 7;
-        static const size_t TIMEZONE_GROUPINDEX = 8;
-
-        static const size_t EXPECTED_MATCH_COUNT = 9;
-
-    private:
-        static Utf8CP const PATTERN;
-
-        std::regex m_regex;
-
-    public:
-        //Characters in the ISO string have to be upper case, so not using case-insensitivity flag with regex
-        Iso8601Regex() : m_regex(PATTERN) {}
-        ~Iso8601Regex() {}
-
-        //! Applies the ISO 8601 Regex against the specified date time string (@p iso8601DateTime).
-        //! @remarks This method supports T and a space as delimiter of the date and time component, e.g.
-        //! both <c>2013-09-15T12:05:39</> and <c>2013-09-15 12:05:39</> can be parsed correctly.
-        //! This is a minor deviation from the ISO standard (specifies the T delimiter), but allows to parse 
-        //! SQL-99 date time literals (specifies the space delimiter)
-        //! @param[out] matches Resulting matches
-        //! @param[in] iso8601DateTime ISO 8601 date time string to parse
-        //! @return true if there are matches. false, if no matches were found
-        bool Match(Matches& matches, Utf8CP iso8601DateTime) const;
-    };
-
-
-//=======================================================================================    
 //! Utility to convert between DateTime and string representations
 //! @bsiclass                                                   Krischan.Eberle   02/2013
 //=======================================================================================    
-struct DateTimeStringConverter : NonCopyableClass
+struct DateTimeStringConverter final
     {
     private:
-        //static class -> not instantiable
-        DateTimeStringConverter();
-        ~DateTimeStringConverter();
+        DateTimeStringConverter() = delete;
+        ~DateTimeStringConverter() = delete;
 
-        static bool TryRetrieveValueFromRegexMatch(int& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex);
-        static bool TryRetrieveValueFromRegexMatch(uint8_t& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex);
-        static bool TryRetrieveValueFromRegexMatch(double& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex);
-        static bool TryRetrieveValueFromRegexMatch(Utf8String& matchValue, Iso8601Regex::Matches const& matches, size_t groupIndex);
-        static bool RegexGroupMatched(Iso8601Regex::Matches const& matches, size_t groupIndex);
+        static bool TryRetrieveValueFromRegexMatch(int16_t& matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex);
+        static bool TryRetrieveValueFromRegexMatch(uint8_t& matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex);
+        static bool TryRetrieveValueFromRegexMatch(double& matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex);
+        static bool TryRetrieveValueFromRegexMatch(Utf8String& matchValue, std::match_results<Utf8CP> const& matches, size_t groupIndex);
+        static bool RegexGroupMatched(std::match_results<Utf8CP> const& matches, size_t groupIndex);
+
+        static BentleyStatus FromIso8601TimeOfDay(DateTime& dateTime, Utf8CP iso8601TimeOfDay);
 
     public:
         static Utf8String ToIso8601(DateTimeCR dateTime);

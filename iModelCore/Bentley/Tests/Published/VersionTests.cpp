@@ -2,13 +2,16 @@
 |
 |     $Source: Tests/Published/VersionTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "VersionTests.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/BeVersion.h>
 
 USING_NAMESPACE_BENTLEY
+
+class VersionTests : public ::testing::Test {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                      05/15

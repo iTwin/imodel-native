@@ -23,13 +23,30 @@ DateTime::CompareResult DateTime::Compare(DateTime const& lhs, DateTime const& r
         //if only one of them is invalid, return error; if both them are invalid, return equals
         return lhs.IsValid() == rhs.IsValid() ? CompareResult::Equals : CompareResult::Error;
 
-    uint64_t lhsJd = INT64_C(0);
-    uint64_t rhsJd = INT64_C(0);
-    if (lhs.ToJulianDay(lhsJd) != SUCCESS ||
-        rhs.ToJulianDay(rhsJd) != SUCCESS)
-        return CompareResult::Error;
+    int64_t diff = 0;
+    if (lhs.IsTimeOfDay() || rhs.IsTimeOfDay())
+        {
+        //TimeOfDay can only be compared to TimeOfDay
+        if (lhs.GetInfo().GetComponent() != rhs.GetInfo().GetComponent())
+            return CompareResult::Error;
 
-    const int64_t diff = lhsJd - rhsJd;
+        uint32_t rhsMsec = 0, lhsMsec = 0;
+        if (SUCCESS != lhs.ToMillisecondsSinceMidnight(lhsMsec) || SUCCESS != rhs.ToMillisecondsSinceMidnight(rhsMsec))
+            return CompareResult::Error;
+
+        diff = (int64_t) lhsMsec - rhsMsec;
+        }
+    else
+        {
+        uint64_t lhsJd = INT64_C(0);
+        uint64_t rhsJd = INT64_C(0);
+        if (lhs.ToJulianDay(lhsJd) != SUCCESS ||
+            rhs.ToJulianDay(rhsJd) != SUCCESS)
+            return CompareResult::Error;
+
+        diff = lhsJd - rhsJd;
+        }
+
     if (diff < INT64_C(0))
         return CompareResult::EarlierThan;
     else if (diff == INT64_C(0))
@@ -82,7 +99,7 @@ DateTime DateTime::GetCurrentTimeUtc()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DateTime::ToUtc(DateTime& utcDateTime) const
     {
-    if (!IsValid() || m_info.GetKind() != Kind::Local)
+    if (!IsValid() || IsTimeOfDay() || m_info.GetKind() != Kind::Local)
         return ERROR;
 
     uint64_t jd = INT64_C(0);
@@ -99,7 +116,7 @@ BentleyStatus DateTime::ToUtc(DateTime& utcDateTime) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DateTime::ToLocalTime(DateTime& localDateTime) const
     {
-    if (!IsValid() || m_info.GetKind() != Kind::Utc)
+    if (!IsValid() || IsTimeOfDay() || m_info.GetKind() != Kind::Utc)
         return ERROR;
 
     //as we are in UTC, no need to apply any time zone offsets
@@ -114,10 +131,7 @@ BentleyStatus DateTime::ToLocalTime(DateTime& localDateTime) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DateTime::ToJulianDay(uint64_t& julianDay) const
-    {
-    return DateTimeConverter::ConvertToJulianDay(julianDay, *this, true);
-    }
+BentleyStatus DateTime::ToJulianDay(uint64_t& julianDay) const { return DateTimeConverter::ConvertToJulianDay(julianDay, *this, true); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
@@ -136,10 +150,7 @@ BentleyStatus DateTime::ToJulianDay(double& julianDay) const
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus DateTime::FromJulianDay(DateTimeR dateTime, uint64_t julianDayMsec, DateTime::Info const& targetInfo)
-    {
-    return DateTimeConverter::ConvertFromJulianDay(dateTime, julianDayMsec, targetInfo, true);
-    }
+BentleyStatus DateTime::FromJulianDay(DateTimeR dateTime, uint64_t julianDayMsec, DateTime::Info const& targetInfo) { return DateTimeConverter::ConvertFromJulianDay(dateTime, julianDayMsec, targetInfo, true); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
@@ -165,6 +176,18 @@ BentleyStatus DateTime::ToUnixMilliseconds(int64_t& unixMilliseconds) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  09/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DateTime::ToMillisecondsSinceMidnight(uint32_t& msecs) const
+    {
+    if (!IsValid() || m_info.GetComponent() == Component::Date)
+        return ERROR;
+
+    msecs = m_millisecond + m_second * 1000 + m_minute * 60000 + m_hour * 3600000;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -178,82 +201,61 @@ BentleyStatus DateTime::FromUnixMilliseconds(DateTime& dateTime, uint64_t unixMi
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-int64_t DateTime::JulianDayToUnixMilliseconds(uint64_t julianDayMsec)
-    {
-    return DateTimeConverter::JulianDayToUnixMilliseconds(julianDayMsec);
-    }
+int64_t DateTime::JulianDayToUnixMilliseconds(uint64_t julianDayMsec) { return DateTimeConverter::JulianDayToUnixMilliseconds(julianDayMsec); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint64_t DateTime::UnixMillisecondsToJulianDay(uint64_t unixMilliseconds)
-    {
-    return DateTimeConverter::UnixMillisecondsToJulianDay(unixMilliseconds);
-    }
+uint64_t DateTime::UnixMillisecondsToJulianDay(uint64_t unixMilliseconds) { return DateTimeConverter::UnixMillisecondsToJulianDay(unixMilliseconds); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-int64_t DateTime::JulianDayToCommonEraMilliseconds(uint64_t julianDay)
-    {
-    return DateTimeConverter::JulianDayToCommonEraMilliseconds(julianDay);
-    }
+int64_t DateTime::JulianDayToCommonEraMilliseconds(uint64_t julianDay) { return DateTimeConverter::JulianDayToCommonEraMilliseconds(julianDay); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  11/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint64_t DateTime::CommonEraMillisecondsToJulianDay(int64_t commonEraMsec)
-    {
-    return DateTimeConverter::CommonEraMillisecondsToJulianDay(commonEraMsec);
-    }
+uint64_t DateTime::CommonEraMillisecondsToJulianDay(int64_t commonEraMsec) { return DateTimeConverter::CommonEraMillisecondsToJulianDay(commonEraMsec); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-double DateTime::MsecToRationalDay(uint64_t msec)
-    {
-    return DateTimeConverter::MillisecsToRationalDay(msec);
-    }
+double DateTime::MsecToRationalDay(uint64_t msec) { return DateTimeConverter::MillisecsToRationalDay(msec); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-uint64_t DateTime::RationalDayToMsec(double rationalDay)
-    {
-    return DateTimeConverter::RationalDayToMillisecs(rationalDay);
-    }
-
+uint64_t DateTime::RationalDayToMsec(double rationalDay) { return DateTimeConverter::RationalDayToMillisecs(rationalDay); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 DateTime::DayOfWeek DateTime::GetDayOfWeek() const
     {
-    if (!IsValid())
+    if (!IsValid() || IsTimeOfDay())
         {
-        BeAssert(false && "Cannot call DateTime::GetDayOfWeek on invalid DateTime.");
+        BeAssert(false && "Cannot call DateTime::GetDayOfWeek on invalid DateTime or TimeOfDay.");
         return DayOfWeek::Sunday;
         }
 
     //algorithm taken from: http://jonathan.rawle.org/hyperpedia/day_calculation.php
     const uint8_t monthTable[] = {0, 3, 3, 6, 1, 4, 6, 2, 5, 0, 3, 5};
 
-    const int16_t year = GetYear();
-    int dayOfWeekNumber = year + (year / 4) - (year / 100) + (year / 400) + GetDay();
-    const int8_t month = GetMonth();
-    dayOfWeekNumber += monthTable[month - 1] - 1;
+    int dayOfWeekNumber = m_year + (m_year / 4) - (m_year / 100) + (m_year / 400) + m_day;
+    dayOfWeekNumber += monthTable[m_month - 1] - 1;
     //leap year correction (only for positive years. Leap years BC are not well defined, if at all)
-    if (year > 0 && IsLeapYear(year))
+    if (m_year > 0 && IsLeapYear(m_year))
         {
         int8_t leapYearCorrection = 0;
-        if (month == 1)
+        if (m_month == 1)
             leapYearCorrection = 6;
-        else if (month == 2)
+        else if (m_month == 2)
             leapYearCorrection = -1;
 
         dayOfWeekNumber += leapYearCorrection;
@@ -268,20 +270,17 @@ DateTime::DayOfWeek DateTime::GetDayOfWeek() const
 //+---------------+---------------+---------------+---------------+---------------+------
 uint16_t DateTime::GetDayOfYear() const
     {
-    if (!IsValid())
+    if (!IsValid() || IsTimeOfDay())
         {
-        BeAssert(false && "Cannot call DateTime::GetDayOfYear on invalid DateTime.");
+        BeAssert(false && "Cannot call DateTime::GetDayOfYear on invalid DateTime or TimeOfDay.");
         return 0;
         }
 
-    const uint8_t month = GetMonth();
-    const int16_t year = GetYear();
-
-    uint16_t dayOfYear = GetDay();
+    uint16_t dayOfYear = m_day;
     //iterate from January till month before current month
-    for (uint8_t i = 1; i < month; i++)
+    for (uint8_t i = 1; i < m_month; i++)
         {
-        dayOfYear += GetMaxDay(year, i);
+        dayOfYear += GetMaxDay(m_year, i);
         }
 
     return dayOfYear;

@@ -33,15 +33,16 @@ TEST(DateTimeTests, DateTimeConstructorTests)
 
     dateTime = DateTime(expectedKind, expectedYear, expectedMonth, expectedDay, expectedHour, expectedMinute, expectedSecond, expectedMillisecond);
     ASSERT_TRUE(dateTime.IsValid());
-    ASSERT_EQ((int) expectedKind, (int) dateTime.GetInfo().GetKind());
-    ASSERT_EQ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo().GetComponent());
-    ASSERT_EQ(expectedYear, dateTime.GetYear());
-    ASSERT_EQ(expectedMonth, dateTime.GetMonth());
-    ASSERT_EQ(expectedDay, dateTime.GetDay());
-    ASSERT_EQ(expectedHour, dateTime.GetHour());
-    ASSERT_EQ(expectedMinute, dateTime.GetMinute());
-    ASSERT_EQ(expectedSecond, dateTime.GetSecond());
-    ASSERT_EQ(expectedMillisecond, dateTime.GetMillisecond());
+    EXPECT_EQ((int) expectedKind, (int) dateTime.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo().GetComponent());
+    EXPECT_FALSE(dateTime.IsTimeOfDay());
+    EXPECT_EQ(expectedYear, dateTime.GetYear());
+    EXPECT_EQ(expectedMonth, dateTime.GetMonth());
+    EXPECT_EQ(expectedDay, dateTime.GetDay());
+    EXPECT_EQ(expectedHour, dateTime.GetHour());
+    EXPECT_EQ(expectedMinute, dateTime.GetMinute());
+    EXPECT_EQ(expectedSecond, dateTime.GetSecond());
+    EXPECT_EQ(expectedMillisecond, dateTime.GetMillisecond());
 
     //with negative year
     expectedKind = DateTime::Kind::Local;
@@ -55,28 +56,120 @@ TEST(DateTimeTests, DateTimeConstructorTests)
 
     dateTime = DateTime(expectedKind, expectedYear, expectedMonth, expectedDay, expectedHour, expectedMinute, expectedSecond, expectedMillisecond);
     ASSERT_TRUE(dateTime.IsValid());
-    ASSERT_EQ((int) expectedKind, (int) dateTime.GetInfo().GetKind());
-    ASSERT_EQ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo().GetComponent());
-    ASSERT_EQ(expectedYear, dateTime.GetYear());
-    ASSERT_EQ(expectedMonth, dateTime.GetMonth());
-    ASSERT_EQ(expectedDay, dateTime.GetDay());
-    ASSERT_EQ(expectedHour, dateTime.GetHour());
-    ASSERT_EQ(expectedMinute, dateTime.GetMinute());
-    ASSERT_EQ(expectedSecond, dateTime.GetSecond());
-    ASSERT_EQ(expectedMillisecond, dateTime.GetMillisecond());
+    EXPECT_EQ((int) expectedKind, (int) dateTime.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo().GetComponent());
+    EXPECT_FALSE(dateTime.IsTimeOfDay());
+    EXPECT_EQ(expectedYear, dateTime.GetYear());
+    EXPECT_EQ(expectedMonth, dateTime.GetMonth());
+    EXPECT_EQ(expectedDay, dateTime.GetDay());
+    EXPECT_EQ(expectedHour, dateTime.GetHour());
+    EXPECT_EQ(expectedMinute, dateTime.GetMinute());
+    EXPECT_EQ(expectedSecond, dateTime.GetSecond());
+    EXPECT_EQ(expectedMillisecond, dateTime.GetMillisecond());
 
     //with date only
     DateTime dateOnly(expectedYear, expectedMonth, expectedDay);
     ASSERT_TRUE(dateOnly.IsValid());
-    ASSERT_EQ((int) DateTime::Kind::Unspecified, (int) dateOnly.GetInfo().GetKind());
-    ASSERT_EQ((int) DateTime::Component::Date, (int) dateOnly.GetInfo().GetComponent());
-    ASSERT_EQ(expectedYear, dateOnly.GetYear());
-    ASSERT_EQ(expectedMonth, dateOnly.GetMonth());
-    ASSERT_EQ(expectedDay, dateOnly.GetDay());
-    ASSERT_EQ(0, dateOnly.GetHour());
-    ASSERT_EQ(0, dateOnly.GetMinute());
-    ASSERT_EQ(0, dateOnly.GetSecond());
-    ASSERT_EQ(0, dateOnly.GetMillisecond());
+    EXPECT_EQ((int) DateTime::Kind::Unspecified, (int) dateOnly.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::Date, (int) dateOnly.GetInfo().GetComponent());
+    EXPECT_FALSE(dateOnly.IsTimeOfDay());
+    EXPECT_EQ(expectedYear, dateOnly.GetYear());
+    EXPECT_EQ(expectedMonth, dateOnly.GetMonth());
+    EXPECT_EQ(expectedDay, dateOnly.GetDay());
+    EXPECT_EQ(0, dateOnly.GetHour());
+    EXPECT_EQ(0, dateOnly.GetMinute());
+    EXPECT_EQ(0, dateOnly.GetSecond());
+    EXPECT_EQ(0, dateOnly.GetMillisecond());
+
+    //with time of day
+    DateTime timeOfDay = DateTime::CreateTimeOfDay(14,15);
+    ASSERT_TRUE(timeOfDay.IsValid());
+    EXPECT_EQ((int) DateTime::Kind::Unspecified, (int) timeOfDay.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::TimeOfDay, (int) timeOfDay.GetInfo().GetComponent());
+    EXPECT_EQ(2000, timeOfDay.GetYear());
+    EXPECT_EQ(1, timeOfDay.GetMonth());
+    EXPECT_EQ(1, timeOfDay.GetDay());
+    EXPECT_EQ(14, timeOfDay.GetHour());
+    EXPECT_EQ(15, timeOfDay.GetMinute());
+    EXPECT_EQ(0, timeOfDay.GetSecond());
+    EXPECT_EQ(0, timeOfDay.GetMillisecond());
+
+    timeOfDay = DateTime::CreateTimeOfDay(14, 15, 16);
+    ASSERT_TRUE(timeOfDay.IsValid());
+    EXPECT_EQ((int) DateTime::Kind::Unspecified, (int) timeOfDay.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::TimeOfDay, (int) timeOfDay.GetInfo().GetComponent());
+    EXPECT_TRUE(timeOfDay.IsTimeOfDay());
+    EXPECT_EQ(2000, timeOfDay.GetYear());
+    EXPECT_EQ(1, timeOfDay.GetMonth());
+    EXPECT_EQ(1, timeOfDay.GetDay());
+    EXPECT_EQ(14, timeOfDay.GetHour());
+    EXPECT_EQ(15, timeOfDay.GetMinute());
+    EXPECT_EQ(16, timeOfDay.GetSecond());
+    EXPECT_EQ(0, timeOfDay.GetMillisecond());
+
+    timeOfDay = DateTime::CreateTimeOfDay(14, 15, 16, 444);
+    ASSERT_TRUE(timeOfDay.IsValid());
+    EXPECT_EQ((int) DateTime::Kind::Unspecified, (int) timeOfDay.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::TimeOfDay, (int) timeOfDay.GetInfo().GetComponent());
+    EXPECT_EQ(2000, timeOfDay.GetYear());
+    EXPECT_EQ(1, timeOfDay.GetMonth());
+    EXPECT_EQ(1, timeOfDay.GetDay());
+    EXPECT_EQ(14, timeOfDay.GetHour());
+    EXPECT_EQ(15, timeOfDay.GetMinute());
+    EXPECT_EQ(16, timeOfDay.GetSecond());
+    EXPECT_EQ(444, timeOfDay.GetMillisecond());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Krischan.Eberle                    09/18
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, InvalidDateTimes)
+    {
+    BeTest::SetFailOnAssert(false);
+    {
+    const int16_t year = 2018;
+    for (uint8_t month : std::vector<uint8_t>{0, 1, 2, 5, 6, 12, 13, 100})
+        {
+        for (uint8_t day : std::vector<uint8_t> {0, 1, 15, 28, 29, 30, 31, 32, 100})
+            {
+            ASSERT_EQ(month > 0 && month <= 12 && day > 0 && day <= DateTime::GetMaxDay(year, month), DateTime(year, month, day).IsValid()) << year << "-" << (int) month << "-" << (int) day;
+
+            for (uint8_t hour : std::vector<uint8_t> {0, 1, 15, 23, 24, 25, 100})
+                {
+                for (uint8_t min : std::vector<uint8_t> {0, 1, 30, 59, 60, 100})
+                    {
+                    for (uint8_t sec : std::vector<uint8_t> {0, 1, 30, 59, 60, 100})
+                        {
+                        for (uint16_t msec : std::vector<uint16_t> {0, 1, 30, 100, 999, 1000, 2000, 10000})
+                            {
+                            const bool expectedIsValid = month > 0 && month <= 12 && day > 0 && day <= DateTime::GetMaxDay(year, month) &&
+                                hour <= 24 && min <= 59 && sec <= 59 && msec <= 999 && (hour < 24 || (min == 0 && sec == 0 && msec == 0));
+                            ASSERT_EQ(expectedIsValid, DateTime(DateTime::Kind::Utc, year, month, day, hour, min, sec, msec).IsValid()) << year << "-" << (int) month << "-" << (int) day << "T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec;
+                            ASSERT_EQ(expectedIsValid, DateTime(DateTime::Kind::Unspecified, year, month, day, hour, min, sec, msec).IsValid()) << year << "-" << (int) month << "-" << (int) day << "T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec;
+                            ASSERT_EQ(expectedIsValid, DateTime(DateTime::Kind::Local, year, month, day, hour, min, sec, msec).IsValid()) << year << "-" << (int) month << "-" << (int) day << "T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    // time of day tests
+    for (uint8_t hour : std::vector<uint8_t> {0, 1, 15, 23, 24, 25, 100})
+        {
+        for (uint8_t min : std::vector<uint8_t> {0, 1, 30, 59, 60, 100})
+            {
+            for (uint8_t sec : std::vector<uint8_t> {0, 1, 30, 59, 60, 100})
+                {
+                for (uint16_t msec : std::vector<uint16_t> {0, 1, 30, 100, 999, 1000, 2000, 10000})
+                    {
+                    ASSERT_EQ(hour <= 24 && min <= 59 && sec <= 59 && msec <= 999 && (hour < 24 || (min == 0 && sec == 0 && msec == 0)), DateTime::CreateTimeOfDay(hour, min, sec, msec).IsValid()) << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec;
+                    }
+                }
+            }
+        }
+    }
+    BeTest::SetFailOnAssert(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,17 +177,19 @@ TEST(DateTimeTests, DateTimeConstructorTests)
 //---------------------------------------------------------------------------------------
 TEST(DateTimeTests, DateTimeSpecialMemberTests)
     {
-    DateTime d1(DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0);
-    ASSERT_TRUE(d1.IsValid());
-    //test copy constructor
-    DateTime d2(d1);
-    ASSERT_EQ(d1, d2);
+    for (DateTime const& dt : {DateTime(DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0), DateTime(2018,9,14), DateTime::CreateTimeOfDay(14,15)})
+        {
+        ASSERT_TRUE(dt.IsValid());
+        //test copy constructor
+        DateTime d2(dt);
+        EXPECT_EQ(dt, d2);
 
-    //test copy assignment operator
-    DateTime d3;
-    ASSERT_TRUE(!d3.IsValid());
-    d3 = d1;
-    ASSERT_EQ(d1, d3);
+        //test copy assignment operator
+        DateTime d3;
+        ASSERT_TRUE(!d3.IsValid());
+        d3 = dt;
+        EXPECT_EQ(dt, d3);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -105,6 +200,7 @@ TEST(DateTimeTests, DateTimeIsValid)
     //tests with invalid date times (created with default ctor)
     DateTime dt;
     ASSERT_FALSE(dt.IsValid());
+    ASSERT_FALSE(dt.IsTimeOfDay());
 
     BeTest::SetFailOnAssert(false);
     {
@@ -113,17 +209,26 @@ TEST(DateTimeTests, DateTimeIsValid)
     }
     BeTest::SetFailOnAssert(true);
 
+    {
     DateTime newDt;
     ASSERT_EQ(ERROR, dt.ToLocalTime(newDt));
     ASSERT_EQ(ERROR, dt.ToUtc(newDt));
+    }
 
+    {
     double jd = 0.0;
     ASSERT_EQ(ERROR, dt.ToJulianDay(jd));
     uint64_t jdHns = 0ULL;
     ASSERT_EQ(ERROR, dt.ToJulianDay(jdHns));
+    }
 
     int64_t millisecs = -1LL;
     ASSERT_EQ(ERROR, dt.ToUnixMilliseconds(millisecs));
+
+    uint32_t msSinceMidnight = 0;
+    ASSERT_EQ(ERROR, dt.ToMillisecondsSinceMidnight(msSinceMidnight));
+
+    ASSERT_FALSE(dt.GetTimeOfDay().IsValid());
 
     Utf8String actualStr = dt.ToString();
     ASSERT_TRUE(actualStr.empty());
@@ -137,6 +242,7 @@ TEST(DateTimeTests, DateTimeIsValid)
     now = DateTime::GetCurrentTimeUtc();
     ASSERT_TRUE(now.IsValid());
 
+    double jd = 0.0;
     ASSERT_EQ(SUCCESS, now.ToJulianDay(jd));
     DateTime resultDt;
     ASSERT_FALSE(resultDt.IsValid());
@@ -161,6 +267,39 @@ TEST(DateTimeTests, DateTimeIsValid)
     }
 
 //---------------------------------------------------------------------------------------
+// @betest                                      Krischan.Eberle                    09/18
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, GetTimeOfDay)
+    {
+    EXPECT_FALSE(DateTime().GetTimeOfDay().IsValid());
+    EXPECT_FALSE(DateTime(2000, 1, 1).GetTimeOfDay().IsValid());
+
+    auto assertTimeOfDay = [] (DateTime const& dt)
+        {
+        DateTime t = dt.GetTimeOfDay();
+        ASSERT_EQ(dt.IsValid(), t.IsValid()) << dt.ToString();
+        EXPECT_TRUE(t.IsTimeOfDay()) << dt.ToString();
+        EXPECT_EQ(dt.GetHour(), t.GetHour()) << dt.ToString();
+        EXPECT_EQ(dt.GetMinute(), t.GetMinute()) << dt.ToString();
+        EXPECT_EQ(dt.GetSecond(), t.GetSecond()) << dt.ToString();
+        EXPECT_EQ(dt.GetMillisecond(), t.GetMillisecond()) << dt.ToString();
+        };
+
+    assertTimeOfDay(DateTime(DateTime::Kind::Utc, 2018, 9, 25, 0, 0));
+    assertTimeOfDay(DateTime(DateTime::Kind::Unspecified, 2018, 9, 25, 0, 0));
+    assertTimeOfDay(DateTime(DateTime::Kind::Local, 2018, 9, 25, 0, 0));
+    assertTimeOfDay(DateTime(DateTime::Kind::Utc, 2018, 9, 25, 8, 2, 59));
+    assertTimeOfDay(DateTime(DateTime::Kind::Unspecified, 2018, 9, 25, 8, 2, 59));
+    assertTimeOfDay(DateTime(DateTime::Kind::Local, 2018, 9, 25, 8, 2, 59));
+    assertTimeOfDay(DateTime(DateTime::Kind::Utc, 2018, 9, 25, 24, 0));
+    assertTimeOfDay(DateTime(DateTime::Kind::Unspecified, 2018, 9, 25, 24, 0));
+    assertTimeOfDay(DateTime(DateTime::Kind::Local, 2018, 9, 25, 24, 0));
+    assertTimeOfDay(DateTime::CreateTimeOfDay(0, 0));
+    assertTimeOfDay(DateTime::CreateTimeOfDay(8, 2, 59));
+    assertTimeOfDay(DateTime::CreateTimeOfDay(24, 0));
+    }
+
+//---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
 TEST(DateTimeTests, DateTimeEqualityTests)
@@ -181,7 +320,8 @@ TEST(DateTimeTests, DateTimeEqualityTests)
     DateTime dateOnly2 = dateOnly;
     DateTime utcDateOnly(DateTime::Kind::Utc, 2012, 10, 18, 0, 0);
     DateTime unspecifiedDateOnly(DateTime::Kind::Unspecified, 2012, 10, 18, 0, 0);
-
+    DateTime timeOfDate1 = DateTime::CreateTimeOfDay(14, 15, 39, 143);
+    DateTime timeOfDate2 = DateTime::CreateTimeOfDay(14, 15);
     //test comparison operator
     EXPECT_TRUE(utc == utc2);
     EXPECT_TRUE(utc == utc3);
@@ -194,6 +334,16 @@ TEST(DateTimeTests, DateTimeEqualityTests)
 
     EXPECT_FALSE(dateOnly == utcDateOnly);
     EXPECT_FALSE(dateOnly == unspecifiedDateOnly);
+
+    EXPECT_FALSE(utc == timeOfDate1);
+    EXPECT_NE(utc, timeOfDate1);
+    EXPECT_FALSE(utc == timeOfDate2);
+    EXPECT_NE(utc, timeOfDate2);
+    EXPECT_FALSE(timeOfDate1 == timeOfDate2);
+    EXPECT_NE(timeOfDate1, dateOnly);
+    EXPECT_NE(timeOfDate1, unspecifiedDateOnly);
+    EXPECT_FALSE(timeOfDate1 == local);
+    EXPECT_NE(timeOfDate1, local);
 
     DateTime empty1;
     DateTime empty2;
@@ -241,6 +391,12 @@ TEST(DateTimeTests, DateTimeEqualityTests)
 
     EXPECT_TRUE(dateOnly.Equals(unspecifiedDateOnly, true));
     EXPECT_FALSE(dateOnly.Equals(unspecifiedDateOnly, false));
+
+    EXPECT_FALSE(timeOfDate1.Equals(unspecifiedDateOnly, true));
+    EXPECT_FALSE(timeOfDate1.Equals(unspecifiedDateOnly, false));
+
+    EXPECT_FALSE(timeOfDate2.Equals(DateTime(DateTime::Kind::Utc, 2000,1,1,14,15), false));
+    EXPECT_TRUE(timeOfDate2.Equals(DateTime(DateTime::Kind::Utc, 2000, 1, 1, 14, 15), true));
     }
 
 //---------------------------------------------------------------------------------------
@@ -257,7 +413,8 @@ TEST(DateTimeTests, DateTimeInfoEqualityTests)
     utc = local;
     DateTime utcDateOnly(DateTime::Kind::Utc, 2012, 10, 18, 0, 0);
     DateTime dateOnly(2012, 10, 18);
-
+    DateTime timeOfDay = DateTime::CreateTimeOfDay(14, 15);
+    DateTime timeOfDay2 = timeOfDay;
     EXPECT_TRUE(utc2.GetInfo() == utc3.GetInfo());
     EXPECT_FALSE(utc2.GetInfo() != utc3.GetInfo());
 
@@ -273,6 +430,13 @@ TEST(DateTimeTests, DateTimeInfoEqualityTests)
 
     EXPECT_FALSE(unspec.GetInfo() == local.GetInfo());
     EXPECT_TRUE(unspec.GetInfo() != local.GetInfo());
+
+    EXPECT_TRUE(timeOfDay.GetInfo() == timeOfDay2.GetInfo());
+    EXPECT_EQ(timeOfDay.GetInfo(), timeOfDay2.GetInfo());
+
+    EXPECT_FALSE(timeOfDay.GetInfo() == utc2.GetInfo());
+    EXPECT_NE(timeOfDay.GetInfo(), utc2.GetInfo());
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -299,6 +463,18 @@ TEST(DateTimeTests, DateTimeComparisonTests)
             }
 
     ASSERT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(DateTime(2014, 6, 30), DateTime(DateTime::Kind::Utc, 2014, 6, 30, 0, 0)));
+
+    ASSERT_EQ((int) DateTime::CompareResult::Error, (int) DateTime::Compare(DateTime(2014, 6, 30), DateTime::CreateTimeOfDay(14, 15)));
+    ASSERT_EQ((int) DateTime::CompareResult::Error, (int) DateTime::Compare(DateTime::CreateTimeOfDay(14, 15), DateTime(DateTime::Kind::Unspecified, 2000, 1, 1, 14, 15)));
+
+    ASSERT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(DateTime::CreateTimeOfDay(14, 15), DateTime::CreateTimeOfDay(14, 15, 0)));
+    ASSERT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(DateTime::CreateTimeOfDay(14, 15), DateTime::CreateTimeOfDay(14, 15, 0, 0)));
+
+    ASSERT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(DateTime::CreateTimeOfDay(0, 0), DateTime::CreateTimeOfDay(0, 0, 0, 1)));
+    ASSERT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(DateTime::CreateTimeOfDay(0, 0, 1), DateTime::CreateTimeOfDay(0, 0)));
+    ASSERT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(DateTime::CreateTimeOfDay(0, 0), DateTime::CreateTimeOfDay(24, 0)));
+    ASSERT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(DateTime::CreateTimeOfDay(24, 0), DateTime::CreateTimeOfDay(0, 0)));
+    ASSERT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(DateTime::CreateTimeOfDay(22, 14, 12, 99), DateTime::CreateTimeOfDay(22, 14, 12)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -320,6 +496,12 @@ TEST(DateTimeTests, GetDayOfWeek)
         DateTime::DayOfWeek expectedDayOfWeekNr = (DateTime::DayOfWeek) ((int) baselineDayOfWeekNr - (i % 7));
         ASSERT_EQ(expectedDayOfWeekNr, testDate.GetDayOfWeek()) << testDate.ToString().c_str();
         }
+
+    BeTest::SetFailOnAssert(false);
+    {
+    ASSERT_EQ(DateTime::DayOfWeek::Sunday, DateTime::CreateTimeOfDay(14,15,13).GetDayOfWeek());
+    }
+    BeTest::SetFailOnAssert(true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -352,6 +534,129 @@ TEST(DateTimeTests, GetDayOfYear)
     runTest(2001); //no leap year
     runTest(2004); //leap year
     runTest(2014); //no leap year
+
+    BeTest::SetFailOnAssert(false);
+    {
+    ASSERT_EQ(0, DateTime::CreateTimeOfDay(14, 15, 13).GetDayOfYear());
+    }
+    BeTest::SetFailOnAssert(true);
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Krischan.Eberle                    09/18
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, ToMillisecondsSinceMidnight)
+    {
+    for (uint8_t hour : std::vector<uint8_t> {0, 8, 15, 23})
+        {
+        for (uint8_t min : std::vector<uint8_t> {0, 8, 23, 59})
+            {
+            for (uint8_t sec : std::vector<uint8_t> {0, 1, 33, 59})
+                {
+                for (uint16_t msec : std::vector<uint16_t> {0, 1, 33, 143, 999})
+                    {
+                    const int expected = msec + sec * 1000 + min * 60000 + hour * 3600000;
+                    DateTime t = DateTime::CreateTimeOfDay(hour, min, sec, msec);
+                    ASSERT_TRUE(t.IsValid());
+                    uint32_t actual = 0;
+                    ASSERT_EQ(SUCCESS, (int) t.ToMillisecondsSinceMidnight(actual)) << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec;
+                    ASSERT_EQ(expected, actual) << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec;
+
+                    DateTime dt = DateTime(DateTime::Kind::Utc, 2018, 9, 18, hour, min, sec, msec);
+                    ASSERT_TRUE(dt.IsValid());
+                    ASSERT_EQ(SUCCESS, (int) dt.ToMillisecondsSinceMidnight(actual)) << "2018-09-18T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec << "Z";
+                    ASSERT_EQ(expected, actual) << "2018-09-18T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec << "Z";
+
+                    dt = DateTime(DateTime::Kind::Unspecified, 2018, 9, 18, hour, min, sec, msec);
+                    ASSERT_TRUE(dt.IsValid());
+                    ASSERT_EQ(SUCCESS, (int) dt.ToMillisecondsSinceMidnight(actual)) << "2018-09-18T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec;
+                    ASSERT_EQ(expected, actual) << "2018-09-18T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec << "Z";
+
+                    dt = DateTime(DateTime::Kind::Local, 2018, 9, 18, hour, min, sec, msec);
+                    ASSERT_TRUE(dt.IsValid());
+                    ASSERT_EQ(SUCCESS, (int) dt.ToMillisecondsSinceMidnight(actual)) << "2018-09-18T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec << " Local";
+                    ASSERT_EQ(expected, actual) << "2018-09-18T" << (int) hour << ":" << (int) min << ":" << (int) sec << "." << (int) msec << "Z";
+                    }
+                }
+            }
+        }
+
+    DateTime t24 = DateTime::CreateTimeOfDay(24, 0);
+    ASSERT_TRUE(t24.IsValid());
+    uint32_t actual = 0;
+    ASSERT_EQ(SUCCESS, t24.ToMillisecondsSinceMidnight(actual)) << "24:00:00";
+    ASSERT_EQ(86400000, actual) << "24:00:00";
+
+    t24 = DateTime(DateTime::Kind::Utc, 2018, 9, 18, 24, 0);
+    ASSERT_TRUE(t24.IsValid());
+    actual = 0;
+    ASSERT_EQ(SUCCESS, t24.ToMillisecondsSinceMidnight(actual)) << "2018-09-18T24:00:00Z";
+    ASSERT_EQ(86400000, actual) << "2018-09-18T24:00:00Z";
+
+    t24 = DateTime(DateTime::Kind::Unspecified, 2018, 9, 18, 24, 0);
+    ASSERT_TRUE(t24.IsValid());
+    actual = 0;
+    ASSERT_EQ(SUCCESS, t24.ToMillisecondsSinceMidnight(actual)) << "2018-09-18T24:00:00";
+    ASSERT_EQ(86400000, actual) << "2018-09-18T24:00:00";
+
+    t24 = DateTime(DateTime::Kind::Local, 2018, 9, 18, 24, 0);
+    ASSERT_TRUE(t24.IsValid());
+    actual = 0;
+    ASSERT_EQ(SUCCESS, t24.ToMillisecondsSinceMidnight(actual)) << "2018-09-18T24:00:00 Local";
+    ASSERT_EQ(86400000, actual) << "2018-09-18T24:00:00 Local";
+
+    // invalid datetimes
+    ASSERT_EQ(ERROR, DateTime().ToMillisecondsSinceMidnight(actual));
+    ASSERT_EQ(ERROR, DateTime(2018,9,14).ToMillisecondsSinceMidnight(actual));
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Krischan.Eberle                    09/18
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, ToJulianDay)
+    {
+    const std::vector<std::pair<DateTime, uint64_t>> testDateTimes({
+            {DateTime(DateTime::Kind::Utc, 2018, 9, 25, 0, 0), UINT64_C(212404593600000)},
+            {DateTime(DateTime::Kind::Utc, 2018, 9, 25, 24, 0), UINT64_C(212404680000000)},
+            {DateTime::CreateTimeOfDay(14, 15), UINT64_C(211813496100000)},
+            {DateTime::CreateTimeOfDay(24, 0), UINT64_C(211813531200000)},
+            {DateTime(2018, 9, 25), UINT64_C(212404593600000)}});
+
+    for (std::pair<DateTime, uint64_t> const& kvPair : testDateTimes)
+        {
+        DateTime const& dt = kvPair.first;
+        uint64_t expectedJd = kvPair.second;
+
+        uint64_t actualJd = 0;
+        EXPECT_EQ(SUCCESS, dt.ToJulianDay(actualJd)) << dt.ToString();
+        EXPECT_EQ(expectedJd, actualJd) << dt.ToString();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Krischan.Eberle                    09/18
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, FromJulianDay)
+    {
+    const std::vector<std::pair<uint64_t, DateTime>> testDateTimes({
+            {UINT64_C(212404593600000), DateTime(DateTime::Kind::Utc, 2018, 9, 25, 0, 0)},
+            {UINT64_C(212404680000000), DateTime(DateTime::Kind::Utc, 2018, 9, 26, 0, 0)},
+            {UINT64_C(211813496100000), DateTime(DateTime::Kind::Utc, 2000, 1, 1, 14, 15)},
+            {UINT64_C(211813496100000), DateTime::CreateTimeOfDay(14, 15)},
+            {UINT64_C(211813531200000), DateTime(DateTime::Kind::Utc, 2000, 1, 2, 0, 0)},
+            {UINT64_C(211813531200000), DateTime::CreateTimeOfDay(0, 0)},
+            {UINT64_C(212404593600000), DateTime(DateTime::Kind::Utc, 2018, 9, 25, 0, 0)}});
+
+    for (std::pair<uint64_t, DateTime> const& kvPair : testDateTimes)
+        {
+        uint64_t jd = kvPair.first;
+        DateTime const& expectedDt = kvPair.second;
+
+        DateTime actualDt;
+        EXPECT_EQ(SUCCESS, DateTime::FromJulianDay(actualDt, jd, expectedDt.GetInfo())) << jd;
+        EXPECT_EQ(expectedDt, actualDt) << jd;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -365,7 +670,7 @@ TEST(DateTimeTests, StringConversionRoundtripTests)
         ASSERT_STREQ(dateStr, actualStr.c_str());
 
         DateTime actualDt;
-        ASSERT_EQ(SUCCESS, DateTime::FromString(actualDt, dateStr));
+        ASSERT_EQ(SUCCESS, DateTime::FromString(actualDt, dateStr)) << dateStr;
         ASSERT_EQ(date, actualDt);
         };
 
@@ -385,6 +690,14 @@ TEST(DateTimeTests, StringConversionRoundtripTests)
     isoDate = "2012-03-01T02:03:00.000";
     assertStringConversion(testDate, isoDate);
 
+    testDate = DateTime(DateTime::Kind::Unspecified, 2012, 3, 1, 0, 0, 0);
+    isoDate = "2012-03-01T00:00:00.000";
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime(DateTime::Kind::Unspecified, 2012, 3, 1, 24, 0, 0);
+    isoDate = "2012-03-01T24:00:00.000";
+    assertStringConversion(testDate, isoDate);
+
     testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 500);
     isoDate = "2012-12-05T23:44:59.500Z";
     assertStringConversion(testDate, isoDate);
@@ -400,6 +713,34 @@ TEST(DateTimeTests, StringConversionRoundtripTests)
     testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 999);
     isoDate = "2012-12-05T23:44:59.999Z";
     assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 0, 0, 0, 0);
+    isoDate = "2012-12-05T00:00:00.000Z";
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 24, 0, 0, 0);
+    isoDate = "2012-12-05T24:00:00.000Z";
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime::CreateTimeOfDay(0, 0, 0, 0);
+    isoDate = "00:00:00.000";
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime::CreateTimeOfDay(9, 1);
+    isoDate = "09:01:00.000";
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime::CreateTimeOfDay(14, 1, 2, 3);
+    isoDate = "14:01:02.003";
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime::CreateTimeOfDay(23, 59, 59, 999);
+    isoDate = "23:59:59.999";
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime::CreateTimeOfDay(24, 0, 0, 0);
+    isoDate = "24:00:00.000";
+    assertStringConversion(testDate, isoDate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -412,11 +753,11 @@ TEST(DateTimeTests, FromStringTests)
         DateTime actualDt;
         if (expectedSuccess)
             {
-            ASSERT_EQ(SUCCESS, DateTime::FromString(actualDt, dateStr));
+            ASSERT_EQ(SUCCESS, DateTime::FromString(actualDt, dateStr)) << dateStr;
             ASSERT_EQ(expectedDt, actualDt);
             }
         else
-            ASSERT_EQ(ERROR, DateTime::FromString(actualDt, dateStr));
+            ASSERT_EQ(ERROR, DateTime::FromString(actualDt, dateStr)) << dateStr;
         };
 
     //supported ISO strings
@@ -588,6 +929,43 @@ TEST(DateTimeTests, FromStringTests)
     expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 123);
     assertFromString(isoDateTime, expectedDate, true);
 
+    isoDateTime = "2012-12-05 24:00:00.000Z";
+    expectedDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 24, 0);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    isoDateTime = "2012-12-05T24:00:00.000Z";
+    expectedDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 24, 0);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    isoDateTime = "2012-12-05 24:00:00.000";
+    expectedDate = DateTime(DateTime::Kind::Unspecified, 2012, 12, 5, 24, 0);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    isoDateTime = "2012-12-05T24:00:00.000";
+    expectedDate = DateTime(DateTime::Kind::Unspecified, 2012, 12, 5, 24, 0);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    isoDateTime = "00:00:00.000";
+    expectedDate = DateTime::CreateTimeOfDay(0, 0);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    isoDateTime = "09:03:05.019";
+    expectedDate = DateTime::CreateTimeOfDay(9, 3, 5, 19);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    isoDateTime = "22:53:45.919";
+    expectedDate = DateTime::CreateTimeOfDay(22, 53, 45, 919);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    isoDateTime = "24:00:00.000";
+    expectedDate = DateTime::CreateTimeOfDay(24, 0);
+    assertFromString(isoDateTime, expectedDate, true);
+
+    //This is supported as it is a valid time of day string
+    isoDateTime = "2012";
+    expectedDate = DateTime::CreateTimeOfDay(20, 12);
+    assertFromString(isoDateTime, expectedDate, true);
+
     //Invalid ISO strings for which the parser still returns something.
     BeTest::SetFailOnAssert(false);
     {
@@ -604,7 +982,7 @@ TEST(DateTimeTests, FromStringTests)
     //doesn't support them (yet?).
     bvector<Utf8String> unsupportedIsoDateTimeStrings;
     //leaving out month or day or minute
-    unsupportedIsoDateTimeStrings.push_back("2012");
+    unsupportedIsoDateTimeStrings.push_back("2512");
     unsupportedIsoDateTimeStrings.push_back("-2012");
     unsupportedIsoDateTimeStrings.push_back("2012-09");
     unsupportedIsoDateTimeStrings.push_back("2012-09-31T13");
@@ -760,13 +1138,13 @@ TEST(DateTimeTests, GetCurrentTimeTests)
     EXPECT_EQ((int) DateTime::Kind::Local, (int) currentTimeLocal.GetInfo().GetKind());
     EXPECT_EQ((int) DateTime::Component::DateAndTime, (int) currentTimeLocal.GetInfo().GetComponent());
     //Simple check only to avoid drasticly wrong implementations (as were seen on iOS)
-    EXPECT_GE(static_cast<int> (currentTimeLocal.GetYear()), 2013) << Utf8PrintfString("CurrentTime is %s", currentTimeLocal.ToString().c_str()).c_str();
+    EXPECT_GE((int) (currentTimeLocal.GetYear()), 2013) << Utf8PrintfString("CurrentTime is %s", currentTimeLocal.ToString().c_str()).c_str();
 
     DateTime currentTimeUtc = DateTime::GetCurrentTimeUtc();
     EXPECT_EQ((int) DateTime::Kind::Utc, (int) currentTimeUtc.GetInfo().GetKind());
     EXPECT_EQ((int) DateTime::Component::DateAndTime, (int) currentTimeUtc.GetInfo().GetComponent());
     //Simple check only to avoid drasticly wrong implementations (as were seen on iOS)
-    EXPECT_GE(static_cast<int> (currentTimeUtc.GetYear()), 2013) << Utf8PrintfString("currentTimeUtc is %s", currentTimeUtc.ToString().c_str()).c_str();
+    EXPECT_GE((int) (currentTimeUtc.GetYear()), 2013) << Utf8PrintfString("currentTimeUtc is %s", currentTimeUtc.ToString().c_str()).c_str();
     }
 #endif
     
