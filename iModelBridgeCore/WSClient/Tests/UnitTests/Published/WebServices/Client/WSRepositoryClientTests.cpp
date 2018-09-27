@@ -367,23 +367,32 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithSchemaNotFound_ReturnsS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SetRepositoryid_RepositoryId_RepositoryIdSet)
+TEST_F(WSRepositoryClientTests, GetPersistenceProviderId_SetWithCustom_RetursCustom)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+	auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
     client->Config().SetPersistenceProviderId("id");
     EXPECT_STREQ("id", client->Config().GetPersistenceProviderId().c_str());
     }
 
+#ifdef USE_GTEST
+struct WSRepositoryClientTests_RepositoryIds : TestWithParam<vector<Utf8String>> {};
+INSTANTIATE_TEST_CASE_P(WithProviderId, WSRepositoryClientTests_RepositoryIds, ValuesIn(vector<vector<Utf8String>>{
+	{"A--B", "A"}
+}));
+INSTANTIATE_TEST_CASE_P(NoProviderId, WSRepositoryClientTests_RepositoryIds, ValuesIn(vector<vector<Utf8String>>{
+	{"Foo", ""}
+}));
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetRepositoryid_RepositoryIdNotSet_RepositoryIdIsPluginId)
+TEST_P(WSRepositoryClientTests_RepositoryIds, GetPersistenceProviderId_RepositoryIdNotSet_RepositoryIdIsPluginId)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testId--plugin", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    EXPECT_STREQ("testId", client->Config().GetPersistenceProviderId().c_str());
+	auto client = WSRepositoryClient::Create("https://srv.com/ws", GetParam()[0], StubClientInfo(), nullptr, nullptr);
+	EXPECT_STREQ(GetParam()[1].c_str(), client->Config().GetPersistenceProviderId().c_str());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    01/2015
