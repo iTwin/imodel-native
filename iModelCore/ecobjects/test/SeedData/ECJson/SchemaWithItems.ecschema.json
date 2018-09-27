@@ -138,6 +138,27 @@
       "phenomenon" : "ExampleSchema.ExamplePhenomenon",
       "unitSystem" : "ExampleSchema.ExampleUnitSystem"
     },
+    "ExampleConstant" : {
+      "schemaItemType" : "Constant",
+      "label" : "ExampleConstantLabel",
+      "description" : "ExampleConstantDescription",
+      "definition" : "ONE",
+      "numerator" : 10.0,
+      "phenomenon" : "ExampleSchema.ExamplePhenomenon"
+    },
+    "ExampleInvertedUnit" : {
+      "schemaItemType" : "InvertedUnit",
+      "label" : "ExampleInvertedUnitLabel",
+      "description" : "ExampleInvertedUnitDescription",
+      "invertsUnit": "ExampleSchema.ExampleUnit",
+      "unitSystem" : "ExampleSchema.ExampleUnitSystem"
+    },
+    "ExampleFormat" : {
+      "schemaItemType" : "Format",
+      "label" : "ExampleFormatLabel",
+      "description" : "ExampleFormatDescription",
+      "type": "Decimal"
+    },
     "ExampleEnumeration": {
       "schemaItemType": "Enumeration",
       "type": "int",

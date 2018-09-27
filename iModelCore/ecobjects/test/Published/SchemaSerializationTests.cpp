@@ -680,14 +680,32 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     customAttrClass->SetClassModifier(ECClassModifier::Sealed);
     customAttrClass->SetContainerType(ECN::CustomAttributeContainerType::Schema | ECN::CustomAttributeContainerType::AnyProperty);
 
+    // UnitSystem
     UnitSystemP unitSystem;
     schema->CreateUnitSystem(unitSystem, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
     
+    // Phenomenon
     PhenomenonP phenom;
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH", "ExamplePhenomenonLabel", "ExamplePhenomenonDescription");
 
+    // Unit
     ECUnitP unit;
     schema->CreateUnit(unit, "ExampleUnit", "[MILLI]M", *phenom, *unitSystem, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription");
+
+    // Constant
+    ECUnitP constant;
+    schema->CreateConstant(constant, "ExampleConstant", "ONE", *phenom, 10.0, "ExampleConstantLabel", "ExampleConstantDescription");
+
+    // InvertedUnit
+    ECUnitP invertedUnit;
+    schema->CreateInvertedUnit(invertedUnit, *unit, "ExampleInvertedUnit", *unitSystem, "ExampleInvertedUnitLabel", "ExampleInvertedUnitDescription");
+
+    // Format
+    ECFormatP format;
+    schema->CreateFormat(format, "ExampleFormat", "ExampleFormatLabel", "ExampleFormatDescription");
+    Formatting::NumericFormatSpec numspec;
+    format->SetNumericSpec(numspec);
+    EXPECT_FALSE(format->IsProblem());
 
     // Kind of Quantity
     KindOfQuantityP koq;
@@ -725,7 +743,6 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
