@@ -117,7 +117,9 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
 
     shutil.copyfile(srcpackagefile, dstpackagefile)
 
-    shutil.copyfile(os.path.join(sourceDir, 'api_package', 'LICENSE.pdf'), os.path.join(outputpackagedir, 'LICENSE.pdf'))
+    shutil.copyfile(os.path.join(sourceDir, 'README-Public.md'), os.path.join(outputpackagedir, 'README.md'))
+
+    shutil.copyfile(os.path.join(sourceDir, 'api_package', 'LICENSE.md'), os.path.join(outputpackagedir, 'LICENSE.md'))
 
     # The node addon is specific to a version of node.
     # *** NEEDS WORK: We don't inject this constraint for Electron addons -- not sure how to specify electron engines.
@@ -146,7 +148,7 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
     packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
-    filesToCopy = ['installImodelJsNative.js', 'formatPackageName.js', 'loadNativePlatform.js', 'LICENSE.pdf']
+    filesToCopy = ['installImodelJsNative.js', 'formatPackageName.js', 'loadNativePlatform.js','README.md', 'LICENSE.md']
 
     for fileToCopy in filesToCopy:
         shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))

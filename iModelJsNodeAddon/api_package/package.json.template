@@ -1,6 +1,6 @@
 {
   "name": "@bentley/imodeljs-native-platform-api",
-  "license": "SEE LICENSE IN LICENSE.pdf",
+  "license": "SEE LICENSE IN LICENSE.md",
   "version": "${PACKAGE_VERSION}",
   "keywords": [
     "Bentley",
