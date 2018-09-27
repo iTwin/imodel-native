@@ -2323,7 +2323,7 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr&
 
     // We need to stroke if either the stroke length or width exceeds tolerance...
     ILineStyleCP        lineStyle;
-    double              maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
+    double              maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : lsSymb.GetScale() * std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
     constexpr double    s_strokeLineStylePixels = 5.0;      // Stroke if max dimension exceeds 5 pixels.
 
     if (maxDimension > s_strokeLineStylePixels * m_context.GetTolerance())
