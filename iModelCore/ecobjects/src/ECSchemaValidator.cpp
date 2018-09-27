@@ -281,7 +281,14 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
+    // RULE: All classes should have a description
+    if (ecClass.GetDescription().length() < 1)
+        {
+        LOG.warningv("Class '%s' has no description. Please add a description.", ecClass.GetFullName());
+        }
+
     // RULE: Properties should not be of type long.
+    // RULE: All properties should have a description (warn)
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
         if (prop->GetTypeName().Equals("long") && !prop->GetIsNavigation())
@@ -289,6 +296,10 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
             LOG.errorv("Warning treated as error. Property '%s.%s' is of type 'long' and long properties are not allowed. Use int, double or if this represents a FK use a navigiation property",
                 ecClass.GetFullName(), prop->GetName().c_str());
             status = ECObjectsStatus::Error;
+            }
+        if (prop->GetDescription().length() < 1)
+            {
+            LOG.warningv("Property '%s.%s' has no description. Please add a description.", ecClass.GetFullName(), prop->GetName().c_str());
             }
         }
 

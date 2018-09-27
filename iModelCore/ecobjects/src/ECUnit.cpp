@@ -459,19 +459,6 @@ SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-bool ECUnit::ToJson(Json::Value& outValue, bool includeSchemaVersion) const
-    {
-    if (IsConstant())
-        return ConstantToJson(outValue, true, includeSchemaVersion);
-    else if (IsInvertedUnit())
-        return InvertedUnitToJson(outValue, true, includeSchemaVersion);
-    else
-        return ToJson(outValue, true, includeSchemaVersion);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
 bool ECUnit::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema children
@@ -484,12 +471,16 @@ bool ECUnit::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVe
         outValue[NAME_ATTRIBUTE] = GetName();
         }
 
+    if (IsConstant())
+        return ConstantToJson(outValue, standalone, includeSchemaVersion);
+    else if (IsInvertedUnit())
+        return InvertedUnitToJson(outValue, standalone, includeSchemaVersion);
+
     outValue[ECJSON_SCHEMA_ITEM_TYPE] = UNIT_ELEMENT;
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
 
     outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
     outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::UnitSystemCP)GetUnitSystem());
-
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
@@ -510,16 +501,6 @@ bool ECUnit::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVe
 //--------------------------------------------------------------------------------------
 bool ECUnit::InvertedUnitToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const 
     {
-    // Common properties to all Schema children
-    if (standalone)
-        {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
-        outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
-        if (includeSchemaVersion)
-            outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
-        outValue[NAME_ATTRIBUTE] = GetName();
-        }
-
     outValue[ECJSON_SCHEMA_ITEM_TYPE] = INVERTED_UNIT_ELEMENT;
     outValue[INVERTS_UNIT_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::ECUnitCP)GetParent());
     outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::UnitSystemCP)GetUnitSystem());
@@ -537,16 +518,6 @@ bool ECUnit::InvertedUnitToJson(Json::Value& outValue, bool standalone, bool inc
 //--------------------------------------------------------------------------------------
 bool ECUnit::ConstantToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const 
     {
-    // Common properties to all Schema children
-    if (standalone)
-        {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
-        outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
-        if (includeSchemaVersion)
-            outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
-        outValue[NAME_ATTRIBUTE] = GetName();
-        }
-
     outValue[ECJSON_SCHEMA_ITEM_TYPE] = CONSTANT_ELEMENT;
     outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
