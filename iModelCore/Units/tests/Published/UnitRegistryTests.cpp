@@ -377,30 +377,43 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
     std::string line;
     bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "MM/RAD", "MM/REVOLUTION"};
     
-    bool ignore = false;
+    bool isIgnoredName;
+    Utf8String parsedName;
     while (std::getline(ifs, line))
         {
-        for(auto const& name : ignoredNames)
+        parsedName = line.c_str();
+        parsedName.Trim();
+        isIgnoredName = false;
+        
+        for(auto const& ignoredName : ignoredNames)
             {
-            if(name.EqualsI(line.c_str()))
-                ignore=true;
+            if(ignoredName.EqualsI(parsedName.c_str()))
+                isIgnoredName = true;
             }
-        if(!ignore)
+        if(!isIgnoredName)
             { 
-            auto mapped = UnitNameMappings::TryGetECNameFromNewName(line.c_str());
-            EXPECT_NE(nullptr, mapped) << "Unit with new Name " << line << " not mapped to an ec Name";
-            if(0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:DECA"))
-                line = "DECA";
+            auto mapped = UnitNameMappings::TryGetECNameFromNewName(parsedName.c_str());
+            if (nullptr == mapped)
+                {
+                ASSERT_TRUE(false) << "Unit with new Name " << parsedName << " not mapped to an ec Name";
+                continue;
+                }
+            if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:DECA"))
+                parsedName = "DECA";
             if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:MEGAPASCAL"))
-                line = "MEGAPASCAL";
+                parsedName = "MEGAPASCAL";
             if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:KPF"))
-                line = "KPF";
+                parsedName = "KPF";
             if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:PERSON"))
-                line = "PERSON";
-            auto newUnit = s_unitsContext->LookupUnit(line.c_str());
+                parsedName = "PERSON";
+            
             auto roundtrippedName = UnitNameMappings::TryGetNewNameFromECName(mapped);
-            EXPECT_NE(nullptr, roundtrippedName) << "Can't get name from ecname for unit " << mapped;
-            if(0 == BeStringUtilities::StricmpAscii(roundtrippedName, "DEKA"))
+            if (nullptr == roundtrippedName)
+                {
+                ASSERT_TRUE(false) <<  "Can't get name from ecname for unit " << mapped;
+                continue;
+                }
+            if (0 == BeStringUtilities::StricmpAscii(roundtrippedName, "DEKA"))
                 roundtrippedName = "DECA";
             if (0 == BeStringUtilities::StricmpAscii(roundtrippedName, "N/SQ.MM"))
                 roundtrippedName = "MEGAPASCAL";
@@ -408,10 +421,11 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
                 roundtrippedName = "KPF";
             if (0 == BeStringUtilities::StricmpAscii(roundtrippedName, "CAPITA"))
                 roundtrippedName = "PERSON";
+
+            auto newUnit = s_unitsContext->LookupUnit(parsedName.c_str());
             auto ecUnit = s_unitsContext->LookupUnit(roundtrippedName);
             EXPECT_EQ(newUnit, ecUnit) << "Failed to find " << roundtrippedName;
             }
-        ignore=false;
         }
     }
 
