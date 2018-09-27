@@ -282,7 +282,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     ECObjectsStatus status = ECObjectsStatus::Success;
 
     // RULE: All classes should have a description
-    if (ecClass.GetDescription.length() < 1)
+    if (ecClass.GetDescription().length() < 1)
         {
         LOG.warningv("Class '%s' has no description. Please add a description.", ecClass.GetFullName());
         }
