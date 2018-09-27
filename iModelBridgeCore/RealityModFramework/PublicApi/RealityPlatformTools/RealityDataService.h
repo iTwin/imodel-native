@@ -967,7 +967,7 @@ struct RealityDataServiceTransfer : public RequestConstructor
         }
 
     //! Set interval at which to send a progress callback. Default 1% (0.01)
-    REALITYDATAPLATFORM_EXPORT void SetProgressStep(double step) { m_progressThreshold = m_progressStep = step; }
+    REALITYDATAPLATFORM_EXPORT virtual void SetProgressStep(double step) { m_progressThreshold = m_progressStep = step; }
 
     //! Set callback to allow the user to mass cancel all uploads
     REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataServiceTransfer_HeartbeatCallBack pi_func)
@@ -1113,6 +1113,8 @@ private:
     Utf8String                  m_serverPath;
     };
 
+struct RealityDataFileDownload; //forward declaration
+
 //=====================================================================================
 //! @bsiclass                                   Spencer.Mason                  02/2017
 //! RealityDataServiceDownload
@@ -1132,9 +1134,17 @@ private:
 //=====================================================================================
 struct RealityDataServiceDownload : public RealityDataServiceTransfer
     {
+    friend struct RealityDataFileDownload;
+
     REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
 
     REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
+
+    REALITYDATAPLATFORM_EXPORT virtual void SetProgressStep(double step) override 
+        { 
+        m_progressThreshold = m_progressStep = step; 
+        m_fullTransferSize = (uint64_t) (m_filesToTransfer.size() * (1.0 / m_progressStep));
+        }
 
 private:
 
