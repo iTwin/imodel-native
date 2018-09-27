@@ -65,7 +65,7 @@ TEST_F(ThumbnailsTests, GetiModelThumbnail)
             result = s_client->GetiModelThumbnail(s_projectId, s_info->GetId(), size)->GetResult();
             if (result.IsSuccess() || i == retryCount)
                 break;
-            BeThreadUtilities::BeSleep(3000);
+            BeThreadUtilities::BeSleep(10000);
             }
         EXPECT_TRUE(result.IsSuccess());
         EXPECT_TRUE(result.GetValue().IsValid());
@@ -88,7 +88,7 @@ TEST_F(ThumbnailsTests, GetThumbnailsById)
             thumbnailsIds = thumbnailsManager.GetAllThumbnailsIds(size)->GetResult().GetValue();
             if (4 == thumbnailsIds.size() || i == retryCount)
                 break;
-            BeThreadUtilities::BeSleep(3000);
+            BeThreadUtilities::BeSleep(10000);
             }
         EXPECT_EQ(4, thumbnailsIds.size());
 
@@ -119,7 +119,7 @@ TEST_F(ThumbnailsTests, GetThumbnailsByVersionId)
                 result = thumbnailsManager.GetThumbnailByVersionId(versionId, size)->GetResult();
                 if (result.IsSuccess() || i == retryCount)
                     break;
-                BeThreadUtilities::BeSleep(3000);
+                BeThreadUtilities::BeSleep(10000);
                 }
             EXPECT_TRUE(result.IsSuccess());
             EXPECT_TRUE(result.GetValue().IsValid());
