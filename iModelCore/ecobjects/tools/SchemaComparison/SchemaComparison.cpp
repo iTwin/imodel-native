@@ -44,6 +44,7 @@ struct SchemaComparisonOptions
     BeFileName InFileNames[NSCHEMAS];
     bvector<BeFileName> ReferenceDirectories[NSCHEMAS];
     bool NoStandardSchemas;
+    bool UseStandardUnitsAndFormatsSchemas;
     };
 
 static void ShowUsage(const char* progName)
@@ -73,6 +74,7 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
     size_t referenceSchemasIndex = 0;
     bool allInputFilesDefined = false;
     options.NoStandardSchemas = false;
+    options.UseStandardUnitsAndFormatsSchemas = false;
     for (int i = 1; i < argc; ++i)
         {
         if (0 == std::strcmp(argv[i], "-h") || 0 == std::strcmp(argv[i], "--help"))
@@ -82,6 +84,10 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
         if (0 == std::strcmp(argv[i], "--NoStandardSchemas"))
             {
             options.NoStandardSchemas = true;
+            }
+        else if (0 == std::strcmp(argv[i], "--UseStandardUnitsAndFormatsSchemas"))
+            {
+            options.UseStandardUnitsAndFormatsSchemas = true;
             }
         else if (0 == std::strcmp(argv[i], "-i"))
             {
@@ -145,7 +151,7 @@ static void LogError(Utf8String message)
         }
     }
 
-int CompareSchemas(SchemaComparisonOptions& options)
+int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir)
     {
     ECN::ECSchemaReadContextPtr contexts[NSCHEMAS];
     ECN::ECSchemaPtr schemas[NSCHEMAS];
@@ -165,11 +171,31 @@ int CompareSchemas(SchemaComparisonOptions& options)
         ECN::SearchPathSchemaFileLocaterPtr exactSchemaLocater = ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(searchPaths, true);
         contexts[i]->AddSchemaLocater(*exactSchemaLocater);
 
+        if (options.UseStandardUnitsAndFormatsSchemas)
+            {
+            ECN::ECSchemaPtr schema;
+            BeFileName unitsSchemaPath(assetsDir);
+            unitsSchemaPath.AppendUtf8("/ECSchemas/Standard/Units.01.00.00.ecschema.xml");
+            BeFileName formatsSchemaPath(assetsDir);
+            formatsSchemaPath.AppendUtf8("/ECSchemas/Standard/Formats.01.00.00.ecschema.xml");
+            
+            if(ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(schema, unitsSchemaPath, *contexts[i]))
+                {
+                s_logger->errorv("Failed to load standard 'Units' schema.");
+                return SCHEMA_COMPARISON_EXIT_FAILURE;
+                }
+            if( ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(schema, formatsSchemaPath, *contexts[i]))
+                {
+                s_logger->errorv("Failed to load standard 'Formats' schema.");
+                return SCHEMA_COMPARISON_EXIT_FAILURE;
+                }
+            }
+
         ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schemas[i], options.InFileNames[i].c_str(), *contexts[i]);
         if (status != ECN::SchemaReadStatus::Success || !schemas[i].IsValid())
             {
             Utf8String err("Failed to read schema ");
-            err += schemas[i]->GetName().c_str();
+            err += Utf8CP(options.InFileNames[i].GetFileNameWithoutExtension().c_str());
             s_logger->fatal(err.c_str());
             return SCHEMA_COMPARISON_EXIT_FAILURE;
             }
@@ -265,7 +291,7 @@ int main(int argc, char** argv)
         s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);    
         }
     
-    int comparisonResult = CompareSchemas(progOptions);
+    int comparisonResult = CompareSchemas(progOptions, workingDirectory);
 
     return comparisonResult;
     }

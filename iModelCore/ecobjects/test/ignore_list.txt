@@ -10,3 +10,4 @@ SchemaDeserializationTest.CanLoadCaInstanceWhichAppearsBeforeCaDefinition
 
 #JsonEcInstanceWriter needs to take a class locater in order to resolve a rel class id into a rel class name in the JSON wire format
 NavigationPropertyValueTests.InstanceWithNavProp_Long
+
