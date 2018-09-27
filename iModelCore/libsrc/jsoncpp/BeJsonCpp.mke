@@ -23,8 +23,6 @@ JsonCppSrc          = $(baseDir)src/lib_json/
 JsonCppInclude      = $(baseDir)include/json/
 BeJsonCppSrc        = $(baseDir)
 BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
-JSInclude           = $(baseDir)PublicAPI/JS/
-JSSrc               = $(baseDir)src/JS/
 appName             = BeJsonCpp
 o                   = $(OutputRootDir)build/$(appName)/
 
@@ -37,7 +35,6 @@ always:
 always:
     ~linkdir "$(BuildContext)PublicAPI/json=$(baseDir)include/json"
     ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
-    ~linkdir "$(BuildContext)PublicAPI/JS=${JSInclude}"
 
 #--------------------------------------------------------------------------------------
 #   Compile source
@@ -48,7 +45,6 @@ JsonCppDepends              = $(_MakeFileSpec)            \
                               $(JsonCppInclude)json.h     \
                               $(JsonCppInclude)value.h    \
                               $(JsonCppInclude)writer.h   \
-                              $(JSInclude)Value.h  \
                               $(JsonCppSrc)json_tool.h
 
 $(o)json_reader$(oext)      : $(JsonCppSrc)json_reader.cpp $(JsonCppDepends)
@@ -56,8 +52,6 @@ $(o)json_reader$(oext)      : $(JsonCppSrc)json_reader.cpp $(JsonCppDepends)
 $(o)json_value$(oext)       : $(JsonCppSrc)json_value.cpp $(JsonCppDepends)
 
 $(o)json_writer$(oext)      : $(JsonCppSrc)json_writer.cpp $(JsonCppDepends)
-
-$(o)js_value$(oext)          : $(JSSrc)Value.cpp $(JsonCppDepends)
 
 $(o)BeJsonUtilities$(oext)  : $(BeJsonCppSrc)BeJsonUtilities.cpp $(JsonCppDepends) $(BeJsonCppInclude)BeJsonUtilities.h
 
@@ -67,7 +61,6 @@ $(o)BeJsonUtilities$(oext)  : $(BeJsonCppSrc)BeJsonUtilities.cpp $(JsonCppDepend
 BeJsonCppObjs               = $(o)json_reader$(oext)    \
                               $(o)json_value$(oext)     \
                               $(o)json_writer$(oext)    \
-                              $(o)js_value$(oext)        \
                               $(o)BeJsonUtilities$(oext)
 
 #--------------------------------------------------------------------------------------
