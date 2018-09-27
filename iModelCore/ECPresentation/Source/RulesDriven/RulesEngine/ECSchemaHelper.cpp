@@ -1348,6 +1348,12 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, relatedClassPath);
     BoundQueryValuesList filterBindings = filteringQuery->GetBoundValues();
 
+    if (nullptr != filteringParams)
+        {
+        for (RelatedClass const& relatedInstanceClass : filteringParams->GetSelectInfo().GetRelatedInstanceClasses())
+            filteringQuery->Join(relatedInstanceClass);
+        }
+    
     bvector<RelatedClassPath> paths;
     for (RelatedClass const& relatedClass : *polymorphicallyRelatedClasses)
         {
@@ -1368,7 +1374,7 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         query->From(*nestedQuery);
         query->Where(Utf8String("[RelatedInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
         query->GroupByContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("RelatedClassId", "RelatedClassId")));
-        
+
         CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(),
             m_connection.GetDb(), query->ToString().c_str());
         if (stmt.IsNull())

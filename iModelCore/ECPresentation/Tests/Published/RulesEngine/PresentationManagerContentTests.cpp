@@ -13582,3 +13582,101 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultip
     Utf8String expected = RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_MultipleInstances());
     EXPECT_STREQ(expected.c_str(), label.c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas             09/2018
+* VSTS#29087
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(HandlesContentWithPolymorphicallyRelatedPropertiesAndRelatedInstanceUsedInInstanceFilterCorrectly, 
+R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Aspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementHasAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class = "Aspect" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="DerivedAspect">
+        <BaseClass>Aspect</BaseClass>
+        <ECProperty propertyName="intProp" typeName="int"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="InfoAspect">
+        <BaseClass>Aspect</BaseClass>
+        <ECProperty propertyName="intProp" typeName="int"/>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorphicallyRelatedPropertiesAndRelatedInstanceUsedInInstanceFilterCorrectly)
+    {
+    // prepare the dataset
+    ECRelationshipClassCP rel = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementHasAspect"));
+    ECClassCP ecClassElement = GetSchema()->GetClassCP("Element");
+    ECClassCP ecClassAspect = GetSchema()->GetClassCP("Aspect");
+    ECClassCP ecClassDerivedAspect = GetSchema()->GetClassCP("DerivedAspect");
+    ECClassCP ecClassInfoAspect = GetSchema()->GetClassCP("InfoAspect");
+
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClassElement);
+    IECInstancePtr infoAspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClassInfoAspect, [](IECInstanceR instance) {instance.SetValue("intProp", ECValue(75)); });
+    
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *element, *infoAspect, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    ContentRuleP rule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "b.intProp < 100", ecClassElement->GetFullName(), true);
+    specification->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), ecClassInfoAspect->GetFullName(), "b", true));
+    specification->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(), ecClassAspect->GetFullName(), "",
+        RelationshipMeaning::RelatedInstance, true));
+
+    rule->AddSpecification(*specification);
+    rules->AddPresentationRule(*rule);
+    m_locater->AddRuleSet(*rules);
+
+    // get content
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+
+    // assert
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Element_InfoAspect": [{
+            "PrimaryKeys": [
+                {
+                "ECClassId": "",
+                "ECInstanceId": ""
+                }],
+            "Values": {
+                "InfoAspect_intProp": 75
+                },
+            "DisplayValues": {
+                "InfoAspect_intProp": "75"
+                },
+            "MergedFieldNames": []
+            }]
+        })");
+    expectedValues["Element_InfoAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(ecClassInfoAspect->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Element_InfoAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(infoAspect->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
