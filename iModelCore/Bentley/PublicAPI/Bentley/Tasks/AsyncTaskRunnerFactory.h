@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Tasks/AsyncTaskRunnerFactory.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
