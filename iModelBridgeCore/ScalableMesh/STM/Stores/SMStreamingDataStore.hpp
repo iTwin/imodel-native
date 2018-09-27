@@ -571,13 +571,11 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     else
         {
 #ifndef LINUX_SCALABLEMESH_BUILD
-        std::unique_ptr<DataSource::Buffer[]>            dest;
+        std::vector<DataSourceBuffer::BufferData>        dest;
         DataSource                                *      dataSource;
-        DataSource::DataSize                             readSize;
-        DataSourceBuffer::BufferSize                     destSize = 20 * 1024 * 1024;
         DataSourceURL dataSourceURL(m_masterFileName.c_str());
 
-        dataSource = this->InitializeDataSource(dest, destSize);
+        dataSource = this->InitializeDataSource();
         if (dataSource == nullptr)
             {
             assert(false); // problem initializing a datasource
@@ -591,7 +589,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             if ((status = dataSource->open(dataSourceURL, DataSourceMode_Read)).isFailed())
                 throw status; // problem opening a datasource
 
-            if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+            if ((status = dataSource->read(dest)).isFailed())
                 throw status; // problem reading a datasource
 
             if ((status = dataSource->close()).isFailed())
@@ -609,27 +607,27 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         if (isGrouped)
             {
             // initialize codec
-            bvector<uint8_t> masterHeader(decltype(readSize)(*reinterpret_cast<decltype(readSize)*>(dest.get())));
-            HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(readSize - sizeof(readSize));
-            const size_t computedDataSize = pCodec->DecompressSubset(dest.get() + sizeof(readSize),
-                readSize - sizeof(readSize),
-                masterHeader.data(),
-                masterHeader.size());
+            bvector<uint8_t> masterHeader(uint8_t(*reinterpret_cast<uint8_t*>(dest.data())));
+            HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(dest.size() - sizeof(dest.size()));
+            const size_t computedDataSize = pCodec->DecompressSubset(dest.data() + sizeof(dest.size()),
+                                                                     dest.size() - sizeof(dest.size()),
+                                                                     masterHeader.data(),
+                                                                     masterHeader.size());
             assert(computedDataSize != 0 && computedDataSize == masterHeader.size());
 
-            dest.reset(new uint8_t[masterHeader.size()]);
-            memcpy(dest.get(), masterHeader.data(), masterHeader.size());
-            headerSize = masterHeader.size();
+            //dest.reset(new uint8_t[masterHeader.size()]);
+            //memcpy(dest.get(), masterHeader.data(), masterHeader.size());
+            //headerSize = masterHeader.size();
 
             size_t position = 0;
 
             uint32_t sizeOfOldMasterHeaderPart;
-            memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
+            memcpy(&sizeOfOldMasterHeaderPart, dest.data() + position, sizeof(sizeOfOldMasterHeaderPart));
             position += sizeof(sizeOfOldMasterHeaderPart);
             assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
 
             SQLiteIndexHeader oldMasterHeader;
-            memcpy(&oldMasterHeader, dest.get() + position, sizeof(SQLiteIndexHeader));
+            memcpy(&oldMasterHeader, dest.data() + position, sizeof(SQLiteIndexHeader));
             position += sizeof(SQLiteIndexHeader);
             indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
             indexHeader->m_balanced = oldMasterHeader.m_balanced;
@@ -651,7 +649,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
             short storedGroupMode = m_use_virtual_grouping;
-            memcpy(&storedGroupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(storedGroupMode));
+            memcpy(&storedGroupMode, reinterpret_cast<char *>(dest.data()) + position, sizeof(storedGroupMode));
             assert((storedGroupMode == SMGroupGlobalParameters::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
             position += sizeof(storedGroupMode);
 
@@ -754,9 +752,9 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             Json::Reader    reader;
             Json::Value     masterHeader;
 
-            headerSize = readSize;
+            headerSize = dest.size();
 
-            if (!reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader)
+            if (!reader.parse(reinterpret_cast<char *>(dest.data()), reinterpret_cast<char *>(&(dest.data()[dest.size()])), masterHeader)
                 || !masterHeader.isMember("rootNodeBlockID"))
                 {
                 assert(false); // error reading Master Header
@@ -1225,14 +1223,13 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         }
     else if (s_stream_using_cesium_3d_tiles_format)
         {
-        size_t headerSize = 0;
-        std::unique_ptr<Byte> headerData = nullptr;
-        this->GetNodeHeaderBinary(blockID, headerData, headerSize);
-        if (!headerData && headerSize == 0) return 1;
+        std::vector<DataSourceBuffer::BufferData> headerData;
+        this->GetNodeHeaderBinary(blockID, headerData);
+        if (headerData.empty()) return 1;
 
         Json::Reader    reader;
         Json::Value     cesiumHeader;
-        if (!reader.parse(reinterpret_cast<char *>(headerData.get()), reinterpret_cast<char *>(&(headerData.get()[headerSize])), cesiumHeader)
+        if (!reader.parse(reinterpret_cast<char *>(headerData.data()), reinterpret_cast<char *>(&(headerData.data()[headerData.size()])), cesiumHeader)
             || !(cesiumHeader.isMember("root") && cesiumHeader["root"].isMember("SMHeader")))
             {
             assert(false); // error reading Master Header
@@ -1244,11 +1241,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     else {
         //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
         //ReadNodeHeaderFromJSON(header, nodeHeader);
-        size_t headerSize = 0;
-        std::unique_ptr<Byte> headerData = nullptr;
-        this->GetNodeHeaderBinary(blockID, headerData, headerSize);
-        if (!headerData && headerSize == 0) return 0;
-        ReadNodeHeaderFromBinary(header, headerData.get(), headerSize);
+        std::vector<DataSourceBuffer::BufferData> headerData;
+        this->GetNodeHeaderBinary(blockID, headerData);
+        if (headerData.empty()) return 0;
+        ReadNodeHeaderFromBinary(header, headerData.data(), headerData.size());
         }
     header->m_id = blockID;
     return 1;
@@ -1446,7 +1442,7 @@ template <class EXTENT> SMNodeGroupPtr SMStreamingStore<EXTENT>::GetGroup(HPMBlo
     return group;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t& maxCountData) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t maxCountData) const
     {
     size_t dataIndex = 0;
 
@@ -1885,21 +1881,17 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
         }
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, size_t& po_pDataSize)
+template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::vector<DataSourceBuffer::BufferData>& dest)
     {
 #ifndef LINUX_SCALABLEMESH_BUILD
     //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
-    std::unique_ptr<DataSource::Buffer[]>          dest;
     DataSource                                *    dataSource;
-    DataSource::DataSize                           readSize;
 
     DataSourceURL    dataSourceURL(m_pathToHeaders);
     std::wstring extension = s_stream_using_cesium_3d_tiles_format ? L".json" : L".bin";
     dataSourceURL.append(L"n_" + std::to_wstring(blockID.m_integerID) + extension);
 
-    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
-
-    dataSource = this->InitializeDataSource(dest, destSize);
+    dataSource = this->InitializeDataSource();
     if (dataSource == nullptr)
         return;
 
@@ -1910,7 +1902,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
         if ((status = dataSource->open(dataSourceURL, DataSourceMode_Read)).isFailed())
             throw status;
 
-        if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+        if ((status = dataSource->read(dest)).isFailed())
             throw status;
 
         if ((status = dataSource->close()).isFailed())
@@ -1924,23 +1916,6 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
             }
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
-
-    if (readSize > 0)
-        {
-        po_pDataSize = readSize;
-
-        uint8_t *buffer = new uint8_t[readSize];
-        if (buffer)
-            {
-            po_pBinaryData.reset(buffer);
-            memmove(po_pBinaryData.get(), dest.get(), po_pDataSize);
-            }
-
-        assert(buffer);
-        assert(readSize > 0);
-        }  
-
-//  this->GetDataSourceAccount()->destroyDataSource(dataSource);
 #endif
     }
 
@@ -2089,7 +2064,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesiu
     }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
-template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
+template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource() const
     {
     if (this->GetDataSourceAccount() == nullptr)
         return nullptr;
@@ -2097,10 +2072,6 @@ template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSour
     DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceSessionName());
     if (dataSource == nullptr)
         return nullptr;
-                                                    // Make sure caching is enabled for this DataSource
-//  dataSource->setCachingEnabled(s_stream_enable_caching);
-
-    dest.reset(new unsigned char[destSize]);
                                                     // Return the DataSource
     return dataSource;
     }
@@ -2135,7 +2106,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatT
 
 #ifndef LINUX_SCALABLEMESH_BUILD
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress/* = true*/)
     : m_dataSourceAccount(dataSourceAccount),
       m_dataSourceSessionName(session),
       m_dataSourceURL(url.c_str()),
@@ -2485,7 +2456,7 @@ void StreamingDataBlock::SetLoading()
     m_pIsLoading = true; 
     }
 #ifndef LINUX_SCALABLEMESH_BUILD
-DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize)
+DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session)
     {
     if (dataSourceAccount == nullptr)
         return nullptr;
@@ -2493,11 +2464,7 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*dataSourceAccount, session);
     if (dataSource == nullptr)
         return nullptr;
-                                                        // Make sure caching is enabled for this DataSource
-//  dataSource->setCachingEnabled(s_stream_enable_caching);
 
-    dest.reset(new unsigned char[destSize]);
-                                                        // Return the DataSource
     return dataSource;
     }
     
@@ -2511,8 +2478,8 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, const DataSo
         }
     else
         {
-        std::unique_ptr<DataSource::Buffer[]> dest;
-        auto readSize = this->LoadDataBlock(dataSourceAccount, session, dest, dataSizeKnown);
+        std::vector<DataSourceBuffer::BufferData> dest;
+        auto readSize = this->LoadDataBlock(dataSourceAccount, session, dest);
         //assert(readSize > 0); // something went wrong loading streaming data block
         if (readSize > 0)
             {
@@ -2520,10 +2487,10 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, const DataSo
 
             if (dataType != SMStoreDataType::Cesium3DTiles)
                 {
-                uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
+                uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.data());
                 //std::wcout << "node id:" << m_pID << "  source: " << m_pDataSource << "  size(bytes) : " << dataSize << std::endl;
                 uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
-                DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
+                DecompressPoints(dest.data() + sizeof(uint32_t), sizeData, uncompressedSize);
                 switch (dataType)
                     {
                     case SMStoreDataType::Points:
@@ -2550,7 +2517,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, const DataSo
                 }
             else
                 {
-                this->ParseCesium3DTilesData(dest.get(), readSize);
+                this->ParseCesium3DTilesData(dest.data(), dest.size());
                 }
             }
         }
@@ -2668,19 +2635,14 @@ inline uint32_t StreamingDataBlock::GetTextureSize()
     }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
-inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown)
+inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::vector<DataSourceBuffer::BufferData>& destination)
     {
     DataSource                                *  dataSource;
-    DataSource::DataSize                         readSize;
 
     DataSourceURL    dataSourceURL(m_pDataSourceURL); 
-    //dataSourceURL.append(m_pPrefix + std::to_wstring(m_pID) + m_extension);
     dataSourceURL.append(m_url);
 
-    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
-
-    dataSource = initializeDataSource(dataSourceAccount, session, destination, destSize);
-    assert(destination != nullptr);
+    dataSource = initializeDataSource(dataSourceAccount, session);
     if (dataSource == nullptr)
         return 0;
 
@@ -2691,10 +2653,7 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
         if ((status = dataSource->open(dataSourceURL, DataSourceMode_Read)).isFailed())
             throw status;
 
-        if (dataSizeKnown == uint64_t(-1))
-            dataSizeKnown = 0;
-
-        if ((status = dataSource->read(destination.get(), destSize, readSize, dataSizeKnown)).isFailed())
+        if ((status = dataSource->read(destination)).isFailed())
             throw status;
 
         if ((status = dataSource->close()).isFailed())
@@ -2709,7 +2668,7 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
 
-    return readSize;
+    return destination.size();
     }
 #endif
 
@@ -3029,10 +2988,10 @@ template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeText
     if (!texture->IsLoaded())
         {
 #ifndef LINUX_SCALABLEMESH_BUILD
-            auto blockSize = m_nodeHeader->GetBlockSize(5);
+            //auto blockSize = m_nodeHeader->GetBlockSize(5);
             texture->SetID(blockID.m_integerID);
             texture->SetDataSourceURL(m_dataSourceURL);
-            texture->Load(this->GetDataSourceAccount(), GetDataSourceSessionName(), blockSize);
+            texture->Load(this->GetDataSourceAccount(), GetDataSourceSessionName());
 #endif
         }
     assert(texture->IsLoaded() && !texture->empty());
@@ -3233,22 +3192,22 @@ inline void StreamingTextureBlock::Store(DataSourceAccount *dataSourceAccount, c
                                 //}
     }
 
-inline void StreamingTextureBlock::Load(DataSourceAccount * dataSourceAccount, const DataSource::SessionName &session, uint64_t blockSizeKnown)
+inline void StreamingTextureBlock::Load(DataSourceAccount * dataSourceAccount, const DataSource::SessionName &session)
     {
-    std::unique_ptr<DataSource::Buffer[]> dest;
-    auto readSize = this->LoadDataBlock(dataSourceAccount, session, dest, blockSizeKnown);
+    std::vector<DataSourceBuffer::BufferData> dest;
+    auto readSize = this->LoadDataBlock(dataSourceAccount, session, dest);
 
     if (readSize > 0)
         {
-        m_Width = reinterpret_cast<int&>(dest.get()[0]);
-        m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
-        m_NbChannels = reinterpret_cast<int&>(dest.get()[2 * sizeof(int)]);
-        m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
+        m_Width = reinterpret_cast<int&>(dest[0]);
+        m_Height = reinterpret_cast<int&>(dest[sizeof(int)]);
+        m_NbChannels = reinterpret_cast<int&>(dest[2 * sizeof(int)]);
+        m_Format = reinterpret_cast<int&>(dest[3 * sizeof(int)]);
 
         auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
         uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
 
-        DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
+        DecompressTexture(dest.data() + 4 * sizeof(int), compressedSize, textureSize);
         }
 
     m_pIsLoaded = true;

@@ -33,6 +33,12 @@ DataSourceStatus DataSourceAzure::read(Buffer *dest, DataSize destSize, DataSize
     return status;
 }
 
+DataSourceStatus DataSourceAzure::read(std::vector<Buffer>& dest)
+    {
+    // Pass to superclass for read (Note: Real reads are down through download calls)
+    return Super::read(dest);
+    }
+
 DataSourceStatus DataSourceAzure::close(void)
 {
     return Super::close();

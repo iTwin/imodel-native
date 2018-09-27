@@ -118,6 +118,24 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
     return status;
 }
 
+DataSourceStatus DataSourceBuffered::read(std::vector<Buffer>& dest)
+    {
+    DataSourceStatus            status;
+    DataSourceAccount *         account;
+
+    // Get the associated account
+    if ((account = getAccount()) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+
+    if ((status = initializeBuffer(dest)).isFailed())
+        return status;
+
+    status = account->download(*this, dest);
+    assert(!dest.empty()); // Nothing was downloaded to the buffer!
+
+    return status;
+    }
+
 DataSourceStatus DataSourceBuffered::write(const Buffer * source, DataSize size)
 {
     DataSourceStatus    status;
@@ -142,7 +160,7 @@ DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSi
         delete getBuffer();
     }
 
-    setBuffer(new DataSourceBuffer(size, existingBuffer));
+    setBuffer(new DataSourceBuffer(size, nullptr));
 
     if (getBuffer())
     {
@@ -162,6 +180,19 @@ DataSourceStatus DataSourceBuffered::initializeBuffer(DataSourceBuffer::BufferSi
 
     return DataSourceStatus(DataSourceStatus::Status_Error);
 }
+
+DataSourceStatus DataSourceBuffered::initializeBuffer(std::vector<DataSourceBuffer::BufferData>& existingBuffer)
+    {
+    if (getBuffer())
+        {
+        delete getBuffer();
+        }
+
+    setBuffer(new DataSourceBuffer(existingBuffer));
+
+    getBuffer()->setSegmented(false);
+    return DataSourceStatus();
+    }
 
 
 DataSourceStatus DataSourceBuffered::open(const DataSourceURL & sourceURL, DataSourceMode sourceMode)
