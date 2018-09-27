@@ -15,6 +15,22 @@ using namespace ::testing;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+void TestChangesetToRequestStringWithDefaultRequestOptions(WSChangeset& changeset)
+    {
+    auto expectedJson = ToJson(R"({
+        "instances":[]
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+
+    EXPECT_EQ(WSChangeset::Options::FailureStrategy::ServerDefault, changeset.GetRequestOptions().GetFailureStrategy());
+    EXPECT_EQ(WSChangeset::Options::ResponseContent::ServerDefault, changeset.GetRequestOptions().GetResponseContent());
+    EXPECT_EQ(WSChangeset::Options::RefreshInstances::ServerDefault, changeset.GetRequestOptions().GetRefreshInstances());
+    EXPECT_TRUE(changeset.GetRequestOptions().GetCustomOptions().empty());
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -706,40 +722,33 @@ TEST_F(WSChangesetTests, ToRequestString_ThreeInstances_ReturnsChangesetAndCalcu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSChangesetTests, ToRequestString_GetRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToRequestString_NotModifiedRequestOptions_ReturnsChangesetWithDefaultRequestOptionsAndCalculateSizeMatches)
     {
     WSChangeset changeset;
-    changeset.GetRequestOptions();
-
-    auto expectedJson = ToJson(R"({
-        "instances":[],
-        "requestOptions":{}
-        })");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2015
+* @bsimethod                                                    Mantas.Smicius    09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSChangesetTests, ToRequestString_RemoveRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToRequestString_GetRequestOptionsInvoked_ReturnsChangesetWithDefaultRequestOptionsAndCalculateSizeMatches)
     {
     WSChangeset changeset;
     changeset.GetRequestOptions();
+
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSChangesetTests, ToRequestString_RemovedRequestOptions_ReturnsChangesetWithDefaultRequestOptionsAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Continue);
     changeset.RemoveRequestOptions();
 
-    auto expectedJson = ToJson(R"({
-        "instances":[]
-        })");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
-    EXPECT_EQ(WSChangeset::Options::FailureStrategy::Null, changeset.GetRequestOptions().GetFailureStrategy());
-    EXPECT_EQ(WSChangeset::Options::ResponseContent::Null, changeset.GetRequestOptions().GetResponseContent());
-    EXPECT_TRUE(changeset.GetRequestOptions().GetCustomOptions().empty());
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -771,17 +780,9 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsFailureStrategyRemoved_ReturnsCh
     {
     WSChangeset changeset;
     changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Stop);
-    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Null);
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::ServerDefault);
 
-    auto expectedJson = ToJson(R"({
-        "instances":[],
-        "requestOptions":{}
-        })");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
-    EXPECT_EQ(WSChangeset::Options::FailureStrategy::Null, changeset.GetRequestOptions().GetFailureStrategy());
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -883,13 +884,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsRemoved_ReturnsChan
     changeset.GetRequestOptions().SetCustomOption("A", "1");
     changeset.GetRequestOptions().RemoveCustomOption("A");
 
-    auto expectedJson = ToJson(R"({
-        "instances":[],"requestOptions":{}})");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
-    EXPECT_TRUE(changeset.GetRequestOptions().GetCustomOptions().empty());
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
     }
 
 /*--------------------------------------------------------------------------------------+

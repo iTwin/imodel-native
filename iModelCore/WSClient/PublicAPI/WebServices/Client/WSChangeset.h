@@ -69,7 +69,7 @@ struct WSChangeset
         WSCLIENT_EXPORT WSChangeset(Format format = Format::MultipleInstances);
 
         //! DEPRECATED- Use GetRequestOptions instead
-        //! Get set request options for changeset
+        //! Set request options for changeset
         WSCLIENT_EXPORT void SetRequestOptions(RequestOptions options);
 
         //! Add new instance. 
@@ -91,9 +91,9 @@ struct WSChangeset
         //! Get total relationship count used in changeset.
         WSCLIENT_EXPORT size_t GetRelationshipCount() const;
 
-        //! Request options allows to change default behaviour of WSG request
-        //! Current WSChangeset implementation allows these options: Response Content, Refresh Instances, Custom Options.
-        //! If request options are not initialised, this method initialise them.
+        //! Request options allows to change default behaviour of WSG request.
+        //! Current WSChangeset implementation allows these options: Failure Strategy, Response Content, Refresh Instances, Custom Options.
+		//! If request options are not initialised, this method initialise them.
         //! @return request options
         WSCLIENT_EXPORT Options& GetRequestOptions();
 
@@ -210,14 +210,14 @@ struct WSChangeset::Options
     public:
         enum class FailureStrategy
             {
-            Null,
+            ServerDefault,
             Continue,
             Stop
             };
 
         enum class ResponseContent
             {
-            Null,
+            ServerDefault,
             FullInstance,
             Empty,
             InstanceId
@@ -225,15 +225,15 @@ struct WSChangeset::Options
 
         enum class RefreshInstances
             {
-            Null,
+            ServerDefault,
             Refresh,
             DontRefresh
             };
 
     private:
-        FailureStrategy m_failureStrategy = FailureStrategy::Null;
-        ResponseContent m_responseContent = ResponseContent::Null;
-        RefreshInstances m_refreshInstances = RefreshInstances::Null;
+        FailureStrategy m_failureStrategy = FailureStrategy::ServerDefault;
+        ResponseContent m_responseContent = ResponseContent::ServerDefault;
+        RefreshInstances m_refreshInstances = RefreshInstances::ServerDefault;
         Json::Value m_customOptions = Json::objectValue;
         mutable size_t m_baseSize = 0;
 
@@ -241,6 +241,7 @@ struct WSChangeset::Options
         static Utf8CP GetFailureStrategyStr(FailureStrategy failureStrategy);
         static Utf8CP GetResponseContentStr(ResponseContent option);
         size_t CalculateSize() const;
+        bool IsServerDefault() const;
         void ToJson(JsonValueR jsonOut) const;
 
     public:
