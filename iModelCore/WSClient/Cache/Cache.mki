@@ -2,7 +2,7 @@
 #
 #     $Source: Cache/Cache.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -99,6 +99,7 @@ ClientMkiHeaders =                                                          \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV11ToV12.h          \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV12ToV13.h          \
     $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV20ToV21.h          \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV21ToV23.h          \
     $(CacheMkiSourceDir)SyncCachedDataTask.h                                \
     $(CacheMkiSourceDir)SyncCachedInstancesSeperatelyTask.h                 \
     $(CacheMkiSourceDir)SyncCachedInstancesTask.h                           \
@@ -231,6 +232,8 @@ $(o)UpgraderFromV11ToV12$(oext)                 : $(CacheMkiSourceDir)Persistenc
 $(o)UpgraderFromV12ToV13$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV12ToV13.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)UpgraderFromV20ToV21$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV20ToV21.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderFromV21ToV23$(oext)                 : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV21ToV23.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 
 $(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}

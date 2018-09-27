@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileInfoManager.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -14,6 +14,7 @@
 #include "../Core/ECDbFileInfoSchema.h"
 #include "../Hierarchy/HierarchyManager.h"
 #include "../DataSourceCache.xliff.h"
+#include "../../Logging.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -38,11 +39,14 @@ m_cachedFileInfoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_CachedFileI
 m_objectInfoToCachedFileInfoClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_ObjectInfoToCachedFileInfo)),
 m_cachedFileInfoToFileInfoClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedFileInfoToFileInfo)),
 m_cachedFileInfoToFileInfoOwnershipClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_CachedFileInfoToFileInfoOwnership)),
+m_staleFileInfoClass(dbAdapter.GetECClass(SCHEMA_CacheSchema, CLASS_StaleFileInfo)),
+m_staleFileInfoToFileInfoClass(dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchema, CLASS_StaleFileInfoToFileInfo)),
 m_externalFileInfoClass(dbAdapter.GetECClass(SCHEMA_ECDbFileInfo, CLASS_ExternalFileInfo)),
 m_externalFileInfoOwnershipClass(dbAdapter.GetECClass(SCHEMA_ECDbFileInfo, CLASS_FileInfoOwnership)),
 
 m_cachedFileInfoInserter(dbAdapter.GetECDb(), *m_cachedFileInfoClass),
 m_cachedFileInfoUpdater(dbAdapter.GetECDb(), *m_cachedFileInfoClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties),
+m_staleFileInfoInserter(dbAdapter.GetECDb(), *m_staleFileInfoClass),
 m_externalFileInfoInserter(dbAdapter.GetECDb(), *m_externalFileInfoClass),
 m_externalFileInfoUpdater(dbAdapter.GetECDb(), *m_externalFileInfoClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties)
     {
@@ -173,8 +177,7 @@ BentleyStatus FileInfoManager::CheckMaxLastAccessDate(BeFileNameCR fileName, Dat
 CacheStatus FileInfoManager::DeleteFilesNotHeldByNodes
 (
 const ECInstanceKeyMultiMap& holdingNodes,
-DateTimeCP maxLastAccessDate,
-AsyncError* errorOut
+DateTimeCP maxLastAccessDate
 )
     {
     auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::DeleteFilesNotHeldByNodes", [&]
@@ -216,16 +219,10 @@ AsyncError* errorOut
         if (shouldSkip)
             continue;
 
-        auto status = m_fileStorage.RemoveStoredFile(fileInfo);
-        if (CacheStatus::OK != status)
+        if (SUCCESS != RemoveFileGracefully(fileInfo))
             {
-            if (errorOut != nullptr && CacheStatus::FileLocked == status)
-                {
-            	*errorOut = AsyncError(Utf8PrintfString(
-                    DataSourceCacheLocalizedString(ERROR_FileIsLocked).c_str(),
-                    Utf8String(fileInfo.GetFileName()).c_str()));
-                }
-            return status;
+            BeAssert(false);
+            returnValue = CacheStatus::Error;
             }
         }
     return returnValue;
@@ -257,10 +254,7 @@ BentleyStatus FileInfoManager::OnBeforeDelete(ECClassCR ecClass, ECInstanceId ec
     m_dbAdapter.GetJsonInstance(externalFileInfoJson, {ecClass.GetId(), ecInstanceId});
 
     FileInfo info(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
-    if (CacheStatus::OK != m_fileStorage.RemoveStoredFile(info))
-        return ERROR;
-
-    return SUCCESS;
+    return RemoveFileGracefully(info);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -362,4 +356,116 @@ ECInstanceKey FileInfoManager::InsertFileInfoOwnership(ECInstanceKeyCR ownerKey,
         }
 
     return ownershipKey;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::RemoveFileGracefully(FileInfoR info)
+    {
+    auto status = m_fileStorage.RemoveStoredFile(info);
+    if (CacheStatus::FileLocked == status)
+        {
+        if (SUCCESS != InsertStaleFileInfo(info))
+            return ERROR;
+
+        LOG.infov("Cannot remove locked file. Added to stale file list: '%s'", info.GetFilePath().GetNameUtf8().c_str());
+        status = CacheStatus::OK;
+        }
+
+    if (CacheStatus::OK != status)
+        return ERROR;
+
+    info.ClearFilePath();
+    auto externalFileInfoId = ECDbHelper::ECInstanceIdFromJsonInstance(info.GetExternalFileInfoJson());
+    if (BE_SQLITE_OK != m_externalFileInfoUpdater.Get().Update(externalFileInfoId, info.GetExternalFileInfoJson()))
+        return ERROR;
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::InsertStaleFileInfo(FileInfoCR info)
+    {
+    Json::Value externalFileInfoJson = info.GetExternalFileInfoJson();
+    externalFileInfoJson.removeMember(ECJsonUtilities::json_id());
+    if (DbResult::BE_SQLITE_OK != m_externalFileInfoInserter.Get().Insert(externalFileInfoJson))
+        return ERROR;
+
+    Json::Value staleFileInfoJson;
+    staleFileInfoJson[CLASS_StaleFileInfo_PROPERTY_StaleDate] = DateTime::GetCurrentTimeUtc().ToString();
+    staleFileInfoJson[CLASS_StaleFileInfo_PROPERTY_FileInfo][ECJsonUtilities::json_navId()] = externalFileInfoJson[ECJsonUtilities::json_id()];
+    if (DbResult::BE_SQLITE_OK != m_staleFileInfoInserter.Get().Insert(staleFileInfoJson))
+        return ERROR;
+        
+    return SUCCESS;
+    }
+    
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::ReadStaleFilePaths(bset<BeFileName>& pathsOut)
+    {
+    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::ReadStaleFilePaths", [&]
+        {
+        return
+            "SELECT "
+                "efi.[" CLASS_ExternalFileInfo_PROPERTY_RootFolder "], "
+                "efi.[" CLASS_ExternalFileInfo_PROPERTY_RelativePath "] "
+            "FROM " ECSql_ExternalFileInfoClass " efi "
+            "JOIN " ECSql_StaleFileInfo " USING " ECSql_StaleFileInfoToFileInfo " ";
+        });
+
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement->Step()))
+        {
+        FileCache location = static_cast<FileCache>(statement->GetValueInt(0));
+        BeFileName relativePath(statement->GetValueText(1));
+        BeFileName absolutePath = GetAbsoluteFilePath(location, relativePath);
+        pathsOut.insert(absolutePath);
+        }
+
+    if (BE_SQLITE_DONE != status)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus FileInfoManager::CleanupStaleFiles()
+    {
+    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::CleanupStaleFiles", [&]
+        {
+        return
+            "SELECT efi.* "
+            "FROM ONLY " ECSql_ExternalFileInfoClass " efi "
+            "JOIN ONLY " ECSql_StaleFileInfo " USING " ECSql_StaleFileInfoToFileInfo " ";
+        });
+
+    JsonECSqlSelectAdapter adapter(*statement);
+
+    ECInstanceKeyMultiMap removedFiles;
+    while (BE_SQLITE_ROW == statement->Step())
+        {
+        Json::Value externalFileInfoJson;
+        if (SUCCESS != adapter.GetRowInstance(externalFileInfoJson, m_externalFileInfoClass->GetId()))
+            return ERROR;
+
+        FileInfo fileInfo(Json::nullValue, externalFileInfoJson, CachedInstanceKey(), this);
+
+        auto status = m_fileStorage.RemoveStoredFile(fileInfo);
+        if (CacheStatus::OK != status)
+            {
+            LOG.infov("Stale file cannot be removed yet (status %d): '%s'", status, fileInfo.GetFilePath().GetNameUtf8().c_str());
+            continue;
+            }
+
+        LOG.infov("Stale file was cleaned up succesfully: '%s'", fileInfo.GetFilePath().GetNameUtf8().c_str());
+        removedFiles.Insert(m_externalFileInfoClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(externalFileInfoJson));
+        }
+
+    return m_dbAdapter.DeleteInstances(removedFiles);
     }

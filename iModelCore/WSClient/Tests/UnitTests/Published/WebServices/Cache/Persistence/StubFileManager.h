@@ -29,6 +29,28 @@ struct StubFileManager : FileManager
 
         return FileManager::DeleteFile(path);
         }
+
+    BeFileName          overrideMoveFileArg;
+    BeFileNameStatus    overrideMoveFileRet = BeFileNameStatus::Success;
+    virtual BeFileNameStatus MoveFile(BeFileNameCR src, BeFileNameCR trg) override
+        {
+        if (BeFileNameStatus::Success != overrideMoveFileRet)
+            if (overrideMoveFileArg.empty() || overrideMoveFileArg == src || overrideMoveFileArg == trg)
+                return overrideMoveFileRet;
+
+        return FileManager::MoveFile(src, trg);
+        }
+
+    BeFileName          overrideDeleteDirectoryFileArg;
+    BeFileNameStatus    overrideDeleteDirectoryFileRet = BeFileNameStatus::Success;
+    virtual BeFileNameStatus DeleteDirectory(BeFileNameCR path) override
+        {
+        if (BeFileNameStatus::Success != overrideDeleteDirectoryFileRet)
+            if (overrideDeleteDirectoryFileArg.empty() || overrideDeleteDirectoryFileArg == path)
+                return overrideDeleteDirectoryFileRet;
+
+        return FileManager::DeleteDirectory(path);
+        }
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
