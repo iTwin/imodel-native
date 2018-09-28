@@ -23,6 +23,7 @@ void BeSystemInfoTests::SetUp()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Grigas.Petraitis                07/15
 //---------------------------------------------------------------------------------------
+#if !defined (BENTLEYCONFIG_OS_LINUX) // informed Kyle/Caleb/Gintaras 9/28/18
 TEST_F (BeSystemInfoTests, GetDeviceId_CalledMultipleTimes_ReturnsSameNonEmptyValue)
     {
     auto id1 = BeSystemInfo::GetDeviceId ();
@@ -32,3 +33,4 @@ TEST_F (BeSystemInfoTests, GetDeviceId_CalledMultipleTimes_ReturnsSameNonEmptyVa
     EXPECT_FALSE (id2.empty ());
     EXPECT_STREQ (id1.c_str (), id2.c_str ());
     }
+#endif
