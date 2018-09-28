@@ -348,6 +348,8 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         void SetGltfUpAxis(UpAxis gltfUpAxis);
 
+        void SetDecompressTexture(bool decompressTexture) { m_decompressTexture = decompressTexture; }
+
         void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
 
         DPoint3d* GetPoints();
@@ -368,6 +370,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
 
         bool m_pIsLoading = false;
         bool m_pIsLoaded = false;
+        bool m_decompressTexture = false;
         uint64_t m_pID = -1;
 #ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL m_url;
@@ -436,6 +439,7 @@ SMStreamingNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Valu
         DataSourceURL                 m_dataSourceURL;
 #endif
         Transform                     m_transform;
+        mutable bool                  m_decompressTexture = true;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         typedef std::unique_ptr<StreamingDataBlock> DataCache;
@@ -449,6 +453,10 @@ SMStreamingNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Valu
         SMStoreDataType               m_dataType;
 
         uint64_t GetBlockSizeFromNodeHeader() const;
+        void     SetDecompressTexture(bool decompressTexture) const
+            {
+            m_decompressTexture = decompressTexture;
+            }
 #ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceAccount               *   GetDataSourceAccount        (void)  { return m_dataSourceAccount; }
         const DataSource::SessionName   &   GetDataSourceSessionName    (void)  { return m_dataSourceSessionName; }

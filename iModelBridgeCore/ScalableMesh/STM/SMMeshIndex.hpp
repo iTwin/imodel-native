@@ -3984,10 +3984,21 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
     if (!IsTextured())
         return poolMemBlobItemPtr;
 
-    auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
+    if (!m_SMIndex->IsFromCesium())
+        {
+        auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
 
-    poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
-    assert(poolMemBlobItemPtr.IsValid());
+        poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
+        assert(poolMemBlobItemPtr.IsValid());
+        }
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = this->template GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::TextureCompressed, GetBlockID()).get();
+        // In the cesium format, textures are packaged with the points
+        m_texturePoolItemId = m_pointsPoolItemId;
+        bool result = poolMemMultiItemsPtr->GetItem<Byte>(poolMemBlobItemPtr, SMStoreDataType::TextureCompressed);
+        assert(result == true);
+        }
 
     return poolMemBlobItemPtr;
     }
