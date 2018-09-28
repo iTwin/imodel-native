@@ -148,7 +148,7 @@ BentleyStatus DoGetFromSource()
     bool            rgbPresent = colors.size() == points.size();
     DVec3d          tileRangeDiagonal = tileRange.DiagonalVector();
 
-    featureTable["POINTS_LENGTH"] = points.size();
+    featureTable["POINTS_LENGTH"] = static_cast<uint32_t>(points.size());
     featureTable["POSITION"]["byteOffset"] = 0;
 
     featureTable["QUANTIZED_VOLUME_OFFSET"].append(tileRange.low.x);
@@ -159,7 +159,7 @@ BentleyStatus DoGetFromSource()
     featureTable["QUANTIZED_VOLUME_SCALE"].append(tileRangeDiagonal.z);
 
     if (rgbPresent)
-        featureTable["RGB"]["byteOffset"] = points.size() * sizeof(QPoint3d);
+        featureTable["RGB"]["byteOffset"] = static_cast<uint32_t>(points.size() * sizeof(QPoint3d));
 
     Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
     uint32_t        featureTableStrLen = featureTableStr.size();
