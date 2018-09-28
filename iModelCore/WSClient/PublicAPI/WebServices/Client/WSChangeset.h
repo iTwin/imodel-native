@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSChangeset.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/ObjectId.h>
+#include <WebServices/Client/WSError.h>
 #include <WebServices/Client/RequestOptions.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
