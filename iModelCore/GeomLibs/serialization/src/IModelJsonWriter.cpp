@@ -186,8 +186,8 @@ struct BeCGIModelJsonValueWriter
         Json::Value value;
         bool rational = bsurf.rational != 0;
         bvector<double> knots;
-        value["orderU"] = bsurf.GetUOrder ();
-        value["orderV"] = bsurf.GetVOrder ();
+        value["orderU"] = static_cast<uint32_t>(bsurf.GetUOrder ());
+        value["orderV"] = static_cast<uint32_t>(bsurf.GetVOrder ());
 
         bsurf.GetUKnots (knots);
         value["uKnots"] = toJson (knots);
