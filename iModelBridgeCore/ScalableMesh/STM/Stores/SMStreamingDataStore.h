@@ -292,6 +292,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         virtual bool GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile) override;
 
+        virtual SMSQLiteFilePtr GetSQLiteFilePtr(SMStoreDataType dataType) override;
+
         
 
         //Multi-items loading store

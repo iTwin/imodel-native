@@ -204,6 +204,19 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); } 
 #endif
 
+    protected:
+
+        bool IsSisterFileType(SMStoreDataType dataType)
+            {
+            return (dataType == SMStoreDataType::DiffSet ||
+                    dataType == SMStoreDataType::Graph ||
+                    dataType == SMStoreDataType::LinearFeature ||
+                    dataType == SMStoreDataType::ClipDefinition ||
+                    dataType == SMStoreDataType::CoveragePolygon ||
+                    dataType == SMStoreDataType::CoverageName ||
+                    dataType == SMStoreDataType::Skirt);
+            }
+
     public:
 
         ISMDataStore() {};

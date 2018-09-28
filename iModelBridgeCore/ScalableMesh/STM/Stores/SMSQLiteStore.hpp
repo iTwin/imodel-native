@@ -499,12 +499,12 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSQLiteFilePtr(
     
     SMSQLiteFilePtr sqlFilePtr;
 
-    if (dataType == SMStoreDataType::DiffSet)
+    if (IsSisterFileType(dataType))
     {
         if (!IsProjectFilesPathSet())
             return nullptr;
 
-        SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, false, IsUsingTempPath());
+        SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(dataType, true, IsUsingTempPath());
 
         if (!sqliteFilePtr.IsValid())
             return nullptr;

@@ -2002,6 +2002,21 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     return true;
     }
 
+template <class EXTENT> SMSQLiteFilePtr SMStreamingStore<EXTENT>::GetSQLiteFilePtr(SMStoreDataType dataType)
+    {
+
+    SMSQLiteFilePtr sqlFilePtr = nullptr;
+
+    if (IsSisterFileType(dataType))
+        {
+        if (!IsProjectFilesPathSet())
+            return nullptr;
+        sqlFilePtr = GetSisterSQLiteFile(dataType, true, IsUsingTempPath());
+        }
+
+    return sqlFilePtr;
+    }
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
     assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
