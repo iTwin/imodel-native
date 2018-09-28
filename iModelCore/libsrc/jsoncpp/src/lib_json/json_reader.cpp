@@ -458,11 +458,11 @@ Reader::decodeNumber( Token &token )
       value = value * 10 + digit;
    }
    if ( isNegative )
-      currentValue() = -Value::LargestInt( value );
+      currentValue() = Value(-Value::LargestInt( value ) );
    else if ( value <= Value::LargestUInt(Value::maxInt) )
-      currentValue() = Value::LargestInt( value );
+      currentValue() = Value(Value::LargestInt( value ) );
    else
-      currentValue() = value;
+      currentValue() = Value( value );
    return true;
 }
 
