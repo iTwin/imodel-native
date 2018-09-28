@@ -370,7 +370,7 @@ TEST_F(UnitRegistryTests, TestCaseInsensitiveLookup)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-#if !defined (BENTLEYCONFIG_OS_LINUX) // informed Kyle 9/28/18
+#if !defined (BENTLEYCONFIG_OS_LINUX) // informed Kyle/Caleb/Gintaras 9/28/18
 TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
     {
     Utf8String path = UnitsTestFixture::GetConversionDataPath(L"All3_1Names.csv");
