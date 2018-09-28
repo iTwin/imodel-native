@@ -417,8 +417,16 @@ class JSON_API Value
       Value(unsigned long value);
 #endif
 #endif
-      Value(Int64 value) : type_(intValue) {value_.int_ = value;}
-      Value(UInt64 value) : type_(uintValue) {value_.uint_ = value;}
+      // NB: The constructors accepting 64-bit integers are marked explicit to ensure that callers do not unintentionally
+      // assign 64-bit integers to JSON values.
+      // Javascript does not support 64-bit precision for integer values - if the JSON representation of values outside of
+      // the supported range are transmitted to a Javascript context, errors may result.
+      // If your 64-bit integer represents an ID (such as a BeInt64Id), use BeInt64Id::ToHexStr() instead.
+      // If the value of your 64-bit integer is known not to exceed 32 bits, cast it to a uint32_t instead.
+      // If you really want to store a 64-bit integer, invoke the constructor explicitly.
+      explicit Value(Int64 value) : type_(intValue) {value_.int_ = value;}
+      explicit Value(UInt64 value) : type_(uintValue) {value_.uint_ = value;}
+
       Value(double value) : type_(realValue) {if (std::isnan(value)) {BeAssert(false); type_ = nullValue; return;} value_.real_ = value;}
       Value(Utf8CP value) : type_(stringValue), allocated_(true) {value_.string_ = CZString::Duplicate(value ? value : "");}
       Value(Utf8CP beginValue, Utf8CP endValue) : type_(stringValue), allocated_(true) {value_.string_ = CZString::Duplicate(beginValue, (unsigned int)(endValue - beginValue));}
@@ -661,8 +669,8 @@ class JSON_API Value
 
       void SetOrRemoveInt(Utf8CP key, Int val, Int defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
       void SetOrRemoveUInt(Utf8CP key, UInt val, UInt defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
-      void SetOrRemoveInt64(Utf8CP key, Int64 val, Int64 defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
-      void SetOrRemoveUInt64(Utf8CP key, UInt64 val, UInt64 defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
+      void SetOrRemoveInt64(Utf8CP key, Int64 val, Int64 defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = Value(val);}
+      void SetOrRemoveUInt64(Utf8CP key, UInt64 val, UInt64 defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = Value(val);}
       void SetOrRemoveDouble(Utf8CP key, double val, double defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
       void SetOrRemoveBool(Utf8CP key, bool val, bool defaultVal) {if (val==defaultVal) removeMember(key); else (*this)[key] = val;}
 
