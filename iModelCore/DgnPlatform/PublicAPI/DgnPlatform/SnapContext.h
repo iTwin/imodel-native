@@ -88,6 +88,8 @@ namespace SnapContext
         BE_JSON_NAME(snapDivisor)
         BE_JSON_NAME(offSubCategories)
         BE_JSON_NAME(intersectCandidates)
+        BE_JSON_NAME(decorationGeometry)
+        BE_JSON_NAME(geometryStream)
         bool IsValid() const {return isMember(json_id()) && isMember(json_closePoint()) && isMember(json_worldToView());}
         DgnElementId GetElementId() const {DgnElementId elementId; elementId.FromJson((*this)[json_id()]); return elementId;}
         DMatrix4d GetWorldToView() const {return JsonUtils::ToDMatrix4d((*this)[json_worldToView()]);}
@@ -149,6 +151,22 @@ namespace SnapContext
                     elements.insert(elemId);
             }
         return elements;
+        }
+
+        bmap<DgnElementId, Json::Value> GetNonElementGeometry() const {
+            bmap<DgnElementId, Json::Value> decoGeomMap;
+            auto& decoGeom = (*this)[json_decorationGeometry()];
+            if (decoGeom.isNull() || !decoGeom.isArray())
+                return decoGeomMap;
+            uint32_t nEntries = (uint32_t) decoGeom.size();
+            for (uint32_t i=0; i < nEntries; i++) {
+                DgnElementId id;
+                id.FromJson(decoGeom[i][json_id()]);
+                if (!id.IsValid())
+                    continue;
+                decoGeomMap[id] = decoGeom[i][json_geometryStream()];
+            }
+        return decoGeomMap;
         }
     };
 

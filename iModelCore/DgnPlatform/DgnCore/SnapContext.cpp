@@ -2182,12 +2182,57 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
     output.SetStatus(SnapStatus::NoElements);
     DgnElementId elementId = input.GetElementId();
     if (!elementId.IsValid())
-        return output; // NOTE: Maybe to support snapable decorations the GeometryStream/Placement can be supplied in lieu of an element id?
+        return output;
 
     DgnElementCPtr element = db.Elements().GetElement(elementId);
     GeometrySourceCP source = element.IsValid() ? element->ToGeometrySource() : nullptr;
     if (nullptr == source)
+//        return output;
+        {
+        // NEEDSWORK: Support snapable decorations...
+        bmap<DgnElementId, Json::Value> nonElemGeomMap = input.GetNonElementGeometry();
+
+        if (nonElemGeomMap.empty())
+            return output;
+
+        bmap<DgnElementId, Json::Value>::const_iterator found = nonElemGeomMap.find(elementId);
+
+        if (found == nonElemGeomMap.end())
+            return output;
+
+        GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(db, true);
+
+        if (!builder->FromJson(found->second, Json::Value()))
+            return output;
+
+        GeometryStream geomStream;
+        if (SUCCESS != builder->GetGeometryStream(geomStream))
+            return output;
+
+        GeometryCollection collection(geomStream, db);
+
+        for (auto iter : collection)
+            {
+            GeometricPrimitivePtr geom = iter.GetGeometryPtr();
+            if (!geom.IsValid())
+                continue;
+
+            ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
+            if (!curve.IsValid())
+                continue;
+
+            DPoint3d testPoint;
+            if (!curve->GetStartPoint(testPoint))
+                continue;
+
+            SnapData testSnap(SnapMode::NearestKeypoint, testPoint);
+            testSnap.m_heat = SnapHeat::SNAP_HEAT_InRange;
+            testSnap.ToResponse(output);
+            break;
+            }
+
         return output;
+        }
 
     DPoint3d testPoint = input.GetTestPoint();
     DPoint3d closePoint = input.GetClosePoint();
