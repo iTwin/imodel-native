@@ -323,8 +323,11 @@ private:
                         m_texture = system._CreateTexture(m_image, db, params);
                         }
 
+// #define WIP_GLYPH_ATLASES
+#if !defined(WIP_GLYPH_ATLASES) // if atlases are enabled, do not invalidate image!
                     m_image.Invalidate();
                     BeAssert(m_texture.IsValid());
+#endif
                     }
 
                 return m_texture;
