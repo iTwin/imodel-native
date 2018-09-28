@@ -2134,6 +2134,7 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined (BENTLEYCONFIG_OS_LINUX) // informed Kyle/Caleb/Gintaras 9/28/18
 TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     {
     // cache root data source
@@ -2164,7 +2165,8 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[0]->GetNodeId()));
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodes[1]->GetNodeId()));
     }
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
