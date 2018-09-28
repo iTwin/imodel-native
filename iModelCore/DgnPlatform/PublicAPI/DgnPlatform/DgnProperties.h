@@ -59,7 +59,6 @@ struct DgnEmbeddedProjectProperty
     };
 
     struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
-    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
     static ProjectProperty ProfileVersion() { return ProjectProperty("SchemaVersion"); }
     static ProjectProperty Name()            {return ProjectProperty("Name");}
@@ -86,9 +85,8 @@ struct DgnViewProperty
     };
 
     struct ViewProperty : Spec {ViewProperty(Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
-    struct ViewSetting  : Spec {ViewSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
-    static ViewSetting DefaultView()    {return ViewSetting("DefaultView");}
+    static ViewProperty DefaultView()    {return ViewProperty("DefaultView");}
     static ViewProperty ViewThumbnail() {return ViewProperty("Thumbnail", DbPropSpec::Compress::No);}
 };
 
