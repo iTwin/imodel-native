@@ -80,7 +80,7 @@ void ECJsonUtilities::Int64ToJson(Json::Value& json, int64_t int64Val, ECJsonInt
     switch (int64Format)
         {
             case ECJsonInt64Format::AsNumber:
-                json = int64Val;
+                json = Json::Value(int64Val);
                 return;
 
             case ECJsonInt64Format::AsDecimalString:
@@ -1465,7 +1465,7 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
             if (koq)
                 BeAssert(false && "KOQ not yet support for this type");
 
-            valueToPopulate[propertyName] = ecValue.GetLong();
+            valueToPopulate[propertyName] = Json::Value(ecValue.GetLong());
             return BSISUCCESS;
             }
 
