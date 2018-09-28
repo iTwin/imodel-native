@@ -81,8 +81,8 @@ TEST(JsonCpp, RoundTripInt64)
     const int64_t expectedPositiveInt64 = id.GetValue();
     const int64_t expectedNegativeInt64 = (-1) * id.GetValue();
     Json::Value obj1(Json::objectValue);
-    obj1["positive"] = expectedPositiveInt64;
-    obj1["negative"] = expectedNegativeInt64;
+    obj1["positive"] = Json::Value(expectedPositiveInt64);
+    obj1["negative"] = Json::Value(expectedNegativeInt64);
 
     Utf8String str = Json::FastWriter().write(obj1);
 
