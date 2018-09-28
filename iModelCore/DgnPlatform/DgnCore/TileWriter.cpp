@@ -284,7 +284,7 @@ void Writer::AddAccessor(Gltf::DataType componentType, Utf8StringCR accessorId, 
     accessor["componentType"] = static_cast<int32_t>(componentType);
     accessor["bufferView"] = bufferViewId;
     accessor["byteOffset"] = 0;
-    accessor["count"] = count;
+    accessor["count"] = static_cast<uint32_t>(count);
     accessor["type"] = type;
 
     BeAssert(!m_json["accessors"].isMember(accessorId));
@@ -523,7 +523,7 @@ Json::Value Writer::AddPolylines(PolylineList const& polylines, size_t maxIndex,
     for (auto& polyline : polylines)
         AppendPolylineToBufferView(polyline, useShortIndices);
     
-    bufferViewJson["byteLength"] = m_binaryData.size() -  bufferViewOffset;
+    bufferViewJson["byteLength"] = static_cast<uint32_t>(m_binaryData.size() -  bufferViewOffset);
     m_json["bufferViews"][bufferViewId] = bufferViewJson;
 
     AddAccessor(useShortIndices ? Gltf::DataType::UnsignedShort : Gltf::DataType::UInt32, accessorId, bufferViewId, polylines.size(), "PLINE");

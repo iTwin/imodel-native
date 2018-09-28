@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementMaterial_tests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -69,7 +69,7 @@ static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName
 
     Json::Value     patternMap, mapsMap;
 
-    patternMap[RENDER_MATERIAL_TextureId]        = textureId.GetValue();
+    patternMap[RENDER_MATERIAL_TextureId]        = textureId.ToHexStr();
     patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
     patternMap[RENDER_MATERIAL_PatternMapping]   = (int) Render::TextureMapping::Mode::Parametric;
 

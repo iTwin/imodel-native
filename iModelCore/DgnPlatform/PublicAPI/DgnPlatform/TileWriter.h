@@ -122,8 +122,8 @@ protected:
         auto bufferDataSize = count * sizeof(*bufferData);
         auto& view = (views[name] = Json::objectValue);
         view["buffer"] = "binary_glTF";
-        view["byteOffset"] = m_binaryData.size();
-        view["byteLength"] = bufferDataSize;
+        view["byteOffset"] = static_cast<uint32_t>(m_binaryData.size());
+        view["byteLength"] = static_cast<uint32_t>(bufferDataSize);
 
         size_t binaryDataSize = m_binaryData.size();
         m_binaryData.resize(binaryDataSize + bufferDataSize);
