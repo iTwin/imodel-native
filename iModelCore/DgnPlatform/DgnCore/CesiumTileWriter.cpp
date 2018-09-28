@@ -543,8 +543,8 @@ Utf8String CesiumTileWriter::AddTextureImage (TextureCR texture, Utf8StringCR id
     m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = dimensions.height;
 
     ByteStream const& imageData = imageSource.GetByteStream();
-    m_json["bufferViews"][bvImageId]["byteOffset"] = BinaryDataSize();
-    m_json["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+    m_json["bufferViews"][bvImageId]["byteOffset"] = static_cast<uint32_t>(BinaryDataSize());
+    m_json["bufferViews"][bvImageId]["byteLength"] = static_cast<uint32_t>(imageData.size());
     AddBinaryData (imageData.data(), imageData.size());
 
     return textureId;
@@ -616,7 +616,7 @@ void CesiumTileWriter::BeginBatchedModel(uint32_t& startPosition, uint32_t& leng
     Utf8String          batchTableStr = BatchTableBuilder (featureTable, m_model.GetDgnDb(), m_model.Is3d()).ToString();
     Json::Value         featureTableJson;
 
-    featureTableJson["BATCH_LENGTH"] = featureTable.size();
+    featureTableJson["BATCH_LENGTH"] = static_cast<uint32_t>(featureTable.size());
     Utf8String      featureTableStr = getJsonString(featureTableJson);
 
     startPosition = m_buffer.GetSize();
@@ -724,7 +724,7 @@ WriteStatus CesiumTileOutput::WritePointCloudTile(Cesium::PublishedTileR outputT
     auto            paramRangeDiagonal = paramRange.DiagonalVector();
     size_t          nPoints = pointCloud.m_points.size();
 
-    featureTable["POINTS_LENGTH"] = nPoints;
+    featureTable["POINTS_LENGTH"] = static_cast<uint32_t>(nPoints);
     featureTable["POSITION_QUANTIZED"]["byteOffset"] = 0;
 
     featureTable["QUANTIZED_VOLUME_OFFSET"].append(paramRange.low.x);
@@ -736,7 +736,7 @@ WriteStatus CesiumTileOutput::WritePointCloudTile(Cesium::PublishedTileR outputT
 
     size_t pointBytes =  nPoints * sizeof(QPoint3d);
     if (!pointCloud.m_colors.empty())
-        featureTable["RGB"]["byteOffset"] = pointBytes;
+        featureTable["RGB"]["byteOffset"] = static_cast<uint32_t>(pointBytes);
 
     Utf8String      featureTableStr =  getJsonString(featureTable);
     uint32_t        featureTableStrLen = featureTableStr.size(); 

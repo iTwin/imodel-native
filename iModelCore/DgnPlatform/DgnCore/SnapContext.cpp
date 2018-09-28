@@ -1841,7 +1841,7 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
 
     Transform localToWorld = iter.GetGeometryToWorld();
 
-    if (!ProcessGeometry(*geom, localToWorld, !preFiltered))
+    if (!ProcessGeometry(*geom, localToWorld, !preFiltered && nullptr != element))
         return false;
 
     m_hitGeom = geom;
@@ -1866,7 +1866,7 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, bool isPart, ViewFlagsCP viewFlags, DgnElementIdSet const* offSubCategories)
+bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, bool isPart, ViewFlagsCP viewFlags, DgnElementIdSet const* offSubCategories, bool checkRange)
     {
     GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
 
@@ -1905,6 +1905,9 @@ bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR
             }
         }
 
+    if (!checkRange)
+        return false;
+
     DRange3d    localRange = iter.GetSubGraphicLocalRange();
 
     if (localRange.IsNull() && (!isPart || SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, iter.GetDgnDb(), iter.GetGeometryPartId())))
@@ -1920,6 +1923,65 @@ bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR
     double      outsideDist = localRange.DistanceOutside(localPoint);
 
     return (outsideDist > maxOutsideDist);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element, ViewFlagsCP viewFlags, DgnElementIdSet const* offSubCategories, CheckStop* stopTester)
+    {
+    GeometryStreamEntryId  snapElemEntryId = m_hitEntryId;
+    GeometryStreamEntryId  snapPartEntryId = m_hitEntryId;
+
+    snapElemEntryId.SetPartIndex(0);
+    m_stopTester = stopTester;
+
+    for (auto iter : collection)
+        {
+        // Quick exclude of geometry that didn't generate the hit...
+        if (SkipEntry(iter, snapElemEntryId, false, viewFlags, offSubCategories, nullptr != element))
+            continue;
+
+        if (GeometryCollection::Iterator::EntryType::GeometryPart != iter.GetEntryType())
+            {
+            if (ProcessEntry(iter, snapElemEntryId.IsValid(), element))
+                break;
+
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return SnapStatus::Aborted;
+
+            continue;
+            }
+
+        DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
+
+        if (!geomPart.IsValid())
+            continue; // Shouldn't happen...
+
+        GeometryCollection partCollection(geomPart->GetGeometryStream(), geomPart->GetDgnDb());
+
+        partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
+
+        for (auto partIter : partCollection)
+            {
+            // Quick exclude of geometry that didn't generate the hit...
+            if (SkipEntry(partIter, snapPartEntryId, true, viewFlags, offSubCategories, true))
+                continue;
+
+            if (ProcessEntry(partIter, snapPartEntryId.IsValid(), geomPart.get()))
+                break;
+
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return SnapStatus::Aborted;
+            }
+
+        if (snapPartEntryId.IsValid())
+            break; // Done with part...
+        }
+
+    SimplifyHitDetail();
+
+    return (nullptr != m_hitCurveDetail.curve || HitGeomType::Point == m_hitGeomType ? SnapStatus::Success : SnapStatus::NoSnapPossible);
     }
 
 public:
@@ -2096,59 +2158,29 @@ bool ComputeSnapLocation(SnapMode snapMode, bool findArcCenters) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus GetClosestCurve(GeometrySourceCR source, ViewFlagsCP viewFlags = nullptr, DgnElementIdSet const* offSubCategories = nullptr, CheckStop* stopTester = nullptr)
     {
-    GeometryCollection     collection(source);
-    GeometryStreamEntryId  snapElemEntryId = m_hitEntryId;
-    GeometryStreamEntryId  snapPartEntryId = m_hitEntryId;
+    GeometryCollection collection(source);
 
-    snapElemEntryId.SetPartIndex(0);
-    m_stopTester = stopTester;
+    return GetClosestCurve(collection, source.ToElement(), viewFlags, offSubCategories, stopTester);
+    }
 
-    for (auto iter : collection)
-        {
-        // Quick exclude of geometry that didn't generate the hit...
-        if (SkipEntry(iter, snapElemEntryId, false, viewFlags, offSubCategories))
-            continue;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SnapStatus GetClosestCurve(JsonValueCR input, DgnDbR db, ViewFlagsCP viewFlags = nullptr, DgnElementIdSet const* offSubCategories = nullptr, CheckStop* stopTester = nullptr)
+    {
+    GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(db, true); // I don't expect pickable decorations to reference GeometryParts...
 
-        if (GeometryCollection::Iterator::EntryType::GeometryPart != iter.GetEntryType())
-            {
-            if (ProcessEntry(iter, snapElemEntryId.IsValid(), source.ToElement()))
-                break;
+    if (!builder->FromJson(input, Json::Value()))
+        return SnapStatus::NoElements;
 
-            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
-                return SnapStatus::Aborted;
+    GeometryStream stream;
 
-            continue;
-            }
+    if (SUCCESS != builder->GetGeometryStream(stream))
+        return SnapStatus::NoElements;
 
-        DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
+    GeometryCollection collection(stream, db);
 
-        if (!geomPart.IsValid())
-            continue; // Shouldn't happen...
-
-        GeometryCollection partCollection(geomPart->GetGeometryStream(), geomPart->GetDgnDb());
-
-        partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
-
-        for (auto partIter : partCollection)
-            {
-            // Quick exclude of geometry that didn't generate the hit...
-            if (SkipEntry(partIter, snapPartEntryId, true, viewFlags, offSubCategories))
-                continue;
-
-            if (ProcessEntry(partIter, snapPartEntryId.IsValid(), geomPart.get()))
-                break;
-
-            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
-                return SnapStatus::Aborted;
-            }
-
-        if (snapPartEntryId.IsValid())
-            break; // Done with part...
-        }
-
-    SimplifyHitDetail();
-
-    return (nullptr != m_hitCurveDetail.curve || HitGeomType::Point == m_hitGeomType ? SnapStatus::Success : SnapStatus::NoSnapPossible);
+    return GetClosestCurve(collection, nullptr, viewFlags, offSubCategories, stopTester);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2182,12 +2214,20 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
     output.SetStatus(SnapStatus::NoElements);
     DgnElementId elementId = input.GetElementId();
     if (!elementId.IsValid())
-        return output; // NOTE: Maybe to support snapable decorations the GeometryStream/Placement can be supplied in lieu of an element id?
-
-    DgnElementCPtr element = db.Elements().GetElement(elementId);
-    GeometrySourceCP source = element.IsValid() ? element->ToGeometrySource() : nullptr;
-    if (nullptr == source)
         return output;
+
+    DgnElementCPtr element;
+    GeometrySourceCP source = nullptr;
+    bmap<DgnElementId, Json::Value> nonElemGeomMap = input.GetNonElementGeometry();
+    bmap<DgnElementId, Json::Value>::const_iterator foundNonElemGeom = nonElemGeomMap.find(elementId);
+
+    if (foundNonElemGeom == nonElemGeomMap.end())
+        {
+        element = db.Elements().GetElement(elementId);
+        source = element.IsValid() ? element->ToGeometrySource() : nullptr;
+        if (nullptr == source)
+            return output;
+        }
 
     DPoint3d testPoint = input.GetTestPoint();
     DPoint3d closePoint = input.GetClosePoint();
@@ -2213,8 +2253,12 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
     if (!snapModes.empty())
         {
         SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap);
+        SnapStatus status = SnapStatus::NoSnapPossible;
 
-        SnapStatus status = helper.GetClosestCurve(*source, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+        if (nullptr != source)
+            status = helper.GetClosestCurve(*source, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+        else
+            status = helper.GetClosestCurve(foundNonElemGeom->second, db, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
 
         if (SnapStatus::Success != status)
             {
@@ -2283,14 +2327,25 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
         {
         for (DgnElementId candidateId : intersectCandidates)
             {
-            DgnElementCPtr candidateElement = db.Elements().GetElement(candidateId);
-            GeometrySourceCP candidateSource = candidateElement.IsValid() ? candidateElement->ToGeometrySource() : nullptr;
-            if (nullptr == candidateSource)
-                continue;
+            DgnElementCPtr candidateElement;
+            GeometrySourceCP candidateSource = nullptr;
+            bmap<DgnElementId, Json::Value>::const_iterator foundCandidateNonElemGeom = nonElemGeomMap.find(candidateId);
+
+            if (foundCandidateNonElemGeom == nonElemGeomMap.end())
+                {
+                candidateElement = db.Elements().GetElement(candidateId);
+                candidateSource = candidateElement.IsValid() ? candidateElement->ToGeometrySource() : nullptr;
+                if (nullptr == candidateSource)
+                    continue;
+                }
 
             SnapGeometryHelper helper(snapDivisor, snapAperture, closePoint, worldToViewMap);
+            SnapStatus status = SnapStatus::NoSnapPossible;
 
-            SnapStatus status = helper.GetClosestCurve(*candidateSource, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+            if (nullptr != candidateSource)
+                status = helper.GetClosestCurve(*candidateSource, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+            else
+                status = helper.GetClosestCurve(foundCandidateNonElemGeom->second, db, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
 
             if (SnapStatus::Aborted == status)
                 break;

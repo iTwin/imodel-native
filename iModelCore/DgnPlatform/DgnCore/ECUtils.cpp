@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ECUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -139,7 +139,7 @@ BentleyStatus ECUtils::ConvertECValueToJson(Json::Value& jv, ECN::ECValue const&
         case ECN::PRIMITIVETYPE_Boolean:    jv = v.GetBoolean(); break;
         case ECN::PRIMITIVETYPE_Double:     jv = v.GetDouble(); break;
         case ECN::PRIMITIVETYPE_Integer:    jv = v.GetInteger(); break;
-        case ECN::PRIMITIVETYPE_Long:       jv = v.GetLong(); break;
+        case ECN::PRIMITIVETYPE_Long:       jv = Json::Value(v.GetLong()); break;
         case ECN::PRIMITIVETYPE_String:     jv = v.GetUtf8CP(); break;
         
         case ECN::PRIMITIVETYPE_Point2d:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2d()); break;
