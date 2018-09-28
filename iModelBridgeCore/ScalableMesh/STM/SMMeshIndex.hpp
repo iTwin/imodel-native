@@ -1918,7 +1918,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     val["parts"] = Json::arrayValue;
 
     for(auto& id: texId){
-        val["texId"].append(id);
+        val["texId"].append(Json::Value(id));
         assert(id< 10000);
         
         }
@@ -1991,7 +1991,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
                     {
                     int newId = texId[currentPart];
                     assert(newId < 10000);
-                    subMetadata["texId"].append(texId[currentPart]);
+                    subMetadata["texId"].append(Json::Value(texId[currentPart]));
                     }
 
                 Utf8String subMetadataStr(Json::FastWriter().write(subMetadata));
@@ -2009,7 +2009,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
 
         if (texId.size() > currentPart)
             {
-            val["texId"].append(texId[currentPart]);
+            val["texId"].append(Json::Value(texId[currentPart]));
             }
 
         metadataStr = Json::FastWriter().write(val);
