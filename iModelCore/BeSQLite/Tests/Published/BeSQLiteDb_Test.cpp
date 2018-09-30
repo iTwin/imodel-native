@@ -1198,10 +1198,10 @@ TEST_F (BeSQLiteDbTests, SaveCreationDate)
     SetupDb (L"test2.db");
     EXPECT_TRUE (m_db.IsDbOpen ());
 
-    BentleyB0200::DateTime currentDate = BentleyB0200::DateTime::GetCurrentTimeUtc ();
+    BentleyM0200::DateTime currentDate = BentleyM0200::DateTime::GetCurrentTimeUtc ();
     EXPECT_EQ (BE_SQLITE_OK, m_db.SaveCreationDate ());
    
-    BentleyB0200::DateTime newDate;
+    BentleyM0200::DateTime newDate;
     EXPECT_EQ(BE_SQLITE_ROW, m_db.QueryCreationDate(newDate));
 
     if ( (newDate.GetYear()==currentDate.GetYear()) && (newDate.GetMonth()==currentDate.GetMonth()) && (newDate.GetDay () == currentDate.GetDay ()) && (newDate.GetHour()==currentDate.GetHour()) && (newDate.GetMinute()==currentDate.GetMinute()) && (newDate.GetSecond()==currentDate.GetSecond()) )

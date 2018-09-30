@@ -2363,6 +2363,7 @@ public:
         struct Key : NonCopyableClass {};
     };
 
+    using AppDataPtr = RefCountedPtr<AppData>;
 protected:
 
     //=======================================================================================
@@ -2371,8 +2372,9 @@ protected:
     struct AppDataCollection
     {
         using AppData = Db::AppData;
+        using AppDataPtr = Db::AppDataPtr;
     private:
-        typedef bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> Map;
+        typedef bmap<AppData::Key const*, AppDataPtr, std::less<AppData::Key const*>, 8> Map;
 
         BeMutex     m_mutex;
         Map         m_map;
@@ -2382,8 +2384,9 @@ protected:
     public:
         void Add(AppData::Key const& key, AppData* data) { BeMutexHolder lock(m_mutex); return AddInternal(key, data); }
         StatusInt Drop(AppData::Key const& key);
-        AppData* Find(AppData::Key const& key) { BeMutexHolder lock(m_mutex); return FindInternal(key); }
-        template<typename T> AppData* FindOrAdd(AppData::Key const& key, T createAppData)
+        AppData* FindRaw(AppData::Key const& key) { BeMutexHolder lock(m_mutex); return FindInternal(key); }
+        AppDataPtr Find(AppData::Key const& key) { return FindRaw(key); }
+        template<typename T> AppDataPtr FindOrAdd(AppData::Key const& key, T createAppData)
             {
             BeMutexHolder lock(m_mutex);
             AppData* data = FindInternal(key);
@@ -2889,7 +2892,14 @@ public:
     //! Search for the Db::AppData on this Db with \c key. See discussion of keys in AddAppData.
     //! @return A pointer to the AppData object with \c key. nullptr if not found.
     //! @note This function is thread-safe.
-    BE_SQLITE_EXPORT AppData* FindAppData(AppData::Key const& key) const;
+    BE_SQLITE_EXPORT AppDataPtr FindAppData(AppData::Key const& key) const;
+
+    //! @private
+    //! This exists because folks have dumb circular dependencies wherein during destruction of an AppData (ref-count == 0),
+    //! other objects owned by the AppData want to look it up again in the app data collection. If it is returned as a ref-counted ptr
+    //! it will be double-freed.
+    //! See PriorityAppData in ECPresentation.
+    AppData* FindRawAppData(AppData::Key const& key) const { return m_appData.FindRaw(key); }
 
     //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
     //! will be invoked to create it, and the returned AppData* will be added to the Db.
@@ -2897,7 +2907,20 @@ public:
     //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
     //! @return The existing or newly-added Db::AppData*
     //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
-    template<typename T> AppData* FindOrAddAppData(AppData::Key const& key, T createAppData) const { return m_appData.FindOrAdd(key, createAppData); }
+    template<typename T> AppDataPtr FindOrAddAppData(AppData::Key const& key, T createAppData) const { return m_appData.FindOrAdd(key, createAppData); }
+
+    //! Search for the Db::AppData on this Db with \c key. If no such AppData yet exists, the supplied \c createAppData function
+    //! will be invoked to create it, and the returned AppData* will be added to the Db.
+    //! @param[in] key The key to find the appropriate AppData. See discussion of keys in AddAppData.
+    //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
+    //! @return A ref-counted pointer to the existing or newly-added Db::AppData, as the derived type returned by invoking createAppData().
+    //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
+    template<typename T> auto ObtainAppData(AppData::Key const& key, T createAppData) const -> RefCountedPtr<typename std::remove_pointer<decltype(createAppData())>::type>
+        {
+        using U = decltype(createAppData());
+        AppDataPtr data = FindOrAddAppData(key, createAppData);
+        return static_cast<U>(data.get());
+        }
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);
