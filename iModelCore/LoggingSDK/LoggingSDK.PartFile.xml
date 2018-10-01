@@ -120,7 +120,7 @@
         <SubPart PartName="LoggingNative" />
         <!-- LoggingManaged is used by Navigator Mobile Publisher -->
         <SubPart PartName="LoggingManaged" />
-        <SubPart PartName="LoggingManagedInterop" />
+        <!-- <SubPart PartName="LoggingManagedInterop" /> -->
         <!-- LoggingServer are not currently part of any deliverable in Graphite
         <SubPart PartName="LoggingServer" />
         -->
