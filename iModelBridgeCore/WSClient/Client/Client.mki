@@ -14,7 +14,6 @@ ClientMkiSourceDir = $(ClientSourceDirectory)Client/
 #--------------------------------------------------------------------------------------
 ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        \
                     $(ClientMkiPublicApiDir)ObjectId.h                          \
-                    $(ClientMkiPublicApiDir)RequestOptions.h                    \
                     $(ClientMkiPublicApiDir)Response/WSResponse.h               \
                     $(ClientMkiPublicApiDir)Response/WSFileResponse.h           \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReader.h          \
@@ -70,8 +69,6 @@ $(o)ClientConnection$(oext)                 : $(ClientMkiSourceDir)ClientConnect
 $(o)ClientInfo$(oext)                       : $(ClientMkiSourceDir)ClientInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ObjectId$(oext)                         : $(ClientMkiSourceDir)ObjectId.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
-
-$(o)RequestOptions$(oext)                   : $(ClientMkiSourceDir)RequestOptions.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)RepositoryInfoProvider$(oext)           : $(ClientMkiSourceDir)RepositoryInfoProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

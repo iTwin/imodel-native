@@ -147,7 +147,6 @@
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
     <ClCompile Include="Client\RepositoryInfoProvider.cpp" />
-    <ClCompile Include="Client\RequestOptions.cpp" />
     <ClCompile Include="Client\WSJob.cpp" />
     <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp" />
     <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp" />
@@ -338,7 +337,6 @@
     <ClInclude Include="iModelHubClient\Storage\PendingChangeSetStorage.h" />
     <ClInclude Include="iModelHubClient\Utils.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />

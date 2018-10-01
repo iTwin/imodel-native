@@ -11,7 +11,6 @@
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/ObjectId.h>
 #include <WebServices/Client/WSError.h>
-#include <WebServices/Client/RequestOptions.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -51,7 +50,6 @@ struct WSChangeset
         Format m_format;
         bvector<std::shared_ptr<Instance>> m_instances;
         std::shared_ptr<Options> m_options;
-        Json::Value m_requestOptions;
         size_t m_requestOptionsJsonSize = 0;
 
     private:
@@ -67,10 +65,6 @@ struct WSChangeset
         //! Specify Format::SingeInstance for one instance with related instances changeset format.
         //! Specify Format::MultipleInstance for multiple instances with telated instances changeset format.
         WSCLIENT_EXPORT WSChangeset(Format format = Format::MultipleInstances);
-
-        //! DEPRECATED- Use GetRequestOptions instead
-        //! Set request options for changeset
-        WSCLIENT_EXPORT void SetRequestOptions(RequestOptions options);
 
         //! Add new instance. 
         //! @return added instance. Will assert if adding second instance with Format::SingeInstance and return undefined result.
