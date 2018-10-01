@@ -97,7 +97,6 @@
     <Part Name="__ParasiteSubParts_DcsX64Parts" OnlyPlatforms="x64">
         <SubProduct ProductName="IModelExtractor" PartFile="IModelExtractor" Repository="BeSQLite"/>
         <SubProduct ProductName="iModelConsole" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="LoggingManagedInterop" PartFile="LoggingSDK" Repository="LoggingSDK"/>
 
         <SubPart PartName="NuGetPackage" PartFile="ecobjects" Repository="ecobjects"/>
         <SubPart PartName="NuGetPackage" PartFile="ecdb" Repository="ECDb"/>
