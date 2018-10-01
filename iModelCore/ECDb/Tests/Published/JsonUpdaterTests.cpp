@@ -980,4 +980,49 @@ TEST_F(JsonUpdaterTests, ReadonlyAndCalculatedProperties)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonUpdaterTests, UpdateTimeOfDayValues)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("UpdateTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="CalendarEntry" modifier="None">
+                <ECProperty propertyName="StartTime" typeName="dateTime">
+                </ECProperty>
+                <ECProperty propertyName="EndTime" typeName="dateTime" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey key1, key2;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key1, "INSERT INTO ts.CalendarEntry(StartTime,EndTime) VALUES(TIME '08:00', TIME '17:30:45.500')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key2, "INSERT INTO ts.CalendarEntry(StartTime,EndTime) VALUES(TIME '00:00', TIME '24:00')"));
+
+
+    ECClassCP calendarEntryClass = m_ecdb.Schemas().GetClass("TestSchema", "CalendarEntry");
+    ASSERT_TRUE(calendarEntryClass != nullptr);
+
+    {
+    JsonUpdater updater(m_ecdb, *calendarEntryClass, nullptr);
+    ASSERT_TRUE(updater.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key1.GetInstanceId(), JsonValue("{\"StartTime\":\"08:30\", \"EndTime\":\"20:00\"}").m_value));
+    }
+
+    {
+    bvector<Utf8CP> propsToUpdate;
+    propsToUpdate.push_back("EndTime");
+    JsonUpdater updater(m_ecdb, *calendarEntryClass, propsToUpdate, nullptr);
+    ASSERT_TRUE(updater.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key2.GetInstanceId(), JsonValue("{\"EndTime\":\"23:59:59.999\"}").m_value));
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    // WIP: Once we can use the TimeOfDay component in the schema, we need to adjust the expected time strings
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T08:30:00.000\", \"EndTime\":\"2000-01-01T20:00:00.000\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key1.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T00:00:00.000\", \"EndTime\":\"2000-01-01T23:59:59.999\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key2.GetInstanceId().ToString().c_str()).c_str()));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
