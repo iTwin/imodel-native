@@ -100,13 +100,13 @@ Json::Value& elementData
     { 
     Dgn::DgnDbR db = GetDgnDb();
     elementData["name"] = GetName();
-    elementData["id"] = GetElementId().GetValueUnchecked();
+    elementData["id"] = GetElementId().ToHexStr();
     elementData["classifications"] = Json::Value(Json::arrayValue);
     elementData["groups"] = Json::Value(Json::arrayValue);
     for (Dgn::ElementIteratorEntry elementIter : MakeClassificationGroupIterator())
         {
         Json::Value elementValue;
-        elementValue["id"] = elementIter.GetElementId().GetValueUnchecked();
+        elementValue["id"] = elementIter.GetElementId().ToHexStr();
 
         ClassificationGroupCPtr classificationGroup = db.Elements().Get<ClassificationGroup>(elementIter.GetElementId());
         BeAssert (classificationGroup.IsValid());
@@ -118,13 +118,13 @@ Json::Value& elementData
     for (Dgn::ElementIteratorEntry elementIter : MakeClassificationIterator())
         {
         Json::Value elementValue;
-        elementValue["id"] = elementIter.GetElementId().GetValueUnchecked();
+        elementValue["id"] = elementIter.GetElementId().ToHexStr();
 
         ClassificationCPtr classification = db.Elements().Get<Classification>(elementIter.GetElementId());
         BeAssert (classification.IsValid());
         
         elementValue["label"] = classification->GetName();
-        elementValue["groupId"] = classification->GetGroupId().GetValueUnchecked();
+        elementValue["groupId"] = classification->GetGroupId().ToHexStr();
         elementData["classifications"].append(elementValue);
         }
     }
