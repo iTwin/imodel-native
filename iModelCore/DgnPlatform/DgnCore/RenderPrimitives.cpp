@@ -312,6 +312,8 @@ private:
             bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
             TexturePtr GetTexture(SystemR system, DgnDbR db)
                 {
+// #define WIP_GLYPH_ATLASES
+#if !defined(WIP_GLYPH_ATLASES) // if atlases are enabled, do not invalidate image or create texture!
                 if (m_texture.IsNull() && m_image.IsValid())
                     {
                     TextureKey key(m_name);
@@ -323,14 +325,14 @@ private:
                         m_texture = system._CreateTexture(m_image, db, params);
                         }
 
-// #define WIP_GLYPH_ATLASES
-#if !defined(WIP_GLYPH_ATLASES) // if atlases are enabled, do not invalidate image!
                     m_image.Invalidate();
                     BeAssert(m_texture.IsValid());
-#endif
                     }
 
                 return m_texture;
+#else
+                return nullptr;
+#endif
                 }
         };
 
