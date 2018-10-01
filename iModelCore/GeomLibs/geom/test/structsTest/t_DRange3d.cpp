@@ -429,10 +429,10 @@ TEST(DRange3d, IndependentIntersection)
     
     DPoint3d points2[2] = { DPoint3d::From(-9, 6, 6), DPoint3d::From(-6, 9, 9) };
     DRange3d range1 = DRange3d::From(points2, weihgts, 2);
-    Check::ExactDouble(range1.low.x, range0.low.x);
-    Check::ExactDouble(range1.low.y, range0.low.y);
-    Check::ExactDouble(range1.low.z, range0.low.z);
-    Check::ExactDouble(range1.high.x, range0.high.x);  
-    Check::ExactDouble(range1.high.y, range0.high.y);
-    Check::ExactDouble(range1.high.z, range0.high.z);
+    Check::Near(range1.low.x, range0.low.x);
+    Check::Near(range1.low.y, range0.low.y);
+    Check::Near(range1.low.z, range0.low.z);
+    Check::Near(range1.high.x, range0.high.x);  
+    Check::Near(range1.high.y, range0.high.y);
+    Check::Near(range1.high.z, range0.high.z);
     }
