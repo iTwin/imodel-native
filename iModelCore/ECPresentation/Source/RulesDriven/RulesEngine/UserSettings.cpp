@@ -61,7 +61,7 @@ void UserSettings::_SetSettingIntValue(Utf8CP id, int64_t value)
         }
 
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
-    m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), value);
+    m_localState->SaveJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str(), Json::Value(value));
     
     if (!m_isInitializing && nullptr != m_changeListener)
         m_changeListener->_OnSettingChanged(m_rulesetId.c_str(), id);
@@ -86,7 +86,7 @@ static Json::Value JsonArrayFromVector(bvector<int64_t> const& vec)
     {
     Json::Value json(Json::arrayValue);
     for (int64_t v : vec)
-        json.append(v);
+        json.append(Json::Value(v));
     return json;
     }
 
@@ -268,7 +268,7 @@ void UserSettings::AddValues(JsonValueR groupListJson) const
                 if (0 == strcmp("StringValue", options))
                     itemJson["Value"] = GetSettingValue(itemJson["Id"].asCString()).c_str();
                 else if (0 == strcmp("IntValue", options))
-                    itemJson["Value"] = GetSettingIntValue(itemJson["Id"].asCString());
+                    itemJson["Value"] = Json::Value(GetSettingIntValue(itemJson["Id"].asCString()));
                 else
                     itemJson["Value"] = GetSettingBoolValue(itemJson["Id"].asCString());
                 }
