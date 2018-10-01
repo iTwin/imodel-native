@@ -745,9 +745,9 @@ BentleyStatus   DwgImporter::SetModelPropertiesFromLayout (DgnModelP model, DwgD
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId classId)
     {
-    Utf8String          descr (block.GetComments().c_str());
+    Utf8String      descr (block.GetComments().c_str());
     SchemaManagerCR dgndbSchemas = m_dgndb->Schemas ();
-    DgnElementId        modelElementId;
+    DgnElementId    modelElementId;
 
     if (dgndbSchemas.GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel) == classId)
         {

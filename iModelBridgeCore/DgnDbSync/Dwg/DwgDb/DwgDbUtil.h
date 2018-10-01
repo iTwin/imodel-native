@@ -17,10 +17,12 @@ USING_NAMESPACE_DWGDB
 #define TkArray         OdArray
 #define TkDbVersion     OdDb::DwgVersion
 #define TkObjectArray   OdRxObjectPtrArray
+#define TkEntityArray   OdDbEntityPtrArray
 #elif DWGTOOLKIT_RealDwg
 #define TkArray         AcArray
 #define TkDbVersion     AcDb::AcDbDwgVersion
 #define TkObjectArray   AcDbVoidPtrArray
+#define TkEntityArray   AcArray<AcDbEntity*>
 #endif
 
 struct Util : NonCopyableClass
@@ -46,6 +48,7 @@ public:
     static void         GetDPoint3d (DPoint3dP points, DWGGE_TypeCP(Point3d) gePoint, uint32_t nPoints);
     static size_t       GetPointArray (DPoint3dArrayR pointsOut, DWGGE_TypeCR(Point3dArray) pointsIn);
     static size_t       GetPointArray (DPoint2dArrayR pointsOut, DWGGE_TypeCR(Point2dArray) pointsIn);
+    static size_t       GetVectorArray (DVector3dArrayR vectorsOut, DWGGE_TypeCR(Vector3dArray) vectorsIn);
     static void         GetTransform (TransformR trans, DWGGE_TypeCR(Matrix3d) matrix);
     static void         GetRotMatrix (RotMatrixR rotMatrix, DWGGE_TypeCR(Matrix3d) geMatrix);
     static DwgDbStatus  GetMSBsplineCurve (MSBsplineCurveR curve, DWGGE_TypeCR(SplineEnt3d) geSpline);
@@ -63,6 +66,7 @@ public:
     static size_t       GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2dArrayCR pointsIn);
     static size_t       GetObjectIdArray (DWGDB_TypeR(ObjectIdArray) idsOut, DwgDbObjectIdArrayCR idsIn);
     static DwgDbStatus  GetObjectArray (DwgDbObjectPArrayR out, TkObjectArray& in);
+    static DwgDbStatus  GetEntityArray (DwgDbEntityPArrayR out, TkEntityArray& in);
 
     static DwgFileVersion   GetDwgVersionFrom (TkDbVersion dwgVersion);
     static TkDbVersion      GetDwgVersionFrom (DwgFileVersion dwgVersion);

@@ -223,6 +223,7 @@ private:
     GeometricPrimitivePtr CreateGeometry (PK_BODY_create_topology_2_r_t& brep);
     void        FreeBrep (PK_BODY_create_topology_2_r_t& brep) const;
 #endif
+    GeometricPrimitivePtr CreateGeometry (DwgDbPlaneSurfaceP planeSurface);
     };  // DwgBrep
 
 

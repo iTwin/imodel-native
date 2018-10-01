@@ -40,6 +40,12 @@
 #include    <Teigha/Drawing/Include/DbGroup.h>
 #include    <Teigha/Drawing/Include/DbXrecord.h>
 #include    <Teigha/Drawing/Include/DbXrefGraph.h>
+#include    <Teigha/Drawing/Include/DbExtrudedSurface.h>
+#include    <Teigha/Drawing/Include/DbLoftedSurface.h>
+#include    <Teigha/Drawing/Include/DbNurbSurface.h>
+#include    <Teigha/Drawing/Include/DbPlaneSurface.h>
+#include    <Teigha/Drawing/Include/DbRevolvedSurface.h>
+#include    <Teigha/Drawing/Include/DbSweptSurface.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewRepBlockReference.h>
 #include    <Teigha/Kernel/Include/OdString.h>
