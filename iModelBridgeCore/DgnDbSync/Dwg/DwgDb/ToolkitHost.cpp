@@ -355,6 +355,10 @@ DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WString
     DWORD   winError = ERROR_FILE_NOT_FOUND;
     if (!ignoreCache)
         {
+        // if we have previsously downloaded & cached this file, use it:
+        if (this->FindCachedLocalFile(local, url))
+            return  DwgDbStatus::Success;
+            
         // look the file up from the OS's cache:
         DWORD   size = 0;
         if (::GetUrlCacheEntryInfo(url.c_str(), nullptr, &size))
@@ -364,16 +368,33 @@ DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WString
         if (winError == ERROR_INSUFFICIENT_BUFFER)
             {
             INTERNET_CACHE_ENTRY_INFO* cacheEntry = (INTERNET_CACHE_ENTRY_INFO*)::malloc(size);
-            if (::GetUrlCacheEntryInfo(url.c_str(), cacheEntry, &size) && BeFileName::DoesPathExist(cacheEntry->lpszLocalFileName))
+            if (::GetUrlCacheEntryInfo(url.c_str(), cacheEntry, &size))
                 {
-                // found the cache file - return it:
-                local.assign (cacheEntry->lpszLocalFileName);
-                // but also save it to our list for future lookup:
-                m_localToUrlMap.Insert (local, url);
+                // cacheEntry->lpszLocalFileName might be a .htm file telling us that the file has been moved!
+                bool isMoved = false;
+                if (cacheEntry->dwHeaderInfoSize > 0 && WString(cacheEntry->lpHeaderInfo).Contains(L"Moved Permanently"))
+                    isMoved = true;
+
+                bool isFound = false;
+                if (!isMoved && BeFileName::DoesPathExist(cacheEntry->lpszLocalFileName))
+                    {
+                    // found the cache file - return it:
+                    local.assign (cacheEntry->lpszLocalFileName);
+                    // but also save it to our list for future lookup:
+                    m_localToUrlMap.Insert (local, url);
+                    isFound = true;
+                    }
+
                 ::free(cacheEntry);
-                return DwgDbStatus::Success;
+                if (isFound)
+                    return DwgDbStatus::Success;
+
+                winError = ERROR_FILE_NOT_FOUND;
                 }
-            winError = ::GetLastError();
+            else
+                {
+                winError = ::GetLastError();
+                }
             }
         }
 
@@ -381,7 +402,7 @@ DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WString
         {
         // download and cache the URL file
         static DWORD    localSize = 2048;
-        LPTSTR  localFile = static_cast<LPTSTR> (::calloc(1, 2048));
+        LPTSTR  localFile = static_cast<LPTSTR> (::calloc(1, localSize));
 
         HRESULT result = ::URLDownloadToCacheFile (nullptr, url.c_str(), localFile, localSize, 0, nullptr);
 
@@ -404,7 +425,7 @@ DwgDbStatus     DwgToolkitHost::DownloadOrGetCachedFile (WStringR local, WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DwgToolkitHost::FindCachedLocalFile (WStringR cached, WStringCR url)
+bool            DwgToolkitHost::FindCachedLocalFile (WStringR cached, WStringCR url) const
     {
     auto found = std::find_if (m_localToUrlMap.begin(), m_localToUrlMap.end(), [&](bpair<WString,WString> const& entry){ return entry.second.EqualsI(url.c_str()); });
     if (found != m_localToUrlMap.end())
