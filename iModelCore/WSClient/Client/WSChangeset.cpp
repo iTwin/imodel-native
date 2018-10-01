@@ -78,13 +78,6 @@ size_t WSChangeset::CalculateSize() const
         size += m_options->CalculateSize();
         }
 
-    if (!m_requestOptions.isNull())
-        {
-        static const size_t requestOptionsFieldSize = Utf8String(R"(,"requestOptions":)").size();
-        size += requestOptionsFieldSize;
-        size += m_requestOptionsJsonSize;
-        }
-
     return size;
     }
 
@@ -114,11 +107,6 @@ void WSChangeset::ToRequestJson(JsonValueR changesetJson) const
     else
         {
         ToMultipleInstancesRequestJson(changesetJson);
-        }
-
-    if (!m_requestOptions.isNull())
-        {
-        changesetJson["requestOptions"] = m_requestOptions;
         }
     }
 
@@ -245,15 +233,6 @@ WSChangeset::Options& WSChangeset::GetRequestOptions()
 void WSChangeset::RemoveRequestOptions()
     {
     m_options = nullptr;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::SetRequestOptions(RequestOptions options)
-    {
-    options.ToJson(m_requestOptions);
-    m_requestOptionsJsonSize = Json::FastWriter::ToString(m_requestOptions).size();
     }
 
 /*--------------------------------------------------------------------------------------+
