@@ -1489,7 +1489,7 @@ BentleyStatus IModelTileWriter::AddTextureJson(TextureMappingCR mapping, Json::V
     Utf8String name = "";
     if (texture.GetKey().IsNamed())
         {
-        name = texture.GetKey().GetName(); // if this is true, put in json atlasTexture
+        name = texture.GetKey().GetName();
         }
     else
         {
