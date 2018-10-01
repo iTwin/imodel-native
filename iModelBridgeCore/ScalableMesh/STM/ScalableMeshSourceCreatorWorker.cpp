@@ -28,10 +28,15 @@ StatusInt IScalableMeshSourceCreatorWorker::CreateMeshTasks() const
     {    
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateMeshTasks();
     }
-
+	
 StatusInt IScalableMeshSourceCreatorWorker::CreateTaskPlan() const
     {
     return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateTaskPlan();
+    }
+
+StatusInt IScalableMeshSourceCreatorWorker::CreateGenerationTasks() const
+    {
+    return static_cast<IScalableMeshSourceCreatorWorker::Impl*>(m_implP.get())->CreateGenerationTasks();
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::ExecuteNextTaskInTaskPlan() const
@@ -257,7 +262,7 @@ struct GenerationTask : public RefCountedBase
 
         for (auto& node : groupNodes)
             {
-            m_resolutionToGenerate[node->GetLevel() - 1].m_nodeIds.push_back(node->GetNodeId());
+            m_resolutionToGenerate[node->GetLevel()].m_nodeIds.push_back(node->GetNodeId());
             }
 
         for (auto& node : groupNodes)
@@ -271,13 +276,13 @@ struct GenerationTask : public RefCountedBase
                         bvector<IScalableMeshNodePtr> neighborNodes = node->GetNeighborAt(relativePosX, relativePosY, relativePosZ);
                         for (auto& neighborNode : neighborNodes)
                             {
-                            if (!m_resolutionToGenerate[node->GetLevel() - 1].FindNode(neighborNode->GetNodeId()))
+                            if (!m_resolutionToGenerate[node->GetLevel()].FindNode(neighborNode->GetNodeId()))
                                 isNeighborFound = false;
                             }
                         }
                         
             if (isNeighborFound)
-                m_resolutionToGenerate[node->GetLevel() - 1].m_nodeStitchIds.push_back(node->GetNodeId());
+                m_resolutionToGenerate[node->GetLevel()].m_nodeStitchIds.push_back(node->GetNodeId());
             }
         }
 
@@ -392,15 +397,18 @@ void GroupNodes(bvector<GenerationTaskPtr>& toExecuteTasks, IScalableMeshNodePtr
 
 
 void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks)
-    {    
-    IScalableMeshNodePtr meshRootNode(m_scmPtr->GetRootNode());
-        
-    IScalableMeshNodePtr currentNode; 
-    uint64_t pointThreshold = 10000; 
-    int childrenGroupingSize = 0; 
-    int nbResolutions = m_scmPtr->GetNbResolutions();
+    {   
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
 
-    GroupNodes(toExecuteTasks, currentNode, pointThreshold, childrenGroupingSize, nbResolutions);
+    HFCPtr<SMPointIndexNode<DPoint3d, DRange3d>> rootNode(pDataIndex->GetRootNode());
+    
+    IScalableMeshNodePtr meshRootNode(new ScalableMeshNode<DPoint3d>(rootNode));
+            
+    uint64_t pointThreshold = 60000; 
+    int childrenGroupingSize = 0;     
+    int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
+
+    GroupNodes(toExecuteTasks, meshRootNode, pointThreshold, childrenGroupingSize, nbResolutions);
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateGenerationTasks()

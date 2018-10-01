@@ -73,7 +73,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         virtual                             ~Impl();
 
-
+        
         StatusInt                    CreateGenerationTasks();
         
         StatusInt                    CreateMeshTasks();        
