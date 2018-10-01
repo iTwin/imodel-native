@@ -730,15 +730,15 @@ void ElevationGridSurface::_SerializeProperties (Json::Value& elementData) const
     {
     elementData[BCSSERIALIZABLE_ELEMENT_ClassName] = GetElementClass()->GetName();
     elementData[BCSSERIALIZABLE_ELEMENT_SchemaName] = GetElementClass()->GetSchema().GetName();
-    elementData[BCSSERIALIZABLE_ELEMENT_ElementId] = GetElementId().GetValueUnchecked();
+    elementData[BCSSERIALIZABLE_ELEMENT_ElementId] = GetElementId().ToHexStr();
     elementData[BCSSERIALIZABLE_ELEMENT_Name] = GetUserLabel();
     elementData[BCSSERIALIZABLE_ELEMENT_CodeValue] = GetCode().GetValueUtf8();
 
     GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
-    elementData[BCSSERIALIZABLE_ELEVSURFACE_OwnerId] = grid->GetCode().GetScopeElementId(GetDgnDb()).GetValueUnchecked();
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_OwnerId] = grid->GetCode().GetScopeElementId(GetDgnDb()).ToHexStr();
     elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation] = GetElevation();
-    elementData[BCSSERIALIZABLE_ELEVSURFACE_AxisId] = GetAxisId().GetValueUnchecked();
-    elementData[BCSSERIALIZABLE_ELEVSURFACE_GridId] = GetGridId().GetValueUnchecked();
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_AxisId] = GetAxisId().ToHexStr();
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_GridId] = GetGridId().ToHexStr();
 
 
     DPoint3d centroid;
