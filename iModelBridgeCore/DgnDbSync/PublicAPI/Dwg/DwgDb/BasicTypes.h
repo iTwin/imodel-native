@@ -38,17 +38,21 @@ class DwgCmColor;
 //! common arrays
 typedef bvector <BentleyApi::DPoint2d>  DPoint2dArray;
 typedef bvector <BentleyApi::DPoint3d>  DPoint3dArray;
+typedef bvector <BentleyApi::DVec3d>    DVector3dArray;
 typedef bvector <int32_t>               DwgDbIntArray;
 typedef bvector <double>                DwgDbDoubleArray;
 typedef bvector <DwgDbObjectId>         DwgDbObjectIdArray;
 typedef bvector <DwgDbObjectP>          DwgDbObjectPArray;
+typedef bvector <DwgDbEntityP>          DwgDbEntityPArray;
 typedef bvector <DwgCmColor>            DwgColorArray;
 DEFINE_NO_NAMESPACE_TYPEDEFS (DPoint2dArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DPoint3dArray)
+DEFINE_NO_NAMESPACE_TYPEDEFS (DVector3dArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbIntArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbDoubleArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbObjectIdArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbObjectPArray)
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbEntityPArray)
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgColorArray)
 
 /*=================================================================================**//**

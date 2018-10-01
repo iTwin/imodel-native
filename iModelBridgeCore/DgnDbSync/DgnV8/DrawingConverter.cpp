@@ -1173,10 +1173,10 @@ bool CreateOrUpdateDrawingGraphics()
             if (nullptr != modelRef && nullptr != modelRef->GetDgnModelP())
                 originalElementMapping = m_converter.FindFirstElementMappedTo(*modelRef->GetDgnModelP(), byElement.first);
 
+            DgnV8Api::ElementHandle v8eh(modelRef->GetDgnModelP()->FindElementByID(byElement.first));
             if (!originalElementMapping.IsValid())
                 {
                 // See "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
-                DgnV8Api::ElementHandle v8eh(modelRef->GetDgnModelP()->FindElementByID(byElement.first));
                 SyncInfo::ElementProvenance lmt(v8eh, m_converter.GetSyncInfo(), m_converter.GetCurrentIdPolicy());
                 originalElementMapping = SyncInfo::V8ElementMapping(DgnElementId(), byElement.first, m_parentModelMapping.GetV8ModelSyncInfoId(), lmt);
                 }
@@ -1189,7 +1189,7 @@ bool CreateOrUpdateDrawingGraphics()
                 {
                 modified = true;
                 seenCategories.insert(bycategory.first);
-                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, bycategory.first, *bycategory.second);
+                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, v8eh, bycategory.first, *bycategory.second);
                 if (DgnDbStatus::Success != status)
                     {
                     BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");

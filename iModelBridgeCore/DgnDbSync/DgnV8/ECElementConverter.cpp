@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ECElementConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -263,7 +263,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspect(ElementConversionResults& 
         {
         Utf8String error;
         error.Sprintf("Inserting aspect for %s failed. Could not find target aspect ECClass in the DgnDb file.", ToInstanceLabel(v8Instance).c_str());
-        m_converter.ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
+        m_converter.ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
         return BSIERROR;
         }
 
@@ -272,7 +272,7 @@ BentleyStatus ElementAspectConverter::ConvertToAspect(ElementConversionResults& 
         {
         Utf8String error;
         error.Sprintf("Inserting aspect for %s failed. Transforming v8 ECInstance to aspect ECInstance failed.", ToInstanceLabel(v8Instance).c_str());
-        m_converter.ReportIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
+        m_converter.ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
         return BSIERROR;
         }
 

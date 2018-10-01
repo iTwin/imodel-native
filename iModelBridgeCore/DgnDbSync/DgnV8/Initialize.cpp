@@ -12,6 +12,8 @@
 #include <VersionedDgnV8Api/PSolidAcisInterop/PSolidAcisInterop.h>
 #include <VersionedDgnV8Api/DgnGeoCoord/DgnGeoCoord.h>
 #include <VersionedDgnV8Api/DgnPlatform/Tools/MacroConfigurationAdmin.h>
+#include <VersionedDgnV8Api/DgnPlatform/Tools/MacroFileProcessor.h>
+
 #include <VersionedDgnV8Api/GeoCoord/GCSLibrary.h>
 #include <VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h>
 
@@ -355,13 +357,24 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
         BeFileName  fallbackV8iConfigDir(exeDir);
         fallbackV8iConfigDir.AppendToPath(L"Dgnv8\\v8iConfig");
         BeFileName  fallbackConnectConfigDir(exeDir);
-        fallbackConnectConfigDir.AppendToPath(L"Dgnv8\\CEconfig");
+        fallbackConnectConfigDir.AppendToPath(L"Dgnv8");
 
         // if enough information is supplied, read either CONNECT or V8i configuration files to define the macros.
         if (!isV8i)
             {
             s_macros->DefineBuiltinMacro (L"_DGNV8CONVERTER", L"1");
-            s_macros->ReadCONNECTConfigurationFiles(workSpaceOrUser.c_str(), workSetOrProject.c_str(), configRootDir.c_str(), installDir.c_str(), msConfigFileName.c_str(), fallbackConnectConfigDir.c_str(), assignmentArgs, debugOutput, debugLevel);
+            
+            if (msConfigFileName.empty())
+                s_macros->ReadCONNECTConfigurationFiles(workSpaceOrUser.c_str(), workSetOrProject.c_str(), configRootDir.c_str(), installDir.c_str(), msConfigFileName.c_str(), fallbackConnectConfigDir.c_str(), assignmentArgs, debugOutput, debugLevel);
+            else
+                {
+                DgnV8Api::MacroFileProcessor fileProcessor(*s_macros, nullptr, nullptr);
+                if (nullptr != debugOutput)
+                    fileProcessor.SetDebugOutput(debugOutput, debugLevel);
+                fileProcessor.ProcessTopLevelFile(msConfigFileName.c_str(), DgnV8Api::ConfigurationVariableLevel::System, nullptr);
+                if (nullptr != debugOutput)
+                    fileProcessor.PrintSummary();                
+                }
             }
         else
             {
@@ -414,7 +427,9 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
     // If MS_SMARTSOLID is not defined, Vancouver will look for a "schema" sub-directory next to the process's EXE to provide ParaSolid with its schema files.
     // In DgnDb, we place ParaSolid schemas in a "PSolidSchemas" sub-directory for clarity, so we need to inject a better path.
     // Further, might as well ensure V8 uses the schema from the V8 delivery, and not ours.
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, L"MS_SMARTSOLID"))
+    Bentley::WString parasolidCfgVarValue;
+    bool hasPsolidDir = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(parasolidCfgVarValue, L"MS_SMARTSOLID")) && BeFileName::DoesPathExist(parasolidCfgVarValue.c_str());
+    if (!hasPsolidDir)
         {
         WString smartSolidDir = v8RootDir;
         

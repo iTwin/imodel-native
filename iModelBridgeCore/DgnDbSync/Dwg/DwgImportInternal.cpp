@@ -128,7 +128,11 @@ void        DwgImporter::RegisterProtocalExtensions ()
     DwgRxClass::AddProtocolExtension (DwgDb3dSolid::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbRegion::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
     DwgRxClass::AddProtocolExtension (DwgDbBody::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
-    // WIP - add surface entities
-    //DwgRxClass::AddProtocolExtension (DwgDbSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbExtrudedSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbLoftedSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbNurbSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbRevolvedSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbPlaneSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
+    DwgRxClass::AddProtocolExtension (DwgDbSweptSurface::SuperDesc(), protocalClass, DwgBrepExt::CreateObject());
     }
 
