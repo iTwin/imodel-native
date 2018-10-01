@@ -306,3 +306,166 @@ TEST_F(InstanceLabelOverrideContentPerformanceTests, GetPropertyPaneContentWithL
     {
     GetContentForAllGeometricElements(ContentDisplayType::PropertyPane, 1, (int)ContentFlags::ShowLabels);
     }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                09/2018
++===============+===============+===============+===============+===============+======*/
+struct TilesPublisherPerformanceTests : ContentPerformanceTests
+    {
+    BeFileName _SupplyProjectPath() const override
+        {
+        BeFileName path;
+        BeTest::GetHost().GetDocumentsRoot(path);
+        path.AppendToPath(L"Performance");
+        path.AppendToPath(L"TilesPublisherSample.bim");
+        return path;
+        }
+    
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        // taken from https://bentleycs.visualstudio.com/beconnect/_git/TilesPublisherService?path=%2Fsrc%2FInterop%2FAssets%2FPresentationRules%2FBisCore.PresentationRuleSet.xml&version=GB2018_07_25_04_Platform_update
+        PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromXmlString(R"ruleset(
+            <PresentationRuleSet RuleSetId="Items" VersionMinor="0" VersionMajor="1">
+              <InstanceLabelOverride ClassName='BisCore:Element' OnlyIfNotHandled='true' Priority='100' PropertyNames='UserLabel,CodeValue' />
+              <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")'
+                Label='this.GetRelatedValue("BisCore:ModelModelsElement", "Forward", "BisCore:Element", "UserLabel")' OnlyIfNotHandled='true' Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Category", "BisCore")' ImageId='"ECLiteralImage://CATEGORY"'
+                Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("GeometricModel2d", "BisCore")' ImageId='"ECLiteralImage://MODEL_2D"'
+                Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("GeometricModel3d", "BisCore")' ImageId='"ECLiteralImage://MODEL_3D"'
+                Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")' ImageId='"ECLiteralImage://MODEL' Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("ViewDefinition2d", "BisCore")' ImageId='"ECLiteralImage://VIEWDEF_2D"'
+                Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("ViewDefinition3d", "BisCore")' ImageId='"ECLiteralImage://VIEWDEF_3D"'
+                Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("ViewDefinition", "BisCore")' ImageId='"ECLiteralImage://VIEWDEF"'
+                Priority='100' />
+              <ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore")' ImageId='"ECLiteralImage://ELEMENT"'
+                Priority='100' />
+              <ContentModifier ClassName="Element" SchemaName="BisCore">
+                <RelatedProperties IsPolymorphic='True' RelatedClassNames='BisCore:ElementUniqueAspect' RelationshipClassNames='BisCore:ElementOwnsUniqueAspect'
+                  RequiredDirection='Forward' />
+                <RelatedProperties IsPolymorphic='True' RelatedClassNames='BisCore:ElementMultiAspect' RelationshipClassNames='BisCore:ElementOwnsMultiAspects'
+                  RequiredDirection='Forward' />
+              </ContentModifier>
+              <ContentModifier ClassName="PhysicalElement" SchemaName="BisCore">
+                <RelatedProperties IsPolymorphic='True' RelatedClassNames='BisCore:PhysicalType' RelationshipClassNames='BisCore:PhysicalElementIsOfType'
+                  RelationshipMeaning='RelatedInstance' RequiredDirection='Forward' />
+              </ContentModifier>
+              <ContentModifier ClassName="SpatialLocationElement" SchemaName="BisCore">
+                <RelatedProperties IsPolymorphic='True' RelatedClassNames='BisCore:SpatialLocationType' RelationshipClassNames='BisCore:SpatialLocationIsOfType'
+                  RequiredDirection='Forward' />
+              </ContentModifier>
+              <ContentModifier ClassName="PhysicalType" SchemaName="BisCore">
+                <HiddenProperties ClassName="BisCore:PhysicalType" PropertyNames="*" />
+              </ContentModifier>
+              <ContentModifier ClassName="SpatialLocationType" SchemaName="BisCore">
+                <HiddenProperties ClassName="BisCore:SpatialLocationType" PropertyNames="*" />
+              </ContentModifier>
+              <ContentRule>
+                <SelectedNodeInstances />
+              </ContentRule>
+            </PresentationRuleSet>
+            )ruleset");
+        return ruleset;
+        }
+
+    void ExtractElementsPaged(ContentDescriptorCR descriptor, size_t pageSize);
+    };
+/*
+static Utf8String SerializeJson(rapidjson::Document const& json)
+    {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    json.Accept(writer);
+    return buffer.GetString();
+    }*/
+/*
+static void WriteToFile(BeFileNameCR directory, Utf8StringCR fileName, Utf8StringCR value)
+    {
+    auto path = directory;
+    BeFile file;
+    file.Create(path.AppendToPath(BeFileName(fileName)).c_str());
+    file.Write(nullptr, value.data(), static_cast<uint32_t>(value.size()));
+    }*/
+
+#define KEEP_UNUSED(var) do { (void)var; } while(false);
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesPublisherPerformanceTests::ExtractElementsPaged(ContentDescriptorCR descriptor, size_t pageSize)
+    {
+    PageOptions pageOptions;
+    auto i = 0ull;
+    pageOptions.SetPageSize(pageSize);
+    ContentCPtr content;
+    do
+        {
+        pageOptions.SetPageStart(i);
+        content = m_manager->GetContent(descriptor, pageOptions).get();
+        for (const auto contentItem : content->GetContentSet())
+            {
+            const auto instanceId = contentItem->GetKeys()[0].GetId();
+            auto json = contentItem->AsJson();
+            // auto serialized = SerializeJson(json);
+            // WriteToFile(directory, fileName, serialized);
+            KEEP_UNUSED(json);
+            }
+        i += pageSize;
+        } while (content->GetContentSet().GetSize());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TilesPublisherPerformanceTests, GetPropertiesOfAllElementsInImodel)
+    {
+    /*
+    - stepping through all elements just to get their classes?
+    - stepping through all elements **again** and then filtering by class???
+    - writing to file
+    */
+
+    Timer _timer(BeTest::GetNameOfCurrentTest());
+
+    bset<Utf8String> classes;
+    const auto options = RulesDrivenECPresentationManager::ContentOptions("Items").GetJson();
+
+    ECSqlStatement elementsStmt1;
+    elementsStmt1.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM BisCore.Element");
+
+    while (BE_SQLITE_ROW == elementsStmt1.Step())
+    //for (const auto classEntry : file->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Element)))
+        {
+        const auto ecClass = m_project.Schemas().GetClass(elementsStmt1.GetValueId<ECClassId>(0));
+        const Utf8String className = ecClass->GetFullName();
+        if (classes.find(className) != classes.end())
+            continue;
+
+        classes.insert(className);
+
+        bvector<ECClassInstanceKey> keys;
+        ECSqlStatement elementsStmt2;
+        elementsStmt2.Prepare(m_project, "SELECT ECClassId, ECInstanceId FROM BisCore.Element");
+        while (BE_SQLITE_ROW == elementsStmt2.Step())
+        //for (auto instanceEntry : file->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Element)))
+            {
+            const auto instanceClass = m_project.Schemas().GetClass(elementsStmt2.GetValueId<ECClassId>(0));
+            if (!className.CompareTo(instanceClass->GetFullName()))
+                keys.push_back(ECClassInstanceKey(ecClass, elementsStmt2.GetValueId<ECInstanceId>(1)));
+            }
+
+        const auto set = KeySet::Create(keys);
+
+        Utf8PrintfString _timerClassMsg("Getting content for '%s' with %" PRIu64 " elements", className.c_str(), (uint64_t)keys.size());
+        Timer _timerClass(_timerClassMsg.c_str());
+
+        ContentDescriptorCPtr descriptorPtr = m_manager->GetContentDescriptor(m_project, ContentDisplayType::PropertyPane, *set, nullptr, options).get();
+        const auto descriptor = ContentDescriptor::Create(*descriptorPtr);
+        descriptor->RemoveContentFlag(ContentFlags::MergeResults);
+        ExtractElementsPaged(*descriptor, 50000);
+        }
+    }
