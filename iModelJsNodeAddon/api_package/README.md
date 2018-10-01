@@ -8,4 +8,4 @@ The `@bentley/imodeljs-native-platform-api` package is responsible for installin
 
 ## License
 
-> See: [License](./LICENSE.md)
+> See: [License](https://github.com/imodeljs/imodeljs/blob/master/core/backend/src/imodeljs-native-LICENSE.md)
