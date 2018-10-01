@@ -166,11 +166,7 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
             return static_cast<SMNodeR>(*m_tile).Read3SMTile(m_tileBytes, (SMSceneR)m_tile->GetRootR(), GetRenderSystem(), true);
             };
 
-        folly::Future<BentleyStatus> _GetFromSource() override
-            {
-            //ScalableMesh has his own loader
-            return SUCCESS;
-            }
+        SCALABLEMESH_SCHEMA_EXPORT folly::Future<BentleyStatus> _GetFromSource() override;
     };
 
 private:
