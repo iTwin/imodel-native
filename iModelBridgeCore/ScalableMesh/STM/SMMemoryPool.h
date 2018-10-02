@@ -318,6 +318,7 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
                     break;
                     }
                 case SMStoreDataType::Texture:
+                case SMStoreDataType::TextureCompressed:
                     {
                     item = new SMMemoryPoolBlobItem<Byte>(nbItems, nodeId, dataType, smId);
                     multiData.m_textureData = (Byte*)item->m_data;

@@ -35,6 +35,11 @@ void GetAllDataTypesInCompositeDataType(bvector<SMStoreDataType>& dataTypes, SMS
             dataTypes.push_back(SMStoreDataType::TriPtIndices);
             break;
             }
+        case SMStoreDataType::TextureCompressed:
+            {
+            dataTypes.push_back(SMStoreDataType::TextureCompressed);
+            break;
+            }
         default:
             {
             assert(!"Unknown composite data type");

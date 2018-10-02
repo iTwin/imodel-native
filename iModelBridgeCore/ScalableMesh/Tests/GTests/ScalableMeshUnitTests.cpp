@@ -2030,7 +2030,15 @@ TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
 
     //Don't test clipping on un-reprojected Cesium datasets
     if (myScalableMesh->IsCesium3DTiles())
-        return;
+        {
+        bool status;
+        SetReprojection(myScalableMesh, status);
+        if (status == false)
+            {
+            // Skip this dataset, it is not ECEF
+            return;
+            }
+        }
 
     DRange3d range;
     myScalableMesh->GetRange(range);
@@ -2077,7 +2085,7 @@ TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
         //need to refresh clips
         ASSERT_TRUE(meshes.empty() || meshes.front()->GetPointIndexCount() == 0);
 
-        Transform tr = Transform::FromIdentity();
+        Transform tr = myScalableMesh->GetReprojectionTransform();
         current->RefreshMergedClip(tr);
 
         meshes.clear();
@@ -2316,6 +2324,17 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
+    if (myScalableMesh->IsCesium3DTiles())
+        {
+        bool status;
+        SetReprojection(myScalableMesh, status);
+        if (status == false)
+            {
+            // Skip this dataset, it is not ECEF
+            return;
+            }
+        }
+
     // Create clip from scalable mesh extent
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
@@ -2335,7 +2354,7 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
 
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, false);
 
-    Transform tr = Transform::FromIdentity();
+    Transform tr = myScalableMesh->GetReprojectionTransform();
     nodeP->RefreshMergedClip(tr);
     auto mesh = nodeP->GetMeshUnderClip(flags, clipId);
     if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)

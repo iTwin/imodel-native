@@ -289,11 +289,6 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
-#ifndef VANCOUVER_API
-        // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
-		assert(!"Imagepp needs update on bim02");
-#endif
-
         uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
         m_preloadMutex.lock();
         m_raster->SetLookAhead(shape, consumerID);
@@ -499,12 +494,12 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSQLiteFilePtr(
     
     SMSQLiteFilePtr sqlFilePtr;
 
-    if (dataType == SMStoreDataType::DiffSet)
+    if (IsSisterFileType(dataType))
     {
         if (!IsProjectFilesPathSet())
             return nullptr;
 
-        SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, false, IsUsingTempPath());
+        SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(dataType, true, IsUsingTempPath());
 
         if (!sqliteFilePtr.IsValid())
             return nullptr;

@@ -424,7 +424,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
         masterHeader["balanced"] = indexHeader->m_balanced;
         masterHeader["depth"] = (uint32_t)indexHeader->m_depth;
         masterHeader["rootNodeBlockID"] = ConvertBlockID(indexHeader->m_rootNodeBlockID);
-        masterHeader["splitThreshold"] = indexHeader->m_SplitTreshold;
+        masterHeader["splitThreshold"] = Json::Value(indexHeader->m_SplitTreshold);
         masterHeader["singleFile"] = false;
         masterHeader["isTerrain"] = indexHeader->m_isTerrain;
 
@@ -1049,11 +1049,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     //    }
 
 
-    block["totalCount"] = header->m_totalCount;
-    block["nodeCount"] = header->m_nodeCount;
+    block["totalCount"] = Json::Value(header->m_totalCount);
+    block["nodeCount"] = Json::Value(header->m_nodeCount);
     block["arePoints3d"] = header->m_arePoints3d;
 
-    block["nbFaceIndexes"] = header->m_nbFaceIndexes;
+    block["nbFaceIndexes"] = Json::Value(header->m_nbFaceIndexes);
     block["nbIndiceID"] = (int)header->m_ptsIndiceID.size();
 
     block["geometricResolution"] = header->m_geometricResolution;
@@ -2002,6 +2002,21 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     return true;
     }
 
+template <class EXTENT> SMSQLiteFilePtr SMStreamingStore<EXTENT>::GetSQLiteFilePtr(SMStoreDataType dataType)
+    {
+
+    SMSQLiteFilePtr sqlFilePtr = nullptr;
+
+    if (IsSisterFileType(dataType))
+        {
+        if (!IsProjectFilesPathSet())
+            return nullptr;
+        sqlFilePtr = GetSisterSQLiteFile(dataType, true, IsUsingTempPath());
+        }
+
+    return sqlFilePtr;
+    }
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
     assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
@@ -2328,6 +2343,13 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
             if (count == 0) this->m_nodeHeader->m_isTextured = false;
             break;
             }
+        case SMStoreDataType::TextureCompressed:
+            {
+            this->SetDecompressTexture(false);
+            count = this->GetBlock(blockID).GetTextureSize();
+            if (count == 0) this->m_nodeHeader->m_isTextured = false;
+            break;
+            }
         default:
             {
             count = this->GetBlock(blockID).size() / sizeof(DATATYPE);
@@ -2367,6 +2389,7 @@ template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
     auto& block = this->GetBlock(blockID);
+    size_t returnSize = 0;
     if (m_dataType != SMStoreDataType::Cesium3DTiles)
         {
         assert(block.size() <= maxCountData * sizeof(DATATYPE));
@@ -2376,20 +2399,35 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
     else
         {
         Cesium3DTilesBase* pData = (Cesium3DTilesBase*)(DataTypeArray);
-        assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0);
-        assert(!m_nodeHeader->m_isTextured || (m_nodeHeader->m_isTextured && pData->m_uvData != 0 && pData->m_textureData != 0));
-        assert(maxCountData >= block.GetNumberOfPoints() * sizeof(DPoint3d) + block.GetNumberOfUvs() * sizeof(DPoint2d) + block.GetNumberOfIndices() * sizeof(int32_t) + block.GetTextureSize());
-        memmove(pData->m_textureData, block.GetTexture(), block.GetTextureSize());
-        memmove(pData->m_uvData, block.GetUVs(), block.GetNumberOfUvs() * sizeof(DPoint2d));
-        memmove(pData->m_pointData, block.GetPoints(), block.GetNumberOfPoints() * sizeof(DPoint3d));
-        memmove(pData->m_indicesData, block.GetIndices(), block.GetNumberOfIndices() * sizeof(int32_t));
+        //assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0);
+        //assert(!m_nodeHeader->m_isTextured || (m_nodeHeader->m_isTextured && pData->m_uvData != 0 && pData->m_textureData != 0));
+        //assert(maxCountData >= block.GetNumberOfPoints() * sizeof(DPoint3d) + block.GetNumberOfUvs() * sizeof(DPoint2d) + block.GetNumberOfIndices() * sizeof(int32_t) + block.GetTextureSize());
+        if (pData->m_pointData)
+            {
+            memmove(pData->m_pointData, block.GetPoints(), block.GetNumberOfPoints() * sizeof(DPoint3d));
+            returnSize += block.GetNumberOfPoints() * sizeof(DPoint3d);
+            }
+        if (pData->m_indicesData)
+            {
+            memmove(pData->m_indicesData, block.GetIndices(), block.GetNumberOfIndices() * sizeof(int32_t));
+            returnSize += block.GetNumberOfIndices() * sizeof(int32_t);
+            }
+        if (pData->m_uvData)
+            {
+            memmove(pData->m_uvData, block.GetUVs(), block.GetNumberOfUvs() * sizeof(DPoint2d));
+            returnSize += block.GetNumberOfUvs() * sizeof(DPoint2d);
+            }
+        if (pData->m_textureData)
+            {
+            memmove(pData->m_textureData, block.GetTexture(), block.GetTextureSize());
+            returnSize += block.GetTextureSize();
+            }
         }
-    auto blockSize = block.size();
     // Data now resides in the pool, no longer need to keep it in the store
     block.UnLoad();
     m_dataCache.reset(nullptr);
 
-    return blockSize;
+    return returnSize;
     }
 
 template <class DATATYPE, class EXTENT> bool SMStreamingNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
@@ -2414,6 +2452,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
             block->SetDataSourceURL(m_dataSourceURL);
             block->SetDataSourceExtension(s_stream_using_cesium_3d_tiles_format ? L".b3dm" : L".bin");
             block->SetTransform(m_transform);
+            block->SetDecompressTexture(m_decompressTexture);
             block->SetGltfUpAxis(m_nodeGroup->GetGltfUpAxis());
             block->Load(m_dataSourceAccount, m_dataSourceSessionName, m_dataType, m_nodeHeader->GetBlockSize((short)m_dataType));
 #endif
@@ -2799,7 +2838,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
         buffer_object_pointer uv_buffer_pointer = { uvAccessor["count"].asUInt(), uvBV["byteLength"].asUInt(), uvBV["byteOffset"].asUInt() };
         buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
         m_tileData.numUvs = uv_buffer_pointer.count;
-        m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
+        m_tileData.textureSize = (m_decompressTexture? texture_buffer_pointer.count : texture_buffer_pointer.byte_size) + 3 * sizeof(uint32_t);
 
         this->resize(m_tileData.numIndices * sizeof(int32_t) + m_tileData.numPoints * sizeof(DPoint3d) + m_tileData.numUvs * sizeof(DPoint2d) + m_tileData.textureSize);
 
@@ -2814,8 +2853,8 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
                 auto& uvDecodeMatrixJson = uvQuantizedAttr["decodeMatrix"];
                 auto& uvDecodeMin = uvQuantizedAttr["decodedMin"];
                 auto& uvDecodeMax = uvQuantizedAttr["decodedMax"];
-                DPoint2d decMin = { uvDecodeMin[0].asFloat(), uvDecodeMin[1].asFloat() };
-                DPoint2d decMax = { uvDecodeMax[0].asFloat(), uvDecodeMax[1].asFloat() };
+                DPoint2d decMin = { std::max(0.0f, uvDecodeMin[0].asFloat()), std::max(0.0f, uvDecodeMin[1].asFloat()) };
+                DPoint2d decMax = { std::min(1.0f, uvDecodeMax[0].asFloat()), std::min(1.0f, uvDecodeMax[1].asFloat()) };
 
                 const FPoint3d scale = { uvDecodeMatrixJson[0].asFloat(), uvDecodeMatrixJson[4].asFloat() };
                 const FPoint3d translate = { uvDecodeMatrixJson[6].asFloat(), uvDecodeMatrixJson[7].asFloat() };
@@ -2855,31 +2894,39 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             memcpy(m_tileData.m_textureData + sizeof(uint32_t), &imageHeight, sizeof(uint32_t));
             memcpy(m_tileData.m_textureData + 2 * sizeof(nbChannels), &nbChannels, sizeof(nbChannels));
 
-            // Decompress texture
-            try {
-                auto texture_jpeg = (Byte*)(buffer + texture_buffer_pointer.offset);
-                auto codec = new HCDCodecIJG(imageWidth, imageHeight, 3 * 8);// 3 * 8 bits per pixels (rgb)
-                codec->SetQuality(70);
-                codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
-                HFCPtr<HCDCodec> pCodec = codec;
-                auto textureSize = (uint32_t)(imageWidth*imageHeight * 3);
-                assert(texture_buffer_pointer.count == textureSize);
-                const size_t uncompressedDataSize = pCodec->DecompressSubset(texture_jpeg, texture_buffer_pointer.byte_size, m_tileData.m_textureData + 3 * sizeof(uint32_t), textureSize);
-                assert(textureSize == uncompressedDataSize);
-                }
-            catch (const std::exception& e)
+            auto texture_jpeg = (Byte*)(buffer + texture_buffer_pointer.offset);
+
+            if (m_decompressTexture)
                 {
-                assert(!"There is an error decompressing texture");
-                std::wcout << L"Error: " << e.what() << std::endl;
-                }
-            catch (const HCDException& e)
-                {
-                //assert(!"There is an error decompressing texture");
+                // Decompress texture
+                try {
+                    auto codec = new HCDCodecIJG(imageWidth, imageHeight, 3 * 8);// 3 * 8 bits per pixels (rgb)
+                    codec->SetQuality(70);
+                    codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
+                    HFCPtr<HCDCodec> pCodec = codec;
+                    auto textureSize = (uint32_t)(imageWidth*imageHeight * 3);
+                    assert(texture_buffer_pointer.count == textureSize);
+                    const size_t uncompressedDataSize = pCodec->DecompressSubset(texture_jpeg, texture_buffer_pointer.byte_size, m_tileData.m_textureData + 3 * sizeof(uint32_t), textureSize);
+                    assert(textureSize == uncompressedDataSize);
+                    }
+                catch (const std::exception& e)
+                    {
+                    assert(!"There is an error decompressing texture");
+                    std::wcout << L"Error: " << e.what() << std::endl;
+                    }
+                catch (const HCDException& e)
+                    {
+                    //assert(!"There is an error decompressing texture");
 #ifdef VANCOUVER_API
-                std::wcout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
+                    std::wcout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
 #else
-				std::cout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
+                    std::cout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
 #endif
+                    }
+                }
+            else
+                {
+                memcpy(m_tileData.m_textureData + sizeof(imageWidth) + sizeof(imageHeight) + sizeof(nbChannels), texture_jpeg, texture_buffer_pointer.byte_size);
                 }
             }
         }

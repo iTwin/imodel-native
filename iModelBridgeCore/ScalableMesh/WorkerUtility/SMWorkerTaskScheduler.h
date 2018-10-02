@@ -25,6 +25,7 @@ struct TaskScheduler
     
         BeFileName m_taskFolderName;
         uint32_t   m_nbWorkers;
+        bool       m_useGroupingStrategy;
 
         IScalableMeshSourceCreatorWorkerPtr m_sourceCreatorWorkerPtr;
 
@@ -48,7 +49,7 @@ struct TaskScheduler
     
     public:
     
-        TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers);
+        TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy);
 
         virtual ~TaskScheduler();
 

@@ -39,9 +39,9 @@ struct MockListener : IScalableMeshProgressListener
     mutable int m_numCheckContinueOnProgressCalls = 0;
     virtual void CheckContinueOnProgress(IScalableMeshProgress* progress) const override
         {
-        auto progress_percent = progress->GetProgress() * 100.0;
-        std::cout << "\r" << "step [" << progress->GetProgressStepIndex() << "] : " << progress_percent;
-        if (progress_percent >= 100) std::cout << "\r";
+        //auto progress_percent = progress->GetProgress() * 100.0;
+        //std::cout << "\r" << "step [" << progress->GetProgressStepIndex() << "] : " << progress_percent;
+        //if (progress_percent >= 100) std::cout << "\r";
         ++m_numCheckContinueOnProgressCalls;
         };
     };

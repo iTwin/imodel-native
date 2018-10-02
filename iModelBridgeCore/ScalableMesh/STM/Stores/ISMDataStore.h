@@ -32,6 +32,12 @@ need be.
 USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.
 USING_NAMESPACE_IMAGEPP
     
+#ifndef VANCOUVER_API
+class SMSQLiteFile;
+
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
+#endif
+
 enum class SMStoreDataType
     {
     Points = 0,
@@ -203,6 +209,19 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 #ifndef VANCOUVER_API
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); } 
 #endif
+
+    protected:
+
+        bool IsSisterFileType(SMStoreDataType dataType)
+            {
+            return (dataType == SMStoreDataType::DiffSet ||
+                    dataType == SMStoreDataType::Graph ||
+                    dataType == SMStoreDataType::LinearFeature ||
+                    dataType == SMStoreDataType::ClipDefinition ||
+                    dataType == SMStoreDataType::CoveragePolygon ||
+                    dataType == SMStoreDataType::CoverageName ||
+                    dataType == SMStoreDataType::Skirt);
+            }
 
     public:
 

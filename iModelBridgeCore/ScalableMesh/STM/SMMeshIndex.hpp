@@ -660,6 +660,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
 
         this->m_nodeHeader.m_geometryResolution = newGeometricErrorValue;
 #ifndef VANCOUVER_API
+        static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
+        static const uint64_t maxQueueSize = /*std::max((uint64_t)m_SMIndex->m_totalNumNodes, (uint64_t)*/30000;//);
         typedef SMNodeDistributor<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> Distribution_Type;
         static Distribution_Type* distributor = new Distribution_Type([&pi_pDataStore](HFCPtr<SMPointIndexNode<POINT, EXTENT>> node)
             {
@@ -695,7 +697,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
             //node->Unload();
-            });
+            }, [](HFCPtr<SMPointIndexNode<POINT, EXTENT>> node) {return true; }, nbThreads, maxQueueSize);
 
         distributor->AddWorkItem(this);
 #else
@@ -1918,7 +1920,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
     val["parts"] = Json::arrayValue;
 
     for(auto& id: texId){
-        val["texId"].append(id);
+        val["texId"].append(Json::Value(id));
         assert(id< 10000);
         
         }
@@ -1991,7 +1993,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
                     {
                     int newId = texId[currentPart];
                     assert(newId < 10000);
-                    subMetadata["texId"].append(texId[currentPart]);
+                    subMetadata["texId"].append(Json::Value(texId[currentPart]));
                     }
 
                 Utf8String subMetadataStr(Json::FastWriter().write(subMetadata));
@@ -2009,7 +2011,7 @@ template<class POINT, class EXTENT> size_t SMMeshIndexNode<POINT, EXTENT>::AddMe
 
         if (texId.size() > currentPart)
             {
-            val["texId"].append(texId[currentPart]);
+            val["texId"].append(Json::Value(texId[currentPart]));
             }
 
         metadataStr = Json::FastWriter().write(val);
@@ -3984,10 +3986,21 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
     if (!IsTextured())
         return poolMemBlobItemPtr;
 
-    auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
+    if (!m_SMIndex->IsFromCesium())
+        {
+        auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
 
-    poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
-    assert(poolMemBlobItemPtr.IsValid());
+        poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
+        assert(poolMemBlobItemPtr.IsValid());
+        }
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = this->template GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::TextureCompressed, GetBlockID()).get();
+        // In the cesium format, textures are packaged with the points
+        m_texturePoolItemId = m_pointsPoolItemId;
+        bool result = poolMemMultiItemsPtr->GetItem<Byte>(poolMemBlobItemPtr, SMStoreDataType::TextureCompressed);
+        assert(result == true);
+        }
 
     return poolMemBlobItemPtr;
     }

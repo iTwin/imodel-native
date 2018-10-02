@@ -1330,9 +1330,9 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         // Save master header info in Cesium tileset
         auto& SMMasterHeader = tileSet["root"]["SMMasterHeader"];
         SMMasterHeader["Balanced"] = m_GroupMasterHeader.IsBalanced();
-        SMMasterHeader["SplitTreshold"] = m_GroupMasterHeader.GetSplitThreshold();
-        SMMasterHeader["Depth"] = m_GroupMasterHeader.GetDepth();
-        SMMasterHeader["MeshDataDepth"] = m_GroupMasterHeader.GetTerrainDepth();
+        SMMasterHeader["SplitTreshold"] = Json::Value(m_GroupMasterHeader.GetSplitThreshold());
+        SMMasterHeader["Depth"] = Json::Value(m_GroupMasterHeader.GetDepth());
+        SMMasterHeader["MeshDataDepth"] = Json::Value(m_GroupMasterHeader.GetTerrainDepth());
         SMMasterHeader["IsTerrain"] = m_GroupMasterHeader.IsTerrain();
         SMMasterHeader["DataResolution"] = m_GroupMasterHeader.GetResolution();
         SMMasterHeader["IsTextured"] = (uint32_t)m_GroupMasterHeader.IsTextured();
