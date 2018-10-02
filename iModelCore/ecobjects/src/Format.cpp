@@ -96,18 +96,6 @@ ECObjectsStatus ECFormat::SetSchema(ECSchemaCR schema)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECFormat::_ToJson(Json::Value& out, bool verbose) const
-    {
-    if (!T_Super::_ToJson(out, verbose))
-        return false;
-    if (!ToJsonInternal(out, true, verbose))
-        return false;
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECFormat::GetFullName() const
@@ -512,6 +500,11 @@ bool ECFormat::ToJsonInternal(Json::Value& outValue, bool standalone, bool inclu
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
     if (!Utf8String::IsNullOrEmpty(GetInvariantDescription().c_str()))
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
+
+    // The includeSchemaVersion flag is acting as the verbose flag here. This isn't ideal...
+    if (!T_Super::_ToJson(outValue, includeSchemaVersion))
+        return false;
+
     return true;
     }
 

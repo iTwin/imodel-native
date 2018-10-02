@@ -1098,7 +1098,7 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
         if (minVal.IsInteger())
             tmpJson = minVal.GetInteger();
         else if (minVal.IsLong())
-            tmpJson = minVal.GetLong();
+            tmpJson = Json::Value(minVal.GetLong());
         else if (minVal.IsDouble())
             tmpJson = minVal.GetDouble();
         else
@@ -1115,7 +1115,7 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
         if (maxVal.IsInteger())
             tmpJson = maxVal.GetInteger();
         else if (maxVal.IsLong())
-            tmpJson = maxVal.GetLong();
+            tmpJson = Json::Value(maxVal.GetLong());
         else if (maxVal.IsDouble())
             tmpJson = maxVal.GetDouble();
         else

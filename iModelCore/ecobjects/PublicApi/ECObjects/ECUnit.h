@@ -165,7 +165,7 @@ private:
     SchemaWriteStatus WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
-    bool ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
     bool InvertedUnitToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
     bool ConstantToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
@@ -206,7 +206,7 @@ public:
     //! Write the ECUnit as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    bool ToJson(Json::Value& outValue, bool includeSchemaVersion = false) const {return ToJson(outValue, true, includeSchemaVersion);}
 };
 
 //=======================================================================================
@@ -267,7 +267,7 @@ private:
     bool ToJsonInternal(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     ECFormat(ECSchemaCR schema, Utf8StringCR name);
-    bool _ToJson(Json::Value& out, bool verbose) const override;
+    bool _ToJson(Json::Value& out, bool verbose) const override {return ToJsonInternal(out, true, verbose);}
 public:
     ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Format is defined in.
 

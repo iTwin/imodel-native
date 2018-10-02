@@ -52,81 +52,16 @@ bool SchemaJsonWriter::WriteClass(ECClassCR ecClass)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman              11/2017
+// @bsimethod                                   Caleb.Shafer                09/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WriteEnumeration(ECEnumerationCR ecEnumeration)
+bool SchemaJsonWriter::WriteFormat(ECFormatCR format)
     {
-    // Don't write any enumerations that aren't in the schema we're writing.
-    if (&(ecEnumeration.GetSchema()) != &m_ecSchema)
+    // Don't write any classes that aren't in the schema we're writing.
+    if (&(format.GetSchema()) != &m_ecSchema)
         return true;
 
-    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][ecEnumeration.GetName()];
-    return ecEnumeration.ToJson(itemObj, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman              11/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity)
-    {
-    // Don't write any KOQs that aren't in the schema we're writing.
-    if (&(kindOfQuantity.GetSchema()) != &m_ecSchema)
-        return true;
-
-    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][kindOfQuantity.GetName()];
-    return kindOfQuantity.ToJson(itemObj, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman              11/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WritePropertyCategory(PropertyCategoryCR propertyCategory)
-    {
-    // Don't write any elements that aren't in the schema we're writing.
-    if (&(propertyCategory.GetSchema()) != &m_ecSchema)
-        return true;
-
-    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][propertyCategory.GetName()];
-    return propertyCategory.ToJson(itemObj, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz             02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WriteUnitSystem(UnitSystemCR unitSystem)
-    {
-    // Don't write any elements that aren't in the schema we're writing.
-    if (&(unitSystem.GetSchema()) != &m_ecSchema)
-        return true;
-
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][unitSystem.GetName()];
-    return unitSystem.ToJson(childObj, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz             02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WritePhenomenon(PhenomenonCR phenomenon)
-    {
-    // Don't write any elements that aren't in the schema we're writing.
-    if (&(phenomenon.GetSchema()) != &m_ecSchema)
-        return true;
-
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][phenomenon.GetName()];
-    return phenomenon.ToJson(childObj, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz             02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WriteUnit(ECUnitCR unit)
-    {
-    // Don't write any elements that aren't in the schema we're writing.
-    if (&(unit.GetSchema()) != &m_ecSchema)
-        return true;
-
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][unit.GetName()];
-    return unit.ToJson(childObj, false, false);
+    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][format.GetName()];
+    return format.ToJsonInternal(itemObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,46 +72,36 @@ bool SchemaJsonWriter::WriteSchemaItems()
     m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE] = Json::Value(Json::ValueType::objectValue);
 
     for (auto const ecClass : m_ecSchema.GetClasses())
-        {
         if (!WriteClass(*ecClass))
             return false;
-        }
 
     for (auto const enumeration : m_ecSchema.GetEnumerations())
-        {
-        if (!WriteEnumeration(*enumeration))
+        if (!WriteSchemaItem<ECEnumeration>(*enumeration))
             return false;
-        }
 
     for (auto const koq : m_ecSchema.GetKindOfQuantities())
-        {
-        if (!WriteKindOfQuantity(*koq))
+        if (!WriteSchemaItem<KindOfQuantity>(*koq))
             return false;
-        }
 
     for (auto const pc : m_ecSchema.GetPropertyCategories())
-        {
-        if (!WritePropertyCategory(*pc))
+        if (!WriteSchemaItem<PropertyCategory>(*pc))
             return false;
-        }
 
     for (auto const us : m_ecSchema.GetUnitSystems())
-        {
-        if (!WriteUnitSystem(*us))
+        if (!WriteSchemaItem<UnitSystem>(*us))
             return false;
-        }
 
     for (auto const ph : m_ecSchema.GetPhenomena())
-        {
-        if (!WritePhenomenon(*ph))
+        if (!WriteSchemaItem<Phenomenon>(*ph))
             return false;
-        }
 
     for (auto const ecu : m_ecSchema.GetUnits())
-        {
-        if (!WriteUnit(*ecu))
+        if (!WriteSchemaItem<ECUnit>(*ecu))
             return false;
-        }
+
+    for (auto const format : m_ecSchema.GetFormats())
+        if (!WriteFormat(*format))
+            return false;
 
     if (0 == m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE].size())
         m_jsonRoot.removeMember(ECJSON_SCHEMA_ITEMS_ATTRIBUTE);

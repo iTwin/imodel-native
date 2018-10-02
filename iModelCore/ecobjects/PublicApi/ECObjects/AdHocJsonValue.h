@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/AdHocJsonValue.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,7 @@ public:
     //! Set an Int64 value
     //! @param[in] member the name of the member
     //! @param[in] value Value of the property
-    void SetValueInt64(Utf8CP member, int64_t value) {GetMemberR(member) = value; SetType(member, PRIMITIVETYPE_Long);}
+    void SetValueInt64(Utf8CP member, int64_t value) {GetMemberR(member) = AdHocJsonValue(value); SetType(member, PRIMITIVETYPE_Long);}
 
     //! Set a Double value
     //! @param[in] member the name of the member
