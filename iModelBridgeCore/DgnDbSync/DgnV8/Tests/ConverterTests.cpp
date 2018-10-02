@@ -676,7 +676,7 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
     ASSERT_TRUE (db->IsDbOpen());
 
     ValidateModelRange (*db.get(), "2D Site Data", 775473.879, 82772.289, -0.0005, 776530.835, 83720.500, 0.0005);
-    ValidateModelRange(*db.get(), "Building 1", 775953.179, 83335.971, -0.0005, 776088.567, 83467.104, 0.0005);
+    ValidateModelRange(*db.get(), "Building 1", 775954.601, 83335.970, -0.0005, 776087.898, 83454.089, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.795, 83307.686, -0.0005, 775960.121, 83398.667, 0.0005);
     }
 

@@ -353,7 +353,7 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
     DgnTextureId    textureId = m_importer.GetDgnMaterialTextureFor (utf8Name);
     if (textureId.IsValid())
         {
-        mapJson[RENDER_MATERIAL_TextureId] = textureId.GetValue ();
+        mapJson[RENDER_MATERIAL_TextureId] = textureId.ToHexStr();
         return  BSISUCCESS;
         }
 
@@ -404,7 +404,7 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
     textureId = texture.GetTextureId();
     if (textureId.IsValid())
         {
-        mapJson[RENDER_MATERIAL_TextureId] = textureId.GetValue ();
+        mapJson[RENDER_MATERIAL_TextureId] = textureId.ToHexStr();
         m_importer.AddDgnMaterialTexture (utf8Name, textureId);
         }
     else

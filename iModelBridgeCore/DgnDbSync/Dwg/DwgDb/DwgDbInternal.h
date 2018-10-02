@@ -639,7 +639,7 @@ END_DWGDB_NAMESPACE
     DwgGiDrawablePtr    DwgDb##_classSuffix_##::GetDrawable () { return new DwgGiDrawable(T_Super::drawable()); }                          \
     bool                DwgDb##_classSuffix_##::CanCastShadows () const { return T_Super::castShadows(); }                                 \
     bool                DwgDb##_classSuffix_##::CanReceiveShadows () const { return T_Super::receiveShadows(); }                           \
-    bool                DwgDb##_classSuffix_##::IsPlanar () const { return T_Super::isPlanar(); }                                          \
+    bool                DwgDb##_classSuffix_##::IsPlanar () const { return DWGDB_Type(Entity)::isPlanar(); }                               \
     void DwgDb##_classSuffix_##::GetEcs(TransformR ecs) const { DWGGE_Type(Matrix3d) m; DWGDB_CALLSDKMETHOD(m=T_Super::getEcs(), T_Super::getEcs(m)); return Util::GetTransform(ecs, m); } \
     DwgDbStatus DwgDb##_classSuffix_##::TransformBy (TransformCR t) { DWGGE_Type(Matrix3d) m; Util::GetGeMatrix(m, t); return ToDwgDbStatus(T_Super::transformBy(m)); } \
     DwgDbStatus DwgDb##_classSuffix_##::SetColor (DwgCmColorCR c, bool s) { return ToDwgDbStatus(T_Super::setColor(static_cast<DWGCM_TypeCR(Color)>(c), s)); } \
@@ -665,6 +665,18 @@ END_DWGDB_NAMESPACE
 #define DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                  \
     DWGDB_ENTITY_DEFINE_BASEMEMBERS(_classSuffix_)                  \
     DWGDB_OBJECT_DEFINE_CREATE(_classSuffix_)
+
+// define common methods for DbSurface
+#define DWGDB_SURFACE_DEFINE_MEMBERS(_classSuffix_)                 \
+    DWGDB_ENTITY_DEFINE_MEMBERS(_classSuffix_)                      \
+    DwgDbStatus DwgDb##_classSuffix_##::GetArea (double& a) const { return ToDwgDbStatus(T_Super::getArea(a)); }  \
+    DwgDbStatus DwgDb##_classSuffix_##::GetPerimeter (double& p) const { return ToDwgDbStatus(T_Super::getPerimeter(p)); } \
+    DwgDbStatus DwgDb##_classSuffix_##::ConvertToRegion (DwgDbEntityPArrayR regions) { \
+        TkEntityArray array;                                        \
+        DwgDbStatus status = ToDwgDbStatus (T_Super::convertToRegion(array)); \
+        if (DwgDbStatus::Success == status) {                       \
+            Util::GetEntityArray(regions, array); }                 \
+        return status; }
 
 
 void    RegisterDwgDbObjectExtensions (bool beforeValidation);

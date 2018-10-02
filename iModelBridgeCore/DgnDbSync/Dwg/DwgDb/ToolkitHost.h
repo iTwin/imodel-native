@@ -66,7 +66,7 @@ public:
     // same as getRemoteFile
     DwgDbStatus                     DownloadOrGetCachedFile (WStringR local, WStringCR url, bool ignoreCache = false) const;
     // inverse lookup as in isRemoteFile
-    bool                            FindCachedLocalFile (WStringR cached, WStringCR url);
+    bool                            FindCachedLocalFile (WStringR cached, WStringCR url) const;
     static DwgToolkitHost&          GetHost ();     // toolkit host
 
 #if defined (DWGTOOLKIT_OpenDwg)

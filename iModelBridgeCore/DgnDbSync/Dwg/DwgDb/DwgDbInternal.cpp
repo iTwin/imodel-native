@@ -65,6 +65,13 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     DwgDbMText::rxInit ();
     DwgDbText::rxInit ();
     DwgDbTrace::rxInit ();
+    DwgDbExtrudedSurface::rxInit ();
+    DwgDbLoftedSurface::rxInit ();
+    DwgDbNurbSurface::rxInit ();
+    DwgDbPlaneSurface::rxInit ();
+    DwgDbRevolvedSurface::rxInit ();
+    DwgDbSurface::rxInit ();
+    DwgDbSweptSurface::rxInit ();
 
     DwgDbSymbolTable::rxInit ();
     DwgDbSymbolTableRecord::rxInit ();
@@ -186,6 +193,13 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbMText::rxUninit ();
     DwgDbText::rxUninit ();
     DwgDbTrace::rxUninit ();
+    DwgDbExtrudedSurface::rxUninit ();
+    DwgDbLoftedSurface::rxUninit ();
+    DwgDbNurbSurface::rxUninit ();
+    DwgDbPlaneSurface::rxUninit ();
+    DwgDbRevolvedSurface::rxUninit ();
+    DwgDbSurface::rxUninit ();
+    DwgDbSweptSurface::rxUninit ();
 
     DwgDbSymbolTable::rxUninit ();
     DwgDbSymbolTableRecord::rxUninit ();
