@@ -162,6 +162,7 @@ BentleyStatus SyncInfo::CreateTables()
                          "ElementId BIGINT NOT NULL, "
                          "V8FileSyncInfoId INTEGER NOT NULL, "
                          "V8ElementId BIGINT, "
+                         "V8ViewName TEXT, "
                          "LastModified REAL");
 
     m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Imagery),
@@ -1795,13 +1796,13 @@ bool SyncInfo::ViewTableExists()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo)
+BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo, Utf8CP viewName)
     {
     if (!ViewTableExists())
         return DbResult::BE_SQLITE_ERROR;
 
     Statement stmt;
-    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_View) "(ElementId, V8FileSyncInfoId, V8ElementId, LastModified) VALUES (?,?,?,?)");
+    stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_View) "(ElementId, V8FileSyncInfoId, V8ElementId, V8ViewName, LastModified) VALUES (?, ?,?,?,?)");
     int col = 1;
     stmt.BindId(col++, viewId);
 
@@ -1815,6 +1816,7 @@ BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewIn
 
     stmt.BindInt(col++, v8FileId.GetValue());
     stmt.BindInt(col++, viewElemRef->GetElementId());
+    stmt.BindText(col++, viewName, Statement::MakeCopy::Yes);
     stmt.BindDouble(col++, viewElemRef->GetLastModified());
     auto res = stmt.Step();
     return res;
@@ -1823,10 +1825,10 @@ BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewIn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-bool SyncInfo::TryFindView(DgnViewId& viewId, double& lastModified, DgnV8ViewInfoCR viewInfo) const
+bool SyncInfo::TryFindView(DgnViewId& viewId, double& lastModified, Utf8StringR v8ViewName, DgnV8ViewInfoCR viewInfo) const
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT ElementId, LastModified FROM "
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT ElementId, V8ViewName, LastModified FROM "
                                                     SYNCINFO_ATTACH(SYNC_TABLE_View)
                                                     " WHERE V8FileSyncInfoId=? AND V8ElementId=?"))
         {
@@ -1845,7 +1847,8 @@ bool SyncInfo::TryFindView(DgnViewId& viewId, double& lastModified, DgnV8ViewInf
         return false;
 
     viewId = stmt->GetValueId<DgnViewId>(0);
-    lastModified = stmt->GetValueDouble(1);
+    v8ViewName = stmt->GetValueText(1);
+    lastModified = stmt->GetValueDouble(2);
     return true;
     }
 
@@ -1867,15 +1870,16 @@ BeSQLite::DbResult SyncInfo::DeleteView(DgnViewId viewId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BeSQLite::DbResult SyncInfo::UpdateView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo)
+BeSQLite::DbResult SyncInfo::UpdateView(DgnViewId viewId, Utf8CP v8ViewName, DgnV8ViewInfoCR viewInfo)
     {
     if (!ViewTableExists())
         return DbResult::BE_SQLITE_ERROR;
 
     Statement stmt;
-    stmt.Prepare(*m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_View) " SET LastModified=? WHERE(ElementId=?)");
+    stmt.Prepare(*m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_View) " SET LastModified=?, V8ViewName=? WHERE(ElementId=?)");
     int col = 1;
     stmt.BindDouble(col++, viewInfo.GetElementRef()->GetLastModified());
+    stmt.BindText(col++, v8ViewName, Statement::MakeCopy::Yes);
     stmt.BindId(col++, viewId);
     return stmt.Step();
     }

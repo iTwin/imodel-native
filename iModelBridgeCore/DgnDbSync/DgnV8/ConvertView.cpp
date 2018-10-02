@@ -424,39 +424,56 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ViewDefinitionPtr SpatialViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+ViewDefinitionPtr SpatialViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, ViewDefinitionR existing)
     {
     ViewDefinitionPtr newDef = _MakeView(converter, params);
     if (!newDef.IsValid())
         return newDef;
     
     SpatialViewDefinition* spatial = newDef->ToSpatialViewP();
+    SpatialViewDefinitionP existingViewDef = existing.ToSpatialViewP();
 
     DgnDbStatus stat;
     // need to update the ModelSelector, DisplayStyle, etc.
-    SpatialViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId);
     ModelSelectorR newModelSelector = spatial->GetModelSelector();
-    newModelSelector.ForceElementIdForInsert(existingDef->GetModelSelectorId());
-    newModelSelector.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newModelSelector.ForceElementIdForInsert(existingViewDef->GetModelSelectorId());
+
+    // Update doesn't actually update the 'ModelSelectorRefersToModels' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update, 
+    // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of models and only call Update if there were.
+    Json::Value newModelVal = newModelSelector.ToJson();
+    Json::Value oldModelVal = existingViewDef->GetModelSelector().ToJson();
+    if (newModelVal != oldModelVal)
+        {
+        newModelSelector.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     spatial->SetModelSelector(newModelSelector);
 
     DisplayStyle3dR newDisplayStyle = spatial->GetDisplayStyle3d();
-    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
-    newDisplayStyle.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newDisplayStyle.ForceElementIdForInsert(existingViewDef->GetDisplayStyleId());
+
+    if (!newDisplayStyle.EqualState(existingViewDef->GetDisplayStyle()))
+        {
+        newDisplayStyle.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     spatial->SetDisplayStyle(newDisplayStyle);
 
     CategorySelectorR newCategorySelector = spatial->GetCategorySelector();
-    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
-    newCategorySelector.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newCategorySelector.ForceElementIdForInsert(existingViewDef->GetCategorySelectorId());
+    Json::Value newCategoryVal = newCategorySelector.ToJson();
+    Json::Value oldCategoryVal = existingViewDef->GetCategorySelector().ToJson();
+    if (newCategoryVal != oldCategoryVal)
+        {
+        newCategorySelector.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     spatial->SetCategorySelector(newCategorySelector);
 
-    newDef->ForceElementIdForInsert(viewId);
+    newDef->ForceElementIdForInsert(existingViewDef->GetElementId());
     return newDef;
     }
 
@@ -663,13 +680,14 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         return BSIERROR;
 
     DgnViewId existingViewId;
+    Utf8String v8ViewName;
     if (IsUpdating())
         {
         // For imodels that were created during the EAP, but before this table was implemented, need to do a check
         if (GetSyncInfo().ViewTableExists())
             {
             double lastModified;
-            GetSyncInfo().TryFindView(existingViewId, lastModified, viewInfo);
+            GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
             }
         if (!existingViewId.IsValid())
             existingViewId = ViewDefinition::QueryViewId(*definitionModel, name);
@@ -710,6 +728,12 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         suffix.Sprintf("-%d", ++i);
         }
 
+    // If the view exists and the name hasn't changed, use its existing name.  Otherwise, the previous loop will have changed its name thus causing an actual update
+    if (existingViewId.IsValid() && defaultName.EqualsI(v8ViewName))
+        {
+        ViewDefinitionPtr existingDef = GetDgnDb().Elements().GetForEdit<ViewDefinition>(existingViewId);
+        name = existingDef->GetCode().GetValueUtf8();
+        }
     ViewFactory::ViewDefinitionParams parms(this, name, modelMapping, viewInfo, viewFactory._Is3d());
     parms.m_description = defaultDescription;
     parms.m_trans = trans;
@@ -759,8 +783,24 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     parms.m_rot = (RotMatrixCR)v8Rotation;
 
     ViewDefinitionPtr view;
+    ViewDefinitionPtr existingDef;
     if (IsUpdating() && existingViewId.IsValid())
-        view = viewFactory._UpdateView(*this, parms, existingViewId);
+        {
+        existingDef = GetDgnDb().Elements().GetForEdit<ViewDefinition>(existingViewId);
+        // When loading a ViewDefinition element, the Json for the gridPerRef is inaccurately stored as an int instead of a uint. This means that if it is being compared to a ViewDefinition
+        // created on the fly and not loaded, these two values will not match and return a false negative.
+        GridOrientationType orientation;
+        DPoint2d spacing;
+        uint32_t gridsPerRef;
+        existingDef->GetGridSettings(orientation, spacing, gridsPerRef);
+        existingDef->SetGridSettings(orientation, spacing, gridsPerRef);
+
+        // When the display style is loaded from the db, the type of the background color is set to type int instead of uint.  This makes comparisons to a display style that was set on the
+        // fly give a false negative.
+        existingDef->GetDisplayStyle().SetBackgroundColor(existingDef->GetDisplayStyle().GetBackgroundColor());
+
+        view = viewFactory._UpdateView(*this, parms, *existingDef);
+        }
     else
         view = viewFactory._MakeView(*this, parms);
 
@@ -771,12 +811,15 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
     ConvertViewACS(view, viewInfo, *v8Model, trans, name);
 
-    if (IsUpdating() && existingViewId.IsValid())
+    if (existingViewId.IsValid())
         {
-        if (!view->Update().IsValid())
+        if (!view->EqualState(*existingDef))
             {
-            ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
-            return BSIERROR;
+            if (!view->Update().IsValid())
+                {
+                ReportError(IssueCategory::CorruptData(), Issue::Error(), name.c_str());
+                return BSIERROR;
+                }
             }
         }
     else
@@ -799,9 +842,9 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         viewId = view->GetViewId();
     GetChangeDetector()._OnViewSeen(*this, viewId);
     if (IsUpdating() && existingViewId.IsValid())
-        GetSyncInfo().UpdateView(viewId, viewInfo);
+        GetSyncInfo().UpdateView(viewId, defaultName.c_str(), viewInfo);
     else
-        GetSyncInfo().InsertView(viewId, viewInfo);
+        GetSyncInfo().InsertView(viewId, viewInfo, defaultName.c_str());
     return BSISUCCESS;
     }
 

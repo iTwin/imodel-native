@@ -23,7 +23,7 @@ struct DrawingViewFactory : ViewFactory
     DrawingViewFactory(ResolvedModelMapping const& v8mm) : m_drawingModelMapping(v8mm) {}
 
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
-    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, ViewDefinitionR existingViewDef) override;
     };
 
 /*=================================================================================**//**
@@ -783,7 +783,7 @@ ViewDefinitionPtr DrawingViewFactory::_MakeView(Converter& converter, ViewDefini
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, ViewDefinitionR existingViewDef)
     {
     ViewDefinitionPtr newDef = _MakeView(converter, params);
     if (!newDef.IsValid())
@@ -793,23 +793,32 @@ ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefi
 
     DgnDbStatus stat;
     // need to update the DisplayStyle and CategorySelector.
-    DrawingViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<DrawingViewDefinition>(viewId);
 
     DisplayStyleR newDisplayStyle = drawing->GetDisplayStyle();
-    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
-    newDisplayStyle.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newDisplayStyle.ForceElementIdForInsert(existingViewDef.GetDisplayStyleId());
+    if (!existingViewDef.GetDisplayStyle().EqualState(newDisplayStyle))
+        {
+        newDisplayStyle.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     drawing->SetDisplayStyle(newDisplayStyle);
 
+    // Update doesn't actually update the 'CategorySelector' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update, 
+    // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of categories and only call Update if there were.
     CategorySelectorR newCategorySelector = drawing->GetCategorySelector();
-    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
-    newCategorySelector.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newCategorySelector.ForceElementIdForInsert(existingViewDef.GetCategorySelectorId());
+    Json::Value newCategoryVal = newCategorySelector.ToJson();
+    Json::Value oldCategoryVal = existingViewDef.GetCategorySelector().ToJson();
+    if (newCategoryVal != oldCategoryVal)
+        {
+        newCategorySelector.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     drawing->SetCategorySelector(newCategorySelector);
 
-    newDef->ForceElementIdForInsert(viewId);
+    newDef->ForceElementIdForInsert(existingViewDef.GetElementId());
     return newDef;
     }
 

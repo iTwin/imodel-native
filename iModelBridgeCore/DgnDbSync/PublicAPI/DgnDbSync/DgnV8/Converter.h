@@ -401,7 +401,7 @@ struct ViewFactory
 
     virtual bool _Is3d() const {return false;}
     virtual ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) = 0;
-    virtual ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId existingViewId) = 0;
+    virtual ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, ViewDefinitionR existingViewDef) = 0;
 };
 
 //=======================================================================================
@@ -2701,7 +2701,7 @@ struct SpatialViewFactory : ViewFactory
 {
     SpatialConverterBase& m_spatialConverter;
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
-    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, ViewDefinitionR existingViewDef) override;
     bool _Is3d() const override final {return true;}
     SpatialViewFactory(SpatialConverterBase& s) : m_spatialConverter(s) {}
 };
