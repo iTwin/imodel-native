@@ -656,19 +656,6 @@ DgnCode DgnCode::FromJson2(JsonValueCR value)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Affan.Khan                      05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnCode::FromJsValue(Js::Object value)
-    {
-    DgnCode val;
-    Js::Object spec = value[json_spec()];
-    val.m_specId = CodeSpecId(spec.Get(json_value()).ToUInt64());
-    val.m_scope = value.Get(json_scope()).AsString();
-    val.m_value = DgnCodeValue(value.Get(json_value()).AsString());
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP DgnCode::Iterator::Options::GetECSql() const

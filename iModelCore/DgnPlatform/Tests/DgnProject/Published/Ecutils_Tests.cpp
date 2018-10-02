@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/Ecutils_Tests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -212,7 +212,7 @@ TEST_F(EcutilsTests, ToJsonPropertiesFromECProperties)
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("p2d", ECN::ECValue(DPoint2d::From( 8, 8))));
     ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ToJsonPropertiesFromECProperties(obj, ecInstance1, "i,l,p2d"));
     ASSERT_EQ(obj["i"], 10);
-    ASSERT_EQ(obj["l"], 1000000000001);
+    ASSERT_EQ(obj["l"], Json::Value(1000000000001));
     ASSERT_EQ(obj["p2d"][0], 8.0);
     ASSERT_EQ(obj["p2d"][1], 8.0);
     }

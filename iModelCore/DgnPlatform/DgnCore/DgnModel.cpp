@@ -20,7 +20,7 @@ DgnModel::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     if (!modeledElement.IsValid())
         {
         BeAssert(false);
-        LOG.errorv("DgnModel::CreateParams: modeledElement is not a valid RelatedElement. It is \"%s\"", val[DgnModel::json_classFullName()].asString().c_str());
+        LOGE("DgnModel::CreateParams: modeledElement is not a valid RelatedElement. It is \"%s\"", val[DgnModel::json_classFullName()].asString().c_str());
         return;
         }
 

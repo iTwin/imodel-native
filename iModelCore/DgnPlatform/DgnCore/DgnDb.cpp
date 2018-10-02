@@ -634,8 +634,10 @@ DbResult DgnDb::DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const& params
     if (BE_SQLITE_OK != stat)
         {
         // When it comes to schema upgrades, the caller probably does know what he is doing -- at least the iModelBridge framework does -- so this is not necessarily an "error".
-        auto sev = (BE_SQLITE_ERROR_SchemaUpgradeRequired == stat)? NativeLogging::LOG_INFO: NativeLogging::LOG_ERROR;
-        LOG.messagev(sev, "Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
+        if (BE_SQLITE_ERROR_SchemaUpgradeRequired == stat)
+            LOGI("Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
+        else
+            LOGE("Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
         }
 
     return stat;
@@ -688,7 +690,7 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
             {
             if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(projectFile))
                 {
-                LOG.errorv("Unable to create DgnDb because '%s' cannot be deleted.", projectFile.GetNameUtf8().c_str());
+                LOGE("Unable to create DgnDb because '%s' cannot be deleted.", projectFile.GetNameUtf8().c_str());
                 return BE_SQLITE_ERROR_FileExists;
                 }
             }

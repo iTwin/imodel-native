@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ECSqlClassParams.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -205,7 +205,7 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
 
             if (nullptr == info.GetPropertyAccessors(propIdx))
                 {
-                LOG.infov("%s.%s - missing accessors for custom-handled property", ecclass->GetECSqlName().c_str(), (*i)->GetName().c_str());
+                LOGI("%s.%s - missing accessors for custom-handled property", ecclass->GetECSqlName().c_str(), (*i)->GetName().c_str());
 
                 static std::once_flag s_nullAccessorsFlag;
                 static ECSqlClassInfo::T_ElementPropGet s_nullGetter;
