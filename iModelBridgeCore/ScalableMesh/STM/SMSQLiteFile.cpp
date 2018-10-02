@@ -321,7 +321,7 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
             if (!BeFileName::DoesPathExist(dirname))
                 BeFileName::CreateNewDirectory(dirname.GetWCharCP());
 #endif
-            result = smSQLiteFile->Create(Utf8String(filename.c_str()).c_str(), SQLDatabaseType::SM_DIFFSETS_FILE);
+            result = smSQLiteFile->Create(Utf8String(filename.c_str()).c_str(), type);
             BeAssert(result == true); // Failed to create sister file
 
             status = result ? SUCCESS : ERROR;

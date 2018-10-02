@@ -91,6 +91,46 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
 
 }
 
+DataSourceStatus DataSourceCached::readFromCache(std::vector<DataSourceBuffer::BufferData>& dest)
+    {
+    DataSource           *  dataSource;
+    DataSourceStatus        statusNotFound(DataSourceStatus::Status_Not_Found);
+    DataSourceAccount   *   cacheAccount;
+
+    if ((dataSource = getCacheDataSource()) == nullptr && getAccount())
+        {
+        if (cacheAccount = getAccount()->getCacheAccount())
+            {
+            DataSourceName dataSourceName(getName());
+            dataSourceName += L"-Cache";
+
+            DataSource::SessionName   sessionName(getSessionName());
+
+            if ((dataSource = cacheAccount->createDataSource(dataSourceName, sessionName)) == nullptr)
+                {
+                return DataSourceStatus(DataSourceStatus::Status_Error);
+                }
+
+            setCacheDataSource(dataSource);
+            }
+        }
+
+    if (dataSource == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Create_DataSource);
+
+    if ((dataSource->open(getCacheURL(), DataSourceMode_Read)).isFailed())
+        return statusNotFound;
+
+    if ((dataSource->read(dest)).isFailed())
+        return statusNotFound;
+
+    if ((dataSource->close()).isFailed())
+        return statusNotFound;
+
+    return DataSourceStatus();
+
+    }
+
 bool IsUrl(WCharCP filename)
 {
 	return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
@@ -130,6 +170,22 @@ DataSourceStatus DataSourceCached::writeToCache(DataSourceBuffer::BufferData *de
 
     return DataSourceStatus();
 }
+
+DataSourceStatus DataSourceCached::writeToCache(std::vector<DataSourceBuffer::BufferData>& dest)
+    {
+    DataSource            *    dataSource;
+    DataSourceStatus        statusErrorWrite(DataSourceStatus::Status_Error_Write);
+
+    dataSource = getCacheDataSource();
+    if (dataSource)
+        {
+        DataSourceURL url;
+        dataSource->getURL(url);
+        CacheWriter::GetCacheWriter()->push(new CacheWriter::CacheData(url, dest));
+        }
+
+    return DataSourceStatus();
+    }
 
 void DataSourceCached::setWriteToCache(bool write)
 {
@@ -257,6 +313,38 @@ DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize destSize, DataSiz
                                                             // Return status
     return status;
 }
+
+DataSourceStatus DataSourceCached::read(std::vector<Buffer>& dest)
+    {
+    DataSourceStatus    status;
+    // If caching is enabled
+    if (getCachingEnabled())
+        {
+        // Try reading from the cache
+        if (readFromCache(dest).isOK())
+            {
+            m_isFromCache = true;
+            // If read, return OK
+            return status;
+            }
+        // If not read, Flag to write to cache on next read
+        setWriteToCache(true);
+        }
+    // Get Superclass to read
+    if ((status = Super::read(dest)).isFailed())
+        return status;
+    // If cache needs writing
+    if (getWriteToCache())
+        {
+        // Write to the cache
+        setWriteToCache(false);
+        // Write to cache [Note: This could be on separate thread in future]
+        if ((status = writeToCache(dest)).isFailed())
+            return DataSourceStatus();                      // Not a big deal if writing to cache has failed
+        }
+    // Return status
+    return status;
+    }
 
 DataSourceStatus DataSourceCached::write(Buffer * source, DataSize size)
 {
