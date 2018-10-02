@@ -12,6 +12,8 @@
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
+#define CONCAT(value1, value2, value3) value1 value2 value3
+
 struct FormatUtilsTest : FormattingTestFixture {};
 struct FormatIntegerTest : FormattingTestFixture
     {
@@ -812,14 +814,13 @@ TEST_F(FormatParsingSetTest, SingleUnitWithVaryingUnitSeperators)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-#if !defined (BENTLEYCONFIG_OS_LINUX) // informed Kyle/Caleb/Gintaras 9/28/18
 TEST_F(FormatParsingSetTest, CompositeFormats)
     {
-    TestValidParseToQuantity("2 FT 6 IN", foot, 2*1  + 6.f/12.f);
+    TestValidParseToQuantity("2 FT 6 IN", foot, 2*1  + 6.0/12.0);
     TestValidParseToQuantity("2 FT 6 IN", inch, 2*12 + 6*1);
 
-    TestValidParseToQuantity("3 YRD 2 FT 6 IN", yard, 3*1  + 2.f/3.f + 6.f/36.f);
-    TestValidParseToQuantity("3 YRD 2 FT 6 IN", foot, 3*3  + 2*1     + 6.f/12.f);
+    TestValidParseToQuantity("3 YRD 2 FT 6 IN", yard, 3*1  + 2.0/3.0 + 6.0/36.0);
+    TestValidParseToQuantity("3 YRD 2 FT 6 IN", foot, 3*3  + 2*1     + 6.0/12.0);
     TestValidParseToQuantity("3 YRD 2 FT 6 IN", inch, 3*36 + 2*12    + 6*1);
 
     // Make sure composite formats with fractional/decimal components work.
@@ -834,7 +835,6 @@ TEST_F(FormatParsingSetTest, CompositeFormats)
     TestValidParseToQuantity("2 FT6 IN", inch, 2*12 + 6*1);
     TestValidParseToQuantity("2 FT        6 IN", inch, 2*12 + 6*1);
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
@@ -843,9 +843,9 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
     {
     TestValidParseToQuantity(u8"135°11'30 1/4\" ", arcDeg, 135.191736);
 
-    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", mile, 1*1     + 3.f/1760.f + 2.f/5280.f + 6.f/63360.f);
-    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", yard, 1*1760  + 3*1        + 2.f/3.f    + 6.f/36.f);
-    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", foot, 1*5280  + 3*3        + 2*1        + 6.f/12.f);
+    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", mile, 1*1     + 3.0/1760.0 + 2.0/5280.0 + 6.0/63360.0);
+    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", yard, 1*1760  + 3*1        + 2.0/3.0    + 6.0/36.0);
+    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", foot, 1*5280  + 3*3        + 2*1        + 6.0/12.0);
     TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", inch, 1*63360 + 3*36       + 2*12       + 6*1);
 
     TestValidParseToQuantity("2 1/2 FT 6 IN", inch, 2.5*12 + 6*1);
@@ -1046,7 +1046,6 @@ TEST_F(FormattingTestFixture, StdFormatting)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined (BENTLEYCONFIG_OS_LINUX) // informed Kyle/Caleb/Gintaras 9/28/18
 TEST_F(FormattingTestFixture, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
@@ -1134,7 +1133,11 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ ("2,828.450", fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    fmtP.ImbueLocale("de");
+    #if defined (BENTLEYCONFIG_OS_UNIX)
+        fmtP.ImbueLocale("de_DE");
+    #else
+        fmtP.ImbueLocale("de");
+    #endif
 
     EXPECT_STREQ("1.414,20000000", fmtP.Format(testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision7);
@@ -1149,22 +1152,31 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ("2.828,450", fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    fmtP.ImbueLocale("fi");
-    fmtP.SetThousandSeparator(' '); // Setting european locales actually sets the thousands separator to \xA0 which is thin space which breaks non UTF8 comparison TODO
-    EXPECT_STREQ("1 414,20000000", fmtP.Format(testV).c_str());
+    #if defined (BENTLEYCONFIG_OS_UNIX)
+        fmtP.ImbueLocale("fi_FI");
+    #else
+        fmtP.ImbueLocale("fi");
+    #endif
+
+    EXPECT_STREQ(CONCAT("1", "\xA0", "414,20000000"), fmtP.Format(testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ("7 071,0500000", fmtP.Format(5.0*testV).c_str());
+    EXPECT_STREQ(CONCAT("7", "\xA0", "071,0500000"), fmtP.Format(5.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ("4 242,650000", fmtP.Format(3.0*testV).c_str());
+    EXPECT_STREQ(CONCAT("4", "\xA0", "242,650000"), fmtP.Format(3.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ("9 899,50000", fmtP.Format(7.0*testV).c_str());
+    EXPECT_STREQ(CONCAT("9", "\xA0", "899,50000"), fmtP.Format(7.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ("12 727,9000", fmtP.Format(9.0*testV).c_str());
+    EXPECT_STREQ(CONCAT("12", "\xA0", "727,9000"), fmtP.Format(9.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ("2 828,450", fmtP.Format(2.0*testV).c_str());
+    EXPECT_STREQ(CONCAT("2", "\xA0", "828,450"), fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    fmtP.ImbueLocale("");
+    #if defined (BENTLEYCONFIG_OS_UNIX)
+        fmtP.ImbueLocale("en_US");
+    #else
+        fmtP.ImbueLocale("en-US");
+    #endif
+
     fmtP.SetKeepTrailingZeroes(false);
     fmtP.SetUse1000Separator(false);
 
@@ -1246,7 +1258,6 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ ("-0.2718281828e+4", numFmt.Format(-2718.2818284590).c_str());
     EXPECT_STREQ ("0.2718281828e+4", numFmt.Format(2718.2818284590).c_str());    
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      01/17

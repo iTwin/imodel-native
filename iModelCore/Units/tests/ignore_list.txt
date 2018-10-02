@@ -9,8 +9,3 @@
 FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
 FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
 FormatParsingSetTest.CompositeFormats_IGNORED
-
-# Gintaras is working on these.
-LocaleTests.BasicTest
-FormatParsingSetTest.CompositeFormats
-FormattingTestFixture.Simple
