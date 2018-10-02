@@ -139,7 +139,7 @@ private:
     ResourceMap<GradientSymb, JsTexture> m_gradients;
     ResourceMap<MaterialKey, JsMaterial> m_materials;
 
-    void Add(TextureKey key, JsTexture* texture); // { BeAssert(key.IsValid()); m_textures.Insert(key, texture); }
+    void Add(TextureKey key, JsTexture* texture);
     void Add(GradientSymbCR grad, JsTexture* texture) { m_gradients.Insert(grad, texture); }
     void Add(MaterialKey key, JsMaterial* material) { BeAssert(key.IsValid()); m_materials.Insert(key, material); }
 
