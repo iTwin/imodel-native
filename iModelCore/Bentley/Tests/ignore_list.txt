@@ -118,3 +118,12 @@ WStringTest.FlakyTest
 
 # This exists to test a new timeout mechanism, so cannot fail slow builds right now.
 BeFileTests1.CreateFile1
+
+# Flakey, especially on high-core machines.
+WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock
+    # [ RUN      ] WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock
+    # D:\vsts_a\1\s\Bentley\Tests\Published\Tasks\WorkerThreadTests.cpp(451): error: Value of: threadStopped
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock (38653 ms)
+    # [----------] 16 tests from WorkerThreadTests (38672 ms total)
