@@ -96,5 +96,6 @@
         <OptionBool name="SyncDwgVersionGuid" value="false"/>       <!--Use DWG VersionGuid to tell if a file is changed. Set to "true" if AutoCAD based products are the only DWG file editors for the sake of performance. -->
         <OptionBool name="SyncAsmBodyInFull" value="false"/>        <!--Save & analyze Autodesk ShapeManager data in full to track changes, with a preformance penalty. -->
         <OptionBool name="ConvertAsmAsParasolid" value="true"/>     <!--"true" to convert SOLID3D, BODY, RESION & SURFACE entities as Parasolid elements as many as possible; "false" to create mesh only. -->
+        <OptionBool name="ConvertBlockSharedParts" value="true"/>   <!--"true" to convert blocks using shared parts resulting in smaller file size; "false" to not use shared parts. -->
     </Options>
 </ConvertConfig>
