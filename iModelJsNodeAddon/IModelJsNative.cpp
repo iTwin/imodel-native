@@ -2567,6 +2567,9 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
         BeGuid guid = m_ecsqlValue->GetGuid();
+        if (!guid.IsValid())
+            return Env().Undefined();
+
         return Napi::String::New(Env(), guid.ToString().c_str());
         }
 
@@ -2576,6 +2579,9 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
         BeInt64Id id = m_ecsqlValue->GetId<BeInt64Id>();
+        if (!id.IsValid())
+            return Env().Undefined();
+
         return Napi::String::New(Env(), id.ToHexStr().c_str());
         }
 
@@ -3012,6 +3018,8 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             InstanceMethod("bindDouble", &NativeSqliteStatement::BindDouble),
             InstanceMethod("bindInteger", &NativeSqliteStatement::BindInteger),
             InstanceMethod("bindString", &NativeSqliteStatement::BindString),
+            InstanceMethod("bindId", &NativeSqliteStatement::BindId),
+            InstanceMethod("bindGuid", &NativeSqliteStatement::BindGuid),
             InstanceMethod("clearBindings", &NativeSqliteStatement::ClearBindings),
             InstanceMethod("step", &NativeSqliteStatement::Step),
             InstanceMethod("reset", &NativeSqliteStatement::Reset),
@@ -3023,6 +3031,8 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             InstanceMethod("getValueDouble", &NativeSqliteStatement::GetValueDouble),
             InstanceMethod("getValueInteger", &NativeSqliteStatement::GetValueInteger),
             InstanceMethod("getValueString", &NativeSqliteStatement::GetValueString),
+            InstanceMethod("getValueId", &NativeSqliteStatement::GetValueId),
+            InstanceMethod("getValueGuid", &NativeSqliteStatement::GetValueGuid),
             });
 
             exports.Set("NativeSqliteStatement", t);
@@ -3211,6 +3221,48 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             return Napi::Number::New(Env(), (int) stat);
             }
 
+        Napi::Value BindGuid(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            if (info.Length() != 2)
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindGuid requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int paramIndex = GetParameterIndex(info[0]);
+            if (paramIndex < 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindGuid", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            REQUIRE_ARGUMENT_STRING(1, guidString, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            BeGuid guid;
+            if (SUCCESS != guid.FromString(guidString.c_str()))
+                return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+            const DbResult stat = m_stmt->BindGuid(paramIndex, guid);
+            return Napi::Number::New(Env(), (int) stat);
+            }
+
+        Napi::Value BindId(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not initialized.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            if (info.Length() != 2)
+                THROW_TYPE_EXCEPTION_AND_RETURN("BindId requires two arguments", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            int paramIndex = GetParameterIndex(info[0]);
+            if (paramIndex < 1)
+                THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindId", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            REQUIRE_ARGUMENT_STRING(1, idString, Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            BeInt64Id id;
+            if (SUCCESS != BeInt64Id::FromString(id, idString.c_str()))
+                return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+            const DbResult  stat = m_stmt->BindId(paramIndex, id);
+            return Napi::Number::New(Env(), (int) stat);
+            }
+
         Napi::Value ClearBindings(Napi::CallbackInfo const& info)
             {
             if (m_stmt == nullptr)
@@ -3304,6 +3356,34 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
 
             REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
             return Napi::String::New(Env(), m_stmt->GetValueText(colIndex));
+            }
+
+        Napi::Value GetValueId(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+
+            BeInt64Id id = m_stmt->GetValueId<BeInt64Id>(colIndex);
+            if (!id.IsValid())
+                return Env().Undefined();
+
+            return Napi::String::New(Env(), id.ToHexStr().c_str());
+            }
+
+        Napi::Value GetValueGuid(Napi::CallbackInfo const& info)
+            {
+            if (m_stmt == nullptr)
+                THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
+
+            REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
+
+            BeGuid guid = m_stmt->GetValueGuid(colIndex);
+            if (!guid.IsValid())
+                return Env().Undefined();
+
+            return Napi::String::New(Env(), guid.ToString().c_str());
             }
 
         Napi::Value Reset(Napi::CallbackInfo const& info)
