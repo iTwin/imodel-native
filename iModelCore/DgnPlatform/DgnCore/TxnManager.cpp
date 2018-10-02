@@ -762,7 +762,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
         if (SUCCESS != status)
             {
-            LOGE("Cancelling txn due to fatal validation error.");
+            LOG.errorv("Cancelling txn due to fatal validation error.");
             OnEndValidate();
             return CancelChanges(dataChangeSet); // roll back entire txn
             }
@@ -915,7 +915,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
             // the merged changes are lost after this routine and cannot be used for change propagation anymore.
             if (BE_SQLITE_OK != result)
                 {
-                LOGE("MergeRevision failed with SQLite error %s", m_dgndb.GetLastError().c_str());
+                LOG.errorv("MergeRevision failed with SQLite error %s", m_dgndb.GetLastError().c_str());
                 BeAssert(false);
                 status = RevisionStatus::SQLiteError;
                 }
@@ -926,7 +926,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
         {
         // Ensure the entire transaction is rolled back to before the merge, and the txn tables are notified to
         // appropriately revert their in-memory state.
-        LOGE("Could not propagate changes after merge due to validation errors.");
+        LOG.errorv("Could not propagate changes after merge due to validation errors.");
 
         // Note: CancelChanges() requires an iterator over the inverse of the changes notified through AddChanges().
         // The change stream can be inverted only by holding the inverse either in memory, or as a new file on disk.
@@ -982,7 +982,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
         DbResult result = m_dgndb.SaveChanges();
         if (BE_SQLITE_OK != result)
             {
-            LOGE("Apply failed with SQLite error %s", m_dgndb.GetLastError().c_str());
+            LOG.errorv("Apply failed with SQLite error %s", m_dgndb.GetLastError().c_str());
             BeAssert(false);
             status = RevisionStatus::SQLiteError;
             }
@@ -1037,7 +1037,7 @@ void TxnManager::ReportError(ValidationError& e)
     m_validationErrors.push_back(e);
 
     auto sev = (e.GetSeverity() == ValidationError::Severity::Fatal) ? "Fatal" : "Warning";
-    LOGE("Validation error. Severity:%s Class:[%s] Description:[%s]", sev, typeid(e).name(), e.GetDescription());
+    LOG.errorv("Validation error. Severity:%s Class:[%s] Description:[%s]", sev, typeid(e).name(), e.GetDescription());
     }
 
 /*---------------------------------------------------------------------------------**//**

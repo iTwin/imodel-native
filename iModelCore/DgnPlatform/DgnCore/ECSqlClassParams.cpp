@@ -205,7 +205,7 @@ bool ECSqlClassParams::BuildClassInfo(ECSqlClassInfo& info, DgnDbCR dgndb, DgnCl
 
             if (nullptr == info.GetPropertyAccessors(propIdx))
                 {
-                LOGI("%s.%s - missing accessors for custom-handled property", ecclass->GetECSqlName().c_str(), (*i)->GetName().c_str());
+                LOG.infov("%s.%s - missing accessors for custom-handled property", ecclass->GetECSqlName().c_str(), (*i)->GetName().c_str());
 
                 static std::once_flag s_nullAccessorsFlag;
                 static ECSqlClassInfo::T_ElementPropGet s_nullGetter;

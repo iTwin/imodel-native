@@ -4498,7 +4498,7 @@ BentleyStatus JobSubjectUtils::GetTransform(TransformR trans, SubjectCR jobSubje
     if (!json.isArray() || json.size() != 3  || !json[0].isArray() || json[0].size() != 4 || !json[0][0].isDouble()) 
         {
         BeAssert(false);
-        LOGE("JobSubjectUtils::GetTransform: %s.%s is invalid [%s]\n", jobSubject.GetCode().GetValue().GetUtf8CP(), json_Transform().c_str(), json.ToString().c_str());
+        LOG.errorv("JobSubjectUtils::GetTransform: %s.%s is invalid [%s]\n", jobSubject.GetCode().GetValue().GetUtf8CP(), json_Transform(), json.ToString().c_str());
         return BSIERROR;
         }
     

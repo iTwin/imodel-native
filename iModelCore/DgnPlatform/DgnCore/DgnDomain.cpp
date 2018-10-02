@@ -63,7 +63,7 @@ bool DgnDomain::ValidateSchemaPathname() const
     BeFileName schemaPathname = GetSchemaPathname();
     if (!schemaPathname.DoesPathExist())
         {
-        LOGE("Schema '%ls' does not exist", schemaPathname.GetName());
+        LOG.errorv(L"Schema '%s' does not exist", schemaPathname.GetName());
         BeAssert(false && "Schema does not exist");
         return false;
         }
@@ -74,7 +74,7 @@ bool DgnDomain::ValidateSchemaPathname() const
 
     if (0 != BeStringUtilities::Strnicmp(schemaBaseName.c_str(), GetDomainName(), strlen(GetDomainName())))
         {
-        LOGE("Schema name '%s' does not match Domain name '%s'", schemaBaseName.c_str(), GetDomainName());
+        LOG.errorv("Schema name '%s' does not match Domain name '%s'", schemaBaseName.c_str(), GetDomainName());
         BeAssert(false && "Schema name and DgnDomain name must match");
         return false;
         }
@@ -118,7 +118,7 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
         auto thisHandler = myHandlers.find(handlerName);
         if (thisHandler == myHandlers.end())
             {
-            LOGE("Missing Handler [%s]", handlerName.c_str());
+            LOG.errorv("Missing Handler [%s]", handlerName.c_str());
             continue;
             }
 
@@ -162,7 +162,7 @@ ECSchemaPtr DgnDomain::ReadSchema(ECSchemaReadContextR schemaContext) const
     // CreateSearchPathSchemaFileLocater
     if (SchemaReadStatus::Success != status)
         {
-        LOGE("Error reading schema %ls", GetSchemaPathname().GetName());
+        LOG.errorv("Error reading schema %ls", GetSchemaPathname().GetName());
         BeAssert(false && "Error reading schema");
         }
     return schema;
@@ -175,7 +175,7 @@ SchemaStatus DgnDomain::ValidateSchema(ECSchemaCR schema, DgnDbCR dgndb) const
     {
     if (0 != BeStringUtilities::StricmpAscii(schema.GetName().c_str(), GetDomainName()))
         {
-        LOGE("Schema name %s must match domain name %s", schema.GetName().c_str(), GetDomainName());
+        LOG.errorv("Schema name %s must match domain name %s", schema.GetName().c_str(), GetDomainName());
         BeAssert(false && "Schema name must match domain name");
         return SchemaStatus::SchemaDomainNamesMismatched;
         }
@@ -214,13 +214,13 @@ void DgnDomains::SyncWithSchemas()
         auto thisDomain = registeredDomains.find(domainName);
         if (thisDomain == registeredDomains.end())
             {
-            LOGI("Missing Domain [%s]", stmt.GetValueText(0));
+            LOG.infov("Missing Domain [%s]", stmt.GetValueText(0));
             continue;
             }
 
         if (thisDomain->second->GetVersion() < stmt.GetValueInt(1))
             {
-            LOGE("Wrong Domain version [%s]", stmt.GetValueText(0));
+            LOG.errorv("Wrong Domain version [%s]", stmt.GetValueText(0));
             BeAssert(false);
             continue;
             }
@@ -579,7 +579,7 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
                 domainsToImport->push_back(domain);
             if (schemasToImport)
                 schemasToImport->push_back(schema);
-            LOGW("Schema for a required domain %s is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch", domain->GetDomainName());
+            LOG.warningv("Schema for a required domain %s is not found. Either call DgnDomain::ImportSchema(), or RegisterDomain as optional, or re-create a new Db from scratch", domain->GetDomainName());
             continue;
             }
             
@@ -635,7 +635,7 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
     ECSchemaCP bimSchema = db.Schemas().GetSchema(appSchemaKey.GetName().c_str(), false);
     if (!bimSchema)
         {
-        LOGT("Application schema %s was not found in the BIM.", appSchemaKey.GetFullSchemaName().c_str());
+        LOG.tracev("Application schema %s was not found in the BIM.", appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaNotFound;
         }
     SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
@@ -645,13 +645,13 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
 
     if (appSchemaKey.GetVersionRead() < bimSchemaKey.GetVersionRead())
         {
-        LOGE("Schema found in the BIM %s is too new compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        LOG.errorv("Schema found in the BIM %s is too new compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaTooNew;
         }
 
     if (appSchemaKey.GetVersionRead() > bimSchemaKey.GetVersionRead())
         {
-        LOGE("Schema found in the BIM %s is too old compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        LOG.errorv("Schema found in the BIM %s is too old compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaTooOld;
         }
 
@@ -659,17 +659,17 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
         {
         if (!isSchemaReadonly)
             {
-            LOGD("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+            LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
             return SchemaStatus::SchemaUpgradeRequired;
             }
 
-        LOGD("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        LOG.debugv("Schema found in the BIM %s needs to (and can) be upgraded to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaUpgradeRecommended;
         }
 
     if (appSchemaKey.GetVersionMinor() > bimSchemaKey.GetVersionMinor())
         {
-        LOGD("Schema found in the BIM %s is recommended to be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        LOG.debugv("Schema found in the BIM %s is recommended to be upgraded to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaUpgradeRecommended;
         }
 
@@ -677,11 +677,11 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
 
     if (!isSchemaReadonly)
         {
-        LOGE("Schema found in the BIM %s is too new compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+        LOG.errorv("Schema found in the BIM %s is too new compared to that in the application %s", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaTooNew;
         }
 
-    LOGD("Schema found in the BIM %s is newer and found to be write incompatible to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
+    LOG.debugv("Schema found in the BIM %s is newer and found to be write incompatible to that in the application %s. However, this is not an issue since the application or domain is readonly.", bimSchemaKey.GetFullSchemaName().c_str(), appSchemaKey.GetFullSchemaName().c_str());
     return SchemaStatus::SchemaUpgradeRecommended;
     }
 
@@ -735,11 +735,11 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         return SchemaStatus::CouldNotAcquireLocksOrCodes;
         }
 
-    if (LOG_IsSeverityEnabled(SEVERITY::LOG_DEBUG))
+    if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG))
         {
-        LOGD("Schemas to be imported:");
+        LOG.debug("Schemas to be imported:");
         for (ECSchemaCP schema : importSchemas)
-            LOGD("\t%s", schema->GetFullSchemaName().c_str());
+            LOG.debugv("\t%s", schema->GetFullSchemaName().c_str());
         }
 
     if (dgndb.Txns().IsTracking())
@@ -757,7 +757,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         {
         if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
             {
-            LOGE("Failed to import legacy V8 schemas"); 
+            LOG.errorv("Failed to import legacy V8 schemas"); 
             }
         else
             {
@@ -951,7 +951,7 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
         {
         BeAssert(m_schemaUpgradeOptions.AreDomainUpgradesAllowed() && "You cannot register a handler unless its ECClass has a ClassHasHandler custom attribute");
 #if !defined (NDEBUG)
-        LOGE("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
+        LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which lacks a ClassHasHandler custom attribute. Handler not registered.",
                 typeid(handler).name(), handler.GetClassName().c_str());
 #endif
 
@@ -1005,7 +1005,7 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
 
     if (!myEcClass->Is(superEcClass))
         {
-        LOGE("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
+        LOG.errorv("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
                " Handler [%s] says it handles ECClass '%s', \n"
                " but that class does not derive from its superclass handler's ECClass '%s'\n", 
                 typeid(*this).name(), GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
@@ -1019,7 +1019,7 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
         BeAssert(nullptr != rootEcClass);
         if (nullptr != rootEcClass && rootEcClass != myEcClass && !myEcClass->IsSingularlyDerivedFrom(*rootEcClass))
             {
-            LOGE("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+            LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
             typeid(*this).name(), GetClassName().c_str(), rootClass->GetClassName().c_str());
 
             BeAssert(false && "Handler::_VerifySchema() failed. Check log for details");
@@ -1226,7 +1226,7 @@ public:
 
         if (!myECClass->Is(superECClass))
             {
-            LOGE("ERROR: HANDLER hierarchy does not match ECSCHMA hiearchy:\n"
+            LOG.errorv("ERROR: HANDLER hierarchy does not match ECSCHMA hiearchy:\n"
                    " Handler [%s] says it handles ECClass '%s', \n"
                    " but that class does not derive from its superclass handler's ECClass '%s'\n", 
                     typeid(m_handler).name(), m_handler.GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
@@ -1240,7 +1240,7 @@ public:
             BeAssert(nullptr != rootEcClass);
             if (nullptr != rootEcClass && rootEcClass != myECClass && !myECClass->IsSingularlyDerivedFrom(*rootEcClass))
                 {
-                LOGE("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
+                LOG.errorv("ERROR: HANDLER [%s] handles ECClass '%s' which derives more than once from root ECClass '%s'.\n",
                 typeid(m_handler).name(), m_handler.GetClassName().c_str(), rootClass->GetClassName().c_str());
 
                 BeAssert(false && "Handler derives more than once from root ECClass - see log for details");
@@ -1264,7 +1264,7 @@ public:
                 typeid(*instance).name(), T_Traits::GetECClassName(*instance),
                 T_Traits::GetMacroName(), T_Traits::GetCppClassName());
             
-            LOGE("%s", msg.c_str());
+            LOG.errorv("%s", msg.c_str());
             BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }
 
@@ -1275,7 +1275,7 @@ public:
                     typeid(m_handler).name(), handlerSuperClass->GetClassName().c_str(), 
                     T_Traits::GetCppClassName(), typeid(*instance).name(), T_Traits::GetSuperECClassName(*instance));
             
-            LOGE("%s", msg.c_str());
+            LOG.errorv("%s", msg.c_str());
             BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }
 
@@ -1286,7 +1286,7 @@ public:
         ECN::ECClassCP instanceSuperECClass = schemas.GetClass(instanceSuperClassId);
         if (!instanceECClass->Is(instanceSuperECClass))
             {
-            LOGE("C++ INHERITANCE ERROR: %s class [%s] handlers ECClass '%s', but it does not derive from ECClass '%s'\n",
+            LOG.errorv("C++ INHERITANCE ERROR: %s class [%s] handlers ECClass '%s', but it does not derive from ECClass '%s'\n",
                 T_Traits::GetCppClassName(), typeid(*instance).name(), T_Traits::GetECClassName(*instance), T_Traits::GetSuperECClassName(*instance));
             BeAssert(false && "Inconsistent handler class hierarchy - see log for details");
             }
