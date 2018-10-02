@@ -68,7 +68,6 @@ protected:
 
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
-    DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
     DGNPLATFORM_EXPORT void _OnLoadedJsonProperties() override;
     DGNPLATFORM_EXPORT void _OnSaveJsonProperties() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
@@ -95,6 +94,7 @@ public:
     DisplayStyle3dCP ToDisplayStyle3d() const {return _ToDisplayStyle3d();}
     DisplayStyle3dP ToDisplayStyle3dP() {return const_cast<DisplayStyle3dP>(_ToDisplayStyle3d());}
     bool Is3d() const {return nullptr != ToDisplayStyle3d();}
+    DGNPLATFORM_EXPORT bool EqualState(DisplayStyleR other); // Note: this is purposely non-const and takes a non-const argument. DO NOT CHANGE THAT! You may only call it on writeable copies
 
     void CopyStylesFrom(DisplayStyle& rhs) {rhs._OnSaveJsonProperties(); GetStylesR() = rhs.GetStyles(); _OnLoadedJsonProperties();}
 
