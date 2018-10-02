@@ -228,12 +228,16 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
-	WString serverUrl;
-	//UINT32 bufLen;
-	CallStatus status = APIERR_SUCCESS;
-	try
-		{
+    WString serverUrl;
+    CallStatus status = APIERR_SUCCESS;
+    try
+        {
         CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+        if (!api)
+            {
+            BeAssert(!"Couldn't initialize Connection client COM API");
+            return "";
+            }
         bool installed;
         status = CCApi_IsInstalled(api, &installed);
         if (!installed)
@@ -278,35 +282,19 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         wchar_t* buddiUrl;
         UINT32 strlen = 0;
 
-        //if (region > 100)
-        //    {
-        //    CCApi_GetBuddiRegionUrl(api, L"RealityDataServices", region, NULL, &strlen);
-        //    strlen += 1;
-        //    buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
-        //    CCApi_GetBuddiRegionUrl(api, L"RealityDataServices", region, buddiUrl, &strlen);
-        //    }
-        //else
-        //    {
-            CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &strlen);
-            strlen += 1;
-            buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
-            CCApi_GetBuddiUrl(api, L"RealityDataServices", buddiUrl, &strlen);
-        //    }
+        CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &strlen);
+        strlen += 1;
+        buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
+        CCApi_GetBuddiUrl(api, L"RealityDataServices", buddiUrl, &strlen);
 
-        char* charServer = new char[strlen];
-        wcstombs(charServer, buddiUrl, strlen);
         serverUrl.assign(buddiUrl);
-		//wchar_t* buffer;
-		//status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
-		//bufLen++;
-		//buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
-		//status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
-		//serverUrl.assign(buffer);
-		CCApi_FreeApi(api);
-		}
-	catch (...)
-		{
-		}
+        free(buddiUrl);
+        CCApi_FreeApi(api);
+        }
+    catch (...)
+        {
+        BeAssert(!"Error thrown while fetching RDS server url");
+        }
     return Utf8String(serverUrl.c_str());
     }
 
