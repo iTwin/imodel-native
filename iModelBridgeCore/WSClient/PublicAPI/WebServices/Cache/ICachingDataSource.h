@@ -98,12 +98,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             {
             public:
                 ProgressCallback progressCallback;
-                std::function<bool(const IQueryProvider::Query& query)> shouldReportQueryProgress;
+                std::function<bool(ECInstanceKeyCR instance, CacheTransactionCR txn)> shouldReportInstanceProgress;
 
             public:
-                ProgressHandler() : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
-                ProgressHandler(std::nullptr_t) : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
-                ProgressHandler(ProgressCallback callback) : progressCallback(callback), shouldReportQueryProgress([] (const IQueryProvider::Query& query) { return true; }) {};
+                ProgressHandler() : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportInstanceProgress([] (ECInstanceKeyCR instance, CacheTransactionCR txn) { return true; }) {};
+                ProgressHandler(std::nullptr_t) : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportInstanceProgress([] (ECInstanceKeyCR instance, CacheTransactionCR txn) { return true; }) {};
+                ProgressHandler(ProgressCallback callback) : progressCallback(callback), shouldReportInstanceProgress([] (ECInstanceKeyCR instance, CacheTransactionCR txn) { return true; }) {};
             };
 
         typedef std::shared_ptr<ProgressHandler> ProgressHandlerPtr;

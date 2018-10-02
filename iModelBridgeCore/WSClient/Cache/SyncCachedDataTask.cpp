@@ -50,7 +50,7 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     size_t synced = m_syncedInitialInstances + m_syncedQueries;
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
-    size_t syncedInstances = m_syncedInstances;
+    size_t syncedInstances = m_syncedInstancesToReportProgress.size();
     size_t totalInstances = m_instancesToReportProgress.size();
 
     if (totalInstances == 0)
@@ -218,7 +218,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
                 return;
             
             for (auto& pair : cachedInstances)
-                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively, m_progressHandler.shouldReportQueryProgress(providedQuery->query));
+                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively);
             }
         else
             {
@@ -229,7 +229,12 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
             {
             providedQuery->instance->Remove(*providedQuery);
             if (providedQuery->instance->IsComplete())
-                m_syncedInstances++;
+                {
+                auto instanceKey = providedQuery->instance->key;
+                auto reportProgress = m_progressHandler.shouldReportInstanceProgress(instanceKey, txn);
+                if (reportProgress)
+                    m_syncedInstancesToReportProgress.insert(instanceKey);
+                }
             }
 
         m_syncedQueries++;
@@ -271,13 +276,14 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, ECInstanceKeyCR i
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively, bool reportProgress)
+void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively)
     {
     if (m_instanceQueriesPrepared.find(instanceKey) != m_instanceQueriesPrepared.end())
         return;
 
     m_instanceQueriesPrepared.insert(instanceKey);
 
+    auto reportProgress = m_progressHandler.shouldReportInstanceProgress(instanceKey, txn);
     if (reportProgress)
         m_instancesToReportProgress.insert(instanceKey);
 
@@ -312,7 +318,7 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
     size_t instanceQueriesCount = instancePtr->cacheQueries.size();
     m_totalQueries += instanceQueriesCount;
     if (instanceQueriesCount == 0 && reportProgress)
-        m_syncedInstances++;
+        m_syncedInstancesToReportProgress.insert(instancePtr->key);
     }
 
 /*--------------------------------------------------------------------------------------+
