@@ -9,4 +9,4 @@ There should be no direct dependencies on this package.
 
 ## License
 
-> See: [License](https://github.com/imodeljs/imodeljs/blob/master/core/backend/src/imodeljs-native-LICENSE.md)
+> See Right-to-Run [License](https://github.com/imodeljs/imodeljs/blob/master/core/backend/src/imodeljs-native-LICENSE.md)
