@@ -32,6 +32,12 @@ need be.
 USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.
 USING_NAMESPACE_IMAGEPP
     
+#ifndef VANCOUVER_API
+class SMSQLiteFile;
+
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
+#endif
+
 enum class SMStoreDataType
     {
     Points = 0,

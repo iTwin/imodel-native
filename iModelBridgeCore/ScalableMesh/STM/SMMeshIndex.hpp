@@ -660,6 +660,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
 
         this->m_nodeHeader.m_geometryResolution = newGeometricErrorValue;
 #ifndef VANCOUVER_API
+        static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
+        static const uint64_t maxQueueSize = /*std::max((uint64_t)m_SMIndex->m_totalNumNodes, (uint64_t)*/30000;//);
         typedef SMNodeDistributor<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> Distribution_Type;
         static Distribution_Type* distributor = new Distribution_Type([&pi_pDataStore](HFCPtr<SMPointIndexNode<POINT, EXTENT>> node)
             {
@@ -695,7 +697,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
             //node->Unload();
-            });
+            }, [](HFCPtr<SMPointIndexNode<POINT, EXTENT>> node) {return true; }, nbThreads, maxQueueSize);
 
         distributor->AddWorkItem(this);
 #else
