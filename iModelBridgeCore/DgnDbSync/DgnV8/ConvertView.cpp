@@ -813,7 +813,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     if (existingViewId.IsValid())
         {
-        if (!view->EqualState(*existingDef))
+        if (!view->EqualState(*existingDef) || view->GetName() != existingDef->GetName())
             {
             if (!view->Update().IsValid())
                 {
