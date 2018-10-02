@@ -266,7 +266,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     dgndbJournalFile.append(L"-journal");
     if (BeFileName::DoesPathExist(dgndbJournalFile))
         {
-        LOG.fatalv(L"Error creating package for [%ls] -- a journal file exists.", dgndbFile.c_str());
+        LOGF("Error creating package for [%ls] -- a journal file exists.", dgndbFile.c_str());
         return BE_SQLITE_CORRUPT;
         }
 
@@ -291,7 +291,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
         {
         if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(packageFile))
             {
-            LOG.errorv(L"Unable to create DgnPackage because '%ls' cannot be deleted.", packageFile.GetName());
+            LOGE("Unable to create DgnPackage because '%ls' cannot be deleted.", packageFile.GetName());
             return BE_SQLITE_ERROR_FileExists;
             }
         }

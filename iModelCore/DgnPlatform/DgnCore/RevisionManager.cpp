@@ -61,17 +61,17 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     auto control = dgndb.GetOptimisticConcurrencyControl();
     bool letControlHandleThis = (nullptr != control) && (const_cast<DgnDbR>(dgndb).Txns().HasLocalChanges());
 
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
+    if (LOG_IsSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        LOG.infov("------------------------------------------------------------------");
-        LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
+        LOGI("------------------------------------------------------------------");
+        LOGI("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
         if (cause == ChangeSet::ConflictCause::ForeignKey)
             {
             // Note: No current or conflicting row information is provided if it's a FKey conflict
             int nConflicts = 0;
             result = iter.GetFKeyConflicts(&nConflicts);
             BeAssert(result == BE_SQLITE_OK);
-            LOG.infov("Detected %d foreign key conflicts in ChangeSet", nConflicts);
+            LOGI("Detected %d foreign key conflicts in ChangeSet", nConflicts);
             }
         else 
             {
@@ -93,7 +93,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         if (opcode == DbOpcode::Delete)
             {
             // Caused by CASCADE DELETE on a foreign key, and is usually not a problem. 
-            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            LOGI("Conflict resolved by keeping the existing entry and skipping the change");
             return ChangeSet::ConflictResolution::Skip;
             }
 
@@ -101,7 +101,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3))
             {
             // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise        
-            LOG.infov("Conflict resolved by keeping the existing entry and skipping the change");
+            LOGI("Conflict resolved by keeping the existing entry and skipping the change");
             return ChangeSet::ConflictResolution::Skip;
             }
 
@@ -121,7 +121,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
 
     if (ChangeSet::ConflictCause::Constraint == cause)
         {
-        LOG.warning("Constraint conflict handled by rejecting incoming change. Constraint conflicts are NOT expected. These happen most often when two clients both insert elements with the same code. That indicates a bug in the client or the code server.");
+        LOGW("Constraint conflict handled by rejecting incoming change. Constraint conflicts are NOT expected. These happen most often when two clients both insert elements with the same code. That indicates a bug in the client or the code server.");
         iter.Dump(dgndb, false, 1);
         return ChangeSet::ConflictResolution::Skip;
         }
@@ -148,7 +148,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *
      * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
-    LOG.infov("Conflicting resolved by replacing the existing entry with the change");
+    LOGI("Conflicting resolved by replacing the existing entry with the change");
     return ChangeSet::ConflictResolution::Replace;
     }
 
@@ -298,7 +298,7 @@ DgnRevision::~DgnRevision()
         BeFileNameStatus status = m_revChangesFile.BeDeleteFile();
         if (BeFileNameStatus::Success != status)
             {
-            LOG.errorv(L"Could not delete temporary change stream file %ls - error %x", m_revChangesFile.c_str(), status);
+            LOGE("Could not delete temporary change stream file %ls - error %x", m_revChangesFile.c_str(), status);
             BeAssert(BeFileNameStatus::Success == status && "Could not delete temporary change stream file");
             }
         }
@@ -328,14 +328,14 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
     {
 // Don't log "sensitive" information in production builds.
 #if !defined(PRG)
-    LOG.infov("Id : %s", m_id.c_str());
-    LOG.infov("ParentId : %s", m_parentId.c_str());
-    LOG.infov("Initial ParentId : %s", m_initialParentId.c_str());
-    LOG.infov("DbGuid: %s", m_dbGuid.c_str());
-    LOG.infov("User Name: %s", m_userName.c_str());
-    LOG.infov("Summary: %s", m_summary.c_str());
-    LOG.infov("ChangeStreamFile: %ls", m_revChangesFile.c_str());
-    LOG.infov("DateTime: %s", m_dateTime.ToString().c_str());
+    LOGI("Id : %s", m_id.c_str());
+    LOGI("ParentId : %s", m_parentId.c_str());
+    LOGI("Initial ParentId : %s", m_initialParentId.c_str());
+    LOGI("DbGuid: %s", m_dbGuid.c_str());
+    LOGI("User Name: %s", m_userName.c_str());
+    LOGI("Summary: %s", m_summary.c_str());
+    LOGI("ChangeStreamFile: %ls", m_revChangesFile.c_str());
+    LOGI("DateTime: %s", m_dateTime.ToString().c_str());
 
     RevisionChangesFileReader fs(m_revChangesFile, dgndb);
 
@@ -344,8 +344,8 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
     DbResult result = fs.GetSchemaChanges(containsSchemaChanges, dbSchemaChangeSet);
     BeAssert(result == BE_SQLITE_OK);
 
-    LOG.infov("Contains Schema Changes: %s", containsSchemaChanges ? "yes" : "no");
-    LOG.infov("Contains DbSchema Changes: %s", (dbSchemaChangeSet.GetSize() > 0) ? "yes" : "no");
+    LOGI("Contains Schema Changes: %s", containsSchemaChanges ? "yes" : "no");
+    LOGI("Contains DbSchema Changes: %s", (dbSchemaChangeSet.GetSize() > 0) ? "yes" : "no");
     if (dbSchemaChangeSet.GetSize() > 0)
         dbSchemaChangeSet.Dump("DDL: ");
 
@@ -522,7 +522,7 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
         if (dgndb.GetExistingBriefcaseManager()->QueryLockLevel(schemasLock) != LockLevel::Exclusive)
             {
             BeAssert(false && "If a revision contains schema changes, then the briefcase must hold the Schemas lock");
-            LOG.fatalv("Briefcase has made schema changes but does not hold the Schemas lock");
+            LOGF("Briefcase has made schema changes but does not hold the Schemas lock");
             }
         lockRequest.InsertLock(schemasLock, LockLevel::Exclusive);
         }
@@ -988,7 +988,7 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
     if (revision.IsNull())
         return revision;
 
-    LOG.tracev(L"CreateRevisionObject %ls for cs %ls", tempRevisionPathname.c_str(), revision->GetRevisionChangesFile().c_str());
+    LOGT("CreateRevisionObject %ls for cs %ls", tempRevisionPathname.c_str(), revision->GetRevisionChangesFile().c_str());
 
     BeFileNameCR revisionPathname = revision->GetRevisionChangesFile();
     if (revisionPathname.DoesPathExist() && BeFileNameStatus::Success != revisionPathname.BeDeleteFile()) // Note: Need to delete since BeMoveFile doesn't overwrite
@@ -1170,7 +1170,7 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
-    LOG.tracev(L"RevisonManager::StartCreateRevision for %ls", m_dgndb.GetFileName().c_str());
+    LOGT("RevisonManager::StartCreateRevision for %ls", m_dgndb.GetFileName().c_str());
 
     TxnManagerR txnMgr = m_dgndb.Txns();
     if (!txnMgr.IsTracking())
@@ -1555,7 +1555,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
             //    opcode=DELETE   => attempt to delete a row that is referenced as a FK by some existing row  ==> We have to reject the incoming delete!
             //    opcode=INSERT   => new row violates a UNIQUE constraint                                     ==> We have to reject the incoming insert! << Can only happen on unique properties other than codes. What properties are unique???
             //    opcode=UPDATE   => some column value violates a UNIQUE or NOT NULL constraint               ==> We have to reject the incoming change! <<             "                 "                       "
-            LOG.warning("Constraint Conflict should never happen");
+            LOGW("Constraint Conflict should never happen");
             onConflict = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
             break;
 
@@ -1572,7 +1572,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
             //    ==> This should never happen, since we will reject incoming changes that would cause constraint violations, as described above.
     
             BeAssert(false && "Conflict cause Conflict and ForeignKey should never happen");
-            LOG.warning("NotFound Conflict should never happen");
+            LOGW("NotFound Conflict should never happen");
             onConflict = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
             break;
 

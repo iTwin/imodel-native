@@ -545,7 +545,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     if (typeid(element) != element.GetElementHandler()._ElementType())
 #endif
         {
-        LOG.errorv("InsertElement element must have its own handler: element typeid=%s, handler typeid=%s", typeid(element).name(), element.GetElementHandler()._ElementType().name());
+        LOGE("InsertElement element must have its own handler: element typeid=%s, handler typeid=%s", typeid(element).name(), element.GetElementHandler()._ElementType().name());
         BeAssert(false && "you can only insert an element that has ITS OWN handler");
         stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
         return nullptr;
