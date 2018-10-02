@@ -266,7 +266,7 @@ struct WSChangeset::Options
         //! Set custom option.
         //! CustomOptions can be used to pass any user data for ec plugin via extended parameters
         //! Will overwrite values with same name.
-        WSCLIENT_EXPORT void SetCustomOption(Utf8StringCR name, Utf8StringCR value);
+        WSCLIENT_EXPORT void SetCustomOption(Utf8StringCR name, Json::Value value);
 
         //! Remove custom option.
         WSCLIENT_EXPORT void RemoveCustomOption(Utf8StringCR name);

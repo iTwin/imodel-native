@@ -746,7 +746,7 @@ Json::Value WSChangeset::Options::GetCustomOptions() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::Options::SetCustomOption(Utf8StringCR name, Utf8StringCR value)
+void WSChangeset::Options::SetCustomOption(Utf8StringCR name, Json::Value value)
     {
     m_baseSize = 0;
     m_customOptions[name] = value;
