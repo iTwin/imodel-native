@@ -13,7 +13,7 @@
     <ECStructClass typeName="RebarLayoutType" displayLabel="Rebar Layout Type">
         <!--<BaseClass>bis:DefinitionElement</BaseClass>-->
     </ECStructClass>
-	
+
     <ECEntityClass typeName="RebarSet" displayLabel="Rebar Set" description="Grouping of similar rebars the reinforce a member or portion of a member.">
         <BaseClass>bis:PhysicalElement</BaseClass>
 
@@ -33,7 +33,7 @@
         <BaseClass>bis:PhysicalType</BaseClass>
     </ECEntityClass>
     <ECRelationshipClass typeName="RebarAccessoryIsOfType" displayLabel="Rebar Accessory is of Type" description="Relationship between a Rebar Accessory and its Type" modifier="None" strength="referencing">
-		<BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="Rebar Accessory is of Type" polymorphic="true">
             <Class class="RebarAccessory"/>
         </Source>
@@ -42,8 +42,8 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="RebarAssemblyOwnsRebarSet" displayLabel="Rebar Assembly Owns Rebar Set"  strength="embedding" modifier="None">
-	<BaseClass>bis:ElementOwnsChildElements</BaseClass>
-		<Source multiplicity="(1..N)" roleLabel="owns" polymorphic="false">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..N)" roleLabel="owns" polymorphic="false">
             <Class class="RebarAssembly"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
@@ -59,10 +59,10 @@
 
     </ECEntityClass>
     <ECEntityClass typeName="RebarEndTreatment" displayLabel="Rebar End Treatment">
-	<BaseClass>bis:DefinitionElement</BaseClass>
-	</ECEntityClass>
+        <BaseClass>bis:DefinitionElement</BaseClass>
+    </ECEntityClass>
     <ECRelationshipClass typeName="RebarHasEndDevice" displayLabel="Rebar has End Device" modifier="None" strength="referencing">
-	<BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="Rebar has End Device" polymorphic="true">
             <Class class="Rebar"/>
         </Source>
@@ -77,7 +77,7 @@
 
     </ECEntityClass>
     <ECRelationshipClass typeName="RebarIsOfRebarType" displayLabel="Rebar is of Rebar Type" modifier="None" strength="referencing">
-		<BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="Rebar is of Rebar Type" polymorphic="true">
             <Class class="Rebar"/>
         </Source>
@@ -95,7 +95,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="RebarMechanicalSpliceIsOfType" displayLabel="Rebar Mechanical Splice is of Type" modifier="None" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-		<Source multiplicity="(1..1)" roleLabel="Rebar Mechanical Splice is of Type" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="Rebar Mechanical Splice is of Type" polymorphic="true">
             <Class class="RebarMechanicalSplice"/>
         </Source>
         <Target multiplicity="(0..N)" roleLabel="Rebar Mechanical Splice is of Type (Reversed)" polymorphic="true">
@@ -104,7 +104,7 @@
     </ECRelationshipClass>
 
     <ECEntityClass typeName="RebarSize" displayLabel="Rebar Size" >
-	<BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:DefinitionElement</BaseClass>
         <ECProperty propertyName="Name" typeName="string"/>
         <ECProperty propertyName="Diameter" typeName="double"/>
         <ECProperty propertyName="Area" typeName="double"/>
@@ -112,7 +112,7 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="RebarSetOwnsRebar" displayLabel="Rebar Set Owns Rebar"  strength="embedding" modifier="None" >
-	<BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(1..N)" roleLabel="Rebar Set Owns Rebar" polymorphic="false">
             <Class class="RebarSet"/>
         </Source>
@@ -130,7 +130,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="RebarTerminatorIsOfType" displayLabel="Rebar Terminator is of Type" modifier="None" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-		<Source multiplicity="(1..1)" roleLabel="Rebar Terminator is of Type" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="Rebar Terminator is of Type" polymorphic="true">
             <Class class="RebarTerminator"/>
         </Source>
         <Target multiplicity="(0..N)" roleLabel="Rebar Terminator is of Type (Reversed)" polymorphic="true">
@@ -138,7 +138,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="RebarTypeHasRebarSize" displayLabel="Rebar Type has Rebar Size" modifier="None" strength="referencing">
-	<BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="Rebar Type has Rebar Size" polymorphic="true">
             <Class class="RebarType"/>
         </Source>
@@ -147,7 +147,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="RebarTypeHasTreatmentAtEnd" displayLabel="Rebar Type has Treatment at End" modifier="None" strength="referencing">
-		<BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="Rebar Type has Treatment at End" polymorphic="true">
             <Class class="RebarType"/>
         </Source>
@@ -156,7 +156,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="RebarTypeHasTreatmentAtStart" displayLabel="Rebar Type has Treatment at Start" modifier="None" strength="referencing">
-		<BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="Rebar Type has Treatment at Start" polymorphic="true">
             <Class class="RebarType"/>
         </Source>
