@@ -54,9 +54,9 @@ void SMCesiumPublisher::_ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json
     auto& sm = static_cast<ScalableMesh<DPoint3d>&>(*smPtr);
     auto const& index = sm.GetMainIndexP();
     smJsonMasterHeader["Balanced"] = index->IsBalanced();
-    smJsonMasterHeader["SplitTreshold"] = index->GetSplitTreshold();
-    smJsonMasterHeader["Depth"] = index->GetDepth();
-    smJsonMasterHeader["MeshDataDepth"] = index->GetTerrainDepth();
+    smJsonMasterHeader["SplitTreshold"] = Json::Value(index->GetSplitTreshold());
+    smJsonMasterHeader["Depth"] = Json::Value(index->GetDepth());
+    smJsonMasterHeader["MeshDataDepth"] = Json::Value(index->GetTerrainDepth());
     smJsonMasterHeader["IsTerrain"] = index->IsTerrain();
     smJsonMasterHeader["DataResolution"] = index->GetResolution();
     smJsonMasterHeader["IsTextured"] = (uint32_t)index->IsTextured();

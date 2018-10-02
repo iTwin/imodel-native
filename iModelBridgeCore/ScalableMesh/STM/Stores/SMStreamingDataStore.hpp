@@ -424,7 +424,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
         masterHeader["balanced"] = indexHeader->m_balanced;
         masterHeader["depth"] = (uint32_t)indexHeader->m_depth;
         masterHeader["rootNodeBlockID"] = ConvertBlockID(indexHeader->m_rootNodeBlockID);
-        masterHeader["splitThreshold"] = indexHeader->m_SplitTreshold;
+        masterHeader["splitThreshold"] = Json::Value(indexHeader->m_SplitTreshold);
         masterHeader["singleFile"] = false;
         masterHeader["isTerrain"] = indexHeader->m_isTerrain;
 
@@ -1051,11 +1051,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     //    }
 
 
-    block["totalCount"] = header->m_totalCount;
-    block["nodeCount"] = header->m_nodeCount;
+    block["totalCount"] = Json::Value(header->m_totalCount);
+    block["nodeCount"] = Json::Value(header->m_nodeCount);
     block["arePoints3d"] = header->m_arePoints3d;
 
-    block["nbFaceIndexes"] = header->m_nbFaceIndexes;
+    block["nbFaceIndexes"] = Json::Value(header->m_nbFaceIndexes);
     block["nbIndiceID"] = (int)header->m_ptsIndiceID.size();
 
     block["geometricResolution"] = header->m_geometricResolution;
