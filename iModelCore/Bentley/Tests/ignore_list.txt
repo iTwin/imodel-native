@@ -127,3 +127,16 @@ WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTas
     # Expected: true
     # [  FAILED  ] WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock (38653 ms)
     # [----------] 16 tests from WorkerThreadTests (38672 ms total)
+
+ThreadlessTaskSchedulerTests.Push_WithinParentTask_ParentExecutionProlonged
+    # [ RUN      ] ThreadlessTaskSchedulerTests.Push_WithinParentTask_ParentExecutionProlonged
+    # C:\Code\repos\iModelCore\imodel02.out\Winx64\BuildContexts\Bentley\SubParts\BeGTest\gtest\BeGTestExe.cpp(360): error: Value of: std::future_status::ready == futureResult.wait_for(std::chrono::seconds(timeoutInSeconds))    
+    #   Actual: false
+    # Expected: true
+    # 
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # ERROR: Test suite exceeded 1800 second(s) and was aborted.
+    #        Errors reported above may either be due to the termination of the test,
+    #        or may be clues for the hang and/or deadlock.
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
