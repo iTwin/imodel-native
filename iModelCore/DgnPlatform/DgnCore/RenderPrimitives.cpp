@@ -312,6 +312,7 @@ private:
             bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
             TexturePtr GetTexture(SystemR system, DgnDbR db)
                 {
+// ###TODO: Remove this code path when glyph atlases are turned on by default!
 // #define WIP_GLYPH_ATLASES
 #if !defined(WIP_GLYPH_ATLASES) // if atlases are enabled, do not invalidate image or create texture!
                 if (m_texture.IsNull() && m_image.IsValid())
