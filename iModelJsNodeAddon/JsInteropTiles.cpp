@@ -104,6 +104,8 @@ public:
         }
 };
 
+DEFINE_REF_COUNTED_PTR(JsTexture);
+
 //=======================================================================================
 // This caches textures per-DgnDb so that we do not have to recreate them constantly or
 // hold duplicates of the same texture in memory. We preserve the image data so that it
@@ -137,12 +139,12 @@ private:
     ResourceMap<GradientSymb, JsTexture> m_gradients;
     ResourceMap<MaterialKey, JsMaterial> m_materials;
 
-    void Add(TextureKey key, JsTexture* texture) { BeAssert(key.IsValid()); m_textures.Insert(key, texture); }
+    void Add(TextureKey key, JsTexture* texture); // { BeAssert(key.IsValid()); m_textures.Insert(key, texture); }
     void Add(GradientSymbCR grad, JsTexture* texture) { m_gradients.Insert(grad, texture); }
     void Add(MaterialKey key, JsMaterial* material) { BeAssert(key.IsValid()); m_materials.Insert(key, material); }
 
-    JsTexture* CreateTexture(ImageCR, Texture::CreateParams const&);
-    JsTexture* CreateTexture(ImageSourceCR, Texture::CreateParams const&);
+    JsTexturePtr CreateTexture(ImageCR, Texture::CreateParams const&);
+    JsTexturePtr CreateTexture(ImageSourceCR, Texture::CreateParams const&);
 
     template<typename F> auto UnderMutex(F func) -> decltype(func())
         {
@@ -150,18 +152,28 @@ private:
         return func();
         }
 public:
-    JsTexture* FindTexture(TextureKey key) { return key.IsValid() ? UnderMutex([&]() { return m_textures.Find(key); }) : nullptr; }
+    JsTexturePtr FindTexture(TextureKey key) { return key.IsValid() ? UnderMutex([&]() { return m_textures.Find(key); }) : nullptr; }
     JsMaterial* FindMaterial(MaterialKey key) { return key.IsValid() ? UnderMutex([&]() { return m_materials.Find(key); }) : nullptr; }
 
-    JsTexture* GetGradient(GradientSymbCR);
-    JsTexture* GetTexture(ImageSourceCR, Texture::CreateParams const&, Image::BottomUp = Image::BottomUp::No);
-    JsTexture* GetTexture(ImageCR, Texture::CreateParams const&);
+    JsTexturePtr GetGradient(GradientSymbCR);
+    JsTexturePtr GetTexture(ImageSourceCR, Texture::CreateParams const&, Image::BottomUp = Image::BottomUp::No);
+    JsTexturePtr GetTexture(ImageCR, Texture::CreateParams const&);
     JsMaterial* GetMaterial(Material::CreateParams const& params);
 
     static ResourceCache& Get(DgnDbR db) { return *db.ObtainAppData(GetKey(), []() { return new ResourceCache(); }); }
 
     ~ResourceCache() { m_textures.Clear(); m_gradients.Clear(); m_materials.Clear(); }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser   10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ResourceCache::Add(TextureKey key, JsTexture* texture)
+    {
+    BeAssert(key.IsValid());
+    if (!texture->IsGlyph()) // with glyph atlases, we don't want to cache these
+        m_textures.Insert(key, texture);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
@@ -183,7 +195,7 @@ JsMaterial* ResourceCache::GetMaterial(Material::CreateParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsTexture* ResourceCache::GetGradient(GradientSymbCR grad)
+JsTexturePtr ResourceCache::GetGradient(GradientSymbCR grad)
     {
     BeMutexHolder lock(m_mutex);
     RefCountedPtr<JsTexture> tex = m_gradients.Find(grad);
@@ -193,20 +205,20 @@ JsTexture* ResourceCache::GetGradient(GradientSymbCR grad)
         Add(grad, tex.get());
         }
 
-    return tex.get();
+    return tex;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsTexture* ResourceCache::GetTexture(ImageSourceCR src, Texture::CreateParams const& params, Image::BottomUp)
+JsTexturePtr ResourceCache::GetTexture(ImageSourceCR src, Texture::CreateParams const& params, Image::BottomUp)
     {
     if (!params.GetKey().IsValid())
         return nullptr;
 
     BeMutexHolder lock(m_mutex);
     auto tex = FindTexture(params.GetKey());
-    if (nullptr == tex)
+    if (tex.IsNull())
         tex = CreateTexture(src, params);
 
     return tex;
@@ -215,14 +227,14 @@ JsTexture* ResourceCache::GetTexture(ImageSourceCR src, Texture::CreateParams co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsTexture* ResourceCache::GetTexture(ImageCR img, Texture::CreateParams const& params)
+JsTexturePtr ResourceCache::GetTexture(ImageCR img, Texture::CreateParams const& params)
     {
     if (!params.GetKey().IsValid())
         return nullptr;
 
     BeMutexHolder lock(m_mutex);
     auto tex = FindTexture(params.GetKey());
-    if (nullptr == tex)
+    if (tex.IsNull())
         tex = CreateTexture(img, params);
 
     return tex;
@@ -231,27 +243,27 @@ JsTexture* ResourceCache::GetTexture(ImageCR img, Texture::CreateParams const& p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsTexture* ResourceCache::CreateTexture(ImageSourceCR src, Texture::CreateParams const& params)
+JsTexturePtr ResourceCache::CreateTexture(ImageSourceCR src, Texture::CreateParams const& params)
     {
     BeAssert(params.GetKey().IsValid());
-    BeAssert(nullptr == FindTexture(params.GetKey()));
+    BeAssert(FindTexture(params.GetKey()).IsNull());
 
     auto tex = JsTexture::Create(params, src);
     Add(params.GetKey(), tex.get());
-    return tex.get();
+    return tex;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsTexture* ResourceCache::CreateTexture(ImageCR img, Texture::CreateParams const& params)
+JsTexturePtr ResourceCache::CreateTexture(ImageCR img, Texture::CreateParams const& params)
     {
     BeAssert(params.GetKey().IsValid());
-    BeAssert(nullptr == FindTexture(params.GetKey()));
+    BeAssert(FindTexture(params.GetKey()).IsNull());
 
     auto tex = JsTexture::Create(params, img);
     Add(params.GetKey(), tex.get());
-    return tex.get();
+    return tex;
     }
 
 //=======================================================================================
