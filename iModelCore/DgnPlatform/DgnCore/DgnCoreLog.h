@@ -24,10 +24,10 @@
 #define LOGF(...) __android_log_print(ANDROID_LOG_FATAL, "DgnCore", __VA_ARGS__)
 #else
 #define LOG_IsSeverityEnabled(...) (*NativeLogging::LoggingManager::GetLogger (L"DgnCore").isSeverityEnabled (__VA_ARGS__)
-#define LOGT(...) (*NativeLogging::LoggingManager::GetLogger (L"DgnCore").tracev (__VA_ARGS__)
-#define LOGD(...) (*NativeLogging::LoggingManager::GetLogger (L"DgnCore").debugv (__VA_ARGS__)
-#define LOGI(...) (*NativeLogging::LoggingManager::GetLogger (L"DgnCore").infov (__VA_ARGS__)
-#define LOGW(...) (*NativeLogging::LoggingManager::GetLogger (L"DgnCore").warningv (__VA_ARGS__)
-#define LOGE(...) (*NativeLogging::LoggingManager::GetLogger (L"DgnCore").errorv (__VA_ARGS__)
-#define LOGF(...) (*NativeLogging::LoggingManager::GetLogger (L"DgnCore").fatalv (__VA_ARGS__)
+#define LOGT(...) NativeLogging::LoggingManager::GetLogger (L"DgnCore")->tracev (__VA_ARGS__)
+#define LOGD(...) NativeLogging::LoggingManager::GetLogger (L"DgnCore")->debugv (__VA_ARGS__)
+#define LOGI(...) NativeLogging::LoggingManager::GetLogger (L"DgnCore")->infov (__VA_ARGS__)
+#define LOGW(...) NativeLogging::LoggingManager::GetLogger (L"DgnCore")->warningv (__VA_ARGS__)
+#define LOGE(...) NativeLogging::LoggingManager::GetLogger (L"DgnCore")->errorv (__VA_ARGS__)
+#define LOGF(...) NativeLogging::LoggingManager::GetLogger (L"DgnCore")->fatalv (__VA_ARGS__)
 #endif
