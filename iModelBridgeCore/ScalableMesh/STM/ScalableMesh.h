@@ -346,6 +346,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
+        virtual bool                               _GetClip(uint64_t clipID, ClipVectorPtr& clipData) override;
         virtual bool                               _IsInsertingClips() override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
 
@@ -574,6 +575,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return false;
         }
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override { return false; }
+        virtual bool                               _GetClip(uint64_t clipID, ClipVectorPtr& clipData) override { return false; }
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual bool                               _IsInsertingClips() override;
