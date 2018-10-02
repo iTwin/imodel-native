@@ -731,6 +731,9 @@
     <ClInclude Include="PublicAPI\DgnPlatform\TileWriter.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\DgnPlatform\ElementTileTree.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PublicAPI\DgnPlatform\DesktopTools\pagalloc.fdf">
@@ -1185,6 +1188,9 @@
       <Filter>DgnCore</Filter>
     </ClCompile>
     <ClCompile Include="DgnCore\CesiumTileWriter.cpp">
+      <Filter>DgnCore</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnCore\ElementTileTree.cpp">
       <Filter>DgnCore</Filter>
     </ClCompile>
   </ItemGroup>
