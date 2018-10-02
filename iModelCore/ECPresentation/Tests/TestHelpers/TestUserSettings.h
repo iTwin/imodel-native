@@ -35,11 +35,11 @@ protected:
     void _InitFrom(UserSettingsGroupList const&) override {}
     void _SetSettingValue(Utf8CP id, Utf8CP value) override {m_values[id] = value; NotifySettingChanged(id);}
     void _SetSettingBoolValue(Utf8CP id, bool value) override {m_values[id] = value; NotifySettingChanged(id);}
-    void _SetSettingIntValue(Utf8CP id, int64_t value) override {m_values[id] = value; NotifySettingChanged(id);}
+    void _SetSettingIntValue(Utf8CP id, int64_t value) override {m_values[id] = Json::Value(value); NotifySettingChanged(id);}
     void _SetSettingIntValues(Utf8CP id, bvector<int64_t> const& values) override
         {
         for (int64_t v : values)
-            m_values[id].append(v);
+            m_values[id].append(Json::Value(v));
         NotifySettingChanged(id);
         }    
 
