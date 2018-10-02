@@ -1198,7 +1198,7 @@ void SetupTransformCorrectionTest()
     ASSERT_TRUE(jobSubject.IsValid()) << "There is always a job subject element";
 
     BentleyApi::Transform trans;
-    ASSERT_NE(BSISUCCESS, JobSubjectUtils::GetTransform(trans, *jobSubject)) << "The job subject should not yet have a transform property";
+    ASSERT_EQ(BSISUCCESS, JobSubjectUtils::GetTransform(trans, *jobSubject)) << "The job subject should have a default identity transform property";
 
     auto bimLine1 = FindV8ElementInDgnDb(*db, m_elementId1);
     ASSERT_TRUE(bimLine1.IsValid());

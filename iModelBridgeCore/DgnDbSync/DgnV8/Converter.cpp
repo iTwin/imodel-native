@@ -2712,6 +2712,9 @@ void Converter::ProcessConversionResults(ElementConversionResults& conversionRes
         {
         BeAssert(IChangeDetector::ChangeType::Insert == csearch.m_changeType);
         InsertResults(conversionResults);
+        if (!conversionResults.m_element.IsValid())
+            return;
+
         _GetChangeDetector().OnElementSeen(*this, conversionResults.m_element.get());
         }
 

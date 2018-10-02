@@ -57,15 +57,6 @@ ConverterTests.ElementCRUDInTile
     # To be equal to: expectUpdate
     # Which is: true
 
-TransformTests.Test1
-
-    # VSTS#34355
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/19/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: true
-    # To be equal to: expectUpdate
-    # Which is: false
-
 ConverterTests.ElementCRUDTiled
 
     # VSTS#34354
