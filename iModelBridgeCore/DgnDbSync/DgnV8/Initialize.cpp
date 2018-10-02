@@ -344,21 +344,21 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 
         }
 
-    // if we didn't find any of our command line arguments, then we don't try to use any configuration files, and don't install the MacroConfigurationAdmin ConfigurationAdmin
-    // NOTE: Need to revisit this if we ship fallback configuration files.
-    if (!configRootDir.empty() || !installDir.empty() ||!msConfigFileName.empty())
+    BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
+    BeFileName  fallbackConnectConfigDir(exeDir);
+    fallbackConnectConfigDir.AppendToPath(L"Dgnv8");
+    BeFileName  fallbackV8iConfigDir(exeDir);
+    fallbackV8iConfigDir.AppendToPath(L"Dgnv8\\v8iConfig");
+
+    bool fallbackExist = isV8i ? fallbackV8iConfigDir.DoesPathExist() : fallbackConnectConfigDir.DoesPathExist();
+    if (!configRootDir.empty() || !installDir.empty() ||!msConfigFileName.empty() || fallbackExist)
         {
         s_macros = new DgnV8Api::MacroConfigurationAdmin;
         DgnV8Api::ConfigurationManager::SetGetAdminFunc(getConvertMacros);  // *** TRICKY: Our startup code, including LoadMacros below, makes calls on ConfigurationManager, but it isn't set up yet,
                                                                              // so Sam implemented this scheme to get it while it's used. It's not really right, but it works. See comment in MicroStation's msmacro.cpp
 
         // If we want to operate without  MicroStation installation we have to ship fallback configuration files for both V8i and CONNECT with the DgnV8 converter. We find those relative to this dll.
-        BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
-        BeFileName  fallbackV8iConfigDir(exeDir);
-        fallbackV8iConfigDir.AppendToPath(L"Dgnv8\\v8iConfig");
-        BeFileName  fallbackConnectConfigDir(exeDir);
-        fallbackConnectConfigDir.AppendToPath(L"Dgnv8");
-
+        
         // if enough information is supplied, read either CONNECT or V8i configuration files to define the macros.
         if (!isV8i)
             {
