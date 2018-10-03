@@ -683,12 +683,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     Utf8String v8ViewName;
     if (IsUpdating())
         {
-        // For imodels that were created during the EAP, but before this table was implemented, need to do a check
-        if (GetSyncInfo().ViewTableExists())
-            {
-            double lastModified;
-            GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
-            }
+        double lastModified;
+        GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
         if (!existingViewId.IsValid())
             existingViewId = ViewDefinition::QueryViewId(*definitionModel, name);
         }

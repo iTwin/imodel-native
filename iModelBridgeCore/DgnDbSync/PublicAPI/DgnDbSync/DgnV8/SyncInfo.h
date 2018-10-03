@@ -885,8 +885,8 @@ public:
     //! Updates the information for a previously recorded view mapping
     DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateView(DgnViewId viewId, Utf8CP v8ViewName, DgnV8ViewInfoCR viewInfo);
 
-    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process
-    DGNDBSYNC_EXPORT bool ViewTableExists();
+    //! Checks to see if the View syncinfo table exists.
+    DGNDBSYNC_EXPORT void ValidateViewTable();
 
     //! Record sync info for a level.
     //! @param[out] info        Sync info for the level
