@@ -10,6 +10,7 @@ ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*
 ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*&$filter=$id+eq+'********-****-****-****-************'
 ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*&$filter=Initialized+eq+true
 ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*&$filter=Name+eq+'*'
+ProjectScope/iModel?$select=*,HasCreatorInfo-forward-UserInfo.*&$orderby=CreatedDate+asc&$top=*
 iModelScope/Briefcase
 iModelScope/Briefcase/*
 iModelScope/Briefcase?$filter=$id+in+['*']
