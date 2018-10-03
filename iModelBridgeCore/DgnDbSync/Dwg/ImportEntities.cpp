@@ -2026,7 +2026,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     m_hasBaseTransform = false;
     m_basePartScale = 0.0;
     m_is3d = m_inputs.GetTargetModelR().Is3d ();
-    m_canCreateSharedParts = false;
+    m_canCreateSharedParts = m_importer.GetOptions().IsBlockAsSharedParts ();
     m_sourceBlockId.SetNull ();
 
     // find the element handler
@@ -2039,6 +2039,10 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ElementFactory::SetDefaultCreation ()
     {
+    // if user does not want shared parts, honor the request:
+    if (!m_canCreateSharedParts)
+        return;
+
     DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(m_inputs.GetEntityP());
     if (nullptr != insert)
         {
@@ -3210,11 +3214,15 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
     auto blockTrans = Transform::FromIdentity ();
     insert->GetBlockTransform (blockTrans);
 
+    // attempt to create shared parts from a block only if that is what the user wants:
     double  partScale = 0.0;
-    bool    canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockTrans);
+    bool    canShareParts = this->GetOptions().IsBlockAsSharedParts ();
+    if (canShareParts)
+        canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockTrans);
+
     if (canShareParts)
         {
-        // block transform is valid for shared parts, now search the parts cache:
+        // user wants shared parts, and block transform is valid for shared parts, now search the parts cache:
         SharedPartKey key(insert->GetBlockTableRecordId(), partScale);
         found = m_blockPartsMap.find (key);
         }
