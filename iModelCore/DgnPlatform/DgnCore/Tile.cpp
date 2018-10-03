@@ -748,7 +748,7 @@ private:
     const uint32_t m_glyphHalfPaddingInPixels = m_glyphPaddingInPixels / 2;
     const uint32_t m_glyphTotalSizeInPixels = m_glyphSizeInPixels + m_glyphPaddingInPixels;
     const uint32_t m_maxAtlasGlyphsDim = 64; // 64 glyphs * 64 pixels = 4096 pixels
-    const uint32_t m_maxAtlasPixelsDim = m_maxAtlasGlyphsDim * m_glyphTotalSizeInPixels;
+    // unused - const uint32_t m_maxAtlasPixelsDim = m_maxAtlasGlyphsDim * m_glyphTotalSizeInPixels;
 
     uint32_t m_index;
     uint32_t m_numGlyphs;
