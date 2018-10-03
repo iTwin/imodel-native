@@ -391,11 +391,13 @@
         <ProductDirectory Name="UnitTests-Assets" Deliver="false"/>
         <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
         <ProductDirectory Name="UnitTests-Objects" Deliver="false"/>
+        <ProductDirectory Name="WorkSpace" RelativeTo="DgnV8Dlls" />
     </ProductDirectoryList>
 
     <Product Name="DgnV8ConverterTests" OnlyPlatforms="x64">
         <SubPart PartName="DgnV8ConverterExe"/>
         <SubPart PartName="DgnV8ConverterTestsExe"/>
+        <SubPart PartName="StaticAppData"  PartFile="MstnAppData"      Repository="miscdev-mstnappdata"    />
         <!--
         <Directories PartFile="BeGTest" Repository="BeGTest" DirectoryListName="BeGTestDirList"/>
         -->

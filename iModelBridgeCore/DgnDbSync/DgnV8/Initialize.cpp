@@ -253,6 +253,17 @@ struct ConfigDebugOutput : DgnV8Api::IMacroDebugOutput
         }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool     IsValidConfigFilePath(WCharCP configVar)
+    {
+    Bentley::WString cfgVarValue;
+    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, configVar))
+        return false;
+
+    return BeFileName::DoesPathExist(cfgVarValue.c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BentleySystems  
@@ -387,7 +398,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
     Bentley::WString cfgVarValue;
 
     // Setting MS_FONTCONFIGFILE means we don't have to provide our own DgnV8 FontAdmin just to set the paths.
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, L"MS_FONTCONFIGFILE"))
+    if (!IsValidConfigFilePath(L"MS_FONTCONFIGFILE"))
         {
         Bentley::BeFileName cfgFileName(v8RootDir);
         cfgFileName.AppendToPath(L"Fonts");
@@ -417,7 +428,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
         DgnV8Api::ConfigurationManager::DefineVariable(L"MS_SEEDFILES", seedFilesPath);        
         }    
     
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, L"MS_TRANSSEED"))
+    if (!IsValidConfigFilePath(L"MS_TRANSSEED"))
         {
         Bentley::BeFileName transeed(v8RootDir);
         transeed.AppendToPath(L"Seed\\seed3d.dgn");
@@ -427,9 +438,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
     // If MS_SMARTSOLID is not defined, Vancouver will look for a "schema" sub-directory next to the process's EXE to provide ParaSolid with its schema files.
     // In DgnDb, we place ParaSolid schemas in a "PSolidSchemas" sub-directory for clarity, so we need to inject a better path.
     // Further, might as well ensure V8 uses the schema from the V8 delivery, and not ours.
-    Bentley::WString parasolidCfgVarValue;
-    bool hasPsolidDir = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(parasolidCfgVarValue, L"MS_SMARTSOLID")) && BeFileName::DoesPathExist(parasolidCfgVarValue.c_str());
-    if (!hasPsolidDir)
+    if (!IsValidConfigFilePath(L"MS_SMARTSOLID"))
         {
         WString smartSolidDir = v8RootDir;
         

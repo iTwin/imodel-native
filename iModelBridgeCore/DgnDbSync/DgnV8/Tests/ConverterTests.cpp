@@ -133,11 +133,11 @@ struct LightTests : public ConverterTestBaseFixture
 void LightTests::SetUp()
     {
     T_Super::SetUp();
-    if (false == DgnV8Api::ConfigurationManager::IsVariableDefined(L"_USTN_DGNLIBLIST_SYSTEM"))
+    //if (false == DgnV8Api::ConfigurationManager::IsVariableDefined(L"_USTN_DGNLIBLIST_SYSTEM"))
         {
         BentleyApi::BeFileName inFile = GetInputFileName(L"SystemCells.dgnlib");
         WString directory = inFile.GetDirectoryName();
-        DgnV8Api::ConfigurationManager::DefineVariable(L"_USTN_DGNLIBLIST_SYSTEM", directory.c_str(), DgnV8Api::ConfigurationVariableLevel::System);
+        DgnV8Api::ConfigurationManager::DefineVariable(L"_USTN_DGNLIBLIST_SYSTEM", directory.c_str(), DgnV8Api::ConfigurationVariableLevel::User);
         }
     }
 
