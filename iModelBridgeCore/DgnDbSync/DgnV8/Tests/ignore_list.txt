@@ -888,37 +888,6 @@ BasicGeometryTests.EnlargeProjectExtents
     # Actual: false
     # Expected: true
 
-LightTests.CreatePointLightWithECInstance
-
-    # VSTS#37377
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 10/04/2018
-    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    # *********************** STACK TRACE ************************
-    # [18] _C_specific_handler (0x7ffde1e5bff0)
-    # [17] _chkstk (0x7ffe01ac4d50)
-    # [16] RtlWalkFrameChain (0x7ffe01a44b40)
-    # [15] KiUserExceptionDispatcher (0x7ffe01ac3d70)
-    # [14] Bentley::DgnPlatform::ElementHandle::GetElementId (0x7ffdbd0fbf60)
-    # [13] LightTests_CreatePointLightWithECInstance_Test::TestBody (0x7ff7c30f5ae0)
-    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7c30cb7e0)
-    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff7c30cb670)
-    # [10] testing::Test::Run (0x7ff7c30db8d0)
-    # [9] testing::TestInfo::Run (0x7ff7c30dbbe0)
-    # [8] testing::TestCase::Run (0x7ff7c30db9f0)
-    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff7c30dbea0)
-    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c30cb880)
-    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff7c30cb760)
-    # [4] testing::UnitTest::Run (0x7ff7c30dbd80)
-    # [3] main (0x7ff7c31b53c0)
-    # [2] __scrt_common_main_seh (0x7ff7c31b898c)
-    # [1] BaseThreadInitThunk (0x7ffe002d1fd0)
-    # [0] RtlUserThreadStart (0x7ffe01a8cb10)
-
-ImportConfigTests.FontImport
-
-    # VSTS#37373
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 10/04/2018
-
 TransformTests.Test1
 
     # VSTS#37374
