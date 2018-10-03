@@ -168,14 +168,11 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
         });
     }
 
-
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2016
+//@bsimethod                                     Algirdas.Mikoliunas         10/2018
 //---------------------------------------------------------------------------------------
-iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken) const
+iModelTaskPtr Client::GetiModelInternal(Utf8StringCR projectId, WSQuery query, Utf8String methodName, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::GetiModelByName";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (m_serverUrl.empty())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
@@ -188,18 +185,6 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModel with name %s.", iModelName.c_str());
-    WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
-    Utf8String filter;
-    Utf8String updatedName = BeUri::EscapeString(iModelName);
-    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, updatedName.c_str());
-    query.SetFilter(filter);
-
-    //Always select HasCreatorInfo relationship
-    Utf8String select = "*";
-    iModelInfo::AddHasCreatorInfoSelect(select);
-    query.SetSelect(select);
 
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
@@ -225,23 +210,33 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iMode
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
+iModelTaskPtr Client::GetiModelByName(Utf8StringCR projectId, Utf8StringCR iModelName, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::GetiModelByName";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModel with name %s.", iModelName.c_str());
+
+    WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+    Utf8String filter;
+    Utf8String updatedName = BeUri::EscapeString(iModelName);
+    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, updatedName.c_str());
+    query.SetFilter(filter);
+
+    //Always select HasCreatorInfo relationship
+    Utf8String select = "*";
+    iModelInfo::AddHasCreatorInfoSelect(select);
+    query.SetSelect(select);
+
+    return GetiModelInternal(projectId, query, methodName, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
+//---------------------------------------------------------------------------------------
 iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelId, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::GetiModelById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    if (m_serverUrl.empty())
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
-        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::InvalidServerURL));
-        }
-    if (!m_credentials.IsValid() && !m_customHandler)
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
-        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::CredentialsNotSet));
-        }
-
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModel with id %s.", iModelId.c_str());
 
     WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
@@ -253,27 +248,31 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
     Utf8String select = "*";
     iModelInfo::AddHasCreatorInfoSelect(select);
     query.SetSelect(select);
+    
+    return GetiModelInternal(projectId, query, methodName, cancellationToken);
+    }
 
-    IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult& result)
-        {
-        if (!result.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-            return iModelResult::Error(result.GetError());
-            }
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            10/2018
+//---------------------------------------------------------------------------------------
+iModelTaskPtr Client::GetiModel(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::GetiModel";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting primary iModel for project %s.", projectId.c_str());
 
-        auto iModelInfoInstances = result.GetValue().GetInstances();
-        if (iModelInfoInstances.Size() == 0)
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "iModel does not exist.");
-            return iModelResult::Error(Error::Id::iModelDoesNotExist);
-            }
-        iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
-        return iModelResult::Success(iModelInfo);
-        });
+    WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+    Utf8String orderBy;
+    orderBy.Sprintf("%s+%s", ServerSchema::Property::CreatedDate, "asc");
+    query.SetOrderBy(orderBy);
+    query.SetTop(1);
+
+    //Always select HasCreatorInfo relationship
+    Utf8String select = "*";
+    iModelInfo::AddHasCreatorInfoSelect(select);
+    query.SetSelect(select);
+
+    return GetiModelInternal(projectId, query, methodName, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
