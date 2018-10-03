@@ -453,10 +453,46 @@ TEST_F(ConverterTests, GetCoordinateSystemProperties)
     dgnProj->GeoLocation().LatLongFromXyz(gp, BentleyApi::DPoint3d::FromZero());
 
     double const latitudeExpected = 42.3412;
-    EXPECT_TRUE(fabs(latitudeExpected - gp.latitude) < eps) << "Expected diffrent latitude ";
+    EXPECT_TRUE(fabs(latitudeExpected - gp.latitude) < eps) << "Expected different latitude ";
 
     double const longitudeExpected = -71.0805;
-    EXPECT_TRUE(fabs(longitudeExpected - gp.longitude) < eps) << "Expected diffrent longitude ";
+    EXPECT_TRUE(fabs(longitudeExpected - gp.longitude) < eps) << "Expected different longitude ";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, GCSNoChange)
+    {
+    LineUpFiles(L"GeoCoordinateSystem.ibim", L"GeoCoordinateSystem.i.dgn", true);
+    DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto originalExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    dgnProj->CloseDb();
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+
+    dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto updatedExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    ASSERT_TRUE(updatedExtents.IsEqual(originalExtents));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, NoGCSNoChange)
+    {
+    LineUpFiles(L"NoGCS.ibim", L"Test3d.dgn", true);
+    DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto originalExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    dgnProj->CloseDb();
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+
+    dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto updatedExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    ASSERT_TRUE(updatedExtents.IsEqual(originalExtents));
     }
 
 /*---------------------------------------------------------------------------------**//**
