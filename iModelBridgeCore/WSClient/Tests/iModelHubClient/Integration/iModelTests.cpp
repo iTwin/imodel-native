@@ -68,6 +68,30 @@ struct iModelTests : public IntegrationTestsBase
         callback.Verify(true);
         return createResult;
         }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             10/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    iModelInfoPtr GetOldestiModel()
+        {
+        iModelsResult iModelsList = s_client->GetiModels(s_projectId, nullptr, false)->GetResult();
+        iModelInfoPtr oldestiModel = nullptr;
+        for (auto imodel : iModelsList.GetValue())
+            {
+            if (oldestiModel.IsNull())
+                {
+                oldestiModel = imodel;
+                continue;
+                }
+
+            if (DateTime::Compare(imodel->GetCreatedDate(), oldestiModel->GetCreatedDate()) == DateTime::CompareResult::EarlierThan)
+                {
+                oldestiModel = imodel;
+                }
+            }
+
+        return oldestiModel;
+        }
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -75,9 +99,23 @@ struct iModelTests : public IntegrationTestsBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, SuccessfulCreateiModel)
     {
-    iModelResult createResult = CreateiModel();
+    iModelsResult iModelsList = s_client->GetiModels(s_projectId)->GetResult();
+    ASSERT_SUCCESS(iModelsList);
 
-    iModelResult getResult = s_client->GetiModelById(s_projectId, createResult.GetValue()->GetId())->GetResult();
+    // If there are no iModels in the project, primary iModel query should return error
+    iModelResult primaryiModel;
+    if (iModelsList.GetValue().size() == 0)
+        {
+        primaryiModel = s_client->GetiModel(s_projectId)->GetResult();
+        ASSERT_FAILURE(primaryiModel);
+        EXPECT_EQ(Error::Id::iModelDoesNotExist, primaryiModel.GetError().GetId());
+        }
+
+    // Create first iModel
+    iModelResult createResult = CreateiModel();
+    auto creatediModelId = createResult.GetValue()->GetId();
+
+    iModelResult getResult = s_client->GetiModelById(s_projectId, creatediModelId)->GetResult();
     ASSERT_SUCCESS(getResult) << "Needs defect filed";
     EXPECT_TRUE(getResult.GetValue()->IsInitialized());
     EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
@@ -96,6 +134,24 @@ TEST_F(iModelTests, SuccessfulCreateiModel)
         EXPECT_TRUE(createdDate.IsValid());
         EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(compareDate, createdDate));
         }
+
+    // First iModel should be primary
+    auto oldestiModelId = GetOldestiModel()->GetId();
+    primaryiModel = s_client->GetiModel(s_projectId)->GetResult();
+    auto primaryiModelId = primaryiModel.GetValue()->GetId();
+    ASSERT_SUCCESS(primaryiModel);
+    EXPECT_EQ(oldestiModelId, primaryiModelId);
+
+    // Create second iModel
+    iModelResult createResult2 = CreateiModel("Primary2", "Primary2Description");
+    ASSERT_SUCCESS(createResult2);
+
+    // First iModel should be primary
+    primaryiModel = s_client->GetiModel(s_projectId)->GetResult();
+    ASSERT_SUCCESS(primaryiModel);
+    EXPECT_EQ(oldestiModelId, primaryiModelId);
+
+    s_client->DeleteiModel(s_projectId, *createResult2.GetValue());
     }
 
 /*--------------------------------------------------------------------------------------+
