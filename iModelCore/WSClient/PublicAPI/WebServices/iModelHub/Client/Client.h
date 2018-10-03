@@ -81,6 +81,9 @@ private:
                                                           Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
 
     void SetCredentialsForImodelBank();
+    
+    iModelTaskPtr GetiModelInternal(Utf8StringCR projectId, WSQuery query, Utf8String methodName, ICancellationTokenPtr cancellationToken = nullptr) const;
+
 
 public:
     //! Set custom handler.
@@ -143,6 +146,12 @@ public:
     //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
     IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelId, 
                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Gets primary iModel.
+    //! @param[in] projectId Project Id to connect to.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has iModel information as the result. See iModelInfo.
+    IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModel(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets the most latest Thumbnail image of an iModel.
     //! @param[in] projectId Project Id to connect to.
