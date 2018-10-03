@@ -73,3 +73,11 @@ ConverterTests.ElementCRUDTiled
     # Which is: false
     # To be equal to: expectUpdate
     # Which is: true
+
+ViewTests.SavedViewsCRUD
+
+    # VSTS#37063
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 10/02/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ViewTests.cpp(131): error: Value of: viewId.IsValid()
+    # Actual: true
+    # Expected: false
