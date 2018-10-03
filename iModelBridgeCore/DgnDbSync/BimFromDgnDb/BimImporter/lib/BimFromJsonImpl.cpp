@@ -312,7 +312,6 @@ void BimFromJsonImpl::FinalizeImport()
     Utf8PrintfString message("Importing elements|%.0f millisecs", m_importTimer.GetElapsedSeconds() * 1000.0);
     BentleyApi::NativeLogging::LoggingManager::GetLogger("BimFromDgnDbUpgrader.Performance")->info(message.c_str());
 
-    m_dgndb->GeoLocation().InitializeProjectExtents();
 //    m_dgndb->Schemas().CreateClassViewsInDb();
 
     ElementClassToAspectClassMapping::CreatePresentationRules(*m_dgndb);

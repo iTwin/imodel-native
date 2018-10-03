@@ -2949,6 +2949,8 @@ BentleyStatus BaselineReader::_Read(Json::Value& baseline)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
     {
+    // need to call this to set the globalOrigin and initialProjectCenter.  If values were provided by the export, these default values will be overwritten
+    GetDgnDb()->GeoLocation().InitializeProjectExtents();
     if (propData.isMember("DefaultView"))
         {
         DgnElementId viewId = ECJsonUtilities::JsonToId<DgnElementId>(propData["DefaultView"]["id"]);
@@ -2972,10 +2974,15 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
             GetDgnDb()->SaveProperty(prop, blob.data(), blob.size());
             if (propData.isMember("globalOrigin"))
                 {
-                GetDgnDb()->SavePropertyString(DgnProjectProperty::Units(), propData["globalOrigin"].ToString());
+                DPoint3d globalOrigin;
+                ECN::ECJsonUtilities::JsonToPoint3d(globalOrigin, propData["globalOrigin"]);
+                GetDgnDb()->GeoLocation().SetGlobalOrigin(globalOrigin);
+                GetDgnDb()->GeoLocation().Save();
                 }
             }
         }
+    if (propData.isMember("projectExtents"))
+        GetDgnDb()->SavePropertyString(DgnProjectProperty::Extents(), propData["projectExtents"].asString());
 
     return SUCCESS;
     }
