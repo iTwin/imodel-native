@@ -731,7 +731,7 @@ struct DeferredGlyph
 
 typedef bvector<DeferredGlyph> DeferredGlyphList;
 
-// #define WIP_GLYPH_ATLASES
+#define WIP_GLYPH_ATLASES
 #if defined(WIP_GLYPH_ATLASES)
 struct GlyphLocation
 {
@@ -1935,19 +1935,20 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderMap::Key const& key)
     return m_builderMap[key];
     }
 
-// #define DEBUG_DUMP_TEXTURE_ATLAS_TO_FILE
-#if defined(DEBUG_DUMP_TEXTURE_ATLAS_TO_FILE) && defined(WIP_GLYPH_ATLASES)
-static void writeAtlasToImageFile(Byte const* data, uint32_t width, uint32_t height, char* name, int32_t bytesPerPixel)
+// #define DEBUG_DUMP_TEXTURE_ATLAS_DIR L"d:\\im\\tmp\\texture_atlas\\"
+#if defined(DEBUG_DUMP_TEXTURE_ATLAS_DIR) && defined(WIP_GLYPH_ATLASES)
+static void writeAtlasToImageFile(Byte const* data, uint32_t width, uint32_t height, int32_t bytesPerPixel)
     {
     bool            rgba = 4 == bytesPerPixel;
     Image           image(width, height, ByteStream(data, width * height * bytesPerPixel), (rgba) ? Image::Format::Rgba : Image::Format::Rgb);
     ImageSource     imageSource(image, rgba ? ImageSource::Format::Png: ImageSource::Format::Jpeg);
 
-    FILE*               file = fopen(name, "wb");
-    ByteStream const&   byteStream = imageSource.GetByteStream();
-
-    fwrite(byteStream.data(), 1, byteStream.size(), file);
-    fclose(file);
+    static BeAtomic<uint32_t> s_atlasIndex;
+    WPrintfString filename(L"%lsatlas_%u.png", DEBUG_DUMP_TEXTURE_ATLAS_DIR, s_atlasIndex.IncrementAtomicPre());
+    BeFile file;
+    file.Create(filename.c_str(), true);
+    file.Write(nullptr, imageSource.GetByteStream().GetData(), imageSource.GetByteStream().GetSize());
+    file.Close();
     }
 #endif
 
@@ -2088,8 +2089,8 @@ TexturePtr GlyphAtlas::GetTexture(Render::System& renderSystem, DgnDbP db)
 
     Render::Image atlasImage(m_numPixelsInX, m_numPixelsInY, std::move(m_atlasBytes), Render::Image::Format::Rgba);
 
-#if defined(DEBUG_DUMP_TEXTURE_ATLAS_TO_FILE)
-    writeAtlasToImageFile(atlasImage.GetByteStream().data(), atlasImage.GetWidth(), atlasImage.GetHeight(), "d:\\atlasImage.png", atlasImage.GetBytesPerPixel());
+#if defined(DEBUG_DUMP_TEXTURE_ATLAS_DIR)
+    writeAtlasToImageFile(atlasImage.GetByteStream().data(), atlasImage.GetWidth(), atlasImage.GetHeight(), atlasImage.GetBytesPerPixel());
 #endif
 
     // create the texture from the atlas image

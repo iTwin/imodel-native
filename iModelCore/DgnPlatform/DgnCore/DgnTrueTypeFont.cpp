@@ -73,7 +73,7 @@ public:
     RasterStatus _GetRaster(Render::ImageR) const override;
 };
 
-// #define WIP_GLYPH_ATLASES
+#define WIP_GLYPH_ATLASES
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Mark.Schlosser  01/2018
