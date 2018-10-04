@@ -93,6 +93,10 @@ $(o)RectanglePlacementStrategy$(oext) : $(_MakeFilePath)RectanglePlacementStrate
 
 $(o)ScopedDynamicKeyPointResetter$(oext) : $(_MakeFilePath)ScopedDynamicKeyPointResetter.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ScopedDynamicKeyPointResetter.h
 
+$(o)PointPlacementStrategy$(oext) : $(_MakeFilePath)PointPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PointPlacementStrategy.h
+
+$(o)PointManipulationStrategy$(oext) : $(_MakeFilePath)PointManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PointManipulationStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

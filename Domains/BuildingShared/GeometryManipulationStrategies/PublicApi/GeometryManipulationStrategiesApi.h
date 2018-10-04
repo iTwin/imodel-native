@@ -58,6 +58,9 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ExtrusionPlacementStrategy)
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(RectanglePlacementStrategy)
 
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(PointManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(PointPlacementStrategy)
+
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(DynamicStateBase)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(BooleanDynamicState)
 BUILDING_SHARED_TYPEDEFS(IResettableDynamic)
@@ -106,5 +109,8 @@ END_BUILDING_SHARED_NAMESPACE
 #include "ExtrusionPlacementStrategy.h"
 
 #include "RectanglePlacementStrategy.h"
+
+#include "PointManipulationStrategy.h"
+#include "PointPlacementStrategy.h"
 
 #include "ScopedDynamicKeyPointResetter.h"
