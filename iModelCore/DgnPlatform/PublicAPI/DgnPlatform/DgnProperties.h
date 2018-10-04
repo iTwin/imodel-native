@@ -46,6 +46,7 @@ struct DgnProjectProperty
     static ProjectProperty Units()           {return ProjectProperty("Units");}
     static ProjectProperty DgnGCS()          {return ProjectProperty("DgnGCS");}
     static ProjectProperty LastSchemaUpgradeInPhase() { return ProjectProperty("LastSchemaUpgradeInPhase"); }
+    static ProjectProperty ConnectedContextId() {return ProjectProperty("ConnectedContextId");} // Optional: the stringified GUID of the associated Connected Context
 };
 
 //=======================================================================================

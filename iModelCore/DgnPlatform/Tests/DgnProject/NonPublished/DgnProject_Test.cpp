@@ -129,6 +129,35 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, ConnectedContextId)
+    {
+    SetupSeedProject();
+
+    BeGuid fakeContextId1(true);
+    BeGuid fakeContextId2(true);
+    Utf8String value;
+
+    ASSERT_FALSE(m_db->HasProperty(DgnProjectProperty::ConnectedContextId())) << "Optional properties should not be present by default";
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SavePropertyString(DgnProjectProperty::ConnectedContextId(), fakeContextId1.ToString()));
+    ASSERT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(value, DgnProjectProperty::ConnectedContextId()));
+    ASSERT_STREQ(value.c_str(), fakeContextId1.ToString().c_str()) << "Expected fakeContextId1";
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SavePropertyString(DgnProjectProperty::ConnectedContextId(), fakeContextId2.ToString()));
+    ASSERT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(value, DgnProjectProperty::ConnectedContextId()));
+    ASSERT_STREQ(value.c_str(), fakeContextId2.ToString().c_str()) << "Expected fakeContextId2";
+
+    ASSERT_EQ(BE_SQLITE_DONE, m_db->DeleteProperty(DgnProjectProperty::ConnectedContextId()));
+    ASSERT_FALSE(m_db->HasProperty(DgnProjectProperty::ConnectedContextId())) << "Property should have been deleted";
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db->SavePropertyString(DgnProjectProperty::ConnectedContextId(), fakeContextId1.ToString()));
+    ASSERT_EQ(BE_SQLITE_ROW, m_db->QueryProperty(value, DgnProjectProperty::ConnectedContextId()));
+    ASSERT_STREQ(value.c_str(), fakeContextId1.ToString().c_str()) << "Expected fakeContextId1";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Schema Version can be accessed and it is correct
 * @bsimethod                                    Majd.Uddin                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
