@@ -13626,7 +13626,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorph
     ECRelationshipClassCP rel = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementHasAspect"));
     ECClassCP ecClassElement = GetSchema()->GetClassCP("Element");
     ECClassCP ecClassAspect = GetSchema()->GetClassCP("Aspect");
-    ECClassCP ecClassDerivedAspect = GetSchema()->GetClassCP("DerivedAspect");
     ECClassCP ecClassInfoAspect = GetSchema()->GetClassCP("InfoAspect");
 
     IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClassElement);
