@@ -282,7 +282,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     ECObjectsStatus status = ECObjectsStatus::Success;
 
     // RULE: All classes should have a description
-    if (ecClass.GetDescription().length() < 1)
+    if (ecClass.GetDescription().empty())
         {
         LOG.warningv("Class '%s' has no description. Please add a description.", ecClass.GetFullName());
         }
@@ -297,7 +297,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                 ecClass.GetFullName(), prop->GetName().c_str());
             status = ECObjectsStatus::Error;
             }
-        if (prop->GetDescription().length() < 1)
+        if (prop->GetDescription().empty())
             {
             LOG.warningv("Property '%s.%s' has no description. Please add a description.", ecClass.GetFullName(), prop->GetName().c_str());
             }
