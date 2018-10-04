@@ -2062,7 +2062,7 @@ public:
     //! @private
     DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
 
-    bool HadAnyChanges() const { return m_hadAnyChanges; }
+    bool HadAnyChanges() const { return m_hadAnyChanges || m_elementsConverted != 0; }
 };
 
 //=======================================================================================

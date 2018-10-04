@@ -40,48 +40,6 @@ SheetCompositionTests.HasDgnAttachment
 SheetCompositionTests.HasDrawingBoundary
 LevelTests.LevelMaskfromSheetAttachment_toViewAttachment
 
-ConverterTests.ElementCRUDInTile
-
-    # VSTS#34354
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/19/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: false
-    # To be equal to: expectUpdate
-    # Which is: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: false
-    # To be equal to: expectUpdate
-    # Which is: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: false
-    # To be equal to: expectUpdate
-    # Which is: true
-
-ConverterTests.ElementCRUDTiled
-
-    # VSTS#34354
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/19/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: false
-    # To be equal to: expectUpdate
-    # Which is: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: false
-    # To be equal to: expectUpdate
-    # Which is: true
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: false
-    # To be equal to: expectUpdate
-    # Which is: true
-
-ViewTests.SavedViewsCRUD
-
-    # VSTS#37063
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 10/02/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ViewTests.cpp(131): error: Value of: viewId.IsValid()
-    # Actual: true
-    # Expected: false
-
 TransformTests.Test1
 ConverterTests.GCSMultiFilesReprojectImport
 
@@ -879,14 +837,6 @@ V8AttachmentTests.Attach3dm
     # Which is: 83
     # To be equal to: stmt->GetValueInt(0)
     # Which is: 81
-
-BasicGeometryTests.EnlargeProjectExtents
-
-    # VSTS#37378
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 10/04/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\BasicGeometryTests.cpp(111): error: Value of: updatedProjectExtents.IsEqual(updatedProjectExtents2)
-    # Actual: false
-    # Expected: true
 
 TransformTests.Test1
 
