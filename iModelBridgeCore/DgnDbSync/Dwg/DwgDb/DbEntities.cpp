@@ -262,6 +262,40 @@ bool       DwgDb2dPolyline::GetConstantWidth (double& width) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDb2dPolyline::GetPoints (DPoint3dArrayR out) const
+    {
+    out.clear ();
+    auto iter = this->GetVertexIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  DwgDbStatus::MemoryError;
+
+    for (iter->Start(); !iter->Done(); iter->Next())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        OdDb2dVertexPtr vertex = iter->GetObjectId().safeOpenObject (OdDb::kForRead);
+        if (!vertex.isNull())
+#elif DWGTOOLKIT_RealDwg
+        AcDbSmartObjectPointer<AcDb2dVertex>    vertex(iter->GetObjectId(), AcDb::kForRead);
+        if (vertex.openStatus() == Acad::eOk)
+#endif
+            {
+            // a database resident vertex
+            out.push_back (Util::DPoint3dFrom(vertex->position()));
+            }
+        else
+            {
+            // a non-db resident vertex
+            auto newVertex = DWGDB_Type(2dVertex)::cast (iter->GetEntity());
+            if (newVertex != nullptr)
+                out.push_back (Util::DPoint3dFrom(newVertex->position()));
+            }
+        }
+    return  out.empty() ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus DwgDb2dPolyline::SetVertex (DWGDB_TypeP(2dVertex) vertex, DPoint2dCR point, DPoint2dCR widths)

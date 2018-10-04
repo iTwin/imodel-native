@@ -236,6 +236,8 @@ public:
     DWGDB_EXPORT bool       HasPlinegen () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT Type       GetType () const;
+    //! Extract 3D points from the 2D vertex iterator and pack them into an untransformed array.
+    DWGDB_EXPORT DwgDbStatus GetPoints (DPoint3dArrayR out) const;
     DWGDB_EXPORT DwgDbObjectIteratorPtr GetVertexIterator () const;
     DWGDB_EXPORT DwgDbStatus AppendVertex (DwgDbObjectIdR outId, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
     DWGDB_EXPORT DwgDbStatus InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectIdCR atVertex, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
