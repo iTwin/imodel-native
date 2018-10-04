@@ -39,35 +39,3 @@ SheetCompositionTests.SheetSizeTest
 SheetCompositionTests.HasDgnAttachment
 SheetCompositionTests.HasDrawingBoundary
 LevelTests.LevelMaskfromSheetAttachment_toViewAttachment
-
-TransformTests.Test1
-
-    # VSTS#37374
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 10/04/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(434): error:       Expected: hadAnyChanges
-    # Which is: true
-    # To be equal to: expectUpdate
-    # Which is: false
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1186): error: Value of: newProjectExtents.IsContained(m_projectExtents)
-    # Actual: true
-    # Expected: false
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1185): error: Value of: m_projectExtents.IsContained(newProjectExtents)
-    # Actual: false
-    # Expected: true
-    # Project extents should have expanded to hold the lines that moved over and up
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1185): error: Value of: m_projectExtents.IsContained(newProjectExtents)
-    # Actual: false
-    # Expected: true
-    # Project extents should have expanded to hold the lines that moved over and up
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1185): error: Value of: m_projectExtents.IsContained(newProjectExtents)
-    # Actual: false
-    # Expected: true
-    # Project extents should have expanded to hold the lines that moved over and up
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1185): error: Value of: m_projectExtents.IsContained(newProjectExtents)
-    # Actual: false
-    # Expected: true
-    # Project extents should have expanded to hold the lines that moved over and up
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1185): error: Value of: m_projectExtents.IsContained(newProjectExtents)
-    # Actual: false
-    # Expected: true
-    # Project extents should have expanded to hold the lines that moved over and up

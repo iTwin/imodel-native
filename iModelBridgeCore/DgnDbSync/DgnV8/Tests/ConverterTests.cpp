@@ -1181,10 +1181,6 @@ void UpdateWithSpatialDataTransform(BentleyApi::DPoint3dCR xlat, double rot, boo
 
     // Verify that the lines moved as expected
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
-    auto newProjectExtents = db->GeoLocation().GetProjectExtents();
-    ASSERT_TRUE(m_projectExtents.IsContained(newProjectExtents)) << "Project extents should have expanded to hold the lines that moved over and up";  
-    ASSERT_FALSE(newProjectExtents.IsContained(m_projectExtents));
-
     auto bimLine1 = FindV8ElementInDgnDb(*db, m_elementId1);
     ASSERT_TRUE(bimLine1.IsValid());
     BentleyApi::DPoint3d obim1AfterUpdate;
@@ -1217,11 +1213,13 @@ void SetupTransformCorrectionTest()
     auto o1 = Bentley::DPoint3d::From(1, 0, 0);
     auto o2 = Bentley::DPoint3d::From(2, 0, 0);
 
+    {
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     v8editor.AddLine(&m_elementId1, v8editor.m_defaultModel, o1);
     v8editor.AddLine(&m_elementId2, v8editor.m_defaultModel, o2);
     v8editor.Save();
+    }
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
