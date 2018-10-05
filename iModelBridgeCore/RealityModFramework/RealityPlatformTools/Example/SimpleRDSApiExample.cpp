@@ -23,6 +23,7 @@ void Inspect()
     {
     bvector<ConnectedNavNode> rootNodes = bvector<ConnectedNavNode>();
 
+    //get all rootNodes, every individual entry on the server
     ConnectedResponse response = ConnectedNavNode::GetRootNodes(rootNodes);
 
     if(!response.simpleSuccess)
@@ -31,15 +32,20 @@ void Inspect()
         return;
         }
 
+    //create a ConnectedRealityData object, with an instanceId. This will fetch the properties of
+    //the corresponding RealityData on the server, for that instanceId
     ConnectedRealityData rd = ConnectedRealityData(rootNodes[0].GetInstanceId());
 
     std::cout << "RealityData name: " << rd.GetName() << std::endl;
 
+    //get a list of all relationships for a given RealityData, a list of every project that uses this RD
     bvector<ConnectedRealityDataRelationshipPtr> relationships = bvector<ConnectedRealityDataRelationshipPtr>();
     response = ConnectedRealityDataRelationship::RetrieveAllForRDId(relationships, rd.GetIdentifier());
 
     std::cout << "has " << relationships.size() << " relationships" << std::endl;
 
+    //get child nodes for a rootNode. This is equivalent to entering a folder in a file explorer, it shows
+    //any files or folders contained within the node
     bvector<ConnectedNavNode> childNodes = bvector<ConnectedNavNode>();
     response = rootNodes[0].GetChildNodes(childNodes);
 
@@ -57,8 +63,9 @@ void Inspect()
             }
         }
 
+    
     ConnectedRealityDataEnterpriseStat stats = ConnectedRealityDataEnterpriseStat();
-
+    //Get all server stats (size on server, number of entries, etc)
     response = stats.GetEnterpriseStats();
 
     std::cout << "total size on server: " << stats.GetTotalSizeKB() << "KB" << std::endl;
@@ -136,21 +143,18 @@ Utf8String CreateUpload()
 
     //the actual upload begins here
     ConnectedRealityData crd = ConnectedRealityData();
+    //set a handful of properties that you want, for the upload
     crd.SetName("SimpleRDSApiExample (DELETE THIS)");
     crd.SetClassification(RealityDataBase::Classification::TERRAIN);
     crd.SetRealityDataType("S3MX");
     crd.SetVisibility(RealityDataBase::Visibility::ENTERPRISE);
     crd.SetRootDocument("DummyRootDocument.json");
-    crd.SetOrganizationId("72adad30-c07c-465d-a1fe-2f2dfac950d7");
-    crd.SetUltimateId("72adad30-c07c-465d-a1fe-2f2dfac950d8");
-    crd.SetUltimateSite("72adad30-c07c-465d-a1fe-2f2dfac950d9");
-    crd.SetContainerName("72adad30-c07c-465d-a1fe-2f2dfac950da");
-    crd.SetDataLocationGuid("72adad30-c07c-465d-a1fe-2f2dfac950db");
     crd.SetDataset("SRTM1");
     crd.SetDescription("example upload for SimpleRDSApi");
     
     Utf8String empty = "";
 
+    //upload the data at "dummy root" with the properties stored in "crd"
     ConnectedResponse response = crd.Upload(dummyRoot, empty);
 
     if (!response.simpleSuccess)
@@ -159,11 +163,13 @@ Utf8String CreateUpload()
         return "";
         }
 
+    //if the upload was successful, "crd" will have been given a GUID, by the server
     return crd.GetIdentifier();
     }
 
 void FolderOperations(Utf8String guid)
     {
+    //create a local folder to receive the download
     Utf8String folderGuid = Utf8PrintfString("%s~2F%s", guid, "DummySubFolder");
     ConnectedRealityDataFolder crdf = ConnectedRealityDataFolder(folderGuid);
 
@@ -179,8 +185,11 @@ void FolderOperations(Utf8String guid)
     BeFileName dummyRoot = BeFileName(directory.c_str());
     dummyRoot.AppendToPath(L"DummyFolderDownFolder");
 
+    //download the folder at "folderGuid" to the local folder "dummyRoot"
+    //"crdf" will have its properties filled by the server
     crdf.Download(dummyRoot, folderGuid);
 
+    //reupload the folder from "dummyRoot" to the server path "folderGuid"
     ConnectedResponse response = crdf.Upload(dummyRoot, folderGuid);
 
     if (!response.simpleSuccess)
@@ -189,11 +198,13 @@ void FolderOperations(Utf8String guid)
         return;
         }
 
+    //remove the local folder
     BeFileName::EmptyAndRemoveDirectory(dummyRoot.c_str());
     }
 
 void DocumentOperations(Utf8String guid)
     {
+    //create a local path to the downloaded document
     Utf8String documentGuid = Utf8PrintfString("%s~2F%s", guid, "DummyRootDocument.json");
     ConnectedRealityDataDocument crdf = ConnectedRealityDataDocument(documentGuid);
 
@@ -209,8 +220,11 @@ void DocumentOperations(Utf8String guid)
     BeFileName dummyRoot = BeFileName(directory.c_str());
     dummyRoot.AppendToPath(L"DummyFolderDownDocument");
 
+    //download the file at "documentGuid" to the local folder "dummyRoot"
+    //"crdf" will have its properties filled by the server
     crdf.Download(dummyRoot, documentGuid);
 
+    //reupload the folder from "dummyRoot" to the server path "documentGuid"
     ConnectedResponse response = crdf.Upload(dummyRoot, documentGuid);
 
     if (!response.simpleSuccess)
@@ -219,6 +233,7 @@ void DocumentOperations(Utf8String guid)
         return;
         }
 
+    //remove the local document
     BeFileName::EmptyAndRemoveDirectory(dummyRoot.c_str());
     }
 
@@ -236,9 +251,12 @@ void DownloadModify(Utf8String guid)
     BeFileName dummyRoot = BeFileName(directory.c_str());
     dummyRoot.AppendToPath(L"DummyFolderDown");
 
+    //retrieve the realitydata info for the guid
     ConnectedRealityData crd = ConnectedRealityData(guid);
-    crd.Download(dummyRoot, guid);
+    
+    //make any desired modifications
     crd.SetName("SimpleModifiedExample (DELETE THIS)");
+    //push these changes to the server
     ConnectedResponse response = crd.UpdateInfo();
 
     if (!response.simpleSuccess)
@@ -252,9 +270,12 @@ void DownloadModify(Utf8String guid)
 
 void Delete(Utf8String guid)
     {
+    //retrieve the realitydata info for the guid
     ConnectedRealityData crd = ConnectedRealityData(guid);
+    //Delete the RealityData on the server
     crd.Delete();
 
+    //attempt to retrieve the realitydata info for the guid. This should fail, proving the delete was successful
     ConnectedRealityData crdTester = ConnectedRealityData(guid);
     if(!crdTester.GetName().empty())
         {
@@ -265,15 +286,22 @@ void Delete(Utf8String guid)
 
 int main(int argc, char *argv[])
     {
+    //Do this first
     RDSRequestManager::Setup();
 
+    //look at available entries, inspecting the first one in the list and looking at server stats
     Inspect();
+    //uploading a new realitydata
     Utf8String guid = CreateUpload();
     if(guid.empty())
         return 1;
+    //download/upload a single folder
     FolderOperations(guid);
+    //download/upload a single file
     DocumentOperations(guid);
+    //change properties of a realityData
     DownloadModify(guid);
+    //remove the realityData from the server
     Delete(guid);
 
     return 0;

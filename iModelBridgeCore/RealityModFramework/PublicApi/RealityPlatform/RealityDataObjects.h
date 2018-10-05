@@ -638,6 +638,7 @@ public:
     //! total size of the organisations data (at time of last calculation)
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
+    REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(double totalSizeKB);
 
     //! UltimateId 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOrganizationId() const;
@@ -680,6 +681,7 @@ public:
     //! total size of the organisations data (at time of last calculation)
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
+    REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(double totalSizeKB);
 
     //! UltimateId 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateId() const;
@@ -719,6 +721,7 @@ public:
     //! total size of the organisations data (at time of last calculation)
     REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
     REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
+    REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(double totalSizeKB);
 
     //! UserId 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserId() const;

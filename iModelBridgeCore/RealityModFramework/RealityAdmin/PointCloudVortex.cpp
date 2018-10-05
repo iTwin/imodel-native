@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/PointCloudVortex.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -207,7 +207,7 @@ HRESULT PointCloudVortex::ExtractPointCloud(HBITMAP*        pThumbnailBmp,
                 pt3d.x = pPointsBuffer[i];
                 pt3d.y = pPointsBuffer[i+1];
                 pt3d.z = pPointsBuffer[i+2];
-                bsiTransform_multiplyDPoint3d (&transform, &pt3dOut, &pt3d);
+                transform.Multiply (pt3dOut, pt3d);
                 col = (LONG32) pt3dOut.x;
                 row = (LONG32) pt3dOut.y;
 
@@ -543,7 +543,7 @@ void PointCloudVortex::GetTransformForThumbnail(TransformR outTransform, PtHandl
     float       lower [3], upper [3];
 	//PtVortex::CloudBounds (cloudHandle, lower, upper);
 	ptCloudBounds(cloudHandle, lower, upper);
-    bsiTransform_initIdentity(&transform);
+    transform.InitIdentity ();
 
     // Rotate according to the desired view (for Top view, nothing to do, the point cloud is already in top view)
     double xRotation = 0.0;
@@ -599,9 +599,9 @@ void PointCloudVortex::GetTransformForThumbnail(TransformR outTransform, PtHandl
     // Make sure scaling is the same in X and Y
     double scaling = (scalingY > scalingX ? scalingX : scalingY);
 
-    bsiTransform_initIdentity(&trfScale);
-    bsiTransform_scaleMatrixColumns (&trfScale, &trfScale, scaling, scaling, scaling);
-    bsiTransform_multiplyTransformTransform(&transform, &trfScale, &transform);
+    trfScale.InitIdentity ();
+    trfScale.ScaleMatrixColumns(trfScale, scaling, scaling, scaling);
+    transform.InitProduct (trfScale, transform);
 
     // Translate one pixel to center the point cloud (reason: look at the (bitmapWidth - 2) above that creates a border).
     // This will leave a 1 pixel border around all bitmap.
@@ -609,10 +609,10 @@ void PointCloudVortex::GetTransformForThumbnail(TransformR outTransform, PtHandl
     translation.y = 1.0;
     translation.z = 0.0;
     Transform trfTranslate;
-    bsiTransform_initIdentity(&trfTranslate);
-    bsiTransform_setTranslation (&trfTranslate, &translation);
+    trfTranslate.InitIdentity ();
+    trfTranslate.SetTranslation (translation);
 
-    bsiTransform_multiplyTransformTransform(&outTransform, &trfTranslate, &transform);
+    outTransform.InitProduct (trfTranslate, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -626,25 +626,25 @@ void PointCloudVortex::TransformAddRotation(TransformR transform, double xRotati
     translation.y = 0.0 - rotationOrigin.y;
     translation.z = 0.0 - rotationOrigin.z;
     Transform trfTranslate;
-    bsiTransform_initIdentity(&trfTranslate);
-    bsiTransform_setTranslation (&trfTranslate, &translation);
+    trfTranslate.InitIdentity ();
+    trfTranslate.SetTranslation (translation);
 
     Transform trfResult;
-    bsiTransform_multiplyTransformTransform(&trfResult, &trfTranslate, &transform);
+    trfResult.InitProduct (trfTranslate, transform);
 
     // Rotate around origin
     RotMatrix rotMatrix;
     GetRotationMatrix(xRotation, yRotation, zRotation, rotMatrix);
-    bsiTransform_multiplyRotMatrixTransform(&trfResult, &rotMatrix, &trfResult);
+    trfResult.InitProduct (rotMatrix, trfResult);
 
     // Translate to original position
     translation.x = rotationOrigin.x;
     translation.y = rotationOrigin.y;
     translation.z = rotationOrigin.z;
-    bsiTransform_initIdentity(&trfTranslate);
-    bsiTransform_setTranslation (&trfTranslate, &translation);
+    trfTranslate.InitIdentity ();
+    trfTranslate.SetTranslation (translation);
 
-    bsiTransform_multiplyTransformTransform(&transform, &trfTranslate, &trfResult);
+    transform.InitProduct (trfTranslate, trfResult);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -653,9 +653,9 @@ void PointCloudVortex::TransformAddRotation(TransformR transform, double xRotati
 void PointCloudVortex::TransformAddTranslation(TransformR transform, DPoint3dCR translation)
     {
     Transform trfTranslate;
-    bsiTransform_initIdentity(&trfTranslate);
-    bsiTransform_setTranslation (&trfTranslate, &translation);
-    bsiTransform_multiplyTransformTransform(&transform, &trfTranslate, &transform);
+    trfTranslate.InitIdentity ();
+    trfTranslate.SetTranslation (translation);
+    transform.InitProduct (trfTranslate, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -667,21 +667,21 @@ void PointCloudVortex::GetRotationMatrix(double xRotation, double yRotation, dou
     RotMatrix rotMatrixX;
     DVec3d vec;
     vec.Init (1, 0, 0);
-    bsiRotMatrix_initFromVectorAndRotationAngle (&rotMatrixX, &vec, xRotation);
+    rotMatrixX.InitFromVectorAndRotationAngle (vec, xRotation);
 
     // Create Z rotation matrix
     RotMatrix rotMatrixZ;
     vec.Init (0, 0, 1);
-    bsiRotMatrix_initFromVectorAndRotationAngle (&rotMatrixZ, &vec, zRotation);
+    rotMatrixZ.InitFromVectorAndRotationAngle (vec, zRotation);
 
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&rotMatrix, &rotMatrixX, &rotMatrixZ);
+    rotMatrix.InitProduct (rotMatrixX, rotMatrixZ);
 
     // Create Y rotation matrix
     RotMatrix rotMatrixY;
     vec.Init (0, 1, 0);
-    bsiRotMatrix_initFromVectorAndRotationAngle (&rotMatrixY, &vec, yRotation);
+    rotMatrixY.InitFromVectorAndRotationAngle (vec, yRotation);
 
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&rotMatrix, &rotMatrix, &rotMatrixY);
+    rotMatrix.InitProduct (rotMatrix, rotMatrixY);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -724,7 +724,7 @@ void PointCloudVortex::GetPointCloudBounds(DPoint3dR lowerBound, DPoint3dR upper
     boxPoints[7].z = inUpperBound.z;
 
     // Transform points
-    bsiTransform_multiplyDPoint3dArrayInPlace(&transform, boxPoints, 8);
+    transform.Multiply (boxPoints, 8);
 
     // Find new upper and lower points
     lowerBound.x = boxPoints[0].x;

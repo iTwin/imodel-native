@@ -36,6 +36,23 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
     }
 
+static int download_progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
+    {
+    if(dltotal < 1)
+        return 0;
+
+    RealityDataUrl *request = reinterpret_cast<RealityDataUrl*>(clientp);
+    RealityDataFileDownload *fileDown = dynamic_cast<RealityDataFileDownload*>(request);
+
+    if(fileDown != nullptr)
+        {
+        uint64_t currentProgress = (uint64_t) (100.0 * ((double)dlnow / (double)dltotal));
+
+        return fileDown->ProcessProgress(currentProgress);
+        }
+    return 0;
+    }
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //! Callback methods used by the upload/download process.
@@ -152,11 +169,11 @@ const TransferReport& RealityDataServiceTransfer::Perform()
                             {
                             if (m_pProgressFunc) 
                                 {
-                                if(fileUp!= nullptr)
+                                if(fileUp!= nullptr) //download now has its own way of handling this
+                                    {
                                     UpdateTransferAmount((int64_t)fileUp->GetMessageSize());
-                                else
-                                    UpdateTransferAmount(1);
-                                m_pProgressFunc(fileTrans->GetFilename(), 1.0, m_progress);
+                                    m_pProgressFunc(fileTrans->GetFilename(), 1.0, m_progress);
+                                    }
                                 }
                             ReportStatus((int)fileTrans->m_index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                             }  
@@ -261,6 +278,10 @@ void RealityDataServiceTransfer::SetupRequestforFile(RealityDataUrl* request, bo
             curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, DownloadWriteCallback);
             /* Set a pointer to our struct to pass to the callback */
             curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, fileDownload);
+
+            curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0);
+            curl_easy_setopt(pCurl, CURLOPT_XFERINFOFUNCTION, download_progress_callback);
+            curl_easy_setopt(pCurl, CURLOPT_XFERINFODATA, fileDownload);
 
             if (fileDownload->GetFileStream().Create(fileDownload->GetFilename().c_str(), true) != BeFileStatus::Success)
                 {

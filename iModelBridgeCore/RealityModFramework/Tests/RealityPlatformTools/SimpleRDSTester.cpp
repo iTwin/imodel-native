@@ -228,7 +228,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatCloneTest)
     RealityDataEnterpriseStat stat;
 
     stat.SetNbRealityData(100);
-    stat.SetTotalSizeKB(1000);
+    stat.SetTotalSizeKB(1000.0);
     stat.SetOrganizationId("orgID");
     stat.SetUltimateId("ultID");
     stat.SetUltimateSite("ultSite");
@@ -252,7 +252,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataUserStatCloneTest)
     RealityDataUserStat stat;
 
     stat.SetNbRealityData(100);
-    stat.SetTotalSizeKB(1000);
+    stat.SetTotalSizeKB(1000.0);
     stat.SetUserId("usrID");
     stat.SetUserEmail("usrEmail");
     stat.SetUltimateId("ultID");
