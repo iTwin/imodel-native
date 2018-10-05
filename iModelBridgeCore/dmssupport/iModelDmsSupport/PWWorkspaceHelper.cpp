@@ -116,11 +116,15 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
     DWORD monikerFlags = AAMONIKERF_USE_EXISTING_LOGIN| AAMONIKERF_RESOURCE_LOCATION;
     LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, monikerFlags))
+        {
+        LOG.errorv("aaApi_StringsToMonikers failed for document %s", pwMoniker.c_str());
         return ERROR;
+        }
 
     LPCGUID guid = aaApi_GetDocumentGuidFromMoniker(moniker);
     if (NULL == guid)
         {
+        LOG.errorv("aaApi_GetDocumentGuidFromMoniker failed for document %s", pwMoniker.c_str());
         aaApi_Free(moniker);
         return ERROR;
         }
@@ -128,6 +132,7 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
     AADOC_ITEM docItem = { 0 };
     if (!aaApi_GetDocumentIdsByGUIDs(1, guid, &docItem))
         {
+        LOG.errorv("aaApi_GetDocumentIdsByGUIDs failed for document %s", pwMoniker.c_str());
         aaApi_Free((void*)guid);
         aaApi_Free(moniker);
         return ERROR;
@@ -163,11 +168,15 @@ bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     HMONIKER moniker = NULL;
     LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, AAMONIKERF_DONT_VALIDATE))
+        {
+        LOG.errorv("Cannot call  aaApi_StringsToMonikers for document %s", pwMoniker.c_str());
         return false;
+        }
     
     LPCWSTR datasourceName = aaApi_GetDatasourceNameFromMoniker(moniker);
     if (NULL == datasourceName)
         {
+        LOG.errorv("Cannot call  aaApi_GetDatasourceNameFromMoniker for document %s", pwMoniker.c_str());
         aaApi_Free(moniker);
         return false;
         }

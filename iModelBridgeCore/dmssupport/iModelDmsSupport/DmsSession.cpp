@@ -65,6 +65,7 @@ bool    DmsSession::Initialize()
     ULONG dataSourceCount = 0;
     if (aaApi_GetDatasourceHandlesByName(dataSource.c_str(), &dataSources, &dataSourceCount))
         {
+        LOG.trace("aaApi_GetDatasourceHandlesByName SUCCEEDED");
         m_activeDataSource = dataSources[0];
         aaApi_Free(dataSources);
         }
