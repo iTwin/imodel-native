@@ -1291,7 +1291,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     //  Open our state db.
     dbres = OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
+        {
+        LOG.fatal("OpenOrCreateStateDb failed");
         return RETURN_STATUS_LOCAL_ERROR;
+        }
 
     //  Resolve the bridge to run
     if (m_jobEnvArgs.m_bridgeLibraryName.empty())
@@ -1369,6 +1372,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
     catch (...)
         {
+        LOG.fatal("UpdateExistingBim failed");
         status = RETURN_STATUS_LOCAL_ERROR;
         }
 
@@ -1467,6 +1471,7 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     {
+    GetLogger().trace("Entering TryOpenBimWithBisSchemaUpgrade");
     bool madeSchemaChanges = false;
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
@@ -1637,7 +1642,10 @@ int iModelBridgeFwk::UpdateExistingBim()
         BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
     
         if (BSISUCCESS != bridgeCvtStatus)
+            {
+            GetLogger().errorv("Bridge::DoConvertToExistingBim failed with status %d", bridgeCvtStatus);
             return RETURN_STATUS_CONVERTER_ERROR;
+            }
 
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
@@ -1647,7 +1655,10 @@ int iModelBridgeFwk::UpdateExistingBim()
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
     if (BeSQLite::BE_SQLITE_OK != dbres)
+        {
+        GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
         return RETURN_STATUS_LOCAL_ERROR;
+        }
 
     //  PullMergePush
     //  Note: We may still be holding shared locks that we need to release. If we detect this, we must try again to release them.
