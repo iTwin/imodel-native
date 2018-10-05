@@ -39,7 +39,7 @@
     </Part>
     <Part Name="PsolidShim_x64" OnlyPlatforms="x64">
         <!-- Yes, we are choosing to use a different, older, version on x64. This is for PP compatibility. This version is not available on other platforms. -->
-        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_0_226"/>
+        <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_239_x64"/>
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
