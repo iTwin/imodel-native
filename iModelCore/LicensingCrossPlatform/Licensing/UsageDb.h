@@ -10,7 +10,6 @@
 
 #include <Licensing/Licensing.h>
 #include <BeSQLite/BeSQLite.h>
-#include "PolicyToken.h"
 
 #define LICENSE_CLIENT_SCHEMA_NAME      "LICENSINGSCHEMA"
 #define LICENSE_CLIENT_SCHEMA_VERSION   1.0

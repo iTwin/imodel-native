@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/Policy.cpp $
+|     $Source: Licensing/Policy.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,6 +15,7 @@ USING_NAMESPACE_BENTLEY_LICENSING
 +---------------+---------------+---------------+---------------+---------------+------*/
 Policy::Policy(const Json::Value& json)
 	{
+	m_json = json;
 	m_PolicyId = json["PolicyId"].asString();
 	m_PolicyVersion = json["PolicyVersion"].asDouble();
 	m_PolicyCreatedOn = DateHelper::StringToTime(json["PolicyCreatedOn"].asCString());
@@ -32,12 +33,32 @@ Policy::Policy(const Json::Value& json)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<Policy> Policy::Create(std::shared_ptr<PolicyToken> policyToken)
+std::shared_ptr<Policy> Policy::Create(std::shared_ptr<JWToken> jwToken)
+{
+	if (jwToken == nullptr)
+		return nullptr;
+
+	Utf8String policyB64 = jwToken->GetClaim(GETCLAIM_JwtokenClaim_Url);
+	if (policyB64.empty())
+		return nullptr;
+
+	Utf8String policy = Base64Utilities::Decode(policyB64);
+	Json::Value policyJson;
+	if (!Json::Reader::Parse(policy, policyJson))
+		return nullptr;
+
+	return std::shared_ptr<Policy>(new Policy(policyJson));
+}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+/*std::shared_ptr<Policy> Policy::Create(std::shared_ptr<PolicyToken> policyToken)
 	{
 	if (policyToken == nullptr)
 		return nullptr;
 	return std::shared_ptr<Policy>(new Policy(policyToken));
-	}
+	}*/
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -139,7 +160,7 @@ Policy::Qualifier::Qualifier(Json::Value json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::Qualifier> Policy::Qualifier::Create(const Json::Value& json)
 	{
-	if (json.isNull()) return nullptr;
+	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::Qualifier>(new Policy::Qualifier(json));
 	}
 
@@ -159,7 +180,7 @@ Policy::RequestedSecurable::RequestedSecurable(Json::Value json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::RequestedSecurable> Policy::RequestedSecurable::Create(const Json::Value& json)
 	{
-	if (json.isNull()) return nullptr;
+	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::RequestedSecurable>(new Policy::RequestedSecurable(json));
 	}
 
@@ -185,7 +206,7 @@ Policy::RequestData::RequestData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::RequestData> Policy::RequestData::Create(const Json::Value& json)
 	{
-	if (json.isNull()) return nullptr;
+	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::RequestData>(new Policy::RequestData(json));
 	}
 
@@ -225,7 +246,7 @@ Policy::ACL::ACL(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::ACL> Policy::ACL::Create(const Json::Value& json)
 	{
-	if (json.isNull()) return nullptr;
+	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::ACL>(new Policy::ACL(json));
 	}
 
@@ -265,7 +286,7 @@ Policy::SecurableData::SecurableData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::SecurableData> Policy::SecurableData::Create(const Json::Value& json)
 	{
-	if (json.isNull()) return nullptr;
+	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::SecurableData>(new Policy::SecurableData(json));
 	}
 
@@ -296,7 +317,7 @@ Policy::UserData::UserData(const Json::Value& json)
 	m_UserId = json["UserId"].asString();
 	m_OrganizationId = json["OrganizationId"].asString();
 	m_UsageCountryISO = json["UsageCountryISO"].asString();
-	m_UltimateSAPId = json["UltimateSAPId"].asString();
+	m_UltimateSAPId = json["UltimateSAPId"].asInt64();
 	m_UltimadeId = json["UltimateId"].asString();
 	m_UltimateCountryId = json["UltimateCountryId"].asString();
 	}
@@ -306,6 +327,6 @@ Policy::UserData::UserData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::UserData> Policy::UserData::Create(const Json::Value& json)
 	{
-	if (json.isNull()) return nullptr;
+	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::UserData>(new Policy::UserData(json));
 	}

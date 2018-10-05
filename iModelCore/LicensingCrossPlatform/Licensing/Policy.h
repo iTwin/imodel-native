@@ -1,17 +1,30 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/Policy.h $
+|     $Source: Licensing/Policy.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "PolicyToken.h"
-#include "DateHelper.h"
+#include <Bentley/Base64Utilities.h>
 
 #include <Licensing/Licensing.h>
+#include <Licensing/Utils/JWToken.h>
 #include <list>
+#include "DateHelper.h"
+
+
+// AppliesTo Url
+#if defined(DEBUG)
+#define GETPOLICY_RequestData_AppliesTo_Url         "https://qa-entitlement-search.bentley.com/"
+#else
+#define GETPOLICY_RequestData_AppliesTo_Url         "https://entitlement-search.bentley.com/"
+#endif // DEBUG)
+
+// Policy Claim Url
+#define GETCLAIM_JwtokenClaim_Url                   "http://schemas.bentley.com/ws/2011/03/identity/claims/policy"
+
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
@@ -22,6 +35,24 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 struct Policy
 {
 public:
+	// enumeration for GetProductStatus return value
+	enum class ProductStatus
+	{
+		Allowed,
+		Denied,
+		NoLicense,
+		TrialExpired
+	};
+	// enumeration for GetPolicyStatus return value
+	enum class PolicyStatus
+	{
+		Error = -1,
+		Valid = 0,
+		Expired = 1,
+		NotFound = 2,
+		Invalid = 3
+	};
+
 	// START defining necessary structs for Policy
 	struct Qualifier
 	{
@@ -135,7 +166,7 @@ public:
 		Utf8String m_UserId;
 		Utf8String m_OrganizationId;
 		Utf8String m_UsageCountryISO;
-		Utf8String m_UltimateSAPId;
+		int64_t m_UltimateSAPId;
 		Utf8String m_UltimadeId;
 		Utf8String m_UltimateCountryId;
 		UserData(const Json::Value& json);
@@ -144,13 +175,65 @@ public:
 		Utf8String GetUserId() const { return m_UserId; };
 		Utf8String GetOrganizationId() const { return m_OrganizationId; };
 		Utf8String GetUsageCountryISO() const { return m_UsageCountryISO; };
-		Utf8String GetUltimateSAPId() const { return m_UltimateSAPId; };
+		int64_t GetUltimateSAPId() const { return m_UltimateSAPId; };
 		Utf8String GetUltimateId() const { return m_UltimadeId; };
 		Utf8String GetUltimateCountryId() const { return m_UltimateCountryId; };
 	};
 	// END
+
+	// START defining private helper functions
 private:
-	std::shared_ptr<PolicyToken> m_policyToken;
+	bool IsTimeExpired(const time_t& expirationTime)
+	{
+		double timeLeft = difftime(expirationTime, DateHelper::GetCurrentTime());
+		return timeLeft <= 0;
+	}
+
+	std::shared_ptr<Policy::Qualifier> GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8String qualifierName)
+	{
+		std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
+		for (auto qualifier : qualifierList)
+		{
+			if (qualifier->GetName() == qualifierName)
+			{
+				matchingQualifier = qualifier;
+				break;
+			}
+		}
+		return matchingQualifier;
+	};
+
+	std::shared_ptr<Policy::ACL> GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8String securableId)
+	{
+		std::shared_ptr<Policy::ACL> matchingACL = nullptr;
+		for (auto acl : aclList)
+		{
+			if (acl->GetSecurableId() == securableId)
+			{
+				matchingACL = acl;
+				break;
+			}
+		}
+		return matchingACL;
+	}
+
+	std::shared_ptr<Policy::SecurableData> GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8String productId, Utf8String featureString)
+	{
+		std::shared_ptr<Policy::SecurableData> matchingSecurable = nullptr;
+		for (auto securable : securableList)
+		{
+			if (std::to_string(securable->GetProductId()).c_str() == productId &&
+				securable->GetFeatureString() == featureString)
+			{
+				matchingSecurable = securable;
+				break;
+			}
+		}
+		return matchingSecurable;
+	}
+
+private:
+	Json::Value m_json;
 	Utf8String m_PolicyId;
 	double m_PolicyVersion;
 	time_t m_PolicyCreatedOn;
@@ -168,11 +251,11 @@ private:
 	std::list<std::shared_ptr<ACL>> CreateACLs(const Json::Value& json);
 	std::list<std::shared_ptr<SecurableData>> CreateSecurableData(const Json::Value& json);
 	std::list<std::shared_ptr<Qualifier>> CreateDefaultQualifiers(const Json::Value& json);
-	Policy(std::shared_ptr<PolicyToken> policyToken) : Policy(policyToken->GetPolicyFile()) {};
 	Policy(const Json::Value& json);
 public:
-	LICENSING_EXPORT static std::shared_ptr<Policy> Create(std::shared_ptr<PolicyToken> policyToken);
+	LICENSING_EXPORT static std::shared_ptr<Policy> Create(std::shared_ptr<JWToken> jwToken);
 	LICENSING_EXPORT static std::shared_ptr<Policy> Create(const Json::Value& json); // for testing purposes
+	LICENSING_EXPORT Json::Value GetJson() const { return m_json; };
 	LICENSING_EXPORT Utf8String GetPolicyId() const { return m_PolicyId; };
 	LICENSING_EXPORT double GetPolicyVersion() const { return m_PolicyVersion; };
 	LICENSING_EXPORT time_t GetPolicyCreatedOn() const { return m_PolicyCreatedOn; };
@@ -185,6 +268,177 @@ public:
 	LICENSING_EXPORT std::list<std::shared_ptr<SecurableData>> GetSecurableData() const { return m_SecurableData; };
 	LICENSING_EXPORT std::shared_ptr<UserData> GetUserData() const { return m_UserData; };
 	LICENSING_EXPORT std::list<std::shared_ptr<Qualifier>> GetDefaultQualifiers() const { return m_DefaultQualifiers; };
+	// getter shortcuts for useful portions of the policy
+	LICENSING_EXPORT Utf8String GetPrincipalId() { return (GetACLs().size() > 0) ? GetACLs().front()->GetPrincipalId() : ""; };
+	LICENSING_EXPORT Utf8String GetSecurableId() { return (GetACLs().size() > 0) ? GetACLs().front()->GetSecurableId() : ""; };
+	LICENSING_EXPORT Utf8String GetCountry() { return GetUserData()->GetUsageCountryISO(); };
+	LICENSING_EXPORT int64_t GetUltimateSAPId() { return GetUserData()->GetUltimateSAPId(); };
+
+	LICENSING_EXPORT bool IsValid() {
+		// check if policy is not empty
+		if (GetJson().isNull())
+			return false;
+		// check if policy is expired
+		if (IsExpired())
+			return false;
+		// check if RequestData is present
+		if (GetRequestData()->GetUserId().Equals(""))
+			return false;
+		// check if UserData is present
+		if (GetUserData()->GetUserId().Equals(""))
+			return false;
+		// Todo: generate and check machine signature
+		// check if ACLs are valid (Ids)
+		for (auto acl : GetACLs())
+		{
+			if (Utf8String::IsNullOrEmpty(acl->GetPrincipalId().c_str()) ||
+				(
+					!acl->GetPrincipalId().Equals(GetUserData()->GetUserId()) &&
+					!acl->GetPrincipalId().Equals(GetUserData()->GetOrganizationId()) &&
+					!acl->GetPrincipalId().Equals(GetUserData()->GetUltimateId()) &&
+					!acl->GetPrincipalId().Equals(GetUserData()->GetUltimateCountryId())
+					))
+				// do nothing for now
+				continue;
+		}
+		return true;
+	}
+
+	LICENSING_EXPORT bool IsExpired()
+	{
+		return IsTimeExpired(GetPolicyExpiresOn());
+	};
+
+	LICENSING_EXPORT std::shared_ptr<Policy::Qualifier> GetQualifier(Utf8String qualifierName, Utf8String productId, Utf8String featureString)
+	{
+		std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
+		// check if policy is not empty
+		if (GetJson().isNull())
+			return matchingQualifier;
+		// check if product is in securables
+		std::shared_ptr<Policy::SecurableData> securableData = GetFirstMatchingSecurableData(GetSecurableData(), productId, featureString);
+
+		if (securableData != nullptr)
+		{
+			// try to find acl with SecurableId of securableData
+			std::shared_ptr<Policy::ACL> acl = nullptr;
+			auto acls = GetACLs();
+			acl = GetFirstMatchingACL(acls, securableData->GetSecurableId());
+			// if acl exists, look for matching qualifier
+			if (acl != nullptr)
+			{
+				// try to find qualifier with name
+				matchingQualifier = GetFirstMatchingQualifier(acl->GetQualifierOverrides(), qualifierName);
+			}
+			// if matching qualifier not found yet, search for it in securableData
+			if (matchingQualifier == nullptr)
+			{
+				matchingQualifier = GetFirstMatchingQualifier(securableData->GetQualifierOverrides(), qualifierName);
+			}
+		}
+		// if still no match, search for qualifier in DefaultQualifiers
+		if (matchingQualifier == nullptr)
+		{
+			matchingQualifier = GetFirstMatchingQualifier(GetDefaultQualifiers(), qualifierName);
+		}
+
+		return matchingQualifier;
+	}
+
+	LICENSING_EXPORT bool IsTrial(Utf8String productId, Utf8String featureString)
+	{
+		bool result = false;
+		auto qualifier = GetQualifier("UsageType", productId, featureString);
+		// check if UsageType is Trial
+		if (qualifier != nullptr)
+		{
+			result = qualifier->GetValue() == "Trial";
+		}
+		return result;
+	};
+
+	LICENSING_EXPORT bool IsAllowedOfflineUsage(Utf8String productId, Utf8String featureString)
+	{
+		bool result = false;
+		auto qualifier = GetQualifier("AllowOfflineUsage", productId, featureString);
+		// check if AllowOfflineUsage is TRUE
+		if (qualifier != nullptr)
+		{
+			result = qualifier->GetValue() == "TRUE";
+		}
+		return result;
+	}
+
+	LICENSING_EXPORT int GetOfflineDuration(Utf8String productId, Utf8String featureString)
+	{
+		int result = 0;
+		auto qualifier = GetQualifier("OfflineDuration", productId, featureString);
+		// get days of offline usage allowed
+		if (qualifier != nullptr)
+		{
+			result = std::stoi(qualifier->GetValue().c_str());
+		}
+		return result;
+	}
+
+	LICENSING_EXPORT Utf8String GetUsageType()
+	{
+		Utf8String result = "";
+		auto qualifier = GetFirstMatchingQualifier(GetDefaultQualifiers(), "UsageType");
+		if (qualifier != nullptr)
+		{
+			result = qualifier->GetValue();
+		}
+		return result;
+	}
+
+	LICENSING_EXPORT Policy::ProductStatus GetProductStatus(Utf8String productId, Utf8String featureString)
+	{
+		if (GetJson().isNull())
+		{
+			return Policy::ProductStatus::NoLicense;
+		}
+		auto securable = GetFirstMatchingSecurableData(GetSecurableData(), productId, featureString);
+		if (securable == nullptr)
+		{
+			return Policy::ProductStatus::NoLicense;
+		}
+		auto acl = GetFirstMatchingACL(GetACLs(), securable->GetSecurableId());
+		if (acl == nullptr)
+		{
+			return Policy::ProductStatus::NoLicense;
+		}
+		if (acl->GetAccessKind() == Policy::ACL::AccessKind::Denied)
+		{
+			return Policy::ProductStatus::Denied;
+		}
+		if (acl->GetAccessKind() == Policy::ACL::AccessKind::TrialExpired)
+		{
+			return Policy::ProductStatus::TrialExpired;
+		}
+		if (IsTrial(productId, featureString))
+		{
+			if (IsTimeExpired(acl->GetExpiresOn()))
+			{
+				return Policy::ProductStatus::TrialExpired;
+			}
+		}
+		return Policy::ProductStatus::Allowed;
+	}
+
+	LICENSING_EXPORT Policy::PolicyStatus GetPolicyStatus()
+	{
+		if (IsExpired())
+		{
+			return Policy::PolicyStatus::Expired;
+		}
+		if (!IsValid())
+		{
+			return Policy::PolicyStatus::Invalid;
+		}
+		return Policy::PolicyStatus::Valid;
+	}
+
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

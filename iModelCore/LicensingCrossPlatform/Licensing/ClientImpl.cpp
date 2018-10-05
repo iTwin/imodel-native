@@ -9,7 +9,6 @@
 #include "GenerateSID.h"
 #include "../PublicAPI/Licensing/Utils/LogFileHelper.h"
 #include "Logging.h"
-#include "PolicyToken.h"
 #include "UsageDb.h"
 
 #include <BeHttp/HttpError.h>
@@ -68,7 +67,7 @@ LicenseStatus ClientImpl::StartApplication()
         return LicenseStatus::Error;
     
     // Get policy token
-    m_policyToken = GetPolicyToken();
+    m_policy = GetPolicyToken();
 
     // Get product status
     LicenseStatus licStatus = GetProductStatus();
@@ -225,15 +224,15 @@ BentleyStatus ClientImpl::RecordUsage()
                           m_clientInfo->GetApplicationVersion().GetSub1(), m_clientInfo->GetApplicationVersion().GetSub2());
 
     LOG.debugv("RecordUsage - UsageLogEntry data: {ultimateId:%ld,principalId:%s,userId:%s,machineName:%s,machineSID:%s,userName:%s,userSID:%s,policyId:%s,securableId:%s,productId:%s,featureString:%s,version:%s,projectId:%s,correlationId:%s,eventTimeZ:%s,schemaVer:%f,source:%s,country:%s,usageType:%s}",
-               m_policyToken->GetUltimateSAPId(),
-               m_policyToken->GetPrincipalId().c_str(),
-               m_policyToken->GetUserId().c_str(),
+               m_policy->GetUltimateSAPId(),
+               m_policy->GetPrincipalId().c_str(),
+               m_policy->GetAppliesToUserId().c_str(),
                m_clientInfo->GetDeviceId().c_str(),
                gsid.GetMachineSID(m_clientInfo->GetDeviceId()).c_str(),
                m_userInfo.username.c_str(),
                gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()).c_str(),
-               m_policyToken->GetPolicyId().c_str(),
-               m_policyToken->GetSecurableId().c_str(),
+               m_policy->GetPolicyId().c_str(),
+               m_policy->GetSecurableId().c_str(),
                atoi(m_clientInfo->GetApplicationProductId().c_str()),
                m_featureString.c_str(),
                atoll(versionString.c_str()),
@@ -242,18 +241,18 @@ BentleyStatus ClientImpl::RecordUsage()
                eventTimeZ.c_str(),
                LICENSE_CLIENT_SCHEMA_VERSION,
                GetLoggingPostSource(LogPostingSource::RealTime).c_str(),
-               m_policyToken->GetCountry().c_str(),
-               m_policyToken->GetUsageType().c_str());
+               m_policy->GetCountry().c_str(),
+               m_policy->GetUsageType().c_str());
 
-    if (SUCCESS != m_usageDb->RecordUsage(m_policyToken->GetUltimateSAPId(),
-                                          m_policyToken->GetPrincipalId(),
-                                          m_policyToken->GetUserId(),
+    if (SUCCESS != m_usageDb->RecordUsage(m_policy->GetUltimateSAPId(),
+                                          m_policy->GetPrincipalId(),
+                                          m_policy->GetAppliesToUserId(),
                                           m_clientInfo->GetDeviceId(),
                                           gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
                                           m_userInfo.username,
                                           gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()),
-                                          m_policyToken->GetPolicyId(),
-                                          m_policyToken->GetSecurableId(),
+                                          m_policy->GetPolicyId(),
+                                          m_policy->GetSecurableId(),
                                           atoi(m_clientInfo->GetApplicationProductId().c_str()),
                                           m_featureString,
                                           atoll(versionString.c_str()),
@@ -262,8 +261,8 @@ BentleyStatus ClientImpl::RecordUsage()
                                           eventTimeZ,
                                           LICENSE_CLIENT_SCHEMA_VERSION,
                                           GetLoggingPostSource(LogPostingSource::RealTime),
-                                          m_policyToken->GetCountry(),
-                                          m_policyToken->GetUsageType()))
+                                          m_policy->GetCountry(),
+                                          m_policy->GetUsageType()))
         {
         LOG.error("RecordUsage - ERROR: Usage failed to be recorded.");
         return ERROR;
@@ -275,17 +274,16 @@ BentleyStatus ClientImpl::RecordUsage()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<PolicyToken> ClientImpl::GetPolicyToken()
+std::shared_ptr<Policy> ClientImpl::GetPolicyToken()
     {
-    auto policyToken = GetPolicy().get();
-
-    if (policyToken != nullptr)
+    auto policy = GetPolicy().get();
+    if (policy != nullptr)
         {
-        StorePolicyTokenInUsageDb(policyToken);
-		DeleteAllOtherUserPolicies(policyToken);
+        StorePolicyInUsageDb(policy);
+		DeleteAllOtherUserPolicies(policy);
         }
     
-    return policyToken;
+    return policy;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -312,7 +310,7 @@ BentleyStatus ClientImpl::PostUsageLogs()
     m_usageDb->CleanUpUsages();
 
     Utf8String ultimateId;
-    ultimateId.Sprintf("%ld", m_policyToken->GetUltimateSAPId());  
+    ultimateId.Sprintf("%ld", m_policy->GetUltimateSAPId());  
 
     LogFileHelper lfh;
     logFiles = lfh.GetLogFiles(Utf8String(usageLogPath.GetDirectoryName()));
@@ -450,7 +448,7 @@ UsageDb& ClientImpl::GetUsageDb()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<std::shared_ptr<PolicyToken>> ClientImpl::GetPolicy()
+folly::Future<std::shared_ptr<Policy>> ClientImpl::GetPolicy()
     {
     return folly::collectAll(GetCertificate(), PerformGetPolicyRequest()).then(
         [] (const std::tuple<folly::Try<Utf8String>, folly::Try<Utf8String>>& tup)
@@ -461,7 +459,7 @@ folly::Future<std::shared_ptr<PolicyToken>> ClientImpl::GetPolicy()
         Utf8String policyToken = std::get<1>(tup).value();
         policyToken.ReplaceAll("\"", "");
 
-        return PolicyToken::Create(JWToken::Create(policyToken, cert));
+        return Policy::Create(JWToken::Create(policyToken, cert));
         });
     }
 
@@ -494,7 +492,7 @@ void ClientImpl::CleanUpPolicies()
 	for (auto policy : GetPolicies())
 		{
 		// if policy is not valid, remove it from the database; no point in keeping it
-		if (!PolicyHelper::IsValid(policy))
+		if (!policy->IsValid())
 			{
 			m_usageDb->DeletePolicyFile(policy->GetPolicyId());
 			}
@@ -537,7 +535,7 @@ std::list<std::shared_ptr<Policy>> ClientImpl::GetUserPolicies()
 	for (auto json : jsonpolicies)
 		{
 		auto policy = Policy::Create(json);
-		if (!PolicyHelper::IsValid(policy))
+		if (!policy->IsValid())
 			continue;
 		if (policy->GetAppliesToUserId().Equals(m_userInfo.userId))
 			{
@@ -583,22 +581,24 @@ std::shared_ptr<Policy> ClientImpl::SearchForPolicy(Utf8String requestedProductI
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::DeleteAllOtherUserPolicies(std::shared_ptr<PolicyToken> policyToken)
+void ClientImpl::DeleteAllOtherUserPolicies(std::shared_ptr<Policy> policy)
 	{
-	m_usageDb->DeleteAllOtherUserPolicyFiles(policyToken->GetPolicyId(),
-		policyToken->GetUserId());
+	m_usageDb->DeleteAllOtherUserPolicyFiles(policy->GetPolicyId(),
+		policy->GetUserData()->GetUserId());
 	}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientImpl::StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken)
+void ClientImpl::StorePolicyInUsageDb(std::shared_ptr<Policy> policy)
 	{
-	m_usageDb->AddOrUpdatePolicyFile(policyToken->GetPolicyId(),
-		policyToken->GetUserId(),
-		policyToken->GetExpirationDate(),
-		policyToken->GetLastUpdateTime(),
-		policyToken->GetPolicyFile());
+	auto expiration = Utf8String(DateHelper::TimeToString(policy->GetPolicyExpiresOn()).c_str());
+	auto lastUpdate = Utf8String(DateHelper::TimeToString(policy->GetRequestData()->GetClientDateTime()).c_str());
+	m_usageDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
+		policy->GetAppliesToUserId(),
+		expiration,
+		lastUpdate,
+		policy->GetJson());
 	}
 
 /*--------------------------------------------------------------------------------------+
@@ -621,7 +621,7 @@ int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> poli
 		return 0;
 	}
 	// check if online usage is allowed; 
-	auto offlineDurationDays = PolicyHelper::GetOfflineDuration(policy, productId, featureString);
+	auto offlineDurationDays = policy->GetOfflineDuration(productId, featureString);
 	auto gracePeriodEndTime = DateHelper::AddDaysToTime(DateHelper::StringToTime(graceStartString.c_str()), offlineDurationDays);
 	auto daysLeft = DateHelper::GetDaysLeftUntilTime(gracePeriodEndTime);
 	return daysLeft;
@@ -646,34 +646,34 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 		return LicenseStatus::NotEntitled;
 		}
 	// get PolicyStatus
-	auto policyStatus = PolicyHelper::GetPolicyStatus(policy);
+	auto policyStatus = policy->GetPolicyStatus();
 	// if not valid, return LicenseStatus::DisabledByPolicy
-	if (policyStatus != PolicyHelper::PolicyStatus::Valid)
+	if (policyStatus != Policy::PolicyStatus::Valid)
 		{
 		return LicenseStatus::DisabledByPolicy;
 		}
 	// get GetProductLicenseStatus
-	auto productStatus = PolicyHelper::GetProductStatus(policy, productId, m_featureString);
+	auto productStatus = policy->GetProductStatus(productId, m_featureString);
 	// if prodStatus is TrialExpired, return LicenseStatus::Expired
-	if (productStatus == PolicyHelper::ProductStatus::TrialExpired)
+	if (productStatus == Policy::ProductStatus::TrialExpired)
 		{
 		return LicenseStatus::Expired;
 		}
 	// if prodStatus is Denied, return LicenseStatus::AccessDenied
-	if (productStatus == PolicyHelper::ProductStatus::Denied)
+	if (productStatus == Policy::ProductStatus::Denied)
 		{
 		return LicenseStatus::AccessDenied;
 		}
 	// if prodStatus is NoLicense, return LicenseStatus::NotEntitled
-	if (productStatus == PolicyHelper::ProductStatus::NoLicense)
+	if (productStatus == Policy::ProductStatus::NoLicense)
 		{
 		return LicenseStatus::NotEntitled;
 		}
 	// if prodStatus is Allowed
-	if (productStatus == PolicyHelper::ProductStatus::Allowed)
+	if (productStatus == Policy::ProductStatus::Allowed)
 		{
 		// if (IsTrial) return LicenseStatus::Trial
-		if (PolicyHelper::IsTrial(policy, productId, m_featureString))
+		if (policy->IsTrial(productId, m_featureString))
 			{
 			return LicenseStatus::Trial;
 			}
@@ -681,7 +681,7 @@ LicenseStatus ClientImpl::GetProductStatus(int requestedProductId)
 		if (HasOfflineGracePeriodStarted())
 			{
 			// if not allowed to use offline, return LicenseStatus::DisabledByPolicy
-			if (!PolicyHelper::IsAllowedOfflineUsage(policy, productId, m_featureString))
+			if (!policy->IsAllowedOfflineUsage(productId, m_featureString))
 				{
 				return LicenseStatus::DisabledByPolicy;
 				}

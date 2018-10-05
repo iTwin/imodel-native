@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: LicensingCrossPlatform/Licensing.mki $
+#     $Source: Licensing.mki $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -9,13 +9,11 @@
 %include MultiCppCompileRule.mki
 
 Headers =
-Headers + $(SourceDir)PolicyHelper.h
 Headers + $(SourceDir)DateHelper.h
 Headers + $(SourceDir)DummyJsonHelper.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
-Headers + $(SourceDir)PolicyToken.h
 Headers + $(SourceDir)UsageDb.h
 Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)LicenseStatus.h
@@ -37,8 +35,6 @@ $(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${Multi
 $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
-
-$(o)PolicyToken$(oext)               : $(SourceDir)PolicyToken.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)Policy$(oext)                    : $(SourceDir)Policy.cpp $(Headers) ${MultiCompileDepends}
 

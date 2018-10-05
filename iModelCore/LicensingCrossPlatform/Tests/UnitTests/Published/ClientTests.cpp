@@ -11,7 +11,6 @@
 #include <Licensing/Client.h>
 #include "../../../Licensing/ClientImpl.h"
 #include "../../../Licensing/UsageDb.h"
-#include "../../../Licensing/PolicyToken.h"
 #include "../../../Licensing/DummyJsonHelper.h"
 #include "../../../Licensing/DateHelper.h"
 #include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
@@ -204,16 +203,16 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	// Add empty policy to make sure does not cause issues for policy searching
 	client->GetUsageDb().AddOrUpdatePolicyFile("11111111-1111-1111-1111-111111111111", "", "", "", "");
 
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValid));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrial));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyValidTrialExpired));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyExpired));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoSecurables));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoACLs));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoUserData));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyNoRequestData));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyIdBad));
-	client->AddPolicyTokenToDb(PolicyToken::Create(jsonPolicyOfflineNotAllowed));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyValid));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrial));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyValidTrialExpired));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyExpired));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyNoSecurables));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyNoACLs));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyNoUserData));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyNoRequestData));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyIdBad));
+	client->AddPolicyToDb(Policy::Create(jsonPolicyOfflineNotAllowed));
 	
 	// NOTE: statuses are cast to int so that if test fails, logs will show human-readable values (rather than byte representation of enumeration value)
 	ASSERT_EQ((int)client->GetProductStatus(), (int)LicenseStatus::AccessDenied); // Obtained test policy should result in AccessDenied
@@ -255,32 +254,32 @@ TEST_F(ClientTests, CleanUpPolicies_Success)
 	auto jsonPolicyValid = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9904, "", 1, false);
 	auto jsonPolicyValid2 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userId, 9905, "", 1, false);
 	auto jsonPolicyValid3 = DummyJsonHelper::CreatePolicyFull(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), DateHelper::AddDaysToCurrentTime(7), userIdOther, 9906, "", 1, false);
-	auto expiredPolicyToken1 = PolicyToken::Create(jsonPolicyExpired1);
-	auto expiredPolicyToken2 = PolicyToken::Create(jsonPolicyExpired2);
-	auto validPolicyToken = PolicyToken::Create(jsonPolicyValid);
-	auto validPolicyToken2 = PolicyToken::Create(jsonPolicyValid2);
-	auto validPolicyToken3 = PolicyToken::Create(jsonPolicyValid3);
-	client->AddPolicyTokenToDb(expiredPolicyToken1);
-	client->AddPolicyTokenToDb(expiredPolicyToken2);
-	client->AddPolicyTokenToDb(validPolicyToken);
-	client->AddPolicyTokenToDb(validPolicyToken2);
-	client->AddPolicyTokenToDb(validPolicyToken3);
+	auto expiredPolicy1 = Policy::Create(jsonPolicyExpired1);
+	auto expiredPolicy2 = Policy::Create(jsonPolicyExpired2);
+	auto validPolicy = Policy::Create(jsonPolicyValid);
+	auto validPolicy2 = Policy::Create(jsonPolicyValid2);
+	auto validPolicy3 = Policy::Create(jsonPolicyValid3);
+	client->AddPolicyToDb(expiredPolicy1);
+	client->AddPolicyToDb(expiredPolicy2);
+	client->AddPolicyToDb(validPolicy);
+	client->AddPolicyToDb(validPolicy2);
+	client->AddPolicyToDb(validPolicy3);
 	// all 3 should be located
-	ASSERT_NE(client->GetPolicyWithId(expiredPolicyToken1->GetPolicyId()),nullptr);
-	ASSERT_NE(client->GetPolicyWithId(expiredPolicyToken2->GetPolicyId()), nullptr);
-	ASSERT_NE(client->GetPolicyWithId(validPolicyToken->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(expiredPolicy1->GetPolicyId()),nullptr);
+	ASSERT_NE(client->GetPolicyWithId(expiredPolicy2->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(validPolicy->GetPolicyId()), nullptr);
 	// clean up policies; expired policy should be removed
 	client->CleanUpPolicies();
 	// invalid policy should NOT be located and thus be a nullptr
-	ASSERT_EQ(client->GetPolicyWithId(expiredPolicyToken1->GetPolicyId()), nullptr);
-	ASSERT_EQ(client->GetPolicyWithId(expiredPolicyToken2->GetPolicyId()), nullptr);
-	ASSERT_NE(client->GetPolicyWithId(validPolicyToken->GetPolicyId()), nullptr);
+	ASSERT_EQ(client->GetPolicyWithId(expiredPolicy1->GetPolicyId()), nullptr);
+	ASSERT_EQ(client->GetPolicyWithId(expiredPolicy2->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(validPolicy->GetPolicyId()), nullptr);
 	// delete other policies for user; policies that don't match policyId for that user should be removed
-	client->DeleteAllOtherUserPolicies(validPolicyToken);
+	client->DeleteAllOtherUserPolicies(validPolicy);
 	// provided policy and other user's policy should remain, while the other user policy should be gone
-	ASSERT_NE(client->GetPolicyWithId(validPolicyToken->GetPolicyId()), nullptr);
-	ASSERT_EQ(client->GetPolicyWithId(validPolicyToken2->GetPolicyId()), nullptr);
-	ASSERT_NE(client->GetPolicyWithId(validPolicyToken3->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(validPolicy->GetPolicyId()), nullptr);
+	ASSERT_EQ(client->GetPolicyWithId(validPolicy2->GetPolicyId()), nullptr);
+	ASSERT_NE(client->GetPolicyWithId(validPolicy3->GetPolicyId()), nullptr);
 	}
 
 TEST_F(ClientTests, SendUsage_Success)

@@ -12,9 +12,7 @@
 #include <Licensing/LicenseStatus.h>
 
 #include "UsageDb.h"
-#include "PolicyToken.h"
 #include "Policy.h"
-#include "PolicyHelper.h"
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
@@ -70,7 +68,7 @@ private:
     Utf8String m_projectId;
     Utf8String m_correlationId;
     bool m_offlineMode;
-    std::shared_ptr<PolicyToken> m_policyToken;
+	std::shared_ptr<Policy> m_policy;
 
     void UsageHeartbeat(int64_t currentTime);
     void PolicyHeartbeat(int64_t currentTime);
@@ -83,9 +81,9 @@ private:
     bool HasOfflineGracePeriodStarted();
     int64_t GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> policy, Utf8String productId, Utf8String featureString);
 
-    void StorePolicyTokenInUsageDb(std::shared_ptr<PolicyToken> policyToken);
+    void StorePolicyInUsageDb(std::shared_ptr<Policy> policy);
     BentleyStatus RecordUsage();
-    std::shared_ptr<PolicyToken> GetPolicyToken();
+    std::shared_ptr<Policy> GetPolicyToken();
     BentleyStatus PostUsageLogs();
     folly::Future<Utf8String> PerformGetPolicyRequest();
     Utf8String GetLoggingPostSource(LogPostingSource lps) const;
@@ -115,16 +113,17 @@ public:
 
     LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
 
-    LICENSING_EXPORT folly::Future<std::shared_ptr<PolicyToken>> GetPolicy();
+    LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
 
     // Used in tests
     LICENSING_EXPORT UsageDb& GetUsageDb();
-    LICENSING_EXPORT void AddPolicyTokenToDb(std::shared_ptr<PolicyToken> policyToken) { StorePolicyTokenInUsageDb(policyToken); };
+	//LICENSING_EXPORT void AddPolicyTokenToDb(std::shared_ptr<PolicyToken> policyToken) { auto policy = Policy::Create(policyToken->GetPolicyFile()); StorePolicyTokenInUsageDb(policy); };
+	LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy) { StorePolicyInUsageDb(policy); };
 	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
 
 	// clean up policies; used internally, but also used in unit tests
 	LICENSING_EXPORT void CleanUpPolicies();
-	LICENSING_EXPORT void DeleteAllOtherUserPolicies(std::shared_ptr<PolicyToken> policyToken);
+	LICENSING_EXPORT void DeleteAllOtherUserPolicies(std::shared_ptr<Policy> policy);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE
