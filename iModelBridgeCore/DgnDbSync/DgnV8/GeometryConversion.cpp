@@ -1256,7 +1256,7 @@ void FixupTransformForPlacement2d(TransformR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double v8SymbolScale)
+GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool isPartCreate)
     {
     bool doFlatten = (!m_is3dDest && m_is3dSrc);
 
@@ -1404,9 +1404,9 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double
 
         Transform goopTrans = m_goopTrans;
 
-        if (0.0 != v8SymbolScale && 1.0 != fabs(v8SymbolScale))
+        if (isPartCreate && 0.0 != m_partScale && 1.0 != fabs(m_partScale))
             {
-            double partScale = fabs(1.0/v8SymbolScale);
+            double partScale = fabs(1.0/m_partScale);
 
             goopTrans.ScaleMatrixColumns(goopTrans, partScale, partScale, partScale);
             }
@@ -1657,6 +1657,7 @@ void AddEntry(DgnV8PathEntry& entry)
 struct DgnV8PartReference
 {
 DgnGeometryPartId       m_partId;
+double                  m_scale;
 Render::GeometryParams  m_geomParams;
 Transform               m_geomToLocal;
 DRange3d                m_localRange;
@@ -2614,7 +2615,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             if (!partId.IsValid())
                 {
-                GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, v8SymbolScale);
+                GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, true);
 
                 if (!geometry.IsValid())
                     continue;
@@ -2646,6 +2647,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
             DgnV8PartReference partRef;
 
             partRef.m_partId = partId;
+            partRef.m_scale = pathEntry.m_partScale;
             partRef.m_geomParams = pathEntry.m_geomParams;
             partRef.m_geomToLocal = geomToLocal;
             partRef.m_localRange = localRange;
@@ -3124,9 +3126,9 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
             Transform geomToLocal = partRef.m_geomToLocal;
             Render::GeometryParams geomParams = partRef.m_geomParams;
 
-            if (1.0 != fabs(v8SymbolScale))
+            if (1.0 != fabs(partRef.m_scale))
                 {
-                double partScale = fabs(v8SymbolScale);
+                double partScale = fabs(partRef.m_scale);
 
                 geomToLocal.ScaleMatrixColumns(geomToLocal, partScale, partScale, partScale);
                 }
@@ -3174,7 +3176,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 #ifdef TEST_AUXDATA_FILE
             GeometricPrimitivePtr geometry = createFromTestFile();
 #else
-            GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, 0.0);
+            GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, false);
 #endif
 
             if (!geometry.IsValid())
@@ -4477,7 +4479,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                     if (!partId.IsValid())
                         {
-                        GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, v8SymbolScale);
+                        GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, true);
 
                         if (!geometry.IsValid())
                             continue;
@@ -4509,6 +4511,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                     DgnV8PartReference partRef;
 
                     partRef.m_partId = partId;
+                    partRef.m_scale = pathEntry.m_partScale;
                     partRef.m_geomParams = pathEntry.m_geomParams;
                     partRef.m_geomToLocal = geomToLocal;
                     partRef.m_localRange = localRange;
@@ -4891,9 +4894,9 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                     Transform geomToLocal = partRef.m_geomToLocal;
                     Render::GeometryParams geomParams = partRef.m_geomParams;
 
-                    if (1.0 != fabs(v8SymbolScale))
+                    if (1.0 != fabs(partRef.m_scale))
                         {
-                        double partScale = fabs(v8SymbolScale);
+                        double partScale = fabs(partRef.m_scale);
 
                         geomToLocal.ScaleMatrixColumns(geomToLocal, partScale, partScale, partScale);
                         }
@@ -4936,7 +4939,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
                  //   if (0 == (++iEntry % 10))
                  //       m_converter.ReportProgress();
 
-                    GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, 0.0);
+                    GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, false);
 
                     if (!geometry.IsValid())
                         continue;
