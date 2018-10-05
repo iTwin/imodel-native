@@ -166,6 +166,7 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     if (strcmp("MCNC", name) == 0) return FormatSpecialCodes::SignatureMCNCN;    // :0:0
     if (strcmp("MCCN", name) == 0) return FormatSpecialCodes::SignatureMCCN;      // ::0
     if (strcmp("MCN", name) == 0) return FormatSpecialCodes::SignatureMCN;        // :0
+    if (strcmp("NN", name) == 0) return FormatSpecialCodes::SignatureNN;
 
     return FormatSpecialCodes::SignatureInvalid;
     }

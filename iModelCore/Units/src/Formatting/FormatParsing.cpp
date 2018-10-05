@@ -9,6 +9,7 @@
 #include <Formatting/FormattingApi.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
+#include <regex>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -652,12 +653,69 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
     if (Utf8String::IsNullOrEmpty(input))
         return;
 
+    //special case for station format in order not to brake functionality below
+    if (nullptr != m_format && m_format->GetPresentationType() == PresentationType::Station)
+        {
+        Utf8String specialChars(R"*(([]()\.*+^?|{}$))*"); // if separator is one of these, we need to escape
+
+        auto signWithSpacePattern(R"*(([+-]?)\s*)*");
+        auto integerPattern(R"*((0|[1-9]\d*))*");
+        auto realNumberPattern(R"*((\d*\.\d+|\d+))*");
+
+        std::string separatorString(1, m_format->GetNumericSpec()->GetStationSeparator());
+        auto separator = separatorString.c_str();
+
+        Utf8String separatorPattern;
+        if (-1 != specialChars.find(separator))
+            separatorPattern.append("\\");
+        separatorPattern.append(separator);
+
+        Utf8String regexString(signWithSpacePattern);
+        regexString.append(integerPattern).append(separatorPattern).
+            append(realNumberPattern);
+
+        std::regex regex { regexString.c_str() };
+        std::smatch matches;
+
+        Utf8String inputString(input);
+        inputString.Trim();
+        std::string const inputStringForRegex(inputString.c_str());
+
+        if (std::regex_search(inputStringForRegex, matches, regex))
+            {
+            auto sign(matches[1].str());
+            auto majorNumber(matches[2].str());
+            auto minorNumber(matches[3].str());
+
+            if ((Utf8String::IsNullOrEmpty(sign.c_str()) && inputString.StartsWith(majorNumber.c_str()) ||
+                !Utf8String::IsNullOrEmpty(sign.c_str()) && inputString.StartsWith(sign.c_str())) &&
+                inputString.EndsWith(minorNumber.c_str()))
+                {
+                Utf8String numberWithSign(sign.c_str());
+                numberWithSign.append(majorNumber.c_str());
+                ng.Grab(numberWithSign.c_str());
+                auto firstSegment = FormatParsingSegment(ng);
+                m_segs.push_back(firstSegment);
+
+                ng.Grab(minorNumber.c_str());
+                auto secondSegment = FormatParsingSegment(ng);
+                m_segs.push_back(secondSegment);
+                }
+            else
+                m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidSyntax);
+            }
+        else
+            m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidSyntax);
+
+        return;
+        }
+
     while (!ng.IsEndOfLine())
         {
         ng.Grab(m_input, ind);
         if (ng.GetLength() > 0)  // a number is detected
             {
-            if (m_symbs.size() > 0)
+            if (!m_symbs.empty())
                 {
                 fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
                 m_segs.push_back(fps);
@@ -676,7 +734,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             csp = CursorScanPoint(m_input, ind);
             if (csp.IsSpace())
                 {
-                if (m_symbs.size() > 0)
+                if (!m_symbs.empty())
                     {
                     fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
                     m_segs.push_back(fps);
@@ -695,7 +753,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             }
         }
 
-    if (m_symbs.size() > 0)
+    if (!m_symbs.empty())
         {
         fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
         m_segs.push_back(fps);
@@ -813,11 +871,12 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     BEU::Quantity tmp = BEU::Quantity();
     Utf8String sig = GetSignature(false);
     // only a limited number of signatures will be recognized in this particular context
-    // reduced version: NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
-    //   3 FT - NU
-    //  1/3 FT  FU
+    // reduced version: NN, NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
+    //        3 FT - NU
+    //      1/3 FT - FU
+    //  50+00.1    - NN (station)
     BEU::UnitCP majP, midP;
-
+    
     BEU::UnitCP inputUnit;
     
     if (nullptr != format && nullptr != format->GetCompositeMajorUnit())
@@ -844,6 +903,12 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
             sign = m_segs[0].GetSign();
             qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *inputUnit);
             qty.Scale(sign);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNN:
+            if (format->GetPresentationType() == PresentationType::Station)
+                qty = BEU::Quantity(m_segs[0].GetReal() * std::pow(10, format->GetNumericSpec()->GetStationOffsetSize()) + m_segs[1].GetReal(), *inputUnit);
+            else
+                m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidSyntax);
             break;
         case Formatting::FormatSpecialCodes::SignatureNU:
             majP = m_segs[1].GetUnit();

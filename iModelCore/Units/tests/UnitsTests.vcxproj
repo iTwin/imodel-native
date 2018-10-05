@@ -100,6 +100,8 @@
     <NMakeOutput>$(OutRoot)Winx64\Product\Units-Gtest\UnitsTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);WIN32;_DEBUG</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir)\..\PrivateAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeReBuildCommandLine>bb re Units:PublishedTests Units:Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re Units:PublishedTests Units:Gtest -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>UnitsTests.exe</NMakeOutput>
