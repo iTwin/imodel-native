@@ -874,19 +874,19 @@ public:
                                                        DgnCategoryId categoryId);
 
     //! Record a mapping between a DgnV8 View and a DgnDb ID
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo);
+    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo, Utf8CP viewName);
 
     //! Looks to see if this view has already been converted
-    DGNDBSYNC_EXPORT bool TryFindView(DgnViewId&, double& lastModified, DgnV8ViewInfoCR viewInfo) const;
+    DGNDBSYNC_EXPORT bool TryFindView(DgnViewId&, double& lastModified, Utf8StringR v8ViewName, DgnV8ViewInfoCR viewInfo) const;
 
     //! Removes a mapping for a view that has been deleted
     DGNDBSYNC_EXPORT BeSQLite::DbResult DeleteView(DgnViewId viewId);
 
     //! Updates the information for a previously recorded view mapping
-    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateView(DgnViewId viewId, DgnV8ViewInfoCR viewInfo);
+    DGNDBSYNC_EXPORT BeSQLite::DbResult UpdateView(DgnViewId viewId, Utf8CP v8ViewName, DgnV8ViewInfoCR viewInfo);
 
-    //! Checks to see if the View syncinfo table exists.  This is only necessary when updating imodels created early during the EAP process
-    DGNDBSYNC_EXPORT bool ViewTableExists();
+    //! Checks to see if the View syncinfo table exists.
+    DGNDBSYNC_EXPORT void ValidateViewTable();
 
     //! Record sync info for a level.
     //! @param[out] info        Sync info for the level

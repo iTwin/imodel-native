@@ -333,6 +333,15 @@ bool    MaterialFactory::FindTextureFile (BeFileNameR filename)
     if (m_importer._FindTextureFile(filename))
         return  true;
 
+    // feedback about empty file name
+    if (filename.empty())
+        {
+        // except for the default "Global" which is in all DWG files but unlikely used by a user
+        if (m_dwgMaterial->GetObjectId() != m_importer.GetDwgDb().GetMaterialGlobalId())
+            m_importer.ReportIssue (DwgImporter::IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::MaterialNoFile(), m_materialName.c_str());
+        return  false;
+        }
+
     // warn about the missing material texture file
     Utf8PrintfString    context("Material \"%s\"", m_materialName.c_str());
     m_importer.ReportIssue (DwgImporter::IssueSeverity::Warning, IssueCategory::MissingData(), Issue::FileNotFound(), Utf8String(filename).c_str(), context.c_str());

@@ -248,7 +248,7 @@ void TiledFileConverter::ConvertRootModel()
     _ConvertSpatialViews();
 
     _ConvertElementsInModel(m_rootModelMapping);
-
+    m_hadAnyChanges = true;
     _OnFileComplete(*m_rootFile);
     }
 

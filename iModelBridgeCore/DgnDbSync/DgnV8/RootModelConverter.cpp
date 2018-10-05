@@ -360,6 +360,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
     v8JobProps["BridgeType"] = "IModelBridgeForMstn";
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
+    JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
 
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
     if (!jobSubject.IsValid())
@@ -772,7 +773,7 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
         return;
         }
-
+    m_hadAnyChanges = true;
 
     DgnV8Api::DgnModel& v8Model = v8mm.GetV8Model();
 
