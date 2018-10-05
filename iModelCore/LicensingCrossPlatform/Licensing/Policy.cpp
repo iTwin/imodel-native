@@ -254,7 +254,7 @@ std::shared_ptr<Policy::ACL> Policy::ACL::Create(const Json::Value& json)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::list<std::shared_ptr<Policy::Qualifier>> Policy::ACL::CreateQualifierOverrides(const Json::Value& json)
-{
+	{
 	std::list<std::shared_ptr<Policy::Qualifier>> reqSecItems;
 
 	if (!json.isArray())
@@ -266,7 +266,7 @@ std::list<std::shared_ptr<Policy::Qualifier>> Policy::ACL::CreateQualifierOverri
 		}
 
 	return reqSecItems;
-}
+	}
 
 // SecurableData Methods
 /*--------------------------------------------------------------------------------------+
@@ -329,4 +329,214 @@ std::shared_ptr<Policy::UserData> Policy::UserData::Create(const Json::Value& js
 	{
 	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::UserData>(new Policy::UserData(json));
+	}
+
+bool Policy::IsTimeExpired(const time_t& expirationTime)
+	{
+	double timeLeft = difftime(expirationTime, DateHelper::GetCurrentTime());
+	return timeLeft <= 0;
+	}
+
+std::shared_ptr<Policy::Qualifier> Policy::GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8String qualifierName)
+	{
+	std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
+	for (auto qualifier : qualifierList)
+		{
+		if (qualifier->GetName() == qualifierName)
+			{
+			matchingQualifier = qualifier;
+			break;
+			}
+		}
+	return matchingQualifier;
+	}
+
+std::shared_ptr<Policy::ACL> Policy::GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8String securableId)
+	{
+	std::shared_ptr<Policy::ACL> matchingACL = nullptr;
+	for (auto acl : aclList)
+		{
+		if (acl->GetSecurableId() == securableId)
+			{
+			matchingACL = acl;
+			break;
+			}
+		}
+	return matchingACL;
+	}
+
+std::shared_ptr<Policy::SecurableData> Policy::GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8String productId, Utf8String featureString)
+	{
+	std::shared_ptr<Policy::SecurableData> matchingSecurable = nullptr;
+	for (auto securable : securableList)
+		{
+		if (std::to_string(securable->GetProductId()).c_str() == productId &&
+			securable->GetFeatureString() == featureString)
+			{
+			matchingSecurable = securable;
+			break;
+			}
+		}
+	return matchingSecurable;
+	}
+
+bool Policy::IsValid()
+	{
+	// check if policy is not empty
+	if (GetJson().isNull())
+		return false;
+	// check if policy is expired
+	if (IsExpired())
+		return false;
+	// check if RequestData is present
+	if (GetRequestData()->GetUserId().Equals(""))
+		return false;
+	// check if UserData is present
+	if (GetUserData()->GetUserId().Equals(""))
+		return false;
+	// Todo: generate and check machine signature
+	// check if ACLs are valid (Ids)
+	for (auto acl : GetACLs())
+		{
+		if (Utf8String::IsNullOrEmpty(acl->GetPrincipalId().c_str()) ||
+			(
+				!acl->GetPrincipalId().Equals(GetUserData()->GetUserId()) &&
+				!acl->GetPrincipalId().Equals(GetUserData()->GetOrganizationId()) &&
+				!acl->GetPrincipalId().Equals(GetUserData()->GetUltimateId()) &&
+				!acl->GetPrincipalId().Equals(GetUserData()->GetUltimateCountryId())
+				))
+			// do nothing for now
+			continue;
+		}
+	return true;
+	}
+
+std::shared_ptr<Policy::Qualifier> Policy::GetQualifier(Utf8String qualifierName, Utf8String productId, Utf8String featureString)
+	{
+	std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
+	// check if policy is not empty
+	if (GetJson().isNull())
+		return matchingQualifier;
+	// check if product is in securables
+	std::shared_ptr<Policy::SecurableData> securableData = GetFirstMatchingSecurableData(GetSecurableData(), productId, featureString);
+
+	if (securableData != nullptr)
+		{
+		// try to find acl with SecurableId of securableData
+		std::shared_ptr<Policy::ACL> acl = nullptr;
+		auto acls = GetACLs();
+		acl = GetFirstMatchingACL(acls, securableData->GetSecurableId());
+		// if acl exists, look for matching qualifier
+		if (acl != nullptr)
+			{
+			// try to find qualifier with name
+			matchingQualifier = GetFirstMatchingQualifier(acl->GetQualifierOverrides(), qualifierName);
+			}
+		// if matching qualifier not found yet, search for it in securableData
+		if (matchingQualifier == nullptr)
+			{
+			matchingQualifier = GetFirstMatchingQualifier(securableData->GetQualifierOverrides(), qualifierName);
+			}
+		}
+	// if still no match, search for qualifier in DefaultQualifiers
+	if (matchingQualifier == nullptr)
+		{
+		matchingQualifier = GetFirstMatchingQualifier(GetDefaultQualifiers(), qualifierName);
+		}
+
+	return matchingQualifier;
+	}
+
+bool Policy::IsTrial(Utf8String productId, Utf8String featureString)
+	{
+	bool result = false;
+	auto qualifier = GetQualifier("UsageType", productId, featureString);
+	// check if UsageType is Trial
+	if (qualifier != nullptr)
+		{
+		result = qualifier->GetValue() == "Trial";
+		}
+	return result;
+	}
+
+bool Policy::IsAllowedOfflineUsage(Utf8String productId, Utf8String featureString)
+	{
+	bool result = false;
+	auto qualifier = GetQualifier("AllowOfflineUsage", productId, featureString);
+	// check if AllowOfflineUsage is TRUE
+	if (qualifier != nullptr)
+		{
+		result = qualifier->GetValue() == "TRUE";
+		}
+	return result;
+	}
+
+int Policy::GetOfflineDuration(Utf8String productId, Utf8String featureString)
+	{
+	int result = 0;
+	auto qualifier = GetQualifier("OfflineDuration", productId, featureString);
+	// get days of offline usage allowed
+	if (qualifier != nullptr)
+		{
+		result = std::stoi(qualifier->GetValue().c_str());
+		}
+	return result;
+	}
+
+Utf8String Policy::GetUsageType()
+	{
+	Utf8String result = "";
+	auto qualifier = GetFirstMatchingQualifier(GetDefaultQualifiers(), "UsageType");
+	if (qualifier != nullptr)
+		{
+		result = qualifier->GetValue();
+		}
+	return result;
+	}
+
+Policy::ProductStatus Policy::GetProductStatus(Utf8String productId, Utf8String featureString)
+	{
+	if (GetJson().isNull())
+		{
+		return Policy::ProductStatus::NoLicense;
+		}
+	auto securable = GetFirstMatchingSecurableData(GetSecurableData(), productId, featureString);
+	if (securable == nullptr)
+		{
+		return Policy::ProductStatus::NoLicense;
+		}
+	auto acl = GetFirstMatchingACL(GetACLs(), securable->GetSecurableId());
+	if (acl == nullptr)
+		{
+		return Policy::ProductStatus::NoLicense;
+		}
+	if (acl->GetAccessKind() == Policy::ACL::AccessKind::Denied)
+		{
+		return Policy::ProductStatus::Denied;
+		}
+	if (acl->GetAccessKind() == Policy::ACL::AccessKind::TrialExpired)
+		{
+		return Policy::ProductStatus::TrialExpired;
+		}
+	if (IsTrial(productId, featureString))
+		{
+		if (IsTimeExpired(acl->GetExpiresOn()))
+			{
+			return Policy::ProductStatus::TrialExpired;
+			}
+		}
+	return Policy::ProductStatus::Allowed;
+	}
+
+Policy::PolicyStatus Policy::GetPolicyStatus()
+	{
+	if (IsExpired())
+		{
+		return Policy::PolicyStatus::Expired;
+		}
+	if (!IsValid())
+		{
+		return Policy::PolicyStatus::Invalid;
+		}
+	return Policy::PolicyStatus::Valid;
 	}
