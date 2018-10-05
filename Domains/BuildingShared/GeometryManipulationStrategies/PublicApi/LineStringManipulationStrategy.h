@@ -17,11 +17,10 @@ struct LineStringManipulationStrategy : public CurvePrimitiveManipulationStrateg
     DEFINE_T_SUPER(CurvePrimitiveManipulationStrategy)
 
     private:
-        LineStringManipulationStrategy() : T_Super() {}
-
         template <typename T> void UpdateKeyPoint(size_t index, T updateFn);
 
     protected:
+        LineStringManipulationStrategy() : T_Super() {}
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<IGeometryPtr> _FinishConstructionGeometry() const override;
 
