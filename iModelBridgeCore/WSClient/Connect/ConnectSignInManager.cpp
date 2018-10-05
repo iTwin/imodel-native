@@ -682,6 +682,17 @@ void ConnectSignInManager::StartConnectionClientListener()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Giedrius.Kairys       09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConnectSignInManager::IsConnectionClientListenerStarted()
+    {
+    if (m_connectionClientListener != nullptr)
+        return true;
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManager::ConnectionClientListener *ConnectSignInManager::ConnectionClientListener::s_instance = nullptr;
