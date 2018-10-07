@@ -631,6 +631,39 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 10/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitSpecificationConversionTest, DollarsUnitsPassThroughWithoutChangeToSI)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="OldUnits" version="01.00" displayLabel="Old Units test" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+            <ECClass typeName="Pipe" isDomainClass="True">
+                <ECProperty propertyName="Cost" typeName="double">
+                    <ECCustomAttributes>
+                        <UnitSpecification xmlns="Unit_Attributes.01.00">
+                            <KindOfQuantityName>MONEY</KindOfQuantityName>
+                            <DimensionName>ONE</DimensionName>
+                            <UnitName>DOLLAR</UnitName>
+                        </UnitSpecification>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
+
+    EXPECT_STREQ("MONEY", schema->GetClassCP("Pipe")->GetPropertyP("Cost")->GetKindOfQuantity()->GetName().c_str());
+    EXPECT_STREQ("US_DOLLAR", schema->GetClassCP("Pipe")->GetPropertyP("Cost")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Colin.Kerr                 01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(UnitSpecificationConversionTest, PercentUnitsPassThroughWithoutChangeToSI)
