@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECInstanceFinder.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,7 @@ struct ECInstanceFinder final
         private:
             int m_relatedDirections;
             uint8_t m_relationshipDepth;
-            ECN::ECClassCP m_ecClass;
+            // unused - ECN::ECClassCP m_ecClass;
 
         public:
             //! Options to gather instances, related instances, and relationship instances between them 
