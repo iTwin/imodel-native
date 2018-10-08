@@ -211,7 +211,7 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_FileSmallerThanChunk_U
     uint32_t fileSize = 200;
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("TestUrl", request.GetUrl().c_str());
         EXPECT_EQ(fileSize, request.GetRequestBody()->GetLength());

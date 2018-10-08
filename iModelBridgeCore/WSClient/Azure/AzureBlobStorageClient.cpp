@@ -177,16 +177,16 @@ AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendAsOneChunk
 Utf8StringCR url,
 HttpBodyPtr httpBody,
 uint64_t fileSize,
-HttpRequest::ProgressCallbackCR progressCallback,
+Http::Request::ProgressCallbackCR progressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    HttpRequest request(url, "PUT", m_customHandler);
+    Http::Request request(url, "PUT", m_customHandler);
     request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
     request.SetRequestBody(httpBody);
-    SetCommonRequestOptions(request, HttpRequest::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, progressCallback, ct);
+    SetCommonRequestOptions(request, Http::Request::RetryOption::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, nullptr, progressCallback, ct);
 
-    return request.PerformAsync()->Then<AzureResult>([=] (HttpResponseCR httpResponse)
+    return request.PerformAsync()->Then<AzureResult>([=] (Http::ResponseCR httpResponse)
         {
         return ResolveFinalResponse(httpResponse);
         });
