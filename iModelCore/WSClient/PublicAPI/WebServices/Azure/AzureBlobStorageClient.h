@@ -92,7 +92,7 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             Utf8StringCR url,
             HttpBodyPtr httpBody,
             uint64_t fileSize,
-            HttpRequest::ProgressCallbackCR progressCallback,
+            Http::Request::ProgressCallbackCR progressCallback,
             ICancellationTokenPtr ct
             ) const;
 
