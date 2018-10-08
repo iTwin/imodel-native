@@ -6639,9 +6639,9 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSupplied_ProgressHan
     ICachingDataSource::ProgressHandler progressHandler;
 
     progressHandler.progressCallback = [] (ICachingDataSource::ProgressCR) {};
-    progressHandler.shouldReportQueryProgress = [] (const IQueryProvider::Query& query)
+    progressHandler.shouldReportInstanceProgress = [=] (ECInstanceKeyCR instanceKey, CacheTransactionCR txn)
         {
-        EXPECT_EQ(query.key.GetName(), "Foo");
+        EXPECT_EQ(newInstanceKey, instanceKey);
         return true;
         };
 
@@ -6682,9 +6682,9 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedFilteringAll
         EXPECT_PROGRESS_EQ(expectedProgress[index], progress);
         index++;
         };
-    progressHandler.shouldReportQueryProgress = [] (const IQueryProvider::Query& query)
+    progressHandler.shouldReportInstanceProgress = [=] (ECInstanceKeyCR instanceKey, CacheTransactionCR txn)
         {
-        EXPECT_EQ(query.key.GetName(), "Foo");
+        EXPECT_EQ(newInstanceKey, instanceKey);
         return false;
         };
 

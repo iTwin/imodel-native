@@ -250,6 +250,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Uses Connection Client API to listen to events fired by Connection Client
         WSCLIENT_EXPORT void StartConnectionClientListener();
 
+        //! Check if Connection Client listener is started
+        WSCLIENT_EXPORT bool IsConnectionClientListenerStarted();
+
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
