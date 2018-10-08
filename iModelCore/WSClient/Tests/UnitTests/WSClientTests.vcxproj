@@ -82,6 +82,7 @@
     <ClInclude Include="Published\WebServices\Cache\Util\MockSelectProvider.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ProgressFilterTests.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
+    <ClInclude Include="Published\WebServices\Client\MockRepositoryInfoListener.h" />
     <ClInclude Include="Published\WebServices\Client\Response\WSUploadResponseTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSChangesetTests.h" />
     <ClInclude Include="Published\WebServices\Client\WSJobTests.h" />

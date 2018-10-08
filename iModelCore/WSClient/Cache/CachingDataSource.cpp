@@ -1756,7 +1756,7 @@ AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::SyncCachedData
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ProgressCallback onProgress,
+ProgressHandler progressHandler,
 ICancellationTokenPtr ct
 )
     {
@@ -1766,7 +1766,7 @@ ICancellationTokenPtr ct
         std::move(initialInstances),
         std::move(initialQueries),
         std::move(queryProviders),
-        std::move(onProgress),
+        std::move(progressHandler),
         CreateCancellationToken(ct)
         );
 

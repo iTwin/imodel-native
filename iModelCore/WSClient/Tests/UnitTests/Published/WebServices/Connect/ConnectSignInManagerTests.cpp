@@ -1374,14 +1374,14 @@ TEST_F(ConnectSignInManagerTests, GetConnectionClientToken_ReturnSuccessWithToke
 
     Utf8StringCR uri = "";
     SamlTokenPtr token = StubSamlTokenWithUser("TestUser");
-    ON_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri)).WillByDefault(Return(token));
+    ON_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri, _)).WillByDefault(Return(token));
     ON_CALL(*connectionClient, IsRunning()).WillByDefault(Return(true));
 
     EXPECT_CALL(*connectionClient, IsInstalled()).WillOnce(Return(true));
     EXPECT_CALL(*connectionClient, IsRunning()).WillOnce(Return(true));
     EXPECT_CALL(*connectionClient, StartClientApp()).Times(0);
     EXPECT_CALL(*connectionClient, IsLoggedIn()).WillOnce(Return(true));
-    EXPECT_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri)).WillOnce(Return(token));
+    EXPECT_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri, _)).WillOnce(Return(token));
                                     
     auto result = manager->GetConnectionClientToken(uri);
     EXPECT_NE(nullptr, result);
@@ -1398,7 +1398,7 @@ TEST_F(ConnectSignInManagerTests, GetConnectionClientToken_CantStartClient_Retur
 
     Utf8StringCR uri = "";
     SamlTokenPtr token = StubSamlTokenWithUser("TestUser");
-    ON_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri)).WillByDefault(Return(token));
+    ON_CALL(*connectionClient, GetSerializedDelegateSecurityToken(uri, _)).WillByDefault(Return(token));
     ON_CALL(*connectionClient, IsRunning()).WillByDefault(Return(false));
 
     EXPECT_CALL(*connectionClient, IsInstalled()).WillOnce(Return(true));

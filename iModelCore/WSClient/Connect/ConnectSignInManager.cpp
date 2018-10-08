@@ -462,9 +462,10 @@ AsyncTaskPtr<ConnectionClientTokenResult> ConnectSignInManager::GetConnectionCli
     if (!m_connectionClient->IsLoggedIn())
         return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_ConnectionClientNotLoggedIn_Message)));
 
-    SamlTokenPtr samlToken = m_connectionClient->GetSerializedDelegateSecurityToken(rpUri);
+    Utf8String errorString;
+    SamlTokenPtr samlToken = m_connectionClient->GetSerializedDelegateSecurityToken(rpUri, &errorString);
     if (samlToken == nullptr)
-        return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(ConnectLocalizedString(ALERT_UnsupportedToken)));
+        return CreateCompletedAsyncTask(ConnectionClientTokenResult::Error(errorString.empty() ? ConnectLocalizedString(ALERT_UnsupportedToken) : errorString));
 
     return  CreateCompletedAsyncTask(ConnectionClientTokenResult::Success(samlToken));
     }
@@ -509,6 +510,17 @@ void ConnectSignInManager::StartConnectionClientListener()
 
     m_connectionClientListener = std::make_shared<ConnectionClientListener>(*this);
     m_connectionClient->AddClientEventListener(m_connectionClientListener->callback);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Giedrius.Kairys       09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConnectSignInManager::IsConnectionClientListenerStarted()
+    {
+    if (m_connectionClientListener != nullptr)
+        return true;
+
+    return false;
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -27,12 +27,12 @@ CachingDataSourcePtr ds,
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ICachingDataSource::ProgressCallback onProgress,
+ICachingDataSource::ProgressHandler progressHandler,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
-m_onProgress(onProgress ? onProgress : [] (CachingDataSource::ProgressCR) {})
+m_progressHandler(progressHandler)
     {
     for (auto& key : initialInstances)        
         m_initialInstances.push_back(Instance(key));
@@ -50,13 +50,13 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     size_t synced = m_syncedInitialInstances + m_syncedQueries;
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
-    size_t syncedInstances = m_syncedInstances;
-    size_t totalInstances = m_instancesWithQueriesProvided.size();
+    size_t syncedInstances = m_syncedInstancesToReportProgress.size();
+    size_t totalInstances = m_instancesToReportProgress.size();
 
     if (totalInstances == 0)
         totalInstances = m_initialInstances.size();
 
-    m_onProgress({        
+    m_progressHandler.progressCallback({
         progress,
         {(double) syncedInstances, (double) totalInstances},
         m_downloadBytesProgress,
@@ -201,7 +201,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         {
         if (IsTaskCanceled())
             return;
-        
+
         auto txn = m_ds->StartCacheTransaction();
         if (result.IsSuccess())
             {
@@ -229,7 +229,12 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
             {
             providedQuery->instance->Remove(*providedQuery);
             if (providedQuery->instance->IsComplete())
-                m_syncedInstances++;
+                {
+                auto instanceKey = providedQuery->instance->key;
+                auto reportProgress = m_progressHandler.shouldReportInstanceProgress(instanceKey, txn);
+                if (reportProgress)
+                    m_syncedInstancesToReportProgress.insert(instanceKey);
+                }
             }
 
         m_syncedQueries++;
@@ -273,8 +278,14 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, ECInstanceKeyCR i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively)
     {
-    if (m_instancesWithQueriesProvided.find(instanceKey) != m_instancesWithQueriesProvided.end())
+    if (m_instanceQueriesPrepared.find(instanceKey) != m_instanceQueriesPrepared.end())
         return;
+
+    m_instanceQueriesPrepared.insert(instanceKey);
+
+    auto reportProgress = m_progressHandler.shouldReportInstanceProgress(instanceKey, txn);
+    if (reportProgress)
+        m_instancesToReportProgress.insert(instanceKey);
 
     bool isPersistent = IsInstancePersistent(txn, instanceKey);
     auto instancePtr = std::make_shared<Instance>(instanceKey);
@@ -289,7 +300,7 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
                 auto cacheQueryPtr = std::make_shared<CacheQuery>(query);
                 cacheQueryPtr->instance = instancePtr;
                 instancePtr->cacheQueries.push_back(cacheQueryPtr);
-                
+
                 m_queriesToCache.insert(m_queriesToCache.end(), cacheQueryPtr);
                 }
             }
@@ -310,10 +321,8 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
 
     size_t instanceQueriesCount = instancePtr->cacheQueries.size();
     m_totalQueries += instanceQueriesCount;
-    if (instanceQueriesCount == 0)
-        m_syncedInstances++;
-    
-    m_instancesWithQueriesProvided.insert(instanceKey);
+    if (instanceQueriesCount == 0 && reportProgress)
+        m_syncedInstancesToReportProgress.insert(instancePtr->key);
     }
 
 /*--------------------------------------------------------------------------------------+

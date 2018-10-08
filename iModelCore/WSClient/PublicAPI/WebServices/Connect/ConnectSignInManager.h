@@ -170,6 +170,9 @@ struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_thi
         //! Uses Connection Client API to listen to events fired by Connection Client
         WSCLIENT_EXPORT void StartConnectionClientListener();
 
+        //! Check if Connection Client listener is started
+        WSCLIENT_EXPORT bool IsConnectionClientListenerStarted();
+
         //! Get token's connect environment from local state
         WSCLIENT_EXPORT UrlProvider::Environment ReadConnectEnvironment();
     };
