@@ -47,16 +47,20 @@ struct SyncCachedDataTask : public CachingTaskBase
             };
         
     private:
-        bvector<IQueryProviderPtr>          m_queryProviders;
+        bvector<IQueryProviderPtr> m_queryProviders;
 
-        bvector<Instance>        			       m_initialInstances;
-        std::deque<std::shared_ptr<CacheQuery>>    m_queriesToCache;
+        bvector<Instance> m_initialInstances;
+        std::deque<std::shared_ptr<CacheQuery>> m_queriesToCache;
+
+        bset<ECInstanceKey> m_instancesToReportProgress;
+        bset<ECInstanceKey> m_syncedInstancesToReportProgress;
+
         bmap<ECInstanceKey, ICancellationTokenPtr> m_filesToDownload;
 
-        bset<ECInstanceKey>                     m_instancesWithQueriesProvided;
-        std::shared_ptr<ECInstanceKeyMultiMap>  m_persistentInstances;             
+        bset<ECInstanceKey> m_instanceQueriesPrepared;
+        std::shared_ptr<ECInstanceKeyMultiMap> m_persistentInstances;             
 
-        ICachingDataSource::ProgressCallback m_onProgress;
+        ICachingDataSource::ProgressHandler m_progressHandler;
 
         size_t m_syncedInstances = 0;
         size_t m_syncedInitialInstances = 0;
@@ -89,7 +93,7 @@ struct SyncCachedDataTask : public CachingTaskBase
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ICachingDataSource::ProgressCallback onProgress,
+            ICachingDataSource::ProgressHandler progressHandler,
             ICancellationTokenPtr ct
             );
     };

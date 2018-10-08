@@ -464,6 +464,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         
         // Taken from WebServices team .NET implementation
         static Utf8String UrlDecode(Utf8String url);
+        static Utf8String ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId);
 
     public:
         //! @param[in] serverUrl - address to supported server/site
@@ -503,8 +504,6 @@ struct WSRepositoryClient : public IWSRepositoryClient
         //! @param[out] remainingPathOut - remaining URL path and/or query after repository identifier
         //! @return parsed WSRepository or invalid if there was an error
         WSCLIENT_EXPORT static WSRepository ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut = nullptr);
-
-        WSCLIENT_EXPORT static Utf8String ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId);
 
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.

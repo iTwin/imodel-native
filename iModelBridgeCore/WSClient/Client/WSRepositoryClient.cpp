@@ -645,13 +645,13 @@ WSRepository WSRepositoryClient::ParseRepositoryUrl(Utf8StringCR url, Utf8String
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String WSRepositoryClient::ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId)
     {
-    bvector<Utf8String> splits;
-    BeStringUtilities::Split(repositoryId.c_str(), "--", splits);
-
-    if (2 != splits.size())
+    std::regex regex(R"(((.+?)--[^\/\?#]+))");
+    std::cmatch matches;
+    std::regex_search(repositoryId.c_str(), matches, regex);
+    if (matches.empty() && matches.size() != 3)
         return "";
 
-    return splits[0];
+    return (matches[2].str().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
