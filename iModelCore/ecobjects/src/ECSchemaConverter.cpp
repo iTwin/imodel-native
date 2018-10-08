@@ -1044,7 +1044,10 @@ bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::Unit
 
 bool unitIsAcceptable (Units::UnitCP unit)
     {
-    return unit->IsSI() || 0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "PERCENTAGE") || 0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "NUMBER");
+    return  unit->IsSI() ||
+            0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "PERCENTAGE") ||
+            0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "NUMBER") ||
+            0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "CURRENCY");
     }
 
 ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
