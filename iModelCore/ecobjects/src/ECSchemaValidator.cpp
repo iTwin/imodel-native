@@ -722,6 +722,24 @@ static ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constrai
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Aurora.Lane                  10/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+static ECObjectsStatus CheckEndpointForElementAspect(ECRelationshipConstraintCR endpoint, Utf8CP classname, Utf8CP constraintType)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    ECClassCP abstractClass = endpoint.GetAbstractConstraint();
+    if (abstractClass->Is("BisCore", "ElementAspect"))
+        {
+        status = ECObjectsStatus::Error;
+        LOG.errorv("Relationship class '%s' has ElementAspect '%s' listed as a %s. ElementAspects should not be at the receiving end of relationships.",
+                   classname, abstractClass->GetFullName(), constraintType);
+        }
+    return status;
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 // static
@@ -747,6 +765,22 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
     if (ECObjectsStatus::Success != CheckLocalDefinitions(sourceConstraint, "Source"))
         status = ECObjectsStatus::Error;
 
+    // RULE: ElementAspects should not be on receiving end of a relationship
+    //       if not derived from ElementOwns.
+    if (relClass->Is("BisCore", ElementOwnsUniqueAspect) || relClass->Is("BisCore", ElementOwnsMultiAspects))
+        return status;
+
+    if (ECRelatedInstanceDirection::Backward == relClass->GetStrengthDirection())
+        {
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(sourceConstraint, relClass->GetFullName(), "source"))
+            status = ECObjectsStatus::Error;
+        }
+    else
+        {
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(targetConstraint, relClass->GetFullName(), "target"))
+            status = ECObjectsStatus::Error;
+        }
+    
     return status;
     }
 
