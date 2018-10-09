@@ -62,7 +62,6 @@ struct SyncCachedDataTask : public CachingTaskBase
 
         ICachingDataSource::ProgressHandler m_progressHandler;
 
-        size_t m_syncedInstances = 0;
         size_t m_syncedInitialInstances = 0;
         size_t m_syncedQueries = 0;
         size_t m_totalQueries = 0;
