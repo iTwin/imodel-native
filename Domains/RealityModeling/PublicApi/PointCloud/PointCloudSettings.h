@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloud/PointCloudSettings.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -105,8 +105,8 @@ public:
     int32_t GetDisplayStyleIndex() const {return m_displayStyleIndex;}
     void SetDisplayStyleIndex(int32_t displayStyleIndex){m_displayStyleIndex = displayStyleIndex;}
 
-    void _Save(ViewDefinitionR) const override;
-    void _Load(ViewDefinitionR) override;
+    POINTCLOUD_EXPORT void _Save(ViewDefinitionR) const override;
+    POINTCLOUD_EXPORT void _Load(ViewDefinitionR) override;
 
     POINTCLOUD_EXPORT static PointCloudViewSettings& FromView(SpatialViewController&);
 };
