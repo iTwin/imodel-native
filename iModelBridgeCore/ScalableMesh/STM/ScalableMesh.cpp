@@ -3617,6 +3617,9 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                              // Reproject data using this new GCS
         auto newGCS = m_sourceGCS;
         std::swap(m_sourceGCS, ecefGCS);
+
+        if (newGCS.GetGeoRef().GetBasePtr().get() == nullptr)
+            return ERROR;
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnModel));
         return this->_Reproject(newDgnGcsPtr.get(), dgnModel);
         }
