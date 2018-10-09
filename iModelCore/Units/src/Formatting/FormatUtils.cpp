@@ -81,7 +81,11 @@ std::locale FormatConstant::s_userLocale = std::locale("");
 //---------------------------------------------------------------------------------------
 const Utf8Char FormatConstant::FPV_DecimalSeparator() 
     {
-    return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).decimal_point();
+    #ifdef BENTLEYCONFIG_OS_ANDROID
+        return '.';
+    #else
+        return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).decimal_point();
+    #endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -89,7 +93,11 @@ const Utf8Char FormatConstant::FPV_DecimalSeparator()
 //---------------------------------------------------------------------------------------
 const Utf8Char FormatConstant::FPV_ThousandSeparator() 
     {
-    return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).thousands_sep();
+    #ifdef BENTLEYCONFIG_OS_ANDROID
+        return ',';
+    #else
+        return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).thousands_sep();
+    #endif
     }
 
 //---------------------------------------------------------------------------------------

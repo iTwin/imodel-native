@@ -1181,66 +1181,70 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ ("2,828.450", fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    #if defined (BENTLEYCONFIG_OS_UNIX)
-        fmtP.ImbueLocale("de_DE");
-    #else
-        fmtP.ImbueLocale("de");
-    #endif
+    #ifndef BENTLEYCONFIG_OS_ANDROID
 
-    EXPECT_STREQ("1.414,20000000", fmtP.Format(testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ("7.071,0500000", fmtP.Format(5.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ("4.242,650000", fmtP.Format(3.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ("9.899,50000", fmtP.Format(7.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ("12.727,9000", fmtP.Format(9.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ("2.828,450", fmtP.Format(2.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision8);
+        #ifdef BENTLEYCONFIG_OS_UNIX
+            fmtP.ImbueLocale("de_DE");
+        #else
+            fmtP.ImbueLocale("de");
+        #endif
 
-    #if defined (BENTLEYCONFIG_OS_UNIX)
-        fmtP.ImbueLocale("fi_FI");
-    #else
-        fmtP.ImbueLocale("fi");
-    #endif
+        EXPECT_STREQ("1.414,20000000", fmtP.Format(testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision7);
+        EXPECT_STREQ("7.071,0500000", fmtP.Format(5.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision6);
+        EXPECT_STREQ("4.242,650000", fmtP.Format(3.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision5);
+        EXPECT_STREQ("9.899,50000", fmtP.Format(7.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision4);
+        EXPECT_STREQ("12.727,9000", fmtP.Format(9.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision3);
+        EXPECT_STREQ("2.828,450", fmtP.Format(2.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    EXPECT_STREQ(CONCAT("1", "\xA0", "414,20000000"), fmtP.Format(testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ(CONCAT("7", "\xA0", "071,0500000"), fmtP.Format(5.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ(CONCAT("4", "\xA0", "242,650000"), fmtP.Format(3.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ(CONCAT("9", "\xA0", "899,50000"), fmtP.Format(7.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ(CONCAT("12", "\xA0", "727,9000"), fmtP.Format(9.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ(CONCAT("2", "\xA0", "828,450"), fmtP.Format(2.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision8);
+        #ifdef BENTLEYCONFIG_OS_UNIX
+            fmtP.ImbueLocale("fi_FI");
+        #else
+            fmtP.ImbueLocale("fi");
+        #endif
 
-    #if defined (BENTLEYCONFIG_OS_UNIX)
-        fmtP.ImbueLocale("en_US");
-    #else
-        fmtP.ImbueLocale("en-US");
-    #endif
+        EXPECT_STREQ(CONCAT("1", "\xA0", "414,20000000"), fmtP.Format(testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision7);
+        EXPECT_STREQ(CONCAT("7", "\xA0", "071,0500000"), fmtP.Format(5.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision6);
+        EXPECT_STREQ(CONCAT("4", "\xA0", "242,650000"), fmtP.Format(3.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision5);
+        EXPECT_STREQ(CONCAT("9", "\xA0", "899,50000"), fmtP.Format(7.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision4);
+        EXPECT_STREQ(CONCAT("12", "\xA0", "727,9000"), fmtP.Format(9.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision3);
+        EXPECT_STREQ(CONCAT("2", "\xA0", "828,450"), fmtP.Format(2.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    fmtP.SetKeepTrailingZeroes(false);
-    fmtP.SetUse1000Separator(false);
+        #ifdef BENTLEYCONFIG_OS_UNIX
+            fmtP.ImbueLocale("en_US");
+        #else
+            fmtP.ImbueLocale("en-US");
+        #endif
 
-    EXPECT_STREQ ("1414.2", fmtP.Format(testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision7);
-    EXPECT_STREQ ("-7071.05", fmtP.Format(-5.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision6);
-    EXPECT_STREQ ("-4242.65", fmtP.Format(-3.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision5);
-    EXPECT_STREQ ("-9899.5", fmtP.Format(-7.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision4);
-    EXPECT_STREQ ("-12727.9", fmtP.Format(-9.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision3);
-    EXPECT_STREQ ("-2828.45", fmtP.Format(-2.0*testV).c_str());
-    fmtP.SetPrecision(DecimalPrecision::Precision8);
+        fmtP.SetKeepTrailingZeroes(false);
+        fmtP.SetUse1000Separator(false);
 
+        EXPECT_STREQ ("1414.2", fmtP.Format(testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision7);
+        EXPECT_STREQ ("-7071.05", fmtP.Format(-5.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision6);
+        EXPECT_STREQ ("-4242.65", fmtP.Format(-3.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision5);
+        EXPECT_STREQ ("-9899.5", fmtP.Format(-7.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision4);
+        EXPECT_STREQ ("-12727.9", fmtP.Format(-9.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision3);
+        EXPECT_STREQ ("-2828.45", fmtP.Format(-2.0*testV).c_str());
+        fmtP.SetPrecision(DecimalPrecision::Precision8);
+    
+    #endif /* BENTLEYCONFIG_OS_ANDROID */
+    
     NumericFormatSpec numFmt = NumericFormatSpec();
     numFmt.SetSignOption(SignOption::OnlyNegative);
     EXPECT_STREQ ("135", numFmt.Format(135).c_str());
