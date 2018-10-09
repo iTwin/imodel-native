@@ -45,6 +45,24 @@ static Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <Class class="ElementUniqueAspect"/>
             </Target>
         </ECRelationshipClass>
+    
+        <ECEntityClass typeName="Model" modifier="Abstract" description="A Model is a container for persisting a collection of related elements.">
+        <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
     </ECSchema>)xml";
 
 struct SchemaValidatorTests : ECTestFixture
@@ -2497,6 +2515,66 @@ TEST_F(SchemaValidatorTests, NoClassShouldSubclassDefinitionModelWithExceptions)
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisDefinitionModel));
     ASSERT_FALSE(validator.Validate(*schema)) << "Entity class subclasses bis:DefinitionModel, so validation should fail";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Aurora.Lane                         10/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, NoModelSubclassMayHaveProperties)
+    {
+            {
+            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECEntityClass typeName='Model' modifier='Abstract'>"
+                "        <ECProperty propertyName='ModelTestProp' typeName='int'/>"
+                "    </ECEntityClass>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>Model</BaseClass>"
+                "        <ECProperty propertyName='TestProperty' typeName='int'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitContextWithSchemaXml(goodSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with properties in BisCore are valid";
+            }
+            {
+            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>bis:Model</BaseClass>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses without properties are valid";
+            }
+            {
+            Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>bis:Model</BaseClass>"
+                "        <ECProperty propertyName='TestProperty' typeName='int'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitBisContextWithSchemaXml(badSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_FALSE(validator.Validate(*schema)) << "Model Subclasses with properties are not valid";
+            }
+            {
+            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>bis:Model</BaseClass>"
+                "        <ECProperty propertyName='IsPrivate' typeName='boolean'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with override properties are valid";
+            }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

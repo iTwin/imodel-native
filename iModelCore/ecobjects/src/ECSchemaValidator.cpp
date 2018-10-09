@@ -294,9 +294,12 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
         LOG.warningv("Class '%s' has no description. Please add a description.", ecClass.GetFullName());
         }
 
+    bool IsModel = (!ecClass.GetSchema().GetName().EqualsI("BisCore")) && ecClass.Is("BisCore", "Model");
+
     // RULE: Properties should not be of type long.
     // RULE: All properties should have a description (warn)
     // RULE: All extended types of properties should be on the valid list
+    // RULE: All Model subclasses outside of BisCore should not add properties
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
         if (prop->GetTypeName().Equals("long") && !prop->GetIsNavigation())
@@ -343,8 +346,12 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                 if (ECObjectsStatus::Success != CheckForValidExtendedType(prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName(), ecClass.GetFullName(), prop->GetName()))
                     status = ECObjectsStatus::Error;
                 }
-
-            
+            }
+        if (IsModel && nullptr == prop->GetBaseProperty())
+            {
+            status = ECObjectsStatus::Error;
+            LOG.errorv("Class '%s' adds property '%s.%s' despite being a subclass of 'BisCore:Model' defined outside 'BisCore'. Model subclasses should not add new properties.",
+                       ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
             }
         }
 
