@@ -483,6 +483,57 @@ int Policy::GetOfflineDuration(Utf8String productId, Utf8String featureString)
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int Policy::GetHeartbeatInterval(Utf8String productId, Utf8String featureString)
+    {
+    int result_in_ms = 0;
+    auto heartbeatInterval = GetQualifier("HeartbeatInterval", productId, featureString);
+
+    if (heartbeatInterval != nullptr)
+        {
+        result_in_ms = std::stoi(heartbeatInterval->GetValue().c_str()) * 60 * 1000;
+        }
+
+    return result_in_ms;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int Policy::GetPolicyInterval(Utf8String productId, Utf8String featureString)
+    {
+    int result_in_ms = 0;
+    auto policyInterval = GetQualifier("PolicyInterval", productId, featureString);
+
+    if (policyInterval != nullptr)
+        {
+        result_in_ms = std::stoi(policyInterval->GetValue().c_str()) * 60 * 1000;
+        }
+
+    return result_in_ms;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int Policy::GetTimeToKeepUnSentLogs(Utf8String productId, Utf8String featureString)
+    {
+    int result_in_ms = 0;
+    auto sendLogsInterval = GetQualifier("TimeToKeepUnSentLogs", productId, featureString);
+
+    if (sendLogsInterval != nullptr)
+        {
+        result_in_ms = std::stoi(sendLogsInterval->GetValue().c_str()) * 60 * 1000;
+        }
+
+    return result_in_ms;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Policy::GetUsageType()
 	{
 	Utf8String result = "";

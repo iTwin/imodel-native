@@ -236,7 +236,9 @@ public:
 	LICENSING_EXPORT Utf8String GetUsageType();
 	LICENSING_EXPORT Policy::ProductStatus GetProductStatus(Utf8String productId, Utf8String featureString);
 	LICENSING_EXPORT Policy::PolicyStatus GetPolicyStatus();
-
+    LICENSING_EXPORT int GetHeartbeatInterval(Utf8String productId, Utf8String featureString);
+    LICENSING_EXPORT int GetPolicyInterval(Utf8String productId, Utf8String featureString);
+    LICENSING_EXPORT int GetTimeToKeepUnSentLogs(Utf8String productId, Utf8String featureString);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

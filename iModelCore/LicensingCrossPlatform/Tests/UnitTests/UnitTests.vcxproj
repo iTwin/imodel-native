@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Published\ClientTests.cpp" />
+    <ClCompile Include="Published\DummyPolicyHelper.cpp" />
     <ClCompile Include="Published\GenerateSIDTests.cpp" />
     <ClCompile Include="Published\PolicyTests.cpp" />
     <ClCompile Include="Published\PolicyTokenTests.cpp" />
@@ -21,6 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\ClientTests.h" />
+    <ClInclude Include="Published\DummyPolicyHelper.h" />
     <ClInclude Include="Published\GenerateSIDTests.h" />
     <ClInclude Include="Published\PolicyTests.h" />
     <ClInclude Include="Published\PolicyTokenTests.h" />

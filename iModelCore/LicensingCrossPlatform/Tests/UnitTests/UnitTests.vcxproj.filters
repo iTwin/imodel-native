@@ -48,6 +48,9 @@
     <ClCompile Include="Published\Utils\LogFileHelperTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\DummyPolicyHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\TestsHelper.h">
@@ -81,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Published\Utils\LogFileHelperTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\DummyPolicyHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

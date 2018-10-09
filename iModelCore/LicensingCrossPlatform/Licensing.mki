@@ -10,7 +10,6 @@
 
 Headers =
 Headers + $(SourceDir)DateHelper.h
-Headers + $(SourceDir)DummyJsonHelper.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h

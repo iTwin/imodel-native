@@ -23,7 +23,6 @@
   <ItemGroup>
     <ClInclude Include="Licensing\ClientImpl.h" />
     <ClInclude Include="Licensing\DateHelper.h" />
-    <ClInclude Include="Licensing\DummyJsonHelper.h" />
     <ClInclude Include="Licensing\Logging.h" />
     <ClInclude Include="Licensing\Policy.h" />
     <ClInclude Include="Licensing\PolicyHelper.h" />

@@ -72,7 +72,9 @@ LicenseStatus ClientImpl::StartApplication()
     // Get product status
     LicenseStatus licStatus = GetProductStatus();
 
-    if (LicenseStatus::Ok == licStatus)
+    if ((LicenseStatus::Ok == licStatus) ||
+        (LicenseStatus::Offline == licStatus) ||
+        (LicenseStatus::Trial == licStatus))
         {
         if (ERROR == RecordUsage())
             return LicenseStatus::Error;
@@ -110,7 +112,9 @@ void ClientImpl::UsageHeartbeat(int64_t currentTime)
     LOG.trace("UsageHeartbeat");
 
     m_lastRunningUsageheartbeatStartTime = currentTime;
-    m_delayedExecutor->Delayed(USAGE_HEARTBEAT_INTERVAL_MS).then([this, currentTime] 
+    int heartbeatInterval = m_policy->GetHeartbeatInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+    m_delayedExecutor->Delayed(heartbeatInterval).then([this, currentTime]
         {
         if (currentTime != m_lastRunningUsageheartbeatStartTime)
             return;
@@ -131,7 +135,9 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
     LOG.trace("PolicyHeartbeat");
 
     m_lastRunningPolicyheartbeatStartTime = currentTime;
-    m_delayedExecutor->Delayed(POLICY_HEARTBEAT_INTERVAL_MS).then([this, currentTime]
+    int policyInterval = m_policy->GetPolicyInterval(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+    m_delayedExecutor->Delayed(policyInterval).then([this, currentTime]
         {
         if (currentTime != m_lastRunningPolicyheartbeatStartTime)
             return;
@@ -165,7 +171,9 @@ void ClientImpl::LogPostingHeartbeat(int64_t currentTime)
     LOG.trace("LogPostingHeartbeat");
     
     m_lastRunningLogPostingheartbeatStartTime = currentTime;
-    m_delayedExecutor->Delayed(LOG_POSTING_HEARTBEAT_INTERVAL_MS).then([this, currentTime]
+    int logsPostingInterval = m_policy->GetTimeToKeepUnSentLogs(m_clientInfo->GetApplicationProductId(), m_featureString);
+
+    m_delayedExecutor->Delayed(logsPostingInterval).then([this, currentTime]
         {
         if (currentTime != m_lastRunningLogPostingheartbeatStartTime)
             return;
@@ -188,6 +196,8 @@ BentleyStatus ClientImpl::StopApplication()
     m_lastRunningPolicyheartbeatStartTime = 0;      // This will stop Policy heartbeat
     m_lastRunningUsageheartbeatStartTime = 0;       // This will stop Usage heartbeat
     m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
+
+    PostUsageLogs();
 
     m_usageDb->Close();
 

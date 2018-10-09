@@ -24,16 +24,6 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
-#if defined(DEBUG)
-#define USAGE_HEARTBEAT_INTERVAL_MS         5*1000 
-#define POLICY_HEARTBEAT_INTERVAL_MS        30*60*1000
-#define LOG_POSTING_HEARTBEAT_INTERVAL_MS   30*60*1000
-#else
-#define USAGE_HEARTBEAT_INTERVAL_MS         60*1000
-#define POLICY_HEARTBEAT_INTERVAL_MS        60*60*1000
-#define LOG_POSTING_HEARTBEAT_INTERVAL_MS   60*60*1000
-#endif // DEBUG)
-
 // Log Posting Sources
 #define LOGPOSTINGSOURCE_REALTIME           "RealTime"
 #define LOGPOSTINGSOURCE_OFFLINE            "Offline"

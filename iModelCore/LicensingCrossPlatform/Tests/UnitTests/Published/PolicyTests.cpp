@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "PolicyTests.h"
+#include "DummyPolicyHelper.h"
 
 #include <Licensing/Utils/JWToken.h>
 #include "../../../Licensing/Policy.h"
-#include "../../../Licensing/DummyJsonHelper.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
 
@@ -93,10 +93,89 @@ TEST_F(PolicyTests, Validate_ProperRead)
 
 TEST_F(PolicyTests, InvalidJson_Robustness)
 	{
-	auto policy = Policy::Create(DummyJsonHelper::CreatePolicyMissingFields());
+	auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyMissingFields());
 	// verify Utf8Strings are empty and don't cause SEH exception
 	ASSERT_NE(policy, nullptr);
 	ASSERT_NE(policy->GetPolicyId(), "");
 	ASSERT_EQ(policy->GetMachineSignature(), "");
 	ASSERT_EQ(policy->GetAppliesToUserId(), "");
 	}
+
+TEST_F(PolicyTests, GetACLsQualifierOverride_HeartbeatInterval_Success)
+    {
+    bvector<QualifierOverride> aclsQualifierOverrides;
+    bvector<QualifierOverride> securedataQualifierOverrides;
+    QualifierOverride aclsQualifierOverride;
+
+    aclsQualifierOverride.qualifierName = "HeartbeatInterval";
+    aclsQualifierOverride.qualifierValue = "5";
+    aclsQualifierOverride.qualifierType = "int";
+    aclsQualifierOverride.qualifierPrompt = "";
+    aclsQualifierOverrides.push_back(aclsQualifierOverride);
+
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+
+    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQuailifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), 
+                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
+                                                                                    aclsQualifierOverrides, securedataQualifierOverrides));
+
+    EXPECT_NE(policy, nullptr);
+
+    int heartbeatInterval = policy->GetHeartbeatInterval("9900", "");
+    EXPECT_EQ(5*60*1000, heartbeatInterval);
+    }
+
+TEST_F(PolicyTests, GetSecureDataQualifierOverride_PolicyInterval_Success)
+    {
+    bvector<QualifierOverride> aclsQualifierOverrides;
+    bvector<QualifierOverride> securedataQualifierOverrides;
+    QualifierOverride securedataQualifierOverride;
+
+    securedataQualifierOverride.qualifierName = "PolicyInterval";
+    securedataQualifierOverride.qualifierValue = "120";
+    securedataQualifierOverride.qualifierType = "int";
+    securedataQualifierOverride.qualifierPrompt = "";
+    securedataQualifierOverrides.push_back(securedataQualifierOverride);
+
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+
+    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQuailifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
+                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
+                                                                                    aclsQualifierOverrides, securedataQualifierOverrides));
+
+    EXPECT_NE(policy, nullptr);
+
+    int policyInterval = policy->GetPolicyInterval("9900", "");
+    EXPECT_EQ(120*60*1000, policyInterval);
+    }
+
+TEST_F(PolicyTests, GetACLsQualifierOverrideWithSecureDataQualifierOverride_TimeToKeepUnSentLogs_Success)
+    {
+    bvector<QualifierOverride> aclsQualifierOverrides;
+    bvector<QualifierOverride> securedataQualifierOverrides;
+    QualifierOverride aclsQualifierOverride;
+    QualifierOverride securedataQualifierOverride;
+
+    aclsQualifierOverride.qualifierName = "TimeToKeepUnSentLogs";
+    aclsQualifierOverride.qualifierValue = "90";
+    aclsQualifierOverride.qualifierType = "int";
+    aclsQualifierOverride.qualifierPrompt = "";
+    aclsQualifierOverrides.push_back(aclsQualifierOverride);
+
+    securedataQualifierOverride.qualifierName = "TimeToKeepUnSentLogs";
+    securedataQualifierOverride.qualifierValue = "120";
+    securedataQualifierOverride.qualifierType = "int";
+    securedataQualifierOverride.qualifierPrompt = "";
+    securedataQualifierOverrides.push_back(securedataQualifierOverride);
+
+    Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
+
+    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQuailifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
+                                                                                    DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
+                                                                                    aclsQualifierOverrides, securedataQualifierOverrides));
+
+    EXPECT_NE(policy, nullptr);
+
+    int logPostingInterval = policy->GetTimeToKeepUnSentLogs("9900", "");
+    EXPECT_EQ(90*60*1000, logPostingInterval);
+    }
