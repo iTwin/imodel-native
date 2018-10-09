@@ -68,6 +68,6 @@ Utf8String WSRepository::ToString() const
     json[INFO_Serialized_ServerUrl] = m_serverUrl;
     json[INFO_Serialized_PluginVersion] = m_pluginVersion.ToString();
     json[INFO_Serialized_ServiceVersion] = m_serviceVersion.ToString();
-    json[INFO_Serialized_MaxUploadSize] = Json::Value(m_maxUploadSize);
+    json[INFO_Serialized_MaxUploadSize] = (uint32_t)m_maxUploadSize;
     return Json::FastWriter::ToString(json);
     }
