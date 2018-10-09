@@ -391,6 +391,11 @@ bool IScalableMesh::GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
     return _GetClip(clipID, clipData);
 }
 
+bool IScalableMesh::GetClip(uint64_t clipID, ClipVectorPtr& clipData)
+{
+    return _GetClip(clipID, clipData);
+}
+
 bool IScalableMesh::IsInsertingClips()
     {
     return _IsInsertingClips();
@@ -2777,6 +2782,16 @@ template <class POINT> bool ScalableMesh<POINT>::_GetClip(uint64_t clipID, bvect
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
     m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
     return !clipData.empty();
+}
+
+template <class POINT> bool ScalableMesh<POINT>::_GetClip(uint64_t clipID, ClipVectorPtr& clipData)
+{
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    SMClipGeometryType geom; 
+    SMNonDestructiveClipType type; 
+    bool isActive;
+    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipData, geom, type, isActive);
+    return clipData.IsValid();
 }
 
 template <class POINT> bool ScalableMesh<POINT>::_IsInsertingClips()

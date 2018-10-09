@@ -411,6 +411,15 @@ bool                               ScalableMeshGroup::_GetClip(uint64_t clipID, 
     return false;
 }
 
+bool                               ScalableMeshGroup::_GetClip(uint64_t clipID, ClipVectorPtr& clipData)
+{
+    for (auto& member : m_members)
+        if (member->GetClip(clipID, clipData))
+            return true;
+
+    return false;
+}
+
 bool                               ScalableMeshGroup::_IsInsertingClips()
     {
     bool isInsertingClips = false;
