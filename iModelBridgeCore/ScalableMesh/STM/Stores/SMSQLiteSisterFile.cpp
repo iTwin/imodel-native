@@ -189,7 +189,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                     remove(sqlNameUtf8.c_str());
                     m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_GENERATION_FILE, createSisterIfMissing);
                     //m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
-                    BeAssert(status == SUCCESS);
+                    BeAssert(status == SUCCESS || !createSisterIfMissing);
                     }
                 else
                     {         
@@ -217,7 +217,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                     
                 StatusInt status;
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_DIFFSETS_FILE, createSisterIfMissing);
-                BeAssert(status == SUCCESS);
+                BeAssert(status == SUCCESS || !createSisterIfMissing);
                 }
 
             sqlFilePtr = m_smClipSQLiteFile;
@@ -237,7 +237,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 StatusInt status;
                 m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_CLIP_DEF_FILE, createSisterIfMissing);
-                BeAssert(status == SUCCESS);
+                BeAssert(status == SUCCESS || !createSisterIfMissing);
                 }
 
             sqlFilePtr = m_smClipDefinitionSQLiteFile;

@@ -18,8 +18,18 @@
 #include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
 #include "../../STM/Edits/ClipUtilities.h"
+#ifndef VANCOUVER_API
+#include <DgnPlatform/DesktopTools/ConfigurationManager.h>
+#else
+#include <DgnPlatform/Tools/ConfigurationManager.h>
+#endif
+#include <queue>
 
-
+#ifdef VANCOUVER_API
+#define DELETE_FILE(filenameP, removeReadOnlyAttribute) BeFileName::BeDeleteFile(filenameP, removeReadOnlyAttribute)
+#else
+#define DELETE_FILE(filenameP, removeReadOnlyAttribute) BeFileName::BeDeleteFile(filenameP)
+#endif
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
@@ -118,6 +128,32 @@ class ScalableMeshTest : public ::testing::Test
         BeAssert(status == SUCCESS);
         return myScalableMesh;
         }
+
+    static ScalableMesh::IScalableMeshNodePtr GetNonEmptyNode(ScalableMesh::IScalableMeshPtr sm, std::function<bool(IScalableMeshNodePtr)> predicate = [](IScalableMeshNodePtr) { return true; }, bool returnFirstNonEmptyNode = false)
+        {
+        bvector<IScalableMeshNodePtr> nodesList;
+        std::function<bool(IScalableMeshNodePtr)> getNonEmptyNodes;
+        getNonEmptyNodes = [&](IScalableMeshNodePtr node) -> bool
+            {
+            if (node->GetPointCount() > 0 && predicate(node))
+                {
+                nodesList.push_back(node);
+                if (returnFirstNonEmptyNode)
+                    return false;
+                }
+            for (auto child : node->GetChildrenNodes())
+                if (!getNonEmptyNodes(child)) return false;
+            return true;
+            };
+        getNonEmptyNodes(sm->GetRootNode());
+        
+        if (returnFirstNonEmptyNode) return nodesList[0];
+        std::random_device rd;
+        std::default_random_engine e1(rd());
+        std::uniform_int_distribution<uint64_t> index(0, nodesList.size() - 1);
+
+        return nodesList[index(e1)];
+        }
     };
 
 class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
@@ -143,11 +179,11 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
 
             if (BeFileName::DoesPathExist(tempClipFile.c_str()))
                 {
-                ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(tempClipFile.c_str(), true));
+                ASSERT_TRUE(BeFileNameStatus::Success == DELETE_FILE(tempClipFile.c_str(), true));
                 }
             if (BeFileName::DoesPathExist(tempClipDefFile.c_str()))
                 {
-                ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(tempClipDefFile.c_str(), true));
+                ASSERT_TRUE(BeFileNameStatus::Success == DELETE_FILE(tempClipDefFile.c_str(), true));
                 }
         }
         BeFileName GetFileName() { return m_filename; }
@@ -195,11 +231,12 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
             {
             status = false;
             Transform tr = myScalableMesh->GetReprojectionTransform();
+#ifdef VANCOUVER_API
             if (tr.IsIdentity())
                 {
                 // Reproject ECEF mesh using Bing maps GCS because they can't be clipped without being reprojected
                 WString bingWKT(BINGWKT);
-                auto bingGCS = GeoCoordinates::BaseGCS::CreateGCS();
+                auto bingGCS = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS();
 
                 StatusInt warningStat;
                 WString warningMessageString;
@@ -218,8 +255,8 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
                 DPoint3d extent;
                 extent.DifferenceOf(range.high, range.low);
 
-                GeoCoordinates::DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(myScalableMesh->GetBaseGCS().get(), nullptr);
-                GeoCoordinates::DgnGCSPtr  targetGCS = GeoCoordinates::DgnGCS::CreateGCS(bingGCS.get(), nullptr);
+                DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(myScalableMesh->GetBaseGCS().get(), nullptr);
+                DgnGCSPtr  targetGCS = GeoCoordinates::DgnGCS::CreateGCS(bingGCS.get(), nullptr);
 
                 Transform       approxTransform;
                 auto localTransformStatus = smGCS->GetLocalTransform(&approxTransform,
@@ -235,6 +272,7 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
                     myScalableMesh->SetReprojection(*bingGCS, approxTransform);
                     }
                 }
+#endif
             }
     };
 
@@ -285,7 +323,7 @@ public:
         BeAssert(status == SUCCESS);
         if (myScalableMesh != nullptr)
         {
-            GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS();
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS();
             Transform tr;
             tr.InitFrom(m_transform);
             myScalableMesh->SetReprojection(*gcs, tr);
@@ -505,7 +543,7 @@ TEST_P(ScalableMeshTestWithParams, GetBaseGCS)
 
     auto const& baseGCS = myScalableMesh->GetBaseGCS();
 
-    auto groundTruthGCS = GeoCoordinates::BaseGCS::CreateGCS();
+    auto groundTruthGCS = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS();
 
     StatusInt warningStat;
     WString warningMessageString;
@@ -513,7 +551,7 @@ TEST_P(ScalableMeshTestWithParams, GetBaseGCS)
     groundTruthGCS->InitFromWellKnownText(&warningStat,
                                           &warningMessageString,
                                           BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown,
-                                          WString(groundTruthInfo["WellKnownText"].asCString()).c_str());
+                                          WString(groundTruthInfo["WellKnownText"].asCString(), true).c_str());
 
     EXPECT_EQ(warningStat, SUCCESS);
     EXPECT_EQ(warningMessageString.size(), 0);
@@ -653,11 +691,11 @@ TEST_P(ScalableMeshTestWithParams, GetMeshQueryInterface)
     
     const GeoCoords::GCS smGcs(myScalableMesh->GetGCS());
 
-    BaseGCSCPtr baseGcs(smGcs.GetGeoRef().GetBasePtr());
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr baseGcs(smGcs.GetGeoRef().GetBasePtr());
 
     if (baseGcs.IsValid())
         {
-        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr targetBaseGCSPtr(BaseGCS::CreateGCS(L"EPSG:900913"));
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr targetBaseGCSPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"EPSG:900913"));
         ASSERT_EQ(targetBaseGCSPtr.IsValid(), true);
 
         DRange3d range;
@@ -705,15 +743,15 @@ TEST_P(ScalableMeshTestWithParams, MeshQuery)
     
     if (gcs.GetGeoRef().GetBasePtr().IsValid())
         { 
-        BaseGCSPtr sourceGcsPtr(BaseGCS::CreateGCS(*gcs.GetGeoRef().GetBasePtr().get()));
-        BaseGCSPtr targetGcsPtr(BaseGCS::CreateGCS(L"EPSG:900913"));
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr sourceGcsPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(*gcs.GetGeoRef().GetBasePtr().get()));
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr targetGcsPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"EPSG:900913"));
 
         meshQueryParamPtr->SetGCS(sourceGcsPtr, targetGcsPtr);
                 
         EXPECT_TRUE(meshQueryParamPtr->GetLevel() == levelInd);
 
-        BaseGCSCPtr querySourceGcsPtr(meshQueryParamPtr->GetSourceGCS());
-        BaseGCSCPtr queryTargetGcsPtr(meshQueryParamPtr->GetTargetGCS());
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr querySourceGcsPtr(meshQueryParamPtr->GetSourceGCS());
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr queryTargetGcsPtr(meshQueryParamPtr->GetTargetGCS());
 
         EXPECT_TRUE(sourceGcsPtr->IsEquivalent(*querySourceGcsPtr.get()));
         EXPECT_TRUE(targetGcsPtr->IsEquivalent(*queryTargetGcsPtr.get()));
@@ -758,7 +796,7 @@ TEST_P(ScalableMeshTestWithParams, MeshQuery)
     bvector<IScalableMeshNodePtr> meshNodesPtr;
     
     ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromBlock(smRange.low, smRange.high, false, ClipMask::All, nullptr));
-    ClipVectorPtr queryExtent3dClipPtr(ClipVector::CreateFromPrimitive(clipPrimitive));
+    ClipVectorPtr queryExtent3dClipPtr(ClipVector::CreateFromPrimitive(clipPrimitive.get()));
 
     status = meshQueryPtr->Query(meshNodesPtr, queryExtent3dClipPtr.get(), meshQueryParamLowResPtr);
     EXPECT_TRUE(status == SUCCESS && meshNodesPtr.size() > 0 || status != SUCCESS && meshNodesPtr.size() == 0);
@@ -772,7 +810,7 @@ TEST_P(ScalableMeshTestWithParams, SetGetReprojectionTransform)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS();
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcs = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS();
     Transform tr = Transform::FromRowValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
     myScalableMesh->SetReprojection(*gcs, tr);
 
@@ -793,7 +831,11 @@ TEST_P(ScalableMeshTestWithParams, AddClip)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     bvector<DPoint3d> clipPoints;
     CreateClipFromRangeHelper(clipPoints, range);
@@ -813,8 +855,8 @@ TEST_P(ScalableMeshTestWithParams, AddClip)
     //can add twice the same data
     ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId + 1));
 
-    bvector<DPoint3d> clipDataEmpty;
-    ASSERT_FALSE(myScalableMesh->AddClip(clipDataEmpty.data(), clipDataEmpty.size(), clipId)); //can't add empty data
+    //bvector<DPoint3d> clipDataEmpty;
+    ASSERT_FALSE(myScalableMesh->AddClip(nullptr, 0, clipId)); //can't add empty data
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -829,7 +871,11 @@ TEST_P(ScalableMeshTestWithParams, RemoveClip)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     bvector<DPoint3d> clipPoints;
     CreateClipFromRangeHelper(clipPoints, range);
@@ -857,7 +903,11 @@ TEST_P(ScalableMeshTestWithParams, ModifyClip)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     bvector<DPoint3d> originalClipPoints;
     CreateClipFromRangeHelper(originalClipPoints, range);
@@ -894,7 +944,11 @@ TEST_P(ScalableMeshTestWithParams, SynchronizeClipData)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     // We will create 2 clips and 1 skirt (associated to the first clip)
     uint64_t clipId1 = 1, clipId2 = 2, skirtId = clipId1;
@@ -1003,24 +1057,14 @@ TEST_P(ScalableMeshTestWithParams, Node_HasClip)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    bvector<IScalableMeshNodePtr> nodesList;
-    std::function<void(IScalableMeshNodePtr)> getNonEmptyNodes;
-    getNonEmptyNodes = [&](IScalableMeshNodePtr node)
-        {
-        if (node->GetPointCount() > 0) nodesList.push_back(node);
-        for (auto child : node->GetChildrenNodes())
-            getNonEmptyNodes(child);
-        };
-    getNonEmptyNodes(myScalableMesh->GetRootNode());
-
-    std::random_device rd;
-    std::default_random_engine e1(rd());
-    std::uniform_int_distribution<uint64_t> index(0, nodesList.size() - 1);
-
-    auto nodeToCheck = nodesList[index(e1)];
+    auto nodeToCheck = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
 
     auto range = nodeToCheck->GetContentExtent();
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     bvector<DPoint3d> clipPoints;
     CreateClipFromRangeHelper(clipPoints, range);
@@ -1059,21 +1103,7 @@ TEST_P(ScalableMeshTestWithParams, Node_IsClippingUpToDateAfterAddClip)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    bvector<IScalableMeshNodePtr> nodesList;
-    std::function<void(IScalableMeshNodePtr)> getNonEmptyNodes;
-    getNonEmptyNodes = [&](IScalableMeshNodePtr node)
-        {
-        if (node->GetPointCount() > 0) nodesList.push_back(node);
-        for (auto child : node->GetChildrenNodes())
-            getNonEmptyNodes(child);
-        };
-    getNonEmptyNodes(myScalableMesh->GetRootNode());
-
-    std::random_device rd;
-    std::default_random_engine e1(rd());
-    std::uniform_int_distribution<uint64_t> index(0, nodesList.size() - 1);
-
-    auto nodeToCheck = nodesList[index(e1)];
+    auto nodeToCheck = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
 
     auto range = nodeToCheck->GetContentExtent();
 
@@ -1112,7 +1142,11 @@ TEST_P(ScalableMeshTestWithParams, Node_RefreshMergedClip)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     bvector<DPoint3d> clipPoints;
     CreateClipFromRangeHelper(clipPoints, range);
@@ -1172,16 +1206,20 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     Transform tr = Transform::FromIdentity();
 
     // Create clip
-    auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, false /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
+    auto clipPrimitive = ClipPrimitive::CreateFromBlock(range.low, range.high, false /*isMask*/, ClipMask::None, &tr, false /*invisible*/);
 
-    auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
+    auto clip = ClipVector::CreateFromPrimitive(clipPrimitive.get());
 
-    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/, tr);
     //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
@@ -1221,16 +1259,20 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     Transform tr = Transform::FromIdentity();
 
     // Create clip
-    auto clipPrimitive = DgnPlatform::ClipPrimitive::CreateFromBlock(range.low, range.high, true /*isMask*/, DgnPlatform::ClipMask::None, &tr, false /*invisible*/);
+    auto clipPrimitive = ClipPrimitive::CreateFromBlock(range.low, range.high, true /*isMask*/, ClipMask::None, &tr, false /*invisible*/);
 
-    auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
+    auto clip = ClipVector::CreateFromPrimitive(clipPrimitive.get());
 
-    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/, tr);
     //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
@@ -1652,7 +1694,7 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
 
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
 
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
 
@@ -1668,7 +1710,7 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
 
         ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
         ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
-        ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+        ASSERT_GE(nodeP->GetPointCount(), mesh->GetNbPoints());
 
         flags = IScalableMeshMeshFlags::Create(false, false);
         mesh = nodeP->GetMesh(flags);
@@ -1676,7 +1718,7 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
 
         ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
         ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
-        ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+        ASSERT_GE(nodeP->GetPointCount(), mesh->GetNbPoints());
     }
 }
 
@@ -1694,7 +1736,7 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithGraph)
     if (myScalableMesh->IsCesium3DTiles())
         return;
 
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
 
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, true);
 
@@ -1742,11 +1784,15 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
 
     if (nodeP->GetPointCount() > 4)
     {
+#ifdef VANCOUVER_API
         range.scaleAboutCenter(&range, 0.75);
+#else
+        range.ScaleAboutCenter(range, 0.75);
+#endif
 
         Transform tr = Transform::FromIdentity();
 
@@ -1778,7 +1824,7 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
 
             ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
             ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
-            ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+            ASSERT_GE(nodeP->GetPointCount(), mesh->GetNbPoints());
         }
     }
 }
@@ -1793,18 +1839,22 @@ TEST_P(ScalableMeshTestWithParams, GetAsBcDTM)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
-    auto mesh = nodeP->GetMesh(flags);
-    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
-        ASSERT_TRUE(mesh.IsValid());
-    if (mesh.IsValid())
-    {
+    if (myScalableMesh->IsTerrain())
+        {
 
-        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP = nullptr;
-        ASSERT_EQ(SUCCESS, mesh->GetAsBcDTM(bcdtmP));
-        ASSERT_EQ(bcdtmP->GetTrianglesCount(), mesh->GetNbFaces());
-    }
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+        auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
+        auto mesh = nodeP->GetMesh(flags);
+        if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+            ASSERT_TRUE(mesh.IsValid());
+        if (mesh.IsValid())
+            {
+
+            BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP = nullptr;
+            ASSERT_EQ(SUCCESS, mesh->GetAsBcDTM(bcdtmP));
+            ASSERT_EQ(bcdtmP->GetTrianglesCount(), mesh->GetNbFaces());
+            }
+        }
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1816,7 +1866,7 @@ TEST_P(ScalableMeshTestWithParams, GetTexture)
 
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
 
     IScalableMeshTexturePtr textureP = nodeP->GetTexture();
     if (textureP.IsValid())
@@ -2177,21 +2227,24 @@ TEST_P(ScalableMeshTestWithParams, GetBcDTM)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
-    auto mesh = nodeP->GetMesh(flags);
-    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
-        ASSERT_TRUE(mesh.IsValid());
-    if (mesh.IsValid())
-    {
+    if (myScalableMesh->IsTerrain())
+        {
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+        auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
+        auto mesh = nodeP->GetMesh(flags);
+        if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+            ASSERT_TRUE(mesh.IsValid());
+        if (mesh.IsValid())
+            {
 
-        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP = nullptr;
-        ASSERT_EQ(SUCCESS, mesh->GetAsBcDTM(bcdtmP));
-        ASSERT_EQ(bcdtmP->GetTrianglesCount(), mesh->GetNbFaces());
+            BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP = nullptr;
+            ASSERT_EQ(SUCCESS, mesh->GetAsBcDTM(bcdtmP));
+            ASSERT_EQ(bcdtmP->GetTrianglesCount(), mesh->GetNbFaces());
 
-        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP2 = nodeP->GetBcDTM();
-        ASSERT_EQ(bcdtmP->GetTrianglesCount(), bcdtmP2->GetTrianglesCount());
-    }
+            BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP2 = nodeP->GetBcDTM();
+            ASSERT_EQ(bcdtmP->GetTrianglesCount(), bcdtmP2->GetTrianglesCount());
+            }
+        }
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2301,7 +2354,7 @@ TEST_P(ScalableMeshTestWithParams, GetTextureCompressed)
     auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
     IScalableMeshTexturePtr textureP = nodeP->GetTextureCompressed();
     if (textureP.IsValid())
     {
@@ -2340,7 +2393,11 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
     double maxZ = range.high.z;
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     range.high.z = maxZ;
     bvector<DPoint3d> clipPoints;
@@ -2349,8 +2406,11 @@ TEST_P(ScalableMeshTestWithParams, GetMeshUnderClip)
     uint64_t clipId = 20;
     ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
 
-    //load root node
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    //load random node
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh, [&](IScalableMeshNodePtr nodeP)
+        {
+        return nodeP->HasAnyClip();
+        });
 
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, false);
 
@@ -2374,7 +2434,11 @@ TEST_P(ScalableMeshTestWithParams, MeshClipperClipFilterModes3D)
     DRange3d range;
     ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
 
+#ifdef VANCOUVER_API
     range.scaleAboutCenter(&range, 0.75);
+#else
+    range.ScaleAboutCenter(range, 0.75);
+#endif
 
     bvector<DPoint3d> clipPoints;
     CreateClipFromRangeHelper(clipPoints, range);
@@ -2384,8 +2448,8 @@ TEST_P(ScalableMeshTestWithParams, MeshClipperClipFilterModes3D)
     bvector<bvector<DPoint3d>> polygons;
     polygons.push_back(clipPoints);
 
-    //load root node
-    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    //load random node
+    auto nodeP = ScalableMeshTest::GetNonEmptyNode(myScalableMesh);
 
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
 

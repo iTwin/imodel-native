@@ -386,6 +386,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     //   m_sourceEnv(CreateSourceEnvFrom(scmFileName)),
     m_compressionType(SCM_COMPRESSION_DEFLATE),
     m_workingLayer(DEFAULT_WORKING_LAYER),
+    m_isShareable(false),
     m_isCanceled(false),
     m_progress(new ScalableMeshProgress())
     {
@@ -411,6 +412,7 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_gcsDirty(false),     
         m_compressionType(SCM_COMPRESSION_DEFLATE),
         m_workingLayer(DEFAULT_WORKING_LAYER),
+        m_isShareable(false),
         m_isCanceled(false),
 	m_progress(new ScalableMeshProgress())
     {

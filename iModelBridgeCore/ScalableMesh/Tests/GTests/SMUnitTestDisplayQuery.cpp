@@ -544,7 +544,7 @@ bool DisplayQueryTester::SetQueryParams(const BeFileName& smFileName, const DMat
 
     ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
 
-    m_clipVector = ClipVector::CreateFromPrimitive(clipPrimitive);
+    m_clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
 
     m_expectedResults.resize(expectedResults.size());
     memcpy(&m_expectedResults[0], &expectedResults[0], sizeof(double) * expectedResults.size());
