@@ -69,7 +69,13 @@ size_t  MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR dgnRange,
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     worldToScene.Multiply (sceneRange, dgnRange);
     
-    PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, densityType, densityValue);
+    auto pointCloudScene = m_model.GetPointCloudSceneP();
+    if (nullptr == pointCloudScene)
+        {
+        BeAssert(!"Point cloud scene is missing");
+        return 0;
+        }
+    PointCloudQueryHandlePtr    queryHandle = pointCloudScene->CreateBoundingBoxQuery(sceneRange, densityType, densityValue);
 
     return queryBuffers->GetPoints (queryHandle->GetHandle());
     }
@@ -157,7 +163,10 @@ PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgn
 
     auto pointCloudScene = m_publishContext.m_model.GetPointCloudSceneP();
     if (nullptr == pointCloudScene)
+        {
+        BeAssert(!"Point cloud scene is missing");
         return publishableGeometry;
+        }
 
     bool                                    useRGB = pointCloudScene->_HasRGBChannel();
     PointCloudQueryBuffersPtr               queryBuffers = PointCloudQueryBuffers::Create(s_maxTilePointCount, (uint32_t) PointCloudChannelId::Xyz | (useRGB ? (uint32_t) PointCloudChannelId::Rgb : 0));
