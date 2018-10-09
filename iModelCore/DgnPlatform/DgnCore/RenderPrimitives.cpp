@@ -289,7 +289,6 @@ private:
         {
             Image       m_image;
             Utf8String  m_name;
-            TexturePtr  m_texture;
 
             Raster() { } // for bmap...
             Raster(DgnGlyphCR glyph, DgnFontCR font)
@@ -309,40 +308,14 @@ private:
 
             void DebugPrintImage() const;
             void DebugSaveImage() const;
-            bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
-            TexturePtr GetTexture(SystemR system, DgnDbR db)
-                {
-// ###TODO: Remove this code path when glyph atlases are turned on by default!
-#define WIP_GLYPH_ATLASES
-#if !defined(WIP_GLYPH_ATLASES) // if atlases are enabled, do not invalidate image or create texture!
-                if (m_texture.IsNull() && m_image.IsValid())
-                    {
-                    TextureKey key(m_name);
-                    m_texture = system._FindTexture(key, db);
-                    if (m_texture.IsNull())
-                        {
-                        Texture::CreateParams params(key);
-                        params.m_isGlyph = true;
-                        m_texture = system._CreateTexture(m_image, db, params);
-                        }
-
-                    m_image.Invalidate();
-                    BeAssert(m_texture.IsValid());
-                    }
-
-                return m_texture;
-#else
-                return nullptr;
-#endif
-                }
+            bool IsValid() const { return m_image.IsValid(); }
         };
 
     struct RasterPolyface
     {
         PolyfaceHeaderPtr   m_polyface;
-        TexturePtr          m_texture;
 
-        bool IsValid() const { return m_polyface.IsValid() && m_texture.IsValid(); }
+        bool IsValid() const { return m_polyface.IsValid(); }
     };
 
     private:
@@ -401,7 +374,7 @@ private:
             RasterPolyface polyface;
             GetGeometry(facetOptions, true,
                     [&](Geom& geom) { geom.InitRasterPolyface(*m_curves, facetOptions); },
-                    [&](Geom& geom) { polyface.m_polyface = geom.GetRasterPolyface(); polyface.m_texture = m_raster.GetTexture(system, db); });
+                    [&](Geom& geom) { polyface.m_polyface = geom.GetRasterPolyface(); });
             return polyface;
             }
 
@@ -2400,7 +2373,6 @@ void GlyphCache::Geom::InitRasterPolyface(CurveVectorCR curves, IFacetOptionsR f
     facetOptions->SetParamsRequired(true);
 
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
-    //builder->AddPolygon(quadPts); // linker error???  unimplemented API!
     builder->AddTriangulation(quadPts); // use instead...
     m_rasterPolyface = builder->GetClientMeshPtr();
     }
@@ -2506,11 +2478,6 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
                 rasterImage = glyph->GetRaster() ? &glyph->GetRaster()->m_image : nullptr; // save the raster image to put into texture atlas
                 Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
                 polyface = raster.m_polyface;
-                if (raster.IsValid())
-                    {
-                    displayParams = displayParams->CloneForRasterText(*raster.m_texture);
-                    // ###TODO: do not make texture!  Storing image above, just pack them all together later to make atlas.
-                    }
                 }
             else
                 {

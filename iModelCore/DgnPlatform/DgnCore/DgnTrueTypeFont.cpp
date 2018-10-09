@@ -73,8 +73,6 @@ public:
     RasterStatus _GetRaster(Render::ImageR) const override;
 };
 
-#define WIP_GLYPH_ATLASES
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Mark.Schlosser  01/2018
 //---------------------------------------------------------------------------------------
@@ -95,27 +93,17 @@ DgnGlyph::RasterStatus DgnTrueTypeGlyph::_GetRaster(Render::ImageR img) const
 
         // Produce an image with white pixels and alpha
         FT_Bitmap* ftBmp = &ftFace->glyph->bitmap;
-#if defined(WIP_GLYPH_ATLASES)
         uint32_t outputWidth = ftBmp->width;
         uint32_t outputHeight = ftBmp->rows;
         uint32_t outputSize = outputWidth * 4 * outputHeight;
         ByteStream bytes(outputSize > 0 ? outputSize : 4 * 4); // width is number of pixels in a bitmap row
-#else
-        uint32_t outputWidth = ftBmp->width + 2; // 1 pixel empty border around image
-        uint32_t outputHeight = ftBmp->rows + 2;
-        ByteStream bytes(outputWidth * outputHeight * 4); // width is number of pixels in a bitmap row
-#endif
         memset(bytes.GetDataP(), 0, bytes.GetSize());
         for (uint32_t by = 0; by < ftBmp->rows; by++)
             {
             for (uint32_t bx = 0; bx < ftBmp->width; bx++)
                 {
                 size_t ftIndex = by * ftBmp->width + bx;
-#if defined(WIP_GLYPH_ATLASES)
                 size_t bsIndex = (outputHeight - 1 - by) * outputWidth * 4 + bx * 4; // flip Y for GLES output (could do later)
-#else
-                size_t bsIndex = (outputHeight - 1 - (by + 1)) * outputWidth * 4 + (bx + 1) * 4; // flip Y for GLES output (could do later)
-#endif
                 bytes[bsIndex] = bytes[bsIndex+1] = bytes[bsIndex+2] = 0xff;
                 bytes[bsIndex+3] = ftBmp->buffer[ftIndex];
                 }
@@ -124,11 +112,7 @@ DgnGlyph::RasterStatus DgnTrueTypeGlyph::_GetRaster(Render::ImageR img) const
         if (FT_Err_Ok != FT_Set_Pixel_Sizes(ftFace, m_face.GetPixelScale(), 0))
             BeAssert(false);
 
-#if defined(WIP_GLYPH_ATLASES)
         img = Render::Image(outputWidth, outputHeight, std::move(bytes), Render::Image::Format::Rgba);
-#else
-        img = Render::Image(outputWidth, outputHeight, std::move(bytes), Render::Image::Format::Rgba);
-#endif
         return RasterStatus::Success;
         });
     }

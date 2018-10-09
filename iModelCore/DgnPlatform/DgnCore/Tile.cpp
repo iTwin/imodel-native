@@ -731,8 +731,6 @@ struct DeferredGlyph
 
 typedef bvector<DeferredGlyph> DeferredGlyphList;
 
-#define WIP_GLYPH_ATLASES
-#if defined(WIP_GLYPH_ATLASES)
 struct GlyphLocation
 {
     uint32_t m_atlasNdx; // which atlas within the manager contains this glyph?
@@ -796,7 +794,6 @@ public:
     void AddGlyph(DeferredGlyph& glyph);
     GlyphAtlas& GetAtlasAndLocationForGlyph(DeferredGlyph& glyph, GlyphLocation &loc);
 };
-#endif
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
@@ -1935,8 +1932,8 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderMap::Key const& key)
     return m_builderMap[key];
     }
 
-// #define DEBUG_DUMP_TEXTURE_ATLAS_DIR L"d:\\im\\tmp\\texture_atlas\\"
-#if defined(DEBUG_DUMP_TEXTURE_ATLAS_DIR) && defined(WIP_GLYPH_ATLASES)
+// #define DEBUG_DUMP_TEXTURE_ATLAS_DIR L"E:\\texture_atlas\\"
+#if defined(DEBUG_DUMP_TEXTURE_ATLAS_DIR)
 static void writeAtlasToImageFile(Byte const* data, uint32_t width, uint32_t height, int32_t bytesPerPixel)
     {
     bool            rgba = 4 == bytesPerPixel;
@@ -1961,7 +1958,6 @@ Utf8String DeferredGlyph::GetKey()
     return Utf8PrintfString("%p", static_cast<void*>(glyphImage));
     }
 
-#if defined(WIP_GLYPH_ATLASES)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2108,11 +2104,12 @@ TexturePtr GlyphAtlas::GetTexture(Render::System& renderSystem, DgnDbP db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 GlyphAtlasManager::GlyphAtlasManager(uint32_t numGlyphs) : m_numGlyphs(numGlyphs)
     {
-    m_numAtlases = static_cast<uint32_t>(ceil(m_numGlyphs / 4096.0));
+    const uint32_t maxGlyphsInAtlas = 64 * 64;
+    m_numAtlases = static_cast<uint32_t>(ceil(m_numGlyphs / static_cast<double>(maxGlyphsInAtlas)));
     uint32_t i = 0;
     for (; i < m_numAtlases - 1; i++)
-        m_atlases.emplace_back(i, 4096);
-    m_atlases.emplace_back(i, m_numGlyphs - 4096 * (m_numAtlases - 1));
+        m_atlases.emplace_back(i, maxGlyphsInAtlas);
+    m_atlases.emplace_back(i, m_numGlyphs - maxGlyphsInAtlas * (m_numAtlases - 1));
     m_curAtlasNdx = 0;
     }
 
@@ -2146,8 +2143,6 @@ GlyphAtlas& GlyphAtlasManager::GetAtlasAndLocationForGlyph(DeferredGlyph& glyph,
     return m_atlases[loc.m_atlasNdx];
     }
 
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2157,16 +2152,13 @@ void MeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
     if (0 == numGlyphs)
         return;
 
-#if defined(WIP_GLYPH_ATLASES)
     GlyphAtlasManager atlasManager(static_cast<uint32_t>(m_uniqueGlyphKeys.size()));
     for (auto& deferredGlyph : m_deferredGlyphs)
         atlasManager.AddGlyph(deferredGlyph);
-#endif
 
     // add the polyfaces with appropriate UV coordinates
     for (auto& deferredGlyph : m_deferredGlyphs)
         {
-#if defined(WIP_GLYPH_ATLASES)
         GlyphLocation loc;
         GlyphAtlas& atlas = atlasManager.GetAtlasAndLocationForGlyph(deferredGlyph, loc);
 
@@ -2183,7 +2175,6 @@ void MeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
             param.y = param.y < 0.5 ? uvs[0].x : uvs[1].x;
             param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
             }
-#endif
 
         AddPolyface(deferredGlyph.m_polyface, *deferredGlyph.m_geom, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
         }
