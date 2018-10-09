@@ -101,6 +101,9 @@ BentleyStatus DoGetFromSource()
     static   BeMutex            s_queryMutex;
     BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
     PointCloudQueryHandlePtr    queryHandle = root.InitQuery(colorsPresent, tile.GetRange(), s_maxTileBatchCount);
+
+    if (queryHandle == nullptr)
+        return ERROR;
     size_t                      nBatchPoints = 0;
     bvector<FPoint3d>           batchPoints(s_maxTileBatchCount);
     bvector<PointCloudColorDef> batchColors(s_maxTileBatchCount), colors;
@@ -329,7 +332,14 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
     Transform           worldToScene;
     DRange3d            sceneRange;
     
-    colorsPresent = m_model.GetPointCloudSceneP()->_HasRGBChannel();
+    auto pointCloudScene = m_model.GetPointCloudSceneP();
+    if (nullptr == pointCloudScene)
+        {
+        BeAssert(!"Point cloud scene is missing");
+        return 0;
+        }
+
+    colorsPresent = pointCloudScene->_HasRGBChannel();
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     Transform::FromProduct (worldToScene, GetLocation()).Multiply (sceneRange, tileRange);
 
@@ -349,11 +359,11 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
     PointCloudQueryHandlePtr    queryHandle = PointCloudQueryHandle::Create(ptCreateFrustumPointsQuery());
 
     ptResetQuery(queryHandle->GetHandle());
-    ptSetQueryScope(queryHandle->GetHandle(), m_model.GetPointCloudSceneP()->GetSceneHandle());
+    ptSetQueryScope(queryHandle->GetHandle(), pointCloudScene->GetSceneHandle());
     ptSetQueryDensity (queryHandle->GetHandle(), QUERY_DENSITY_VIEW_COMPLETE, 1.0);
 
     // Ick... the points are being loaded from the .pod file in another thread...
-    while (0 != ptPtsToLoadInViewport(m_model.GetPointCloudSceneP()->GetSceneHandle(), true))
+    while (0 != ptPtsToLoadInViewport(pointCloudScene->GetSceneHandle(), true))
         BeDuration::FromMilliseconds(10).Sleep();
 
     return queryHandle;

@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudTilePublish.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -69,7 +69,13 @@ size_t  MakeQuery (PointCloudQueryBuffersPtr& queryBuffers, DRange3dCR dgnRange,
     worldToScene.InverseOf (m_model.GetSceneToWorld());
     worldToScene.Multiply (sceneRange, dgnRange);
     
-    PointCloudQueryHandlePtr    queryHandle = m_model.GetPointCloudSceneP()->CreateBoundingBoxQuery(sceneRange, densityType, densityValue);
+    auto pointCloudScene = m_model.GetPointCloudSceneP();
+    if (nullptr == pointCloudScene)
+        {
+        BeAssert(!"Point cloud scene is missing");
+        return 0;
+        }
+    PointCloudQueryHandlePtr    queryHandle = pointCloudScene->CreateBoundingBoxQuery(sceneRange, densityType, densityValue);
 
     return queryBuffers->GetPoints (queryHandle->GetHandle());
     }
@@ -153,8 +159,16 @@ size_t  PublishTileNode::QueryPointCount(size_t maxPoints) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool doPolylines, bool doInstancing, ITileGenerationFilterCP filter) const 
     {
-    PublishableTileGeometry                 publishableGeometry;
-    bool                                    useRGB = m_publishContext.m_model.GetPointCloudSceneP()->_HasRGBChannel();
+    PublishableTileGeometry publishableGeometry;
+
+    auto pointCloudScene = m_publishContext.m_model.GetPointCloudSceneP();
+    if (nullptr == pointCloudScene)
+        {
+        BeAssert(!"Point cloud scene is missing");
+        return publishableGeometry;
+        }
+
+    bool                                    useRGB = pointCloudScene->_HasRGBChannel();
     PointCloudQueryBuffersPtr               queryBuffers = PointCloudQueryBuffers::Create(s_maxTilePointCount, (uint32_t) PointCloudChannelId::Xyz | (useRGB ? (uint32_t) PointCloudChannelId::Rgb : 0));
     size_t                                  nPoints = m_publishContext.MakeQuery (queryBuffers, m_dgnRange, QUERY_DENSITY_LIMIT, (float) s_maxTilePointCount);
     DPoint3dCP                              pPoints;
