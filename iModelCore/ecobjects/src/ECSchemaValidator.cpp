@@ -42,6 +42,13 @@ static Utf8CP oldStandardSchemaNames[] =
     "ECDbMap"
     };
 
+static Utf8CP validExtendedTypes[] =
+    {
+    "BeGuid",
+    "GeometryStream",
+    "Json"
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman              01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -289,6 +296,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
 
     // RULE: Properties should not be of type long.
     // RULE: All properties should have a description (warn)
+    // RULE: All extended types of properties should be on the valid list
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
         if (prop->GetTypeName().Equals("long") && !prop->GetIsNavigation())
@@ -300,6 +308,43 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
         if (prop->GetDescription().empty())
             {
             LOG.warningv("Property '%s.%s' has no description. Please add a description.", ecClass.GetFullName(), prop->GetName().c_str());
+            }
+        if (prop->HasExtendedType())
+            {
+            static auto const IsValidExtendedType = [] (Utf8StringCR eType) -> bool
+                {
+                for (auto validType : validExtendedTypes)
+                    {
+                    if (eType.EqualsI(validType))
+                        return true;
+                    }
+                return false;
+                };
+
+            static auto const CheckForValidExtendedType = [] (Utf8StringCR eType, Utf8StringCR className, Utf8StringCR propName) -> ECObjectsStatus
+                {
+                ECObjectsStatus status = ECObjectsStatus::Success;
+                if (!eType.empty() && !IsValidExtendedType(eType))
+                    {
+                    status = ECObjectsStatus::Error;
+                    LOG.errorv("Property '%s.%s' has extended type '%s', which is not on the list of valid extended types (currently 'BeGuid', 'GeometryStream', and 'Json').",
+                               className.c_str(), propName.c_str(), eType.c_str());
+                    }
+                return status;
+                };
+
+            if (nullptr != prop->GetAsPrimitiveProperty())
+                {
+                if (ECObjectsStatus::Success != CheckForValidExtendedType(prop->GetAsPrimitiveProperty()->GetExtendedTypeName(), ecClass.GetFullName(), prop->GetName()))
+                    status = ECObjectsStatus::Error;
+                }
+            else if (nullptr != prop->GetAsPrimitiveArrayProperty())
+                {
+                if (ECObjectsStatus::Success != CheckForValidExtendedType(prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName(), ecClass.GetFullName(), prop->GetName()))
+                    status = ECObjectsStatus::Error;
+                }
+
+            
             }
         }
 
@@ -737,7 +782,6 @@ static ECObjectsStatus CheckEndpointForElementAspect(ECRelationshipConstraintCR 
         }
     return status;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017

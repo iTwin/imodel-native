@@ -2163,6 +2163,139 @@ TEST_F(SchemaValidatorTests, PropertiesMayNotHaveTheSameDisplayLabelAndCategory)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Aurora.Lane                         10/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, PropertyExtendedTypesMustBeOnApprovedList)
+    {
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='NoETypeSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties without ExtendedTypes are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='JsonSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='Json'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties of ExtendedType 'Json' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BeGuidSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='BeGuid'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties of ExtendedType 'BeGuid' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='GeometrySchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='GeometryStream'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties of ExtendedType 'GeometryStream' are valid";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='GarbageETypeSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='Garbage'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Properties of any other ExtendedType are not valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayJsonSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='Json'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Array Properties of ExtendedType 'Json' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayBeGuidSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='BeGuid'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Array Properties of ExtendedType 'BeGuid' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayGeometrySchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='GeometryStream'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Array Properties of ExtendedType 'GeometryStream' are valid";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayGarbageETypeSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='Garbage'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Array Properties of any other ExtendedType are not valid";
+    }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Joseph.Urbano                        05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
