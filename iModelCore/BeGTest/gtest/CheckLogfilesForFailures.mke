@@ -15,6 +15,11 @@ baseDir             = $(_MakeFilePath)
 
 breakOnFailure = 1
 
+#Allowed to ignore failures 
+%if defined(AllowIgnore)
+    breakOnFailure = 0
+%endif
+
 always:
     python $(_makeFilePath)CheckLogfilesForFailures.py $(LogFilesDir) $(breakOnFailure)
 

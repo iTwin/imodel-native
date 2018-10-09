@@ -13,6 +13,13 @@ baseDir             = $(_MakeFilePath)
     %error Define LogFilesDir as the directory that contaings the logfiles to analyze
 %endif
 
+breakOnFailure = 1
+
+#Allowed to ignore failures 
+%if defined(AllowIgnore)
+    breakOnFailure = 0
+%endif
+
 always:
     python $(_makeFilePath)CheckLogfilesForFailures.py $(LogFilesDir) 1
     

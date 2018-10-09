@@ -17,9 +17,10 @@ baseDir             = $(_MakeFilePath)
     %error Define LogFilesDir as the directory that contaings the logfiles to analyze
 %endif
 
-# Firebug is optionally allowed to ignore failures because it will trigger a secondary job to record, ignore, and file defects.
 breakOnFailure = 1
-%if defined(AllowIgnore) && defined(PRG) && !defined(SUBNET_PRG)
+
+#Allowed to ignore failures 
+%if defined(AllowIgnore)
     breakOnFailure = 0
 %endif
 
