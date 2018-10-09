@@ -774,7 +774,7 @@ static ECObjectsStatus CheckEndpointForElementAspect(ECRelationshipConstraintCR 
     ECObjectsStatus status = ECObjectsStatus::Success;
 
     ECClassCP abstractClass = endpoint.GetAbstractConstraint();
-    if (abstractClass->Is("BisCore", "ElementAspect"))
+    if (nullptr != abstractClass && abstractClass->Is("BisCore", "ElementAspect"))
         {
         status = ECObjectsStatus::Error;
         LOG.errorv("Relationship class '%s' has ElementAspect '%s' listed as a %s. ElementAspects should not be at the receiving end of relationships.",
@@ -816,12 +816,12 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
 
     if (ECRelatedInstanceDirection::Backward == relClass->GetStrengthDirection())
         {
-        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(sourceConstraint, relClass->GetFullName(), "source"))
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(sourceConstraint, relClass->GetFullName(), "Source"))
             status = ECObjectsStatus::Error;
         }
     else
         {
-        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(targetConstraint, relClass->GetFullName(), "target"))
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(targetConstraint, relClass->GetFullName(), "Target"))
             status = ECObjectsStatus::Error;
         }
     

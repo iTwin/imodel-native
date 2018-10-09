@@ -10,7 +10,6 @@
 #include "../ECObjectsTestPCH.h"
 #include <Bentley/BeTimeUtilities.h>
 #include "TestFixture.h"
-#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
