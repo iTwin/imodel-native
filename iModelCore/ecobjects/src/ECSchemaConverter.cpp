@@ -1242,7 +1242,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
             {
             Utf8String schemaName;
             Utf8String name;
-            if (SUCCESS == ECClass::ParseClassName(schemaName, name, ecName))
+            if (ECObjectsStatus::Success == ECClass::ParseClassName(schemaName, name, ecName))
                 newUnit = unitSchema->GetUnitCP(name.c_str());
             }
         }
