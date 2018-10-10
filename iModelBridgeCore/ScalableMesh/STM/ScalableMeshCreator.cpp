@@ -389,7 +389,7 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     m_isCanceled(false),
     m_progress(new ScalableMeshProgress())
     {
-
+    m_isShareable = false;
 
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
@@ -415,7 +415,7 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
 	m_progress(new ScalableMeshProgress())
     {
   
-
+    m_isShareable = false;
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 	s_useThreadsInMeshing = true;
