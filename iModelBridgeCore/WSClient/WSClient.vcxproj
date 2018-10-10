@@ -58,6 +58,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
+    <ClCompile Include="Azure\AzureError.cpp" />
     <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp" />
     <ClCompile Include="Azure\EventServiceClient.cpp" />
     <ClCompile Include="Cache\BackgroundSyncNotifier.cpp" />

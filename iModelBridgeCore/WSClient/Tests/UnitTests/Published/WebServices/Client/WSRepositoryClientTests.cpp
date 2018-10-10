@@ -705,8 +705,7 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyFilePath_Erro
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ExpectRequests(0);
 
     auto result = client->SendGetFileRequest(StubObjectId(), BeFileName())->GetResult();
     ASSERT_FALSE(result.IsSuccess());
@@ -2748,7 +2747,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://foozure.com/boo", request.GetUrl().c_str());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
         return StubHttpResponse(HttpStatus::Created);
         });
@@ -2772,7 +2771,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
@@ -2784,24 +2783,10 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://foozure.com/boo", request.GetUrl().c_str());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
         Utf8CP body = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>BlobNotFound</Code><Message>TestMessage</Message></Error>";
         return StubHttpResponse(HttpStatus::NotFound, body, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
-        });
-    GetHandler().ExpectRequest([=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
-        return StubHttpResponse(HttpStatus::OK);
-        });
-    GetHandler().ExpectRequest([=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
-        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
-        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
-        return StubHttpResponse(HttpStatus::OK);
         });
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();

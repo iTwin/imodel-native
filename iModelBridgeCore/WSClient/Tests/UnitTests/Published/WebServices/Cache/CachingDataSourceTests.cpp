@@ -7120,7 +7120,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSupplied_ProgressHan
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(DoAll(SetArgReferee<1>(responseKeys), Return(CacheStatus::OK)));
 
     EXPECT_CALL(*provider, GetQueries(_, newInstanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, newInstanceKey, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, newInstanceKey, _)).Times(1).WillRepeatedly(Return(nullptr));
 
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
@@ -7156,7 +7156,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueriesSuppliedFilteringAll
     EXPECT_CALL(*cache, ReadResponseInstanceKeys(query.key, _)).WillOnce(DoAll(SetArgReferee<1>(responseKeys), Return(CacheStatus::OK)));
 
     EXPECT_CALL(*provider, GetQueries(_, newInstanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
-    EXPECT_CALL(*provider, DoUpdateFile(_, newInstanceKey, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, newInstanceKey, _)).Times(1).WillRepeatedly(Return(nullptr));
 
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
 
