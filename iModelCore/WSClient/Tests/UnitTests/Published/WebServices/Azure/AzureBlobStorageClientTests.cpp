@@ -213,14 +213,14 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_FileSmallerThanChunk_U
     GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
-        EXPECT_STREQ("TestUrl", request.GetUrl().c_str());
+        EXPECT_STREQ("https://test/foo", request.GetUrl().c_str());
         EXPECT_EQ(fileSize, request.GetRequestBody()->GetLength());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
         return StubHttpResponse(HttpStatus::Created, "", {{"ETag", "FooBoo"}});
         });
 
     BeFileName filePath = StubFileWithSize(fileSize);
-    auto result = client->SendUpdateFileRequest("TestUrl", filePath)->GetResult();
+    auto result = client->SendUpdateFileRequest("https://test/foo", filePath)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     ASSERT_EQ("FooBoo", result.GetValue().GetETag());
     }
