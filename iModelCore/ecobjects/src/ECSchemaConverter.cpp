@@ -1238,12 +1238,13 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (nullptr == newUnit)
         {
         Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnit.GetName());
-
-        Utf8String schemaName;
-        Utf8String name;
-        ECClass::ParseClassName(schemaName, name, ecName);
-
-        newUnit = unitSchema->GetUnitCP(name.c_str());
+        if (!Utf8String::IsNullOrEmpty(ecName))
+            {
+            Utf8String schemaName;
+            Utf8String name;
+            if (SUCCESS == ECClass::ParseClassName(schemaName, name, ecName))
+                newUnit = unitSchema->GetUnitCP(name.c_str());
+            }
         }
     if (nullptr == newUnit)
         {
