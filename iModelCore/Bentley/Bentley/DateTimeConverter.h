@@ -14,6 +14,7 @@
 #include <regex>
 #include <time.h>
 #include <Bentley/bvector.h>
+#include <Bentley/BeThread.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -96,6 +97,7 @@ struct DateTimeConverter : NonCopyableClass
 struct DateTimeStringConverter final
     {
     private:
+        static BeMutex* s_mutex;
         static std::regex* s_dtRegex;
         static std::regex* s_todRegex;
 

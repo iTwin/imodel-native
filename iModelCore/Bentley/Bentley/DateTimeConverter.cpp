@@ -35,7 +35,6 @@ const uint64_t DateTimeConverter::UNIXEPOCH_END_IN_JULIANDAY_MSEC = INT64_C(2130
 //(according to http://quasar.as.utexas.edu/BillInfo/JulianDateCalc.html)
 const uint64_t DateTimeConverter::CE_EPOCH_AS_JD_MSEC = INT64_C(148731163200000);
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -393,6 +392,7 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime(int64_t& 
 //+---------------+---------------+---------------+---------------+---------------+------
 // Bentley guideline: Do not release non-POD static variables
 //static
+BeMutex* DateTimeStringConverter::s_mutex = new BeMutex();
 std::regex* DateTimeStringConverter::s_dtRegex = nullptr; 
 std::regex* DateTimeStringConverter::s_todRegex = nullptr;
 
@@ -655,6 +655,7 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(Utf8StringR matchVa
 //static
 std::regex const& DateTimeStringConverter::GetDateTimeRegex()
     {
+    BeMutexHolder lock(*s_mutex);
     if (s_dtRegex == nullptr)
         s_dtRegex = new std::regex(DATETIME_REGEXPATTERN, std::regex_constants::optimize);
 
@@ -667,6 +668,7 @@ std::regex const& DateTimeStringConverter::GetDateTimeRegex()
 //static
 std::regex const& DateTimeStringConverter::GetTimeOfDayRegex()
     {
+    BeMutexHolder lock(*s_mutex);
     if (s_todRegex == nullptr)
         s_todRegex = new std::regex(TIMEOFDAY_REGEXPATTERN, std::regex_constants::optimize);
 
