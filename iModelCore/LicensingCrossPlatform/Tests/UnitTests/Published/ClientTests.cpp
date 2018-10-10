@@ -228,8 +228,8 @@ TEST_F(ClientTests, GetProductStatus_Test)
 	ASSERT_EQ((int)client->GetProductStatus(9999), (int)LicenseStatus::NotEntitled); // Policy with productId does not exist
 	ASSERT_EQ((int)client->GetProductStatus(9909), (int)LicenseStatus::Ok); // Grace Period NOT started; should return Ok
 	
-	auto timestamp = Utf8String(DateHelper::TimeToString(DateHelper::GetCurrentTime()).c_str());
-	auto timestampPast = Utf8String(DateHelper::TimeToString(DateHelper::AddDaysToCurrentTime(-14)).c_str()); // Two weeks ago; default offline period allowed is only 1 week
+	auto timestamp = DateHelper::GetCurrentTime();
+	auto timestampPast = DateHelper::AddDaysToCurrentTime(-14); // Two weeks ago; default offline period allowed is only 1 week
 	
 	client->GetUsageDb().SetOfflineGracePeriodStart(timestamp);
 	ASSERT_EQ((int)client->GetProductStatus(9900), (int)LicenseStatus::Offline); // Valid status should be Offline now

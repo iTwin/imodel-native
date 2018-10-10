@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Licensing/DateHelper.h $
+|     $Source: Licensing/DateHelper.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,65 +8,58 @@
 #pragma once
 
 #include <Licensing/Licensing.h>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
+#include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 struct DateHelper
 {
 private:
-	/*time_t StringToTimeFormatted(const std::string& string, const std::string format) const
-		{
-		std::tm tm;
-		std::istringstream ss(string);
-		ss >> std::get_time(&tm, format);
-		
-		}*/
+
+	static const int64_t dayMillis = 24 * 60 * 60 * 1000;
+
 public:
-	static time_t GetCurrentTime()
+
+	static Utf8String GetCurrentTime()
 		{
-		time_t ct = time(0);
-		time_t currentTime = mktime(gmtime(&ct));
-		return currentTime;
+		return DateTime::GetCurrentTimeUtc().ToString();
 		}
 
-	static time_t AddDaysToTime(const time_t& time, int daysToAdd)
+	static Utf8String AddDaysToTime(Utf8StringCR string, int daysToAdd)
 		{
-		struct tm* tm = localtime(&time);
-		tm->tm_mday += daysToAdd;
-		time_t newTime = mktime(tm);
-		return newTime;
+		DateTime time;
+		DateTime::FromString(time, string.c_str());
+
+		int64_t millis;
+		time.ToUnixMilliseconds(millis);
+		millis += (dayMillis*daysToAdd);
+		DateTime::FromUnixMilliseconds(time, millis);
+		return time.ToString();
 		}
 
-	static time_t AddDaysToCurrentTime(int daysToAdd)
+	static Utf8String AddDaysToCurrentTime(int daysToAdd)
 		{
 		return AddDaysToTime(GetCurrentTime(),daysToAdd);
 		}
 
-	static int64_t GetDaysLeftUntilTime(const time_t& time)
+	static int64_t GetDaysLeftUntilTime(Utf8StringCR time)
 		{
-		double secondsLeft = difftime(time, GetCurrentTime());
-		int64_t daysLeft = (int)ceil(secondsLeft/(24*60*60));
+		int64_t millisLeft = diffdate(time, GetCurrentTime());
+		int64_t daysLeft = (int64_t)ceil(millisLeft/dayMillis);
 		return daysLeft;
 		}
 
-	static time_t StringToTime(const std::string& string)
+	static int64_t diffdate(Utf8StringCR timeStringL, Utf8String timeStringR)
 		{
-		std::tm tm;
-		std::istringstream ss(string);
-		ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-		return std::mktime(&tm);
+		DateTime timeL, timeR;
+		DateTime::FromString(timeL, timeStringL.c_str());
+		DateTime::FromString(timeR, timeStringR.c_str());
+		int64_t l_Millis, r_Millis;
+		timeL.ToUnixMilliseconds(l_Millis);
+		timeR.ToUnixMilliseconds(r_Millis);
+		return l_Millis - r_Millis;
 		}
 
-	static std::string TimeToString(const time_t& time)
-		{
-		std::tm* tmtime = (time < 0) ? gmtime(&time) : localtime(&time);
-		char buffer[64];
-		strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", tmtime);
-		return buffer;
-		}
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

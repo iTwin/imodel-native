@@ -7,12 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include "DateHelper.h"
+
 #include <Bentley/Base64Utilities.h>
 
 #include <Licensing/Licensing.h>
 #include <Licensing/Utils/JWToken.h>
 #include <list>
-#include "DateHelper.h"
 
 
 // AppliesTo Url
@@ -90,10 +91,10 @@ public:
 		Utf8String m_MachineSID;
 		Utf8String m_AccessKey;
 		Utf8String m_UserId;
-		time_t m_CheckedOutDate;
+		Utf8String m_CheckedOutDate;
 		std::list<std::shared_ptr<RequestedSecurable>> m_RequestedSecurables;
 		Utf8String m_MachineName;
-		time_t m_ClientDateTime;
+		Utf8String m_ClientDateTime;
 		Utf8String m_Locale;
 		Utf8String m_AppliesTo;
 		// helper functions
@@ -104,10 +105,10 @@ public:
 		Utf8String GetMachineSID() const { return m_MachineSID; };
 		Utf8String GetAccessKey() const { return m_AccessKey; };
 		Utf8String GetUserId() const { return m_UserId; };
-		time_t GetCheckedOutDate() const { return m_CheckedOutDate; };
+		Utf8String GetCheckedOutDate() const { return m_CheckedOutDate; };
 		std::list<std::shared_ptr<RequestedSecurable>> GetRequestedSecurables() const { return m_RequestedSecurables; };
 		Utf8String GetMachineName() const { return m_MachineName; };
-		time_t GetClientDateTime() const { return m_ClientDateTime; };
+		Utf8String GetClientDateTime() const { return m_ClientDateTime; };
 		Utf8String GetLocale() const { return m_Locale; };
 		Utf8String GetAppliesTo() const { return m_AppliesTo; };
 	};
@@ -126,7 +127,7 @@ public:
 		Utf8String m_PrincipalId;
 		Utf8String m_SecurableId;
 		AccessKind m_AccessKind;
-		time_t m_ExpiresOn;
+		Utf8String m_ExpiresOn;
 		std::list<std::shared_ptr<Qualifier>> m_QualifierOverrides;
 		// helper functions
 		std::list<std::shared_ptr<Qualifier>> CreateQualifierOverrides(const Json::Value& json);
@@ -136,7 +137,7 @@ public:
 		Utf8String GetPrincipalId() const { return m_PrincipalId; };
 		Utf8String GetSecurableId() const { return m_SecurableId; };
 		AccessKind GetAccessKind() const { return m_AccessKind; };
-		time_t GetExpiresOn() const { return m_ExpiresOn; };
+		Utf8String GetExpiresOn() const { return m_ExpiresOn; };
 		std::list<std::shared_ptr<Qualifier>> GetQualifierOverrides() const { return m_QualifierOverrides; };
 	};
 
@@ -185,8 +186,8 @@ private:
 	Json::Value m_json;
 	Utf8String m_PolicyId;
 	double m_PolicyVersion;
-	time_t m_PolicyCreatedOn;
-	time_t m_PolicyExpiresOn;
+	Utf8String m_PolicyCreatedOn;
+	Utf8String m_PolicyExpiresOn;
 	std::shared_ptr<RequestData> m_RequestData;
 	Utf8String m_MachineSignature;
 	Utf8String m_AppliesToUserId;
@@ -196,7 +197,7 @@ private:
 	std::shared_ptr<UserData> m_UserData;
 	std::list<std::shared_ptr<Qualifier>> m_DefaultQualifiers;
 	// helper functions
-	bool IsTimeExpired(const time_t& expirationTime);
+	bool IsTimeExpired(const Utf8String& expirationTime);
 	std::shared_ptr<Policy::Qualifier> GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8String qualifierName);
 	std::shared_ptr<Policy::ACL> GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8String securableId);
 	std::shared_ptr<Policy::SecurableData> GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8String productId, Utf8String featureString);
@@ -211,8 +212,8 @@ public:
 	LICENSING_EXPORT Json::Value GetJson() const { return m_json; };
 	LICENSING_EXPORT Utf8String GetPolicyId() const { return m_PolicyId; };
 	LICENSING_EXPORT double GetPolicyVersion() const { return m_PolicyVersion; };
-	LICENSING_EXPORT time_t GetPolicyCreatedOn() const { return m_PolicyCreatedOn; };
-	LICENSING_EXPORT time_t GetPolicyExpiresOn() const { return m_PolicyExpiresOn; };
+	LICENSING_EXPORT Utf8String GetPolicyCreatedOn() const { return m_PolicyCreatedOn; };
+	LICENSING_EXPORT Utf8String GetPolicyExpiresOn() const { return m_PolicyExpiresOn; };
 	LICENSING_EXPORT std::shared_ptr<RequestData> GetRequestData() const { return m_RequestData; };
 	LICENSING_EXPORT Utf8String GetMachineSignature() const { return m_MachineSignature; };
 	LICENSING_EXPORT Utf8String GetAppliesToUserId() const { return m_AppliesToUserId; };

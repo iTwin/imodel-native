@@ -37,7 +37,6 @@ TEST_F(PolicyTests, Create_Policy)
 
 TEST_F(PolicyTests, Create_PolicyNullInputs)
 	{
-	//auto policyNullToken = Policy::Create(PolicyToken::Create(Json::Value::GetNull()));
 	auto policyNullToken = Policy::Create(JWToken::Create("", ""));
 	auto policyNullJson = Policy::Create(Json::Value::GetNull());
 	ASSERT_EQ(policyNullToken, nullptr);
@@ -55,14 +54,14 @@ TEST_F(PolicyTests, Validate_ProperRead)
 	ASSERT_NE(policy, nullptr);
 	ASSERT_TRUE(policy->GetPolicyId().Equals("e64ca864-6973-401e-9b17-370a30ca493f"));
 	ASSERT_EQ(policy->GetPolicyVersion(), 1.0);
-	ASSERT_EQ(DateHelper::TimeToString(policy->GetPolicyCreatedOn()), "2017-06-14T10:47:49");
-	ASSERT_EQ(DateHelper::TimeToString(policy->GetPolicyExpiresOn()), "2017-06-21T10:47:49");
+	ASSERT_EQ(policy->GetPolicyCreatedOn(), "2017-06-14T10:47:49.7906987Z");
+	ASSERT_EQ(policy->GetPolicyExpiresOn(), "2017-06-21T10:47:49.7906987Z");
 	auto requestData = policy->GetRequestData();
 	ASSERT_NE(requestData, nullptr);
 	ASSERT_TRUE(requestData->GetMachineSID().Equals("zEc0kbXcMkPBXSjeJDU+pE54n/I="));
 	ASSERT_TRUE(std::string(requestData->GetAccessKey().c_str()).empty());
 	ASSERT_TRUE(requestData->GetUserId().Equals("112dde45-f85e-41e6-a012-28f5bcd44ce1"));
-	ASSERT_EQ(requestData->GetCheckedOutDate(), -1); // no time
+	ASSERT_EQ(requestData->GetCheckedOutDate(), ""); // no time
 	auto requestedSecurables = requestData->GetRequestedSecurables();
 	ASSERT_EQ(requestedSecurables.size(), 1);
 	ASSERT_EQ(requestedSecurables.front()->GetProductId(), 1000);
@@ -70,7 +69,7 @@ TEST_F(PolicyTests, Validate_ProperRead)
 	ASSERT_TRUE(std::string(requestedSecurables.front()->GetFeatureString().c_str()).empty());
 	ASSERT_TRUE(std::string(requestedSecurables.front()->GetVersion().c_str()).empty());
 	ASSERT_EQ(requestData->GetMachineName(), "testing");
-	ASSERT_EQ(DateHelper::TimeToString(requestData->GetClientDateTime()), "2017-04-24T21:01:14");
+	ASSERT_EQ(requestData->GetClientDateTime(), "2017-04-24T21:01:14.957Z");
 	ASSERT_EQ(requestData->GetLocale(), "en-US");
 	ASSERT_EQ(requestData->GetAppliesTo(), "https://ulasdeveus2sfc01.eastus2.cloudapp.azure.com/");
 	ASSERT_TRUE(policy->GetMachineSignature().Equals("3EEHtW2zJM8K71EoN0pXjMA4MX4="));
@@ -115,7 +114,7 @@ TEST_F(PolicyTests, GetACLsQualifierOverride_HeartbeatInterval_Success)
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
-    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQuailifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7), 
+    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQualifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
                                                                                     DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
                                                                                     aclsQualifierOverrides, securedataQualifierOverrides));
 
@@ -139,7 +138,7 @@ TEST_F(PolicyTests, GetSecureDataQualifierOverride_PolicyInterval_Success)
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
-    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQuailifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
+    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQualifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
                                                                                     DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
                                                                                     aclsQualifierOverrides, securedataQualifierOverrides));
 
@@ -170,7 +169,7 @@ TEST_F(PolicyTests, GetACLsQualifierOverrideWithSecureDataQualifierOverride_Time
 
     Utf8String userId = "ca1cc6ca-2af1-4efd-8876-fd5910a3a7fa";
 
-    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQuailifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
+    auto policy = Policy::Create(DummyPolicyHelper::CreatePolicyQualifierOverrides(DateHelper::GetCurrentTime(), DateHelper::AddDaysToCurrentTime(7),
                                                                                     DateHelper::AddDaysToCurrentTime(7), userId, 9900, "", 1, false,
                                                                                     aclsQualifierOverrides, securedataQualifierOverrides));
 

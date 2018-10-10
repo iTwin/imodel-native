@@ -44,7 +44,7 @@ std::string DummyPolicyHelper::PN()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyId(Utf8String id)
+std::string DummyPolicyHelper::PolicyId(Utf8StringCR id)
         {
         std::ostringstream stream;
         stream << "\"PolicyId\":\"";
@@ -64,7 +64,7 @@ std::string DummyPolicyHelper::PolicyVersion()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyCreatedOn(Utf8String date)
+std::string DummyPolicyHelper::PolicyCreatedOn(Utf8StringCR date)
     {
     std::ostringstream stream;
     stream << "\"PolicyCreatedOn\":\"";
@@ -76,7 +76,7 @@ std::string DummyPolicyHelper::PolicyCreatedOn(Utf8String date)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::PolicyExpiresOn(Utf8String date)
+std::string DummyPolicyHelper::PolicyExpiresOn(Utf8StringCR date)
     {
     std::ostringstream stream;
     stream << "\"PolicyExpiresOn\":\"";
@@ -88,7 +88,7 @@ std::string DummyPolicyHelper::PolicyExpiresOn(Utf8String date)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::RequestData(int productId, Utf8String featureString, Utf8String userId)
+std::string DummyPolicyHelper::RequestData(int productId, Utf8StringCR featureString, Utf8StringCR userId)
     {
     std::ostringstream stream;
     stream << "\"RequestData\":{\"AccessKey\":null,\"AppliesTo\":\"https://entitlement-search.bentley.com/\",\"CheckedOutDate\":null,\"ClientDateTime\":\"2018-07-25T21:13:42.048Z\",\"Locale\":\"en\",\"MachineName\":\"TestDeviceId\",\"MachineSID\":null,\"RequestedSecurables\":[{\"FeatureString\":\"";
@@ -112,7 +112,7 @@ std::string DummyPolicyHelper::MachineSignature()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::AppliesToUserId(Utf8String userId)
+std::string DummyPolicyHelper::AppliesToUserId(Utf8StringCR userId)
     {
     std::ostringstream stream;
     stream << "\"AppliesToUserId\":\"";
@@ -132,7 +132,7 @@ std::string DummyPolicyHelper::AppliesToSecurableIds()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::ACLs(Utf8String expiration, int accessKind, Utf8String userId, bool isTrial, bool isOfflineUsageAllowed)
+std::string DummyPolicyHelper::ACLs(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed)
     {
     std::ostringstream stream;
     stream << "\"ACLs\":[{\"AccessKind\":";
@@ -163,7 +163,7 @@ std::string DummyPolicyHelper::ACLs(Utf8String expiration, int accessKind, Utf8S
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::ACLsWithQualifierOverrides(Utf8String expiration, int accessKind, Utf8String userId, bool isTrial, bool isOfflineUsageAllowed, bvector<QualifierOverride>& qualifierOverrides)
+std::string DummyPolicyHelper::ACLsWithQualifierOverrides(Utf8StringCR expiration, int accessKind, Utf8StringCR userId, bool isTrial, bool isOfflineUsageAllowed, bvector<QualifierOverride>& qualifierOverrides)
     {
     std::ostringstream stream;
     stream << "\"ACLs\":[{\"AccessKind\":";
@@ -209,7 +209,7 @@ std::string DummyPolicyHelper::ACLsWithQualifierOverrides(Utf8String expiration,
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::SecurableData(int productId, Utf8String featureString)
+std::string DummyPolicyHelper::SecurableData(int productId, Utf8StringCR featureString)
     {
     std::ostringstream stream;
     stream << "\"SecurableData\":[{\"FeatureString\":\"";
@@ -223,7 +223,7 @@ std::string DummyPolicyHelper::SecurableData(int productId, Utf8String featureSt
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::SecurableDataWithQualifierOverrides(int productId, Utf8String featureString, bvector<QualifierOverride>& qualifierOverrides)
+std::string DummyPolicyHelper::SecurableDataWithQualifierOverrides(int productId, Utf8StringCR featureString, bvector<QualifierOverride>& qualifierOverrides)
     {
     std::ostringstream stream;
     stream << "\"SecurableData\":[{\"FeatureString\":\"";
@@ -258,7 +258,7 @@ std::string DummyPolicyHelper::SecurableDataWithQualifierOverrides(int productId
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::string DummyPolicyHelper::UserData(Utf8String userId)
+std::string DummyPolicyHelper::UserData(Utf8StringCR userId)
     {
     std::ostringstream stream;
     stream << "\"UserData\":{\"EntitlementGroupId\":\"00000000-0000-0000-0000-000000000000\",\"OrganizationId\":\"a0dc5a35-7a81-47a5-9380-5f54bf040c43\",\"UltimateCountryId\":\"a427cdbc-56f8-421a-829a-20dccc806660\",\"UltimateId\":\"79c5c2fd-5a32-425f-af1a-c43703ca66be\",\"UltimateSAPId\":\"1004175881\",\"UsageCountryISO\":\"US\",\"UserId\":\"";
@@ -310,7 +310,7 @@ Utf8String DummyPolicyHelper::GetRandomPolicyId()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial)
     {
     bool isOnlineUsageAllowed = type != PolicyType::OfflineNotAllowed;
     // Create string
@@ -318,13 +318,13 @@ Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, time_t crea
     stream << PolicyStart();
     stream << PolicyId(GetRandomPolicyId()) << PN();
     stream << PolicyVersion() << PN();
-    stream << PolicyCreatedOn(DateHelper::TimeToString(createdOn).c_str()) << PN();
-    stream << PolicyExpiresOn(DateHelper::TimeToString(expiresOn).c_str()) << PN();
+    stream << PolicyCreatedOn(createdOn) << PN();
+    stream << PolicyExpiresOn(expiresOn) << PN();
     if (type != PolicyType::NoRequestData) stream << RequestData(productId, featureString, userId) << PN();
     stream << MachineSignature() << PN();
     stream << AppliesToUserId(userId) << PN();
     stream << AppliesToSecurableIds() << PN();
-    if (type != PolicyType::NoACLs) stream << ACLs(DateHelper::TimeToString(aclExpiresOn).c_str(), accessKind, userId, isTrial, isOnlineUsageAllowed) << PN();
+    if (type != PolicyType::NoACLs) stream << ACLs(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed) << PN();
     if (type != PolicyType::NoSecurables) stream << SecurableData(productId, featureString) << PN();
     if (type != PolicyType::NoUserData) stream << UserData(userId) << PN();
     stream << DefaultQualifiers(); // no PN needed here; last subitem
@@ -337,7 +337,7 @@ Json::Value DummyPolicyHelper::CreatePolicySpecific(PolicyType type, time_t crea
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyFull(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+Json::Value DummyPolicyHelper::CreatePolicyFull(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial)
     {
     return CreatePolicySpecific(PolicyType::Full, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
     };
@@ -345,7 +345,7 @@ Json::Value DummyPolicyHelper::CreatePolicyFull(time_t createdOn, time_t expires
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyNoSecurables(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+Json::Value DummyPolicyHelper::CreatePolicyNoSecurables(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial)
     {
     return CreatePolicySpecific(PolicyType::NoSecurables, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
     };
@@ -353,7 +353,7 @@ Json::Value DummyPolicyHelper::CreatePolicyNoSecurables(time_t createdOn, time_t
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyNoACLs(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+Json::Value DummyPolicyHelper::CreatePolicyNoACLs(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial)
     {
     return CreatePolicySpecific(PolicyType::NoACLs, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
     };
@@ -361,7 +361,7 @@ Json::Value DummyPolicyHelper::CreatePolicyNoACLs(time_t createdOn, time_t expir
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyNoUserData(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+Json::Value DummyPolicyHelper::CreatePolicyNoUserData(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial)
     {
     return CreatePolicySpecific(PolicyType::NoUserData, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
     };
@@ -369,7 +369,7 @@ Json::Value DummyPolicyHelper::CreatePolicyNoUserData(time_t createdOn, time_t e
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyNoRequestData(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+Json::Value DummyPolicyHelper::CreatePolicyNoRequestData(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial)
     {
     return CreatePolicySpecific(PolicyType::NoRequestData, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
     };
@@ -377,7 +377,7 @@ Json::Value DummyPolicyHelper::CreatePolicyNoRequestData(time_t createdOn, time_
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyOfflineNotAllowed(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString, int accessKind, bool isTrial)
+Json::Value DummyPolicyHelper::CreatePolicyOfflineNotAllowed(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString, int accessKind, bool isTrial)
     {
     return CreatePolicySpecific(PolicyType::OfflineNotAllowed, createdOn, expiresOn, aclExpiresOn, userId, productId, featureString, accessKind, isTrial);
     };
@@ -398,7 +398,7 @@ Json::Value DummyPolicyHelper::CreatePolicyMissingFields()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DummyPolicyHelper::CreatePolicyQuailifierOverrides(time_t createdOn, time_t expiresOn, time_t aclExpiresOn, Utf8String userId, int productId, Utf8String featureString,
+Json::Value DummyPolicyHelper::CreatePolicyQualifierOverrides(Utf8StringCR createdOn, Utf8StringCR expiresOn, Utf8StringCR aclExpiresOn, Utf8StringCR userId, int productId, Utf8StringCR featureString,
                                                                int accessKind, bool isTrial, bvector<QualifierOverride>& aclsQualifierOverrides, bvector<QualifierOverride>& securableDataQualifierOverrides)
     {
     // Create string
@@ -407,8 +407,8 @@ Json::Value DummyPolicyHelper::CreatePolicyQuailifierOverrides(time_t createdOn,
     stream << PolicyStart();
     stream << PolicyId(GetRandomPolicyId()) << PN();
     stream << PolicyVersion() << PN();
-    stream << PolicyCreatedOn(DateHelper::TimeToString(createdOn).c_str()) << PN();
-    stream << PolicyExpiresOn(DateHelper::TimeToString(expiresOn).c_str()) << PN();
+    stream << PolicyCreatedOn(createdOn) << PN();
+    stream << PolicyExpiresOn(expiresOn) << PN();
     stream << RequestData(productId, featureString, userId) << PN();
     stream << MachineSignature() << PN();
     stream << AppliesToUserId(userId) << PN();
@@ -416,11 +416,11 @@ Json::Value DummyPolicyHelper::CreatePolicyQuailifierOverrides(time_t createdOn,
 
     if (aclsQualifierOverrides.size() == 0)
         {
-        stream << ACLs(DateHelper::TimeToString(aclExpiresOn).c_str(), accessKind, userId, isTrial, isOnlineUsageAllowed) << PN();
+        stream << ACLs(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed) << PN();
         }
     else
         {
-        stream << ACLsWithQualifierOverrides(DateHelper::TimeToString(aclExpiresOn).c_str(), accessKind, userId, isTrial, isOnlineUsageAllowed, aclsQualifierOverrides) << PN();
+        stream << ACLsWithQualifierOverrides(aclExpiresOn, accessKind, userId, isTrial, isOnlineUsageAllowed, aclsQualifierOverrides) << PN();
         }
 
     if (securableDataQualifierOverrides.size() == 0)

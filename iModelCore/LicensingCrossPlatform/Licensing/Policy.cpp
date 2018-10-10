@@ -18,8 +18,8 @@ Policy::Policy(const Json::Value& json)
 	m_json = json;
 	m_PolicyId = json["PolicyId"].asString();
 	m_PolicyVersion = json["PolicyVersion"].asDouble();
-	m_PolicyCreatedOn = DateHelper::StringToTime(json["PolicyCreatedOn"].asCString());
-	m_PolicyExpiresOn = DateHelper::StringToTime(json["PolicyExpiresOn"].asCString());
+	m_PolicyCreatedOn = json["PolicyCreatedOn"].asString();
+	m_PolicyExpiresOn = json["PolicyExpiresOn"].asString();
 	m_RequestData = RequestData::Create(json["RequestData"]);
 	m_MachineSignature = json["MachineSignature"].asString();
 	m_AppliesToUserId = json["AppliesToUserId"].asString();
@@ -49,16 +49,6 @@ std::shared_ptr<Policy> Policy::Create(std::shared_ptr<JWToken> jwToken)
 
 	return std::shared_ptr<Policy>(new Policy(policyJson));
 }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*std::shared_ptr<Policy> Policy::Create(std::shared_ptr<PolicyToken> policyToken)
-	{
-	if (policyToken == nullptr)
-		return nullptr;
-	return std::shared_ptr<Policy>(new Policy(policyToken));
-	}*/
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -160,7 +150,6 @@ Policy::Qualifier::Qualifier(Json::Value json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::Qualifier> Policy::Qualifier::Create(const Json::Value& json)
 	{
-	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::Qualifier>(new Policy::Qualifier(json));
 	}
 
@@ -180,7 +169,6 @@ Policy::RequestedSecurable::RequestedSecurable(Json::Value json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::RequestedSecurable> Policy::RequestedSecurable::Create(const Json::Value& json)
 	{
-	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::RequestedSecurable>(new Policy::RequestedSecurable(json));
 	}
 
@@ -193,10 +181,10 @@ Policy::RequestData::RequestData(const Json::Value& json)
 	m_MachineSID = json["MachineSID"].asString();
 	m_AccessKey = json["AccessKey"].asString();
 	m_UserId = json["UserId"].asString();
-	m_CheckedOutDate = DateHelper::StringToTime(json["CheckedOutDate"].asCString());
+	m_CheckedOutDate = json["CheckedOutDate"].asString();
 	m_RequestedSecurables = CreateRequestedSecurables(json["RequestedSecurables"]);
 	m_MachineName = json["MachineName"].asString();
-	m_ClientDateTime = DateHelper::StringToTime(json["ClientDateTime"].asCString());
+	m_ClientDateTime = json["ClientDateTime"].asString();
 	m_Locale = json["Locale"].asString();
 	m_AppliesTo = json["AppliesTo"].asString();
 	}
@@ -206,7 +194,6 @@ Policy::RequestData::RequestData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::RequestData> Policy::RequestData::Create(const Json::Value& json)
 	{
-	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::RequestData>(new Policy::RequestData(json));
 	}
 
@@ -237,7 +224,7 @@ Policy::ACL::ACL(const Json::Value& json)
 	m_PrincipalId = json["PrincipalId"].asString();
 	m_SecurableId = json["SecurableId"].asString();
 	m_AccessKind = (AccessKind)json["AccessKind"].asInt();
-	m_ExpiresOn = DateHelper::StringToTime(json["ExpiresOn"].asCString());
+	m_ExpiresOn = json["ExpiresOn"].asString();
 	m_QualifierOverrides = CreateQualifierOverrides(json["QualifierOverrides"]);
 	}
 
@@ -246,7 +233,6 @@ Policy::ACL::ACL(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::ACL> Policy::ACL::Create(const Json::Value& json)
 	{
-	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::ACL>(new Policy::ACL(json));
 	}
 
@@ -286,7 +272,6 @@ Policy::SecurableData::SecurableData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::SecurableData> Policy::SecurableData::Create(const Json::Value& json)
 	{
-	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::SecurableData>(new Policy::SecurableData(json));
 	}
 
@@ -327,16 +312,21 @@ Policy::UserData::UserData(const Json::Value& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::UserData> Policy::UserData::Create(const Json::Value& json)
 	{
-	//if (json.isNull()) return nullptr;
 	return std::shared_ptr<Policy::UserData>(new Policy::UserData(json));
 	}
 
-bool Policy::IsTimeExpired(const time_t& expirationTime)
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Policy::IsTimeExpired(Utf8StringCR expirationTime)
 	{
-	double timeLeft = difftime(expirationTime, DateHelper::GetCurrentTime());
+	int64_t timeLeft = DateHelper::diffdate(expirationTime, DateHelper::GetCurrentTime());
 	return timeLeft <= 0;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::Qualifier> Policy::GetFirstMatchingQualifier(std::list<std::shared_ptr<Policy::Qualifier>> qualifierList, Utf8String qualifierName)
 	{
 	std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
@@ -351,6 +341,9 @@ std::shared_ptr<Policy::Qualifier> Policy::GetFirstMatchingQualifier(std::list<s
 	return matchingQualifier;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::ACL> Policy::GetFirstMatchingACL(std::list<std::shared_ptr<Policy::ACL>> aclList, Utf8String securableId)
 	{
 	std::shared_ptr<Policy::ACL> matchingACL = nullptr;
@@ -365,6 +358,9 @@ std::shared_ptr<Policy::ACL> Policy::GetFirstMatchingACL(std::list<std::shared_p
 	return matchingACL;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::SecurableData> Policy::GetFirstMatchingSecurableData(std::list<std::shared_ptr<Policy::SecurableData>> securableList, Utf8String productId, Utf8String featureString)
 	{
 	std::shared_ptr<Policy::SecurableData> matchingSecurable = nullptr;
@@ -380,6 +376,9 @@ std::shared_ptr<Policy::SecurableData> Policy::GetFirstMatchingSecurableData(std
 	return matchingSecurable;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Policy::IsValid()
 	{
 	// check if policy is not empty
@@ -411,6 +410,9 @@ bool Policy::IsValid()
 	return true;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<Policy::Qualifier> Policy::GetQualifier(Utf8String qualifierName, Utf8String productId, Utf8String featureString)
 	{
 	std::shared_ptr<Policy::Qualifier> matchingQualifier = nullptr;
@@ -447,6 +449,9 @@ std::shared_ptr<Policy::Qualifier> Policy::GetQualifier(Utf8String qualifierName
 	return matchingQualifier;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Policy::IsTrial(Utf8String productId, Utf8String featureString)
 	{
 	bool result = false;
@@ -459,6 +464,9 @@ bool Policy::IsTrial(Utf8String productId, Utf8String featureString)
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool Policy::IsAllowedOfflineUsage(Utf8String productId, Utf8String featureString)
 	{
 	bool result = false;
@@ -471,6 +479,9 @@ bool Policy::IsAllowedOfflineUsage(Utf8String productId, Utf8String featureStrin
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 int Policy::GetOfflineDuration(Utf8String productId, Utf8String featureString)
 	{
 	int result = 0;
@@ -545,6 +556,9 @@ Utf8String Policy::GetUsageType()
 	return result;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Policy::ProductStatus Policy::GetProductStatus(Utf8String productId, Utf8String featureString)
 	{
 	if (GetJson().isNull())
@@ -579,6 +593,9 @@ Policy::ProductStatus Policy::GetProductStatus(Utf8String productId, Utf8String 
 	return Policy::ProductStatus::Allowed;
 	}
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 Policy::PolicyStatus Policy::GetPolicyStatus()
 	{
 	if (IsExpired())

@@ -149,7 +149,7 @@ void ClientImpl::PolicyHeartbeat(int64_t currentTime)
 		if (policyToken == nullptr)
 			{
 			if (!HasOfflineGracePeriodStarted())
-				m_usageDb->SetOfflineGracePeriodStart(Utf8String(DateHelper::TimeToString(DateHelper::GetCurrentTime()).c_str()));
+				m_usageDb->SetOfflineGracePeriodStart(DateHelper::GetCurrentTime());
 			}
 		// otherwise, check if offline grace period should be reset
 		else
@@ -602,8 +602,8 @@ void ClientImpl::DeleteAllOtherUserPolicies(std::shared_ptr<Policy> policy)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::StorePolicyInUsageDb(std::shared_ptr<Policy> policy)
 	{
-	auto expiration = Utf8String(DateHelper::TimeToString(policy->GetPolicyExpiresOn()).c_str());
-	auto lastUpdate = Utf8String(DateHelper::TimeToString(policy->GetRequestData()->GetClientDateTime()).c_str());
+	auto expiration = policy->GetPolicyExpiresOn();
+	auto lastUpdate = policy->GetRequestData()->GetClientDateTime();
 	m_usageDb->AddOrUpdatePolicyFile(policy->GetPolicyId(),
 		policy->GetAppliesToUserId(),
 		expiration,
@@ -632,7 +632,7 @@ int64_t ClientImpl::GetDaysLeftInOfflineGracePeriod(std::shared_ptr<Policy> poli
 	}
 	// check if online usage is allowed; 
 	auto offlineDurationDays = policy->GetOfflineDuration(productId, featureString);
-	auto gracePeriodEndTime = DateHelper::AddDaysToTime(DateHelper::StringToTime(graceStartString.c_str()), offlineDurationDays);
+	auto gracePeriodEndTime = DateHelper::AddDaysToTime(graceStartString, offlineDurationDays);
 	auto daysLeft = DateHelper::GetDaysLeftUntilTime(gracePeriodEndTime);
 	return daysLeft;
 	}
