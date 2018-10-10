@@ -330,22 +330,41 @@ void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
 //+---------------+---------------+---------------+---------------+---------------+------
 void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
     {
-    bvector<Utf8CP> reservedNames {"ECInstanceId", "Id", "ECClassId", "SourceECInstanceId", "SourceId", "SourceECClassId", "SourceId", "SourceECClassId", "TargetECInstanceId", "TargetId", "TargetECClassId"};
-
     for (auto const& ecClass : classes)
         {
-        ECN::ECClassP nonConstClass = const_cast<ECClassP>(ecClass);
+        ECClassP nonConstClass = const_cast<ECClassP>(ecClass);
         for (auto const& ecProp : ecClass->GetProperties(false))
             {
             Utf8String debugName = Utf8String("ECProperty:") + ecClass->GetFullName() + Utf8String(".") + ecProp->GetName();
             ProcessCustomAttributeInstance(ecProp->GetCustomAttributes(false), *ecProp, debugName);
+
             // Need to make sure that property name does not conflict with one of the reserved system properties or aliases.
             Utf8CP thisName = ecProp->GetName().c_str();
-            auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
-            if (found != reservedNames.end())
+
+            // ECInstanceId, Id, ECClassId are not allowed, except for structs.
+            static bvector<Utf8CP> reservedNames{ "ECInstanceId", "Id", "ECClassId" };
+            if (!ecClass->IsStructClass())
                 {
-                ECPropertyP newProperty;
-                nonConstClass->RenameConflictProperty(ecProp, true, newProperty);
+                auto found = std::find_if(reservedNames.begin(), reservedNames.end(), [thisName](Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
+                if (found != reservedNames.end())
+                    {
+                    LOG.warningv("The %s has a reserved property name. It is being renamed...", debugName.c_str());
+                    ECPropertyP newProperty;
+                    nonConstClass->RenameConflictProperty(ecProp, true, newProperty);
+                    }
+                }
+
+            // SourceECInstanceId, SourceId, SourceECClassId, TargetECInstanceId, TargetId, TargetECClassId are not allowed on relationships(but are allowed on other types of classes)
+            static bvector<Utf8CP> relationshipReservedName{ "SourceECInstanceId", "SourceId", "SourceECClassId", "TargetECInstanceId", "TargetId", "TargetECClassId" };
+            if (ecClass->IsRelationshipClass())
+                {
+                auto found = std::find_if(relationshipReservedName.begin(), relationshipReservedName.end(), [thisName](Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(thisName, reserved) == 0; });
+                if (found != relationshipReservedName.end())
+                    {
+                    LOG.warningv("The %s has a reserved property name. It is being renamed...", debugName.c_str());
+                    ECPropertyP newProperty;
+                    nonConstClass->RenameConflictProperty(ecProp, true, newProperty);
+                    }
                 }
             }
         }

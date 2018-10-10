@@ -165,6 +165,9 @@
     <ClCompile Include="Published\FormatTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Published\SchemaConverterTests.cpp">
+      <Filter>Source Files\SchemaConverter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">

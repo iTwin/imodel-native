@@ -72,6 +72,7 @@
     <ClCompile Include="Published\ECEnumerationTests.cpp" />
     <ClCompile Include="Published\FormatTests.cpp" />
     <ClCompile Include="Published\SchemaComparerTests.cpp" />
+    <ClCompile Include="Published\SchemaConverterTests.cpp" />
     <ClCompile Include="Published\UnitsTests.cpp" />
     <ClCompile Include="Published\ExtendedTypeTests.cpp" />
     <ClCompile Include="Published\ECRelationshipTests.cpp" />
