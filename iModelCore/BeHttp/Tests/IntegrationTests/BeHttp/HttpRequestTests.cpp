@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#define BEHTTP_ENABLE_DUPLICATING_SYMBOLS
+
 #include "Tests.h"
 
 #include <Bentley/BeDebugLog.h>
@@ -24,6 +26,7 @@
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <Bentley/Tasks/TaskScheduler.h>
+#include <Bentley/Tasks/WorkerThread.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include "../../../BeHttp/Backdoor.h"
@@ -33,7 +36,11 @@
 #include "AsyncTestCheckpoint.h"
 
 #define WAITTIMEOUT 30000
+
+// Server need to have compression enabled - WSG 2.5+ has this by default
 #define COMPRESSION_OPTIONS_URL "https://mobilevm2.bentley.com/ws/v2.5/Repositories"
+
+#define GENERIC_URL "https://httpbin.org/uuid"
 
 #define HTTPBIN_HOST "httpbin.bentley.com"
 #define HTTPBIN_HTTP_URL "http://" HTTPBIN_HOST
@@ -62,7 +69,7 @@ struct HttpRequestTests : ::testing::Test
     void Reset()
         {
         // Enable full logging with LOG_TRACE if needed
-        NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_WARNING);
+        NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_INFO);
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BEHTTP_TESTS, NativeLogging::SEVERITY::LOG_INFO);
 
         putenv("http_proxy=");
@@ -361,17 +368,17 @@ TEST_F(HttpRequestTests, Perform_RequestCouldNotConnect_SetsEffectiveUrlToReques
 TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EscapesUnsafeCharactersAndExecutesSuccessfully)
     {
     //2014. Folowing urls with special symbols tested on browsers (# and % not tested )
-    //  query: http://httpbin.org/ip?<>"{}|\^~[]`
-    //  url:   http://httpbin.org/ip<>"{}|\^~[]`
+    //  query: http://httpbin.bentley.org/ip?<>"{}|\^~[]`
+    //  url:   http://httpbin.bentley.org/ip<>"{}|\^~[]`
     //FireFox:
-    //  query: http://httpbin.org/ip?%3C%3E%22{}|\^~[]%60
-    //  url:   http://httpbin.org/ip%3C%3E%22%7B%7D|%5C%5E~%5B%5D%60
+    //  query: http://httpbin.bentley.org/ip?%3C%3E%22{}|\^~[]%60
+    //  url:   http://httpbin.bentley.org/ip%3C%3E%22%7B%7D|%5C%5E~%5B%5D%60
     //InternetExplorer:
-    //  query: http://httpbin.org/ip?<>"{}|\^~[]`
-    //  url:   http://httpbin.org/ip%3C%3E%22%7B%7D%7C/%5E~[]%60
+    //  query: http://httpbin.bentley.org/ip?<>"{}|\^~[]`
+    //  url:   http://httpbin.bentley.org/ip%3C%3E%22%7B%7D%7C/%5E~[]%60
     //Chrome:
-    //  query: http://httpbin.org/ip?%3C%3E%22{}|\^~[]`
-    //  url:   http://httpbin.org/ip%3C%3E%22%7B%7D%7C/%5E~[]%60
+    //  query: http://httpbin.bentley.org/ip?%3C%3E%22{}|\^~[]`
+    //  url:   http://httpbin.bentley.org/ip%3C%3E%22%7B%7D%7C/%5E~[]%60
     //Casablanca :
     //  Allows only #, % and ~ from unsafe sumbols
     //CURL:
@@ -1187,7 +1194,7 @@ TEST_F(HttpRequestTestsProxy, Perform_SwitchingBetweenTwoServers_SamePerformance
     {
     const bvector<Utf8String> urlList =
         {
-        "http://httpbin.org/uuid",
+        GENERIC_URL,
         HTTPBIN_HTTP_URL "/uuid"
         };
     const size_t numUrls = urlList.size();
@@ -1199,7 +1206,7 @@ TEST_F(HttpRequestTestsProxy, Perform_SwitchingBetweenTwoServers_SamePerformance
 
     // Ignore first-time loads
     for (const auto& url : urlList)
-        EXPECT_TRUE(Request(url).Perform().get().IsSuccess());
+        EXPECT_EQ(HttpStatus::OK, Request(url).Perform().get().GetHttpStatus());
 
     bvector<bvector<uint64_t>> pickerDurations;
     for (const auto& urlPicker : urlPickerList)
@@ -1211,8 +1218,8 @@ TEST_F(HttpRequestTestsProxy, Perform_SwitchingBetweenTwoServers_SamePerformance
             Utf8String url = urlList[urlIndex];
             Request request(url);
             uint64_t before = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-            auto response = request.Perform().get();
-            EXPECT_TRUE(response.IsSuccess());
+            Response response = request.Perform().get();
+            EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
             uint64_t after = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
             urlDurations[urlIndex] += after - before;
             }
@@ -1523,6 +1530,130 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButDefaultOverrides_ExecutesVia
 
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET " HTTPBIN_HTTP_URL "/ip"));
     }
+    
+enum class TlsVersion
+    {
+    v1_0,
+    v1_1,
+    v1_2
+    };
+
+static const bvector<TlsVersion> AllTlsVersions
+    {
+    TlsVersion::v1_0, 
+    TlsVersion::v1_1, 
+    TlsVersion::v1_2
+    };
+
+struct TlsRequestSettings
+    {
+    TlsVersion tlsVersion;
+    ConnectionStatus expectedConnectionStatus;
+    };
+
+struct HttpRequestTestsTls : HttpRequestTests, WithParamInterface<TlsRequestSettings>
+    {
+    static bmap<TlsVersion, unsigned short> s_portMap;
+    static bmap<TlsVersion, unsigned short> CreatePortMap()
+        {
+        bmap<TlsVersion, unsigned short> portMap;
+        portMap[TlsVersion::v1_0] = 4410;
+        portMap[TlsVersion::v1_1] = 4411;
+        portMap[TlsVersion::v1_2] = 4412;
+        return portMap;
+        }
+    static const Utf8String MakeServerUrl(TlsVersion serverTlsVersion)
+        {
+        static const Utf8String host = "localhost";
+        unsigned short port = s_portMap[serverTlsVersion];
+        return "https://" + host + ":" + std::to_string(port).c_str();
+        }
+    static void AssertServerIsStopped (TlsVersion serverTlsVersion) 
+        {
+        auto serverUrl = MakeServerUrl(serverTlsVersion);
+        Request request = Request(serverUrl);
+        Response response = request.PerformAsync()->GetResult();
+        ASSERT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus()) << "Different server process is still running due to previous tests existing unexpectidely. Close existing processes";
+        }
+    static void AssertServersAreStopped ()
+        {
+        // The servers are checked in async to shorten the waiting time for checking server availability
+        bset<std::shared_ptr<AsyncTask>> serversAreStoppedTasks;
+        for (TlsVersion tlsVersion : AllTlsVersions)
+            {
+            auto serverIsStoppedTask = Tasks::WorkerThread::Create()->ExecuteAsync([=]
+                {
+                AssertServerIsStopped(tlsVersion);
+                });
+            serversAreStoppedTasks.insert(serverIsStoppedTask);
+            }
+
+        AsyncTask::WhenAll(serversAreStoppedTasks)->Wait();
+        }
+    static void StartServers () 
+        {
+        static const Utf8String tlsServersBatFile = "tls-server.bat";
+        ScriptRunner::RunScriptAsync(tlsServersBatFile);
+        WaitUntilServersAreRunning();
+        }
+    static void StopServers ()
+        {
+        ScriptRunner::StopAllPythonScripts();
+        }
+    static void SetUpTestCase()
+        {
+        AssertServersAreStopped();
+        StartServers();
+        }
+    static void TearDownTestCase()
+        {
+        StopServers();
+        }
+    static void WaitUntilServerIsRunning(TlsVersion serverTlsVersion)
+        {
+        uint64_t startMs = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        auto serverUrl = MakeServerUrl(serverTlsVersion);
+        // waiting until either the request is good or there is a certificate error, which we assume indicates incompatible tls requirements
+        while (true)
+            {
+            Response response = Request(serverUrl).Perform().get();
+
+            if (HttpStatus::OK == response.GetHttpStatus() ||
+                ConnectionStatus::CertificateError == response.GetConnectionStatus())
+                break;
+            
+            uint64_t nowMs = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+            if (nowMs - startMs > WAITTIMEOUT)
+                {
+                FAIL() << "Timed out waiting for TLS test server to start up.";
+                return;
+                }
+            BeThreadUtilities::BeSleep(100);
+            }
+        }
+    static void WaitUntilServersAreRunning()
+        {
+        for (TlsVersion tlsVersion : AllTlsVersions)
+            WaitUntilServerIsRunning(tlsVersion);
+        }
+    };
+
+bmap<TlsVersion, unsigned short> HttpRequestTestsTls::s_portMap = HttpRequestTestsTls::CreatePortMap();
+
+TEST_P(HttpRequestTestsTls, PerformAsync_TlsServerConnectionRequest_GetsExpectedConnectionResult)
+    {
+    TlsRequestSettings tslRequestSettings = GetParam();
+    Request request(MakeServerUrl(tslRequestSettings.tlsVersion));
+    Response response = request.Perform().get();
+    EXPECT_EQ(tslRequestSettings.expectedConnectionStatus, response.GetConnectionStatus());
+    }
+
+// Disabling until a curl fix is applied
+INSTANTIATE_TEST_CASE_P(, HttpRequestTestsTls, Values(
+     //TlsRequestSettings {TlsVersion::v1_0, ConnectionStatus::CertificateError},
+     TlsRequestSettings {TlsVersion::v1_1, ConnectionStatus::OK},
+     TlsRequestSettings {TlsVersion::v1_2, ConnectionStatus::OK}
+));
 
 struct StubTaskScheduler : ITaskScheduler
     {
