@@ -830,8 +830,8 @@ struct Converter
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
         L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
         L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
-        L10N_STRING(SchemaLockFailed)           // =="SchemaLockFailed"==
-        L10N_STRING(CouldNotAcquireLocksOrCodes) // =="CouldNotAcquireLocksOrCodes"==
+        L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
+        L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
 
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
