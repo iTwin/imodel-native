@@ -9,6 +9,9 @@
 
 #include <Licensing/Licensing.h>
 #include <Bentley/DateTime.h>
+#if defined(__APPLE__)
+#import <math.h>
+#endif
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
