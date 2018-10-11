@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SdkSource>V8_InternalSDK</SdkSource>
+      <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
         <Bindings>
             <PublicAPI ProductDirectoryName="VersionedDgnV8Api" Domain="VersionedDgnV8Api"/>
             <Files ProductDirectoryName="DgnV8Dlls" SubPartDirectory="DgnPlatformV8Sdk/Dlls" Required="true">
