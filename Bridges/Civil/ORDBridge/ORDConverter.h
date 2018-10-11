@@ -86,6 +86,8 @@ struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
 private:
     ORDConverter& m_converter;
     Dgn::DgnClassId m_graphic3dClassId;
+    ECN::ECClassCP m_ordFeatureAspectClassCP;
+    ECN::ECClassCP m_ordCorridorSurfaceAspectClassCP;
     bset<Bentley::ElementRefP> m_elementsSeen;    
     bset<Bentley::ElementRefP> m_alignmentV8RefSet;
     bset<Bentley::ElementRefP> m_corridorV8RefSet;

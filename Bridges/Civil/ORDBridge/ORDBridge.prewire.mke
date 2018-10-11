@@ -2,10 +2,13 @@
 #
 #     $Source: ORDBridge/ORDBridge.prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
 $(BuildContext)PublicAPI/ORDBridge : $(_MakeFilePath)PublicAPI/ORDBridge
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Application/DgnV8OpenRoadsDesigner.ecschema.xml : $(_MakeFilePath)DgnV8OpenRoadsDesigner.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

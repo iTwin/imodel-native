@@ -83,6 +83,9 @@
     <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ORDBridge"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">
+                ECSchemas/Application/DgnV8OpenRoadsDesigner*.xml
+            </Files>
         </Bindings>
     </Part>
 
