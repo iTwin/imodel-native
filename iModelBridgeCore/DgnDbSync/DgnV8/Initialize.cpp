@@ -744,7 +744,7 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
 #endif
 
     affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
-    BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+    BeStringUtilities::Wcsncpy(buffer, bufferSize, L"iModelBridgeForMstn");
     return BSISUCCESS;
     }
 
@@ -788,7 +788,7 @@ void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, i
 #ifdef USEABDFILECHECKER
         BeStringUtilities::Wcsncpy(buffer, bufferSize, L"AECOsimBuildingDesigner");
 #else
-        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"iModelBridgeForMstn");
 #endif
         return;
         }
