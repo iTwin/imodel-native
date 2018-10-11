@@ -10,8 +10,9 @@
 #elif defined(__linux)
 #include <unistd.h>
 #endif
-#include <iModelBridge/iModelBridgeRegistry.h>
+#include <iModelBridge/iModelBridgeFwkRegistry.h>
 #include <Bentley/BeGetProcAddress.h>
+#include <Logging/bentleylogging.h>
 
 #define LOG (*LoggingManager::GetLogger(L"iModelBridgeRegistry"))
 

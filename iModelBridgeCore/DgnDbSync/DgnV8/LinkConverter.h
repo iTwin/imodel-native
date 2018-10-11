@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/LinkConverter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,7 +18,6 @@ struct LinkConverter
 {
 private:
     Converter& m_converter;
-    DgnDbR m_dgndb;
     LinkModelPtr m_linkModel;
     bool m_needsPurge;
     struct ProjectWiseExtension* m_pwExtension;
