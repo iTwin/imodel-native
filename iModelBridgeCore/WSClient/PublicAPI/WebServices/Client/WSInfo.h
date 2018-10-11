@@ -79,6 +79,7 @@ struct WSInfo
         WSCLIENT_EXPORT BeVersionCR GetWebApiVersion() const;
         WSCLIENT_EXPORT bool IsWebApiSupported(BeVersionCR version) const;
 
+        WSCLIENT_EXPORT bool IsMaxUploadSizeSupported() const;
         WSCLIENT_EXPORT bool IsNavigationPropertySelectForAllClassesSupported() const;
         WSCLIENT_EXPORT bool IsSchemaDownloadFullySupported() const;
 

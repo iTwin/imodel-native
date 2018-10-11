@@ -67,6 +67,9 @@ bool WebApiV2::IsSupported(WSInfoCR info)
 +--------------------------------------------------------------------------------------*/
 uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMaxUploadSize) const
     {
+    if (!m_info.IsMaxUploadSizeSupported())
+        return defaultMaxUploadSize;
+
     auto policiesJson = std::make_shared<rapidjson::Document>();
     policiesJson->Parse<0>(response.GetBody().AsString().c_str());
 
@@ -432,7 +435,7 @@ AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancell
     if (!repository.IsValid())
         return CreateCompletedAsyncTask(WSRepositoryResult::Error(WSError::CreateServerNotSupportedError()));
 
-    if (GetMaxWebApiVersion() < BeVersion(2, 7))
+    if (GetMaxWebApiVersion() < BeVersion(2, 8))
         return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
 
     Http::Request request = CreateGetRepositoryRequest();
