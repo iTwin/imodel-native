@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <iModelBridge/iModelBridgeRegistry.h>
+#include <iModelBridge/iModelBridgeFwkRegistry.h>
 #include <Logging/bentleylogging.h>
 
 #define LOG (*LoggingManager::GetLogger(L"iModelBridgeRegistry"))
@@ -16,9 +16,9 @@ USING_NAMESPACE_BENTLEY_LOGGING
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int iModelBridgeRegistryBase::ComputeAffinityMain(int argc, WCharCP argv[])
+int iModelBridgeRegistryUtils::ComputeAffinityMain(int argc, WCharCP argv[])
     {
-    iModelBridgeRegistryUtils::InitCrt(false);
+    InitCrt(false);
 
     if (argc != 2)
         {
@@ -56,7 +56,7 @@ int iModelBridgeRegistryBase::ComputeAffinityMain(int argc, WCharCP argv[])
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, WCharCP argv[])
     {
-    return iModelBridgeRegistry::ComputeAffinityMain(argc, argv);
+    return iModelBridgeRegistryUtils::ComputeAffinityMain(argc, argv);
     }
 
 #ifdef __unix__

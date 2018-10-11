@@ -190,7 +190,7 @@
     </Part>
 
     <Part Name="iModelBridgeGetAffinityHostExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="PublicApi"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
