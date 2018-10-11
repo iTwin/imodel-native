@@ -285,9 +285,28 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithFileUploadIsNotS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Mantas.Smicius    09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetInfo_WebApi27ResponseIsOkWithoutMaxUploadSize_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ServerVersion2688ResponseIsOkWithoutMaxUploadSize_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
     {
-    TestGetMaxUploadSize(GetHandlerPtr(), {2, 7}, StubGetMaxUploadSizeResponseBody(0), 0);
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.8,Bentley-WSG/2.6.8.8"}};
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        // WSG with server version 2.6.8.8 does not support MaxUploadSize, but this mock is only to make test failed if code does not check server version
+        return StubHttpResponse(HttpStatus::OK, StubGetMaxUploadSizeResponseBody(rand(), INSTANCE_PersistenceStreamBackable));
+        });
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ(0, repository.GetMaxUploadSize());
     }
 
 /*--------------------------------------------------------------------------------------+
