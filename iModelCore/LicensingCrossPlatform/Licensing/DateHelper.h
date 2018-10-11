@@ -9,7 +9,7 @@
 
 #include <Licensing/Licensing.h>
 #include <Bentley/DateTime.h>
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(ANDROID)
 #import <math.h>
 #endif
 
