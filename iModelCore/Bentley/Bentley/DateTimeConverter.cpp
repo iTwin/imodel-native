@@ -392,7 +392,6 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime(int64_t& 
 //+---------------+---------------+---------------+---------------+---------------+------
 // Bentley guideline: Do not release non-POD static variables
 //static
-BeMutex* DateTimeStringConverter::s_mutex = new BeMutex();
 std::regex* DateTimeStringConverter::s_dtRegex = nullptr; 
 std::regex* DateTimeStringConverter::s_todRegex = nullptr;
 
@@ -655,10 +654,8 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(Utf8StringR matchVa
 //static
 std::regex const& DateTimeStringConverter::GetDateTimeRegex()
     {
-    BeMutexHolder lock(*s_mutex);
-    if (s_dtRegex == nullptr)
-        s_dtRegex = new std::regex(DATETIME_REGEXPATTERN, std::regex_constants::optimize);
-
+    static std::once_flag s_onceFlag;
+    std::call_once(s_onceFlag, [] () { s_dtRegex = new std::regex(DATETIME_REGEXPATTERN, std::regex_constants::optimize); });
     return *s_dtRegex;
     }
 
@@ -668,10 +665,8 @@ std::regex const& DateTimeStringConverter::GetDateTimeRegex()
 //static
 std::regex const& DateTimeStringConverter::GetTimeOfDayRegex()
     {
-    BeMutexHolder lock(*s_mutex);
-    if (s_todRegex == nullptr)
-        s_todRegex = new std::regex(TIMEOFDAY_REGEXPATTERN, std::regex_constants::optimize);
-
+    static std::once_flag s_onceFlag;
+    std::call_once(s_onceFlag, [] () { s_todRegex = new std::regex(TIMEOFDAY_REGEXPATTERN, std::regex_constants::optimize); });
     return *s_todRegex;
     }
 
