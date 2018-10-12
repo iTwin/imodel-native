@@ -19,7 +19,7 @@
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <iModelBridge/iModelBridgeRegistry.h>
 #include "../iModelBridgeHelpers.h"
-#include "IModelClientForBridges.h"
+#include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
 
 USING_NAMESPACE_BENTLEY_DGN

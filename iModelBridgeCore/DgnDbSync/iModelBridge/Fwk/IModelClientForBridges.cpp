@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <iModelBridge/IModelClientForBridges.h>
+#include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 
 #include <WebServices/iModelHub/Client/Client.h>
