@@ -3046,7 +3046,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                 {
                 Utf8String error;
                 error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
-                              existingSchemaKey.GetFullSchemaName().c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
+                              Utf8String(existingSchemaKey.GetFullSchemaName().c_str()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
                 ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                 return BSISUCCESS;
                 }
@@ -3061,7 +3061,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     {
                     Utf8String error;
                     error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
-                                  existingSchemaKey.GetFullSchemaName().c_str(), existingSchemaKey.m_checkSum,
+                                  Utf8String(existingSchemaKey.GetFullSchemaName().c_str()).c_str(), existingSchemaKey.m_checkSum,
                                   Converter::IssueReporter::FmtModel(v8Model).c_str(), schemaKey.m_checkSum);
                     ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     }
@@ -3137,9 +3137,10 @@ bool DynamicSchemaGenerator::IsDynamicSchema(ECObjectsV8::ECSchemaCR schema)
 //---------------------------------------------------------------------------------------
 bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR schemaName)
     {
-    return BeStringUtilities::Strnicmp(schemaName.c_str(),"PFLModule", 9) == 0 ||
+    return BeStringUtilities::Strnicmp(schemaName.c_str(), "PFLModule", 9) == 0 ||
         schemaName.EqualsI("CivilSchema_iModel") ||
-        schemaName.EqualsI("BuildingDataGroup");
+        schemaName.EqualsI("BuildingDataGroup") ||
+        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3337,7 +3338,8 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             ECObjectsV8::SchemaKey newSchemaKey = v8SchemaInfo.GetSchemaKey();
             ECN::ECSchemaCP bimSchema = m_converter.GetDgnDb().Schemas().GetSchema(Utf8String(newSchemaKey.GetName().c_str()).c_str(), false);
             ECN::SchemaKey bimSchemaKey = bimSchema->GetSchemaKey();
-            if (newSchemaKey.GetVersionMajor() == bimSchemaKey.GetVersionRead() && newSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor())
+            if (newSchemaKey.GetVersionMajor() == bimSchemaKey.GetVersionRead() && newSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor() && 
+                !IsDynamicSchema(Utf8String(v8SchemaInfo.GetSchemaName()).c_str(), schemaXml))
                 {
                 Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
                 ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());

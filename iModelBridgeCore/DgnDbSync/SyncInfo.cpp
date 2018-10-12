@@ -179,7 +179,7 @@ BentleyStatus SyncInfo::CreateTables()
 
     //need a unique index to ensure uniqueness for schemas based on checksum
     Utf8String ddl;
-    ddl.Sprintf("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_variantxml_uix ON "  SYNC_TABLE_ECSchema "(V8Name, Digest);");
+    ddl.Sprintf("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_variantxml_uix ON "  SYNC_TABLE_ECSchema "(V8Name, V8FileSyncInfoId, Digest);");
     MUSTBEOK(m_dgndb->ExecuteSql(ddl.c_str()));
     //need a index on the entire table for fast look ups
     MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_ECSchema) "_ix ON "  SYNC_TABLE_ECSchema "(V8Name);"));
