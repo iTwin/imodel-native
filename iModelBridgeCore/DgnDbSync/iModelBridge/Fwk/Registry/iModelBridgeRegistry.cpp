@@ -601,7 +601,7 @@ void iModelBridgeRegistry::_DiscoverInstalledBridges()
     LOG.tracev(L"DiscoverInstalledBridges");
 
     HKEY iModelBridgesKey;
-    long result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Bentley\\iModelBridges", 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE | KEY_SET_VALUE, &iModelBridgesKey);
+    long result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Bentley\\iModelBridges", 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &iModelBridgesKey);
     if (result != ERROR_SUCCESS)
         {
         LOG.info(L"HKLM\\Software\\Bentley\\iModelBridges not found -- no iModelBridges are installed on this machine.");
@@ -615,7 +615,7 @@ void iModelBridgeRegistry::_DiscoverInstalledBridges()
         {
         // iModelBridgeName buffer is contains key iModelBridgeName here
         HKEY subKey;
-        if (ERROR_SUCCESS != RegOpenKeyExW(iModelBridgesKey, iModelBridgeName, 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE | KEY_SET_VALUE, &subKey))
+        if (ERROR_SUCCESS != RegOpenKeyExW(iModelBridgesKey, iModelBridgeName, 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &subKey))
             continue;
 
         auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_InstalledBridges (Name,BridgeLibraryPath,AffinityLibraryPath,IsPowerPlatformBased) VALUES(?,?,?,?)");
