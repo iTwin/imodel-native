@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <Part Name="VersionedV8_InternalSDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SdkSource>V8_InternalSDK</SdkSource>
+      <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
         <Bindings>
             <PublicAPI ProductDirectoryName="VersionedDgnV8Api" Domain="VersionedDgnV8Api"/>
             <Files ProductDirectoryName="DgnV8Dlls" SubPartDirectory="DgnPlatformV8Sdk/Dlls" Required="true">
@@ -179,7 +179,7 @@
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
     <!-- MstnBridge - an iModelBridge that converts DgnV8 files. This bridge starts with a root model.              -->
     <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
+    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true" PrgOutputDir="MstnBridge">
         <SubPart PartName="DgnV8ConverterExe" />
         <SubPart PartName="DgnV8ConverterDLL" />
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
@@ -454,7 +454,6 @@
         <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
         <SubProduct ProductName="DgnV8ConverterTests" />
     </Part>
-
 
     <Part Name="FontConverterAppExe" BentleyBuildMakeFile="DgnV8/Converters/FontConverterApp.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="DgnV8ConverterDLL"/>
