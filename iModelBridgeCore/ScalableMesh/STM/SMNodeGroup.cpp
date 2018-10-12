@@ -206,15 +206,15 @@ StatusInt SMNodeGroup::SaveTileToCacheWithNewTileIDs(Json::Value & tile, uint64_
     tileID = isRootNode && tileID != uint64_t(-1) && parentID != uint64_t(-1) ? tileID : m_parametersPtr->GetNextNodeID();
 
     auto& smHeader = tile["SMHeader"];
-    smHeader["parentID"] = parentID;
+    smHeader["parentID"] = Json::Value(parentID);
     if (smHeader.isMember("id"))
         {
         smHeader["oldID"] = smHeader["id"];
         }
 
-    smHeader["id"] = tileID;
+    smHeader["id"] = Json::Value(tileID);
     assert((smHeader.isMember("resolution") && smHeader["resolution"].asUInt() == level) || !smHeader.isMember("resolution"));
-    smHeader["level"] = level;
+    smHeader["level"] = Json::Value(level);
 
     if (SUCCESS != this->SaveTileToCache(tile, tileID))
         return ERROR;
@@ -245,7 +245,7 @@ StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
 
     uint64_t tileID = tile.isMember("SMRootID") ? tile["SMRootID"].asUInt() : tile["SMHeader"]["id"].asUInt();
     uint64_t tileLevel = tile["SMHeader"].isMember("level") ? tile["SMHeader"]["level"].asUInt() : this->m_level;
-    tile["SMHeader"]["level"] = tileLevel;
+    tile["SMHeader"]["level"] = Json::Value(tileLevel);
 
     if (SUCCESS != this->SaveTileToCache(tile, tileID))
         return ERROR;
@@ -254,7 +254,7 @@ StatusInt SMNodeGroup::SaveTileToCacheWithExistingTileIDs(Json::Value & tile)
         {
         for (auto& child : tile["children"])
             {
-            child["SMHeader"]["level"] = tileLevel + 1;
+            child["SMHeader"]["level"] = Json::Value(tileLevel + 1);
             if (SUCCESS != SaveTileToCacheWithExistingTileIDs(child))
                 return ERROR;
             }

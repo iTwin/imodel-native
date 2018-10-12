@@ -278,8 +278,8 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
     auto bufferDataSize = bufferData.size() * sizeof(bufferData[0]);
     auto& view = (views[name] = Json::objectValue);
     view["buffer"] = "binary_glTF";
-    view["byteOffset"] = m_binaryData.size();
-    view["byteLength"] = bufferDataSize;
+    view["byteOffset"] = Json::Value(m_binaryData.size());
+    view["byteLength"] = Json::Value(bufferDataSize);
 
     size_t binaryDataSize = m_binaryData.size();
     m_binaryData.resize(binaryDataSize + bufferDataSize);
@@ -625,8 +625,8 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
 
     ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
-    rootNode["bufferViews"][bvImageId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvImageId]["byteLength"] = imageData.size();
+    rootNode["bufferViews"][bvImageId]["byteOffset"] = Json::Value(m_binaryData.size());
+    rootNode["bufferViews"][bvImageId]["byteLength"] = Json::Value(imageData.size());
 
     AddBinaryData(imageData.data(), imageData.size());
 
@@ -993,13 +993,13 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
 
 
     bufferViews["buffer"] = "binary_glTF";
-    bufferViews["byteOffset"] = byteOffset;
-    bufferViews["byteLength"] = dataSize;
+    bufferViews["byteOffset"] = Json::Value(byteOffset);
+    bufferViews["byteLength"] = Json::Value(dataSize);
     bufferViews["target"] = GLTF_ARRAY_BUFFER;
 
     accessor["bufferView"] = bufferViewId;
     accessor["byteOffset"] = 0;
-    accessor["count"] = nAttributes;
+    accessor["count"] = Json::Value(nAttributes);
     accessor["type"] = accessorType;
 
     rootNode["bufferViews"][bufferViewId] = bufferViews;
@@ -1125,8 +1125,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     rootNode["bufferViews"][bvIndexId] = Json::objectValue;
     rootNode["bufferViews"][bvIndexId]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bvIndexId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvIndexId]["byteLength"] = useShortIndices ? (shortIndices.size() * sizeof(uint16_t)) : (indices.size() * sizeof(uint32_t));
+    rootNode["bufferViews"][bvIndexId]["byteOffset"] = Json::Value(m_binaryData.size());
+    rootNode["bufferViews"][bvIndexId]["byteLength"] = Json::Value(useShortIndices ? (shortIndices.size() * sizeof(uint16_t)) : (indices.size() * sizeof(uint32_t)));
     rootNode["bufferViews"][bvIndexId]["target"] =  GLTF_ELEMENT_ARRAY_BUFFER;
 
     if (useShortIndices)
@@ -1139,8 +1139,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
         rootNode["bufferViews"][bvBatchId] = Json::objectValue;
         rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-        rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
+        rootNode["bufferViews"][bvBatchId]["byteOffset"] = Json::Value(m_binaryData.size());
+        rootNode["bufferViews"][bvBatchId]["byteLength"] = Json::Value(nBatchIdBytes);
         rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
 
         AddBinaryData (batchIds.data(), nBatchIdBytes);
@@ -1148,7 +1148,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
         rootNode["accessors"][accBatchId]["byteOffset"] = 0;
         rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-        rootNode["accessors"][accBatchId]["count"] = batchIds.size();
+        rootNode["accessors"][accBatchId]["count"] = Json::Value(batchIds.size());
         rootNode["accessors"][accBatchId]["type"] = "SCALAR";
         }
     
@@ -1178,13 +1178,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][accIndexId]["bufferView"] = bvIndexId;
     rootNode["accessors"][accIndexId]["byteOffset"] = 0;
     rootNode["accessors"][accIndexId]["componentType"] = useShortIndices ? GLTF_UNSIGNED_SHORT : GLTF_UINT32;
-    rootNode["accessors"][accIndexId]["count"] = useShortIndices ? shortIndices.size() : indices.size();
+    rootNode["accessors"][accIndexId]["count"] = Json::Value(useShortIndices ? shortIndices.size() : indices.size());
     rootNode["accessors"][accIndexId]["type"] = "SCALAR";
 
     //AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
 
 
-    rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
+    rootNode["buffers"]["binary_glTF"]["byteLength"] = Json::Value(m_binaryData.size());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -331,7 +331,7 @@ void ScalableMeshWorker::Start()
             }
         }    
 
-    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers);
+    TaskScheduler taskScheduler(m_taskFolderName, nbWorkers, m_useGroupingStrategy);
 
     taskScheduler.Start();
     }

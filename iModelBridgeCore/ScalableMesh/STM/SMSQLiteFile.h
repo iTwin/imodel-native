@@ -100,7 +100,7 @@ public:
     virtual ~SMSQLiteFile();
 
     bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
-    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool createSisterIfMissing = false, bool openReadOnly = true, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE, bool createSisterIfMissing = false);
     bool Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Close();
@@ -110,7 +110,7 @@ public:
     ScalableMeshDb* GetDb() { return m_database; }
     BENTLEY_SM_EXPORT void Save();
 
-    static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, bool createSisterIfMissing = false, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
+    static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, bool openShareable = false, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE, bool createSisterIfMissing = false);
     void SetSource();
     bool SetWkt(WCharCP extendedWkt);
     bool HasWkt();

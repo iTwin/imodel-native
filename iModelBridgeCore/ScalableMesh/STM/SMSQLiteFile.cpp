@@ -276,13 +276,13 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     return result == BE_SQLITE_OK;
     }
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool createSisterIfMissing, bool openReadOnly, bool openShareable, SQLDatabaseType type)
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, bool openShareable, SQLDatabaseType type, bool createSisterIfMissing)
     {
     Utf8String utf8FileName(filename);        
     return Open(utf8FileName.c_str(), openReadOnly, openShareable, type);
     }
 
-SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, bool createSisterIfMissing, bool openShareable, SQLDatabaseType type)
+SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, bool openShareable, SQLDatabaseType type, bool createSisterIfMissing)
     {
     bool result;
     SMSQLiteFilePtr smSQLiteFile;
