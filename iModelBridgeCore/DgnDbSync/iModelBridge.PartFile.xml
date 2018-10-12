@@ -173,6 +173,7 @@
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="PublicApi"/>
         <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
+        <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
         </Bindings>

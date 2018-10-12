@@ -673,25 +673,39 @@ class SupplyBlankPassword : public DgnV8Api::DgnFileSupplyRights
         return SUCCESS;
         }
     };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath)
+    {
+    static std::once_flag s_initOnce;
+    std::call_once(s_initOnce, [&]
+        {
+        BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
+        dllDirectory.AppendToPath(L"DgnV8");
+        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
+        realdwgDirectory.AppendToPath(L"RealDwg");
+        Converter::SetDllSearchPath(dllDirectory, &realdwgDirectory);
+        });
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath)
     {
+    InitializeDllPath(thisLibraryPath);
+
     static std::once_flag s_initOnce;
     std::call_once(s_initOnce, [&]
-    {
+        {
         BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
-        dllDirectory.AppendToPath(L"DgnV8");
-        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
-        realdwgDirectory.AppendToPath(L"RealDwg");
-        Converter::SetDllSearchPath(dllDirectory, &realdwgDirectory);
-
         initializeV8HostConfigVars(Bentley::BeFileName(dllDirectory.c_str()), 0, nullptr);
         DgnV8Api::DgnPlatformLib::Initialize(*new MinimalV8Host, true);
+        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
+        realdwgDirectory.AppendToPath(L"RealDwg");
         Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
-    });
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**

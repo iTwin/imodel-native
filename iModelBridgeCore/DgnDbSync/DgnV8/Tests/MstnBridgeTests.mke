@@ -1,11 +1,11 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: DgnV8/Tests/Tests.mke $
+#  $Source: DgnV8/Tests/MstnBridgeTests.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-programName = DgnV8ConverterTests
+programName = MstnBridgeTests
 baseDir =   $(_MakeFilePath)
 
 BEGTEST_INPUT=$(baseDir)
@@ -61,67 +61,9 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 $(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)Admins.obj                  : $(BEGTEST_INPUT)Admins.cpp                    $(TestsHeaders) ${MultiCompileDepends}
+$(o)MstnBridgeTests.obj     : $(BEGTEST_INPUT)MstnBridgeTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)ConverterTestsBaseFixture.obj : $(BEGTEST_INPUT)ConverterTestsBaseFixture.cpp $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)V8FileEditor.obj            : $(BEGTEST_INPUT)V8FileEditor.cpp              $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ConverterTests.obj          : $(BEGTEST_INPUT)ConverterTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ECTests.obj                 : $(BEGTEST_INPUT)ECTests.cpp                   $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ModelTests.obj              : $(BEGTEST_INPUT)ModelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)MultiBridgeTests.obj        : $(BEGTEST_INPUT)MultiBridgeTests.cpp          $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)DrawingTests.obj            : $(BEGTEST_INPUT)DrawingTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ProgressMeterTests.obj      : $(BEGTEST_INPUT)ProgressMeterTests.cpp        $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)SyncInfoReader.obj          : $(BEGTEST_INPUT)SyncInfoReader.cpp            $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ImportConfigEditor.obj      : $(BEGTEST_INPUT)ImportConfigEditor.cpp        $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ImportConfigTests.obj       : $(BEGTEST_INPUT)ImportConfigTests.cpp         $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)DgnMaterial_Tests.obj       : $(BEGTEST_INPUT)DgnMaterial_Tests.cpp         $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)BasicGeometryTests.obj      : $(BEGTEST_INPUT)BasicGeometryTests.cpp        $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)LevelTests.obj              : $(BEGTEST_INPUT)LevelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)GeomTestHelper.obj          : $(BEGTEST_INPUT)GeomTestHelper.cpp            $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)NamedGroupTests.obj         : $(BEGTEST_INPUT)NamedGroupTests.cpp           $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)V8AttachmentTests.obj       : $(BEGTEST_INPUT)V8AttachmentTests.cpp         $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ECSchemaTests.obj           : $(BEGTEST_INPUT)ECSchemaTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)BeXmlCompareHelper.obj      : $(BEGTEST_INPUT)BeXmlCompareHelper.cpp        $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)TagTests.obj                : $(BEGTEST_INPUT)TagTests.cpp                  $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)DimensionTests.obj          : $(BEGTEST_INPUT)DimensionTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ConverterCommandBuilder.obj : $(BEGTEST_INPUT)ConverterCommandBuilder.cpp   $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ConverterAppTestsBaseFixture.obj : $(BEGTEST_INPUT)ConverterAppTestsBaseFixture.cpp        $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ConverterAppTests.obj       : $(BEGTEST_INPUT)ConverterAppTests.cpp         $(TestsHeaders) ${MultiCompileDepends}
-
-#$(o)StyleTests.obj             : $(BEGTEST_INPUT)StyleTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)RasterTests.obj             : $(BEGTEST_INPUT)RasterTests.cpp               $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)TextBlockTests.obj          : $(BEGTEST_INPUT)TextBlockTests.cpp            $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ItemTypeTests.obj           : $(BEGTEST_INPUT)ItemTypeTests.cpp             $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ViewTests.obj               : $(BEGTEST_INPUT)ViewTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ConvertToDgnDbElementExtensionTests.obj : $(BEGTEST_INPUT)ConvertToDgnDbElementExtensionTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
+$(o)V8FileEditor.obj        : $(BEGTEST_INPUT)V8FileEditor.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -173,7 +115,7 @@ $(BuildContext)Delivery/NamedGroupTestSchema_DgnDbSync.01.00.ecschema.xml : $(ba
     $(LinkFirstDepToFirstTarget)
 
 # Create the sqlang database
-SQLANG_OutputDb     = $(o)DgnV8ConverterTests_en-US.sqlang.db3
+SQLANG_OutputDb     = $(o)$(programName)_en-US.sqlang.db3
 SQLANG_DeliveryDir  = $(BuildContext)Delivery/
 SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
 %include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke

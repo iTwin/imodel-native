@@ -16,8 +16,8 @@
 #include <DgnPlatform/GenericDomain.h>
 #include "../../Fwk/IModelClientForBridges.h"
 #include <Bentley/BeFileName.h>
-#include "FakeRegistry.h"
-
+#include <iModelBridge/FakeRegistry.h>
+#include <iModelBridge/TestiModelHubClientForBridges.h>
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -500,99 +500,17 @@ static BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir)
 // @bsistruct                                                   Sam.Wilson   10/17
 //=======================================================================================
 BEGIN_BENTLEY_DGN_NAMESPACE
-struct TestIModelHubClientForBridges : IModelHubClientForBridges
-{
-    iModel::Hub::Error m_lastServerError;
-    BeFileName m_serverRepo;
-    BeFileName m_testWorkDir;
-    DgnDbP m_briefcase;
+struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
+    {
     struct
         {
         bool haveTxns;
         } m_expect {};
 
-    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir) {}
+        TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) : TestIModelHubClientForBridges(testWorkDir) {}
 
-    static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
-        {
-        BeFileName repoPath = testWorkDir;
-        repoPath.AppendToPath(L"iModelHub");
-        repoPath.AppendToPath(WString(repoName,true).c_str());
-        return repoPath;
-        }
-
-    bool IsConnected() const override {return true;}
-
-    StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override
-        {
-        m_serverRepo = MakeFakeRepoPath(m_testWorkDir, repoName);
-        if (!m_serverRepo.EndsWith(L".bim"))
-            m_serverRepo.append(L".bim");
-        BeFileName::CreateNewDirectory(m_serverRepo.GetDirectoryName());
-        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(localDgnDb, m_serverRepo, false));
-        return BSISUCCESS;
-        }
-
-    StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) override
-        {
-        if (m_serverRepo.empty())
-            {
-            m_lastServerError = iModel::Hub::Error::Id::iModelDoesNotExist;
-            return BSIERROR;
-            }
-        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(m_serverRepo, bcFileName, false));
-
-        auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
-        db->SaveChanges();
-
-        return BSISUCCESS;
-        }
-
-    StatusInt OpenBriefcase(Dgn::DgnDbR db) override
-        {
-        m_briefcase = &db;
-        return BSISUCCESS;
-        }
-
-    void CloseBriefcase() override
-        {
-        m_briefcase = nullptr;
-        }
-
-    StatusInt PullMergeAndPush(Utf8CP) override
-        {
-        CaptureChangeSet(m_briefcase);
-        return BSISUCCESS;
-        }
-
-    void CaptureChangeSet(DgnDbP);
-
-    StatusInt PullAndMerge() override
-        {
-        return BSISUCCESS;
-        }
-
-    StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override
-        {
-        return BSISUCCESS;
-        }
-
-    iModel::Hub::Error const& GetLastError() const override
-        {
-        return m_lastServerError;
-        }
-
-    IRepositoryManagerP GetRepositoryManager(DgnDbR db) override
-        {
-        BeAssert(false); return nullptr;
-        }
-
-    StatusInt AcquireLocks(LockRequest&, DgnDbR) override
-        {
-        return BSISUCCESS;
-        }
-};
+        virtual void CaptureChangeSet(DgnDbP db) override;
+    };
 END_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
@@ -721,16 +639,6 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
     WString bridgeName;
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(L"Foo"),L"");
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName,BeFileName(L"Bar"),L"");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool anyTxnsInFile(DgnDbR db)
-    {
-    Statement stmt;
-    stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
-    return (BE_SQLITE_ROW == stmt.Step());
     }
 
 /*---------------------------------------------------------------------------------**//**
