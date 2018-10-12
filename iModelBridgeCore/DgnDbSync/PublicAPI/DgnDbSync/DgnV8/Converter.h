@@ -1090,6 +1090,7 @@ public:
     //! @private
     //! This is called in a separate process to check bridge file affinity only.
     DGNDBSYNC_EXPORT static BentleyStatus GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName);
+    DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
     
