@@ -87,8 +87,8 @@ Utf8CP UnitNameMappings::TryGetNewNameFromOldName(Utf8CP name)
 // static
 Utf8CP UnitNameMappings::TryGetNewNameFromECName(Utf8CP name)
     {
-    auto iter = GetMappings()->m_ecNamenewNameMapping.find(name);
-    if (iter == GetMappings()->m_ecNamenewNameMapping.end())
+    auto iter = GetMappings()->m_ecNameNewNameMapping.find(name);
+    if (iter == GetMappings()->m_ecNameNewNameMapping.end())
         return nullptr;
     return iter->second.c_str();
     }
@@ -109,19 +109,45 @@ Utf8CP UnitNameMappings::TryGetOldNameFromECName(Utf8CP name)
 //--------------------------------------------------------------------------------------
 void UnitNameMappings::AddMapping(Utf8CP oldName, Utf8CP newName)
     {
-    // NOTE: New mappings overwrite previously added mappings
-    m_oldNameNewNameMapping[oldName] = newName;
-    m_newNameOldNameMapping[newName] = oldName;
+    AddOldNameToNewNameMapping(oldName, newName);
+    AddNewNameToOldNameMapping(newName, oldName);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                              Robert.Schili     01/18
 //--------------------------------------------------------------------------------------
-void UnitNameMappings::AddECMapping(Utf8CP name, Utf8CP ecName)
+void UnitNameMappings::AddECMapping(Utf8CP newName, Utf8CP ecName)
     {
     // NOTE: New mappings overwrite previously added mappings
-    m_newNameECNameMapping[name] = ecName;
-    m_ecNamenewNameMapping[ecName] = name;
+    m_newNameECNameMapping[newName] = ecName;
+    m_ecNameNewNameMapping[ecName] = newName;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                 Gintaras.Volkvicius 10/18
+//--------------------------------------------------------------------------------------
+void UnitNameMappings::AddNewNameToECNameMapping(Utf8CP newName, Utf8CP ecName)
+    {
+    // NOTE: New mappings overwrite previously added mappings
+    m_newNameECNameMapping[newName] = ecName;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                 Gintaras.Volkvicius 10/18
+//--------------------------------------------------------------------------------------
+void UnitNameMappings::AddNewNameToOldNameMapping(Utf8CP newName, Utf8CP oldName)
+    {
+    // NOTE: New mappings overwrite previously added mappings
+    m_newNameOldNameMapping[newName] = oldName;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                 Gintaras.Volkvicius 10/18
+//--------------------------------------------------------------------------------------
+void UnitNameMappings::AddOldNameToNewNameMapping(Utf8CP oldName, Utf8CP newName)
+    {
+    // NOTE: New mappings overwrite previously added mappings
+    m_oldNameNewNameMapping[oldName] = newName;
     }
 
 //--------------------------------------------------------------------------------------
@@ -129,6 +155,7 @@ void UnitNameMappings::AddECMapping(Utf8CP name, Utf8CP ecName)
 //--------------------------------------------------------------------------------------
 void UnitNameMappings::AddMappings()
     {
+    // Single OldName => NewName => OldName mappings
     AddMapping("MILLIMETRE", "MM");
     AddMapping("CENTIMETRE", "CM");
     AddMapping("DECIMETRE", "DM");
@@ -175,8 +202,6 @@ void UnitNameMappings::AddMappings()
     AddMapping("MILE_SQUARED", "SQ.MILE");
     AddMapping("KILOGRAM_PER_METRE_CUBED", "KG/CUB.M");
     AddMapping("KILOGRAM_PER_CENTIMETRE_CUBED", "KG/CUB.CM");
-    AddMapping("KILOGRAM_PER_DECIMETRE_CUBED", "KG/LITRE");
-    AddMapping("KILOGRAM_PER_LITRE", "KG/LITRE");
     AddMapping("GRAM_PER_CENTIMETRE_CUBED", "G/CUB.CM");
     AddMapping("MICROGRAM_PER_LITRE", "MKG/LITRE");
     AddMapping("MILLIGRAM_PER_LITRE", "MG/LITRE");
@@ -316,9 +341,6 @@ void UnitNameMappings::AddMappings()
     AddMapping("BTU_PER_HOUR", "BTU/HR");
     AddMapping("KILOBTU_PER_HOUR", "KILOBTU/HR");
     AddMapping("HORSEPOWER", "HP");
-    AddMapping("PASCAL", "PA");
-    AddMapping("NEWTON_PER_METRE_SQUARED", "PA");
-    AddMapping("NEWTON_PER_MILLIMETRE_SQUARED", "MEGAPASCAL");
     AddMapping("KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED", "AT");
     AddMapping("KILOGRAM_FORCE_PER_CENTIMETRE_SQUARED_GAUGE", "AT_GAUGE");
     AddMapping("KILOGRAM_FORCE_PER_METRE_SQUARED", "KGF/SQ.M");
@@ -331,13 +353,9 @@ void UnitNameMappings::AddMappings()
     AddMapping("BAR_PER_KILOMETRE", "BAR/KM");
     AddMapping("PERCENT_PERCENT", "PERCENT");
     AddMapping("UNITLESS_PERCENT", "DECIMAL_PERCENT");
-    AddMapping("METRE_PER_METRE", "M/M");
-    AddMapping("METRE_VERTICAL_PER_METRE_HORIZONTAL", "M/M");
     AddMapping("CENTIMETRE_PER_METRE", "CM/M");
     AddMapping("MILLIMETRE_PER_METRE", "MM/M");
     AddMapping("METRE_PER_KILOMETRE", "M/KM");
-    AddMapping("FOOT_PER_FOOT", "FT/FT");
-    AddMapping("FOOT_VERTICAL_PER_FOOT_HORIZONTAL", "FT/FT");
     AddMapping("INCH_PER_FOOT", "IN/FT");
     AddMapping("FOOT_PER_INCH", "FT/IN");
     AddMapping("FOOT_PER_MILE", "FT/MILE");
@@ -387,8 +405,6 @@ void UnitNameMappings::AddMappings()
     AddMapping("RADIAN_PER_MINUTE", "RAD/MIN");
     AddMapping("RADIAN_PER_HOUR", "RAD/HR");
     AddMapping("CYCLE_PER_SECOND", "RPS");
-    AddMapping("CYCLE_PER_MINUTE", "RPM");
-    AddMapping("REVOLUTION_PER_MINUTE", "RPM");
     AddMapping("CYCLE_PER_HOUR", "RPH");
     AddMapping("DEGREE_PER_SECOND", "DEG/SEC");
     AddMapping("DEGREE_PER_MINUTE", "DEG/MIN");
@@ -416,8 +432,6 @@ void UnitNameMappings::AddMappings()
     AddMapping("AMPERE", "A");
     AddMapping("RADIAN", "RAD");
     AddMapping("DOLLAR", "US$");
-    AddMapping("NONE", "ONE");
-    AddMapping("UNITLESS_UNIT", "ONE");
     AddMapping("THOUSAND_FOOT_SQUARED", "THOUSAND_SQ.FT");
     AddMapping("DYNE", "DYNE");
     AddMapping("FOOT_POUNDAL", "FT_PDL");
@@ -467,16 +481,6 @@ void UnitNameMappings::AddMappings()
     AddMapping("KILOVOLT", "KILOVOLT");
     AddMapping("VOLT", "VOLT");
     AddMapping("MEGAVOLT", "MEGAVOLT");
-    AddMapping("CAPITA", "PERSON");
-    AddMapping("PERSON", "PERSON");
-    AddMapping("CUSTOMER", "PERSON");
-    AddMapping("EMPLOYEE", "PERSON");
-    AddMapping("GUEST", "PERSON");
-    AddMapping("HUNDRED_CAPITA", "HUNDRED_PERSON");
-    AddMapping("THOUSAND_CAPITA", "THOUSAND_PERSON");
-    AddMapping("PASSENGER", "PERSON");
-    AddMapping("RESIDENT", "PERSON");
-    AddMapping("STUDENT", "PERSON");
     AddMapping("VERTICAL_PER_HORIZONTAL", "VERTICAL/HORIZONTAL");
     AddMapping("FOOT_HORIZONTAL_PER_FOOT_VERTICAL", "FT_HORIZONTAL/FT_VERTICAL");
     AddMapping("METRE_HORIZONTAL_PER_METRE_VERTICAL", "M_HORIZONTAL/M_VERTICAL");
@@ -498,7 +502,6 @@ void UnitNameMappings::AddMappings()
     AddMapping("INCH_OF_HG_AT_32_FAHRENHEIT", "IN_HG@32F");
     AddMapping("INCH_OF_HG_AT_60_FAHRENHEIT", "IN_HG@60F");
     AddMapping("INCH_OF_HG_CONVENTIONAL", "IN_HG");
-    AddMapping("MEGAPASCAL", "MEGAPASCAL");
     AddMapping("MEGAPASCAL_GAUGE", "MEGAPASCAL_GAUGE");
     AddMapping("METRE_OF_H2O_CONVENTIONAL", "M_H2O");
     AddMapping("MILLIMETRE_OF_H2O_CONVENTIONAL", "MM_H2O");
@@ -510,7 +513,24 @@ void UnitNameMappings::AddMappings()
     AddMapping("VOLT_AMPERE", "VA");
     AddMapping("KILOVOLT_AMPERE", "KVA");
     AddMapping("MEGAVOLT_AMPERE", "MVA");
-    
+
+    // Multiple OldName => NewName and single NewName => OldName mappings 
+    AddOldNameToNewNameMapping("KILOGRAM_PER_DECIMETRE_CUBED", "KG/LITRE");
+    AddMapping("KILOGRAM_PER_LITRE", "KG/LITRE");
+    AddOldNameToNewNameMapping("NEWTON_PER_METRE_SQUARED", "PA");
+    AddMapping("PASCAL", "PA");
+    AddOldNameToNewNameMapping("METRE_VERTICAL_PER_METRE_HORIZONTAL", "M/M");
+    AddMapping("METRE_PER_METRE", "M/M");
+    AddOldNameToNewNameMapping("FOOT_VERTICAL_PER_FOOT_HORIZONTAL", "FT/FT");
+    AddMapping("FOOT_PER_FOOT", "FT/FT");
+    AddOldNameToNewNameMapping("REVOLUTION_PER_MINUTE", "RPM");
+    AddMapping("CYCLE_PER_MINUTE", "RPM");
+    AddOldNameToNewNameMapping("UNITLESS_UNIT", "ONE");
+    AddMapping("NONE", "ONE");
+    AddOldNameToNewNameMapping("NEWTON_PER_MILLIMETRE_SQUARED", "MEGAPASCAL");
+    AddMapping("MEGAPASCAL", "MEGAPASCAL");
+
+    // Single NewName => ECName => NewName mappings
     AddECMapping("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "UNITS:BTU_IN_PER_SQ_FT_HR_FAHRENHEIT");
     AddECMapping("(N*M)/DEG", "UNITS:N_M_PER_DEG");
     AddECMapping("(N*M)/RAD", "UNITS:N_M_PER_RAD");
@@ -597,7 +617,6 @@ void UnitNameMappings::AddMappings()
     AddECMapping("CUB.MM", "UNITS:CUB_MM");
     AddECMapping("CUB.MU", "UNITS:CUB_UM");
     AddECMapping("CUB.YRD", "UNITS:CUB_YRD");
-    AddECMapping("CUSTOMER", "UNITS:PERSON");
     AddECMapping("DAY", "UNITS:DAY");
     AddECMapping("DECA", "UNITS:DECA");
     AddECMapping("DECI", "UNITS:DECI");
@@ -611,7 +630,6 @@ void UnitNameMappings::AddMappings()
     AddECMapping("DELTA_RANKINE", "UNITS:DELTA_RANKINE");
     AddECMapping("DM", "UNITS:DM");
     AddECMapping("DYNE", "UNITS:DYNE");
-    AddECMapping("EMPLOYEE", "UNITS:PERSON");
     AddECMapping("EXA", "UNITS:EXA");
     AddECMapping("FAHRENHEIT", "UNITS:FAHRENHEIT");
     AddECMapping("FEMTO", "UNITS:FEMTO");
@@ -657,7 +675,6 @@ void UnitNameMappings::AddMappings()
     AddECMapping("GRAD", "UNITS:GRAD");
     AddECMapping("GRM", "UNITS:GRM");
     AddECMapping("GRM/LBM", "UNITS:GRM_PER_LBM");
-    AddECMapping("GUEST", "UNITS:PERSON");
     AddECMapping("GW", "UNITS:GW");
     AddECMapping("GWH", "UNITS:GWH");
     AddECMapping("HECTARE", "UNITS:HECTARE");
@@ -666,8 +683,6 @@ void UnitNameMappings::AddMappings()
     AddECMapping("HORIZONTAL/VERTICAL", "UNITS:HORIZONTAL_PER_VERTICAL");
     AddECMapping("HP", "UNITS:HP");
     AddECMapping("HR", "UNITS:HR");
-
-    AddECMapping("HUNDRED_PERSON", "UNITS:HUNDRED_PERSON");
     AddECMapping("HZ", "UNITS:HZ");
     AddECMapping("IN", "UNITS:IN");
     AddECMapping("IN/DAY", "UNITS:IN_PER_DAY");
@@ -867,7 +882,6 @@ void UnitNameMappings::AddMappings()
     AddECMapping("PA-S", "UNITS:PA_S");
     AddECMapping("PA/M", "UNITS:PA_PER_M");
     AddECMapping("PA_GAUGE", "UNITS:PA_GAUGE");
-    AddECMapping("PASSENGER", "UNITS:PERSON");
     AddECMapping("PDL", "UNITS:PDL");
     AddECMapping("PER_FT", "UNITS:PER_FT");
     AddECMapping("PER_KM", "UNITS:PER_KM");
@@ -877,7 +891,6 @@ void UnitNameMappings::AddMappings()
     AddECMapping("PER_THOUSAND_FT", "UNITS:PER_THOUSAND_FT");
     AddECMapping("PERCENT", "UNITS:PERCENT");
     AddECMapping("PERCENT_SLOPE", "UNITS:PERCENT_SLOPE");
-    AddECMapping("PERSON", "UNITS:PERSON");
     AddECMapping("PERSON/ACRE", "UNITS:PERSON_PER_ACRE");
     AddECMapping("PERSON/HECTARE", "UNITS:PERSON_PER_HECTARE");
     AddECMapping("PERSON/SQ.FT", "UNITS:PERSON_PER_SQ_FT");
@@ -898,7 +911,6 @@ void UnitNameMappings::AddMappings()
     AddECMapping("RAD/MIN", "UNITS:RAD_PER_MIN");
     AddECMapping("RAD/SEC", "UNITS:RAD_PER_SEC");
     AddECMapping("RANKINE", "UNITS:RANKINE");
-    AddECMapping("RESIDENT", "UNITS:PERSON");
     AddECMapping("REVOLUTION", "UNITS:REVOLUTION");
     AddECMapping("RPH", "UNITS:RPH");
     AddECMapping("RPM", "UNITS:RPM");
@@ -935,11 +947,9 @@ void UnitNameMappings::AddMappings()
     AddECMapping("STRAIN/FAHRENHEIT", "UNITS:STRAIN_PER_FAHRENHEIT");
     AddECMapping("STRAIN/KELVIN", "UNITS:STRAIN_PER_KELVIN");
     AddECMapping("STRAIN/RANKINE", "UNITS:STRAIN_PER_RANKINE");
-    AddECMapping("STUDENT", "UNITS:PERSON");
     AddECMapping("TERA", "UNITS:TERA");
     AddECMapping("THOUSAND_GALLON", "UNITS:THOUSAND_GALLON");
     AddECMapping("THOUSAND_LITRE", "UNITS:THOUSAND_LITRE");
-    AddECMapping("THOUSAND_PERSON", "UNITS:THOUSAND_PERSON");
     AddECMapping("THOUSAND_SQ.FT", "UNITS:THOUSAND_SQ_FT");
     AddECMapping("TONNE", "UNITS:TONNE");
     AddECMapping("TONNE/HR", "UNITS:TONNE_PER_HR");
@@ -972,13 +982,51 @@ void UnitNameMappings::AddMappings()
     AddECMapping("ZEPTO", "UNITS:ZEPTO");
     AddECMapping("ZETTA", "UNITS:ZETTA");
 
-    // These must be added last 
-    AddECMapping("CAPITA", "UNITS:PERSON");
-    AddECMapping("HUNDRED_CAPITA", "UNITS:HUNDRED_PERSON");
-    AddECMapping("THOUSAND_CAPITA", "UNITS:THOUSAND_PERSON");
-    AddECMapping("KIPF", "UNITS:KPF");
-    AddECMapping("N/SQ.MM", "UNITS:MEGAPASCAL");
-    AddECMapping("DEKA", "UNITS:DECA");
+    // Mapping just NewName => ECName to keep compatibility with ECName => OldName
+    AddNewNameToECNameMapping("KIPF", "UNITS:KPF");
+    AddNewNameToECNameMapping("N/SQ.MM", "UNITS:MEGAPASCAL");
+    AddNewNameToECNameMapping("DEKA", "UNITS:DECA");
+
+    // Mapping OldName => NewName => OldName for PERSON/CAPITA units
+    AddMapping("PERSON", "PERSON");
+    AddMapping("HUNDRED_CAPITA", "HUNDRED_PERSON");
+    AddMapping("THOUSAND_CAPITA", "THOUSAND_PERSON");
+
+    // Mapping just OldName => NewName, to not to overwrite existing mapping
+    AddOldNameToNewNameMapping("CAPITA", "PERSON");
+    AddOldNameToNewNameMapping("CUSTOMER", "PERSON");
+    AddOldNameToNewNameMapping("EMPLOYEE", "PERSON");
+    AddOldNameToNewNameMapping("GUEST", "PERSON");
+    AddOldNameToNewNameMapping("PASSENGER", "PERSON");
+    AddOldNameToNewNameMapping("RESIDENT", "PERSON");
+    AddOldNameToNewNameMapping("STUDENT", "PERSON");
+
+    // Mapping just NewName => OldName, because these names where removed from NewNames in progress and changed to map to PERSON unit
+    AddNewNameToOldNameMapping("CAPITA", "CAPITA");
+    AddNewNameToOldNameMapping("CUSTOMER", "CUSTOMER");
+    AddNewNameToOldNameMapping("EMPLOYEE", "EMPLOYEE");
+    AddNewNameToOldNameMapping("GUEST", "GUEST");
+    AddNewNameToOldNameMapping("PASSENGER", "PASSENGER");
+    AddNewNameToOldNameMapping("RESIDENT", "RESIDENT");
+    AddNewNameToOldNameMapping("STUDENT", "STUDENT");
+    AddNewNameToOldNameMapping("HUNDRED_CAPITA", "HUNDRED_CAPITA");
+    AddNewNameToOldNameMapping("THOUSAND_CAPITA", "THOUSAND_CAPITA");
+
+    // Mapping NewName => ECName => NewName for PERSON units
+    AddECMapping("PERSON", "UNITS:PERSON");
+    AddECMapping("HUNDRED_PERSON", "UNITS:HUNDRED_PERSON");
+    AddECMapping("THOUSAND_PERSON", "UNITS:THOUSAND_PERSON");
+
+    // Mapping just NewName => ECName, because these names where removed from NewNames in progress
+    AddNewNameToECNameMapping("CAPITA", "UNITS:PERSON");
+    AddNewNameToECNameMapping("CUSTOMER", "UNITS:PERSON");
+    AddNewNameToECNameMapping("EMPLOYEE", "UNITS:PERSON");
+    AddNewNameToECNameMapping("GUEST", "UNITS:PERSON");
+    AddNewNameToECNameMapping("PASSENGER", "UNITS:PERSON");
+    AddNewNameToECNameMapping("RESIDENT", "UNITS:PERSON");
+    AddNewNameToECNameMapping("STUDENT", "UNITS:PERSON");
+    AddNewNameToECNameMapping("HUNDRED_CAPITA", "UNITS:HUNDRED_PERSON");
+    AddNewNameToECNameMapping("THOUSAND_CAPITA", "UNITS:THOUSAND_PERSON");
     }
 
 END_BENTLEY_UNITS_NAMESPACE

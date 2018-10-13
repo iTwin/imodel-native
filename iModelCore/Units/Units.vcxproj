@@ -93,9 +93,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <NMakeBuildCommandLine>bb re UnitsDll</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb re UnitsDll -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb re UnitsDll -c</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re Units:UnitsNative -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb re Units:UnitsNative</NMakeReBuildCommandLine>
     <IncludePath>$(SrcRoot)Units\PublicAPI;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Units\PublicAPI;$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\Units\VendorAPI;$(IncludePath)</IncludePath>
     <NMakeIncludeSearchPath>$(ProjectDir)\PublicAPI\;$(ProjectDir);$(ProjectDir)\src\;$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\Units\PublicAPI\;$(OutRoot)Winx64\BuildContexts\Units\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>

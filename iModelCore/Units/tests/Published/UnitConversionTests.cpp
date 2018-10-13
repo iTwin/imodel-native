@@ -132,7 +132,7 @@ void UnitConversionTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCha
         };
 
     WString fileNameLong(fileName, BentleyCharEncoding::Utf8);
-    ReadConversionCsvFile(fileNameLong.c_str(), lineProcessor);
+    ReadCSVFile(fileNameLong.c_str(), lineProcessor);
 
     Utf8PrintfString loadErrorString("%s - Attempted %d conversions, error loading :\n", fileName, numberConversions);
 

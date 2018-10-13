@@ -31,7 +31,7 @@ struct UnitsTests : UnitsTestFixture
             unitNameMap[tokens[3]] = newName2;
             };
 
-        ReadConversionCsvFile(file, lineProcessor);
+        ReadCSVFile(file, lineProcessor);
         }
     };
 
@@ -271,7 +271,7 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
         labels[unit->GetName()] = Utf8PrintfString("%s,%s", tokens[1].c_str(), tokens[2].c_str());
         };
 
-    ReadConversionCsvFile(L"oldunitlabels.csv", lineProcessor);
+    ReadCSVFile(L"oldunitlabels.csv", lineProcessor);
 
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"NewUnitLabelsByName.csv");
     BeFile file;

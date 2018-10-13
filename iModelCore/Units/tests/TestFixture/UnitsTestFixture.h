@@ -24,7 +24,8 @@ struct UnitsTestFixture : public ::testing::Test
         void SetUp() override;
         void TearDown() override;
 
-        using CSVLineProcessor = std::function<void(bvector<Utf8String>&)>;
+        using MultipleTokensProcessor = std::function<void(bvector<Utf8String>&)>;
+        using SingleTokenProcessor = std::function<void(Utf8StringCR)>;
 
         static Utf8String GetConversionDataPath(WCharCP dataFile);
         static Utf8String GetOutputDataPath(WCharCP dataFile);
@@ -32,7 +33,11 @@ struct UnitsTestFixture : public ::testing::Test
         static void WriteLine(BeFile& file, Utf8CP line = nullptr);
         static void WriteToFile(Utf8CP fileName, bvector<bpair<Utf8String, Utf8String>> lines);
 
-        static void ReadConversionCsvFile(WCharCP file, CSVLineProcessor lineProcessor);
+        static void ReadCSVFile(WCharCP fileName, MultipleTokensProcessor const& lineProcessor);
+        static void ReadCSVFile(WCharCP fileName, SingleTokenProcessor const& lineProcessor);
+        
+        static int UnitsTestFixture::GetCSVFileLineCount(WCharCP fileName);
+
 
         static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped);
         static UnitCP LocateUOM(Utf8CP unitName, bool useLegacyNames);
