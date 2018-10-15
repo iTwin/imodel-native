@@ -440,7 +440,7 @@
     <Part Name="RunMstnBridgeTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnV8ConverterTests -dGTEST_NAME=MstnBridgeTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="DgnV8ConverterTests" />
         <Bindings>
-            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnV8ConverterTests.log</Files>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/MstnBridgeTests.log</Files>
         </Bindings>
     </Part>
 
