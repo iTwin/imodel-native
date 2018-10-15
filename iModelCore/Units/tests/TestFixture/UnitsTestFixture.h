@@ -36,7 +36,7 @@ struct UnitsTestFixture : public ::testing::Test
         static void ReadCSVFile(WCharCP fileName, MultipleTokensProcessor const& lineProcessor);
         static void ReadCSVFile(WCharCP fileName, SingleTokenProcessor const& lineProcessor);
         
-        static int UnitsTestFixture::GetCSVFileLineCount(WCharCP fileName);
+        static int GetCSVFileLineCount(WCharCP fileName);
 
 
         static Utf8String ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapped);
