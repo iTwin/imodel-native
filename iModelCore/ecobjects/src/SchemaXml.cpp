@@ -536,11 +536,24 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
     if (!m_conversionSchema.IsValid())
         {
         if (1 < sum)
-            LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
-                     "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
-                     className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
-                     schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
-
+            {
+            // We have a dgn (at least one) from a client that has thousands of schemas with classes that are declared as structs but are instantiated.  There are only 5 unique class names but over 1200
+            // schema names, so we just hardcode in those classnames since they are unique
+            if (className.Equals("EWR_GENERAL") || className.Equals("EWR_LINESIDE_ASSET") || className.Equals("EWR_DOCUMENT_REFERENCE") ||
+                className.Equals("EWR_INFORMATION_BLOCK") || className.Equals("EWR_UTILITY"))
+                {
+                classType = ECClassType::Entity;
+                LOG.infov("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, forcing to Domain.  ",
+                             className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA);
+                }
+            else
+                {
+                LOG.warningv("Class '%s' in schema '%s' has more than one type flag set to true: isStruct(%d) isDomainClass(%d) isCustomAttributeClass(%d).  Only one is allowed, defaulting to %s.  "
+                             "Modify the schema or use the ECv3ConversionAttributes in a conversion schema named '%s' to force a different class type.",
+                             className.c_str(), schemaOut->GetFullSchemaName().c_str(), isStruct, isDomain, isCA, isStruct ? "Struct" : "CustomAttribute",
+                             schemaOut->GetFullSchemaName().insert(schemaOut->GetName().length(), "_V3Conversion").c_str());
+                }
+            }
         return;
         }
 
