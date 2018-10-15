@@ -14,7 +14,7 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
 #include <DgnPlatform/GenericDomain.h>
-#include "../../Fwk/IModelClientForBridges.h"
+#include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <Bentley/BeFileName.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <iModelBridge/TestiModelHubClientForBridges.h>
@@ -522,7 +522,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     TestSourceItemWithId m_foo_i1;
     TestSourceItemWithId m_bar_i0;
     TestSourceItemWithId m_bar_i1;
-    TestIModelHubClientForBridges& m_testIModelHubClientForBridges;
+    TestIModelHubFwkClientForBridges& m_testIModelHubClientForBridges;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
     int m_changeCount = 0;
@@ -604,7 +604,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
     void ConvertItem(TestSourceItemWithId& item, iModelBridgeSyncInfoFile::ChangeDetector&);
 
-    iModelBridgeTests_Test1_Bridge(TestIModelHubClientForBridges& tc)
+    iModelBridgeTests_Test1_Bridge(TestIModelHubFwkClientForBridges& tc)
         :
         iModelBridgeWithSyncInfoBase(),
         m_foo_i0("0", "foo i0 - initial"),
@@ -644,7 +644,7 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestIModelHubClientForBridges::CaptureChangeSet(DgnDbP db)
+void TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
     {
     ASSERT_TRUE(db != nullptr);
 
@@ -772,7 +772,7 @@ TEST_F(iModelBridgeTests, Test1)
     args.push_back(L"--fwk-input=Foo");
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run
@@ -870,7 +870,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run
@@ -1007,7 +1007,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run

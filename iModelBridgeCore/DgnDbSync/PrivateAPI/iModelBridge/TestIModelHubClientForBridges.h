@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
-
+#include <BeSQLite/BeSQLite.h>
 //=======================================================================================
 // @bsistruct                                                   Sam.Wilson   10/17
 //=======================================================================================
@@ -15,9 +15,9 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     {
     bool anyTxnsInFile(DgnDbR db)
         {
-        Statement stmt;
+        BeSQLite::Statement stmt;
         stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
-        return (BE_SQLITE_ROW == stmt.Step());
+        return (BeSQLite::BE_SQLITE_ROW == stmt.Step());
         }
 
     iModel::Hub::Error m_lastServerError;
@@ -94,7 +94,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         Dgn::RevisionStatus status = db->Revisions().FinishCreateRevision();
         BeAssert(Dgn::RevisionStatus::Success == status);
         BeSQLite::DbResult result = db->SaveChanges();
-        BeAssert(BE_SQLITE_OK == result);
+        BeAssert(BeSQLite::BE_SQLITE_OK == result);
 
         // *** TBD: test for expected changes
         changeSet->Dump(*db);
