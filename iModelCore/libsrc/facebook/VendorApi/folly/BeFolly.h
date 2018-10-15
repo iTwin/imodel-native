@@ -2,7 +2,7 @@
 |
 |     $Source: VendorApi/folly/BeFolly.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,10 +22,10 @@ namespace BeFolly {
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
-{
+    {
 private:
     struct Worker : BentleyApi::RefCountedBase
-    {
+        {
         int m_id;
         ThreadPool& m_pool;
 
@@ -35,7 +35,7 @@ private:
         void Start();
         void SetName();
         THREAD_MAIN_DECL Main(void* arg);
-    };
+        };
     typedef RefCountedPtr<Worker> WorkerPtr;
 
     friend struct Worker;
@@ -61,16 +61,14 @@ public:
     BE_FOLLY_EXPORT void WaitForIdle();
 };
 
-
 //=======================================================================================
 // A queue that limit the number of parallel execution of tasks.
 // @bsiclass                                                    Mathieu.Marchand 10/17
 //=======================================================================================
 template <typename Result_T>
 struct LimitingTaskQueue
-{
+    {
 private:
-
     typedef std::function<folly::Future<Result_T>()> TaskType;
     typedef std::deque<std::pair<TaskType, std::shared_ptr<folly::Promise<Result_T>>>> DequeType;
     BeMutex m_mutex;
@@ -81,7 +79,7 @@ private:
 
 private:
     void CheckQueue()
-    {
+        {
         if (m_runningTasks >= m_limit)
             return;
 
@@ -89,36 +87,36 @@ private:
 
         auto tasksToRun = m_limit - m_runningTasks;
         while (tasksToRun-- && !m_tasks.empty())
-        {
+            {
             auto task = m_tasks.front();
             m_tasks.pop_front();
             RunTaskAsync(task);
+            }
         }
-    }
 
     void RunTaskAsync(typename DequeType::value_type task)
-    {
+        {
         ++m_runningTasks;
 
         folly::via(&m_executor, [=]
-        {
+            {
             return task.first();        // execute task
-        }).then([=](Result_T result)
-        {
+            }).then([=](Result_T result)
+            {
             --m_runningTasks;
             task.second->setValue(result);  // fulfill the promise            
             CheckQueue();
-        });
+            });
     }
 
 public:
-    LimitingTaskQueue(folly::Executor& executor, uint32_t limit)
-        :m_executor(executor), m_limit(limit), m_runningTasks(0) {BeAssert(limit > 0);}
+    LimitingTaskQueue(folly::Executor& executor, uint32_t limit) :
+        m_executor(executor), m_limit(limit), m_runningTasks(0) {BeAssert(limit > 0);}
 
     //! Schedule a task for execution. 
     template <class Func>
     folly::Future<Result_T> Push(Func&& func)
-    {
+        {
         auto follyPromise = std::make_shared<folly::Promise<Result_T>>();
 
         BeMutexHolder _lock(m_mutex);
@@ -126,8 +124,8 @@ public:
 
         CheckQueue();
         return follyPromise->getFuture();
-    }
-};
+        }
+    };
 
 } // namespace BeFolly
 
