@@ -29,14 +29,14 @@ struct UnitNameMappingsTests : UnitsTestFixture {};
 
 std::unordered_map<Utf8String, Utf8String> newNamesToDifferentOldNamesOnRoundtrip =
     {
-        { "ONE", "NONE" },
+        { "ONE", "UNITLESS_UNIT" },
         { "KG/LITRE", "KILOGRAM_PER_LITRE" },
         { "PERSON", "PERSON" },
-        { "M/M", "METRE_PER_METRE" },
-        { "FT/FT", "FOOT_PER_FOOT" },
+        { "M/M", "METRE_VERTICAL_PER_METRE_HORIZONTAL" },
+        { "FT/FT", "FOOT_VERTICAL_PER_FOOT_HORIZONTAL" },
         { "MEGAPASCAL", "MEGAPASCAL" },
-        { "PA", "PASCAL" },
-        { "RPM", "CYCLE_PER_MINUTE" }
+        { "PA", "NEWTON_PER_METRE_SQUARED" },
+        { "RPM", "REVOLUTION_PER_MINUTE" }
     };
 
 std::unordered_map<Utf8String, Utf8String> oldNamesToDifferentNewNamesOnRoundtrip =
@@ -64,14 +64,14 @@ std::unordered_map<Utf8String, Utf8String> ecNamesToDifferentNewNamesOnRoundtrip
 
 std::unordered_map<Utf8String, Utf8String> ecNamesToDifferentOldNamesOnRoundtrip =
     {
-        { "UNITS:ONE", "NONE" },
+        { "UNITS:ONE", "UNITLESS_UNIT" },
         { "UNITS:KG_PER_LITRE", "KILOGRAM_PER_LITRE" },
         { "UNITS:PERSON", "PERSON" },
-        { "UNITS:M_PER_M", "METRE_PER_METRE" },
-        { "UNITS:FT_PER_FT", "FOOT_PER_FOOT" },
+        { "UNITS:M_PER_M", "METRE_VERTICAL_PER_METRE_HORIZONTAL" },
+        { "UNITS:FT_PER_FT", "FOOT_VERTICAL_PER_FOOT_HORIZONTAL" },
         { "UNITS:MEGAPASCAL", "MEGAPASCAL" },
-        { "UNITS:PA", "PASCAL" },
-        { "UNITS:RPM", "CYCLE_PER_MINUTE" }
+        { "UNITS:PA", "NEWTON_PER_METRE_SQUARED" },
+        { "UNITS:RPM", "REVOLUTION_PER_MINUTE" }
     };
 
 std::unordered_set<Utf8String> newNamesToNoECNames =
