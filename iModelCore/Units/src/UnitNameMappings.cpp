@@ -514,22 +514,6 @@ void UnitNameMappings::AddMappings()
     AddMapping("KILOVOLT_AMPERE", "KVA");
     AddMapping("MEGAVOLT_AMPERE", "MVA");
 
-    // Multiple OldName => NewName and single NewName => OldName mappings 
-    AddOldNameToNewNameMapping("KILOGRAM_PER_DECIMETRE_CUBED", "KG/LITRE");
-    AddMapping("KILOGRAM_PER_LITRE", "KG/LITRE");
-    AddOldNameToNewNameMapping("NEWTON_PER_METRE_SQUARED", "PA");
-    AddMapping("PASCAL", "PA");
-    AddOldNameToNewNameMapping("METRE_VERTICAL_PER_METRE_HORIZONTAL", "M/M");
-    AddMapping("METRE_PER_METRE", "M/M");
-    AddOldNameToNewNameMapping("FOOT_VERTICAL_PER_FOOT_HORIZONTAL", "FT/FT");
-    AddMapping("FOOT_PER_FOOT", "FT/FT");
-    AddOldNameToNewNameMapping("REVOLUTION_PER_MINUTE", "RPM");
-    AddMapping("CYCLE_PER_MINUTE", "RPM");
-    AddOldNameToNewNameMapping("UNITLESS_UNIT", "ONE");
-    AddMapping("NONE", "ONE");
-    AddOldNameToNewNameMapping("NEWTON_PER_MILLIMETRE_SQUARED", "MEGAPASCAL");
-    AddMapping("MEGAPASCAL", "MEGAPASCAL");
-
     // Single NewName => ECName => NewName mappings
     AddECMapping("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", "UNITS:BTU_IN_PER_SQ_FT_HR_FAHRENHEIT");
     AddECMapping("(N*M)/DEG", "UNITS:N_M_PER_DEG");
@@ -982,10 +966,21 @@ void UnitNameMappings::AddMappings()
     AddECMapping("ZEPTO", "UNITS:ZEPTO");
     AddECMapping("ZETTA", "UNITS:ZETTA");
 
-    // Mapping just NewName => ECName to keep compatibility with ECName => OldName
-    AddNewNameToECNameMapping("KIPF", "UNITS:KPF");
-    AddNewNameToECNameMapping("N/SQ.MM", "UNITS:MEGAPASCAL");
-    AddNewNameToECNameMapping("DEKA", "UNITS:DECA");
+    // Multiple OldName => NewName and single NewName => OldName mappings 
+    AddOldNameToNewNameMapping("KILOGRAM_PER_DECIMETRE_CUBED", "KG/LITRE");
+    AddMapping("KILOGRAM_PER_LITRE", "KG/LITRE");
+    AddOldNameToNewNameMapping("PASCAL", "PA");
+    AddMapping("NEWTON_PER_METRE_SQUARED", "PA");
+    AddOldNameToNewNameMapping("METRE_PER_METRE", "M/M");
+    AddMapping("METRE_VERTICAL_PER_METRE_HORIZONTAL", "M/M");
+    AddOldNameToNewNameMapping("FOOT_PER_FOOT", "FT/FT");
+    AddMapping("FOOT_VERTICAL_PER_FOOT_HORIZONTAL", "FT/FT");
+    AddOldNameToNewNameMapping("CYCLE_PER_MINUTE", "RPM");
+    AddMapping("REVOLUTION_PER_MINUTE", "RPM");
+    AddOldNameToNewNameMapping("NONE", "ONE");
+    AddMapping("UNITLESS_UNIT", "ONE");
+    AddOldNameToNewNameMapping("NEWTON_PER_MILLIMETRE_SQUARED", "MEGAPASCAL");
+    AddMapping("MEGAPASCAL", "MEGAPASCAL");
 
     // Mapping OldName => NewName => OldName for PERSON/CAPITA units
     AddMapping("PERSON", "PERSON");
@@ -1001,16 +996,10 @@ void UnitNameMappings::AddMappings()
     AddOldNameToNewNameMapping("RESIDENT", "PERSON");
     AddOldNameToNewNameMapping("STUDENT", "PERSON");
 
-    // Mapping just NewName => OldName, because these names where removed from NewNames in progress and changed to map to PERSON unit
-    AddNewNameToOldNameMapping("CAPITA", "CAPITA");
-    AddNewNameToOldNameMapping("CUSTOMER", "CUSTOMER");
-    AddNewNameToOldNameMapping("EMPLOYEE", "EMPLOYEE");
-    AddNewNameToOldNameMapping("GUEST", "GUEST");
-    AddNewNameToOldNameMapping("PASSENGER", "PASSENGER");
-    AddNewNameToOldNameMapping("RESIDENT", "RESIDENT");
-    AddNewNameToOldNameMapping("STUDENT", "STUDENT");
-    AddNewNameToOldNameMapping("HUNDRED_CAPITA", "HUNDRED_CAPITA");
-    AddNewNameToOldNameMapping("THOUSAND_CAPITA", "THOUSAND_CAPITA");
+    // Mapping just NewName => ECName to keep compatibility with ECName => OldName
+    AddNewNameToECNameMapping("KIPF", "UNITS:KPF");
+    AddNewNameToECNameMapping("N/SQ.MM", "UNITS:MEGAPASCAL");
+    AddNewNameToECNameMapping("DEKA", "UNITS:DECA");
 
     // Mapping NewName => ECName => NewName for PERSON units
     AddECMapping("PERSON", "UNITS:PERSON");
