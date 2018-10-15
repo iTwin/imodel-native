@@ -740,6 +740,14 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
     if (SUCCESS != openStatus)
         return BSIERROR;
     
+    if (file->IsIModel())
+        {
+        // Fulfill the request of VSTS 32629 - assign an i.dgn file to MicroStation Bridge by default:
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::High;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+        return  BSISUCCESS;
+        }
+
     Bentley::WString applicationName;
     if (SUCCESS == file->GetAuthoringProductName(applicationName))
         {

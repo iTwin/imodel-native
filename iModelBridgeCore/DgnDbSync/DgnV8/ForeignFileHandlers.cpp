@@ -106,7 +106,7 @@ DgnV8Api::DgnFileIO* Factory (DgnV8FileP v8file) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ValidateFile (DgnV8Api::DgnFileFormatType* type, int *majorV, int *minorV, bool *is3D, Bentley::IThumbnailPropertyValuePtr* thumbnail, WCharCP name) override
     {
-    if (BentleyStatus::BSISUCCESS != TryLoadFileIO())
+    if ((nullptr == name || 0 == name[0]) || BentleyStatus::BSISUCCESS != TryLoadFileIO())
         return  false;
 
     return m_fileIOType->ValidateFile (type, majorV, minorV, is3D, thumbnail, name);
