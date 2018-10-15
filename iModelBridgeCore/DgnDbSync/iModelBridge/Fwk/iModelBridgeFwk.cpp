@@ -1269,6 +1269,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 	// *** Talk to Sam Wilson if you need to make a change.
 	// ***
 	// ***
+    StopWatch setUpTimer(true);
     Utf8String connectProjectId, iModelId;
     if (m_useIModelHub && NULL != m_iModelHubArgs)
         {
@@ -1343,16 +1344,32 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
 
+    LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
+    
+    LOG.tracev(L"Logging into iModel Hub");
+    {
+    StopWatch iModelHubSignIn(true);
     //  Sign into the iModelHub
     if (BSISUCCESS != Briefcase_Initialize(argc, argv))
         return RETURN_STATUS_SERVER_ERROR;
 
+    LogPerformance(setUpTimer, "Logging into iModelHub");
+    }
+    LOG.tracev(L"Logging into iModel Hub : Done");
+
     // Stage the workspace and input file if  necessary.
+    LOG.tracev(L"Setting up workspace for standalone bridges");
     if (BSISUCCESS != SetupDmsFiles())
         return RETURN_STATUS_SERVER_ERROR;
 
+    LOG.tracev(L"Setting up workspace for standalone bridges  : Done");
+
     //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
+    {
+    LOG.tracev(L"Setting up iModel Briefcase for processing");
+    StopWatch briefcaseTime(true);
+
     bool createdNewRepo = false;
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo))
         {
@@ -1364,6 +1381,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (createdNewRepo)
         return RETURN_STATUS_SUCCESS;
 
+    LogPerformance(setUpTimer, "Getting iModel Briefcase from iModelHub");
+    LOG.tracev(L"Setting up iModel Briefcase for processing  : Done");
+    }
+    
     //  The repo already exists. Run the bridge to update it and then push the changeset to the iModel.
     int status;
     try
@@ -1564,9 +1585,10 @@ int iModelBridgeFwk::UpdateExistingBim()
     // ***          So, we need to be able to open the BIM just in order to pull/merge/push, before we allow the bridge to add a schema import/upgrade into the mix.
     // ***
     //  By getting the BIM to the tip, this initial pull also helps ensure that we will be able to get locks for the other changes that that bridge will make later.
+    LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade");
     if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
         return BentleyStatus::ERROR;
-    
+    LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade  : Done");
 
     if (BSISUCCESS != Briefcase_PullMergePush(""))
         return RETURN_STATUS_SERVER_ERROR;
@@ -1951,4 +1973,28 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         }
 
     return *m_registry;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
+    {
+    stopWatch.Stop();
+    const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
+    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger("iModelBridge.Performance");
+    if (NULL == logger)
+        return;
+
+    if (logger->isSeverityEnabled(severity))
+        {
+        va_list args;
+        va_start(args, description);
+        Utf8String formattedDescription;
+        formattedDescription.VSprintf(description, args);
+        va_end(args);
+
+        logger->messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
+        }
     }

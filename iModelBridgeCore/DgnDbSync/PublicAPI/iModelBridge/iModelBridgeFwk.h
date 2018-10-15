@@ -307,6 +307,7 @@ protected:
     BentleyStatus SetupDmsFiles();
     int ProcessSchemaChange();
     int StoreHeaderInformation();
+    void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...);
 public:
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();

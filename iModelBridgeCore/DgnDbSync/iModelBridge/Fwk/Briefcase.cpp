@@ -433,6 +433,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
     {
+    StopWatch pullpushTimer(true);
     m_lastServerError = EffectiveServerError::Unknown;
 
     GetProgressMeter().SetCurrentStepName("PullMergePush");
@@ -480,6 +481,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     SetSyncState(SyncState::Pushed);
 
+    GetLogger().infov("PullMergePush %s : Done", m_briefcaseBasename.c_str());
     return BSISUCCESS;
     }
 
