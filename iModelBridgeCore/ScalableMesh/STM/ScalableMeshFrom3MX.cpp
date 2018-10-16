@@ -683,7 +683,11 @@ public:
             return SMFrom3MXStatus::SeveralLayersError;
 
         BeFileName root3MXBPath(BeFileName::GetDirectoryName(input3MXPath).c_str());
-        root3MXBPath.AppendToPath(BeFileName(sceneInfo.meshChildren[0].c_str(), false));
+        BeFileName name = BeFileName(sceneInfo.meshChildren[0].c_str(), false);
+        if (name.IsUrl())
+            return SMFrom3MXStatus::URLNotSupportedError;
+
+        root3MXBPath.AppendToPath(name);
 
         DRange3d contentExtent;
         float dataResolution = std::numeric_limits<float>::max();
