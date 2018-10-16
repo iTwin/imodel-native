@@ -162,6 +162,18 @@ struct MstnBridgeTests : ::testing::Test
         stmt->Step();
         return stmt->GetValueInt(0);
         }
+
+    int32_t GetModelCount(BentleyApi::BeFileName fileName)
+        {
+        ScopedDgnHost host;
+        BentleyApi::BeSQLite::DbResult result;
+        DgnDbPtr db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
+        EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, result);
+
+        CachedStatementPtr stmt = db->Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Model) "");
+        stmt->Step();
+        return stmt->GetValueInt(0);
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -213,7 +225,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     int prevCount = GetElementCount(dbFile);
     if (true)
         {
-        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        //Make sure a second run of the bridge does not add any elements.
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         MAKE_ARGC_ARGV(argptrs, args);
@@ -227,7 +239,6 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     if (true)
         {
         // and run an update
-        // This time, we expect to find the repo and briefcase already there.
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         MAKE_ARGC_ARGV(argptrs, args);
@@ -236,11 +247,9 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         EXPECT_EQ(1 + prevCount, GetElementCount(dbFile));
         }
 
-    
-
     if (true)
         {
-        // Run an update with no changes
+        //Make sure a second run of the bridge does not add any elements.
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         MAKE_ARGC_ARGV(argptrs, args);
@@ -275,6 +284,10 @@ TEST_F(MstnBridgeTests, ConvertAttachment)
     testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
     AddLine(inputFile);
     
+    BentleyApi::BeFileName dbFile(testDir);
+    dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
+
+    int modelCount = 0;
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
@@ -283,6 +296,8 @@ TEST_F(MstnBridgeTests, ConvertAttachment)
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
+        modelCount = GetModelCount(dbFile);
+        ASSERT_EQ(8, modelCount);
         }
 
     BentleyApi::BeFileName refFile;
@@ -292,14 +307,13 @@ TEST_F(MstnBridgeTests, ConvertAttachment)
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
         {
-        // Modify an item 
-        // and run an update
-        // This time, we expect to find the repo and briefcase already there.
+        //We added a new attachment.
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
+        ASSERT_EQ(modelCount + 1, GetModelCount(dbFile));
         }
 
     }
