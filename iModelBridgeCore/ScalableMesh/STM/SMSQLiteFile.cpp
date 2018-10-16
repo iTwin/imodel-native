@@ -213,7 +213,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 #ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA || result == BE_SQLITE_ERROR_ProfileTooOld)
 #else
-    if (result != BE_SQLITE_ERROR_FileNotFound)
+    if (result != BE_SQLITE_ERROR_FileNotFound && result != BE_SQLITE_ERROR)
         {
         Db::OpenParams params = Db::OpenParams(openReadOnly ? READONLY : READWRITE);
         result = m_database->IsProfileVersionUpToDate(params);
