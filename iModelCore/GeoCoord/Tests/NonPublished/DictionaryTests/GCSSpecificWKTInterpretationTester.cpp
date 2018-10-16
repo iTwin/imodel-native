@@ -47,6 +47,9 @@ static bvector<bpair <WString, WString> > s_ListOfWKTAndInterpretations =
     // Heathrow Airport grid. The name of the datum is intentionnally unknown. The match is performed using the 7 parameter definition.
     { L"HeathrowAirportGrid2007", L"PROJCS[\"AirportGrid2007\", GEOGCS[\"HeathrowT5.LL\",DATUM[\"Heathrow T5\", SPHEROID[\"AIRY30\",6377563.396,299.32496127],358.398,-213.7028,495.3183,-668.80613932004700,4.72664217602752,-719.67109718139600,-6.26386076385543],PRIMEM[\"Greenwich\",0],UNIT[\"Decimal Degree\",0.017453292519943295]],PROJECTION[\"Transverse Mercator\"],PARAMETER[\"latitude_of_origin\",51.470110655555558],PARAMETER[\"central_meridian\",-0.41832591666666669],PARAMETER[\"scale_factor\",0.999995],PARAMETER[\"false_easting\",7334.810],PARAMETER[\"false_northing\",5637.423],UNIT[\"Meter\",1.00000000000000]]" }, 
 
+
+    { L"AK27-1", L"PROJCS[\"Alaska 5001, Zone 1 (1927)\", GEOGCS [ \"NAD 27 (Alaska)\", DATUM [\"NAD 27 (Alaska)\", SPHEROID [\"Clarke 1866\", 6378206.4, 294.9786982]], PRIMEM [ \"Greenwich\", 0.000000 ], UNIT [\"Decimal Degree\", 0.01745329251994330]], PROJECTION [\"Hotine Oblique Mercator\"], PARAMETER [\"Scale_Factor\", 0.999900], PARAMETER [\"Azimuth\", -36.869898], PARAMETER [\"Central_Meridian\", -133.666667], PARAMETER [\"Latitude_Of_Origin\", 57.000000], PARAMETER [\"False_Easting\",  16404166.6667], PARAMETER [\"False_Northing\", -16404166.6667], UNIT [\"U.S. Foot\", 0.3048006096012]]" },
+
     };
     
 
