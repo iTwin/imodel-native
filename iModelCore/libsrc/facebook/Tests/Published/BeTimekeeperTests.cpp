@@ -20,7 +20,7 @@ struct TestBeTimekeeper : BeTimekeeper
     TestBeTimekeeper() : BeTimekeeper() {};
     };
 
-TEST_F(BeTimekeeperTests, GetExecutor_CalledMultipleTimes_AlwaysReturnsSameInstance)
+TEST_F(BeTimekeeperTests, Get_CalledMultipleTimes_AlwaysReturnsSameInstance)
     {
     auto executor1 = &BeTimekeeper::Get();
     auto executor2 = &BeTimekeeper::Get();
@@ -28,7 +28,7 @@ TEST_F(BeTimekeeperTests, GetExecutor_CalledMultipleTimes_AlwaysReturnsSameInsta
     EXPECT_EQ(executor1, executor2);
     }
 
-TEST_F(BeTimekeeperTests, Delayed_FromLongestToShortest_ExecuteCallbacksAtAppropriateTimes)
+TEST_F(BeTimekeeperTests, after_FromLongestToShortest_ExecuteCallbacksAtAppropriateTimes)
     {
     auto timeBefore = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
@@ -70,7 +70,7 @@ TEST_F(BeTimekeeperTests, Delayed_FromLongestToShortest_ExecuteCallbacksAtApprop
     EXPECT_TRUE(executed3);
     }
 
-TEST_F(BeTimekeeperTests, Delayed_FromShortestToLongest_ExecuteCallbacksAtAppropriateTimes)
+TEST_F(BeTimekeeperTests, after_FromShortestToLongest_ExecuteCallbacksAtAppropriateTimes)
     {
     auto timeBefore = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
