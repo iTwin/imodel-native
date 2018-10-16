@@ -150,6 +150,18 @@ struct MstnBridgeTests : ::testing::Test
         v8editor.AddLine(&eid1);
         v8editor.Save();
         }
+
+    int32_t GetElementCount(BentleyApi::BeFileName fileName)
+        {
+        ScopedDgnHost host;
+        BentleyApi::BeSQLite::DbResult result;
+        DgnDbPtr db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
+        EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, result);
+
+        CachedStatementPtr stmt = db->Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Element) "");
+        stmt->Step();
+        return stmt->GetValueInt(0);
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -185,6 +197,9 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     //testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     //iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
+    BentleyApi::BeFileName dbFile(testDir);
+    dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
+
     if (true)
         {
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
@@ -194,9 +209,21 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         }
-    
-    AddLine(inputFile);
 
+    int prevCount = GetElementCount(dbFile);
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        EXPECT_EQ(prevCount, GetElementCount(dbFile));
+        }
+
+
+    AddLine(inputFile);
     if (true)
         {
         // and run an update
@@ -206,7 +233,10 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
+        EXPECT_EQ(1 + prevCount, GetElementCount(dbFile));
         }
+
+    
 
     if (true)
         {
@@ -216,6 +246,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
+        EXPECT_EQ(1 + prevCount, GetElementCount(dbFile));
         }
     }
 
@@ -241,7 +272,7 @@ TEST_F(MstnBridgeTests, ConvertAttachment)
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
     BentleyApi::Dgn::TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
-
+    testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
     AddLine(inputFile);
     
     if (true)

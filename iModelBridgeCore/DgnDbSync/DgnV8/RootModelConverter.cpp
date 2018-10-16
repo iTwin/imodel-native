@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 
+#include <ScalableMesh/ScalableMeshLib.h>
+
 // We enter this namespace in order to avoid having to qualify all of the types, such as bmap, that are common
 // to bim and v8. The problem is that the V8 Bentley namespace is shifted in.
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
@@ -747,6 +749,10 @@ RootModelConverter::~RootModelConverter()
         //              the FindSpatialV8Models logic, which must populate the m_v8Files vector. It won't do that if the
         //              files all have appdata saying that the converter already knows about them.
         DiscardV8FileSyncInfoAppData(*file);
+        }
+    if (ScalableMesh::ScalableMeshLib::IsInitialized())
+        {
+        ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
         }
     }
 
