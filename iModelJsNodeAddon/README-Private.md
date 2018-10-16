@@ -49,7 +49,7 @@ Request a PRG build of the native platform packages. Specify the new version num
 
 You test the native platform by calling it from TypeScript.
 
-First, install your local build of the native platform. There is a `installNativePlatform` script in the imodeljs-core directory for each supported platform.
+First, install your local build of the native platform. There is a `installNativePlatform` script in this directory for each supported platform. There are scripts for each supported platform.
 
 Next, update imodeljs-core/core/backend/imodeljs-native-platform-api.d.ts to reflect the changes made to the API implemented by native code. (Do not change the version number yet.)
 
@@ -65,34 +65,46 @@ Make sure tests are still passing.
 
 Push.
 
-# APPENDIX: How to Move to a New Version of Node
+# How to Move to a New Version of Node
 
-The native platform is still specific to a major.minor version of nodejs. (That will change after we move to node v9 next year.) If you need to support a newer version of node, do the following:
-
-### Get new node-gyp package, if necessary
-
-node-gyp contains the node header files and the .lib for the desired version. You do not always have to update node-gyp when you update node.
+If you need to support a newer version of node, do the following:
 
 If you haven't already, install node-gyp:
 `npm install -g node-gyp`
 
 Tell node-gyp to install the version of nodejs that you want.
-`node-gyp install <nodevernum>`
+```
+node-gyp install <nodevernum>
+```
 
-That will install the headers and libs to the .node-gyp directory in your %homedrive%%homepath% directory. Copy the files from the relevant subdirectory to thirdparty\node-addon-api\node-gyp
+That will install the headers and libs to the .node-gyp directory in your %homedrive%%homepath% directory.
 
-### Update thirdparty/nodejs/node-gyp, if necessary
+Copy the files to the appropriate subdirectory of thirdparty\node-addon-api\node-gyp. The name of the target directory in thirdparty\node-addon-api\node-gyp should be N_v, where v is the major node version number.
 
-If you updated node-gyp from npm, then you must update our saved copy of it, as follows:
+Finally, change thirdparty\node-addon-api\node-addon-api.PartFile.xml and update the part that refers to the version of the node API that is used to build the native platform.
 
-1. Copy that whole directory to `%SrcRoot%thirdparty\node-addon-api\node-gyp`, creating a new subdirectory with the same name as the origin.
-2. Rename the new subdirectory by prefixing it with "N_" and replacing dots with underscores.
+# How to Move to a New Version of Electron
 
-For example, suppose you want to update to 8.9.2 for node addons. You would copy the `%homedrive%%homepath%.node-gyp\8.9.2` to `%SrcRoot%thirdparty\node-addon-api\node-gyp`. That would create a subdirectory called `8.9.2`. You would then rename the copy to `n_8_2`.
+If you need to support a newer version of node, do the following:
 
-### Change Partfiles
+Tell node-gyp to install the version of electron that you want. For example, to install version 2.0.8, do this:
+```
+node-gyp install --target=2.0.8 --arch=x64 --dist-url=https://atom.io/download/electron
+```
 
-Finally, change the PartFiles that refer to the version of the node API that is used to build the native platform.
+That will install the headers and libs to the %homedrive%%homepath%\.node-gyp\iojs-2.0.8 directory.
 
-thirdparty\node-addon-api\node-addon-api.PartFile.xml
-iModelJsNodeAddon\iModelJsNodeAddon.PartFile.xml
+Copy the files to the appropriate subdirectory of thirdparty\node-addon-api\node-gyp, as follows:
+
+The name of the target directory in thirdparty\node-addon-api\node-gyp should be E_v, where v is the major electron version number.
+
+Copy all of the files in the following directories into the target directory:
+* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\src
+* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\deps\v8\include
+* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\deps\uv\include
+
+Copy the the following directories as directories into the target directory:
+* %homedrive%%homepath%\.node-gyp\iojs-2.0.8\deps\v8\include\libplatform
+
+
+Finally, change thirdparty\node-addon-api\node-addon-api.PartFile.xml and update the part that refers to the version of the electron API that is used to build the native platform.
