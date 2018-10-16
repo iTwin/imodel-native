@@ -241,7 +241,7 @@ TEST_F(MstnBridgeTests, ConvertAttachment)
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
     BentleyApi::Dgn::TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
-
+    testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
     AddLine(inputFile);
     
     if (true)
