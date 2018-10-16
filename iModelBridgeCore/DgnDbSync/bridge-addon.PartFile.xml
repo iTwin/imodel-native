@@ -33,8 +33,9 @@
   </ProductDirectoryList>
 
   <Part Name="bridge-addon-lib" BentleyBuildMakeFile="./iModelBridge/addon/bridge-addon.mke" >
-    <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+    <SubPart PartName="node-addon-api" PartFile="node-addon-api" Repository="Thirdparty-node-addon-api"/>
     <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridge"/>
+    <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
     <Bindings>
       <!-- KEEP THIS CONSISTENT WITH api_package\install-bridge-addon-native.js -->
       <Files ProductDirectoryName="bridge_node_module" ProductSubDirectory="n_8">

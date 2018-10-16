@@ -9,5 +9,6 @@
 #include <cstdio>
 
 int RunBridge(char* json){
-    printf("Hello from C++");
+    printf("%s", json);
+    return 0;
 }
