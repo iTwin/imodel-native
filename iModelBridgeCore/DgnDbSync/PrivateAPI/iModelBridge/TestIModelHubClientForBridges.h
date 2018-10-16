@@ -52,7 +52,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     BeFileName m_serverRepo;
     BeFileName m_testWorkDir;
     DgnDbP m_briefcase;
-    BeBriefcaseId m_currentBriefcaseId;
+    BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
     TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())
         {}
