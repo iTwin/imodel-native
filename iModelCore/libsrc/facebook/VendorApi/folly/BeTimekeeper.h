@@ -42,7 +42,7 @@ struct BeTimekeeper : folly::Timekeeper
 
         struct Context
             {
-            std::atomic_bool m_stopping = false;
+            std::atomic_bool m_stopping;
             mutable std::mutex m_mutex;
             std::condition_variable m_hasWorkCV;
             CallbackQueue m_queue;

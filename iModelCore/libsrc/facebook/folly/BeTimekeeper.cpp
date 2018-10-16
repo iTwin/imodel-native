@@ -29,6 +29,7 @@ int64_t GetCurrentTimeAsUnixMillis()
 BeTimekeeper::BeTimekeeper()
     {
     auto ctx = new Context();
+    ctx->m_stopping = false;
     std::thread thread([ctx]
         {
         ctx->ProcessQueue();
