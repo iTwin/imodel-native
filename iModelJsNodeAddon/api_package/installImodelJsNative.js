@@ -53,8 +53,6 @@ function installNativePlatformPackage(packages) {
 // Install both flavors of the addon for the current platform
 // *** KEEP THIS CONSISTENT WITH iModelJsNodeAddon/MakePackages.py IN MERCURIAL ***
 
-let packages = `${formatPackageName('n_8')}@${version}`;
-if (process.platform.toLowerCase() != 'linux')
-    packages += ` ${formatPackageName('e_2')}@${version}`;
+let packages = `${formatPackageName('n_8')}@${version} ${formatPackageName('e_2')}@${version}`;
 
 installNativePlatformPackage(packages);
