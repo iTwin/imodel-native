@@ -1321,6 +1321,7 @@ public:
     DgnProgressMeterR           GetProgressMeter() const;
     DWG_EXPORT MessageCenter&   GetMessageCenter () { return m_messageCenter; }
     DWG_EXPORT Options const&   GetOptions () const { return m_options; }
+    DWG_EXPORT Options&         GetOptionsForEdit () { return m_options; }
     DWG_EXPORT DgnCategoryId    GetUncategorizedCategory () const { return m_uncategorizedCategoryId; }
     DWG_EXPORT CodeSpecId       GetBusinessKeyCodeSpec () const { return m_businessKeyCodeSpecId; }
     StableIdPolicy              GetCurrentIdPolicy () const { return m_currIdPolicy; }

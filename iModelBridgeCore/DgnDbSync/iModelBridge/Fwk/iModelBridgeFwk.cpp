@@ -19,7 +19,7 @@
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <iModelBridge/iModelBridgeRegistry.h>
 #include "../iModelBridgeHelpers.h"
-#include "IModelClientForBridges.h"
+#include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -1506,6 +1506,28 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     return SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+//! Method to store common information applicable to all bridges.
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int             iModelBridgeFwk::StoreHeaderInformation()
+    {
+    BeGuid guid = m_briefcaseDgnDb->QueryProjectGuid();
+    if (guid.IsValid())
+        return SUCCESS;
+
+    if (!m_useIModelHub || NULL == m_iModelHubArgs)
+        return SUCCESS;
+
+    BeGuid connectProjectId;
+    if (SUCCESS != connectProjectId.FromString(m_iModelHubArgs->m_bcsProjectId.c_str()))
+        return ERROR;
+    
+    m_briefcaseDgnDb->SaveProjectGuid(connectProjectId);
+    return SUCCESS;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1635,6 +1657,9 @@ int iModelBridgeFwk::UpdateExistingBim()
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
+        GetLogger().tracev("bridge:%s iModel:%s - Storing iModel Bridge Header Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+        if (SUCCESS != StoreHeaderInformation())
+            GetLogger().warningv("bridge:%s iModel:%s - Storing iModel Bridge Header Data Failed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         //  Now, finally, we can convert data
         GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());

@@ -11,6 +11,8 @@
 #include <VersionedDgnV8Api/DgnPlatform/RenderStore.h>
 #include <VersionedDgnV8Api/DgnPlatform/LxoEnvironment.h>
 
+#include <PointCloud/PointCloudSettings.h>
+
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 static Utf8CP VIEW_SETTING_PointCloud = "pointCloud";
@@ -764,6 +766,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
                 parms.m_dstyle->SetCode(DisplayStyle::CreateCode(*definitionModel, styleName));
             ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
             }
+        // Need to ensure that the json value holds a uint, not an int
+        parms.m_dstyle->SetBackgroundColor(parms.m_dstyle->GetBackgroundColor());
         }
 
     // View geometry
@@ -802,6 +806,16 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         // When the display style is loaded from the db, the type of the background color is set to type int instead of uint.  This makes comparisons to a display style that was set on the
         // fly give a false negative.
         existingDef->GetDisplayStyle().SetBackgroundColor(existingDef->GetDisplayStyle().GetBackgroundColor());
+        ViewControllerPtr viewController = existingDef->LoadViewController();
+        if (viewController.IsValid())
+            {
+            auto spatialVC = viewController->ToSpatialViewP();
+            if (spatialVC)
+                {
+                PointCloudViewSettings pcvs = PointCloudViewSettings::FromView(*spatialVC);
+                pcvs._Save(*existingDef);
+                }
+            }
 
         view = viewFactory._UpdateView(*this, parms, *existingDef);
         }

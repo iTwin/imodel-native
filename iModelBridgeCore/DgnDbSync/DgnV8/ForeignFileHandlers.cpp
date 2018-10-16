@@ -106,7 +106,7 @@ DgnV8Api::DgnFileIO* Factory (DgnV8FileP v8file) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ValidateFile (DgnV8Api::DgnFileFormatType* type, int *majorV, int *minorV, bool *is3D, Bentley::IThumbnailPropertyValuePtr* thumbnail, WCharCP name) override
     {
-    if (BentleyStatus::BSISUCCESS != TryLoadFileIO())
+    if ((nullptr == name || 0 == name[0]) || BentleyStatus::BSISUCCESS != TryLoadFileIO())
         return  false;
 
     return m_fileIOType->ValidateFile (type, majorV, minorV, is3D, thumbnail, name);
@@ -171,15 +171,7 @@ void Converter::RegisterForeignFileTypes (BentleyApi::BeFileNameCR v8dir, Bentle
     module we use here only depends on DgnPlatform, and does not depend on PowerPlatform.
     In essense, the implementation module is only a subset of the MDL file handler.
     -----------------------------------------------------------------------------------*/
-    static Utf8CP   s_dwgdgnIO = "DwgDgnIO2017.dll";
-
-    // a workaround for transitioning from RealDWG2017 to 2018 to allow either one work for both PRG and developers.
-    BeFileName  checkPath = v8dir;
-    checkPath.AppendToPath (WString(s_dwgdgnIO).c_str());
-    if (!checkPath.DoesPathExist())
-        s_dwgdgnIO = "DwgDgnIO2018.dll";
-
-    V8ForeignFileType*  filetypeInstance = new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "dwg", s_dwgdgnIO, v8dir, &realdwgDir);
+    V8ForeignFileType*  filetypeInstance = new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "dwg", "DwgDgnIO2018.dll", v8dir, &realdwgDir);
     if (nullptr == filetypeInstance)
         return;
 
@@ -193,9 +185,11 @@ void Converter::RegisterForeignFileTypes (BentleyApi::BeFileNameCR v8dir, Bentle
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::OpenNurbs, "3dm", "rhinolib.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::FBX, "fbx", "fbxfileioImp.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::IFC, "ifc", "IfcFileIO.dll", v8dir));
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::Acute3D, "3mx", "MrMeshFileIO.dll", v8dir));
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::Acute3D, "3sm", "MrMeshFileIO.dll", v8dir));
 
     // Add the wildcard DWG as the last entry to give other FileIO's a chance, before unnecessarily loading lots of RealDWG DLL's.
-    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "*", s_dwgdgnIO, v8dir, &realdwgDir));
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DWG, "*", "DwgDgnIO2018.dll", v8dir, &realdwgDir));
     }
 
 /*---------------------------------------------------------------------------------**//**

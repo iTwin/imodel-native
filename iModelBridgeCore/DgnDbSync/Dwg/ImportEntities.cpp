@@ -977,6 +977,69 @@ bool            ApplyThickness (GeometricPrimitivePtr const& geomPrimitive, DVec
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ApplyColorOverride (DwgGiFaceDataCP faceData, DwgGiEdgeDataCP edgeData)
+    {
+    /*-----------------------------------------------------------------------------------
+    Shell and mesh may have face and/or edge data overrides. Apply a color override from 
+    the first face or the first edge - ignore varying colors for now.
+    -----------------------------------------------------------------------------------*/
+    if (nullptr == faceData && nullptr == edgeData)
+        return;
+
+    DwgCmEntityColor    faceColor, edgeColor;
+    bool    hasFaceColor = false, hasEdgeColor = false;
+    if (nullptr != faceData)
+        {
+        DwgCmEntityColorCP  trueColors = faceData->GetTrueColors ();
+        int16_t const*      indexColors = faceData->GetColors ();
+        if (nullptr != trueColors)
+            {
+            // face overridden by the true color of the first face
+            faceColor = trueColors[0];
+            hasFaceColor = true;
+            }
+        else if (nullptr != indexColors)
+            {
+            // face overridden by index color of the first face
+            faceColor.SetColorIndex (indexColors[0]);
+            hasFaceColor = true;
+            }
+        }
+    if (nullptr != edgeData)
+        {
+        DwgCmEntityColorCP  trueColors = edgeData->GetTrueColors ();
+        int16_t const*      indexColors = edgeData->GetColors ();
+        if (nullptr != trueColors)
+            {
+            // edge overridden by the true color of the first edge
+            edgeColor = trueColors[0];
+            hasEdgeColor = true;
+            }
+        else if (nullptr != indexColors)
+            {
+            // edge overridden by index color of the first edge
+            edgeColor.SetColorIndex (indexColors[0]);
+            hasEdgeColor = true;
+            }
+        }
+    if (!hasFaceColor && !hasEdgeColor)
+        return;
+
+    auto regenType = m_geometryOptions->_GetRegenType ();
+    bool rendered = DwgGiRegenType::HideOrShadeCommand == regenType || DwgGiRegenType::RenderCommand == regenType;
+
+    DwgCmEntityColor    colorOverride;
+    if (hasFaceColor)
+        colorOverride = faceColor;
+    if (hasEdgeColor && (!hasFaceColor || !rendered))
+        colorOverride = edgeColor;
+
+    m_drawParams._SetColor (colorOverride);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _Circle (DPoint3dCR center, double radius, DVec3dCR normal) override
@@ -1182,7 +1245,10 @@ virtual void    _Mesh (size_t nRows, size_t nColumns, DPoint3dCP points, DwgGiEd
 
     GeometricPrimitivePtr   pface = GeometricPrimitive::Create (dgnPolyface);
     if (pface.IsValid())
+        {
+        this->ApplyColorOverride (faces, edges);
         this->AppendGeometry (*pface.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1295,7 +1361,10 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
 
     GeometricPrimitivePtr   pface = GeometricPrimitive::Create (dgnPolyface);
     if (pface.IsValid())
+        {
+        this->ApplyColorOverride (faceData, edgeData);
         this->AppendGeometry (*pface.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

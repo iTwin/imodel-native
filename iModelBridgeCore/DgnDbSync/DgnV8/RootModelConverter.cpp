@@ -459,6 +459,10 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
     if (!isMyFile)
         {
+        // Always own a .i.dgn file and all its embedded references:
+        if (v8File.IsIModel() || v8File.IsEmbeddedFile())
+            return  true;
+
         // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
         auto rootFilename = _GetParams().GetInputFileName ();
         if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))

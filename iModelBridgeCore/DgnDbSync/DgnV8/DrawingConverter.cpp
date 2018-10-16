@@ -795,6 +795,8 @@ ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefi
     // need to update the DisplayStyle and CategorySelector.
 
     DisplayStyleR newDisplayStyle = drawing->GetDisplayStyle();
+    newDisplayStyle.SetBackgroundColor(newDisplayStyle.GetBackgroundColor());
+
     newDisplayStyle.ForceElementIdForInsert(existingViewDef.GetDisplayStyleId());
     if (!existingViewDef.GetDisplayStyle().EqualState(newDisplayStyle))
         {
@@ -808,8 +810,10 @@ ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefi
     // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of categories and only call Update if there were.
     CategorySelectorR newCategorySelector = drawing->GetCategorySelector();
     newCategorySelector.ForceElementIdForInsert(existingViewDef.GetCategorySelectorId());
+
+    CategorySelectorR oldCategorySelector = existingViewDef.GetCategorySelector();
     Json::Value newCategoryVal = newCategorySelector.ToJson();
-    Json::Value oldCategoryVal = existingViewDef.GetCategorySelector().ToJson();
+    Json::Value oldCategoryVal = oldCategorySelector.ToJson();
     if (newCategoryVal != oldCategoryVal)
         {
         newCategorySelector.Update(&stat);

@@ -306,7 +306,7 @@ protected:
     BentleyStatus StageWorkspace();
     BentleyStatus SetupDmsFiles();
     int ProcessSchemaChange();
-
+    int StoreHeaderInformation();
 public:
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();
