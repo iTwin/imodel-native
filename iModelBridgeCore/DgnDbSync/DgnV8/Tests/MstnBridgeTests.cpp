@@ -51,38 +51,42 @@ struct MstnBridgeTests : ::testing::Test
         return fileName;
         }
 
+
+    static BentleyApi::BeFileName GetSeedFile()
+        {
+        ScopedDgnHost host;
+
+        //Initialize parameters needed to create a DgnDb
+        CreateDgnDbParams createProjectParams;
+        createProjectParams.SetRootSubjectName("iModelBridgeTests");
+
+        BentleyApi::BeFileName seedDbName = GetSeedFilePath();
+        BeFileName::CreateNewDirectory(seedDbName.GetDirectoryName().c_str());
+
+        // Create the seed DgnDb file. The BisCore domain schema is also imported. 
+        BentleyApi::BeSQLite::DbResult createStatus;
+        DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, seedDbName, createProjectParams);
+        
+        // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
+        //db->SetAsBriefcase(BentleyApi::BeSQLite::BeBriefcaseId(BentleyApi::BeSQLite::BeBriefcaseId::Master()));
+        db->SaveChanges();
+        return seedDbName;
+        }
+
     static void SetUpTestCase()
         {
-        //BentleyApi::BeFileName tmpDir;
-        //BentleyApi::BeTest::GetHost().GetTempDir(tmpDir);
-        //BentleyApi::BeFileName::CreateNewDirectory(tmpDir.c_str());
+        BentleyApi::BeFileName tmpDir;
+        BentleyApi::BeTest::GetHost().GetTempDir(tmpDir);
+        BentleyApi::BeFileName::CreateNewDirectory(tmpDir.c_str());
 
         Converter::InitializeDllPath(GetDgnv8BridgeDllName());
-
-        BentleyApi::BeFileName seedDbName(GetSeedFilePath());
-        BeFileName::CreateNewDirectory(seedDbName.GetDirectoryName().c_str());
 
         BentleyApi::BeFileName platformAssetsDir;
         BentleyApi::BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
         BentleyApi::BeFileName sqLangFile(platformAssetsDir);
         sqLangFile.AppendToPath(L"sqlang\\MstnBridgeTests_en-US.sqlang.db3");
         L10N::Initialize(BentleyApi::BeSQLite::L10N::SqlangFiles(sqLangFile));
-        
         ScopedDgnHost host;
-        
-
-        // Initialize parameters needed to create a DgnDb
-        CreateDgnDbParams createProjectParams;
-        createProjectParams.SetRootSubjectName("iModelBridgeTests");
-
-        // Create the seed DgnDb file. The BisCore domain schema is also imported. 
-        BentleyApi::BeSQLite::DbResult createStatus;
-        DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, seedDbName, createProjectParams);
-        ASSERT_TRUE(db.IsValid());
-
-        // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
-        db->SetAsBriefcase(BentleyApi::BeSQLite::BeBriefcaseId(BentleyApi::BeSQLite::BeBriefcaseId::Standalone()));
-        db->SaveChanges();
         }
 
     static BentleyApi::BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir)
@@ -109,6 +113,43 @@ struct MstnBridgeTests : ::testing::Test
         
         ASSERT_EQ(BentleyApi::BeFileNameStatus::Success, BentleyApi::BeFileName::BeCopyFile(filepath.c_str(), outFile.c_str()));
         }
+
+    void SetUpBridgeProcessingArgs(bvector<WString>& args, WCharCP testDir)
+        {
+        args.push_back(L"iModelBridgeTests.ConvertLinesUsingBridgeFwk");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir));
+        args.push_back(L"--server-environment=Qa");
+        args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
+        args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
+        args.push_back(WPrintfString(L"--fwk-bridge-library=\"%s\"", GetDgnv8BridgeDllName().c_str()));     // must refer to a path that exists! 
+        args.push_back(L"--fwk-skip-assignment-check");
+        
+
+        BentleyApi::BeFileName platformAssetsDir;
+        BentleyApi::BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
+        args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
+        }
+
+    void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File,  int32_t num, bool useOffsetForElement)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(refV8File);
+        int offset = useOffsetForElement ? num : 0;
+        v8editor.AddAttachment(refV8File, nullptr, Bentley::DPoint3d::FromXYZ((double) offset * 1000, (double) offset * 1000, 0));
+        v8editor.Save();
+        }
+
+    void AddLine(BentleyApi::BeFileName& inputFile)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(inputFile);
+        DgnV8Api::ElementId eid1;
+        v8editor.AddLine(&eid1);
+        v8editor.Save();
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -122,27 +163,9 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
-    // I have to create a file that I represent as the bridge "library", so that the fwk's argument validation logic will see that it exists.
-    // The fwk won't try to load this file, since we will register a fake bridge.
-    
-
     bvector<WString> args;
-    args.push_back(L"iModelBridgeTests.ConvertLinesUsingBridgeFwk");                                                 // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
-    args.push_back(L"--server-environment=Qa");
-    args.push_back(L"--server-repository=iModelBridgeTests_Test1");                             // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--server-project-guid=iModelBridgeTests_Project");                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--fwk-create-repository-if-necessary");
-    args.push_back(L"--fwk-revision-comment=\"comment in quotes\"");
-    args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
-    args.push_back(WPrintfString(L"--fwk-bridge-library=\"%s\"", GetDgnv8BridgeDllName().c_str()));     // must refer to a path that exists! 
-    args.push_back(L"--fwk-skip-assignment-check");
+    SetUpBridgeProcessingArgs(args, testDir.c_str());
     args.push_back(L"--fwk-bridge-regsubkey=iModelBridegForMstn");
-    
-    BentleyApi::BeFileName platformAssetsDir;
-    BentleyApi::BeTest::GetHost().GetDgnPlatformAssetsDirectory(platformAssetsDir);
-    args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
 
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
@@ -153,10 +176,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     BentleyApi::Dgn::TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
-    // Register the test bridge that fwk should run
-    //iModelBridgeTests_Test1_Bridge testBridge(testIModelHubClientForBridges);
-    //iModelBridgeFwk::SetBridgeForTesting(testBridge);
-
+    testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
     BentleyApi::BeFileName assignDbName(testDir);
     assignDbName.AppendToPath(L"test1Assignments.db");
     //FakeRegistry testRegistry(testDir, assignDbName);
@@ -175,17 +195,10 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         ASSERT_EQ(0, fwk.Run(argc, argv));
         }
     
-    V8FileEditor v8editor;
-    v8editor.Open(inputFile);
-    DgnV8Api::ElementId eid1;
-    v8editor.AddLine(&eid1);
-    v8editor.Save();
+    AddLine(inputFile);
 
     if (true)
         {
-        // Modify an item 
-        
-
         // and run an update
         // This time, we expect to find the repo and briefcase already there.
         iModelBridgeFwk fwk;
@@ -204,4 +217,58 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
         ASSERT_EQ(0, fwk.Run(argc, argv));
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, ConvertAttachment)
+    {
+    auto bridgeRegSubKey = L"iModelBridgeForMstn";
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"ConvertLinesUsingBridgeFwk2");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str());
+    args.push_back(L"--fwk-bridge-regsubkey=iModelBridegForMstn");
+    
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    BentleyApi::Dgn::TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+
+    AddLine(inputFile);
+    
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        }
+
+    BentleyApi::BeFileName refFile;
+    MakeCopyOfFile(refFile, L"Test3d.dgn", L"-Ref-1");
+
+    AddLine(refFile);
+    AddAttachment(inputFile, refFile, 1, true);
+    if (true)
+        {
+        // Modify an item 
+        // and run an update
+        // This time, we expect to find the repo and briefcase already there.
+        iModelBridgeFwk fwk;
+        bvector<WCharCP> argptrs;
+        MAKE_ARGC_ARGV(argptrs, args);
+        ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+        ASSERT_EQ(0, fwk.Run(argc, argv));
+        }
+
     }
