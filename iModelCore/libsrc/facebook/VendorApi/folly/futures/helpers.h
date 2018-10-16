@@ -38,7 +38,7 @@ namespace futures {
   /// The Timekeeper thread will be lazily created the first time it is
   /// needed. If your program never uses any timeouts or other time-based
   /// Futures you will pay no Timekeeper thread overhead.
-  Future<Unit> sleep(Duration, Timekeeper* = nullptr);
+  BE_FOLLY_EXPORT Future<Unit> sleep(Duration, Timekeeper* = nullptr);
 
   /**
    * Set func as the callback for each input Future and return a vector of
