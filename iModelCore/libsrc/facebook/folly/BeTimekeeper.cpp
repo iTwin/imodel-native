@@ -32,6 +32,7 @@ BeTimekeeper::BeTimekeeper()
     ctx->m_stopping = false;
     std::thread thread([ctx]
         {
+        BeThreadUtilities::SetCurrentThreadName("BeTimekeeper");
         ctx->ProcessQueue();
         delete ctx;
         });

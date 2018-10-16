@@ -18,7 +18,7 @@ namespace BeFolly {
 * @bsiclass
 * Implements folly::Timekeeper for folly::futures::sleep() to work - that is not available
 * in build due to large amount of dependencies.
-* Implementation uses one thread for waiting and executing delayed functions.
+* Implementation uses one thread for waiting and executing after() requests.
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BeTimekeeper : folly::Timekeeper
     {
