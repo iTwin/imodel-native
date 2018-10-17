@@ -1970,6 +1970,100 @@ TEST_F(ECSqlStatementTestFixture, HexLiteral)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindIdStrings)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    ECInstanceKey decimalKey, decimalStrKey, hexStrKey;
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(ECInstanceId, Name) VALUES (?,'Foo')"));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt64(1, INT64_C(10))) << insertStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(decimalKey)) << "Bound decimal";
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "11", IECSqlBinder::MakeCopy::No)) << insertStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(decimalStrKey)) << "Bound decimal string";
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "0x12", IECSqlBinder::MakeCopy::No)) << insertStmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(hexStrKey)) << "Bound hex string";
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, decimalKey.GetInstanceId())) << "Inserted as decimal, bound as decimal";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as decimal, bound as decimal";
+    ASSERT_EQ(decimalKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as decimal, bound as decimal";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, decimalKey.GetInstanceId().ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << "Inserted as decimal, bound as decimal string";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as decimal, bound as decimal string";
+    ASSERT_EQ(decimalKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as decimal, bound as decimal string";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, decimalKey.GetInstanceId().ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << "Inserted as decimal, bound as hexadecimal string";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as decimal, bound as hexadecimal string";
+    ASSERT_EQ(decimalKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as decimal, bound as hexadecimal string";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, decimalStrKey.GetInstanceId())) << "Inserted as decimal string, bound as decimal";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as decimal string, bound as decimal";
+    ASSERT_EQ(decimalStrKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as decimal string, bound as decimal";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, decimalStrKey.GetInstanceId().ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << "Inserted as decimal string, bound as decimal string";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as decimal string, bound as decimal string";
+    ASSERT_EQ(decimalStrKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as decimal string, bound as decimal string";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, decimalStrKey.GetInstanceId().ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << "Inserted as decimal string, bound as hexadecimal string";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as decimal string, bound as hexadecimal string";
+    ASSERT_EQ(decimalStrKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as decimal string, bound as hexadecimal string";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, hexStrKey.GetInstanceId())) << "Inserted as hexadecimal string, bound as decimal";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as hexadecimal string, bound as decimal";
+    ASSERT_EQ(hexStrKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as hexadecimal string, bound as decimal";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, hexStrKey.GetInstanceId().ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << "Inserted as hexadecimal string, bound as decimal string";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as hexadecimal string, bound as decimal string";
+    ASSERT_EQ(hexStrKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as hexadecimal string, bound as decimal string";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, hexStrKey.GetInstanceId().ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << "Inserted as hexadecimal string, bound as hexadecimal string";
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Inserted as hexadecimal string, bound as hexadecimal string";
+    ASSERT_EQ(hexStrKey.GetInstanceId(), selStmt.GetValueId<ECInstanceId>(0)) << "Inserted as hexadecimal string, bound as hexadecimal string";
+    selStmt.Reset();
+    selStmt.ClearBindings();
+
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, "", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, "x", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, "0x", IECSqlBinder::MakeCopy::No));
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PolymorphicDelete)
@@ -2670,15 +2764,16 @@ TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
     ASSERT_EQ(0, sqliteStmt.GetValueInt(1)) << "Hex string cannot be converted to number | " << sqliteStmt.GetSql();
     }
 
+    //Binding hex strings works because ECDb converts them to int64 before handing over to SQLite
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, childId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind ECInstanceId as hex string | " << selStmt.GetECSql() << " | SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind ECInstanceId as hex string | " << selStmt.GetECSql() << " | SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE Parent.Id=?"));
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindText(1, parentId.ToHexStr().c_str(), IECSqlBinder::MakeCopy::Yes)) << selStmt.GetECSql();
-    EXPECT_EQ(BE_SQLITE_DONE, selStmt.Step()) << "Bind Parent.Id as hex string | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
+    EXPECT_EQ(BE_SQLITE_ROW, selStmt.Step()) << "Bind Parent.Id as hex string | " << selStmt.GetECSql() << " SQL: " << selStmt.GetNativeSql();
 
     selStmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Child WHERE IntProp=?"));
@@ -3134,7 +3229,8 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArrayWithDifferentTypes)
     EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindInt64(paramValues[PRIMITIVETYPE_Long].GetLong()));
     EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(paramValues[PRIMITIVETYPE_Point2d].GetPoint2d()));
     EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(paramValues[PRIMITIVETYPE_Point3d].GetPoint3d()));
-    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindText(paramValues[PRIMITIVETYPE_String].GetUtf8CP(), IECSqlBinder::MakeCopy::Yes));
+    EXPECT_EQ(ECSqlStatus::Success, elementBinder.BindText("2018-08-12", IECSqlBinder::MakeCopy::No));
+    EXPECT_EQ(ECSqlStatus::Error, elementBinder.BindText("Hello", IECSqlBinder::MakeCopy::No));
     }
 
     {
@@ -6383,66 +6479,6 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ts.IIsGeometricModel WHERE Is2d=False"));
     }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     09/13
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, ECInstanceIdConversion)
-    {
-    //ToString
-    ECInstanceId ecInstanceId(UINT64_C(123456789));
-    Utf8CP expectedInstanceId = "123456789";
-    Utf8Char actualInstanceId[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-    ecInstanceId.ToString(actualInstanceId);
-    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValue();
-
-    ecInstanceId = ECInstanceId(UINT64_C(0));
-    expectedInstanceId = "0";
-    actualInstanceId[0] = '\0';
-    ecInstanceId.ToString(actualInstanceId);
-    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValueUnchecked();
-
-    //FromString
-    Utf8CP instanceId = "123456789";
-    ECInstanceId expectedECInstanceId(UINT64_C(123456789));
-    ECInstanceId actualECInstanceId;
-    EXPECT_EQ(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
-    EXPECT_EQ(expectedECInstanceId.GetValue(), actualECInstanceId.GetValue()) << "Unexpected ECInstanceId parsed from InstanceId " << instanceId;
-
-    instanceId = "0";
-    expectedECInstanceId = ECInstanceId(UINT64_C(0));
-    actualECInstanceId = ECInstanceId();
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
-
-    instanceId = "0000";
-    expectedECInstanceId = ECInstanceId(UINT64_C(0));
-    actualECInstanceId = ECInstanceId();
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
-
-    instanceId = "-123456";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    instanceId = "-12345678901234";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    //now test with invalid instance ids
-    ScopedDisableFailOnAssertion disableFailOnAssertion;
-
-    instanceId = "0x75BCD15";
-    expectedECInstanceId = ECInstanceId(UINT64_C(123456789));
-    actualECInstanceId = ECInstanceId();
-    EXPECT_EQ(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with hex formatted number '" << instanceId << "' is expected to be supported by ECInstanceId::FromString";
-    EXPECT_TRUE(actualECInstanceId == ECInstanceId(UINT64_C(0x75BCD15)));
-
-    instanceId = "i-12345";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId starting with i- '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    instanceId = "1234a123";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
-
-    instanceId = "blabla";
-    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
     }
 
 //---------------------------------------------------------------------------------------
