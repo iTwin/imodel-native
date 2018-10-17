@@ -230,7 +230,7 @@ void DgnGeoLocation::InitializeProjectExtents()
 
     // We need an immutable origin for Cesium tile publishing that will not
     // change when project extents change.   Set it here only.
-    m_initialProjectCenter = m_extent.LocalToGlobal(.5, .5, 5);
+    m_initialProjectCenter = m_extent.LocalToGlobal(.5, .5, .5);
     Save();
     }
 
