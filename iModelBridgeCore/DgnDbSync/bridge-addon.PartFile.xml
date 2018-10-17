@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+  <Part Name="MakePackages" BentleyBuildMakeFile="./iModelBridge/addon/makePackages.mke" OnlyPlatforms="x64,linuxX64,MacOSx64" PrgOutputDir="bridge-addon">
+    <SubProduct ProductName="bridge-addon"/>
+  </Part>
+
+  <Product Name="bridge-addon">
+    <SubProduct ProductName="bridge-addon-windows" />
+  </Product>
+
+  <Product Name="bridge-addon-windows" OnlyPlatforms="x64">
+    <SubPart PartName="bridge-addon-lib" />
+    <Directories DirectoryListName="bridge-addon-delivery-list" />
+  </Product>
+
+  <ProductDirectoryList ListName="bridge-addon-delivery-list">
+    <ProductDirectory Name="AddonRoot" Path="Addon" />
+    <ProductDirectory Name="bridge_node_module" RelativeTo="AddonRoot"/>
+    <ProductDirectory Name="bridge_node_module" RelativeTo="AddonRoot" LibType="Static" />
+    <ProductDirectory Name="SupportingFilesRoot" Path="Support" />
+    <ProductDirectory Name="Assemblies" Path="" RelativeTo="SupportingFilesRoot"/>
+    <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="SupportingFilesRoot"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="SupportingFilesRoot" LibType="Static"/>
+
+    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot"/>
+    <ProductDirectory Name="PresentationRules" Path="PresentationRules" RelativeTo="SupportingFilesRoot" LibType="Static"/>
+
+    <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="SupportingFilesRoot" Path="Notices" LibType="static"/>
+  </ProductDirectoryList>
+
+  <Part Name="bridge-addon-lib" BentleyBuildMakeFile="./iModelBridge/addon/bridge-addon.mke" >
+    <SubPart PartName="node-addon-api" PartFile="node-addon-api" Repository="Thirdparty-node-addon-api"/>
+    <SubPart PartName="iModelBridgeFwkLib" PartFile="iModelBridge"/>
+    <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+    <Bindings>
+      <!-- KEEP THIS CONSISTENT WITH api_package\install-bridge-addon-native.js -->
+      <Files ProductDirectoryName="bridge_node_module" ProductSubDirectory="n_8">
+        Delivery/bridge-addon/bridge-addon.node
+      </Files>
+    </Bindings>
+  </Part>
+
+</BuildContext>
