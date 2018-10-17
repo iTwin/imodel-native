@@ -50,4 +50,4 @@ baseDir = $(_MakeFilePath)
 always:
     |-- Building iModelJsNodeAddon version $(PACKAGE_VERSION) --
     -@$(rmdirRecursiveCmd) $(o)
-    python $(_MakeFilePath)makePackages.py $(ProductDir)imodel-bank-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)
+    python $(_MakeFilePath)makePackages.py $(ProductDir)bridge-addon-$(Platform) $(o) $(NodeOS) $(NodeCPU) $(baseDir)package_version.txt $(baseDir) $(ACTION)
