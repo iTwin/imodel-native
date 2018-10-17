@@ -7,4 +7,4 @@
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
-int RunBridge(char* json);
+int RunBridge(const char* json);
