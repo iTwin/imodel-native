@@ -995,7 +995,8 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
-    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;;
+    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;
+    bool                m_haveCreatedThumbnails;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
