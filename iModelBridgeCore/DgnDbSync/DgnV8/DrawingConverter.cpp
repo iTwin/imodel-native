@@ -188,6 +188,7 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev(" %s was previously converted to %s", IssueReporter::FmtModel(v8model).c_str(), IssueReporter::FmtModel(foundmm.GetDgnModel()).c_str());
 
+        GetChangeDetector()._OnModelSeen(*this, foundmm);
         return make_bpair(foundmm, false); // v8model has already been imported
         }
 	
