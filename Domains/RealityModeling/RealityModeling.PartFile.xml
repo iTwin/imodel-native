@@ -6,11 +6,9 @@
     <!-- ////////////////////////////   ScalableMesh       /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->            
     <Part Name="ScalableMeshSchemaPublicAPI" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.prewire.mke">
+        <SubPart PartName="ScalableMesh" PartFile="BisSchemas" Repository="BisSchemas" />
         <Bindings>
             <PublicAPI Domain="ScalableMeshSchema"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/ScalableMesh*.xml
-            </Files>
         </Bindings>
     </Part>
 
@@ -32,11 +30,9 @@
     <!-- ////////////////////////////   PointCloud   ///////////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <Part Name="PointCloudPublicAPI" BentleyBuildMakeFile="PointCloudSchema/PointCloud.prewire.mke">
+        <SubPart PartName="PointCloud" PartFile="BisSchemas" Repository="BisSchemas" />
         <Bindings>
             <PublicAPI Domain="PointCloud"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/PointCloud*.xml
-            </Files>
         </Bindings>
     </Part>
 
@@ -58,11 +54,9 @@
     <!-- ////////////////////////////     Raster     ///////////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <Part Name="RasterPublicAPI" BentleyBuildMakeFile="RasterSchema/Raster.prewire.mke">
+        <SubPart PartName="Raster" PartFile="BisSchemas" Repository="BisSchemas" />
         <Bindings>
             <PublicAPI Domain="Raster"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/Raster*.xml
-            </Files>
         </Bindings>
     </Part>
 
@@ -82,11 +76,9 @@
     <!-- ////////////////////////////   ThreeMx       /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <Part Name="ThreeMxPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.prewire.mke">
+        <SubPart PartName="ThreeMx" PartFile="BisSchemas" Repository="BisSchemas" />
         <Bindings>
             <PublicAPI Domain="ThreeMx"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/ThreeMx*.xml
-            </Files>
         </Bindings>
     </Part>
     
@@ -103,7 +95,7 @@
     <Part Name="ThreeMxReaderLegacy" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxReaderLegacy.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <Bindings>
-	    <PublicAPI Domain="ThreeMxReader"/>
+        <PublicAPI Domain="ThreeMxReader"/>
           <Assemblies>Delivery/$(shlibprefix)ThreeMxReaderLegacy$(ApiNumber)$(shlibext)</Assemblies>
           <Libs>delivery/$(libprefix)ThreeMxReaderLegacy$(libext)</Libs>
         </Bindings>
@@ -113,11 +105,9 @@
     <!-- ////////////////////////////   DataCapture        /////////////////////////////////// -->
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <Part Name="DataCaptureSchemasPublicAPI" BentleyBuildMakeFile="DataCaptureSchema/DataCaptureSchema.prewire.mke" WipPartEnable="PhotoPlanner">
+        <SubPart PartName="DataCapture" PartFile="BisSchemas" Repository="BisSchemas" />
         <Bindings>
             <PublicAPI Domain="DataCaptureSchema"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/DataCapture*.xml
-            </Files>
         </Bindings>
     </Part>
 
