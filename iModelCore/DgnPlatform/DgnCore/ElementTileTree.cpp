@@ -2231,7 +2231,16 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         static constexpr double s_minDecimationRatio = 0.25; // Don't use decimated mesh unless point count reduced by at least this percentage...###TODO revisit - too large?
         BeAssert(0 == polyface->GetEdgeChainCount()); // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
 
-        PolyfaceHeaderPtr decimated = polyface->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, s_minDecimationRatio);
+        PolyfaceHeaderPtr decimated;
+// #define DECIMATE_BY_EDGE_COLLAPSE
+#if defined(DECIMATE_BY_EDGE_COLLAPSE)
+        size_t minCollapsed = polyface->GetPointCount() * (1.0 - s_minDecimationRatio);
+        size_t numCollapsed = polyface->DecimateByEdgeCollapse(tilePolyface.m_decimationTolerance, 0.0);
+        if (numCollapsed >= minCollapsed || true) // ###TODO: In-place decimation prevents this...
+            decimated = polyface;
+#else
+        decimated = polyface->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, s_minDecimationRatio);
+#endif
         if (decimated.IsValid())
             {
             polyface = decimated.get();
