@@ -7,8 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #include "BridgeAddon.h"
 #include <cstdio>
+#include <iModelBridge/iModelBridgeFwk.h>
+#include <json/value.h>
 
 int RunBridge(char* json){
-    printf("%s", json);
+    auto value = Json::Value(json);
+    printf("%s", value.ToString().c_str());
     return 0;
 }

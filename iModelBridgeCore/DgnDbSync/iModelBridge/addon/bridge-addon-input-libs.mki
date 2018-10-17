@@ -6,3 +6,5 @@
 #
 #----------------------------------------------------------------------
 BRIDGE_ADDON_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)node-addon-api$(stlibext)
+BRIDGE_ADDON_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)Bentley$(stlibext)
+BRIDGE_ADDON_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
