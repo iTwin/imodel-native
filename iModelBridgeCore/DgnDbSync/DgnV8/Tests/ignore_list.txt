@@ -38,4 +38,3 @@ SheetCompositionTests.SheetNameTest
 SheetCompositionTests.SheetSizeTest
 SheetCompositionTests.HasDgnAttachment
 SheetCompositionTests.HasDrawingBoundary
-LevelTests.LevelMaskfromSheetAttachment_toViewAttachment

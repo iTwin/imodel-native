@@ -277,5 +277,7 @@ TEST_F(LevelTests, LevelMaskfromSheetAttachment_toViewAttachment)
 
     m_params.SetCopyLevel(Converter::Params::CopyLevel::IfDifferent);
 
-    TestLevelConversion(4, 4, 4, true);
+    Bentley::WString configVar;
+    int numExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 5 : 4;
+    TestLevelConversion(numExpected, 4, 4, true);
     }
