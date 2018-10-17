@@ -1676,7 +1676,12 @@ uint32_t DrawArgs::GetMinDepth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t DrawArgs::GetMaxDepth() const
     {
+// #define DEBUG_MAX_DEPTH 1
+#if defined(DEBUG_MAX_DEPTH)
+    return DEBUG_MAX_DEPTH;
+#else
     return m_context.GetUpdatePlan().GetTileOptions().GetMaxDepth();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

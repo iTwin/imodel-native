@@ -608,7 +608,9 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr&
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileBuilder::_WantPreBakedBody(IBRepEntityCR body)
     {
-#if defined (BENTLEYCONFIG_PARASOLID)
+    // Comment out the follow #define to test behavior of BReps on platforms which lack Parasolid.
+// #define TEST_BREP_POLYFACES
+#if defined (BENTLEYCONFIG_PARASOLID) && !defined(TEST_BREP_POLYFACES)
     // ###TODO: Take this tile's tolerance into account; also would be nice to detect single planar sheets since the BRepCurveVector should suffice even if curved.
     bool curved = BRepUtil::HasCurvedFaceOrEdge(body);
     return !curved;
@@ -2028,6 +2030,7 @@ private:
     bool                    m_didDecimate = false;
     ThematicMeshBuilderPtr  m_thematicMeshBuilder;
 
+    // ###TODO: Revisit...lots of small polyfaces can produce excessive vertices...
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
 
     MeshBuilderR GetMeshBuilder(MeshBuilderMap::Key const& key);
@@ -2222,13 +2225,14 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = !m_tile.IsLeaf() && !m_tile.HasZoomFactor() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
-
+    bool doDecimate = tilePolyface.CanDecimate() && !m_tile.IsLeaf() && !m_tile.HasZoomFactor() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
     if (doDecimate)
         {
-        BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
-        PolyfaceHeaderPtr   decimated;
-        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance, .25 /* No decimation unless point count reduced by at least 25% */)).IsValid())
+        static constexpr double s_minDecimationRatio = 0.25; // Don't use decimated mesh unless point count reduced by at least this percentage...###TODO revisit - too large?
+        BeAssert(0 == polyface->GetEdgeChainCount()); // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
+
+        PolyfaceHeaderPtr decimated = polyface->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, s_minDecimationRatio);
+        if (decimated.IsValid())
             {
             polyface = decimated.get();
             m_didDecimate = true;

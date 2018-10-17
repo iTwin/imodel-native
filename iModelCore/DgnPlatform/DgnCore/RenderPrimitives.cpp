@@ -139,7 +139,6 @@ private:
 
     PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions, ViewContextR context) override;
     StrokesList _GetStrokes (IFacetOptionsR facetOptions, ViewContextR context) override;
-    bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
     void _SetInCache(bool inCache) override { m_inCache = inCache; }
 
@@ -1436,7 +1435,28 @@ GeomPart::GeomPart(DRange3dCR range, GeometryList const& geometries) : m_range (
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeomPart::IsCurved() const
     {
+    // ###TODO: Take into account BRepPolyfaces which should be decimated...
     return m_geometries.ContainsCurves();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double GeomPart::ComputeTolerance(GeometryCP instance, double tolerance) const
+    {
+    if (nullptr != instance)
+        {
+        DPoint3d tempPt;
+        Transform invTrans;
+
+        tempPt.Init(tolerance, 0.0, 0.0);
+        invTrans.InverseOf(instance->GetTransform());
+
+        invTrans.MultiplyMatrixOnly(tempPt);
+        tolerance = tempPt.Magnitude();
+        }
+
+    return tolerance;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1444,6 +1464,7 @@ bool GeomPart::IsCurved() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceList GeomPart::GetPolyfaces(double chordTolerance, NormalMode normalMode, GeometryCP instance, ViewContextR context)
     {
+    chordTolerance = ComputeTolerance(instance, chordTolerance);
     PolyfaceList polyfaces;
     for (auto& geometry : m_geometries) 
         {
@@ -1477,6 +1498,7 @@ void GeomPart::SetInCache(bool inCache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StrokesList GeomPart::GetStrokes(double chordTolerance, GeometryCP instance, ViewContextR context)
     {
+    chordTolerance = ComputeTolerance(instance, chordTolerance);
     StrokesList strokes;
 
     for (auto& geometry : m_geometries) 
@@ -1711,7 +1733,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
         polyface = FixPolyface(*polyface, facetOptions);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
-        return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface));
+        return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface, false, false, facetOptions.GetChordTolerance()));
         }
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
