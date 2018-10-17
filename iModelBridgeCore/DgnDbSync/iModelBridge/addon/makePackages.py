@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 
 # This program creates a directory that looks like an npm package, naming it
-# with the specified name, and copying into it the imodel-bank node addons that are defined in the
+# with the specified name, and copying into it the bridge-addon node addons that are defined in the
 # specified product.
 
 import os
@@ -67,12 +67,12 @@ def filterOutUnwantedFiles(dirname, files):
 
 # Copy a version-specific addon into place
 # @param outdirParent The path to the output package's parent directory
-# @param inputProductdir The path to the Product that contains the ingredients, e.g., D:\bim0200dev\out\Winx64\product\imodel-bank-Windows
+# @param inputProductdir The path to the Product that contains the ingredients, e.g., D:\bim0200dev\out\Winx64\product\bridge-addon-Windows
 # @param versionsubdir The name of the subdirectory that contains the addon. The name of the subdir encodes the version of node that this addon is for.  E.g., N_8
 # @param nodeOS The target platform (using Node terminology)
 # @param nodeCPU The target CPU (using Node terminology)
 # @param packageVersion The semantic version number for the generated package
-# @param sourceDir The source directory, i.e., %SrcRoot%imodel-bank
+# @param sourceDir The source directory, i.e., %SrcRoot%bridge-addon
 # @return the full path to the generated package directory
 def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir):
 
@@ -81,7 +81,7 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
 
     # Compute the name of a directory that we can use to stage this package. This is just a temporary name.
     # The real name of the package is inside the package.json file.
-    outputpackagename = 'imodel-bank-' + versionsubdir + '-' + nodeOS + '-' + nodeCPU
+    outputpackagename = 'bridge-addon-' + versionsubdir + '-' + nodeOS + '-' + nodeCPU
 
     outputpackagedir = os.path.join(outdirParent, outputpackagename)
 
@@ -89,16 +89,16 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
         shutil.rmtree(outputpackagedir)
 
     # The input product's directory structure should look like this:
-    # D:\bim0200dev\out\Winx64\product\imodel-bank-Windows\Addon\N_8\imodel-bank.node
-    # D:\bim0200dev\out\Winx64\product\imodel-bank-Windows\Support
+    # D:\bim0200dev\out\Winx64\product\bridge-addon-Windows\Addon\N_8\bridge-addon.node
+    # D:\bim0200dev\out\Winx64\product\bridge-addon-Windows\Support
 
     srcsupportdir = os.path.join(inputProductdir, "Support");
-    srcnodefile = os.path.join(os.path.join(os.path.join(inputProductdir, "Addon"), versionsubdir), "imodel-bank.node")
+    srcnodefile = os.path.join(os.path.join(os.path.join(inputProductdir, "Addon"), versionsubdir), "bridge-addon.node")
     srcpackagefile = os.path.join(sourceDir, "package.json.template")
 
     if not os.path.exists(srcnodefile) or not os.path.exists(srcsupportdir) or not os.path.exists(srcpackagefile):
         print '***'
-        print('*** ' + inputProductdir + ' -- invalid or incomplete imodel-bank Product.')
+        print('*** ' + inputProductdir + ' -- invalid or incomplete bridge-addon Product.')
         if not os.path.exists(srcnodefile):
             print ' ***   not found: ' + srcnodefile
         if not os.path.exists(srcsupportdir):
@@ -108,7 +108,7 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
 
     dstpackagefile = os.path.join(outputpackagedir, 'package.json')
     dstaddondir = os.path.join(outputpackagedir, 'addon')
-    dstnodefile = os.path.join(dstaddondir, 'imodel-bank.node')
+    dstnodefile = os.path.join(dstaddondir, 'bridge-addon.node')
 
     # NB: shutil.copytree insists on creating dstaddondir and will throw an exception if it already exists. That is why we don't call os.makedirs(dest...) here.
     shutil.copytree(srcsupportdir, dstaddondir, False, filterOutUnwantedFiles)
@@ -129,12 +129,12 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
 
 # Generate addon
 # @param outdirParent The path to the output package's parent directory
-# @param parentSourceDir The imodel-bank source directory, i.e., %SrcRoot%imodel-bank
+# @param parentSourceDir The bridge-addon source directory, i.e., %SrcRoot%bridge-addon
 # @param packageVersion The semantic version number for the generated package
 # @return the full path to the generated package directory
 def generate_imodel_bank_native_platform_api(outdirParent, parentSourceDir, packageVersion):
 
-    outputpackagedir = os.path.join(outdirParent, 'imodel-bank-addon-api')
+    outputpackagedir = os.path.join(outdirParent, 'bridge-addon-api')
 
     apiSourceDir = os.path.join(parentSourceDir, 'api_package');
 
@@ -189,8 +189,8 @@ if __name__ == '__main__':
     packageVersion = packageVersion.strip()
 
     addonDir = os.path.join(productdir, 'Addon')
-    if not os.path.basename(productdir).startswith('imodel-bank') or not os.path.exists(addonDir):
-        print '*** ' + productdir + ' does not appear to be the path to an imodel-bank product directory';
+    if not os.path.basename(productdir).startswith('bridge-addon') or not os.path.exists(addonDir):
+        print '*** ' + productdir + ' does not appear to be the path to an bridge-addon product directory';
         exit(1)
 
     if os.path.exists(outdirParent):
