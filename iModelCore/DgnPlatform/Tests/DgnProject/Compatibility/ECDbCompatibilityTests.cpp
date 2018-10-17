@@ -1401,30 +1401,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImport_Formats_API)
             spec.SetFormatTraits((Formatting::FormatTraits) ((int) Formatting::FormatTraits::KeepSingleZero | (int) Formatting::FormatTraits::KeepDecimalPoint));
             ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DefaultReal", "real", nullptr, &spec)) << testDb.GetDescription();
 
-            const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas({schema.get()});
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::Older:
-                    {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
-                    testDb.AssertFormat("TestSchema", "DefaultReal", "real", nullptr, JsonValue(R"json({"type": "Decimal", "formatTraits": ["keepSingleZero", "keepDecimalPoint"], "precision": 6})json"), JsonValue());
-                    break;
-                    }
-                    case ProfileState::Age::UpToDate:
-                    {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
-                    testDb.AssertFormat("TestSchema", "DefaultReal", "real", nullptr, JsonValue(R"json({"type": "Decimal", "formatTraits": ["keepSingleZero", "keepDecimalPoint"], "precision": 6})json"), JsonValue());
-                    break;
-                    }
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(ERROR, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
+            ASSERT_EQ(ERROR, testDb.GetDb().Schemas().ImportSchemas({schema.get()}));
             }
         }
     }
@@ -1493,6 +1470,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
             }
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      08/18
 //+---------------+---------------+---------------+---------------+---------------+------

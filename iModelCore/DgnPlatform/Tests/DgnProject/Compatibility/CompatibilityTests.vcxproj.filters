@@ -32,4 +32,7 @@
   <ItemGroup>
     <None Include="prewire.mke" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
 </Project>
