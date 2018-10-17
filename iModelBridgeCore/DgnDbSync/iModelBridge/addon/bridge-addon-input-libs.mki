@@ -1,0 +1,8 @@
+#----------------------------------------------------------------------
+#
+#     $Source: iModelBridge/addon/bridge-addon-input-libs.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+BRIDGE_ADDON_LIBS +  $(ContextSubpartsLibs)$(stlibprefix)node-addon-api$(stlibext)

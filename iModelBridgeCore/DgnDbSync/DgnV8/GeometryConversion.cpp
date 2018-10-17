@@ -384,21 +384,19 @@ void Converter::ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, 
     clone = BentleyApi::MSBsplineSurface::CreatePtr();
 
     clone->CopyFrom((BentleyApi::MSBsplineSurfaceCR) v8Entity);
-    }
+   }
 // #define TEST_AUXDATA
-//#define TEST_AUXDATA_HEIGHT
-//#define TEST_AUXDATA_RADIAL_WAVES
-//#define TEST_AUXDATA_SPHERICAL_WITH_NORMALS
-//#define TEST_AUXDATA_WAVES
-//#define TEST_AUXDATA_TO_JSON
-//#define TEST_AUXDATA_CANTILEVER
+// #define TEST_AUXDATA_HEIGHT
+// #define TEST_AUXDATA_SPHERICAL_WITH_NORMALS
+// #define TEST_AUXDATA_WAVES
+// #define TEST_AUXDATA_TO_JSON
+// #define TEST_AUXDATA_CANTILEVER
 
 
 #ifdef TEST_AUXDATA
 
 PolyfaceAuxDataPtr              s_testAuxData;
-ThematicGradientSettingsPtr     s_testAuxDataSettings;
-static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange, double v8ToDbScale);
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface);
 #endif
 
 
@@ -760,14 +758,6 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
                 }
             }
         }
-
-#ifdef TEST_AUXDATA
-    params.SetFillDisplay(FillDisplay::Always);
-
-//  thematicSettings.SetMode(GradientSymb::ThematicSettings::Mode::SteppedWithDelimiter);
-//  thematicSettings.SetColorScheme(GradientSymb::ThematicSettings::ColorScheme::SeaMountain);
-    params.SetGradient(new GradientSymb(*s_testAuxDataSettings));
-#endif
 
     params.Resolve(GetDgnDb()); // Need to be able to check for a stroked linestyle...
     }
@@ -1351,7 +1341,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                 jsonClone->TryTransformInPlace(m_v8ToDgnDbTrans);
                 if (BentleyApi::IModelJson::TryGeometryToIModelJsonString (jsonString, *jsonClone))
                     {
-                    FILE*       file = std::fopen("d:\\tmp\\Cantilever.json", "w");
+                    FILE*       file = std::fopen("d:\\tmp\\RadialWave.json", "w");
                     fwrite (jsonString.c_str(), 1, jsonString.size(), file);
                     fclose(file);
                     }
@@ -1982,10 +1972,7 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
 #ifdef TEST_AUXDATA
-    DRange1d scalarRange;
-
-    getTestAuxData(meshData, scalarRange, m_conversionScale.ColumnXMagnitude());
-    s_testAuxDataSettings = new ThematicGradientSettings(scalarRange);
+    getTestAuxData(meshData);
 #endif   
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
@@ -5533,17 +5520,14 @@ void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::Text
 
 
 #ifdef TEST_AUXDATA
-
-
-#ifdef TEST_AUXDATA_RADIAL_WAVES
+#ifdef TEST_AUXDATA_WAVES
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange, double scaleFactor)
+static void addRadialWaveChannels(PolyfaceAuxData::ChannelsR channels, Bentley::PolyfaceQueryCR polyface)
     {
-    bvector<int32_t>    indices(polyface.GetPointIndexCount());
-    bvector<double>     zeroScalarData(polyface.GetPointCount(), 0.0), scalarData;
+    bvector<double>     zeroScalarData(polyface.GetPointCount(), 0.0), scalarHeightData, scalarSlopeData;
     bvector<double>     zeroDisplacementData(3*polyface.GetPointCount(), 0.0), displacementData;
     DPoint3dCP          points = DoInterop(polyface.GetPointCP());
     DRange3d            range = DRange3d::From(points, polyface.GetPointCount());
@@ -5551,40 +5535,103 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRa
     double              radius = range.DiagonalDistance() / 2.0;
     double              maxHeight = radius/10.0;
 
-    memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
         
     for(size_t i=0; i<polyface.GetPointCount(); i++)
         {
         DPoint3dCR  point = points[i];
-        double      height = maxHeight * sin(point.Distance(center) / radius * msGeomConst_2pi);
+        double      angle = point.Distance(center) / radius * msGeomConst_2pi; 
+        double      height = maxHeight * sin(angle);
+        double      slope = fabs(cos(angle));
 
-        scalarData.push_back(scaleFactor * height);
+        scalarHeightData.push_back(height);
+        scalarSlopeData.push_back(slope);
         displacementData.push_back(0.0);
         displacementData.push_back(0.0);
         displacementData.push_back(height);
         }
-    scalarRange = DRange1d::From(scalarData.data(), scalarData.size());
 
-    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector, normalDataVector;
+    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarHeightDataVector, scalarSlopeDataVector;
 
     displacementDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroDisplacementData)));
     displacementDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementData)));
     displacementDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroDisplacementData)));
 
-    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroScalarData)));
-    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(scalarData)));
-    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroScalarData)));
+    scalarHeightDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroScalarData)));
+    scalarHeightDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(scalarHeightData)));
+    scalarHeightDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroScalarData)));
+
+    scalarSlopeDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroScalarData)));
+    scalarSlopeDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(scalarSlopeData)));
+    scalarSlopeDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroScalarData)));
 
 
-    PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Displacement", nullptr, std::move(displacementDataVector));
-    PolyfaceAuxChannelPtr       scalarChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Scalar", nullptr, std::move(scalarDataVector));
+    channels.push_back (new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Radial Displacement", "Radial: Time", std::move(displacementDataVector)));
+    channels.push_back (new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Radial Height", "Radial: Time", std::move(scalarHeightDataVector)));
+    channels.push_back (new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Radial Slope", "Radial: Time", std::move(scalarSlopeDataVector)));
+    }
 
-    PolyfaceAuxData::Channels   channels;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addLinearWaveChannels(PolyfaceAuxData::ChannelsR channels, Bentley::PolyfaceQueryCR polyface)
+    {
+    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, heightDataVector, slopeDataVector;
+    DPoint3dCP          points = DoInterop(polyface.GetPointCP());
+    DRange3d            range = DRange3d::From(points, polyface.GetPointCount());
+    double              rangeDiagonal = range.DiagonalDistance();
+
+    static double       s_waveHeight = rangeDiagonal / 20.0;
+    static double       s_waveLength = rangeDiagonal / 2.0;
+    static size_t       s_frameCount = 10;
+
+    for (size_t i=0; i<s_frameCount; i++)
+        {
+        double              fraction = (double) i / (double) (s_frameCount - 1);
+        double              waveCenter = s_waveLength * fraction;
+        bvector<double>     heightData, slopeData, displacementData;
+
+        for(size_t i=0; i<polyface.GetPointCount(); i++)
+            {
+            DPoint3dCR  point = points[i];
+            double      theta = msGeomConst_2pi * (point.x - waveCenter) / s_waveLength;
+            double      height = s_waveHeight * sin(theta);
+            double      slope = fabs(cos(theta));
+
+            heightData.push_back(height);
+            slopeData.push_back(slope);
+            displacementData.push_back(0.0);
+            displacementData.push_back(0.0);
+            displacementData.push_back(height);
+            }
+        displacementDataVector.push_back(new PolyfaceAuxChannel::Data(i, std::move(displacementData)));
+        heightDataVector.push_back(new PolyfaceAuxChannel::Data(i, std::move(heightData)));
+        slopeDataVector.push_back(new PolyfaceAuxChannel::Data(i, std::move(slopeData)));
+        }                                                                             
+
+    PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Linear: Displacement", "Linear: Time", std::move(displacementDataVector));
+    PolyfaceAuxChannelPtr       heightChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Linear: Height", "Linear: Time", std::move(heightDataVector));
+    PolyfaceAuxChannelPtr       slopeChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Linear: Slope", "Linear: Time", std::move(slopeDataVector));
 
     channels.push_back (displacementChannel);
-    channels.push_back (scalarChannel);
+    channels.push_back (heightChannel);
+    channels.push_back (slopeChannel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface)
+    {
+    bvector<int32_t>            indices(polyface.GetPointIndexCount());
+    PolyfaceAuxData::Channels   channels;
+
+    memcpy (indices.data(), polyface.GetPointIndexCP(), indices.size() * sizeof(int32_t));
+                                                     
+    addLinearWaveChannels(channels, polyface);
+    addRadialWaveChannels(channels, polyface);
     s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
     }
+
 #endif
 
 #ifdef TEST_AUXDATA_SPHERICAL_WITH_NORMALS
@@ -5612,7 +5659,7 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRa
         DVec3d      delta = DVec3d::FromStartEnd(point, center);
         double      x = point.Distance(center);
         double      height = sqrt(radius * radius - x * x); 
-        DVec3d      normal;
+        DVec3d      normal;                                                               dg
 
         scalarData.push_back(height);
         displacementData.push_back(0.0);
@@ -5658,56 +5705,7 @@ static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRa
     }
 #endif
 
-#ifdef TEST_AUXDATA_WAVES
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void getTestAuxData(Bentley::PolyfaceQueryCR polyface, DRange1dR scalarRange)
-    {
-    bvector<int32_t>  indices(polyface.GetPointIndexCount());
-    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector;
-    DRange3d            range = DRange3d::From(polyface.Point());
-    double              rangeDiagonal = range.DiagonalDistance();
-
-    static double       s_waveHeight = rangeDiagonal / 20.0;
-    static double       s_waveLength = rangeDiagonal / 2.0;
-    static size_t       s_frameCount = 10;
-
-    memcpy (indices.data(), polyface.PointIndex().data(), indices.size() * sizeof(int32_t));
-
-    for (size_t i=0; i<s_frameCount; i++)
-        {
-        double              fraction = (double) i / (double) (s_frameCount - 1);
-        double              waveCenter = s_waveLength * fraction;
-        bvector<double>     scalarData, displacementData;
-
-        for(auto& point : polyface.Point())
-            {
-            double      height = s_waveHeight * sin(msGeomConst_2pi * (point.x - waveCenter) / s_waveLength);
-
-            scalarData.push_back(height);
-            displacementData.push_back(height);
-            displacementData.push_back(height);
-            displacementData.push_back(height);
-            }
-        displacementDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementData)));
-        scalarDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(scalarData)));
-        }
-    scalarRange = DRange1d::From(scalarData.data(), scalarData.size());
-
-
-    PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Displacement", nullptr, std::move(displacementDataVector));
-    PolyfaceAuxChannelPtr       scalarChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "scalar", nullptr, std::move(scalarDataVector));
-    PolyfaceAuxData::Channels   channels;
-
-    channels.push_back (displacementChannel);
-    channels.push_back (scalarChannel);
-    PolyfaceAuxDataPtr          auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
-    
-    polyface.SetAuxData(auxData);
-    }
-#endif
 
 #ifdef TEST_AUXDATA_HEIGHT
 /*---------------------------------------------------------------------------------**//**

@@ -11,6 +11,34 @@
 // @bsistruct                                                   Sam.Wilson   10/17
 //=======================================================================================
 BEGIN_BENTLEY_DGN_NAMESPACE
+
+struct TestRepositoryAdmin : IRepositoryManager
+    {
+    virtual Response _ProcessRequest(Request const& req, DgnDbR db, bool queryOnly)
+        {
+        Response response(queryOnly ? IBriefcaseManager::RequestPurpose::Query : IBriefcaseManager::RequestPurpose::Acquire, req.Options());
+        response.SetResult(RepositoryStatus::Success);
+        return response;
+        }
+
+    virtual RepositoryStatus _Demote(DgnLockSet const& locks, DgnCodeSet const& codes, DgnDbR db)
+        {
+        return RepositoryStatus::Success;
+        }
+    virtual RepositoryStatus _Relinquish(Resources which, DgnDbR db)
+        {
+        return RepositoryStatus::Success;
+        }
+    virtual RepositoryStatus _QueryHeldResources(DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db)
+        {
+        return RepositoryStatus::Success;
+        }
+    virtual RepositoryStatus _QueryStates(DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks, DgnCodeSet const& codes)
+        {
+        return RepositoryStatus::Success;
+        }
+    };
+
 struct TestIModelHubClientForBridges : IModelHubClientForBridges
     {
     bool anyTxnsInFile(DgnDbR db)
@@ -24,8 +52,10 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     BeFileName m_serverRepo;
     BeFileName m_testWorkDir;
     DgnDbP m_briefcase;
-
-    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir) {}
+    BeSQLite::BeBriefcaseId m_currentBriefcaseId;
+    TestRepositoryAdmin m_admin;
+    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())
+        {}
 
     static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
         {
@@ -57,7 +87,8 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(m_serverRepo, bcFileName, false));
 
         auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+        m_currentBriefcaseId = m_currentBriefcaseId.GetNextBriefcaseId();
+        db->SetAsBriefcase(m_currentBriefcaseId);
         db->SaveChanges();
 
         return BSISUCCESS;
@@ -117,7 +148,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) override
         {
-        BeAssert(false); return nullptr;
+        return &m_admin;
         }
 
     StatusInt AcquireLocks(LockRequest&, DgnDbR) override

@@ -644,7 +644,7 @@ void Converter::ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, DgnFileR dgnFile)
+bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, DgnFileR dgnFile, DgnV8ModelCR v8Model)
     {
     auto        elementRef = dgnFile.FindByElementId(viewInfo.GetElementId(), true);
     size_t      stringLength = 0;
@@ -664,7 +664,15 @@ bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, 
     Json::Value     value = Json::Reader::DoParse(Utf8String(wBackgroundMapJson));
 
     if (value.isObject())
+        {
+        if (value.isMember("groundBias"))
+            {
+            auto const&        modelInfo = v8Model.GetModelInfo();
+            value["groundBias"] =  value["groundBias"].asDouble() * (DgnV8Api::ModelInfo::GetUorPerMaster(&modelInfo) / DgnV8Api::ModelInfo::GetUorPerMeter(&modelInfo));
+            }
+            
         displayStyle.SetStyle(DisplayStyle::json_backgroundMap(), value);
+        }
 
     return true;
     }
@@ -739,7 +747,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     // DisplayStyle
     ViewFlags flags = ConvertV8Flags(viewInfo.GetViewFlags());
 
-    flags.SetShowBackgroundMap(convertBackgroundMap(*parms.m_dstyle, parms.m_viewInfo, *v8File));
+    flags.SetShowBackgroundMap(convertBackgroundMap(*parms.m_dstyle, parms.m_viewInfo, *v8File, *v8Model));
 
     parms.m_dstyle->SetViewFlags(flags);
     ColorDef bgColor(DgnV8Api::IntColorDef(viewInfo.ResolveBGColor()).m_int); // Always set view's background color to "resolved" background color from V8.
