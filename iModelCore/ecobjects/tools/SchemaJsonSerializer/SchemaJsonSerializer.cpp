@@ -66,7 +66,7 @@ static void GetOutputFile(BeFile &outputFile, ECSchemaR schema, ConversionOption
 
     outputFile.Create(file.c_str());
 
-    s_logger->infov(L"Saving converted version schema '%ls' in directory '%ls'", file.GetFileNameAndExtension(), options.OutputDirectory.GetName());
+    s_logger->infov(L"Saving converted version schema '%ls' in directory '%ls'", file.GetFileNameAndExtension().c_str(), options.OutputDirectory.GetName());
     }
 
 //--------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
     bool status = schema.WriteToJsonString(jsonString);
     if (status != true)
         {
-        s_logger->errorv("Failed to save '%s' as ECJson.", schema.GetName());
+        s_logger->errorv("Failed to save '%s' as ECJson.", schema.GetName().c_str());
         return false;
         }
 
@@ -107,7 +107,7 @@ static int WriteLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, Con
             {
             if (refSchema.second->IsStandardSchema() && !options.IncludeStandards)
                 continue;
-            s_logger->infov(L"Saving the reference schema '%ls' in '%ls'", refSchema.second->GetFullSchemaName(), options.OutputDirectory.GetName());
+            s_logger->infov(L"Saving the reference schema '%ls' in '%ls'", refSchema.second->GetFullSchemaName().c_str(), options.OutputDirectory.GetName());
             if (0 != WriteLoadedSchema(context, *refSchema.second, options))
                 return -1;
             }
@@ -283,7 +283,7 @@ int main(int argc, char** argv)
     workingDirectory.AppendToPath(L"Assets");
 
     ECSchemaReadContext::Initialize(workingDirectory);
-    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
+    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory.c_str());
 
     s_logger->infov(L"Loading schema '%ls' for  validation", options.InputFile.GetName());
     int validationResult = WriteSchema(options);

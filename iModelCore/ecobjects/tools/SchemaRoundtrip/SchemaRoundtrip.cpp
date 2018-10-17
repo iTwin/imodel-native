@@ -81,12 +81,12 @@ static bool TryWriteSchema(ECSchemaR schema, RoundtripOptions options)
     BeFileName outputFile;
     GetOutputFile(outputFile, schema, options);
 
-    s_logger->infov(L"Saving schema '%ls' in directory '%ls'", outputFile.GetFileNameAndExtension(), options.OutputDirectory.GetName());
+    s_logger->infov(L"Saving schema '%ls' in directory '%ls'", outputFile.GetFileNameAndExtension().c_str(), options.OutputDirectory.GetName());
 
     SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), schema.GetECVersion());
     if (status != SchemaWriteStatus::Success)
         {
-        s_logger->errorv("Failed to save schema '%s'", schema.GetName());
+        s_logger->errorv("Failed to save schema '%s'", schema.GetName().c_str());
         return false;
         }
     return true;
@@ -117,7 +117,7 @@ static int WriteLoadedSchema(ECSchemaReadContextR context, ECSchemaR schema, Rou
             {
             if (refSchema.second->IsStandardSchema() && !options.IncludeStandards)
                 continue;
-            s_logger->infov(L"Saving the reference schema '%ls' in '%ls'", refSchema.second->GetFullSchemaName(), options.OutputDirectory.GetName());
+            s_logger->infov(L"Saving the reference schema '%ls' in '%ls'", refSchema.second->GetFullSchemaName().c_str(), options.OutputDirectory.GetName());
             if (0 != WriteLoadedSchema(context, *refSchema.second, options))
                 return -1;
             }
@@ -297,7 +297,7 @@ int main(int argc, char** argv)
     workingDirectory.AppendToPath(L"Assets");
 
     ECSchemaReadContext::Initialize(workingDirectory);
-    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
+    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory.c_str());
 
     s_logger->infov(L"Loading schema '%ls' for roundtrip", options.InputFile.GetName());
     return RoundtripSchema(options);

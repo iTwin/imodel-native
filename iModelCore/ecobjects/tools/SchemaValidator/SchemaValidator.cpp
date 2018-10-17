@@ -217,7 +217,7 @@ int main(int argc, char** argv)
     workingDirectory.AppendToPath(L"Assets");
 
     ECSchemaReadContext::Initialize(workingDirectory);
-    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
+    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory.c_str());
 
     s_logger->infov(L"Loading schema '%ls' for  validation", options.InputFile.GetName());
     int validationResult = ValidateSchema(options);

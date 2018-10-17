@@ -203,7 +203,7 @@ int CompareSchemas(SchemaComparisonOptions& options, BeFileName& assetsDir)
 
         checksums[i] = schemas[i]->ComputeCheckSum();
 
-        s_logger->infov("Checksum for %s = %s\n", schemas[i]->GetFullSchemaName(), checksums[i]);
+        s_logger->infov("Checksum for %s = %s\n", schemas[i]->GetFullSchemaName().c_str(), checksums[i].c_str());
         }
 
     bvector<ECN::ECSchemaCP> cpSchemas[NSCHEMAS] = {{schemas[0].get()}, {schemas[1].get()}};
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
     else
         {
         ECN::ECSchemaReadContext::Initialize(workingDirectory);
-        s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);    
+        s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory.c_str());    
         }
     
     int comparisonResult = CompareSchemas(progOptions, workingDirectory);
