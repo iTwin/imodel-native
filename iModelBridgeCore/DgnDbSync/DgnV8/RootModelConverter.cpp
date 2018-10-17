@@ -750,10 +750,23 @@ RootModelConverter::~RootModelConverter()
         //              files all have appdata saying that the converter already knows about them.
         DiscardV8FileSyncInfoAppData(*file);
         }
+
+    m_v8Files.clear();
+    m_filesKeepAlive.clear();
+
+    m_rootFile = nullptr;
+
     if (ScalableMesh::ScalableMeshLib::IsInitialized())
-        {
         ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
-        }
+
+    ClearV8ProgressMeter();
+
+    if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
+        DgnV8Api::Raster::RasterCoreLib::GetHost().Terminate(false);
+
+    DgnV8Api::DgnViewLib::Host* host = dynamic_cast<DgnV8Api::DgnViewLib::Host*>(DgnV8Api::DgnPlatformLib::QueryHost());
+    if (NULL != host)
+        host->Terminate(false);
     }
 
 /*---------------------------------------------------------------------------------**//**

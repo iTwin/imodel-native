@@ -34,7 +34,12 @@ struct MstnBridgeTests : ::testing::Test
         testDir.AppendToPath(L"Dgnv8Bridge");
         return testDir;
         }
-
+    static DgnV8Api::DgnPlatformLib::Host& Gev8TesttHost()
+        {
+        static DgnV8Api::DgnPlatformLib::Host s_host;
+        DgnV8Api::DgnPlatformLib::Initialize(s_host, true, false);
+        return s_host;
+        }
     static BentleyApi::BeFileName  GetOutputFileName(BentleyApi::WCharCP filename)
         {
         BentleyApi::BeFileName filepath = GetOutputDir();
@@ -133,22 +138,36 @@ struct MstnBridgeTests : ::testing::Test
         args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
         }
 
-    void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File,  int32_t num, bool useOffsetForElement)
+    void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File, int32_t num, bool useOffsetForElement)
+        {
+        bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost();
+        if (adoptHost)
+            DgnV8Api::DgnPlatformLib::AdoptHost(Gev8TesttHost());
         {
         V8FileEditor v8editor;
-        v8editor.Open(refV8File);
+        v8editor.Open(inputFile);
         int offset = useOffsetForElement ? num : 0;
         v8editor.AddAttachment(refV8File, nullptr, Bentley::DPoint3d::FromXYZ((double) offset * 1000, (double) offset * 1000, 0));
         v8editor.Save();
         }
+        if (adoptHost)
+            DgnV8Api::DgnPlatformLib::ForgetHost();
+        }
 
     void AddLine(BentleyApi::BeFileName& inputFile)
+        {
+        bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost();
+        if (adoptHost)
+            DgnV8Api::DgnPlatformLib::AdoptHost(Gev8TesttHost());
         {
         V8FileEditor v8editor;
         v8editor.Open(inputFile);
         DgnV8Api::ElementId eid1;
         v8editor.AddLine(&eid1);
         v8editor.Save();
+        }
+        if (adoptHost)
+            DgnV8Api::DgnPlatformLib::ForgetHost();
         }
 
     int32_t GetElementCount(BentleyApi::BeFileName fileName)
