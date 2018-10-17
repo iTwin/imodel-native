@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/DgnMaterial_Tests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -54,7 +54,7 @@ void DgnMaterialTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::Be
 
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-
+    params.m_keepHostAliveForUnitTests = true;
     params.SetInputFileName(input);
     params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
 

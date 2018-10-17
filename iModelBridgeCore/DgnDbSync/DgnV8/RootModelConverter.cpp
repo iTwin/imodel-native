@@ -755,18 +755,20 @@ RootModelConverter::~RootModelConverter()
     m_filesKeepAlive.clear();
 
     m_rootFile = nullptr;
+    if (!m_params.m_keepHostAliveForUnitTests)
+        {
+        if (ScalableMesh::ScalableMeshLib::IsInitialized())
+            ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
 
-    if (ScalableMesh::ScalableMeshLib::IsInitialized())
-        ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
+        ClearV8ProgressMeter();
 
-    ClearV8ProgressMeter();
+        if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
+            DgnV8Api::Raster::RasterCoreLib::GetHost().Terminate(false);
 
-    if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
-        DgnV8Api::Raster::RasterCoreLib::GetHost().Terminate(false);
-
-    DgnV8Api::DgnViewLib::Host* host = dynamic_cast<DgnV8Api::DgnViewLib::Host*>(DgnV8Api::DgnPlatformLib::QueryHost());
-    if (NULL != host)
-        host->Terminate(false);
+        DgnV8Api::DgnViewLib::Host* host = dynamic_cast<DgnV8Api::DgnViewLib::Host*>(DgnV8Api::DgnPlatformLib::QueryHost());
+        if (NULL != host)
+            host->Terminate(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
