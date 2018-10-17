@@ -18,6 +18,8 @@ BEGIN_ORDBRIDGE_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus ORDBridge::_ParseCommandLineArg(int iArg, int argc, WCharCP argv[])
     {
+    // This method gets called by the offline/test bridge runner.  See _ParseCommandLine() for the version
+    // that gets called during iModelBridgeFwk.exe run.
     if (argv[iArg] == wcsstr(argv[iArg], L"--root-model="))
         {
         BentleyApi::Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelChoice rmc;
@@ -41,6 +43,34 @@ iModelBridge::CmdLineArgStatus ORDBridge::_ParseCommandLineArg(int iArg, int arg
         }
 
     return iModelBridge::CmdLineArgStatus::NotRecognized;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Jonathan.DeCarlo                   10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ORDBridge::_ParseCommandLine(int argc, WCharCP argv[])
+    {
+    // This method gets called during a run of iModelBridgeFwk.exe. See _ParseCommandLineArg()
+    // for the version that gets called during the offline/test runner.
+    for (int i = 1; i < argc; i++)
+        {
+        if (argv[i] == wcsstr(argv[i], L"--root-model="))
+            {
+            BentleyApi::Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelChoice rmc;
+
+            Utf8String value = GetArgValue(argv[i]);
+            if (value.EqualsI(".default"))
+                rmc.SetUseDefaultModel();
+            else if (value.EqualsI(".active"))
+                rmc.SetUseActiveViewGroup();
+            else
+                rmc = BentleyApi::Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelChoice(value);
+
+            m_params.SetRootModelChoice(rmc);
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

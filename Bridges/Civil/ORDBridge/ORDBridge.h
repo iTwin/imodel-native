@@ -39,6 +39,7 @@ protected:
 
 public:
     virtual Dgn::iModelBridge::CmdLineArgStatus _ParseCommandLineArg(int iArg, int argc, WCharCP argv[]) override;
+    virtual BentleyStatus _ParseCommandLine(int argc, WCharCP argv[]) override;
     virtual WString _SupplySqlangRelPath() override {return L"sqlang/DgnV8Converter_en-US.sqlang.db3";}
     virtual BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
     virtual BentleyStatus _OpenSource() override;
