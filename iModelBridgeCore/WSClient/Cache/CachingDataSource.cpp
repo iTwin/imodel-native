@@ -339,7 +339,7 @@ ICancellationTokenPtr ct
                     client->GetWSClient()->GetServerUrl().c_str(),
                     client->GetRepositoryId().c_str(),
                     cacheFilePath.GetNameUtf8().c_str(),
-                    openResult->GetError().GetMessage().c_str(),
+                    openResult->GetError().GetStatus() == Status::Canceled ? "Canceled" : openResult->GetError().GetMessage().c_str(),
                     openResult->GetError().GetDescription().c_str());
 
                 // Force close cache
