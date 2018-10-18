@@ -36,6 +36,15 @@ public:
         UpdateTokenCallback onUpdate = [] { return CreateCompletedAsyncTask(ISecurityTokenPtr()); }
         ) : m_token(token), m_onUpdate(onUpdate) {};
 
+    //! Create token provider 
+    //! @param token initial token to use.
+    //! @param onUpdate optional callback that is called when existing token is expired. Should return new token or null token if it cannot be updated (default).
+    SimpleConnectTokenProvider
+        (
+        Utf8String token,
+        UpdateTokenCallback onUpdate = [] { return CreateCompletedAsyncTask(ISecurityTokenPtr()); }
+        ) : SimpleConnectTokenProvider(std::make_shared<SecurityToken>(token), onUpdate) {};
+
     //! Call onUpdate callback and cache received token
     AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/IConnectAuthenticationProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationProvider
         enum class HeaderPrefix
             {
             Token,
-            Saml
+            Saml,
+            Bearer
             };
 
     public:
