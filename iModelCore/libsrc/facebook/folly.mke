@@ -62,7 +62,7 @@ $(o)SysResource$(oext) : $(FollyDir)portability/SysResource.cpp ${MultiCompileDe
 
 $(o)SharedMutex$(oext) : $(FollyDir)SharedMutex.cpp ${MultiCompileDepends}
 
-$(o)ExceptionWrapper$(oext) : $(FollyDir)ExceptionWrapper.cpp ${MultiCompileDepends}
+$(o)ExceptionWrapper$(oext) : $(FollyDir)ExceptionWrapper.cpp $(FollyVendorAPISrc)ExceptionWrapper.h ${MultiCompileDepends}
 
 $(o)InlineExecutor$(oext) : $(FollyDir)executors/InlineExecutor.cpp $(FollyVendorAPISrc)executors/InlineExecutor.h ${MultiCompileDepends}
 

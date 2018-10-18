@@ -184,8 +184,8 @@ class exception_wrapper {
   std::exception* getCopied() { return item_.get(); }
   const std::exception* getCopied() const { return item_.get(); }
 
-  fbstring what() const;
-  fbstring class_name() const;
+  BE_FOLLY_EXPORT fbstring what() const;
+  BE_FOLLY_EXPORT fbstring class_name() const;
 
   template <class Ex>
   bool is_compatible_with() const {
