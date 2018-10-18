@@ -12,6 +12,7 @@
 #include <Bentley/DateTime.h>
 
 #include <thread>
+#include <set>
 
 using namespace BeFolly;
 
@@ -65,12 +66,11 @@ void BeTimekeeper::Context::ProcessQueue()
     {
     while (!m_stopping)
         {
-        std::unique_lock<std::mutex> lk(m_mutex);
-
         auto currentTime = GetCurrentTimeAsUnixMillis();
 
         PopTimedCallbacks(currentTime);
 
+        std::unique_lock<std::mutex> lk(m_mutex);
         if (m_queue.empty())
             {
             m_hasWorkCV.wait(lk, [this]
@@ -106,14 +106,22 @@ void BeTimekeeper::Context::ProcessQueue()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTimekeeper::Context::PopTimedCallbacks(int64_t currentTime)
     {
+    m_mutex.lock();
+
+    std::vector<CallbackPtr> callbacks;
     while (!m_queue.empty())
         {
         if (m_queue.top()->executionTime > currentTime)
-            return;
+            break;
 
-        m_queue.top()->promise.setValue();
+        callbacks.push_back(m_queue.top());
         m_queue.pop();
         }
+
+    m_mutex.unlock();
+
+    for (auto& callback : callbacks)
+        callback->promise.setValue();
     }
 
 /*--------------------------------------------------------------------------------------+

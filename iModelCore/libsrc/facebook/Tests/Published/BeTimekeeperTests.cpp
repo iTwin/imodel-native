@@ -28,6 +28,65 @@ TEST_F(BeTimekeeperTests, Get_CalledMultipleTimes_AlwaysReturnsSameInstance)
     EXPECT_EQ(executor1, executor2);
     }
 
+TEST_F(BeTimekeeperTests, after_ZeroTime_ExecuteCallbackImmeadetely)
+    {
+    for (int i = 0; i < 10; i++)
+        {
+        std::atomic_bool executed1 = false;
+
+        auto t1 = BeTimekeeper::Get().after(folly::Duration(0)).then([&]
+            {
+            executed1 = true;
+            });
+
+        t1.wait();
+
+        EXPECT_TRUE(executed1);
+        }
+    }
+
+TEST_F(BeTimekeeperTests, after_MultipleCallsWithSameDuration_ExecuteCallbacksAfterSpecifiedTimeInSequence)
+    {
+    auto timeBefore = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+    std::atomic_bool executed1 = false;
+    std::atomic_bool executed2 = false;
+    std::atomic_bool executed3 = false;
+
+    auto t1 = BeTimekeeper::Get().after(folly::Duration(10)).then([&]
+        {
+        auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        EXPECT_GE(timeAfter - timeBefore, 10);
+        EXPECT_FALSE(executed2);
+        EXPECT_FALSE(executed3);
+        executed1 = true;
+        });
+
+    auto t2 = BeTimekeeper::Get().after(folly::Duration(10)).then([&]
+        {
+        auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        EXPECT_GE(timeAfter - timeBefore, 10);
+        EXPECT_TRUE(executed1);
+        EXPECT_FALSE(executed3);
+        executed2 = true;
+        });
+
+    auto t3 = BeTimekeeper::Get().after(folly::Duration(10)).then([&]
+        {
+        auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        EXPECT_GE(timeAfter - timeBefore, 10);
+        EXPECT_TRUE(executed1);
+        EXPECT_TRUE(executed2);
+        executed3 = true;
+        });
+
+    folly::collectAll(t1, t2, t3).wait();
+
+    EXPECT_TRUE(executed1);
+    EXPECT_TRUE(executed2);
+    EXPECT_TRUE(executed3);
+    }
+
 TEST_F(BeTimekeeperTests, after_FromLongestToShortest_ExecuteCallbacksAtAppropriateTimes)
     {
     auto timeBefore = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -38,29 +97,29 @@ TEST_F(BeTimekeeperTests, after_FromLongestToShortest_ExecuteCallbacksAtAppropri
 
     auto t1 = BeTimekeeper::Get().after(folly::Duration(30)).then([&]
         {
-        executed1 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 30);
         EXPECT_TRUE(executed2);
         EXPECT_TRUE(executed3);
+        executed1 = true;
         });
 
     auto t2 = BeTimekeeper::Get().after(folly::Duration(20)).then([&]
         {
-        executed2 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 20);
         EXPECT_FALSE(executed1);
         EXPECT_TRUE(executed3);
+        executed2 = true;
         });
 
     auto t3 = BeTimekeeper::Get().after(folly::Duration(10)).then([&]
         {
-        executed3 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 10);
         EXPECT_FALSE(executed1);
         EXPECT_FALSE(executed2);
+        executed3 = true;
         });
 
     folly::collectAll(t1, t2, t3).wait();
@@ -80,29 +139,29 @@ TEST_F(BeTimekeeperTests, after_FromShortestToLongest_ExecuteCallbacksAtAppropri
 
     auto t1 = BeTimekeeper::Get().after(folly::Duration(10)).then([&]
         {
-        executed1 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 10);
         EXPECT_FALSE(executed2);
         EXPECT_FALSE(executed3);
+        executed1 = true;
         });
 
     auto t2 = BeTimekeeper::Get().after(folly::Duration(20)).then([&]
         {
-        executed2 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 20);
         EXPECT_TRUE(executed1);
         EXPECT_FALSE(executed3);
+        executed2 = true;
         });
 
     auto t3 = BeTimekeeper::Get().after(folly::Duration(30)).then([&]
         {
-        executed3 = true;
         auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
         EXPECT_GE(timeAfter - timeBefore, 30);
         EXPECT_TRUE(executed1);
         EXPECT_TRUE(executed2);
+        executed3 = true;
         });
 
     folly::collectAll(t1, t2, t3).wait();
@@ -110,6 +169,38 @@ TEST_F(BeTimekeeperTests, after_FromShortestToLongest_ExecuteCallbacksAtAppropri
     EXPECT_TRUE(executed1);
     EXPECT_TRUE(executed2);
     EXPECT_TRUE(executed3);
+    }
+
+TEST_F(BeTimekeeperTests, after_CalledFromWithinCallback_ExecuteCallbacksAtAppropriateTimes)
+    {
+    auto timeBefore = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+    std::atomic_bool executed1 = false;
+    std::atomic_bool executed2 = false;
+
+    folly::Future<folly::Unit> t2 = folly::makeFuture();
+
+    auto t1 = BeTimekeeper::Get().after(folly::Duration(10)).then([&]
+        {
+        auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        EXPECT_GE(timeAfter - timeBefore, 10);
+        EXPECT_FALSE(executed2);
+        executed1 = true;
+
+        t2 = BeTimekeeper::Get().after(folly::Duration(10)).then([&]
+            {
+            auto timeAfter = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+            EXPECT_GE(timeAfter - timeBefore, 20);
+            EXPECT_TRUE(executed1);
+            executed2 = true;
+            });
+        });
+
+    t1.wait();
+    t2.wait();
+
+    EXPECT_TRUE(executed1);
+    EXPECT_TRUE(executed2);
     }
 
 TEST_F(BeTimekeeperTests, Dtor_DestroyedWhileExecutingFunc_DestroysWithoutCrashing)
