@@ -110,6 +110,8 @@ struct ECSqlTypeInfo final
         bool IsArray() const { return m_kind == Kind::PrimitiveArray || m_kind == Kind::StructArray; }
         bool IsNavigation() const { return m_kind == Kind::Navigation; }
 
+        bool IsId() const { return IsPrimitive() && m_extendedTypeName.EqualsIAscii(EXTENDEDTYPENAME_Id); }
+
         bool DateTimeInfoMatches(DateTime::Info const& rhs) const;
 
         ECN::PrimitiveType GetPrimitiveType() const 
@@ -123,6 +125,7 @@ struct ECSqlTypeInfo final
         ECN::ECEnumerationCP GetEnumerationType() const { BeAssert(IsPrimitive() || m_kind == Kind::PrimitiveArray); return m_enumType; }
         bool HasExtendedType() const { return !m_extendedTypeName.empty(); }
         Utf8StringCR GetExtendedTypeName() const { BeAssert(IsPrimitive() || m_kind == Kind::PrimitiveArray); return m_extendedTypeName; }
+
         ECN::ECStructClassCR GetStructType() const { BeAssert(IsStruct() || m_kind == Kind::StructArray); return *m_structType; }
 
         Nullable<uint32_t> GetArrayMinOccurs() const { BeAssert(IsArray()); return m_minOccurs; }
