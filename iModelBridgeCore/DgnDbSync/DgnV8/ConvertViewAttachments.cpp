@@ -136,9 +136,7 @@ void Converter::AddV8ModelToRange(Bentley::DRange3dR range, DgnV8ModelR v8Model)
 ResolvedModelMappingWithElement Converter::SheetsCreateAndInsertDrawing(DgnAttachmentCR v8Attachment, ResolvedModelMapping const& parentModel)
     {
     // Create a BIM drawing model to put them in.
-    Utf8String drawingName = SheetsComputeViewAttachmentName(v8Attachment);
-
-    auto drawing = CreateDrawing(drawingName.c_str());
+    auto drawing = CreateDrawing(nullptr, Utf8String(v8Attachment.GetLogicalName()).c_str());
     
     ResolvedModelMappingWithElement rmme;
 
