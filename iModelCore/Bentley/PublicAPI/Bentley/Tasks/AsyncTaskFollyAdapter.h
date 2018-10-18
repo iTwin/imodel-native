@@ -10,6 +10,7 @@
 
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/ThreadlessTaskScheduler.h>
+#include <Logging/bentleylogging.h>
 
 // This is only helper code, so Bentley lib does not depend on BeFolly.
 // BeFolly needs to be added as dependency to consuming code.
