@@ -211,7 +211,8 @@
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""     RelativeTo="Assemblies"/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Path=""     RelativeTo="Assemblies" />
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""     RelativeTo="Assemblies"/>
-      
+        <ProductDirectory Name="DgnV8DummyUstation"             Path="DgnV8"    RelativeTo="Assemblies"/>
+
         <ProductDirectory Name="DgnV8ConverterLibs"             Deliver="false"/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Deliver="false"/>
@@ -695,6 +696,7 @@
         <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="Assets" Deliver="false"/>
         <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+        <ProductDirectory Name="DgnV8DummyUstation" Deliver="false"/>
         <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
 
         <ProductDirectory Name="VendorNotices" Path=""/>

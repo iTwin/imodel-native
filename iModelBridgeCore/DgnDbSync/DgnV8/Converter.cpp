@@ -865,36 +865,38 @@ DgnModelId Converter::_MapModelIntoProject(DgnV8ModelR v8Model, Utf8CP newName, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingPtr Converter::CreateDrawing(Utf8CP name)
+DrawingPtr Converter::CreateDrawing(Utf8CP codeValue, Utf8CP userLabel)
     {
     DocumentListModelPtr drawingListModel = m_dgndb->Models().Get<DocumentListModel>(m_drawingListModelId);
     if (!drawingListModel.IsValid())
         return nullptr;
 
-    DgnCode drawingCode = Drawing::CreateUniqueCode(*drawingListModel, name);
+    DgnCode drawingCode = !Utf8String::IsNullOrEmpty(codeValue)? Drawing::CreateUniqueCode(*drawingListModel, codeValue): DgnCode::CreateEmpty();
     DrawingPtr drawing = Drawing::Create(*drawingListModel, drawingCode.GetValueUtf8CP());
     if (!drawing.IsValid())
         return nullptr;
 
-    drawing->SetUserLabel(name);
+    if (userLabel)
+        drawing->SetUserLabel(userLabel);
     return drawing;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SectionDrawingPtr Converter::CreateSectionDrawing(Utf8CP name)
+SectionDrawingPtr Converter::CreateSectionDrawing(Utf8CP codeValue, Utf8CP userLabel)
     {
     DocumentListModelPtr drawingListModel = m_dgndb->Models().Get<DocumentListModel>(m_drawingListModelId);
     if (!drawingListModel.IsValid())
         return nullptr;
 
-    DgnCode drawingCode = Drawing::CreateUniqueCode(*drawingListModel, name);
+    DgnCode drawingCode = !Utf8String::IsNullOrEmpty(codeValue)? Drawing::CreateUniqueCode(*drawingListModel, codeValue): DgnCode::CreateEmpty();
     SectionDrawingPtr drawing = SectionDrawing::Create(*drawingListModel, drawingCode.GetValueUtf8CP());
     if (!drawing.IsValid())
         return nullptr;
 
-    drawing->SetUserLabel(name);
+    if (userLabel)
+        drawing->SetUserLabel(userLabel);
     return drawing;
     }
 
@@ -953,7 +955,9 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
 
     if (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel) == classId)
         {
-        DrawingCPtr drawing = CreateDrawingAndInsert(newName);
+        auto suggestedLabel = GetSuggestedUserLabel(v8Model, newName);
+        auto modelCode = ModelHasNoCode(v8Model)? nullptr: newName;
+        DrawingCPtr drawing = CreateDrawingAndInsert(modelCode, suggestedLabel);
         if (!drawing.IsValid())
             {
             BeAssert(false);
@@ -965,7 +969,9 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
         }
     else if (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SectionDrawingModel) == classId)
         {
-        SectionDrawingCPtr drawing = CreateSectionDrawingAndInsert(newName);
+        auto suggestedLabel = GetSuggestedUserLabel(v8Model, newName);
+        auto modelCode = ModelHasNoCode(v8Model)? nullptr: newName;
+        SectionDrawingCPtr drawing = CreateSectionDrawingAndInsert(modelCode, suggestedLabel);
         if (!drawing.IsValid())
             {
             BeAssert(false);
