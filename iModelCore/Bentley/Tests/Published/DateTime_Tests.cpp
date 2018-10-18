@@ -945,6 +945,10 @@ TEST(DateTimeTests, FromStringTests)
     expectedDate = DateTime(DateTime::Kind::Unspecified, 2012, 12, 5, 24, 0);
     assertFromString(isoDateTime, expectedDate, true);
 
+    isoDateTime = "2018-10-08T07:47:03.943Z";
+    expectedDate = DateTime(DateTime::Kind::Utc, 2018, 10, 8, 7, 47, 3, 943);
+    assertFromString(isoDateTime, expectedDate, true);
+
     isoDateTime = "00:00:00.000";
     expectedDate = DateTime::CreateTimeOfDay(0, 0);
     assertFromString(isoDateTime, expectedDate, true);

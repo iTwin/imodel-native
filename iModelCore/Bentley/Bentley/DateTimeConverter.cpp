@@ -35,7 +35,6 @@ const uint64_t DateTimeConverter::UNIXEPOCH_END_IN_JULIANDAY_MSEC = INT64_C(2130
 //(according to http://quasar.as.utexas.edu/BillInfo/JulianDateCalc.html)
 const uint64_t DateTimeConverter::CE_EPOCH_AS_JD_MSEC = INT64_C(148731163200000);
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -389,6 +388,14 @@ BentleyStatus DateTimeConverter::ComputeLocalTimezoneOffsetFromUtcTime(int64_t& 
 #define ISO8601_TIME_FORMAT "%.2" PRIu8 ":%.2" PRIu8 ":%06.3lf"
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+// Bentley guideline: Do not release non-POD static variables
+//static
+std::regex* DateTimeStringConverter::s_dtRegex = nullptr; 
+std::regex* DateTimeStringConverter::s_todRegex = nullptr;
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
@@ -426,8 +433,7 @@ BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP is
         return ERROR;
 
     std::match_results<Utf8CP> matches;
-    std::regex regex(DATETIME_REGEXPATTERN);
-    const bool hasMatches = regex_search(iso8601DateTime, matches, regex);
+    const bool hasMatches = regex_search(iso8601DateTime, matches, GetDateTimeRegex());
     if (!hasMatches || matches.size() == 0)
         return FromIso8601TimeOfDay(dateTime, iso8601DateTime);
 
@@ -524,8 +530,7 @@ BentleyStatus DateTimeStringConverter::FromIso8601TimeOfDay(DateTimeR dateTime, 
         return ERROR;
 
     std::match_results<Utf8CP> matches;
-    std::regex regex(TIMEOFDAY_REGEXPATTERN);
-    const bool hasMatches = regex_search(iso8601TimeOfDay, matches, regex);
+    const bool hasMatches = regex_search(iso8601TimeOfDay, matches, GetTimeOfDayRegex());
     if (!hasMatches || matches.size() == 0)
         return ERROR;
 
@@ -641,6 +646,28 @@ bool DateTimeStringConverter::TryRetrieveValueFromRegexMatch(Utf8StringR matchVa
 
     matchValue.assign(matches[groupIndex].str().c_str());
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::regex const& DateTimeStringConverter::GetDateTimeRegex()
+    {
+    static std::once_flag s_onceFlag;
+    std::call_once(s_onceFlag, [] () { s_dtRegex = new std::regex(DATETIME_REGEXPATTERN, std::regex_constants::optimize); });
+    return *s_dtRegex;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  10/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::regex const& DateTimeStringConverter::GetTimeOfDayRegex()
+    {
+    static std::once_flag s_onceFlag;
+    std::call_once(s_onceFlag, [] () { s_todRegex = new std::regex(TIMEOFDAY_REGEXPATTERN, std::regex_constants::optimize); });
+    return *s_todRegex;
     }
 
 END_BENTLEY_NAMESPACE

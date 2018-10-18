@@ -11,9 +11,10 @@
 #include <Bentley/DateTime.h>
 #include <Bentley/WString.h>
 #include <Bentley/NonCopyableClass.h>
+#include <Bentley/bvector.h>
+#include <mutex>
 #include <regex>
 #include <time.h>
-#include <Bentley/bvector.h>
 
 BEGIN_BENTLEY_NAMESPACE
 
@@ -96,6 +97,9 @@ struct DateTimeConverter : NonCopyableClass
 struct DateTimeStringConverter final
     {
     private:
+        static std::regex* s_dtRegex;
+        static std::regex* s_todRegex;
+
         DateTimeStringConverter() = delete;
         ~DateTimeStringConverter() = delete;
 
@@ -106,6 +110,9 @@ struct DateTimeStringConverter final
         static bool RegexGroupMatched(std::match_results<Utf8CP> const& matches, size_t groupIndex);
 
         static BentleyStatus FromIso8601TimeOfDay(DateTime& dateTime, Utf8CP iso8601TimeOfDay);
+
+        static std::regex const& GetDateTimeRegex();
+        static std::regex const& GetTimeOfDayRegex();
 
     public:
         static Utf8String ToIso8601(DateTimeCR dateTime);
