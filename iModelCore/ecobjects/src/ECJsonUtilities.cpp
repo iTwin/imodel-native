@@ -884,7 +884,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
     Json::ValueType jsonValueType = jsonValue.type();
     switch (primitiveType)
         {
-            case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             if (ECJsonUtilities::JsonToPoint2d(point2d, jsonValue))
@@ -892,7 +892,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint2d(point2d);
             }
-            case PRIMITIVETYPE_Point3d:
+        case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             if (ECJsonUtilities::JsonToPoint3d(point3d, jsonValue))
@@ -900,7 +900,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint3d(point3d);
             }
-            case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_Integer:
             {
             if (jsonValueType != Json::intValue && jsonValueType != Json::stringValue)
                 return ERROR;
@@ -910,7 +910,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetInteger(std::stoi(jsonValue.asCString()));
             }
-            case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Long:
             {
             int64_t val;
             if (SUCCESS != ECJsonUtilities::JsonToInt64(val, jsonValue))
@@ -918,22 +918,19 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetLong(val);
             }
-            case PRIMITIVETYPE_Double:
+         case PRIMITIVETYPE_Double:
             {
-            if (!jsonValue.isConvertibleTo(Json::ValueType::realValue) && !jsonValue.isString())
-                return ERROR;
-            if (jsonValue.isDouble())
-                return ecValue.SetDouble(jsonValue.asDouble());
-
-            if (jsonValue.isInt())
-                return ecValue.SetDouble((double) jsonValue.asInt());
+            // FIXME: This seems extremely dangerous - there's no guarantee that a string represents a valid double value...
             if (jsonValue.isString())
                 return ecValue.SetDouble(std::stod(jsonValue.asCString()));
+
+            if (jsonValue.isConvertibleTo(Json::ValueType::realValue))
+                return ecValue.SetDouble(jsonValue.asDouble());
 
             BeAssert(false && "Invalid type to convert to double");
             return ERROR;
             }
-            case PRIMITIVETYPE_DateTime:
+        case PRIMITIVETYPE_DateTime:
             {
             if (jsonValueType != Json::stringValue)
                 return ERROR;
@@ -944,21 +941,21 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetDateTime(dateTime);
             }
-            case PRIMITIVETYPE_String:
+        case PRIMITIVETYPE_String:
             {
             if (jsonValueType != Json::stringValue)
                 return ERROR;
 
             return ecValue.SetUtf8CP(jsonValue.asCString(), true);
             }
-            case PRIMITIVETYPE_Boolean:
+        case PRIMITIVETYPE_Boolean:
             {
             if (jsonValueType != Json::booleanValue)
                 return ERROR;
 
             return ecValue.SetBoolean(jsonValue.asBool());
             }
-            case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_Binary:
             {
             bvector<Byte> blob;
             if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, jsonValue))
@@ -966,7 +963,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetBinary(blob.data(), blob.size(), true);
             }
-            case PRIMITIVETYPE_IGeometry:
+        case PRIMITIVETYPE_IGeometry:
             {
             if (jsonValueType == Json::objectValue)
                 {
@@ -988,9 +985,9 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ERROR;
             }
-            default:
-                BeAssert(false);
-                return ERROR;
+        default:
+            BeAssert(false);
+            return ERROR;
         }
     }
 
@@ -1207,7 +1204,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
     switch (primitiveType)
         {
-            case PRIMITIVETYPE_Point2d:
+        case PRIMITIVETYPE_Point2d:
             {
             DPoint2d point2d;
             if (SUCCESS != ECJsonUtilities::JsonToPoint2d(point2d, jsonValue))
@@ -1215,7 +1212,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint2d(point2d);
             }
-            case PRIMITIVETYPE_Point3d:
+        case PRIMITIVETYPE_Point3d:
             {
             DPoint3d point3d;
             if (SUCCESS != ECJsonUtilities::JsonToPoint3d(point3d, jsonValue))
@@ -1223,7 +1220,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetPoint3d(point3d);
             }
-            case PRIMITIVETYPE_Integer:
+        case PRIMITIVETYPE_Integer:
             {
             if (jsonValue.IsInt())
                 return ecValue.SetInteger(jsonValue.GetInt());
@@ -1234,7 +1231,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             return ERROR;
             }
 
-            case PRIMITIVETYPE_Long:
+        case PRIMITIVETYPE_Long:
             {
             int64_t val;
             if (SUCCESS != ECJsonUtilities::JsonToInt64(val, jsonValue))
@@ -1242,13 +1239,13 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetLong(val);
             }
-            case PRIMITIVETYPE_Double:
-                if (!jsonValue.IsNumber())
-                    return ERROR;
+        case PRIMITIVETYPE_Double:
+            if (!jsonValue.IsNumber())
+                return ERROR;
 
-                return ecValue.SetDouble(jsonValue.GetDouble());
+            return ecValue.SetDouble(jsonValue.GetDouble());
 
-            case PRIMITIVETYPE_DateTime:
+        case PRIMITIVETYPE_DateTime:
             {
             if (!jsonValue.IsString())
                 return ERROR;
@@ -1260,19 +1257,19 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
             return ecValue.SetDateTime(dt);
             }
 
-            case PRIMITIVETYPE_String:
-                if (!jsonValue.IsString())
-                    return ERROR;
+        case PRIMITIVETYPE_String:
+            if (!jsonValue.IsString())
+                return ERROR;
 
-                return ecValue.SetUtf8CP(jsonValue.GetString(), true);
+            return ecValue.SetUtf8CP(jsonValue.GetString(), true);
 
-            case PRIMITIVETYPE_Boolean:
-                if (!jsonValue.IsBool())
-                    return ERROR;
+        case PRIMITIVETYPE_Boolean:
+            if (!jsonValue.IsBool())
+                return ERROR;
 
-                return ecValue.SetBoolean(jsonValue.GetBool());
+            return ecValue.SetBoolean(jsonValue.GetBool());
 
-            case PRIMITIVETYPE_IGeometry:
+        case PRIMITIVETYPE_IGeometry:
             {
             if (jsonValue.IsObject())
                 {
@@ -1294,7 +1291,7 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ERROR;
             }
-            case PRIMITIVETYPE_Binary:
+        case PRIMITIVETYPE_Binary:
             {
             bvector<Byte> blob;
             if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, jsonValue))
@@ -1302,8 +1299,8 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 
             return ecValue.SetBinary(blob.data(), blob.size(), true);
             }
-            default:
-                return ERROR;
+        default:
+            return ERROR;
         }
     }
 

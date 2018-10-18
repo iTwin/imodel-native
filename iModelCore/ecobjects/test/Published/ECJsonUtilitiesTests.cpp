@@ -659,4 +659,119 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToPoint3d)
     }
     }
 
+//=======================================================================================
+// @bsistruct                                                   Bill.Goehrig     10/2018
+//=======================================================================================
+struct JsonECInstanceConverterTestFixture : ECJsonUtilitiesTestFixture
+    {
+protected:
+    Json::Value m_jsonCpp;
+    rapidjson::Document m_rapidJson;
+
+    static IECInstancePtr CreateTestInstance(ECSchemaR schema, PrimitiveType propertyType)
+        {
+        ECEntityClassP testClass;
+        PrimitiveECPropertyP testProperty;
+        schema.CreateEntityClass(testClass, "TestClass");
+        testClass->CreatePrimitiveProperty(testProperty, "TestProperty", propertyType);
+
+        auto customAttributeEnabler = testClass->GetDefaultStandaloneEnabler ();
+        return customAttributeEnabler->CreateInstance();
+        }
+
+    void ParsePropertyJson(Utf8CP value)
+        {
+        Utf8PrintfString raw(u8R"*({ "TestProperty": %s })*", value);
+        ASSERT_EQ(SUCCESS, ParseJson(m_jsonCpp, raw));
+        ASSERT_EQ(SUCCESS, ParseJson(m_rapidJson, raw));
+        }
+    };
+
+struct InSchemaClassLocater final : ECN::IECClassLocater
+    {
+    private:
+        ECN::ECSchemaCR m_schema;
+
+        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return m_schema.GetClassCP(className); }
+    public:
+        explicit InSchemaClassLocater(ECN::ECSchemaCR schema) : m_schema(schema) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Bill.Goehrig     10/2018
+//---------------------------------------------------------------------------------------
+TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_DoubleProperty)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "Schema", "sch", 1, 0, 0);
+    InSchemaClassLocater classLocater(*schema);
+    auto instance = CreateTestInstance(*schema, PRIMITIVETYPE_Double);
+
+    auto GetPropertyValue = [](IECInstanceCR instance)
+        {
+        ECValue val;
+        instance.GetValue(val, 1);
+        return val.GetDouble();
+        };
+
+    ParsePropertyJson("100");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+    EXPECT_EQ(100, GetPropertyValue(*instance));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+    EXPECT_EQ(100, GetPropertyValue(*instance));
+
+    ParsePropertyJson("1.111111");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+    EXPECT_EQ(1.111111, GetPropertyValue(*instance));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+    EXPECT_EQ(1.111111, GetPropertyValue(*instance));
+
+    ParsePropertyJson("1000000000000000");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+    EXPECT_EQ(1.0e15, GetPropertyValue(*instance));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+    EXPECT_EQ(1.0e15, GetPropertyValue(*instance));
+
+    ParsePropertyJson("1000000000000");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+    EXPECT_EQ(1.0e12, GetPropertyValue(*instance));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+    EXPECT_EQ(1.0e12, GetPropertyValue(*instance));
+
+    ParsePropertyJson("1000000000");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+    EXPECT_EQ(1.0e9, GetPropertyValue(*instance));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+    EXPECT_EQ(1.0e9, GetPropertyValue(*instance));
+
+    ParsePropertyJson("1.0e18");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+    EXPECT_EQ(1.0e18, GetPropertyValue(*instance));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+    EXPECT_EQ(1.0e18, GetPropertyValue(*instance));
+
+    ParsePropertyJson("1.0e-24");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+    EXPECT_EQ(1.0e-24, GetPropertyValue(*instance));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+    EXPECT_EQ(1.0e-24, GetPropertyValue(*instance));
+
+#ifdef NOT_NOW
+    ParsePropertyJson("\"ABCDE\"");
+        {
+        DISABLE_ASSERTS
+        EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+        EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+        }
+#endif
+
+    ParsePropertyJson("\"1.111111\"");
+        {
+        DISABLE_ASSERTS
+        // FIXME: This should not be supported!
+        // EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_jsonCpp, classLocater));
+        EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*instance, m_rapidJson, classLocater));
+        }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
