@@ -410,13 +410,14 @@ TEST_F(ModelTests, DrawingModel2D)
     {
     LineUpFiles(L"drawingmodel2d.ibim", L"Test3d.dgn", false);
 
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-    DgnV8Api::DgnModelStatus modelStatus;
-    v8editor.m_file->CreateNewModel(&modelStatus, TESTMODELNEWW, DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
-    ASSERT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-    v8editor.Save();
-
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::DgnModelStatus modelStatus;
+        v8editor.m_file->CreateNewModel(&modelStatus, TESTMODELNEWW, DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+        ASSERT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.Save();
+        }
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
