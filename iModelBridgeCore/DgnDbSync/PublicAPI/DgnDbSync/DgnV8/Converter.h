@@ -1488,10 +1488,10 @@ public:
     //! @name Drawings
     //! @{
     BentleyStatus InitDrawingListModel();
-    DrawingPtr CreateDrawing(Utf8CP label);
-    DrawingCPtr CreateDrawingAndInsert(Utf8CP label) {auto d = CreateDrawing(label); return d.IsValid()? GetDgnDb().Elements().Insert<Drawing>(*d): nullptr;}
-    SectionDrawingPtr CreateSectionDrawing(Utf8CP label);
-    SectionDrawingCPtr CreateSectionDrawingAndInsert(Utf8CP label) {auto d = CreateSectionDrawing(label); return d.IsValid()? GetDgnDb().Elements().Insert<SectionDrawing>(*d): nullptr;}
+    DrawingPtr CreateDrawing(Utf8CP codeValue, Utf8CP userLabel);
+    DrawingCPtr CreateDrawingAndInsert(Utf8CP codeValue, Utf8CP userLabel) {auto d = CreateDrawing(codeValue, userLabel); return d.IsValid()? GetDgnDb().Elements().Insert<Drawing>(*d): nullptr;}
+    SectionDrawingPtr CreateSectionDrawing(Utf8CP codeValue, Utf8CP userLabel);
+    SectionDrawingCPtr CreateSectionDrawingAndInsert(Utf8CP codeValue, Utf8CP userLabel) {auto d = CreateSectionDrawing(codeValue, userLabel); return d.IsValid()? GetDgnDb().Elements().Insert<SectionDrawing>(*d): nullptr;}
 
     void ImportDrawingModel(ResolvedModelMapping& rootModelMapping, DgnV8ModelR v8model);
 
@@ -1546,23 +1546,26 @@ public:
     //! @note The name of the new model is generated and should not conflict with any existing V8 models.
     //! @note This function also changes DgnModelType::Sheet to DgnModelType::Drawing
     //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnV8ModelP, double newAnnotationScale);
-
-    //! Make a copy of the specified sheet model and change its model type from DgnModelType::Sheet to DgnModelType::Drawing.
-    //! @note The name of the new model is generated and should not conflict with any existing V8 models.
-    //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeSheetToDrawing(DgnV8ModelP);
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyAndChangeAnnotationScale(DgnV8ModelP, double newAnnotationScale, bool isNameless);
 
     //! Make a copy of the specified model. 
     //! @note The name of the new model is generated from the original model's file and model name, plus the specified suffix.
     //! @note The returned model is marked as hidden
-    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix);
+    Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix, bool isNameless, Utf8CP displayLabel);
+
+    DGNDBSYNC_EXPORT virtual bool _ModelHasNoCode(DgnV8ModelCR v8model);
+
+    bool ModelHasNoCode(DgnV8ModelCR v8model) {return _ModelHasNoCode(v8model);}
+
+    DGNDBSYNC_EXPORT Utf8CP _GetSuggestedUserLabel(DgnV8ModelCR v8model, Utf8CP defaultLabel);
+
+    Utf8CP GetSuggestedUserLabel(DgnV8ModelCR v8model, Utf8CP defaultLabel) {return _GetSuggestedUserLabel(v8model, defaultLabel);}
 
     //! convert any attached sheets into drawings
     void TransformSheetAttachmentsToDrawings(DgnV8ModelR parentModel);
 
     //! Optionally transform attachments to 2d models into attachments to copies of those 2d models.
-    typedef std::function<bool(DgnV8Api::DgnAttachment const&)> T_AttachmentCopyFilter;
+    typedef std::function<bool(BentleyApi::Utf8StringR displayLabel, DgnV8Api::DgnAttachment const&)> T_AttachmentCopyFilter;
     void TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_AttachmentCopyFilter filter);
 
     //! @}
