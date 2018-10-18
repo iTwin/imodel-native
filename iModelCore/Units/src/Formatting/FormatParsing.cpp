@@ -546,25 +546,21 @@ FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
 FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
     {
     Init(s);
-    size_t bufL = vect.size() * 4 + 2;
-    Utf8Char* buf = (Utf8Char*)alloca(bufL);
-    memset(buf, 0, bufL);
-    int i = 0;
+    m_name.get_allocator().allocate(vect.size() * 4 + 2);
     unsigned char* ptr;
-    for (CursorScanPointP vp = vect.begin(); vp != vect.end(); vp++)
+
+    for (CursorScanPointP vp = vect.begin(); vp != vect.end(); ++vp)
         {
         m_vect.push_back(*vp);
-        for (ptr = vp->GetBytes(); *ptr != '\0'; ptr++)
+        for (ptr = vp->GetBytes(); *ptr != '\0'; ++ptr)
             {
-            buf[i++] = *ptr;
+            m_name += *ptr;
             }
         }
-    if (i > 0) // something in the buffer
+    if (!m_name.empty()) // something in the buffer
         {
-        if (buf[0] == '_') // special case of prpending the unit name by underscore
-            m_name = Utf8String(buf + 1);
-        else
-            m_name = Utf8String(buf);
+        if (m_name.StartsWith("_")) // special case of prpending the unit name by underscore
+            m_name = m_name.substr(1);
 
         m_unit = nullptr;
         if(nullptr != refUnit)  // before looking into the registry we can try to find Unit in the Phenomenon
@@ -773,74 +769,44 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit, FormatCP form
 //----------------------------------------------------------------------------------------
 Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
     {
-    Utf8String txt = "";
+    Utf8String signature("");
     if (m_segs.size() == 0)
-        return txt; 
+        return signature;
+
+    signature.get_allocator().allocate(m_segs.size() * 4 + 2);
     ParsingSegmentType type;
-    size_t bufL = m_segs.size() * 4 + 2;
-    Utf8Char* buf = (Utf8Char*)alloca(bufL);
-    memset(buf, 0, bufL);
-    int i = 0;
-    int colNum = 0;
 
     for (FormatParsingSegmentP fps = m_segs.begin(); fps != m_segs.end(); fps++)
         {
         type = fps->GetType();
         if (type == ParsingSegmentType::Real)
-            buf[i++] = distinct? 'R': 'N';
+            signature += distinct ? 'R': 'N';
         else if (type == ParsingSegmentType::Integer)
-            buf[i++] = distinct ? 'I' : 'N';
+            signature += distinct ? 'I' : 'N';
         else if (type == ParsingSegmentType::Fraction)
-            buf[i++] = 'F';
+            signature += 'F';
         else
             {
             if (fps->IsColon())
-                {
-                buf[i++] = 'C';
-                colNum++;
-                }
+                signature += 'C';
             else if (fps->IsDoubleColon())
-                {
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 2;
-                }
+                signature += "CC";
             else if (fps->IsTripleColon())
-                {
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 3;
-                }
+                signature += "CCC";
             else if (fps->IsMinusColon())
-                {
-                buf[i++] = '-';
-                buf[i++] = 'C';
-                colNum++;
-                }
+                signature += "-C";
             else if (fps->IsMinusDoubleColon())
-                {
-                buf[i++] = '-';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 2;
-                }
+                signature += "-CC";
             else if (fps->IsMinusTripleColon())
-                {
-                buf[i++] = '-';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 3;
-                }
+                signature += "-CCC";
             else if (nullptr == fps->GetUnit())
-                buf[i++] = 'W';
+                signature += 'W';
             else
-                buf[i++] = 'U';
+                signature += 'U';
             }
         }
 
-    return Utf8String(buf);
+    return signature;
     }
 
 //----------------------------------------------------------------------------------------
