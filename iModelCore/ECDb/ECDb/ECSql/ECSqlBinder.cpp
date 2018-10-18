@@ -72,7 +72,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         {
         PropertyNameExp const& propNameExp = targetExp->GetAs<PropertyNameExp>();
         ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp.GetSystemPropertyInfo();
-        if (sysPropInfo.IsId())
+        if (sysPropInfo.IsId() || propNameExp.GetTypeInfo().IsId())
             return CreateIdBinder(ctx, propNameExp.GetPropertyMap(), sysPropInfo, paramNameGen);
         }
 
@@ -139,12 +139,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
 //---------------------------------------------------------------------------------------
 std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyInfo const& sysPropertyInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
     {
-    if (!sysPropertyInfo.IsId())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
+    BeAssert(sysPropertyInfo.IsId() || ECSqlTypeInfo(propMap).IsId());
     const bool isNoopBinder = RequiresNoopBinder(ctx, propMap, sysPropertyInfo);
     return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx, ECSqlTypeInfo(propMap), isNoopBinder, paramNameGen));
     }

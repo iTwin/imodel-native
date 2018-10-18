@@ -20,18 +20,23 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IIssueReporter c
     PERFLOG_START("ECDb", "Schema Validation");
     bool valid = true;
 
+    NoUnitsInEC31SchemaRule noUnitsInEC31SchemaRule;
     ValidBaseClassesRule baseClassesRule;
     ValidRelationshipRule relRule;
     ValidPropertyRule validPropertyRule;
     for (ECSchemaCP schema : schemas)
         {
+        bool succeeded = noUnitsInEC31SchemaRule.Validate(ctx, issueReporter, *schema);
+        if (!succeeded)
+            valid = false;
+
         if (schema->GetName().EqualsIAscii(ECSCHEMA_ECDbSystem))
             continue; //skip because it would violate by design some of the property naming rules
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
             //per class rules
-            bool succeeded = baseClassesRule.Validate(ctx, issueReporter, *schema, *ecClass);
+            succeeded = baseClassesRule.Validate(ctx, issueReporter, *schema, *ecClass);
             if (!succeeded)
                 valid = false;
 
@@ -50,6 +55,28 @@ bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IIssueReporter c
 
     PERFLOG_FINISH("ECDb", "Schema Validation");
     return valid;
+    }
+
+//*************************************************************************
+//SchemaValidator::NoUnitsInEC31SchemaRule
+//*************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+bool SchemaValidator::NoUnitsInEC31SchemaRule::Validate(SchemaImportContext const& ctx, IIssueReporter const& issueReporter, ECN::ECSchemaCR schema) const
+    {
+    if (schema.OriginalECXmlVersionAtLeast(ECVersion::V3_2))
+        return true;
+
+    if (schema.GetUnitSystemCount() != 0 || schema.GetPhenomenonCount() != 0 || schema.GetUnitCount() != 0 || schema.GetFormatCount() != 0)
+        {
+        issueReporter.ReportV("ECSchema '%s' defines units, formats, unit systems, or phenomena which requires its original XML version to be at least 3.2. "
+                              "It is %" PRIu32 ".%" PRIu32 " though.",
+                              schema.GetFullSchemaName().c_str(), schema.GetOriginalECXmlVersionMajor(), schema.GetOriginalECXmlVersionMinor());
+        return false;
+        }
+
+    return true;
     }
 
 //*************************************************************************

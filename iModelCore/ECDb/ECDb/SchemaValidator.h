@@ -17,6 +17,21 @@ struct SchemaValidator final
     {
     private:
         //=======================================================================================
+        // @bsiclass                                                Krischan.Eberle      10/2018
+        //+===============+===============+===============+===============+===============+======
+        struct NoUnitsInEC31SchemaRule final
+            {
+            private:
+                //not copyable
+                NoUnitsInEC31SchemaRule(NoUnitsInEC31SchemaRule const&) = delete;
+                NoUnitsInEC31SchemaRule& operator=(NoUnitsInEC31SchemaRule const&) = delete;
+
+            public:
+                NoUnitsInEC31SchemaRule() {}
+                bool Validate(SchemaImportContext const&, IIssueReporter const&, ECN::ECSchemaCR) const;
+            };
+
+        //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      04/2014
         //+===============+===============+===============+===============+===============+======
         struct ValidBaseClassesRule final

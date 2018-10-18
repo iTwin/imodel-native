@@ -171,14 +171,17 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
         {
         DateTime dt;
         if (SUCCESS != DateTime::FromString(dt, value))
-            return LogSqliteError(BE_SQLITE_MISMATCH, Utf8PrintfString("Failed to bind string '%s' to DateTime parameter. String must be a valid ISO 8601 date, time or timestamp.", value).c_str());
+            {
+            LOG.errorv("Type mismatch. Failed to bind string '%s' to DateTime parameter. String must be a valid ISO 8601 date, time or timestamp.", value);
+            return ECSqlStatus::Error;
+            }
 
         return BindDateTime(dt);
         }
 
     const DbResult sqliteStat = GetSqliteStatement().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
     if (sqliteStat != BE_SQLITE_OK)
-        return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
+        return LogSqliteError(sqliteStat, "Failed to bind string value to parameter.");
 
     return ECSqlStatus::Success;
     }

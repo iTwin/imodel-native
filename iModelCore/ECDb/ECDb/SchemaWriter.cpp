@@ -105,7 +105,7 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
         ctx.GetECDb().GetLastError(&lastErrorCode);
         if (BE_SQLITE_CONSTRAINT_UNIQUE == lastErrorCode)
             ctx.Issues().ReportV("Failed to import ECSchema '%s'. Alias '%s' is already used by an existing ECSchema.",
-                            ecSchema.GetFullSchemaName().c_str(), ecSchema.GetAlias().c_str());
+                                 ecSchema.GetFullSchemaName().c_str(), ecSchema.GetAlias().c_str());
         return ERROR;
         }
 
@@ -125,43 +125,40 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             }
         }
 
-    if (ctx.IsEC32AvailableInFile())
+    //Unit stuff must be imported before KOQs as KOQ reference them
+    for (UnitSystemCP us : ecSchema.GetUnitSystems())
         {
-        //Unit stuff must be imported before KOQs as KOQ reference them
-        for (UnitSystemCP us : ecSchema.GetUnitSystems())
+        if (SUCCESS != ImportUnitSystem(ctx, *us))
             {
-            if (SUCCESS != ImportUnitSystem(ctx, *us))
-                {
-                ctx.Issues().ReportV("Failed to import UnitSystem '%s'.", us->GetFullName().c_str());
-                return ERROR;
-                }
+            ctx.Issues().ReportV("Failed to import UnitSystem '%s'.", us->GetFullName().c_str());
+            return ERROR;
             }
+        }
 
-        for (PhenomenonCP ph : ecSchema.GetPhenomena())
+    for (PhenomenonCP ph : ecSchema.GetPhenomena())
+        {
+        if (SUCCESS != ImportPhenomenon(ctx, *ph))
             {
-            if (SUCCESS != ImportPhenomenon(ctx, *ph))
-                {
-                ctx.Issues().ReportV("Failed to import Phenomenon '%s'.", ph->GetFullName().c_str());
-                return ERROR;
-                }
+            ctx.Issues().ReportV("Failed to import Phenomenon '%s'.", ph->GetFullName().c_str());
+            return ERROR;
             }
+        }
 
-        for (ECUnitCP unit : ecSchema.GetUnits())
+    for (ECUnitCP unit : ecSchema.GetUnits())
+        {
+        if (SUCCESS != ImportUnit(ctx, *unit))
             {
-            if (SUCCESS != ImportUnit(ctx, *unit))
-                {
-                ctx.Issues().ReportV("Failed to import Unit '%s'.", unit->GetFullName().c_str());
-                return ERROR;
-                }
+            ctx.Issues().ReportV("Failed to import Unit '%s'.", unit->GetFullName().c_str());
+            return ERROR;
             }
+        }
 
-        for (ECFormatCP format : ecSchema.GetFormats())
+    for (ECFormatCP format : ecSchema.GetFormats())
+        {
+        if (SUCCESS != ImportFormat(ctx, *format))
             {
-            if (SUCCESS != ImportFormat(ctx, *format))
-                {
-                ctx.Issues().ReportV("Failed to import Format '%s'.", format->GetFullName().c_str());
-                return ERROR;
-                }
+            ctx.Issues().ReportV("Failed to import Format '%s'.", format->GetFullName().c_str());
+            return ERROR;
             }
         }
 
@@ -184,7 +181,7 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             return ERROR;
             }
         }
-    
+
     for (ECClassCP ecClass : ecSchema.GetClasses())
         {
         if (SUCCESS != ImportClass(ctx, *ecClass))
@@ -431,6 +428,12 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ImportUnitSystem(Context& ctx, UnitSystemCR us)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to import UnitSystem '%s'. UnitSystems cannot be imported in a file that does not support EC3.2 yet.", us.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (ctx.GetSchemaManager().GetUnitSystemId(us).IsValid())
         return SUCCESS;
 
@@ -479,6 +482,12 @@ BentleyStatus SchemaWriter::ImportUnitSystem(Context& ctx, UnitSystemCR us)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ImportPhenomenon(Context& ctx, PhenomenonCR ph)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to import Phenomenon '%s'. Phenomena cannot be imported in a file that does not support EC3.2 yet.", ph.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (ctx.GetSchemaManager().GetPhenomenonId(ph).IsValid())
         return SUCCESS;
 
@@ -530,6 +539,12 @@ BentleyStatus SchemaWriter::ImportPhenomenon(Context& ctx, PhenomenonCR ph)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to import Unit '%s'. Units cannot be imported in a file that does not support EC3.2 yet.", unit.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (ctx.GetSchemaManager().GetUnitId(unit).IsValid())
         return SUCCESS;
 
@@ -655,6 +670,12 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to import Format '%s'. Formats cannot be imported in a file that does not support EC3.2 yet.", format.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (ctx.GetSchemaManager().GetFormatId(format).IsValid())
         return SUCCESS;
 
@@ -733,6 +754,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR format, FormatId formatId)
     {
+    BeAssert(ctx.IsEC32AvailableInFile());
     if (!format.HasComposite())
         return SUCCESS;
 
@@ -3377,6 +3399,12 @@ BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& cha
         if (!change.IsChanged())
             continue;
 
+        if (!ctx.IsEC32AvailableInFile())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying phenomena is not supported in a file that does not support EC3.2 yet.", oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Phenomena from an ECSchema is not supported.",
@@ -3427,6 +3455,12 @@ BentleyStatus SchemaWriter::UpdatePhenomena(Context& ctx, PhenomenonChanges& cha
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdatePhenomenon(Context& ctx, PhenomenonChange& change, ECN::PhenomenonCR oldVal, ECN::PhenomenonCR newVal)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to upgrade Phenomenon '%s'. Phenomena are not supported in a file that does not support EC3.2 yet.", oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
@@ -3478,6 +3512,12 @@ BentleyStatus SchemaWriter::UpdateUnitSystems(Context& ctx, UnitSystemChanges& c
         if (!change.IsChanged())
             continue;
 
+        if (!ctx.IsEC32AvailableInFile())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying unit systems is not supported in a file that does not support EC3.2 yet.", oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting UnitSystems from an ECSchema is not supported.",
@@ -3528,6 +3568,12 @@ BentleyStatus SchemaWriter::UpdateUnitSystems(Context& ctx, UnitSystemChanges& c
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateUnitSystem(Context& ctx, UnitSystemChange& change, ECN::UnitSystemCR oldVal, ECN::UnitSystemCR newVal)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to upgrade UnitSystem '%s'. UnitSystems are not supported in a file that does not support EC3.2 yet.", oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
@@ -3579,6 +3625,12 @@ BentleyStatus SchemaWriter::UpdateUnits(Context& ctx, UnitChanges& changes, ECSc
         if (!change.IsChanged())
             continue;
 
+        if (!ctx.IsEC32AvailableInFile())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying units is not supported in a file that does not support EC3.2 yet.", oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Units from an ECSchema is not supported.",
@@ -3629,6 +3681,12 @@ BentleyStatus SchemaWriter::UpdateUnits(Context& ctx, UnitChanges& changes, ECSc
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateUnit(Context& ctx, UnitChange& change, ECN::ECUnitCR oldVal, ECN::ECUnitCR newVal)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to upgrade Unit '%s'. Units are not supported in a file that does not support EC3.2 yet.", oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
@@ -3680,6 +3738,12 @@ BentleyStatus SchemaWriter::UpdateFormats(Context& ctx, FormatChanges& changes, 
         if (!change.IsChanged())
             continue;
 
+        if (!ctx.IsEC32AvailableInFile())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying formats is not supported in a file that does not support EC3.2 yet.", oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Formats from an ECSchema is not supported.",
@@ -3730,6 +3794,12 @@ BentleyStatus SchemaWriter::UpdateFormats(Context& ctx, FormatChanges& changes, 
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal)
     {
+    if (!ctx.IsEC32AvailableInFile())
+        {
+        ctx.Issues().ReportV("Failed to upgrade Unit '%s'. Formats are not supported in a file that does not support EC3.2 yet.", oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
@@ -3805,6 +3875,7 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECN
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateFormatCompositeUnitLabel(Context& ctx, FormatId formatId, StringChange& unitLabelChange, int ordinal)
     {
+    BeAssert(ctx.IsEC32AvailableInFile());
     if (!unitLabelChange.IsChanged())
         return SUCCESS;
 
@@ -3964,10 +4035,10 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 
     schemaChange.SetStatus(ECChange::Status::Done);
 
-    if (UpdateSchemaReferences(ctx, schemaChange.References(), oldSchema, newSchema) == ERROR)
+    if (SUCCESS != UpdateSchemaReferences(ctx, schemaChange.References(), oldSchema, newSchema))
         return ERROR;
 
-    if (UpdateEnumerations(ctx, schemaChange.Enumerations(), oldSchema, newSchema) == ERROR)
+    if (SUCCESS != UpdateEnumerations(ctx, schemaChange.Enumerations(), oldSchema, newSchema))
         return ERROR;
 
     if (SUCCESS != UpdatePhenomena(ctx, schemaChange.Phenomena(), oldSchema, newSchema))
@@ -3982,13 +4053,13 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
     if (SUCCESS != UpdateFormats(ctx, schemaChange.Formats(), oldSchema, newSchema))
         return ERROR;
 
-    if (UpdateKindOfQuantities(ctx, schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)
+    if (SUCCESS != UpdateKindOfQuantities(ctx, schemaChange.KindOfQuantities(), oldSchema, newSchema))
         return ERROR;
 
-    if (UpdatePropertyCategories(ctx, schemaChange.PropertyCategories(), oldSchema, newSchema) == ERROR)
+    if (SUCCESS != UpdatePropertyCategories(ctx, schemaChange.PropertyCategories(), oldSchema, newSchema))
         return ERROR;
 
-    if (UpdateClasses(ctx, schemaChange.Classes(), oldSchema, newSchema) == ERROR)
+    if (SUCCESS != UpdateClasses(ctx, schemaChange.Classes(), oldSchema, newSchema))
         return ERROR;
 
     return UpdateCustomAttributes(ctx, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);

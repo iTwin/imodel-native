@@ -110,8 +110,14 @@ ECSqlStatus IdECSqlBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindInt(int value)
     {
-    LOG.error("Type mismatch. Cannot bind 32 bit integer value to Id parameter.");
-    return ECSqlStatus::Error;
+    if (!m_isNoop)
+        {
+        const DbResult sqliteStat = GetSqliteStatement().BindInt(GetSqlParamIndex(), value);
+        if (sqliteStat != BE_SQLITE_OK)
+            return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind int value %d to Id parameter.", value).c_str());
+        }
+
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -123,7 +129,7 @@ ECSqlStatus IdECSqlBinder::_BindInt64(int64_t value)
         {
         const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParamIndex(), value);
         if (sqliteStat != BE_SQLITE_OK)
-            return LogSqliteError(sqliteStat, "ECSqlStatement::BindInt64");
+            return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind Int64 value %" PRIi64 " to Id parameter.", value).c_str());
         }
 
     return ECSqlStatus::Success;
@@ -138,17 +144,20 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
         {
         if (value != nullptr && value[0] == '0' && (value[1] =='x' || value[1] == 'X') && value[2] != '\0')
             {
-            BentleyStatus stat = SUCCESS;
+            BentleyStatus stat = ERROR;
             uint64_t id = BeStringUtilities::ParseHex(value, &stat);
             if (SUCCESS != stat)
-                return LogSqliteError(BE_SQLITE_MISMATCH, Utf8PrintfString("Binding Id failed. Could not parse the bound hexadecimal string '%s'.", value).c_str());
+                {
+                LOG.errorv("Type mismatch. Failed to bind Id value: Could not parse the bound hexadecimal string '%s'.", value);
+                return ECSqlStatus::Error;
+                }
 
             return _BindInt64(id);
             }
 
         const DbResult sqliteStat = GetSqliteStatement().BindText(GetSqlParamIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
         if (sqliteStat != BE_SQLITE_OK)
-            return LogSqliteError(sqliteStat, Utf8PrintfString("Binding Id failed. Could not bind string value '%s' to the Id parameter.", value).c_str());
+            return LogSqliteError(sqliteStat, Utf8PrintfString("Could not bind string value '%s' to the Id parameter.", value).c_str());
         }
 
     return ECSqlStatus::Success;
