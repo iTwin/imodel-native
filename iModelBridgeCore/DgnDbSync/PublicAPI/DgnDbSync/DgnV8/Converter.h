@@ -1441,7 +1441,7 @@ public:
     //! @return the newly inserted model and modelled element
     ResolvedModelMappingWithElement SheetsCreateAndInsertDrawing(DgnAttachmentCR v8DgnAttachment, ResolvedModelMapping const& parentModel);
 
-    Utf8String SheetsComputeViewAttachmentName(DgnAttachmentCR v8DgnAttachment) const;
+    Utf8String SheetsComputeViewAttachmentName(DgnModelId parentSheetId, DgnAttachmentCR v8DgnAttachment) const;
     
     //! Create a ViewAttachment element from the specified V8 attachment. 
     //! @note this function should attempt to insert or update the element. The returned element should be non-persistent.
