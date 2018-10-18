@@ -10,16 +10,10 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
-#ifdef USE_GTEST
-void SimpleConnectTokenProviderTests::SetUp()
-    {
-    WSClientBaseTest::SetUp();
-    }
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             julius.cepukenas    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SimpleConnectTokenProviderTests, GetToken_CreatedWToken_ReturnsToken)
+TEST_F(SimpleConnectTokenProviderTests, GetToken_CreatedWithToken_ReturnsToken)
     {
     auto token = std::make_shared<SecurityToken>("token");
     SimpleConnectTokenProvider provider(token);
@@ -31,24 +25,23 @@ TEST_F(SimpleConnectTokenProviderTests, GetToken_CreatedWToken_ReturnsToken)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SimpleConnectTokenProviderTests, UpdateToken_DefaultCallback_ReturnsEmptyToken)
+TEST_F(SimpleConnectTokenProviderTests, UpdateToken_DefaultCallback_ReturnsNullToken)
     {
     auto token = std::make_shared<SecurityToken>("token");
     SimpleConnectTokenProvider provider(token);
 
-    EXPECT_EQ("", provider.UpdateToken()->GetResult()->AsString());
+    EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              julius.cepukenas    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SimpleConnectTokenProviderTests, UpdateToken_CreatedWToken_Nullptr)
+TEST_F(SimpleConnectTokenProviderTests, UpdateToken_CreatedWithTokenAndUpdateCallback_CallsAndReturnsUpdateCallbackResult)
     {
-    auto f1([]() {return CreateCompletedAsyncTask(std::make_shared<SecurityToken>("NewToken")); });
-    std::function<AsyncTaskPtr<SecurityTokenPtr>()> f(std::cref(f1));
+    auto onUpdate = [] { return CreateCompletedAsyncTask<ISecurityTokenPtr>(std::make_shared<SecurityToken>("NewToken")); };
 
     auto token = std::make_shared<SecurityToken>("token");
-    SimpleConnectTokenProvider provider(token, f);
+    SimpleConnectTokenProvider provider(token, onUpdate);
 
     EXPECT_EQ("NewToken", provider.UpdateToken()->GetResult()->AsString());
     }
@@ -58,13 +51,11 @@ TEST_F(SimpleConnectTokenProviderTests, UpdateToken_CreatedWToken_Nullptr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SimpleConnectTokenProviderTests, GetToken_AfterUpdateToken_SameToken)
     {
-    auto f1([]() {return CreateCompletedAsyncTask(std::make_shared<SecurityToken>("NewToken")); });
-    std::function<AsyncTaskPtr<SecurityTokenPtr>()> f(std::cref(f1));
+    auto onUpdate = [] { return CreateCompletedAsyncTask<ISecurityTokenPtr>(std::make_shared<SecurityToken>("NewToken")); };
 
     auto token = std::make_shared<SecurityToken>("token");
-    SimpleConnectTokenProvider provider(token, f);
+    SimpleConnectTokenProvider provider(token, onUpdate);
 
     EXPECT_EQ("NewToken", provider.UpdateToken()->GetResult()->AsString());
     EXPECT_EQ("NewToken", provider.GetToken()->AsString());
     }
-#endif

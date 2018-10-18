@@ -13,6 +13,4 @@
 
 class SimpleConnectTokenProviderTests : public WSClientBaseTest
     {
-    public:
-        virtual void SetUp () override;
     };

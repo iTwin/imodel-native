@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Connect/IConnectTokenProvider.h>
-#include <WebServices/Connect/ISecurityToken.h>
+#include <WebServices/Connect/SecurityToken.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -27,10 +27,13 @@ private:
     UpdateTokenCallback m_onUpdate;
 
 public:
-    SimpleConnectTokenProvider(ISecurityTokenPtr token, UpdateTokenCallback onUpdate = [] { return CreateCompletedAsyncTask(std::make_shared<SecurityToken>()); })
+    //! Create token provider 
+    //! @param token initial token to use. Simple wrapper SecurityToken could be used.
+    //! @param onUpdate optional callback that is called when existing token is expired. Should return new token or null token if it cannot be updated (default).
+    SimpleConnectTokenProvider(ISecurityTokenPtr token, UpdateTokenCallback onUpdate = [] { return CreateCompletedAsyncTask(ISecurityTokenPtr()); })
         : m_token(token), m_onUpdate(onUpdate) {};
 
-    //! Call update callback and cache token
+    //! Call onUpdate callback and cache received token
     AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override
         {
         return m_onUpdate()->Then<ISecurityTokenPtr>([=] (ISecurityTokenPtr token)
