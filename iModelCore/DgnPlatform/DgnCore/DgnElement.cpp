@@ -770,7 +770,7 @@ DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8StringCR name)
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
+    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
         {
         BeAssert(false);
         return nullptr;
@@ -787,7 +787,7 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8StringCR
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SectionDrawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
+    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
         {
         BeAssert(false);
         return nullptr;
@@ -2180,6 +2180,7 @@ RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_CloneForImport(DgnElement
         return nullptr;
 
     dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), classid);
+    // *** WIP I think we are missing support for Generic aspects here. We should fall back on creating generic instances if no handler is registered and none is needed
     if (nullptr == handler)
         return nullptr;
 
@@ -2532,6 +2533,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
+    // Note that we use the exact class of this when we insert, not the key class, so that the relationship identifies the aspect accurately.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (Element.Id,Element.RelECClassId) VALUES (?,?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     if (!stmt.IsValid())
         return DgnDbStatus::WriteError;
@@ -2554,6 +2556,7 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite:
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
+    // Tricky: We want to delete whatever aspect is stored in the db. It may be a different subclass of the key class than this (which we might be about to write in its place).
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str(), writeToken);
 
     if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
@@ -2568,8 +2571,8 @@ DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el, BeSQLite:
 //---------------------------------------------------------------------------------------
 ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
-    // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
-
+    // We know the key class and the ID of an instance, if it exists. See if such an instance actually exists.
+    // Note that we must use the key class, not the actual class of this (which we might be about to write and which be a different subclass from the existing stored aspect).
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId, ECClassId FROM %s WHERE Element.Id=?", GetFullEcSqlKeyClassName().c_str()).c_str());
     if (stmt == nullptr)
         {
