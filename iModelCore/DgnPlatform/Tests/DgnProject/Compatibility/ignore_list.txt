@@ -1,2 +1,0 @@
-ECDbCompatibilityTestFixture.EC31SchemaImport_Formats_API
-ECDbCompatibilityTestFixture.EC31SchemaUpgrade_Formats_API
