@@ -106,6 +106,7 @@
     <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Connect\SamlTokenTests.h" />
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\SimpleConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\StubLocalState.h" />
     <ClInclude Include="Published\Utils\FSTest.h" />
@@ -292,6 +293,7 @@
     <ClCompile Include="Published\ViewportTests.cpp" />
     <ClCompile Include="Published\UnitTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ChunkedUploadRequestTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\SimpleConnectTokenProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ObjectIdTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\PassportTests.cpp" />
