@@ -51,7 +51,7 @@ struct AsyncTaskFollyAdapter
 
     //! Convert folly::Future to AsyncTaskPtr with value. Future object should not throw any exceptions.
     template<class T>
-    static AsyncTaskPtr<T> FromFolly(folly::Future<T>& future)
+    static AsyncTaskPtr<T> FromFolly(folly::Future<T>&& future)
         {
         auto valuePtr = std::make_shared<T>();
         auto task = std::make_shared<PackagedAsyncTask<T>>([=]
@@ -65,6 +65,7 @@ struct AsyncTaskFollyAdapter
 
         future.onError([=] (folly::exception_wrapper ew)
             {
+            NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_BENTLEY_TASKS)->fatalv("AsyncTaskFollyAdapter received folly::Future exception: '%s'", ew.what().c_str());
             BeAssert(false && "Received folly::Future exception, cannot convert to AsyncTask, returning default value. Please handle exceptions before folly::Future to AsyncTaskFollyAdapter");
             return T();
             }).then([=] (T value)
@@ -77,7 +78,7 @@ struct AsyncTaskFollyAdapter
         }
 
     //! Convert folly::Future to AsyncTaskPtr with no value. Future object should not throw any exceptions.
-    static AsyncTaskPtr<void> FromFolly(folly::Future<folly::Unit>& future)
+    static AsyncTaskPtr<void> FromFolly(folly::Future<folly::Unit>&& future)
         {
         auto task = std::make_shared<PackagedAsyncTask<void>>([] {});
 
@@ -87,6 +88,7 @@ struct AsyncTaskFollyAdapter
 
         future.onError([=] (folly::exception_wrapper ew)
             {
+            NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_BENTLEY_TASKS)->fatalv("AsyncTaskFollyAdapter received folly::Future exception: '%s'", ew.what().c_str());
             BeAssert(false && "Received folly::Future exception, cannot convert to AsyncTask, returning. Please handle exceptions before folly::Future to AsyncTaskFollyAdapter");
             }).then([=]
             {
