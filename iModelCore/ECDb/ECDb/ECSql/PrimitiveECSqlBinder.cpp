@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -167,6 +167,15 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
     if (!stat.IsSuccess())
         return stat;
 
+    if (!Utf8String::IsNullOrEmpty(value) && GetTypeInfo().IsDateTime())
+        {
+        DateTime dt;
+        if (SUCCESS != DateTime::FromString(dt, value))
+            return LogSqliteError(BE_SQLITE_MISMATCH, Utf8PrintfString("Failed to bind string '%s' to DateTime parameter. String must be a valid ISO 8601 date, time or timestamp.", value).c_str());
+
+        return BindDateTime(dt);
+        }
+
     const DbResult sqliteStat = GetSqliteStatement().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
@@ -233,9 +242,9 @@ ECSqlStatus PrimitiveECSqlBinder::CanBind(ECN::PrimitiveType requestedType) cons
         {
             case PRIMITIVETYPE_DateTime:
             {
-            if (requestedType != fieldDataType)
+            if (requestedType != PRIMITIVETYPE_DateTime && requestedType != PRIMITIVETYPE_String)
                 {
-                LOG.error("Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
+                LOG.error("Type mismatch: only BindDateTime or BindText can be called for a column of the DateTime type.");
                 return ECSqlStatus::Error;
                 }
             else

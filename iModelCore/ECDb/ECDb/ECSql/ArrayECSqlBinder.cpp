@@ -268,6 +268,16 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindText(Utf8CP value, IECSqlBin
     if (!stat.IsSuccess())
         return stat;
 
+    if (!Utf8String::IsNullOrEmpty(value) && m_typeInfo.IsDateTime())
+        {
+        DateTime dt;
+        if (SUCCESS != DateTime::FromString(dt, value))
+            return ECSqlStatus::Error;
+
+        return BindDateTime(dt);
+        }
+
+
     if (stringLength < 0)
         stringLength = (int) strlen(value);
 
@@ -435,9 +445,9 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfTypeMismatch(ECN::Primitive
         {
             case PRIMITIVETYPE_DateTime:
             {
-            if (boundType != PRIMITIVETYPE_DateTime)
+            if (boundType != PRIMITIVETYPE_DateTime && boundType != PRIMITIVETYPE_String)
                 {
-                LOG.error("Type mismatch: only BindDateTime can be called for a column of the DateTime type.");
+                LOG.error("Type mismatch: only BindDateTime or BindText can be called for a column of the DateTime type.");
                 return ECSqlStatus::Error;
                 }
             else

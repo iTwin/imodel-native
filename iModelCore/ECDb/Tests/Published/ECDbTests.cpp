@@ -12,6 +12,66 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     09/13
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECInstanceId, Conversion)
+    {
+    //ToString
+    ECInstanceId ecInstanceId(UINT64_C(123456789));
+    Utf8CP expectedInstanceId = "123456789";
+    Utf8Char actualInstanceId[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    ecInstanceId.ToString(actualInstanceId);
+    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValue();
+
+    ecInstanceId = ECInstanceId(UINT64_C(0));
+    expectedInstanceId = "0";
+    actualInstanceId[0] = '\0';
+    ecInstanceId.ToString(actualInstanceId);
+    EXPECT_STREQ(expectedInstanceId, actualInstanceId) << "Unexpected InstanceId generated from ECInstanceId " << ecInstanceId.GetValueUnchecked();
+
+    //FromString
+    Utf8CP instanceId = "123456789";
+    ECInstanceId expectedECInstanceId(UINT64_C(123456789));
+    ECInstanceId actualECInstanceId;
+    EXPECT_EQ(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
+    EXPECT_EQ(expectedECInstanceId.GetValue(), actualECInstanceId.GetValue()) << "Unexpected ECInstanceId parsed from InstanceId " << instanceId;
+
+    instanceId = "0";
+    expectedECInstanceId = ECInstanceId(UINT64_C(0));
+    actualECInstanceId = ECInstanceId();
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
+
+    instanceId = "0000";
+    expectedECInstanceId = ECInstanceId(UINT64_C(0));
+    actualECInstanceId = ECInstanceId();
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId));
+
+    instanceId = "-123456";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
+
+    instanceId = "-12345678901234";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with negative number '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
+
+    //now test with invalid instance ids
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
+
+    instanceId = "0x75BCD15";
+    expectedECInstanceId = ECInstanceId(UINT64_C(123456789));
+    actualECInstanceId = ECInstanceId();
+    EXPECT_EQ(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId with hex formatted number '" << instanceId << "' is expected to be supported by ECInstanceId::FromString";
+    EXPECT_TRUE(actualECInstanceId == ECInstanceId(UINT64_C(0x75BCD15)));
+
+    instanceId = "i-12345";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "InstanceId starting with i- '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
+
+    instanceId = "1234a123";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
+
+    instanceId = "blabla";
+    EXPECT_NE(SUCCESS, ECInstanceId::FromString(actualECInstanceId, instanceId)) << "Non-numeric InstanceId '" << instanceId << "' is not expected to be supported by ECInstanceId::FromString";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  08/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(SQLiteRegression, Test)

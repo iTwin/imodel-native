@@ -634,6 +634,7 @@ bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii> const& FunctionCallExp::GetBuiltI
         map["count"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long);
         map[CURRENT_DATE()] = ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForDate());
         map[CURRENT_TIMESTAMP()] = ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+        map[CURRENT_TIME()] = ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForTimeOfDay());
         map["date"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
         map["datetime"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String);
         map["every"] = ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean);
@@ -790,7 +791,7 @@ BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParse
         DateTime dt;
         if (SUCCESS != DateTime::FromString(dt, value))
             {
-            ctx.Issues().ReportV("Invalid format for DATE/TIMESTAMP in expression '%s'.", valueExp->ToECSql().c_str());
+            ctx.Issues().ReportV("Invalid format for DATE/TIMESTAMP/TIME in expression '%s'.", valueExp->ToECSql().c_str());
             return ERROR;
             }
 
@@ -816,7 +817,7 @@ BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
         DateTime dt;
         if (SUCCESS != DateTime::FromString(dt, m_rawValue.c_str()))
             {
-            ctx.Issues().ReportV("Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
+            ctx.Issues().ReportV("Invalid format for DATE/TIMESTAMP/TIME in expression '%s'.", ToECSql().c_str());
             return ERROR;
             }
 
@@ -922,10 +923,20 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         if (primType == PRIMITIVETYPE_DateTime)
             {
             DateTime::Info const& dtInfo = typeInfo.GetDateTimeInfo();
-            if (dtInfo.IsValid() && dtInfo.GetComponent() == DateTime::Component::Date)
-                ctx.AppendToECSql("DATE '");
-            else
-                ctx.AppendToECSql("TIMESTAMP '");
+            DateTime::Component comp = dtInfo.IsValid() ? dtInfo.GetComponent() : DateTime::Component::DateAndTime;
+            switch (comp)
+                {
+                    case DateTime::Component::Date:
+                        ctx.AppendToECSql("DATE '");
+                        break;
+                    case DateTime::Component::TimeOfDay:
+                        ctx.AppendToECSql("TIME '");
+                        break;
+                    default:
+                    case DateTime::Component::DateAndTime:
+                        ctx.AppendToECSql("TIMESTAMP '");
+                        break;
+                }
 
             ctx.AppendToECSql(m_rawValue).AppendToECSql("'");
             if (HasParentheses())

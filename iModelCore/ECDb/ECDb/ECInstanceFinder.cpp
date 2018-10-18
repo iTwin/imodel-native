@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECInstanceFinder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -15,10 +15,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceFinder::FindOptions::FindOptions(int relatedDirections /* = RelatedDirection_None */, uint8_t relationshipDepth /* = 0 */, ECClassCP ecClass /* = nullptr */) 
-    : m_relatedDirections(relatedDirections), m_relationshipDepth(relationshipDepth), m_ecClass(ecClass)
+ECInstanceFinder::FindOptions::FindOptions(int relatedDirections /* = RelatedDirection_None */, uint8_t relationshipDepth /* = 0 */, ECClassCP ecClass /* = nullptr */) :
+m_relatedDirections (relatedDirections),
+m_relationshipDepth (relationshipDepth)/*, 
+unused - m_ecClass (ecClass)*/
     {}
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   03/13

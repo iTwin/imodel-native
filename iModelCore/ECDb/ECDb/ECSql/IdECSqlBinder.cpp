@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/IdECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -136,9 +136,19 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
     {
     if (!m_isNoop)
         {
-        const auto sqliteStat = GetSqliteStatement().BindText(GetSqlParamIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
+        if (value != nullptr && value[0] == '0' && (value[1] =='x' || value[1] == 'X') && value[2] != '\0')
+            {
+            BentleyStatus stat = SUCCESS;
+            uint64_t id = BeStringUtilities::ParseHex(value, &stat);
+            if (SUCCESS != stat)
+                return LogSqliteError(BE_SQLITE_MISMATCH, Utf8PrintfString("Binding Id failed. Could not parse the bound hexadecimal string '%s'.", value).c_str());
+
+            return _BindInt64(id);
+            }
+
+        const DbResult sqliteStat = GetSqliteStatement().BindText(GetSqlParamIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
         if (sqliteStat != BE_SQLITE_OK)
-            return LogSqliteError(sqliteStat, "ECSqlStatement::BindText");
+            return LogSqliteError(sqliteStat, Utf8PrintfString("Binding Id failed. Could not bind string value '%s' to the Id parameter.", value).c_str());
         }
 
     return ECSqlStatus::Success;

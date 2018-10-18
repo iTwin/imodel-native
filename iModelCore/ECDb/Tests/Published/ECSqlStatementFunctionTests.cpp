@@ -99,7 +99,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
             {"SELECT STRFTIME('%J','now') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT SUBSTR(S,'a',3) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
             {"SELECT SUM(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
-            {"SELECT TIME('now') FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
+            {"SELECT TIME('now') FROM ecsql.P LIMIT 1", ExpectedResult()}, //Not supported as TIME is a reserved token, and the ECSQL grammar only has one rule yet for TIME which is the TIME literal exp TIME '23:44:14'
             {"SELECT TOTAL(I) FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Double)},
             {"SELECT TOTAL_CHANGES() FROM ecsql.P", ExpectedResult(ECN::PRIMITIVETYPE_Long)},
             {"SELECT TRIM(S) FROM ecsql.P LIMIT 1", ExpectedResult(ECN::PRIMITIVETYPE_String)},
@@ -146,7 +146,6 @@ TEST_F(ECSqlStatementFunctionTestFixture, CoalesceAndNullIf)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("builtinfunctiontests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
-    
     {
     //insert two test rows
     ECSqlStatement stmt;

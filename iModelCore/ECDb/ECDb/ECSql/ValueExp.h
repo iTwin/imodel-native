@@ -202,6 +202,7 @@ struct FunctionCallExp final : ValueExp
 
         static constexpr Utf8CP CURRENT_DATE() { return "CURRENT_DATE"; };
         static constexpr Utf8CP CURRENT_TIMESTAMP() { return "CURRENT_TIMESTAMP"; }
+        static constexpr Utf8CP CURRENT_TIME() { return "CURRENT_TIME"; }
     };
 
 //=======================================================================================

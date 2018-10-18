@@ -118,7 +118,7 @@ using namespace connectivity;
 
 
 /* time and date functions */
-%token <pParseNode> SQL_TOKEN_CURRENT_DATE SQL_TOKEN_CURRENT_TIMESTAMP
+%token <pParseNode> SQL_TOKEN_CURRENT_DATE SQL_TOKEN_CURRENT_TIME SQL_TOKEN_CURRENT_TIMESTAMP
 
 // computational operation
 %token <pParseNode> SQL_TOKEN_EVERY
@@ -133,7 +133,7 @@ using namespace connectivity;
 
 //data types (standard and EC)
 %token <pParseNode> SQL_TOKEN_INTEGER SQL_TOKEN_INT SQL_TOKEN_INT64 SQL_TOKEN_LONG SQL_TOKEN_BOOLEAN SQL_TOKEN_DOUBLE SQL_TOKEN_REAL SQL_TOKEN_FLOAT 
-%token <pParseNode> SQL_TOKEN_STRING SQL_TOKEN_VARCHAR SQL_TOKEN_BINARY SQL_TOKEN_BLOB SQL_TOKEN_DATE SQL_TOKEN_TIMESTAMP 
+%token <pParseNode> SQL_TOKEN_STRING SQL_TOKEN_VARCHAR SQL_TOKEN_BINARY SQL_TOKEN_BLOB SQL_TOKEN_DATE SQL_TOKEN_TIME SQL_TOKEN_TIMESTAMP 
 
 /* operators */
 %left SQL_TOKEN_NAME
@@ -1337,6 +1337,7 @@ cast_target_primitive_type:
     | SQL_TOKEN_REAL
     | SQL_TOKEN_STRING
     | SQL_TOKEN_DATE
+    | SQL_TOKEN_TIME
     | SQL_TOKEN_TIMESTAMP
     | SQL_TOKEN_VARCHAR
     | SQL_TOKEN_NAME
@@ -1474,8 +1475,12 @@ datetime_value_fct:
             $$ = SQL_NEW_RULE;
             $$->append($1);
         }
-
       | SQL_TOKEN_CURRENT_TIMESTAMP
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+        }
+      | SQL_TOKEN_CURRENT_TIME
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
@@ -1492,7 +1497,12 @@ datetime_value_fct:
             $$->append($1);
             $$->append($2);
         }
-
+      | SQL_TOKEN_TIME string_value_exp
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }
     ;
 
 datetime_factor:

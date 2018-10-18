@@ -536,8 +536,12 @@ TEST_F(ECSqlSelectPrepareTests, DateTime)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE DtUnspec BETWEEN TIMESTAMP '2013-02-01T12:00:00' AND DATE '2014-01-01'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE DtUnspec BETWEEN DATE '2013-02-01' AND DATE '2014-01-01'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt, S FROM ecsql.P WHERE DtUnspec BETWEEN DATE '2013-02-01' AND TIMESTAMP '2013-02-01 12:00:00Z'")) << "DtUnspec has date time kind Unspecified but upper bound has date time kind UTC.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = TIME '13:35:16'")) << "TIME constructor (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = TIME '13:35:16.123456'")) << "TIME constructor (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = TIME '13:35:16'")) << "TIME constructor (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUtc = TIME '13:35:16'")) << "TIME can only be assigned to DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUnspecified = TIME '13:35:16'")) << "TIME can only be assigned to DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = TIME '13:35:16.123456'")) << "TIME constructor (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUtc = TIME '13:35:16.123456'")) << "TIME can only be assigned to DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUnspecified = TIME '13:35:16.123456'")) << "TIME can only be assigned to DateTime::Component::TimeOfDay";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
 
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, S FROM ecsql.PSA WHERE I = ? OR Dt = ? OR S = ?"));
@@ -549,8 +553,10 @@ TEST_F(ECSqlSelectPrepareTests, DateTime)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUtc = CURRENT_TIMESTAMP"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUnspec = CURRENT_TIMESTAMP")) << "In ECSQL CURRENT_TIMESTAMP returns a UTC time stamp.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, CURRENT_TIMESTAMP FROM ecsql.P"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = CURRENT_TIME")) << "CURRENT_TIME function (as specified in SQL-99) is not valid in ECSQL as the TIME type is not supported by ECObjects.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, CURRENT_TIME FROM ecsql.P")) << "CURRENT_TIME function (as specified in SQL-99) is not valid in ECSQL as the TIME type is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, Dt FROM ecsql.P WHERE Dt = CURRENT_TIME"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUnspec = CURRENT_TIME")) << "CURRENT_TIME can only be assigned to property with DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, Dt FROM ecsql.P WHERE DtUtc = CURRENT_TIME")) << "CURRENT_TIME can only be assigned to property with DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, CURRENT_TIME FROM ecsql.P"));
     }
 
 
@@ -1452,11 +1458,12 @@ TEST_F(ECSqlSelectPrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE MyPSA.Id = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE MyPSA.RelECClassId IS NULL"));
 
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT NULL FROM ecsql.P WHERE Dt = TIME '13:35:16'"));
+
     //*******************************************************
     //  Unsupported literals
     //*******************************************************
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE B = UNKNOWN")) << "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE Dt = TIME '13:35:16'")) << "TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P2D = POINT2D (-1.3, 45.134)")) << "Point literal not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.P WHERE P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literal not yet supported";
@@ -1541,7 +1548,9 @@ TEST_F(ECSqlInsertPrepareTests, DateTime)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (CURRENT_TIMESTAMP)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (DtUtc) VALUES (CURRENT_TIMESTAMP)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (DtUnspec) VALUES (CURRENT_TIMESTAMP)")) << "In ECSQL CURRENT_TIMESTAMP returns a UTC timestamp";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (Dt) VALUES (CURRENT_TIME)")) << "CURRENT_TIME function (as specified in SQL-99) is not valid in ECSQL as the TIME type is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (Dt) VALUES (CURRENT_TIME)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (DtUnspec) VALUES (CURRENT_TIME)")) << "Time can only be assigned to props with DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.P (DtUtc) VALUES (CURRENT_TIME)")) << "Time can only be assigned to props with DateTime::Component::TimeOfDay";
 
     //implicit conversions (supported what SQLite supports)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.P (I, L) VALUES (123, DATE '2013-04-30')"));
@@ -1679,7 +1688,11 @@ TEST_F(ECSqlInsertPrepareTests, Misc)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA (B) VALUES (UNKNOWN)")) << "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (Dt) VALUES (DATE '2012-01-18')"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (Dt) VALUES (TIMESTAMP '2012-01-18T13:02:55')"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA (Dt) VALUES (TIME '13:35:16')")) << "TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (Dt) VALUES (TIME '13:35:16')"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (Dt) VALUES (TIME '13:35:16.333')"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.PSA (Dt) VALUES (TIME '13:35:16.33333')"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA (DtUtc) VALUES (TIME '13:35:16')")) << "TIME can only be assigned to props with DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA (DtUnspecified) VALUES (TIME '13:35:16')")) << "TIME can only be assigned to props with DateTime::Component::TimeOfDay";
 
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA (Dt) VALUES (LOCALTIME)")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA (P2D) VALUES (POINT2D (-1.3, 45.134))")) << "Point literals not supported yet";
@@ -1862,8 +1875,12 @@ TEST_F(ECSqlUpdatePrepareTests, DateTime)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUtc = CURRENT_TIMESTAMP"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET DtUnspec = CURRENT_TIMESTAMP")) << "In ECSQL CURRENT_TIMESTAMP returns a UTC timestamp";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUnspec = CURRENT_TIMESTAMP")) << "In ECSQL CURRENT_TIMESTAMP returns a UTC timestamp";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET Dt = CURRENT_TIME")) << "CURRENT_TIME function (as specified in SQL-99) is not valid in ECSQL as the TIME type is not supported by ECObjects.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE Dt = CURRENT_TIME")) << "CURRENT_TIME function (as specified in SQL-99) is not valid in ECSQL as the TIME type is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET Dt = CURRENT_TIME"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET DtUnspec = CURRENT_TIME")) << "Time can only be used with props with DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET DtUtc = CURRENT_TIME")) << "Time can only be used with props with DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE Dt = CURRENT_TIME"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUnspec = CURRENT_TIME")) << "Time can only be used with props with DateTime::Component::TimeOfDay";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.P SET I = 123 WHERE DtUtc = CURRENT_TIME")) << "Time can only be used with props with DateTime::Component::TimeOfDay";
 
     //*** Parameters ****
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.P SET I=123, Dt=?, DtUtc=?, DtUnspec=?, DateOnly=?"));
@@ -1930,7 +1947,11 @@ TEST_F(ECSqlUpdatePrepareTests, Misc)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET B = UNKNOWN")) << "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET Dt = DATE '2012-01-18'"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET Dt = TIMESTAMP '2012-01-18T13:02:55'"));
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET Dt = TIME '13:35:16'")) << "TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET Dt = TIME '13:35:16'"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET Dt = TIME '13:35:16.333'"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET Dt = TIME '13:35:16.333333'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET DtUtc = TIME '13:35:16'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET DtUnspecified = TIME '13:35:16'"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET P2D = POINT2D (-1.3, 45.134)")) << "Point literals not supported yet";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literals not supported yet";
@@ -2307,9 +2328,10 @@ TEST_F(ECSqlUpdatePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE MyPSA.Id = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE MyPSA.RelECClassId IS NULL"));
 
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.P SET I=10 WHERE Dt = TIME '13:35:16'"));
+
     //  Unsupported literals
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE B = UNKNOWN")) << "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE Dt = TIME '13:35:16'")) << "TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P2D = POINT2D (-1.3, 45.134)")) << "Point literal not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.P SET I=10 WHERE P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literal not yet supported";
@@ -2665,11 +2687,12 @@ TEST_F(ECSqlDeletePrepareTests, WhereBasics)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE MyPSA.Id = NULL"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE MyPSA.RelECClassId IS NULL"));
 
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P WHERE Dt = TIME '13:35:16'"));
+
     //*******************************************************
     //  Unsupported literals
     //*******************************************************
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE B = UNKNOWN")) << "Boolean literal UNKNOWN (from SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
-    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE Dt = TIME '13:35:16'")) << "TIME literal (as specified in SQL-99) is not valid in ECSQL as it is not supported by ECObjects.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE Dt = LOCALTIME")) << "LOCALTIME function (as specified in SQL-99) is not valid in ECSQL as implicit time zone conversions will not be supported for now.";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P2D = POINT2D (-1.3, 45.134)")) << "Point literal not yet supported";
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.P WHERE P3D = POINT3D (-1.3, 45.134, 2)")) << "Point literal not yet supported";
