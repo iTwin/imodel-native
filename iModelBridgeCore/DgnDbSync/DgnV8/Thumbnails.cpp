@@ -166,7 +166,7 @@ BentleyStatus Converter::GenerateThumbnails()
 #if defined(ELEMENT_TILE_GENERATE_THUMBNAILS)
     ThumbnailConfig thumbnailConfig(m_config);
 
-    if ((DgnViewType::None == thumbnailConfig.GetViewTypes()) || !_GetParams().WantThumbnails())
+    if ((DgnViewType::None == thumbnailConfig.GetViewTypes()) || !_GetParams().WantThumbnails() || m_haveCreatedThumbnails)
         return BSISUCCESS;
 
     SetStepName(ProgressMessage::STEP_CREATE_THUMBNAILS());
@@ -202,6 +202,7 @@ BentleyStatus Converter::GenerateThumbnails()
         if (WasAborted())
             break;
         }
+    m_haveCreatedThumbnails = true;
 #endif
 
     return BSISUCCESS;
