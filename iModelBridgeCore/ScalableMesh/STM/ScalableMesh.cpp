@@ -1216,7 +1216,9 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr&  smSQLiteFile,
             if (isFromPWCS = !pwcsLink.empty())
                 newFilePath = WString(pwcsLink.c_str(), true);
             }
+#ifndef VANCOUVER_API
         ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
+#endif
         }
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -1404,8 +1406,9 @@ template <class POINT> int ScalableMesh<POINT>::Close
         if (!pwcsLink.empty())
             path = WString(pwcsLink.c_str(), true);
         }
-
+#ifndef VANCOUVER_API
     ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
+#endif
     m_viewedNodes.clear();
     ClearProgressiveQueriesInfo();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
