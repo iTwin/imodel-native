@@ -608,6 +608,11 @@ enum class ConfigurationVariableLevel
     User          = 6,         //!< user defined
 };
 
+enum class IModelHubConstants
+{
+    MaxCodeValueLength = 350,   //!< Maximum number of characters in a CodeValue
+};
+
 //! @private
 enum DgnPlatformConstants
 {
