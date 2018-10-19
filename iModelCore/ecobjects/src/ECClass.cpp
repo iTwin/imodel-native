@@ -210,9 +210,9 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetAlias().c_str(), prop->GetName().c_str());
     ECObjectsStatus status = RenameConflictProperty(prop, renameDerivedProperties, renamedProperty, newName);
     if (ECObjectsStatus::Success != status)
-        LOG.errorv("Failed to rename property %s:%s to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
+        LOG.errorv("Failed to rename property %s:%s to %s", GetFullName(), originalName.c_str(), newName.c_str());
     else
-        LOG.warningv("The property %s:%s was renamed to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
+        LOG.warningv("The property %s:%s was renamed to %s", GetFullName(), originalName.c_str(), newName.c_str());
 
     return status;
     }
@@ -241,6 +241,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     auto iter2 = std::find(m_propertyList.begin(), m_propertyList.end(), thisProp);
     if (iter2 != m_propertyList.end())
         m_propertyList.erase(iter2);
+    delete thisProp;
     InvalidateDefaultStandaloneEnabler();
 
     status = AddProperty(renamedProperty, newName);
@@ -250,7 +251,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         return status;
         }
 
-    LOG.infov("Renamed conflict property %s:%s to %s\n", GetFullName(), prop->GetName().c_str(), newName.c_str());
+    LOG.infov("Renamed conflict property %s:%s to %s\n", GetFullName(), originalName.c_str(), newName.c_str());
 
     // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
     AddPropertyMapping(originalName.c_str(), newName.c_str());

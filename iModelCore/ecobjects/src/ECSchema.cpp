@@ -1613,6 +1613,7 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
         targetKOQ->SetDisplayLabel(sourceKOQ.GetInvariantDisplayLabel().c_str());
 
     targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
+    targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
     ECSchemaR copyFromSchema = sourceKOQ.GetSchemaR();
 
@@ -1635,26 +1636,32 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
 
     if (sourceKOQ.HasPresentationFormats())
         {
-        for (const auto& format : sourceKOQ.GetPresentationFormats())
+        for (NamedFormatCR format : sourceKOQ.GetPresentationFormats())
             {
-            auto newFormat = format;
-            auto parentFormat = targetKOQ->GetSchema().GetFormatCP(format.GetParentFormat()->GetName().c_str());
-            if (nullptr == parentFormat)
+            ECFormatCP parentFormat = format.GetParentFormat();
+
+            ECSchemaCR formatSchema = parentFormat->GetSchema();
+            SchemaKey key = SchemaKey(formatSchema.GetName().c_str(), formatSchema.GetVersionRead(), formatSchema.GetVersionWrite(), formatSchema.GetVersionMinor());
+            if (!this->GetSchemaKey().Matches(formatSchema.GetSchemaKey(), SchemaMatchType::Exact))
                 {
-                ECFormatP copiedFormat;
-                status = CopyFormat(copiedFormat, *format.GetParentFormat());
-                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
-                    return status;
-                newFormat.SetParentFormat(copiedFormat);
+                ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+                if (nullptr != foundSchema)
+                    AddReferencedSchema(*foundSchema);
                 }
             else
-                newFormat.SetParentFormat(parentFormat);
+                parentFormat = GetFormatCP(parentFormat->GetName().c_str());
 
-            targetKOQ->AddPresentationFormatInternal(newFormat);
+            // If the format is not overriden we just set that as the presentation format
+            if (!format.IsOverride())
+                targetKOQ->AddPresentationFormatInternal(format);
+            else
+                {
+                NamedFormat newFormat = format;
+                newFormat.SetParentFormat(parentFormat);
+                targetKOQ->AddPresentationFormatInternal(newFormat);
+                }
             }
         }
-    
-    targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
     return ECObjectsStatus::Success;
     }
