@@ -2958,7 +2958,11 @@ Utf8String ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
 Utf8String ECSchema::ComputeCheckSum()
     {
     Utf8String xmlStr;
-    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, m_ecVersion))
+    ECVersion xmlVersion;
+
+    if (ECObjectsStatus::Success != CreateECVersion(xmlVersion, m_originalECXmlVersionMajor, m_originalECXmlVersionMinor))
+        xmlVersion = ECVersion::V3_1;
+    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, xmlVersion))
         return "";
 
     SHA1 sha1;
