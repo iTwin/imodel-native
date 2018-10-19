@@ -1120,7 +1120,8 @@ Utf8CP Cache::GetCurrentVersion()
     // We changed the cache db schema shortly after creating imodel02 branch - so version history restarts at same time.
     // 0: Initial version following db schema change
     // 1: Packed feature table
-    return "1";
+    // 2: Texture atlas for rastter text
+    return "2";
     }
 
 /*---------------------------------------------------------------------------------**//**
