@@ -20,7 +20,8 @@ enum class SMFrom3MXStatus
     ScalableMeshSDKError,	// Error related to ScalableMeshSDK
     ReprojectionError,		// Error encountered in reprojection (most likely due to a 3D point out of bounds)
     SeveralLayersError,		// Special case not handled by the converter: 3MX with several layers
-    SeveralGeometriesError  // Special case not handled by the converter: node with several geometries
+    SeveralGeometriesError,  // Special case not handled by the converter: node with several geometries
+    URLNotSupportedError
 };
 
 // Scoped enum for the conversion warnings
