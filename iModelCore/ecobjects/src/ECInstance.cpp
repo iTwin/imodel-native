@@ -3204,6 +3204,8 @@ struct  InstanceXmlReader
                     Utf8String     propertyValueString;
                     if (BEXML_Success != primitiveValueNode.GetContent(propertyValueString))
                         return InstanceReadStatus::Success;
+                    if (propertyValueString.empty())
+                        return InstanceReadStatus::Success;
 
                     // It is possible that this came in as serialized text Xml, and not binary.  Let's try to get it as xmlText
                     if (!convertStringToByteArray(byteArray, propertyValueString.c_str()))
