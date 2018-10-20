@@ -290,10 +290,14 @@ static int filterTableCallback(void *pCtx, Utf8CP tableName) {return (int) ((Cha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::_ApplyChanges(DbR db, Rebase* rebase)
+DbResult ChangeSet::_ApplyChanges(DbR db, Rebase* rebase, bool invert)
     {
+    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+    if (invert) 
+        flags |= SQLITE_CHANGESETAPPLY_INVERT;
+
     return (DbResult) sqlite3changeset_apply_v2(db.GetSqlDb(), m_size, m_changeset, filterTableCallback, conflictCallback, this, 
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,10 +321,11 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Changes::Changes(ChangeSet const& changeSet)
+Changes::Changes(ChangeSet const& changeSet, bool invert)
     {
     m_data = (void*) changeSet.GetData();
     m_size = changeSet.GetSize();
+    m_invert = invert;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -346,10 +351,10 @@ Changes::Change Changes::begin() const
     Finalize();
 
     if (nullptr != m_data)
-        sqlite3changeset_start(&m_iter, m_size, m_data);
+        sqlite3changeset_start_v2(&m_iter, m_size, m_data, m_invert ? SQLITE_CHANGESETSTART_INVERT : 0);
 
     if (nullptr != m_changeStream)
-        sqlite3changeset_start_strm(&m_iter, ChangeStream::InputCallback, (void*) m_changeStream);
+        sqlite3changeset_start_v2_strm(&m_iter, ChangeStream::InputCallback, (void*) m_changeStream, m_invert ? SQLITE_CHANGESETSTART_INVERT : 0);
 
     if (nullptr == m_iter)
         return Change(0, false);
@@ -573,7 +578,7 @@ void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLeve
 
     bset<Utf8String> tablesSeen;
 
-    Changes changes(*const_cast<ChangeSet*>(this));
+    Changes changes(*const_cast<ChangeSet*>(this), false);
     for (auto& change : changes)
         {
         change.Dump(db, isPatchSet, tablesSeen, detailLevel);
@@ -756,6 +761,15 @@ DbResult ChangeStream::ToChangeGroup(ChangeGroup& changeGroup)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Affan.Khan                        10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChangeStream::_IsEmpty() const
+    {
+    Changes changes = const_cast<ChangeStream*>(this)->GetChanges(false); 
+    return changes.begin() == changes.end(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
@@ -778,10 +792,14 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::_ApplyChanges(DbR db, Rebase* rebase)
+DbResult ChangeStream::_ApplyChanges(DbR db, Rebase* rebase, bool invert)
     {
+    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+    if (invert) 
+        flags |= SQLITE_CHANGESETAPPLY_INVERT;
+
     DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this,
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
     _Reset();
     return result;
     }
