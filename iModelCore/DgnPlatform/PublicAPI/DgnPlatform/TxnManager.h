@@ -325,12 +325,12 @@ private:
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
-    void OnChangesApplied(BeSQLite::IChangeSet& changeset);
-    OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
+    void OnChangesApplied(BeSQLite::IChangeSet& changeset, bool invert);
+    OnCommitStatus CancelChanges(BeSQLite::IChangeSet& changeset);
     BentleyStatus PropagateChanges();
     BentleyStatus DoPropagateChanges(BeSQLite::ChangeTracker& tracker);
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
