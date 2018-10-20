@@ -1132,7 +1132,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     BeAssert(result == BE_SQLITE_OK);
     if (result == BE_SQLITE_OK)
         {
-        OnChangesApplied(changeset, false);
+        OnChangesApplied(changeset, invert);
         if (!IsInAbandon())
             T_HOST.GetTxnAdmin()._OnAppliedChanges(*this);
         }
