@@ -399,6 +399,7 @@
     <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
     <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
     <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8"/>
+    <ProductDirectory Name="DgnV8DummyUstation"         Path="DgnV8"/>
 
   </ProductDirectoryList>
 
