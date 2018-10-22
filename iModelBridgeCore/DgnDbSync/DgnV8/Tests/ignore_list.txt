@@ -1,25 +1,4 @@
-
-DrawingTests.Sheet_SheetAttachment
-DrawingTests.SheetScale_WithMultiAttachmentOfSameStoredScale
-DrawingTests.SheetScale_WithMultiAttachmentOfDiffStoredScale
-DrawingTests.Attach3dmodeltoSheet
-DrawingTests.BorderAttachmenttoSheet
-DrawingTests.AttachDwg
-DrawingTests.AttachNameViewtoSheet
-DrawingTests.Cyclic2dModels_AttachToSheet
-
-DimensionTests.NotetoSheet
-
-    # TFS#875993
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
-    # Which is: 2
-    # To be equal to: ndrawings
-    # Which is: 3
-    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\DimensionTests.cpp(300): error:       Expected: 1
-    # To be equal to: idlist.size()
-    # Which is: 3
-
+# [CGM] Drawings are now converted using the ExtractionGraphics processing and it does not process named groups anymore
 NamedGroupTests.NamedGroupOf2dElement
     # [ RUN      ] NamedGroupTests.NamedGroupOf2dElement
     # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\GeomTestHelper.cpp(54): error: Value of: elem1.IsValid()
@@ -30,12 +9,3 @@ NamedGroupTests.NamedGroupOf2dElement
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
 
-ConverterTests.UseConverterAsLibrary
-DrawingTests.Basic3dAttachment
-DrawingTests.Attachments_With2dRootModel
-DrawingTests.Cyclic2dModels
-SheetCompositionTests.SheetNameTest
-SheetCompositionTests.SheetSizeTest
-SheetCompositionTests.HasDgnAttachment
-SheetCompositionTests.HasDrawingBoundary
-LevelTests.LevelMaskfromSheetAttachment_toViewAttachment

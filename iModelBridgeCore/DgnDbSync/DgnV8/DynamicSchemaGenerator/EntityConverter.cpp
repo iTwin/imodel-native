@@ -1209,6 +1209,7 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
             {
             ECN::ECPropertyP renamedProperty = nullptr;
             ecClass.RenameConflictProperty(prop, true, renamedProperty);
+            prop = renamedProperty;
             }
         BECN::ECClassCP structType = nullptr;
 
