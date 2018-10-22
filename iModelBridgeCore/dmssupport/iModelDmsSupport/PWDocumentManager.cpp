@@ -84,7 +84,7 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
             BentleyApi::BeFileName parentDir(path.c_str());
             if (!parentDir.DoesPathExist())
                 continue;
-            
+            BentleyApi::BeFileName::FixPathName(parentDir, path.c_str(), false);
             bool foundRefDir = false;
             while (!parentDir.empty())
                 {
@@ -98,7 +98,10 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
                     foundRefDir = true;
                     break;
                     }
+                BentleyApi::BeFileName  existingDir = parentDir;
                 parentDir.PopDir();
+                if (0 == existingDir.CompareTo(parentDir.c_str()))
+                    break;
                 }
             if (foundRefDir)
                 break;
@@ -109,7 +112,8 @@ DgnDocumentMonikerPtr   PWDocumentManager::_CreateMoniker(WCharCP portableName, 
             return DgnDocumentManager::_CreateMoniker(portableName, fullRefFileName.c_str(), providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
 
         }
-
+    else
+        searchPath = searchPathIn;
     
     return DgnDocumentManager::_CreateMoniker(portableName, fullPathIn, providerId, isRelative, searchPath.c_str(), findFullPathFirst, customXMLString, displayName);
     }
