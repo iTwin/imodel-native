@@ -18,6 +18,8 @@
             <Files ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas/CIF" Required="true">
                 Delivery/CifSdk/ECSchemas/*.ecschema.xml
                 Delivery/CifSdk/ECSchemas/*.ecschema.liveMapping.xml
+            </Files>
+            <Files ProductDirectoryName="CifDlls" ProductSubDirectory="ECSchemas/Model" Required="true">
                 Delivery/CifSdk/ECSchemas/Model/*.ecschema.xml
             </Files>
         </Bindings>
