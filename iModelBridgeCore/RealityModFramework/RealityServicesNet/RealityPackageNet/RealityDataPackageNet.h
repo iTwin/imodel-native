@@ -2,7 +2,7 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/RealityDataPackageNet.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,6 +66,10 @@ namespace RealityPackageNet
             System::Collections::Generic::List<double>^ GetBoundingPolygon();
             //! Package object will increment ref count of 'polygon'.
             void SetBoundingPolygon(System::Collections::Generic::List<double>^ polygonPts);
+
+            //! Package context. Might be empty.
+            System::String^ GetContext();
+            void SetContext(System::String^ context);
 
             //! Add data sources to corresponding group.
             void AddImageryData(ImageryDataNet^ data);

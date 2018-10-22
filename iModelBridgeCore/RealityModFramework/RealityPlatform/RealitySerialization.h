@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealitySerialization.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,6 +44,7 @@
 #define PACKAGE_ELEMENT_Copyright           "Copyright"
 #define PACKAGE_ELEMENT_PackageId           "PackageId"
 #define PACKAGE_ELEMENT_BoundingPolygon     "BoundingPolygon"
+#define PACKAGE_ELEMENT_Context             "Context"
 #define PACKAGE_ELEMENT_PackageOrigin       "PackageOrigin"
 #define PACKAGE_ELEMENT_RequestingApplication       "RequestingApplication"
 #define PACKAGE_ELEMENT_Origin              "Origin"
@@ -80,7 +81,7 @@
 #define PACKAGE_SOURCE_ATTRIBUTE_Uri        "uri"
 #define PACKAGE_SOURCE_ATTRIBUTE_Type       "type"
 #define PACKAGE_SOURCE_ATTRIBUTE_Streamed   "streamed"
-#define PACKAGE_ELEMENT_Copyright           "Copyright"
+// Copyright element already defined for package
 #define PACKAGE_ELEMENT_TermOfUse           "TermOfUse"
 #define PACKAGE_ELEMENT_Id                  "Id"
 #define PACKAGE_ELEMENT_Provider            "Provider"

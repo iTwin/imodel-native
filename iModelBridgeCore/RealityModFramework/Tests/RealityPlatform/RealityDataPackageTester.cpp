@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/RealityPlatform/RealityDataPackageTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -475,11 +475,12 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_ORIGIN2                        "dev-ual.contextservices.bentley.com"
     #define RPACKAGE_REQUESTINGAPPLICATION2         "ConceptStation:1.1.32.45"
     #define RPACKAGE_NAME2                          "7c71c780-8b52-47ba-adac-a29b407c5ac6"
-    #define RPACKAGE_DESCRIPTION2                   "This is simple sample package listing typical two groups for terrain and imagery."
+    #define RPACKAGE_DESCRIPTION2                   "This is simple sample package listing typical."
     #define RPACKAGE_DATE2                          "2016-02-02T16:28:01.727Z"
     #define RPACKAGE_COPYRIGHT2                     "(c) 2015 Bentley Systems"
     #define RPACKAGE_ID2                            "7c71c780-8b52-47ba-adac-a29b407c5ac6"
     #define RPACKAGE_POLYGON2                       "-71.072445 42.339894 -71.056824 42.339894 -71.056824 42.332027 -71.072445 42.332027 -71.072445 42.339894"
+    #define RPACKAGE_CONTEXT                        "BentleyCONNECT:PROJECT:5b37fcf5-b310-4ab2-a9f4-aec50e46f3ce"
     #define RPACKAGE_SOURCE                         "Source"
     #define RPACKAGE_MULTIBANDSOURCE                "MultiBandSource"
 
@@ -534,6 +535,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_B_SRC_2_ID              "546"
     #define RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT       "You are free to: Copy, modify, publish, translate, adapt, distribute or otherwise use the Information in any medium, mode or format for any lawful purpose."
     #define RPACKAGE_IMDATA_B_SRC_2_PROVIDER        "GeoGratis"
+    #define RPACKAGE_IMDATA_B_SRC_2_VISIBILITY      "PUBLIC"
     #define RPACKAGE_IMDATA_B_SRC_2_SIZE            437627
     #define RPACKAGE_IMDATA_B_SRC_2_METTYPE         "ISO-19115"
     #define RPACKAGE_IMDATA_B_SRC_2_METADATA        "IMR_S4_05230_4828_20060814_1.0_pna.xml"
@@ -667,6 +669,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_A_SRC_ID          "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_TERMOFUSE   "There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER    "Landsat8"
+    #define RPACKAGE_IMDATA_MULTI_A_SRC_VISIBILITY  "PUBLIC"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_SIZE        253831
     #define RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE    "text"
     #define RPACKAGE_IMDATA_MULTI_A_SRC_METADATA    "http://landsat-pds.s3.amazonaws.com/L8/139/045/LC81390452014295LGN00/LC81390452014295LGN00_MTL.txt"
@@ -679,6 +682,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_ID          "55098634e4b02e76d757f5c6"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_COPYRIGHT   "There are no restrictions on the use of data received from the U.S. Geological Survey's Earth Resources Observation and Science (EROS) Center or NASA's Land Processes Distributed Active Archive Center (LP DAAC), unless expressly identified prior to or at the time of receipt. More information on licensing and Landsat data citation is available from USGS"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_PROVIDER    "Landsat8"
+    #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_VISIBILITY  "PUBLIC"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE        93831
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_GEOCS       "EPSG:4326"
     #define RPACKAGE_IMDATA_MULTI_A_RED_SRC_NUMSIS      1
@@ -735,11 +739,13 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERLOGINMETHOD       "CUSTOM"
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERREGISTRATIONPAGE  "http://earthexplorer.usgs.gov/Register"
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERORGANISATIONPAGE  "http://earthexplorer.usgs.gov/"
+    #define RPACKAGE_IMDATA_MULTI_B1_SRC_VISIBILITY  "PUBLIC"
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_SIZE        253831
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_NUMSIS      0
     #define RPACKAGE_IMDATA_MULTI_B1_SRC_NODATA      "0"
 
-    #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B03.jp2"
+    #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_PART1         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production"
+    #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_PART2         "GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B03.jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_TYPE    "jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_ID          "USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:RED"
     #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_SERVERLOGINKEY          "EarthExplorer"
@@ -749,7 +755,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_NUMSIS      0
     #define RPACKAGE_IMDATA_MULTI_B1_RED_SRC_NODATA      "0"
                                    
-    #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2"
+    #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_PART1         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production"
+    #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_PART2         "GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B02.jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_TYPE    "jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_ID          "USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:GREEN"
     #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERLOGINKEY          "EarthExplorer"
@@ -759,7 +766,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_NUMSIS      0
     #define RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_NODATA      "0"
 
-    #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B01.jp2"
+    #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_PART1         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production"
+    #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_PART2         "#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B01.jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_TYPE    "jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_ID          "USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:BLUE"
     #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_SERVERLOGINKEY          "EarthExplorer"
@@ -769,7 +777,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_NUMSIS      0
     #define RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_NODATA      "0"
 
-#define RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production#GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2"
+    #define RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_PART1         "http://dds.cr.usgs.gov/ltaauth/hsm/s2/s2a/2016/10/13/S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01.zip?id=$(AUTHENTICATIONKEY)&amp;iid=443910&amp;did=275426842&amp;ver=production"
+    #define RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_PART2         "GRANULE/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_N02.04/IMG_DATA/S2A_OPER_MSI_L1C_TL_MTI__20161013T200524_A006843_T18NYK_B08.jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_TYPE    "jp2"
     #define RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_ID          "USGS:S2A_OPER_MSI_L1C_TL_MTI__20161013T152337_20161013T200524_A006843_T18NYK_N02_04_01:PANCHROMATIC"
     #define RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERLOGINKEY          "EarthExplorer"
@@ -871,6 +880,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_MODDATA_B_SRC_1_SERVERLOGINKEY          "BentleyCONNECT"
     #define RPACKAGE_MODDATA_B_SRC_1_SERVERLOGINMETHOD       "CUSTOM"
     #define RPACKAGE_MODDATA_B_SRC_1_SERVERORGANISATIONPAGE  "http://www.bentley.com/"
+    #define RPACKAGE_MODDATA_B_SRC_1_VISIBILITY     "CONTEXT"
 
 
     #define RPACKAGE_PINDATA_A_ID                   "6455288846-3552"
@@ -1052,6 +1062,23 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     #define RPACKAGE_UNDDATA_A_SRC_1_NUMSIS         0
     #define RPACKAGE_UNDDATA_A_SRC_1_GEOCS          "EPSG:4326;GEOID"
 
+    #define RPACKAGE_UNDDATA_B_ID                   "LionHead_ContextCaptureSourceData-Version2"
+    #define RPACKAGE_UNDDATA_B_NAME                 "Lion Head Status Input data"
+    #define RPACKAGE_UNDDATA_B_DATASET              "LionHead-333"
+    #define RPACKAGE_UNDDATA_B_SRC_1_URI_PART1      "http://connect-realitydataservices.bentley.com/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/05e4ab16-9ae9-49e5-a479-2adc46e83d67?/file"
+    #define RPACKAGE_UNDDATA_B_SRC_1_URI_PART2      ""
+    #define RPACKAGE_UNDDATA_B_SRC_1_URI_TYPE       "CCCS-Project"
+    #define RPACKAGE_UNDDATA_B_SRC_1_ID             "05e4ab16-9ae9-49e5-a479-2adc46e83d67"
+    #define RPACKAGE_UNDDATA_B_SRC_1_COPYRIGHT      "City of Paris"
+    #define RPACKAGE_UNDDATA_B_SRC_1_PROVIDER       "CITY-PARIS"
+    #define RPACKAGE_UNDDATA_B_SRC_1_SERVERLOGINKEY     "BentleyCONNECT"
+    #define RPACKAGE_UNDDATA_B_SRC_1_SERVERLOGINMETHOD  "CUSTOM"
+    #define RPACKAGE_UNDDATA_B_SRC_1_VISIBILITY     "PERMISSION"
+    #define RPACKAGE_UNDDATA_B_SRC_1_SIZE           5683956
+    #define RPACKAGE_UNDDATA_B_SRC_1_METTYPE        ""
+    #define RPACKAGE_UNDDATA_B_SRC_1_METADATA       "http://connect-realitydataservices.bentley.com/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/3c6c6b90-da34-40aa-ad57-4f49bc65ee60~2FLionHead~2FInput~2FLionProject.xml?/file"
+    #define RPACKAGE_UNDDATA_B_SRC_1_NUMSIS         0
+    #define RPACKAGE_UNDDATA_B_SRC_1_GEOCS          "EPSG:4326;GEOID"
 
     #define RPACKAGE_JPEG2                  "./imagery/map.jpeg"
     #define RPACKAGE_JPEG_LL_x2             4.987654321
@@ -1095,6 +1122,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
   "<Copyright>" RPACKAGE_COPYRIGHT2 "</Copyright>"
   "<Id>" RPACKAGE_ID2 "</Id>"
   "<BoundingPolygon>" RPACKAGE_POLYGON2 "</BoundingPolygon>"
+  "<Context>" RPACKAGE_CONTEXT "</Context>"
   "<ImageryGroup>"
     "<ImageryData>"
         "<!-- This ID enables to request additional information to the origin (ContextServerOrigin) about the data. The service does not garantee that "
@@ -1148,7 +1176,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                  "<!-- Copyright notice can or cannot contain links. -->"
                 "<Copyright>" RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT "</Copyright>"
                 "<Provider>" RPACKAGE_IMDATA_B_SRC_2_PROVIDER "</Provider>"
-               " <Size>" STRINGIFY(RPACKAGE_IMDATA_B_SRC_2_SIZE) "</Size>"
+                "<Visibility>" RPACKAGE_IMDATA_B_SRC_2_VISIBILITY "</Visibility>"
+                " <Size>" STRINGIFY(RPACKAGE_IMDATA_B_SRC_2_SIZE) "</Size>"
                 "<Metadata>" RPACKAGE_IMDATA_B_SRC_2_METADATA "</Metadata>"
                 "<!-- Notice the presence of spatial reference system (or geographic coordinate system). This value can be used as a default if the file format does not support it or if it is not set."
                 "     Any code within the Bentley Geographic Coordinate System library can be used here. -->"
@@ -1294,6 +1323,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<Id>" RPACKAGE_IMDATA_MULTI_A_SRC_ID "</Id>"
                 "<TermOfUse>" RPACKAGE_IMDATA_MULTI_A_SRC_TERMOFUSE "</TermOfUse>"
                 "<Provider>" RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER "</Provider>"
+                "<!-- In the context of a multiband source, the visibility of the MultiBandSource must be the same for sub-components. -->"
+                "<Visibility>" RPACKAGE_IMDATA_MULTI_A_SRC_VISIBILITY "</Visibility>"
                 "<!-- Here the size will be the one of the band only but this info will not have much use -->"
                 "<Size>" STRINGIFY(RPACKAGE_IMDATA_MULTI_A_SRC_SIZE) "</Size>"
                 "<Metadata type='" RPACKAGE_IMDATA_MULTI_A_SRC_METATYPE "'>" RPACKAGE_IMDATA_MULTI_A_SRC_METADATA "</Metadata>"
@@ -1306,6 +1337,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                         "<Id>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_ID "</Id>"
                         "<Copyright>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_COPYRIGHT "</Copyright>"
                         "<Provider>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_PROVIDER "</Provider>"
+                        "<!-- Specifying the visibility here is unneccessary since the MultiBandSource visibility applies but if indicated it must be identical -->"
+                        "<Visibility>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_VISIBILITY "</Visibility>"
                         "<!-- Here the size will be the one of the band only but this info will not have much use -->"
                         "<Size>" STRINGIFY(RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE) "</Size>"
                         "<GeoCS>" RPACKAGE_IMDATA_MULTI_A_RED_SRC_GEOCS "</GeoCS>"
@@ -1323,6 +1356,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                         "<Id>" RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_ID "</Id>"
                         "<Copyright>" RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_COPYRIGHT "</Copyright>"
                         "<Provider>" RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_PROVIDER "</Provider>"
+                        "<!-- Note that the Visibility element is not specified here. Since not specified the visibility of the containing MultiBand source applies. Public is not assumed in this case. -->"
                         "<GeoCS>" RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_GEOCS "</GeoCS>"
                         "<!-- The no data value is the padding color of raster file -->"
                         "<NoDataValue>" RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_NODATA "</NoDataValue>"
@@ -1383,6 +1417,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                 "<ServerRegistrationPage>" RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERREGISTRATIONPAGE "</ServerRegistrationPage>"
                 "<!-- If the registration page is unknown or unreacheable(moved) then the organisation page can be provided to client. -->"
                 "<ServerOrganisationPage>" RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERORGANISATIONPAGE "</ServerOrganisationPage>"
+                "<!-- The data visibility is Public. The fact it refers to public data does not remove the necessity to provide credentials as indicated by previous Server elements -->"
+                "<Visibility>" RPACKAGE_IMDATA_MULTI_B1_SRC_VISIBILITY "</Visibility>"
                 "<!-- The size here represents the total size of the download zip file -->"
                 "<Size>" STRINGIFY(RPACKAGE_IMDATA_MULTI_B1_SRC_SIZE) "</Size>"
                 "<!-- The no data value is the padding color of raster file -->"
@@ -1393,7 +1429,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "     In this particular case the EarthExplorer authentication requires the key to be passed at this location. Note that the extraction of this key or token is specific"
                     "     to EarthExplorer -->"
                     "<!-- Also note that the file containing the red band is located deep into the file struture of the zip file and thus the specification indicated -->"
-                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI "' type='" RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_TYPE "'>"
+                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_PART1 "#" RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_PART2 "' type='" RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_TYPE "'>"
                         "<Id>" RPACKAGE_IMDATA_MULTI_B1_RED_SRC_ID "</Id>"
                         "<!-- The size of individual bands is unknown -->"
                         "<!-- Since there is no way to correlate the band source with the compound multiband source, login information is repeated for every band. The application"
@@ -1410,7 +1446,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<!-- IMPORTANT: You will notice here that all bands are located in the same compound file. Since there are no provisions in the package file to refer to a file already"
                     "     downloaded, the full compound document based URI is specified for every band. The download manager should make use of the MultiBandSource size estimate upon downloading and"
                     "     use the cached file for the other bands  -->"
-                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI "' type='" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_TYPE "'>"
+                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_PART1 "#" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_PART2 "' type='" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_TYPE "'>"
                         "<Id>" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_ID "</Id>"
                         "<ServerLoginKey>" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERLOGINKEY "</ServerLoginKey>"
                         "<ServerLoginMethod>" RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERLOGINMETHOD "</ServerLoginMethod>"
@@ -1421,7 +1457,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "</Source>"
                 "</Green>"
                 "<Blue>"
-                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI "' type='" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_TYPE "'>"
+                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_PART1 "#" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_PART2 "' type='" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_TYPE "'>"
                         "<Id>" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_ID "</Id>"
                         "<ServerLoginKey>" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_SERVERLOGINKEY "</ServerLoginKey>" 
                         "<ServerLoginMethod>" RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_SERVERLOGINMETHOD "</ServerLoginMethod>"
@@ -1432,7 +1468,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "</Source>"
                 "</Blue>"
                 "<Panchromatic>"
-                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI "' type='" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_TYPE "'>"
+                    "<Source uri='" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_PART1 "#" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_PART2 "' type='" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_TYPE "'>"
                         "<Id>" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_ID "</Id>"
                         "<ServerLoginKey>" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERLOGINKEY "</ServerLoginKey>"
                         "<ServerLoginMethod>" RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERLOGINMETHOD "</ServerLoginMethod>"
@@ -1547,6 +1583,10 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<ServerLoginKey>" RPACKAGE_MODDATA_B_SRC_1_SERVERLOGINKEY "</ServerLoginKey>"
                     "<ServerLoginMethod>" RPACKAGE_MODDATA_B_SRC_1_SERVERLOGINMETHOD "</ServerLoginMethod>"
                     "<ServerOrganisationPage>" RPACKAGE_MODDATA_B_SRC_1_SERVERORGANISATIONPAGE "</ServerOrganisationPage>"
+                    "<!-- For Bentley CONNECT accessed data it is recommended to provide visibility. Normally this visibility will not be PUBLIC and data referenced"
+                         "will most probably be limited to Enterprise Members or access controled through the Context (Bentley CONNECT Project or Bentley CONNECT Asset)."
+                         "The context may have been specified in the Package Context element, though it is not mandatory -->"
+                    "<Visibility>" RPACKAGE_MODDATA_B_SRC_1_VISIBILITY "</Visibility>"
                 "</Source>"
             "</Sources>"
         "</ModelData>"
@@ -1698,12 +1738,16 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
             "</Sources>"
         "</TerrainData>"
     "</TerrainGroup>"
+    "<!-- Undefined group contains data that cannot be located in the four other groups. In the present example the undefined data specified refer"
+         "To data used as input in the creation of reality models (Model data that can be in the Model section above)."
+         "Interpretation of Undefined data is either contextual of must be used manually -->"
     "<UndefinedGroup>"
         "<UndefinedData>"
             "<Id>" RPACKAGE_UNDDATA_A_ID "</Id>"
             "<Name>" RPACKAGE_UNDDATA_A_NAME "</Name>"
             "<Dataset>" RPACKAGE_UNDDATA_A_DATASET "</Dataset>"
-            "<Sources>"                "<!-- This is a reference to a CCCS-Project type data. It is a project to be opened by a specific application"
+            "<Sources>"                
+                 "<!-- This is a reference to a CCCS-Project type data. It is a project to be opened by a specific application"
                  "in order to generate 3D Model data. Since the data does not yet represent a consumable data in itself"
                  "it is inserted in the Undefined group. -->"
                 "<Source uri='" RPACKAGE_UNDDATA_A_SRC_1_URI_PART1 "' type='" RPACKAGE_UNDDATA_A_SRC_1_URI_TYPE "'>"
@@ -1715,6 +1759,25 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
                     "<Size>" STRINGIFY(RPACKAGE_UNDDATA_A_SRC_1_SIZE) "</Size>"
                     "<Metadata>" RPACKAGE_UNDDATA_A_SRC_1_METADATA "</Metadata>"
                     "<GeoCS>" RPACKAGE_UNDDATA_A_SRC_1_GEOCS "</GeoCS>"            
+                "</Source>"
+            "</Sources>"
+        "</UndefinedData>"
+        "<UndefinedData>"
+            "<Id>" RPACKAGE_UNDDATA_B_ID "</Id>"
+            "<Name>" RPACKAGE_UNDDATA_B_NAME "</Name>"
+            "<Dataset>" RPACKAGE_UNDDATA_B_DATASET "</Dataset>"
+            "<Sources>"                
+               "<!-- This is another reference to a CCCS-Project type data. -->"
+                "<Source uri='" RPACKAGE_UNDDATA_B_SRC_1_URI_PART1 "' type='" RPACKAGE_UNDDATA_B_SRC_1_URI_TYPE "'>"
+                    "<Id>" RPACKAGE_UNDDATA_B_SRC_1_ID "</Id>"
+                    "<Copyright>" RPACKAGE_UNDDATA_B_SRC_1_COPYRIGHT "</Copyright>"
+                    "<Provider>" RPACKAGE_UNDDATA_B_SRC_1_PROVIDER "</Provider>"
+                    "<ServerLoginKey>" RPACKAGE_UNDDATA_B_SRC_1_SERVERLOGINKEY "</ServerLoginKey>"
+                    "<ServerLoginMethod>" RPACKAGE_UNDDATA_B_SRC_1_SERVERLOGINMETHOD "</ServerLoginMethod>"
+                    "<Visibility>" RPACKAGE_UNDDATA_B_SRC_1_VISIBILITY "</Visibility>"
+                    "<Size>" STRINGIFY(RPACKAGE_UNDDATA_B_SRC_1_SIZE) "</Size>"
+                    "<Metadata>" RPACKAGE_UNDDATA_B_SRC_1_METADATA "</Metadata>"
+                    "<GeoCS>" RPACKAGE_UNDDATA_B_SRC_1_GEOCS "</GeoCS>"            
                 "</Source>"
             "</Sources>"
         "</UndefinedData>"
@@ -1746,6 +1809,8 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_ID2, pPackage->GetId().c_str());
 
 //    ASSERT_STREQ(RPACKAGE_POLYGON2, pPackage->GetBoundingPolygon().ToString().c_str());
+    ASSERT_STREQ(RPACKAGE_CONTEXT, pPackage->GetContext().c_str());
+
 
     // General package structure
 
@@ -1767,6 +1832,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_ID, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_PROVIDER, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_STREQ("PUBLIC", pPackage->GetImageryGroup()[0]->GetDataSource(0).GetVisibilityTag().c_str()); // Default value
     ASSERT_EQ(RPACKAGE_IMDATA_A_SRC_1_SIZE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetSize());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART2, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
@@ -1794,6 +1860,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_ID, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_PROVIDER, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_STREQ("PUBLIC", pPackage->GetImageryGroup()[1]->GetDataSource(0).GetVisibilityTag().c_str());
     ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_1_SIZE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetSize());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART2, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
@@ -1812,6 +1879,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_COPYRIGHT, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetMetadataCP()->GetLegal().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_ID, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_PROVIDER, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetProvider().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_VISIBILITY, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetVisibilityTag().c_str());
     ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_2_SIZE, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetSize());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_2_URI_PART2, pPackage->GetImageryGroup()[1]->GetDataSource(1).GetUri().GetFileInCompound().c_str());
@@ -1999,6 +2067,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_TERMOFUSE, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_ID, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_PROVIDER, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_VISIBILITY, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetVisibilityTag().c_str());
     ASSERT_EQ(RPACKAGE_IMDATA_MULTI_A_SRC_SIZE, pPackage->GetImageryGroup()[7]->GetDataSource(0).GetSize());
 
     ASSERT_STREQ("", pPackage->GetImageryGroup()[7]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
@@ -2033,6 +2102,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_COPYRIGHT, pRedBand->GetMetadataCP()->GetLegal().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_ID, pRedBand->GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_PROVIDER, pRedBand->GetProvider().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_VISIBILITY, pRedBand->GetVisibilityTag().c_str());
     ASSERT_EQ(RPACKAGE_IMDATA_MULTI_A_RED_SRC_SIZE, pRedBand->GetSize());
 
     ASSERT_STREQ("", pRedBand->GetUri().GetFileInCompound().c_str());
@@ -2049,6 +2119,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_COPYRIGHT, pGreenBand->GetMetadataCP()->GetLegal().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_ID, pGreenBand->GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_PROVIDER, pGreenBand->GetProvider().c_str());
+    ASSERT_STREQ("PUBLIC", pGreenBand->GetVisibilityTag().c_str()); // Default value
 
     ASSERT_STREQ("", pGreenBand->GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ("", pGreenBand->GetMetadataCP()->GetDescription().c_str());
@@ -2059,8 +2130,131 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_SIS1, pGreenBand->GetSisterFiles()[0]->GetSource().c_str());
     ASSERT_STREQ("", pGreenBand->GetSisterFiles()[0]->GetFileInCompound().c_str());
 
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_URI      , pBlueBand->GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_URI_TYPE , pBlueBand->GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_ID       , pBlueBand->GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_COPYRIGHT, pBlueBand->GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_PROVIDER , pBlueBand->GetProvider().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_GEOCS    , pBlueBand->GetGeoCS().c_str());
+    ASSERT_TRUE(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_NUMSIS ==   pBlueBand->GetSisterFiles().size());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_SIS1     , pBlueBand->GetSisterFiles()[0]->GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_BLUE_SRC_NODATA   , pBlueBand->GetNoDataValue().c_str());
 
 
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_URI      , pPanchromaticBand->GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_URI_TYPE , pPanchromaticBand->GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_ID       , pPanchromaticBand->GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_COPYRIGHT, pPanchromaticBand->GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_PROVIDER , pPanchromaticBand->GetProvider().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_GEOCS    , pPanchromaticBand->GetGeoCS().c_str());
+    ASSERT_TRUE(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_NUMSIS  == pPanchromaticBand->GetSisterFiles().size());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_SIS1     , pPanchromaticBand->GetSisterFiles()[0]->GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_PANCHROMATIC_SRC_NODATA   , pPanchromaticBand->GetNoDataValue().c_str());
+
+
+
+    // image data 9
+    ASSERT_TRUE(pPackage->GetImageryGroup()[8]->GetDataSourceCount() == 2);
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_ID, pPackage->GetImageryGroup()[8]->GetIdentifier().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_NAME, pPackage->GetImageryGroup()[8]->GetName().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_DATASET, pPackage->GetImageryGroup()[8]->GetDataset().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RESOLUTION, pPackage->GetImageryGroup()[8]->GetResolution().c_str());
+
+    ASSERT_STREQ(RPACKAGE_MULTIBANDSOURCE, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetElementName());
+
+  //  ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_URI, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_URI_TYPE, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_TERMOFUSE, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_COPYRIGHT, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetMetadataCP()->GetLegal().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_ID, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_PROVIDER, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetProvider().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERLOGINKEY, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetServerCP()->GetLoginKey().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERLOGINMETHOD, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetServerCP()->GetLoginMethod().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERREGISTRATIONPAGE, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetServerCP()->GetRegistrationPage().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_SERVERORGANISATIONPAGE, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetServerCP()->GetOrganisationPage().c_str());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_VISIBILITY, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetVisibilityTag().c_str());
+    ASSERT_EQ(RPACKAGE_IMDATA_MULTI_B1_SRC_SIZE, pPackage->GetImageryGroup()[8]->GetDataSource(0).GetSize());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_NODATA   , pPackage->GetImageryGroup()[8]->GetDataSource(0).GetNoDataValue().c_str());
+
+    ASSERT_STREQ("", pPackage->GetImageryGroup()[8]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
+
+    ASSERT_TRUE(pPackage->GetImageryGroup()[8]->GetDataSource(0).GetSisterFiles().size() == 0);
+
+    // Now cast as a multiband and extract information
+    ASSERT_TRUE((pMultiBandSource = dynamic_cast<MultiBandSourceP>(&(pPackage->GetImageryGroup()[8]->GetDataSource(0)))) != NULL);
+
+    ASSERT_TRUE(pMultiBandSource->GetRedBand() != NULL);
+    ASSERT_TRUE(pMultiBandSource->GetBlueBand() != NULL);
+    ASSERT_TRUE(pMultiBandSource->GetGreenBand() != NULL);
+    ASSERT_TRUE(pMultiBandSource->GetPanchromaticBand() != NULL);
+
+    pRedBand = pMultiBandSource->GetRedBand();
+    pGreenBand = pMultiBandSource->GetGreenBand();
+    pBlueBand = pMultiBandSource->GetBlueBand();
+    pPanchromaticBand = pMultiBandSource->GetPanchromaticBand();
+
+    // Make sure that individual bands are not multiband (would not make sense)
+    ASSERT_STRNE(RPACKAGE_MULTIBANDSOURCE, pRedBand->GetElementName());
+    ASSERT_STRNE(RPACKAGE_MULTIBANDSOURCE, pGreenBand->GetElementName());
+    ASSERT_STRNE(RPACKAGE_MULTIBANDSOURCE, pBlueBand->GetElementName());
+    ASSERT_STRNE(RPACKAGE_MULTIBANDSOURCE, pPanchromaticBand->GetElementName());
+
+ //   ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI, pRedBand->GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_TYPE, pRedBand->GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_ID, pRedBand->GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_SERVERLOGINKEY, pRedBand->GetServerCP()->GetLoginKey().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_SERVERLOGINMETHOD, pRedBand->GetServerCP()->GetLoginMethod().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_SERVERREGISTRATIONPAGE, pRedBand->GetServerCP()->GetRegistrationPage().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_SERVERORGANISATIONPAGE, pRedBand->GetServerCP()->GetOrganisationPage().c_str());
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_URI_PART2, pRedBand->GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ("", pRedBand->GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ("", pRedBand->GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_RED_SRC_NODATA   , pRedBand->GetNoDataValue().c_str());
+
+    ASSERT_TRUE(pRedBand->GetSisterFiles().size() == RPACKAGE_IMDATA_MULTI_B1_RED_SRC_NUMSIS);
+
+
+ //   ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI, pGreenBand->GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_TYPE, pGreenBand->GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_ID, pGreenBand->GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERLOGINKEY, pGreenBand->GetServerCP()->GetLoginKey().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERLOGINMETHOD, pGreenBand->GetServerCP()->GetLoginMethod().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERREGISTRATIONPAGE, pGreenBand->GetServerCP()->GetRegistrationPage().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERORGANISATIONPAGE, pGreenBand->GetServerCP()->GetOrganisationPage().c_str());
+
+    ASSERT_STREQ("PUBLIC", pGreenBand->GetVisibilityTag().c_str()); // Default value
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_PART2, pGreenBand->GetUri().GetFileInCompound().c_str());
+    ASSERT_STREQ("", pGreenBand->GetMetadataCP()->GetDescription().c_str());
+    ASSERT_STREQ("", pGreenBand->GetMetadataCP()->GetMetadataType().c_str());
+    ASSERT_TRUE(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_NUMSIS ==   pGreenBand->GetSisterFiles().size());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_NODATA   , pGreenBand->GetNoDataValue().c_str());
+
+    ASSERT_TRUE(pGreenBand->GetSisterFiles().size() == 0);
+
+ //   ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI      , pBlueBand->GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_URI_TYPE , pBlueBand->GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_ID       , pBlueBand->GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_SERVERLOGINKEY, pBlueBand->GetServerCP()->GetLoginKey().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_SERVERLOGINMETHOD, pBlueBand->GetServerCP()->GetLoginMethod().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_SERVERREGISTRATIONPAGE, pBlueBand->GetServerCP()->GetRegistrationPage().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_SERVERORGANISATIONPAGE, pBlueBand->GetServerCP()->GetOrganisationPage().c_str());
+
+    ASSERT_TRUE(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_NUMSIS ==   pBlueBand->GetSisterFiles().size());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_NODATA   , pBlueBand->GetNoDataValue().c_str());
+
+
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_PART1      , pPanchromaticBand->GetUri().GetSource().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_TYPE , pPanchromaticBand->GetDataType().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_ID       , pPanchromaticBand->GetId().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERLOGINKEY, pPanchromaticBand->GetServerCP()->GetLoginKey().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERLOGINMETHOD, pPanchromaticBand->GetServerCP()->GetLoginMethod().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERREGISTRATIONPAGE, pPanchromaticBand->GetServerCP()->GetRegistrationPage().c_str());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERORGANISATIONPAGE, pPanchromaticBand->GetServerCP()->GetOrganisationPage().c_str());
+    ASSERT_TRUE(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_NUMSIS  == pPanchromaticBand->GetSisterFiles().size());
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_NODATA   , pPanchromaticBand->GetNoDataValue().c_str());
 
 
 
@@ -2176,6 +2370,9 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
     ASSERT_EQ(4+1/*closure point*/, pPackage->GetBoundingPolygon().GetPointCount()); 
     ASSERT_DOUBLE_EQ(polygon[2].longitude, pPackage->GetBoundingPolygon().GetPointCP()[2].longitude);
     ASSERT_DOUBLE_EQ(polygon[3].latitude, pPackage->GetBoundingPolygon().GetPointCP()[3].latitude);
+
+    pPackage->SetContext("BentleyCONNECT:PROJECT:5b37fcf5-b310-4ab2-a9f4-aec50e46f3ce");
+    ASSERT_STREQ("123asd789avbdlk", pPackage->GetId().c_str());
 
     // **** Data sources
     SpatialEntityDataSourcePtr pJpegDataSource = SpatialEntityDataSource::Create("./imagery/map.jpeg", "image/jpeg");

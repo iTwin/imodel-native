@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealitySerialization.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if !defined(ANDROID)
@@ -176,6 +176,11 @@ RealityPackageStatus RealityDataSerializer::_ReadPackageInfo(RealityDataPackageR
     if (!polygonString.empty() && (pPolygon = BoundingPolygon::FromString(polygonString.c_str())).IsNull())
         return RealityPackageStatus::PolygonParsingError; // If present, format must be valid.
     package.SetBoundingPolygon(*pPolygon);
+
+    // Context
+    Utf8String context;
+    xmlDom.SelectNodeContent(id, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Context, pContext, BeXmlDom::NODE_BIAS_First);
+    package.SetContext(id.c_str());
 
     // Unknown elements.
     _ReadUnknownElements(package, pRootNode->GetFirstChild());
