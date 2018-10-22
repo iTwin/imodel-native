@@ -977,6 +977,69 @@ bool            ApplyThickness (GeometricPrimitivePtr const& geomPrimitive, DVec
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ApplyColorOverride (DwgGiFaceDataCP faceData, DwgGiEdgeDataCP edgeData)
+    {
+    /*-----------------------------------------------------------------------------------
+    Shell and mesh may have face and/or edge data overrides. Apply a color override from 
+    the first face or the first edge - ignore varying colors for now.
+    -----------------------------------------------------------------------------------*/
+    if (nullptr == faceData && nullptr == edgeData)
+        return;
+
+    DwgCmEntityColor    faceColor, edgeColor;
+    bool    hasFaceColor = false, hasEdgeColor = false;
+    if (nullptr != faceData)
+        {
+        DwgCmEntityColorCP  trueColors = faceData->GetTrueColors ();
+        int16_t const*      indexColors = faceData->GetColors ();
+        if (nullptr != trueColors)
+            {
+            // face overridden by the true color of the first face
+            faceColor = trueColors[0];
+            hasFaceColor = true;
+            }
+        else if (nullptr != indexColors)
+            {
+            // face overridden by index color of the first face
+            faceColor.SetColorIndex (indexColors[0]);
+            hasFaceColor = true;
+            }
+        }
+    if (nullptr != edgeData)
+        {
+        DwgCmEntityColorCP  trueColors = edgeData->GetTrueColors ();
+        int16_t const*      indexColors = edgeData->GetColors ();
+        if (nullptr != trueColors)
+            {
+            // edge overridden by the true color of the first edge
+            edgeColor = trueColors[0];
+            hasEdgeColor = true;
+            }
+        else if (nullptr != indexColors)
+            {
+            // edge overridden by index color of the first edge
+            edgeColor.SetColorIndex (indexColors[0]);
+            hasEdgeColor = true;
+            }
+        }
+    if (!hasFaceColor && !hasEdgeColor)
+        return;
+
+    auto regenType = m_geometryOptions->_GetRegenType ();
+    bool rendered = DwgGiRegenType::HideOrShadeCommand == regenType || DwgGiRegenType::RenderCommand == regenType;
+
+    DwgCmEntityColor    colorOverride;
+    if (hasFaceColor)
+        colorOverride = faceColor;
+    if (hasEdgeColor && (!hasFaceColor || !rendered))
+        colorOverride = edgeColor;
+
+    m_drawParams._SetColor (colorOverride);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _Circle (DPoint3dCR center, double radius, DVec3dCR normal) override
@@ -1182,7 +1245,10 @@ virtual void    _Mesh (size_t nRows, size_t nColumns, DPoint3dCP points, DwgGiEd
 
     GeometricPrimitivePtr   pface = GeometricPrimitive::Create (dgnPolyface);
     if (pface.IsValid())
+        {
+        this->ApplyColorOverride (faces, edges);
         this->AppendGeometry (*pface.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1295,7 +1361,10 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
 
     GeometricPrimitivePtr   pface = GeometricPrimitive::Create (dgnPolyface);
     if (pface.IsValid())
+        {
+        this->ApplyColorOverride (faceData, edgeData);
         this->AppendGeometry (*pface.get());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2026,7 +2095,7 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
     m_hasBaseTransform = false;
     m_basePartScale = 0.0;
     m_is3d = m_inputs.GetTargetModelR().Is3d ();
-    m_canCreateSharedParts = false;
+    m_canCreateSharedParts = m_importer.GetOptions().IsBlockAsSharedParts ();
     m_sourceBlockId.SetNull ();
 
     // find the element handler
@@ -2039,6 +2108,10 @@ ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ElementFactory::SetDefaultCreation ()
     {
+    // if user does not want shared parts, honor the request:
+    if (!m_canCreateSharedParts)
+        return;
+
     DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(m_inputs.GetEntityP());
     if (nullptr != insert)
         {
@@ -3210,11 +3283,15 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
     auto blockTrans = Transform::FromIdentity ();
     insert->GetBlockTransform (blockTrans);
 
+    // attempt to create shared parts from a block only if that is what the user wants:
     double  partScale = 0.0;
-    bool    canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockTrans);
+    bool    canShareParts = this->GetOptions().IsBlockAsSharedParts ();
+    if (canShareParts)
+        canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockTrans);
+
     if (canShareParts)
         {
-        // block transform is valid for shared parts, now search the parts cache:
+        // user wants shared parts, and block transform is valid for shared parts, now search the parts cache:
         SharedPartKey key(insert->GetBlockTableRecordId(), partScale);
         found = m_blockPartsMap.find (key);
         }

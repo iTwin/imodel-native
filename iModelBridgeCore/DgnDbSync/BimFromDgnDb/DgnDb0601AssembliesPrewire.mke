@@ -35,7 +35,7 @@ DgnDbDlls = $(DgndbDgnPlatformLibDir)
     ApiNumber = G06
 %endif
 
-%if "iOSARM64" != $(TARGET_PROCESSOR_ARCHITECTURE)
+%if "iOSARM64" != $(TARGET_PROCESSOR_ARCHITECTURE) && "AndroidARM64" != $(TARGET_PROCESSOR_ARCHITECTURE)
 $(Delivery)Bentley$(ApiNumber).dll : $(DgnDbDlls)Bentley$(ApiNumber).dll
 
 $(Delivery)BeIcu4c$(ApiNumber).dll : $(DgnDbDlls)BeIcu4c$(ApiNumber).dll

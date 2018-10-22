@@ -236,6 +236,8 @@ public:
     DWGDB_EXPORT bool       HasPlinegen () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT Type       GetType () const;
+    //! Extract 3D points from the 2D vertex iterator and pack them into an untransformed array.
+    DWGDB_EXPORT DwgDbStatus GetPoints (DPoint3dArrayR out) const;
     DWGDB_EXPORT DwgDbObjectIteratorPtr GetVertexIterator () const;
     DWGDB_EXPORT DwgDbStatus AppendVertex (DwgDbObjectIdR outId, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
     DWGDB_EXPORT DwgDbStatus InsertVertexAt (DwgDbObjectIdR outId, DwgDbObjectIdCR atVertex, DPoint2dCR point, DPoint2dCR widths=DPoint2d::FromZero());
@@ -1315,6 +1317,105 @@ public:
     DWGDB_EXPORT bool   IsPlottable () const;
     };  // DwgDbLight
 DWGDB_DEFINE_OBJECTPTR (Light)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+#define DWGDB_DECLARE_SURFACE_MEMBERS()                                                 \
+    DWGDB_DECLARE_ENTITY_MEMBERS()                                                      \
+    /*! Get the area of the surface . */                                                \
+    DWGDB_EXPORT DwgDbStatus GetArea (double& area) const;                              \
+    /*! Get the perimeter of the surface . */                                           \
+    DWGDB_EXPORT DwgDbStatus GetPerimeter (double& perimeter) const;                    \
+    /*! Convert the surface to DwgDbRegion entities. */                                 \
+    /*! @note Caller is responsible to free memory of each entity via free(). */        \
+    DWGDB_EXPORT DwgDbStatus ConvertToRegion (DwgDbEntityPArrayR regions);
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbSurface : public DWGDB_EXTENDCLASS(Surface)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(Surface)
+    DWGDB_DECLARE_SURFACE_MEMBERS()
+    };  // DwgDbSurface
+DWGDB_DEFINE_OBJECTPTR (Surface)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbPlaneSurface : public DWGDB_EXTENDCLASS(PlaneSurface)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(PlaneSurface)
+    DWGDB_DECLARE_SURFACE_MEMBERS()
+    };  // DwgDbPlaneSurface
+DWGDB_DEFINE_OBJECTPTR (PlaneSurface)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbExtrudedSurface : public DWGDB_EXTENDCLASS(ExtrudedSurface)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(ExtrudedSurface)
+    DWGDB_DECLARE_SURFACE_MEMBERS()
+    };  // DwgDbExtrudedSurface
+DWGDB_DEFINE_OBJECTPTR (ExtrudedSurface)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbLoftedSurface : public DWGDB_EXTENDCLASS(LoftedSurface)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(LoftedSurface)
+    DWGDB_DECLARE_SURFACE_MEMBERS()
+    };  // DwgDbLoftedSurface
+DWGDB_DEFINE_OBJECTPTR (LoftedSurface)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbNurbSurface : public DWGDB_EXTENDCLASS(NurbSurface)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(NurbSurface)
+    DWGDB_DECLARE_SURFACE_MEMBERS()
+
+    //! Check if the NURB surface is planar.
+    DWGDB_EXPORT DwgDbStatus IsPlanar (bool& planar, DPoint3dR pointOnSurface, DVec3dR normal) const;
+    //! Check if a point is on the surface.
+    DWGDB_EXPORT DwgDbStatus IsPointOnSurface (DPoint3dCR test, bool& answer) const;
+    //! Get normal of the surface at given UV parameters.
+    DWGDB_EXPORT DwgDbStatus GetNormal (double u, double v, DVec3dR normal) const;
+    //! Evaluate surface point and normal at given UV parameters.
+    DWGDB_EXPORT DwgDbStatus Evaluate (double u, double v, int derivDegree, DPoint3dR point, DVector3dArrayR derivatives) const;
+    };  // DwgDbNurbSurface
+DWGDB_DEFINE_OBJECTPTR (NurbSurface)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbRevolvedSurface : public DWGDB_EXTENDCLASS(RevolvedSurface)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(RevolvedSurface)
+    DWGDB_DECLARE_SURFACE_MEMBERS()
+    };  // DwgDbRevolvedSurface
+DWGDB_DEFINE_OBJECTPTR (RevolvedSurface)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbSweptSurface : public DWGDB_EXTENDCLASS(SweptSurface)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(SweptSurface)
+    DWGDB_DECLARE_SURFACE_MEMBERS()
+    };  // DwgDbSweptSurface
+DWGDB_DEFINE_OBJECTPTR (SweptSurface)
 
 
 END_DWGDB_NAMESPACE

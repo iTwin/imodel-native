@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/Base64Utilities.h>
-#include "DGnDb0601ToJsonImpl.h"
+#include "DgnDb0601ToJsonImpl.h"
 #include <limits>
 #include <DgnDb06Api/DgnPlatform/WebMercator.h>
 #include <DgnDb06Api/DgnPlatform/DgnIModel.h>
@@ -2504,6 +2504,9 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportPropertyData()
         ECN::ECJsonUtilities::Point3DToJson(propData["globalOrigin"], globalOrigin);
         }
 
+    Utf8String value;
+    if (BE_SQLITE_ROW == m_dgndb->QueryProperty(value, DgnProjectProperty::Extents()))
+        propData["projectExtents"] = value;
     (QueueJson) (entry.toStyledString().c_str());
 
     return SUCCESS;

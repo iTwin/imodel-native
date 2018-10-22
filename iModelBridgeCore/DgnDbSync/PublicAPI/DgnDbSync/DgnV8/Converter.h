@@ -401,7 +401,7 @@ struct ViewFactory
 
     virtual bool _Is3d() const {return false;}
     virtual ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) = 0;
-    virtual ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId existingViewId) = 0;
+    virtual ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, ViewDefinitionR existingViewDef) = 0;
 };
 
 //=======================================================================================
@@ -830,8 +830,8 @@ struct Converter
         L10N_STRING(UnrecognizedDetailingSymbol) // =="[%s] is an unrecognized kind of detailing symbol. Capturing graphics only."==
         L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
         L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
-        L10N_STRING(SchemaLockFailed)           // =="SchemaLockFailed"==
-        L10N_STRING(CouldNotAcquireLocksOrCodes) // =="CouldNotAcquireLocksOrCodes"==
+        L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
+        L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
 
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
@@ -995,7 +995,8 @@ protected:
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
-    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;;
+    bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;
+    bool                m_haveCreatedThumbnails;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
@@ -1090,6 +1091,7 @@ public:
     //! @private
     //! This is called in a separate process to check bridge file affinity only.
     DGNDBSYNC_EXPORT static BentleyStatus GetAuthoringFileInfo(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, BentleyApi::BeFileName const& sourceFileName);
+    DGNDBSYNC_EXPORT static void InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath);
     DGNDBSYNC_EXPORT static void GetAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,WCharCP affinityLibraryPathStr, WCharCP sourceFileNameStr);
     
@@ -1380,6 +1382,7 @@ public:
     DGNDBSYNC_EXPORT virtual DgnDbStatus _CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping,
                                                                            SyncInfo::V8ElementSource const& attachmentMapping,
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                                           DgnV8Api::ElementHandle& eh,
                                                                            DgnCategoryId categoryId, GeometryBuilder& builder);
     DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
@@ -1438,7 +1441,7 @@ public:
     //! @return the newly inserted model and modelled element
     ResolvedModelMappingWithElement SheetsCreateAndInsertDrawing(DgnAttachmentCR v8DgnAttachment, ResolvedModelMapping const& parentModel);
 
-    Utf8String SheetsComputeViewAttachmentName(DgnAttachmentCR v8DgnAttachment) const;
+    Utf8String SheetsComputeViewAttachmentName(DgnModelId parentSheetId, DgnAttachmentCR v8DgnAttachment) const;
     
     //! Create a ViewAttachment element from the specified V8 attachment. 
     //! @note this function should attempt to insert or update the element. The returned element should be non-persistent.
@@ -2064,7 +2067,7 @@ public:
     //! @private
     DGNDBSYNC_EXPORT virtual void _DeleteElement(DgnElementId);
 
-    bool HadAnyChanges() const { return m_hadAnyChanges; }
+    bool HadAnyChanges() const { return m_hadAnyChanges || m_elementsConverted != 0; }
 };
 
 //=======================================================================================
@@ -2703,7 +2706,7 @@ struct SpatialViewFactory : ViewFactory
 {
     SpatialConverterBase& m_spatialConverter;
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
-    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, ViewDefinitionR existingViewDef) override;
     bool _Is3d() const override final {return true;}
     SpatialViewFactory(SpatialConverterBase& s) : m_spatialConverter(s) {}
 };

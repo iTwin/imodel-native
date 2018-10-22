@@ -14,7 +14,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDb0601Assemblies-static" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601AssembliesPrewire.mke" OnlyPlatforms="iOSARM64" ApiNumber="M02">
+    <Part Name="DgnDb0601Assemblies-static" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601AssembliesPrewire.mke" OnlyPlatforms="iOSARM64,AndroidARM64" ApiNumber="M02">
         <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
         <Bindings>
             <Directory SourceName="Delivery/DgnDbLibs" ProductDirectoryName="DgnDb06Libs" SubPartDirectory="DgnDbLibs" Required="false"/>
@@ -23,7 +23,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDb0601ToJson" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601Exporter/lib/DgnDb0601ToJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="M02">
+    <Part Name="DgnDb0601ToJson" BentleyBuildMakeFile="BimFromDgnDb/DgnDb0601Exporter/lib/DgnDb0601ToJson.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64,AndroidARM64" ApiNumber="M02">
         <SubPart PartName="DgnDb0601Assemblies"/>
         <SubPart PartName="DgnDb0601Assemblies-static"/>
         <SubPart PartFile="DgnDbSync" PartName="BimFromDgnDbPublicAPI"/>

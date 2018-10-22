@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/LinkConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -118,7 +118,7 @@ BentleyStatus ProjectWiseExtension::Terminate()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Ramanujam.Raman   05/2016
 //---------------------------------------------------------------------------------------
-LinkConverter::LinkConverter(Converter& converter) : m_converter(converter), m_dgndb(m_converter.GetDgnDb()), m_needsPurge(false), m_pwExtension(nullptr)
+LinkConverter::LinkConverter(Converter& converter) : m_converter(converter), m_needsPurge(false), m_pwExtension(nullptr)
     {
     InitializeTempTables();
     InitializeProjectWiseExtension();
@@ -137,20 +137,20 @@ LinkConverter::~LinkConverter()
 //---------------------------------------------------------------------------------------
 void LinkConverter::InitializeTempTables()
     {
-    if (m_dgndb.TableExists(TEMP_LINK_SOURCES_TABLE))
+    if (m_converter.GetDgnDb().TableExists(TEMP_LINK_SOURCES_TABLE))
         {
         Statement stmt;
-        stmt.Prepare(m_dgndb, "DELETE FROM " TEMP_LINK_SOURCES_TABLE);
+        stmt.Prepare(m_converter.GetDgnDb(), "DELETE FROM " TEMP_LINK_SOURCES_TABLE);
         stmt.Step();
         }
     else
         {
-        DbResult result = m_dgndb.CreateTable(TEMP_LINK_SOURCES_TABLE, "V8FileSyncInfoId INT NOT NULL, V8ElementId BIGINT NOT NULL, V9ElementId BIGINT NOT NULL");
+        DbResult result = m_converter.GetDgnDb().CreateTable(TEMP_LINK_SOURCES_TABLE, "V8FileSyncInfoId INT NOT NULL, V8ElementId BIGINT NOT NULL, V9ElementId BIGINT NOT NULL");
         BeAssert(result == BE_SQLITE_OK);
         UNUSED_VARIABLE(result);
 
-        m_dgndb.ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "ElementIdx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V9ElementId)");
-        m_dgndb.ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "V8Idx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V8FileSyncInfoId,V8ElementId)");
+        m_converter.GetDgnDb().ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "ElementIdx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V9ElementId)");
+        m_converter.GetDgnDb().ExecuteSql("CREATE INDEX " TEMP_LINK_SOURCES_TABLE "V8Idx ON " TEMP_LINK_SOURCES_TABLE_NO_PREFIX "(V8FileSyncInfoId,V8ElementId)");
         }
     }
 
@@ -214,7 +214,7 @@ void LinkConverter::DisableProjectWiseExtension()
 BentleyStatus LinkConverter::RecordProcessedElement(DgnV8EhCR v8eh, DgnElementId v9ElementId)
     {
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "INSERT INTO " TEMP_LINK_SOURCES_TABLE " (V8FileSyncInfoId, V8ElementId, V9ElementId) VALUES(?,?,?)");
+    m_converter.GetDgnDb().GetCachedStatement(stmt, "INSERT INTO " TEMP_LINK_SOURCES_TABLE " (V8FileSyncInfoId, V8ElementId, V9ElementId) VALUES(?,?,?)");
 
     SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP());
     stmt->BindInt(1, v8FileId.GetValue());
@@ -234,7 +234,7 @@ BentleyStatus LinkConverter::RecordProcessedElement(DgnV8EhCR v8eh, DgnElementId
 bool LinkConverter::WasElementProcessed(DgnV8EhCR v8eh) const
     {
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT V9ElementId FROM " TEMP_LINK_SOURCES_TABLE " WHERE V8FileSyncInfoId=? AND V8ElementId=?");
+    m_converter.GetDgnDb().GetCachedStatement(stmt, "SELECT V9ElementId FROM " TEMP_LINK_SOURCES_TABLE " WHERE V8FileSyncInfoId=? AND V8ElementId=?");
 
     SyncInfo::V8FileSyncInfoId v8FileId = Converter::GetV8FileSyncInfoIdFromAppData(*v8eh.GetDgnFileP());
     stmt->BindInt(1, v8FileId.GetValue());
@@ -256,10 +256,10 @@ LinkModelP LinkConverter::GetOrCreateLinkModel()
 
     Utf8CP partitionName = "Converted Links";
     DgnCode partitionCode = LinkPartition::CreateCode(m_converter.GetJobSubject(), partitionName);
-    DgnElementId partitionId = m_dgndb.Elements().QueryElementIdByCode(partitionCode);
+    DgnElementId partitionId = m_converter.GetDgnDb().Elements().QueryElementIdByCode(partitionCode);
     if (partitionId.IsValid())
         {
-        m_linkModel = LinkModel::Get(m_dgndb, DgnModelId(partitionId.GetValue()));
+        m_linkModel = LinkModel::Get(m_converter.GetDgnDb(), DgnModelId(partitionId.GetValue()));
         BeAssert(m_linkModel.IsValid());
         return m_linkModel.get();
         }
@@ -272,7 +272,7 @@ LinkModelP LinkConverter::GetOrCreateLinkModel()
         return nullptr;
         }
 
-    m_linkModel = LinkModel::Create(LinkModel::CreateParams(m_dgndb, partition->GetElementId()));
+    m_linkModel = LinkModel::Create(LinkModel::CreateParams(m_converter.GetDgnDb(), partition->GetElementId()));
     DgnDbStatus status;
     if ((status = m_linkModel->Insert()) != DgnDbStatus::Success)
         {
@@ -303,10 +303,10 @@ BentleyStatus LinkConverter::RemoveLinksOnElement(DgnElementId sourceElementId)
 
     BentleyStatus status = SUCCESS;
     
-    if (SUCCESS != UrlLink::RemoveAllFromSource(m_dgndb, sourceElementId))
+    if (SUCCESS != UrlLink::RemoveAllFromSource(m_converter.GetDgnDb(), sourceElementId))
         status = ERROR;
 
-    if (SUCCESS != EmbeddedFileLink::RemoveAllFromSource(m_dgndb, sourceElementId))
+    if (SUCCESS != EmbeddedFileLink::RemoveAllFromSource(m_converter.GetDgnDb(), sourceElementId))
         status = ERROR;
 
     return status;
@@ -319,7 +319,7 @@ bool LinkConverter::ElementHasLinks(DgnElementId sourceElementId) const
     {
     Utf8CP ecSql = "SELECT NULL FROM " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE SourceECInstanceId=? LIMIT 1";
 
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_dgndb.GetPreparedECSqlStatement(ecSql);
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_converter.GetDgnDb().GetPreparedECSqlStatement(ecSql);
     BeAssert(stmt.IsValid());
 
     stmt->BindId(1, sourceElementId);
@@ -448,7 +448,7 @@ BentleyStatus LinkConverter::ImportUrlLink(DgnV8URLLinkCR urlLink, DgnElementId 
             return ERROR;
         }
         
-    return LinkElement::AddToSource(m_dgndb, linkId, sourceElementId);
+    return LinkElement::AddToSource(m_converter.GetDgnDb(), linkId, sourceElementId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -456,7 +456,7 @@ BentleyStatus LinkConverter::ImportUrlLink(DgnV8URLLinkCR urlLink, DgnElementId 
 //---------------------------------------------------------------------------------------
 DgnElementId LinkConverter::QueryUrlLink(Utf8StringCR url, Utf8StringCR label, Utf8StringCR description) const
     {
-    DgnElementIdSet idSet = UrlLink::Query(m_dgndb, url.c_str(), label.c_str(), description.c_str());
+    DgnElementIdSet idSet = UrlLink::Query(m_converter.GetDgnDb(), url.c_str(), label.c_str(), description.c_str());
     return idSet.empty() ? DgnElementId() : *(idSet.begin());
     }
 
@@ -515,7 +515,7 @@ BentleyStatus LinkConverter::ImportEmbeddedFileLink(DgnV8FileLinkCR fileLink, Dg
             return ERROR;
         }
 
-    return LinkElement::AddToSource(m_dgndb, linkId, sourceElementId);
+    return LinkElement::AddToSource(m_converter.GetDgnDb(), linkId, sourceElementId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -534,7 +534,7 @@ BentleyStatus LinkConverter::ImportEmbeddedFile(Utf8StringR embeddedName, BeFile
     DateTime fileLastModified = GetFileLastModifiedTime(pathname);
 
     DateTime embeddedLastModified;
-    BeBriefcaseBasedId embeddedId = m_dgndb.EmbeddedFiles().QueryFile(embeddedName.c_str(), nullptr, nullptr, nullptr, nullptr, &embeddedLastModified);
+    BeBriefcaseBasedId embeddedId = m_converter.GetDgnDb().EmbeddedFiles().QueryFile(embeddedName.c_str(), nullptr, nullptr, nullptr, nullptr, &embeddedLastModified);
 
     if (embeddedId.IsValid())
         {
@@ -548,7 +548,7 @@ BentleyStatus LinkConverter::ImportEmbeddedFile(Utf8StringR embeddedName, BeFile
         if (msec1 == msec2 && msec1 != 0)
             return SUCCESS; 
 
-        DbResult result = m_dgndb.EmbeddedFiles().Replace(embeddedName.c_str(), embeddedName.c_str(), 500 * 1024, &fileLastModified);
+        DbResult result = m_converter.GetDgnDb().EmbeddedFiles().Replace(embeddedName.c_str(), embeddedName.c_str(), 500 * 1024, &fileLastModified);
         if (BE_SQLITE_OK != result)
             {
             BeAssert(false && "Could not replace the linked file");
@@ -561,7 +561,7 @@ BentleyStatus LinkConverter::ImportEmbeddedFile(Utf8StringR embeddedName, BeFile
     Utf8String extension(pathname.GetExtension());
 
     DbResult result;
-    m_dgndb.EmbeddedFiles().Import(&result, embeddedName.c_str(), embeddedName.c_str(), extension.c_str(), description.c_str(), &fileLastModified);
+    m_converter.GetDgnDb().EmbeddedFiles().Import(&result, embeddedName.c_str(), embeddedName.c_str(), extension.c_str(), description.c_str(), &fileLastModified);
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false && "Could not embed the linked file");
@@ -593,7 +593,7 @@ DateTime LinkConverter::GetFileLastModifiedTime(BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 DgnElementId LinkConverter::QueryEmbeddedFileLink(Utf8StringCR embeddedName, Utf8StringCR label, Utf8StringCR description) const
     {
-    DgnElementIdSet idSet = EmbeddedFileLink::Query(m_dgndb, embeddedName.c_str(), label.c_str(), description.c_str());
+    DgnElementIdSet idSet = EmbeddedFileLink::Query(m_converter.GetDgnDb(), embeddedName.c_str(), label.c_str(), description.c_str());
     return idSet.empty() ? DgnElementId() : *(idSet.begin());
     }
 
@@ -633,7 +633,7 @@ BentleyStatus LinkConverter::PurgeOrphanedLinks()
     if (!GetNeedsPurge())
         return SUCCESS;
 
-    if (SUCCESS != UrlLink::PurgeOrphaned(m_dgndb))
+    if (SUCCESS != UrlLink::PurgeOrphaned(m_converter.GetDgnDb()))
         return ERROR;
 
     bset<Utf8String> embeddedNames;
@@ -653,14 +653,14 @@ BentleyStatus LinkConverter::PurgeOrphanedLinks()
 //---------------------------------------------------------------------------------------
 DgnElementIdSet LinkConverter::FindOrphanedEmbeddedFileLinks(bset<Utf8String>& embeddedNames)
     {
-    DgnElementIdSet orphanedLinkIds = EmbeddedFileLink::FindOrphaned(m_dgndb);
+    DgnElementIdSet orphanedLinkIds = EmbeddedFileLink::FindOrphaned(m_converter.GetDgnDb());
     if (orphanedLinkIds.empty())
         return orphanedLinkIds;
 
     embeddedNames.clear();
     for (DgnElementId linkId : orphanedLinkIds)
         {
-        EmbeddedFileLinkCPtr link = EmbeddedFileLink::Get(m_dgndb, linkId);
+        EmbeddedFileLinkCPtr link = EmbeddedFileLink::Get(m_converter.GetDgnDb(), linkId);
         embeddedNames.insert(link->GetName());
         }
 
@@ -674,7 +674,7 @@ BentleyStatus LinkConverter::PurgeOrphanedEmbeddedFileLinks(DgnElementIdSet cons
     {
     Utf8CP ecSql = "DELETE FROM ONLY " BIS_SCHEMA(BIS_CLASS_EmbeddedFileLink) " WHERE InVirtualSet(? , ECInstanceId)";
 
-    CachedECSqlStatementPtr stmt = m_dgndb.GetPreparedECSqlStatement(ecSql);
+    CachedECSqlStatementPtr stmt = m_converter.GetDgnDb().GetPreparedECSqlStatement(ecSql);
     BeAssert(stmt.IsValid());
 
     stmt->BindInt64(1, (int64_t) &orphanedLinkIds);
@@ -692,10 +692,10 @@ BentleyStatus LinkConverter::PurgeOrphanedEmbeddedFiles(bset<Utf8String> const& 
 
     for (Utf8StringCR embeddedName : embeddedNames)
         {
-        DgnElementIdSet links = EmbeddedFileLink::Query(m_dgndb, embeddedName.c_str(), nullptr, nullptr, 1); 
+        DgnElementIdSet links = EmbeddedFileLink::Query(m_converter.GetDgnDb(), embeddedName.c_str(), nullptr, nullptr, 1); 
         if (links.empty())
             {
-            DbResult result = m_dgndb.EmbeddedFiles().Remove(embeddedName.c_str());
+            DbResult result = m_converter.GetDgnDb().EmbeddedFiles().Remove(embeddedName.c_str());
 
             if (result != BE_SQLITE_OK)
                 {

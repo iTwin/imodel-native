@@ -344,8 +344,15 @@ BentleyStatus   DwgBridge::RunAsStandaloneExe (int argc, WCharCP argv[])
     if (status != BentleyStatus::SUCCESS)
         return  status;
 
+    // set a default job description for the job, as a be_Prop
+    if (params.GetDescription().empty())
+        params.SetDescription ("Job run as a standalone bridge");
+
+    // set LastEditor to the standalone exe name, as a be_Prop
+    Utf8String  editor(BeFileName::GetFileNameWithoutExtension(argv[0]).c_str());
+
     // Initialize the DgnHost
-    iModelBridgeSacAdapter::InitializeHost (*this);
+    iModelBridgeSacAdapter::InitializeHost (*this, editor.c_str());
 
     // Initialize the importer
     status = this->_Initialize (argc, argv);

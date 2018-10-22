@@ -107,8 +107,8 @@ TEST_F(BasicGeometryTests, EnlargeProjectExtents)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
         updatedProjectExtents2 = db->GeoLocation().GetProjectExtents();
         }
-    // Check that the project's extents did NOT shrink
-    EXPECT_TRUE(updatedProjectExtents.IsEqual(updatedProjectExtents2));
+    // Check that the project's extents shrank
+    EXPECT_FALSE(updatedProjectExtents.IsEqual(updatedProjectExtents2));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2232,12 +2232,12 @@ Utf8CP getLinearUnitName(Utf8StringCR unit)
 Utf8CP getAreaUnitName(Utf8StringCR unit)
     {
     if (unit.EqualsIAscii("English"))
-        return "SQ.FT";
+        return "SQ_FT";
     if (unit.EqualsIAscii("Metric"))
-        return "SQ.M";
+        return "SQ_M";
     if (unit.EqualsIAscii("USSurvey"))
-        return "SQ.US_SURVEY_FT";
-    return "SQ.M";
+        return "SQ_US_SURVEY_FT";
+    return "SQ_M";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2246,12 +2246,12 @@ Utf8CP getAreaUnitName(Utf8StringCR unit)
 Utf8CP getVolumeUnitName(Utf8StringCR unit)
     {
     if (unit.EqualsIAscii("English"))
-        return "CUB.FT";
+        return "CUB_FT";
     if (unit.EqualsIAscii("Metric"))
-        return "CUB.M";
+        return "CUB_M";
     if (unit.EqualsIAscii("USSurvey"))
-        return "CUB.FT";
-    return "CUB.M";
+        return "CUB_FT";
+    return "CUB_M";
     }
 
 //---------------------------------------------------------------------------------------
@@ -2512,7 +2512,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
 
         toImport->WriteToXmlFile(flatPath.GetName());
 #endif
-        if (toImport->OriginalECXmlVersionLessThan(ECVersion::V3_1) && !ECSchemaConverter::Convert(*toImport))
+        if (toImport->OriginalECXmlVersionLessThan(ECVersion::V3_1) && !ECSchemaConverter::Convert(*toImport, m_importer->m_schemaReadContext.get(), false))
             {
             GetLogger().fatalv("Failed to convert schema %s to EC3.1.  Unable to continue.", toImport->GetName().c_str());
             return ERROR;
@@ -2949,6 +2949,8 @@ BentleyStatus BaselineReader::_Read(Json::Value& baseline)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
     {
+    // need to call this to set the globalOrigin and initialProjectCenter.  If values were provided by the export, these default values will be overwritten
+    GetDgnDb()->GeoLocation().InitializeProjectExtents();
     if (propData.isMember("DefaultView"))
         {
         DgnElementId viewId = ECJsonUtilities::JsonToId<DgnElementId>(propData["DefaultView"]["id"]);
@@ -2972,10 +2974,15 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
             GetDgnDb()->SaveProperty(prop, blob.data(), blob.size());
             if (propData.isMember("globalOrigin"))
                 {
-                GetDgnDb()->SavePropertyString(DgnProjectProperty::Units(), propData["globalOrigin"].ToString());
+                DPoint3d globalOrigin;
+                ECN::ECJsonUtilities::JsonToPoint3d(globalOrigin, propData["globalOrigin"]);
+                GetDgnDb()->GeoLocation().SetGlobalOrigin(globalOrigin);
+                GetDgnDb()->GeoLocation().Save();
                 }
             }
         }
+    if (propData.isMember("projectExtents"))
+        GetDgnDb()->SavePropertyString(DgnProjectProperty::Extents(), propData["projectExtents"].asString());
 
     return SUCCESS;
     }

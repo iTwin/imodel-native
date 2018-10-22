@@ -18,6 +18,14 @@ RDVSuffix = 22
 $(Delivery)DgnPlatformV8Sdk/Dlls/3dsfileioImp.dll : $(DgnV8Sdk)Dlls/3dsfileioImp.dll
     $(LinkFirstDepToFirstTarget)
 
+%if exists($(DgnV8Sdk)Dlls/acute3dio1.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/acute3dio1.dll : $(DgnV8Sdk)Dlls/acute3dio1.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/AutomaticGroundDetection.dll : $(DgnV8Sdk)Dlls/AutomaticGroundDetection.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
 $(Delivery)DgnPlatformV8Sdk/Dlls/BaseGeoCoord2.dll : $(DgnV8Sdk)Dlls/BaseGeoCoord2.dll
     $(LinkFirstDepToFirstTarget)
 
@@ -47,6 +55,14 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/BeSQLite2.dll : $(DgnV8Sdk)Dlls/BeSQLite2.dll
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/BeXml1.dll : $(DgnV8Sdk)Dlls/BeXml1.dll
     $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/CGAL.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/CGAL.dll : $(DgnV8Sdk)Dlls/CGAL.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/CloudDataSource.dll : $(DgnV8Sdk)Dlls/CloudDataSource.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/bsiexcept-1.1.dll : $(DgnV8Sdk)Dlls/bsiexcept-1.1.dll
     $(LinkFirstDepToFirstTarget)
@@ -111,6 +127,14 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk.dll : $(DgnV8Sdk)Dlls/lti_dsdk_9.5.dll
 $(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk_cdll.dll : $(DgnV8Sdk)Dlls/lti_dsdk_cdll_9.5.dll
     $(LinkFirstDepToFirstTarget)
 
+%if exists($(DgnV8Sdk)Dlls/MrMeshFileIO.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/MrMeshFileIO.dll : $(DgnV8Sdk)Dlls/MrMeshFileIO.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/MrMeshLib2.dll : $(DgnV8Sdk)Dlls/MrMeshLib2.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
 $(Delivery)DgnPlatformV8Sdk/Dlls/mstntoolsubs.dll : $(DgnV8Sdk)Dlls/mstntoolsubs.dll
     $(LinkFirstDepToFirstTarget)
 
@@ -152,6 +176,14 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/rhinolib.dll : $(DgnV8Sdk)Dlls/rhinolib.dll
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/RmgrTools3.dll : $(DgnV8Sdk)Dlls/RmgrTools3.dll
     $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/ScalableMesh.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/ScalableMesh.dll : $(DgnV8Sdk)Dlls/ScalableMesh.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/ScalableMeshElement.dll : $(DgnV8Sdk)Dlls/ScalableMeshElement.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/sdaidlm.dll : $(DgnV8Sdk)Dlls/sdaidlm.dll
     $(LinkFirstDepToFirstTarget)
@@ -278,6 +310,16 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXVisualizationAsm.dll : $(DgnV8Sdk)Dlls/SPAX
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXVisualizationRep.dll : $(DgnV8Sdk)Dlls/SPAXVisualizationRep.dll
     $(LinkFirstDepToFirstTarget)
+
+%if exists($(DgnV8Sdk)Dlls/SketchUpCommonPreferences.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/SketchUpCommonPreferences.dll : $(DgnV8Sdk)Dlls/SketchUpCommonPreferences.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
+
+%if exists($(DgnV8Sdk)Dlls/TerrainModelCore.dll)
+$(Delivery)DgnPlatformV8Sdk/Dlls/TerrainModelCore.dll : $(DgnV8Sdk)Dlls/TerrainModelCore.dll
+    $(LinkFirstDepToFirstTarget)
+%endif
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/tridslib.dll : $(DgnV8Sdk)Dlls/tridslib.dll
     $(LinkFirstDepToFirstTarget)

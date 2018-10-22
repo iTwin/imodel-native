@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 
+#include <ScalableMesh/ScalableMeshLib.h>
+
 // We enter this namespace in order to avoid having to qualify all of the types, such as bmap, that are common
 // to bim and v8. The problem is that the V8 Bentley namespace is shifted in.
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
@@ -360,6 +362,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
     v8JobProps["BridgeType"] = "IModelBridgeForMstn";
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
+    JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
 
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
     if (!jobSubject.IsValid())
@@ -458,6 +461,10 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
     if (!isMyFile)
         {
+        // Always own a .i.dgn file and all its embedded references:
+        if (v8File.IsIModel() || v8File.IsEmbeddedFile())
+            return  true;
+
         // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
         auto rootFilename = _GetParams().GetInputFileName ();
         if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
@@ -743,6 +750,10 @@ RootModelConverter::~RootModelConverter()
         //              files all have appdata saying that the converter already knows about them.
         DiscardV8FileSyncInfoAppData(*file);
         }
+    if (ScalableMesh::ScalableMeshLib::IsInitialized())
+        {
+        ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,7 +783,7 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
         return;
         }
-
+    m_hadAnyChanges = true;
 
     DgnV8Api::DgnModel& v8Model = v8mm.GetV8Model();
 

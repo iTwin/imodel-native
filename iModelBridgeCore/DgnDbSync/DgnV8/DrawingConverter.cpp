@@ -23,7 +23,7 @@ struct DrawingViewFactory : ViewFactory
     DrawingViewFactory(ResolvedModelMapping const& v8mm) : m_drawingModelMapping(v8mm) {}
 
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
-    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, ViewDefinitionR existingViewDef) override;
     };
 
 /*=================================================================================**//**
@@ -236,6 +236,7 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev(" %s was previously converted to %s", IssueReporter::FmtModel(v8model).c_str(), IssueReporter::FmtModel(foundmm.GetDgnModel()).c_str());
 
+        GetChangeDetector()._OnModelSeen(*this, foundmm);
         return make_bpair(foundmm, false); // v8model has already been imported
         }
 	
@@ -794,7 +795,7 @@ ViewDefinitionPtr DrawingViewFactory::_MakeView(Converter& converter, ViewDefini
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, ViewDefinitionR existingViewDef)
     {
     ViewDefinitionPtr newDef = _MakeView(converter, params);
     if (!newDef.IsValid())
@@ -804,23 +805,36 @@ ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefi
 
     DgnDbStatus stat;
     // need to update the DisplayStyle and CategorySelector.
-    DrawingViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<DrawingViewDefinition>(viewId);
 
     DisplayStyleR newDisplayStyle = drawing->GetDisplayStyle();
-    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
-    newDisplayStyle.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newDisplayStyle.SetBackgroundColor(newDisplayStyle.GetBackgroundColor());
+
+    newDisplayStyle.ForceElementIdForInsert(existingViewDef.GetDisplayStyleId());
+    if (!existingViewDef.GetDisplayStyle().EqualState(newDisplayStyle))
+        {
+        newDisplayStyle.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     drawing->SetDisplayStyle(newDisplayStyle);
 
+    // Update doesn't actually update the 'CategorySelector' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update, 
+    // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of categories and only call Update if there were.
     CategorySelectorR newCategorySelector = drawing->GetCategorySelector();
-    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
-    newCategorySelector.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newCategorySelector.ForceElementIdForInsert(existingViewDef.GetCategorySelectorId());
+
+    CategorySelectorR oldCategorySelector = existingViewDef.GetCategorySelector();
+    Json::Value newCategoryVal = newCategorySelector.ToJson();
+    Json::Value oldCategoryVal = oldCategorySelector.ToJson();
+    if (newCategoryVal != oldCategoryVal)
+        {
+        newCategorySelector.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     drawing->SetCategorySelector(newCategorySelector);
 
-    newDef->ForceElementIdForInsert(viewId);
+    newDef->ForceElementIdForInsert(existingViewDef.GetElementId());
     return newDef;
     }
 
@@ -1184,10 +1198,10 @@ bool CreateOrUpdateDrawingGraphics()
             if (nullptr != modelRef && nullptr != modelRef->GetDgnModelP())
                 originalElementMapping = m_converter.FindFirstElementMappedTo(*modelRef->GetDgnModelP(), byElement.first);
 
+            DgnV8Api::ElementHandle v8eh(modelRef->GetDgnModelP()->FindElementByID(byElement.first));
             if (!originalElementMapping.IsValid())
                 {
                 // See "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
-                DgnV8Api::ElementHandle v8eh(modelRef->GetDgnModelP()->FindElementByID(byElement.first));
                 SyncInfo::ElementProvenance lmt(v8eh, m_converter.GetSyncInfo(), m_converter.GetCurrentIdPolicy());
                 originalElementMapping = SyncInfo::V8ElementMapping(DgnElementId(), byElement.first, m_parentModelMapping.GetV8ModelSyncInfoId(), lmt);
                 }
@@ -1200,7 +1214,7 @@ bool CreateOrUpdateDrawingGraphics()
                 {
                 modified = true;
                 seenCategories.insert(bycategory.first);
-                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, bycategory.first, *bycategory.second);
+                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, v8eh, bycategory.first, *bycategory.second);
                 if (DgnDbStatus::Success != status)
                     {
                     BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");

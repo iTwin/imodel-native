@@ -95,6 +95,17 @@ size_t      Util::GetPointArray (DPoint2dArrayR pointsOut, DWGGE_TypeCR(Point2dA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+size_t      Util::GetVectorArray (DVector3dArrayR vectorsOut, DWGGE_TypeCR(Vector3dArray) vectorsIn)
+    {
+    int     nVectors = vectorsIn.length ();
+    for (int i = 0; i < nVectors; i++)
+        vectorsOut.push_back (DVec3d::From(vectorsIn[i].x, vectorsIn[i].y));
+    return  nVectors;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 size_t      Util::GetGePointArray (DWGGE_TypeR(Point3dArray) pointsOut, DPoint3dArrayCR pointsIn)
     {
     for (DPoint3dCR point : pointsIn)
@@ -526,6 +537,39 @@ DwgDbStatus Util::GetObjectArray (DwgDbObjectPArrayR out, TkObjectArray& in)
             DwgDbObjectP object = DwgDbObject::Cast (acObject);
             if (nullptr != object)
                 out.push_back (object);
+            else
+                delete acObject;
+            }
+        }
+#endif
+    return out.empty() ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus Util::GetEntityArray (DwgDbEntityPArrayR out, TkEntityArray& in)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    for (OdUInt32 i = 0; i < in.length(); i++)
+        {
+        if (nullptr != DwgDbEntity::Cast(in[i].get()))
+            {
+            DwgDbEntityP entity = DwgDbEntity::Cast (in[i].detach());
+            if (nullptr != entity)
+                out.push_back (entity);
+            }
+        }
+    
+#elif DWGTOOLKIT_RealDwg
+    for (int i = 0; i < in.length(); i++)
+        {
+        AcDbEntity* acObject = static_cast<AcDbEntity*>(in[i]);
+        if (nullptr != acObject)
+            {
+            DwgDbEntityP entity = DwgDbEntity::Cast (acObject);
+            if (nullptr != entity)
+                out.push_back (entity);
             else
                 delete acObject;
             }

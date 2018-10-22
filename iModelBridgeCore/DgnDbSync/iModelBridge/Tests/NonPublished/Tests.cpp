@@ -14,10 +14,10 @@
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <DgnPlatform/UnitTests/DgnDbTestUtils.h>
 #include <DgnPlatform/GenericDomain.h>
-#include "../../Fwk/IModelClientForBridges.h"
+#include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <Bentley/BeFileName.h>
-#include "FakeRegistry.h"
-
+#include <iModelBridge/FakeRegistry.h>
+#include <iModelBridge/TestiModelHubClientForBridges.h>
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -500,99 +500,17 @@ static BeFileName getiModelBridgeTestsOutputDir(WCharCP subdir)
 // @bsistruct                                                   Sam.Wilson   10/17
 //=======================================================================================
 BEGIN_BENTLEY_DGN_NAMESPACE
-struct TestIModelHubClientForBridges : IModelHubClientForBridges
-{
-    iModel::Hub::Error m_lastServerError;
-    BeFileName m_serverRepo;
-    BeFileName m_testWorkDir;
-    DgnDbP m_briefcase;
+struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
+    {
     struct
         {
         bool haveTxns;
         } m_expect {};
 
-    TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir) {}
+        TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) : TestIModelHubClientForBridges(testWorkDir) {}
 
-    static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
-        {
-        BeFileName repoPath = testWorkDir;
-        repoPath.AppendToPath(L"iModelHub");
-        repoPath.AppendToPath(WString(repoName,true).c_str());
-        return repoPath;
-        }
-
-    bool IsConnected() const override {return true;}
-
-    StatusInt CreateRepository(Utf8CP repoName, BeFileNameCR localDgnDb) override
-        {
-        m_serverRepo = MakeFakeRepoPath(m_testWorkDir, repoName);
-        if (!m_serverRepo.EndsWith(L".bim"))
-            m_serverRepo.append(L".bim");
-        BeFileName::CreateNewDirectory(m_serverRepo.GetDirectoryName());
-        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(localDgnDb, m_serverRepo, false));
-        return BSISUCCESS;
-        }
-
-    StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) override
-        {
-        if (m_serverRepo.empty())
-            {
-            m_lastServerError = iModel::Hub::Error::Id::iModelDoesNotExist;
-            return BSIERROR;
-            }
-        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(m_serverRepo, bcFileName, false));
-
-        auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-        db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
-        db->SaveChanges();
-
-        return BSISUCCESS;
-        }
-
-    StatusInt OpenBriefcase(Dgn::DgnDbR db) override
-        {
-        m_briefcase = &db;
-        return BSISUCCESS;
-        }
-
-    void CloseBriefcase() override
-        {
-        m_briefcase = nullptr;
-        }
-
-    StatusInt PullMergeAndPush(Utf8CP) override
-        {
-        CaptureChangeSet(m_briefcase);
-        return BSISUCCESS;
-        }
-
-    void CaptureChangeSet(DgnDbP);
-
-    StatusInt PullAndMerge() override
-        {
-        return BSISUCCESS;
-        }
-
-    StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override
-        {
-        return BSISUCCESS;
-        }
-
-    iModel::Hub::Error const& GetLastError() const override
-        {
-        return m_lastServerError;
-        }
-
-    IRepositoryManagerP GetRepositoryManager(DgnDbR db) override
-        {
-        BeAssert(false); return nullptr;
-        }
-
-    StatusInt AcquireLocks(LockRequest&, DgnDbR) override
-        {
-        return BSISUCCESS;
-        }
-};
+        virtual void CaptureChangeSet(DgnDbP db) override;
+    };
 END_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
@@ -604,7 +522,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
     TestSourceItemWithId m_foo_i1;
     TestSourceItemWithId m_bar_i0;
     TestSourceItemWithId m_bar_i1;
-    TestIModelHubClientForBridges& m_testIModelHubClientForBridges;
+    TestIModelHubFwkClientForBridges& m_testIModelHubClientForBridges;
     iModelBridgeSyncInfoFile::ROWID m_docScopeId;
     bool m_jobTransChanged = false;
     int m_changeCount = 0;
@@ -686,7 +604,7 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
     void ConvertItem(TestSourceItemWithId& item, iModelBridgeSyncInfoFile::ChangeDetector&);
 
-    iModelBridgeTests_Test1_Bridge(TestIModelHubClientForBridges& tc)
+    iModelBridgeTests_Test1_Bridge(TestIModelHubFwkClientForBridges& tc)
         :
         iModelBridgeWithSyncInfoBase(),
         m_foo_i0("0", "foo i0 - initial"),
@@ -724,19 +642,9 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool anyTxnsInFile(DgnDbR db)
-    {
-    Statement stmt;
-    stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
-    return (BE_SQLITE_ROW == stmt.Step());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestIModelHubClientForBridges::CaptureChangeSet(DgnDbP db)
+void TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
     {
     ASSERT_TRUE(db != nullptr);
 
@@ -864,7 +772,7 @@ TEST_F(iModelBridgeTests, Test1)
     args.push_back(L"--fwk-input=Foo");
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run
@@ -962,7 +870,7 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run
@@ -1099,7 +1007,7 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", platformAssetsDir.c_str())); // must be a real assets dir! the platform's assets dir will serve just find as the test bridge's assets dir.
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
-    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    TestIModelHubFwkClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     // Register the test bridge that fwk should run

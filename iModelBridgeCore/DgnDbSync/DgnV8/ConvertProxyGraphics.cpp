@@ -296,7 +296,7 @@ Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8M
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping, 
                                                          SyncInfo::V8ElementSource const& attachmentSource,
-                                                         SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                         SyncInfo::V8ElementMapping const& originalElementMapping, DgnV8Api::ElementHandle& v8eh,
                                                          DgnCategoryId categoryId, GeometryBuilder& builder)
     {
     DgnModelR model = drawingModelMapping.GetDgnModel();
@@ -311,7 +311,6 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     V8ElementECContent ecContent;
     bool hasPrimaryInstance = false;
     bool hasSecondaryInstances = false;
-    DgnV8Api::ElementHandle v8eh(drawingModelMapping.GetV8Model().FindElementByID(originalElementMapping.m_v8ElementId));
     if (v8eh.IsValid())
         {
         bool isNewElement = true;
@@ -341,6 +340,16 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (!elementClassId.IsValid())
         elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
+
+    if (!GetDgnDb().Schemas().GetClass(elementClassId)->Is(GetDgnDb().Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic)))
+        {
+        elementClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic);
+        if (hasPrimaryInstance)
+            {
+            ecContent.m_secondaryV8Instances.push_back(std::make_pair(ecContent.m_primaryV8Instance.get(), BisConversionRule::ToAspectOnly));
+            hasPrimaryInstance = false;
+            }
+        }
 
     DgnElementPtr drawingGraphic = CreateNewElement(model, elementClassId, categoryId, code);
     if (!drawingGraphic.IsValid())
@@ -384,7 +393,10 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
         if (nullptr == m_elementAspectConverter)
             m_elementAspectConverter = new ElementAspectConverter(*this);
         if (BentleyApi::SUCCESS != m_elementAspectConverter->ConvertToAspects(results, ecContent.m_secondaryV8Instances))
-            return DgnDbStatus::BadElement;
+            {
+            //ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicBuildFailure(), "", originalElementMapping.m_v8ElementId, model.GetName().c_str());
+
+            }
         }
 
     if (IsUpdating())

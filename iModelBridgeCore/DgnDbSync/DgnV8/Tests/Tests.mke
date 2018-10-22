@@ -13,6 +13,16 @@ ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hope
 
 %include mdl.mki
 
+
+dirToSearch = $(BuildContext)SubParts/UnitTests/include
+%include cincapnd.mki
+
+iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+
+dirToSearch  = $(iModelBridgePrivateAPISrc)
+%include cincapnd.mki
+
+
 # Need to ignore this because it's in Vancouver's header files.
 %if defined(MSVC_VERSION)
 %if MSVC_VERSION >= 1900

@@ -171,6 +171,7 @@
         <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="PublicApi"/>
         <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
+        <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
         </Bindings>
@@ -188,7 +189,7 @@
     </Part>
 
     <Part Name="iModelBridgeGetAffinityHostExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
         <SubPart PartName="PublicApi"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
@@ -396,6 +397,7 @@
     <ProductDirectory Name="PublisherLoggingConfigXml"  RelativeTo="applicationroot"/>
     <ProductDirectory Name="PdfLibInitNativeAssemblies" Deliver="false"/>
     <ProductDirectory Name="DgnV8Dlls"                  Path="DgnV8"/>
+    <ProductDirectory Name="DgnV8DummyUstation"         Path="DgnV8"/>
 
   </ProductDirectoryList>
 

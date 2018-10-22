@@ -133,11 +133,11 @@ struct LightTests : public ConverterTestBaseFixture
 void LightTests::SetUp()
     {
     T_Super::SetUp();
-    if (false == DgnV8Api::ConfigurationManager::IsVariableDefined(L"_USTN_DGNLIBLIST_SYSTEM"))
+    //if (false == DgnV8Api::ConfigurationManager::IsVariableDefined(L"_USTN_DGNLIBLIST_SYSTEM"))
         {
         BentleyApi::BeFileName inFile = GetInputFileName(L"SystemCells.dgnlib");
         WString directory = inFile.GetDirectoryName();
-        DgnV8Api::ConfigurationManager::DefineVariable(L"_USTN_DGNLIBLIST_SYSTEM", directory.c_str(), DgnV8Api::ConfigurationVariableLevel::System);
+        DgnV8Api::ConfigurationManager::DefineVariable(L"_USTN_DGNLIBLIST_SYSTEM", directory.c_str(), DgnV8Api::ConfigurationVariableLevel::User);
         }
     }
 
@@ -453,10 +453,46 @@ TEST_F(ConverterTests, GetCoordinateSystemProperties)
     dgnProj->GeoLocation().LatLongFromXyz(gp, BentleyApi::DPoint3d::FromZero());
 
     double const latitudeExpected = 42.3412;
-    EXPECT_TRUE(fabs(latitudeExpected - gp.latitude) < eps) << "Expected diffrent latitude ";
+    EXPECT_TRUE(fabs(latitudeExpected - gp.latitude) < eps) << "Expected different latitude ";
 
     double const longitudeExpected = -71.0805;
-    EXPECT_TRUE(fabs(longitudeExpected - gp.longitude) < eps) << "Expected diffrent longitude ";
+    EXPECT_TRUE(fabs(longitudeExpected - gp.longitude) < eps) << "Expected different longitude ";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, GCSNoChange)
+    {
+    LineUpFiles(L"GeoCoordinateSystem.ibim", L"GeoCoordinateSystem.i.dgn", true);
+    DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto originalExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    dgnProj->CloseDb();
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+
+    dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto updatedExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    ASSERT_TRUE(updatedExtents.IsEqual(originalExtents));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConverterTests, NoGCSNoChange)
+    {
+    LineUpFiles(L"NoGCS.ibim", L"Test3d.dgn", true);
+    DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto originalExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    dgnProj->CloseDb();
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+
+    dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+    auto updatedExtents = dgnProj->GeoLocation().GetProjectExtents();
+
+    ASSERT_TRUE(updatedExtents.IsEqual(originalExtents));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -676,7 +712,7 @@ TEST_F(ConverterTests, GCSMultiFilesReprojectImport)
     ASSERT_TRUE (db->IsDbOpen());
 
     ValidateModelRange (*db.get(), "2D Site Data", 775473.879, 82772.289, -0.0005, 776530.835, 83720.500, 0.0005);
-    ValidateModelRange(*db.get(), "Building 1", 775953.179, 83335.971, -0.0005, 776088.567, 83467.104, 0.0005);
+    ValidateModelRange(*db.get(), "Building 1", 775954.601, 83335.970, -0.0005, 776087.898, 83454.089, 0.0005);
     ValidateModelRange (*db.get(), "TPB Building", 775885.795, 83307.686, -0.0005, 775960.121, 83398.667, 0.0005);
     }
 
@@ -1145,10 +1181,6 @@ void UpdateWithSpatialDataTransform(BentleyApi::DPoint3dCR xlat, double rot, boo
 
     // Verify that the lines moved as expected
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
-    auto newProjectExtents = db->GeoLocation().GetProjectExtents();
-    ASSERT_TRUE(m_projectExtents.IsContained(newProjectExtents)) << "Project extents should have expanded to hold the lines that moved over and up";  
-    ASSERT_FALSE(newProjectExtents.IsContained(m_projectExtents));
-
     auto bimLine1 = FindV8ElementInDgnDb(*db, m_elementId1);
     ASSERT_TRUE(bimLine1.IsValid());
     BentleyApi::DPoint3d obim1AfterUpdate;
@@ -1181,11 +1213,13 @@ void SetupTransformCorrectionTest()
     auto o1 = Bentley::DPoint3d::From(1, 0, 0);
     auto o2 = Bentley::DPoint3d::From(2, 0, 0);
 
+    {
     V8FileEditor v8editor;
     v8editor.Open(m_v8FileName);
     v8editor.AddLine(&m_elementId1, v8editor.m_defaultModel, o1);
     v8editor.AddLine(&m_elementId2, v8editor.m_defaultModel, o2);
     v8editor.Save();
+    }
 
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
@@ -1198,7 +1232,7 @@ void SetupTransformCorrectionTest()
     ASSERT_TRUE(jobSubject.IsValid()) << "There is always a job subject element";
 
     BentleyApi::Transform trans;
-    ASSERT_NE(BSISUCCESS, JobSubjectUtils::GetTransform(trans, *jobSubject)) << "The job subject should not yet have a transform property";
+    ASSERT_EQ(BSISUCCESS, JobSubjectUtils::GetTransform(trans, *jobSubject)) << "The job subject should have a default identity transform property";
 
     auto bimLine1 = FindV8ElementInDgnDb(*db, m_elementId1);
     ASSERT_TRUE(bimLine1.IsValid());

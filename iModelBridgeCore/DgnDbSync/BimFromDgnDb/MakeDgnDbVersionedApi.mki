@@ -298,6 +298,7 @@ $(modifiedHeadersOutputBaseDir).stamp : $[@wildcard ${DGNDB_VERSIONEDAPI_INPUTDI
 \"bvector\.h\"!<$(DGNDB_VERSIONEDAPI_INCLUDE_ROOT)\/Bentley\/bvector.h>
 \"DgnPlatform\/DgnTextStyle\.h\"!<$(DGNDB_VERSIONEDAPI_INCLUDE_ROOT)\/DgnPlatform\/DgnTextStyle.h>
 \<json!<$(DGNDB_VERSIONEDAPI_INCLUDE_ROOT)\/json
+portability\/config.h!portability\/Config.h
 PerformDGNDB06_!Perform
     <
     python $(bsiScripts)RegexListReplace.py $(DGNDB_VERSIONEDAPI_OUTPUTDIR)replacements ${modifiedHeadersOutputBaseDir}

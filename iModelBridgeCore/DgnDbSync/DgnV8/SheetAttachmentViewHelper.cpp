@@ -399,7 +399,7 @@ void SheetAttachmentViewHelper::SetCategories(ViewDefinitionR viewDef, SyncInfo:
 SheetAttachmentViewHelper::SheetAttachmentViewHelper(Converter& c, DgnAttachmentCR a, ResolvedModelMapping const& sm, DgnV8ViewInfoCP sv, ViewFactory& nvvf)
     : m_converter(c), m_v8DgnAttachment(a), m_sheetModelMapping(sm), m_v8SheetViewInfo(sv), m_nvvf(nvvf)
     {
-    Utf8String baseName = m_converter.SheetsComputeViewAttachmentName(m_v8DgnAttachment);
+    Utf8String baseName = m_converter.SheetsComputeViewAttachmentName(m_sheetModelMapping.GetDgnModel().GetModelId(), m_v8DgnAttachment);
     m_name = baseName;
     int iter=1;
     while (ViewDefinition::QueryViewId(*c.GetJobDefinitionModel(), m_name).IsValid())

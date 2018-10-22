@@ -19,7 +19,7 @@
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <iModelBridge/iModelBridgeRegistry.h>
 #include "../iModelBridgeHelpers.h"
-#include "IModelClientForBridges.h"
+#include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -1221,10 +1221,11 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
     NativeLogging::Provider::Log4cxxProvider*    m_provider;
     WString                                      m_connectProjectId;
     WString                                      m_iModelId;
+    WString                                      m_bridgeName;
     public:
     LoggingContext(iModelBridgeFwk::JobDefArgs const& jobDef, Utf8StringCR projectId, Utf8StringCR iModelId, NativeLogging::Provider::Log4cxxProvider* provider)
         :m_jobRunCorrelationId(jobDef.m_jobRunCorrelationId.c_str(), true), m_provider(provider), m_connectProjectId(projectId.c_str(), true), m_iModelId(iModelId.c_str(), true),
-        m_jobRequestId(jobDef.m_jobRunCorrelationId.c_str(), true)
+        m_jobRequestId(jobDef.m_jobRunCorrelationId.c_str(), true), m_bridgeName(jobDef.m_bridgeRegSubKey)
         {
         if (NULL == m_provider)
             return;
@@ -1236,6 +1237,8 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
             m_provider->AddContext(L"ConnectProjectId", m_connectProjectId.c_str());
         if (!m_iModelId.empty())
             m_provider->AddContext(L"iModelId", m_iModelId.c_str());
+        if (!m_bridgeName.empty())
+            m_provider->AddContext(L"iModelBridgeName", m_bridgeName.c_str());
         }
 
     ~LoggingContext()
@@ -1250,6 +1253,8 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
             m_provider->RemoveContext(L"ConnectProjectId");
         if (!m_jobRunCorrelationId.empty())
             m_provider->RemoveContext(L"iModelId");
+        if (!m_bridgeName.empty())
+            m_provider->RemoveContext(L"iModelBridgeName");
         }
     };
 
@@ -1264,6 +1269,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 	// *** Talk to Sam Wilson if you need to make a change.
 	// ***
 	// ***
+    StopWatch setUpTimer(true);
     Utf8String connectProjectId, iModelId;
     if (m_useIModelHub && NULL != m_iModelHubArgs)
         {
@@ -1286,7 +1292,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     //  Open our state db.
     dbres = OpenOrCreateStateDb();
     if (BE_SQLITE_OK != dbres)
+        {
+        LOG.fatal("OpenOrCreateStateDb failed");
         return RETURN_STATUS_LOCAL_ERROR;
+        }
 
     //  Resolve the bridge to run
     if (m_jobEnvArgs.m_bridgeLibraryName.empty())
@@ -1335,16 +1344,32 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
 
+    LogPerformance(setUpTimer, "Initialized iModelBridge Fwk");
+    
+    LOG.tracev(L"Logging into iModel Hub");
+    {
+    StopWatch iModelHubSignIn(true);
     //  Sign into the iModelHub
     if (BSISUCCESS != Briefcase_Initialize(argc, argv))
         return RETURN_STATUS_SERVER_ERROR;
 
+    LogPerformance(setUpTimer, "Logging into iModelHub");
+    }
+    LOG.tracev(L"Logging into iModel Hub : Done");
+
     // Stage the workspace and input file if  necessary.
+    LOG.tracev(L"Setting up workspace for standalone bridges");
     if (BSISUCCESS != SetupDmsFiles())
         return RETURN_STATUS_SERVER_ERROR;
 
+    LOG.tracev(L"Setting up workspace for standalone bridges  : Done");
+
     //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
+    {
+    LOG.tracev(L"Setting up iModel Briefcase for processing");
+    StopWatch briefcaseTime(true);
+
     bool createdNewRepo = false;
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo))
         {
@@ -1356,6 +1381,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (createdNewRepo)
         return RETURN_STATUS_SUCCESS;
 
+    LogPerformance(setUpTimer, "Getting iModel Briefcase from iModelHub");
+    LOG.tracev(L"Setting up iModel Briefcase for processing  : Done");
+    }
+    
     //  The repo already exists. Run the bridge to update it and then push the changeset to the iModel.
     int status;
     try
@@ -1364,6 +1393,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
     catch (...)
         {
+        LOG.fatal("UpdateExistingBim failed");
         status = RETURN_STATUS_LOCAL_ERROR;
         }
 
@@ -1462,6 +1492,7 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     {
+    GetLogger().trace("Entering TryOpenBimWithBisSchemaUpgrade");
     bool madeSchemaChanges = false;
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
@@ -1493,6 +1524,28 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
         if (0 != ProcessSchemaChange())  // pullmergepush + re-open
             return BSIERROR;
         }
+    return SUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+//! Method to store common information applicable to all bridges.
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int             iModelBridgeFwk::StoreHeaderInformation()
+    {
+    BeGuid guid = m_briefcaseDgnDb->QueryProjectGuid();
+    if (guid.IsValid())
+        return SUCCESS;
+
+    if (!m_useIModelHub || NULL == m_iModelHubArgs)
+        return SUCCESS;
+
+    BeGuid connectProjectId;
+    if (SUCCESS != connectProjectId.FromString(m_iModelHubArgs->m_bcsProjectId.c_str()))
+        return ERROR;
+    
+    m_briefcaseDgnDb->SaveProjectGuid(connectProjectId);
     return SUCCESS;
     }
 
@@ -1532,9 +1585,10 @@ int iModelBridgeFwk::UpdateExistingBim()
     // ***          So, we need to be able to open the BIM just in order to pull/merge/push, before we allow the bridge to add a schema import/upgrade into the mix.
     // ***
     //  By getting the BIM to the tip, this initial pull also helps ensure that we will be able to get locks for the other changes that that bridge will make later.
+    LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade");
     if (BSISUCCESS != TryOpenBimWithBisSchemaUpgrade())
         return BentleyStatus::ERROR;
-    
+    LOG.tracev(L"TryOpenBimWithBisSchemaUpgrade  : Done");
 
     if (BSISUCCESS != Briefcase_PullMergePush(""))
         return RETURN_STATUS_SERVER_ERROR;
@@ -1625,6 +1679,9 @@ int iModelBridgeFwk::UpdateExistingBim()
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
+        GetLogger().tracev("bridge:%s iModel:%s - Storing iModel Bridge Header Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+        if (SUCCESS != StoreHeaderInformation())
+            GetLogger().warningv("bridge:%s iModel:%s - Storing iModel Bridge Header Data Failed.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
         //  Now, finally, we can convert data
         GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
@@ -1632,7 +1689,10 @@ int iModelBridgeFwk::UpdateExistingBim()
         BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, true);
     
         if (BSISUCCESS != bridgeCvtStatus)
+            {
+            GetLogger().errorv("Bridge::DoConvertToExistingBim failed with status %d", bridgeCvtStatus);
             return RETURN_STATUS_CONVERTER_ERROR;
+            }
 
         callTerminate.m_status = callCloseOnReturn.m_status = BSISUCCESS;
         }
@@ -1642,7 +1702,10 @@ int iModelBridgeFwk::UpdateExistingBim()
     //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
     if (BeSQLite::BE_SQLITE_OK != dbres)
+        {
+        GetLogger().errorv("Db::SaveChanges failed with status %d", dbres);
         return RETURN_STATUS_LOCAL_ERROR;
+        }
 
     //  PullMergePush
     //  Note: We may still be holding shared locks that we need to release. If we detect this, we must try again to release them.
@@ -1910,4 +1973,28 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         }
 
     return *m_registry;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
+    {
+    stopWatch.Stop();
+    const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
+    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger("iModelBridge.Performance");
+    if (NULL == logger)
+        return;
+
+    if (logger->isSeverityEnabled(severity))
+        {
+        va_list args;
+        va_start(args, description);
+        Utf8String formattedDescription;
+        formattedDescription.VSprintf(description, args);
+        va_end(args);
+
+        logger->messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
+        }
     }

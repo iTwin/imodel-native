@@ -17,7 +17,7 @@ struct SheetViewFactory : ViewFactory
     Converter& m_sheetConverter;
 
     ViewDefinitionPtr _MakeView(Converter& converter, ViewDefinitionParams const&) override;
-    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, DgnViewId viewId) override;
+    ViewDefinitionPtr _UpdateView(Converter& converter, ViewDefinitionParams const&, ViewDefinitionR existingViewDef) override;
 
     SheetViewFactory(Converter& s) : m_sheetConverter(s) {}
     };
@@ -80,7 +80,7 @@ ViewDefinitionPtr SheetViewFactory::_MakeView(Converter& converter, ViewDefiniti
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ViewDefinitionPtr SheetViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, DgnViewId viewId)
+ViewDefinitionPtr SheetViewFactory::_UpdateView(Converter& converter, ViewDefinitionParams const& params, ViewDefinitionR existingViewDef)
     {
     ViewDefinitionPtr newDef = _MakeView(converter, params);
     if (!newDef.IsValid())
@@ -90,23 +90,31 @@ ViewDefinitionPtr SheetViewFactory::_UpdateView(Converter& converter, ViewDefini
 
     DgnDbStatus stat;
     // need to update the DisplayStyle and CategorySelector.
-    SheetViewDefinitionPtr existingDef = converter.GetDgnDb().Elements().GetForEdit<SheetViewDefinition>(viewId);
-
     DisplayStyleR newDisplayStyle = sheet->GetDisplayStyle();
-    newDisplayStyle.ForceElementIdForInsert(existingDef->GetDisplayStyleId());
-    newDisplayStyle.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newDisplayStyle.ForceElementIdForInsert(existingViewDef.GetDisplayStyleId());
+    if (!existingViewDef.GetDisplayStyle().EqualState(newDisplayStyle))
+        {
+        newDisplayStyle.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     sheet->SetDisplayStyle(newDisplayStyle);
 
+    // Update doesn't actually update the 'CategorySelector' list.  It deletes the old one and creates a new one.  This will cause a changeset to be created for every update, 
+    // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of categories and only call Update if there were.
     CategorySelectorR newCategorySelector = sheet->GetCategorySelector();
-    newCategorySelector.ForceElementIdForInsert(existingDef->GetCategorySelectorId());
-    newCategorySelector.Update(&stat);
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+    newCategorySelector.ForceElementIdForInsert(existingViewDef.GetCategorySelectorId());
+    Json::Value newCategoryVal = newCategorySelector.ToJson();
+    Json::Value oldCategoryVal = existingViewDef.GetCategorySelector().ToJson();
+    if (newCategoryVal != oldCategoryVal)
+        {
+        newCategorySelector.Update(&stat);
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
     sheet->SetCategorySelector(newCategorySelector);
 
-    newDef->ForceElementIdForInsert(viewId);
+    newDef->ForceElementIdForInsert(existingViewDef.GetElementId());
     return newDef;
     }
 

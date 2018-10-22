@@ -52,6 +52,13 @@ DWGDB_ENTITY_DEFINE_MEMBERS(RasterImage)
 DWGDB_ENTITY_DEFINE_MEMBERS(PointCloudEx)
 DWGDB_ENTITY_DEFINE_MEMBERS(Viewport)
 DWGDB_ENTITY_DEFINE_MEMBERS(ViewBorder)
+DWGDB_SURFACE_DEFINE_MEMBERS(Surface)
+DWGDB_SURFACE_DEFINE_MEMBERS(ExtrudedSurface)
+DWGDB_SURFACE_DEFINE_MEMBERS(LoftedSurface)
+DWGDB_SURFACE_DEFINE_MEMBERS(NurbSurface)
+DWGDB_SURFACE_DEFINE_MEMBERS(PlaneSurface)
+DWGDB_SURFACE_DEFINE_MEMBERS(RevolvedSurface)
+DWGDB_SURFACE_DEFINE_MEMBERS(SweptSurface)
 
 
 
@@ -252,6 +259,40 @@ bool       DwgDb2dPolyline::GetConstantWidth (double& width) const
 #elif DWGTOOLKIT_RealDwg
     return  Acad::eOk == T_Super::constantWidth (width);
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDb2dPolyline::GetPoints (DPoint3dArrayR out) const
+    {
+    out.clear ();
+    auto iter = this->GetVertexIterator ();
+    if (!iter.IsValid() || !iter->IsValid())
+        return  DwgDbStatus::MemoryError;
+
+    for (iter->Start(); !iter->Done(); iter->Next())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        OdDb2dVertexPtr vertex = iter->GetObjectId().safeOpenObject (OdDb::kForRead);
+        if (!vertex.isNull())
+#elif DWGTOOLKIT_RealDwg
+        AcDbSmartObjectPointer<AcDb2dVertex>    vertex(iter->GetObjectId(), AcDb::kForRead);
+        if (vertex.openStatus() == Acad::eOk)
+#endif
+            {
+            // a database resident vertex
+            out.push_back (Util::DPoint3dFrom(vertex->position()));
+            }
+        else
+            {
+            // a non-db resident vertex
+            auto newVertex = DWGDB_Type(2dVertex)::cast (iter->GetEntity());
+            if (newVertex != nullptr)
+                out.push_back (Util::DPoint3dFrom(newVertex->position()));
+            }
+        }
+    return  out.empty() ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2132,3 +2173,70 @@ DwgDbStatus DwgDb3dSolid::GetMassProperties (MassProperties& out) const
     }
 uint32_t    DwgDb3dSolid::GetNumChanges () const { return T_Super::numChanges(); }
 DwgDbStatus DwgDb3dSolid::GetArea (double& area) const { return ToDwgDbStatus(T_Super::getArea(area)); }
+
+/*---------------------------------------------------------------------------------------
+Methods of AcDbSurface not exported from RealDWG cause unresolved symbol link errors.
+---------------------------------------------------------------------------------------*/
+#ifdef DWGTOOLKIT_RealDwg
+Acad::ErrorStatus AcDbSurface::createInterferenceObjects(AcArray<AcDbEntity*>& o, AcDbEntity* e, unsigned int flags ) const { return createInterferenceObjects(o, e, flags); }
+Acad::ErrorStatus AcDbSurface::booleanUnion(const AcDbSurface* pSurface2, AcDbSurface*& pNewSurface) { return booleanUnion(pSurface2, pNewSurface); }
+Acad::ErrorStatus AcDbSurface::booleanSubtract(const AcDbSurface* pSurface2, AcDbSurface*& pNewSurface) { return booleanSubtract(pSurface2, pNewSurface); }
+Acad::ErrorStatus AcDbSurface::booleanSubtract(const AcDb3dSolid* pSolid, AcDbSurface*& pNewSurface) { return booleanSubtract(pSolid, pNewSurface); }
+Acad::ErrorStatus AcDbSurface::booleanIntersect(const AcDbSurface* pSurface2, AcArray<AcDbEntity*>& out) { return booleanIntersect(pSurface2, out); }
+Acad::ErrorStatus AcDbSurface::booleanIntersect(const AcDb3dSolid* pSolid, AcArray<AcDbEntity*>& out) { return booleanIntersect(pSolid, out); }
+Acad::ErrorStatus AcDbSurface::imprintEntity(const AcDbEntity* pEntity) { return imprintEntity(pEntity); }
+Acad::ErrorStatus AcDbSurface::createSectionObjects(const AcGePlane& plane, AcArray<AcDbEntity*>& out) const { return createSectionObjects(plane, out); }
+Acad::ErrorStatus AcDbSurface::sliceByPlane(const AcGePlane& plane, AcDbSurface*& s1, AcDbSurface*& s2) { return sliceByPlane(plane, s1, s2); }
+Acad::ErrorStatus AcDbSurface::sliceBySurface(const AcDbSurface* s1, AcDbSurface*& s2, AcDbSurface*& s3) { return sliceBySurface(s1, s2, s3); }
+Acad::ErrorStatus AcDbSurface::chamferEdges(const AcArray<AcDbSubentId *>& edges, const AcDbSubentId& face, double d1, double d2) { return chamferEdges(edges, face, d1, d2); }
+Acad::ErrorStatus AcDbSurface::filletEdges(const AcArray<AcDbSubentId *>& edges, const AcGeDoubleArray& r, const AcGeDoubleArray& s, const AcGeDoubleArray& e) { return filletEdges(edges, r, s, e); }
+Acad::ErrorStatus AcDbSurface::getPlane(AcGePlane& plane, AcDb::Planarity& planarity) const { return getPlane(plane, planarity); }
+Acad::ErrorStatus AcDbSurface::setSubentColor(const AcDbSubentId& subentId, const AcCmColor& color) { return setSubentColor(subentId, color); }
+Acad::ErrorStatus AcDbSurface::getSubentColor(const AcDbSubentId& subentId, AcCmColor& color) const { return getSubentColor(subentId, color); }
+Acad::ErrorStatus AcDbSurface::setSubentMaterial(const AcDbSubentId& subentId, const AcDbObjectId& matId) { return setSubentMaterial(subentId, matId); }
+Acad::ErrorStatus AcDbSurface::getSubentMaterial(const AcDbSubentId& subentId, AcDbObjectId& matId) const { return getSubentMaterial(subentId, matId); }
+Acad::ErrorStatus AcDbSurface::setSubentMaterialMapper(const AcDbSubentId& subentId, const AcGiMapper& mapper) { return setSubentMaterialMapper(subentId, mapper); }
+Acad::ErrorStatus AcDbSurface::getSubentMaterialMapper(const AcDbSubentId& subentId, AcGiMapper& mapper) const { return getSubentMaterialMapper(subentId, mapper); }
+Acad::ErrorStatus AcDbSurface::getArea(double& area) const { return getArea(area); }
+Acad::ErrorStatus AcDbSurface::dwgInFields(AcDbDwgFiler* filer) { return dwgInFields(filer); }
+Acad::ErrorStatus AcDbSurface::dwgOutFields(AcDbDwgFiler* filer) const { return dwgOutFields(filer); }
+Acad::ErrorStatus AcDbSurface::dxfInFields(AcDbDxfFiler* filer) { return dxfInFields(filer); }
+Acad::ErrorStatus AcDbSurface::dxfOutFields(AcDbDxfFiler* filer) const { return dxfOutFields(filer); }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          09/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbNurbSurface::IsPlanar(bool& planar, DPoint3dR pointOut, DVec3dR normalOut) const 
+    {
+    DWGGE_Type(Point3d) gePoint;
+    DWGGE_Type(Vector3d) geVector;
+    auto status = T_Super::isPlanar (planar, gePoint, geVector);
+    if (ToDwgDbStatus(status) == DwgDbStatus::Success)
+        {
+        pointOut = Util::DPoint3dFrom (gePoint);
+        normalOut = Util::DVec3dFrom (geVector);
+        }
+    return  ToDwgDbStatus(status);
+    }
+DwgDbStatus DwgDbNurbSurface::GetNormal(double u, double v, DVec3dR normalOut) const
+    {
+    DWGGE_Type(Vector3d) geVector;
+    auto status = T_Super::getNormal (u, v, geVector);
+    if (ToDwgDbStatus(status) == DwgDbStatus::Success)
+        normalOut = Util::DVec3dFrom (geVector);
+    return ToDwgDbStatus(status);
+    }
+DwgDbStatus DwgDbNurbSurface::Evaluate(double u, double v, int derivDegree, DPoint3dR point, DVector3dArrayR derivatives) const 
+    {
+    DWGGE_Type(Vector3dArray) geVectors;
+    DWGGE_Type(Point3d) gePoint;
+    auto status = T_Super::evaluate (u, v, derivDegree, gePoint, geVectors);
+    if (ToDwgDbStatus(status) == DwgDbStatus::Success)
+        {
+        point = Util::DPoint3dFrom (gePoint);
+        Util::GetVectorArray (derivatives, geVectors);
+        }
+    return ToDwgDbStatus(status);
+    }
+DwgDbStatus DwgDbNurbSurface::IsPointOnSurface(DPoint3dCR test, bool& answer) const { return ToDwgDbStatus(T_Super::isPointOnSurface(Util::GePoint3dFrom(test), answer)); }
