@@ -66,7 +66,7 @@ TEST_F(UnitRegistryTests, AllUnitsNeededForFirstReleaseExist)
             }
         };
 
-    ReadConversionCsvFile(L"NeededUnits.csv", lineProcessor);
+    ReadCSVFile(L"NeededUnits.csv", lineProcessor);
 
     if (missingUnits.size() != 0)
         {
@@ -385,12 +385,12 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
         parsedName.Trim();
         isIgnoredName = false;
         
-        for(auto const& ignoredName : ignoredNames)
+        for (auto const& ignoredName : ignoredNames)
             {
             if(ignoredName.EqualsI(parsedName.c_str()))
                 isIgnoredName = true;
             }
-        if(!isIgnoredName)
+        if (!isIgnoredName)
             { 
             auto mapped = UnitNameMappings::TryGetECNameFromNewName(parsedName.c_str());
             if (nullptr == mapped)
@@ -406,6 +406,10 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
                 parsedName = "KPF";
             if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:PERSON"))
                 parsedName = "PERSON";
+            if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:HUNDRED_PERSON"))
+                parsedName = "HUNDRED_PERSON";
+            if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:THOUSAND_PERSON"))
+                parsedName = "THOUSAND_PERSON";
             
             auto roundtrippedName = UnitNameMappings::TryGetNewNameFromECName(mapped);
             if (nullptr == roundtrippedName)
@@ -413,14 +417,6 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
                 ASSERT_TRUE(false) <<  "Can't get name from ecname for unit " << mapped;
                 continue;
                 }
-            if (0 == BeStringUtilities::StricmpAscii(roundtrippedName, "DEKA"))
-                roundtrippedName = "DECA";
-            if (0 == BeStringUtilities::StricmpAscii(roundtrippedName, "N/SQ.MM"))
-                roundtrippedName = "MEGAPASCAL";
-            if (0 == BeStringUtilities::StricmpAscii(roundtrippedName, "KIPF"))
-                roundtrippedName = "KPF";
-            if (0 == BeStringUtilities::StricmpAscii(roundtrippedName, "CAPITA"))
-                roundtrippedName = "PERSON";
 
             auto newUnit = s_unitsContext->LookupUnit(parsedName.c_str());
             auto ecUnit = s_unitsContext->LookupUnit(roundtrippedName);

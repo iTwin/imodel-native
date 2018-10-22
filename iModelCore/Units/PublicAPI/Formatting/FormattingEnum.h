@@ -215,6 +215,7 @@ enum class FormatSpecialCodes
     SignatureNUNFU = 7,
     SignatureNUNUNU= 8,
     SignatureNUNUNFU = 9,
+    SignatureNN = 10,
     SignatureNCNCN = 20,
     SignatureNCCN  = 21,
     SignatureNCC   = 22,

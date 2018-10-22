@@ -9,6 +9,7 @@
 #include <Formatting/FormattingApi.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
+#include <regex>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -545,25 +546,21 @@ FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
 FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
     {
     Init(s);
-    size_t bufL = vect.size() * 4 + 2;
-    Utf8Char* buf = (Utf8Char*)alloca(bufL);
-    memset(buf, 0, bufL);
-    int i = 0;
+    m_name.get_allocator().allocate(vect.size() * 4 + 2);
     unsigned char* ptr;
-    for (CursorScanPointP vp = vect.begin(); vp != vect.end(); vp++)
+
+    for (CursorScanPointP vp = vect.begin(); vp != vect.end(); ++vp)
         {
         m_vect.push_back(*vp);
-        for (ptr = vp->GetBytes(); *ptr != '\0'; ptr++)
+        for (ptr = vp->GetBytes(); *ptr != '\0'; ++ptr)
             {
-            buf[i++] = *ptr;
+            m_name += *ptr;
             }
         }
-    if (i > 0) // something in the buffer
+    if (!m_name.empty()) // something in the buffer
         {
-        if (buf[0] == '_') // special case of prpending the unit name by underscore
-            m_name = Utf8String(buf + 1);
-        else
-            m_name = Utf8String(buf);
+        if (m_name.StartsWith("_")) // special case of prpending the unit name by underscore
+            m_name = m_name.substr(1);
 
         m_unit = nullptr;
         if(nullptr != refUnit)  // before looking into the registry we can try to find Unit in the Phenomenon
@@ -652,12 +649,69 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
     if (Utf8String::IsNullOrEmpty(input))
         return;
 
+    //special case for station format in order not to brake functionality below
+    if (nullptr != m_format && m_format->GetPresentationType() == PresentationType::Station)
+        {
+        Utf8String specialChars(R"*(([]()\.*+^?|{}$))*"); // if separator is one of these, we need to escape
+
+        auto signWithSpacePattern(R"*(([+-]?)\s*)*");
+        auto integerPattern(R"*((0|[1-9]\d*))*");
+        auto realNumberPattern(R"*((\d*\.\d+|\d+))*");
+
+        std::string separatorString(1, m_format->GetNumericSpec()->GetStationSeparator());
+        auto separator = separatorString.c_str();
+
+        Utf8String separatorPattern;
+        if (-1 != specialChars.find(separator))
+            separatorPattern.append("\\");
+        separatorPattern.append(separator);
+
+        Utf8String regexString(signWithSpacePattern);
+        regexString.append(integerPattern).append(separatorPattern).
+            append(realNumberPattern);
+
+        std::regex regex { regexString.c_str() };
+        std::smatch matches;
+
+        Utf8String inputString(input);
+        inputString.Trim();
+        std::string const inputStringForRegex(inputString.c_str());
+
+        if (std::regex_search(inputStringForRegex, matches, regex))
+            {
+            auto sign(matches[1].str());
+            auto majorNumber(matches[2].str());
+            auto minorNumber(matches[3].str());
+
+            if ((Utf8String::IsNullOrEmpty(sign.c_str()) && inputString.StartsWith(majorNumber.c_str()) ||
+                !Utf8String::IsNullOrEmpty(sign.c_str()) && inputString.StartsWith(sign.c_str())) &&
+                inputString.EndsWith(minorNumber.c_str()))
+                {
+                Utf8String numberWithSign(sign.c_str());
+                numberWithSign.append(majorNumber.c_str());
+                ng.Grab(numberWithSign.c_str());
+                auto firstSegment = FormatParsingSegment(ng);
+                m_segs.push_back(firstSegment);
+
+                ng.Grab(minorNumber.c_str());
+                auto secondSegment = FormatParsingSegment(ng);
+                m_segs.push_back(secondSegment);
+                }
+            else
+                m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidSyntax);
+            }
+        else
+            m_problem.UpdateProblemCode(FormatProblemCode::NA_InvalidSyntax);
+
+        return;
+        }
+
     while (!ng.IsEndOfLine())
         {
         ng.Grab(m_input, ind);
         if (ng.GetLength() > 0)  // a number is detected
             {
-            if (m_symbs.size() > 0)
+            if (!m_symbs.empty())
                 {
                 fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
                 m_segs.push_back(fps);
@@ -676,7 +730,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             csp = CursorScanPoint(m_input, ind);
             if (csp.IsSpace())
                 {
-                if (m_symbs.size() > 0)
+                if (!m_symbs.empty())
                     {
                     fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
                     m_segs.push_back(fps);
@@ -695,7 +749,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             }
         }
 
-    if (m_symbs.size() > 0)
+    if (!m_symbs.empty())
         {
         fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
         m_segs.push_back(fps);
@@ -715,74 +769,44 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit, FormatCP form
 //----------------------------------------------------------------------------------------
 Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
     {
-    Utf8String txt = "";
+    Utf8String signature("");
     if (m_segs.size() == 0)
-        return txt; 
+        return signature;
+
+    signature.get_allocator().allocate(m_segs.size() * 4 + 2);
     ParsingSegmentType type;
-    size_t bufL = m_segs.size() * 4 + 2;
-    Utf8Char* buf = (Utf8Char*)alloca(bufL);
-    memset(buf, 0, bufL);
-    int i = 0;
-    int colNum = 0;
 
     for (FormatParsingSegmentP fps = m_segs.begin(); fps != m_segs.end(); fps++)
         {
         type = fps->GetType();
         if (type == ParsingSegmentType::Real)
-            buf[i++] = distinct? 'R': 'N';
+            signature += distinct ? 'R': 'N';
         else if (type == ParsingSegmentType::Integer)
-            buf[i++] = distinct ? 'I' : 'N';
+            signature += distinct ? 'I' : 'N';
         else if (type == ParsingSegmentType::Fraction)
-            buf[i++] = 'F';
+            signature += 'F';
         else
             {
             if (fps->IsColon())
-                {
-                buf[i++] = 'C';
-                colNum++;
-                }
+                signature += 'C';
             else if (fps->IsDoubleColon())
-                {
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 2;
-                }
+                signature += "CC";
             else if (fps->IsTripleColon())
-                {
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 3;
-                }
+                signature += "CCC";
             else if (fps->IsMinusColon())
-                {
-                buf[i++] = '-';
-                buf[i++] = 'C';
-                colNum++;
-                }
+                signature += "-C";
             else if (fps->IsMinusDoubleColon())
-                {
-                buf[i++] = '-';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 2;
-                }
+                signature += "-CC";
             else if (fps->IsMinusTripleColon())
-                {
-                buf[i++] = '-';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                buf[i++] = 'C';
-                colNum = 3;
-                }
+                signature += "-CCC";
             else if (nullptr == fps->GetUnit())
-                buf[i++] = 'W';
+                signature += 'W';
             else
-                buf[i++] = 'U';
+                signature += 'U';
             }
         }
 
-    return Utf8String(buf);
+    return signature;
     }
 
 //----------------------------------------------------------------------------------------
@@ -813,11 +837,12 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     BEU::Quantity tmp = BEU::Quantity();
     Utf8String sig = GetSignature(false);
     // only a limited number of signatures will be recognized in this particular context
-    // reduced version: NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
-    //   3 FT - NU
-    //  1/3 FT  FU
+    // reduced version: NN, NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
+    //        3 FT - NU
+    //      1/3 FT - FU
+    //  50+00.1    - NN (station)
     BEU::UnitCP majP, midP;
-
+    
     BEU::UnitCP inputUnit;
     
     if (nullptr != format && nullptr != format->GetCompositeMajorUnit())
@@ -844,6 +869,12 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
             sign = m_segs[0].GetSign();
             qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *inputUnit);
             qty.Scale(sign);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNN:
+            if (format->GetPresentationType() == PresentationType::Station)
+                qty = BEU::Quantity(m_segs[0].GetReal() * std::pow(10, format->GetNumericSpec()->GetStationOffsetSize()) + m_segs[1].GetReal(), *inputUnit);
+            else
+                m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidSyntax);
             break;
         case Formatting::FormatSpecialCodes::SignatureNU:
             majP = m_segs[1].GetUnit();

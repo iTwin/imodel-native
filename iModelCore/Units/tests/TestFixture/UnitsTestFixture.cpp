@@ -110,11 +110,13 @@ UnitCP UnitsTestFixture::LocateUOM(Utf8CP unitName, bool useLegacyNames)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Basanta.Kharel                 12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void UnitsTestFixture::ReadConversionCsvFile(WCharCP file, CSVLineProcessor lineProcessor)
+void UnitsTestFixture::ReadCSVFile(WCharCP fileName, MultipleTokensProcessor const& lineProcessor)
     {
-    Utf8String path = UnitsTestFixture::GetConversionDataPath(file);
+    Utf8String path = UnitsTestFixture::GetConversionDataPath(fileName);
     std::ifstream ifs(path.begin(), std::ifstream::in);
     std::string line;
+
+    ASSERT_TRUE(ifs.good()) << "File '" + path + "' does not exist.";
 
     while (std::getline(ifs, line))
         {
@@ -122,6 +124,42 @@ void UnitsTestFixture::ReadConversionCsvFile(WCharCP file, CSVLineProcessor line
         BeStringUtilities::Split(line.c_str(), ",", tokens);
         lineProcessor(tokens);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Gintaras.Volkvicius 10/18
+//---------------------------------------------------------------------------------------
+void UnitsTestFixture::ReadCSVFile(WCharCP fileName, SingleTokenProcessor const& lineProcessor)
+    {
+    Utf8String path = UnitsTestFixture::GetConversionDataPath(fileName);
+    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::string line;
+    
+    ASSERT_TRUE(ifs.good()) << "File '" + path + "' does not exist.";
+
+    while (std::getline(ifs, line))
+        {
+        Utf8String token(line.c_str());
+        lineProcessor(token);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Gintaras.Volkvicius 10/18
+//---------------------------------------------------------------------------------------
+int UnitsTestFixture::GetCSVFileLineCount(WCharCP fileName)
+    {
+    Utf8String path = UnitsTestFixture::GetConversionDataPath(fileName);
+    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::string line;
+
+    ASSERT_TRUE(ifs.good()) << "File '" + path + "' does not exist.", 0;
+
+    int count = 0;
+    while (std::getline(ifs, line))
+        ++count;
+
+    return count;
     }
 
 END_UNITS_UNITTESTS_NAMESPACE

@@ -607,7 +607,7 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist
 // static
 BEU::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatCR inputFormat, FormatProblemCode* problemCode, QuantityFormatting::UnitResolver* resolver)
     {
-    return Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit()).GetQuantity(problemCode, &inputFormat);
+    return Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit(), &inputFormat).GetQuantity(problemCode, &inputFormat);
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

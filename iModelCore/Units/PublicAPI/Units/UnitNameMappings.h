@@ -45,11 +45,14 @@ private:
     bmap<Utf8String, Utf8String, less_str> m_oldNameNewNameMapping; // key: oldName value: newName
     bmap<Utf8String, Utf8String, less_str> m_newNameOldNameMapping; // key: newName value: oldName
     bmap<Utf8String, Utf8String, less_str> m_newNameECNameMapping; // key: newName value: ECName
-    bmap<Utf8String, Utf8String, less_str> m_ecNamenewNameMapping; // key: ECName value: newName
+    bmap<Utf8String, Utf8String, less_str> m_ecNameNewNameMapping; // key: ECName value: newName
 
     UnitNameMappings();
     void AddMapping(Utf8CP oldName, Utf8CP newName);
     void AddECMapping(Utf8CP newName, Utf8CP ecName);
+    void AddNewNameToECNameMapping(Utf8CP newName, Utf8CP ecName);
+    void AddNewNameToOldNameMapping(Utf8CP newName, Utf8CP oldName);
+    void AddOldNameToNewNameMapping(Utf8CP oldName, Utf8CP newName);
     void AddMappings();
 
     static UnitNameMappings * GetMappings();
