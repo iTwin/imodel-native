@@ -15,7 +15,6 @@
                 <HiddenProperty xmlns="CoreCustomAttributes.01.00.00"/>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsCorridorSurfaceAspect" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
