@@ -407,6 +407,24 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     PolyfaceHeaderPtr *inside,
     PolyfaceHeaderPtr *outside
     );
+
+    //! Clip a planar region to this ClipPlaneset
+    //! @param planarRegion [in] A CurveVector of type Loop or ParityRegion.
+    //! @param localToWorld [out] transform from world to the plane of the planarRegion
+    //! @param worldToLocal [out] transform from world to the plane of the planarRegion
+    GEOMDLLIMPEXP CurveVectorPtr ClipPlanarRegion (
+    CurveVectorCR planarRegion,
+    TransformR    localToWorld,
+    TransformR    worldToLocal
+    ) const;
+
+    //! Clip a planar region to the (optional) outsideClip. Subtract the (optional) holeClip.
+    //! @param planarRegion A CurveVector of type Loop or ParityRegion.
+    GEOMDLLIMPEXP static CurveVectorPtr ClipAndMaskPlanarRegion (
+    ClipPlaneSetCP outsideClip,
+    ClipPlaneSetCP holeClip,
+    CurveVectorCR planarRegion
+    );
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE

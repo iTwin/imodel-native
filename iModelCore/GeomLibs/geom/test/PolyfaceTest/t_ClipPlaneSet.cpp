@@ -1118,3 +1118,52 @@ TEST(ClipPlane,ClipPlaneToRange)
         }
     Check::ClearGeometry ("ClipPlaneSet.ClipPlaneToRange");
     }
+TEST(ClipPlaneSet,ClipRegion)
+    {
+    auto shapeL = CreateL (-4,0, 4, 1, 2,6);
+    auto holeL = CreateL (-2, 1, 0, 2, -1, 3);
+    ClipPlaneSet clipper = ClipPlaneSet::FromSweptPolygon (&shapeL[0], shapeL.size ());
+    ClipPlaneSet holeClipper = ClipPlaneSet::FromSweptPolygon (&holeL[0], holeL.size ());
+    DPoint3d xyzA = shapeL.front (); shapeL.push_back (xyzA);
+    DPoint3d xyzB = holeL.front (); holeL.push_back (xyzB);
+
+    for (auto useHole : {false, true})
+        {
+        auto region = CreateFilletedSymmetricT (5.0, 8.0, 1.0, 4.0, 0.5, 0.4);
+        SaveAndRestoreCheckTransform shifter (30,0,0);
+        auto baseTransform = Check::GetTransform ();
+        for (double dz = 0.0; dz < 3.2; dz += 0.5)
+            {
+            Check::Shift (0,0,dz);
+            Check::SaveTransformed (shapeL);
+            if (useHole)
+                Check::SaveTransformed (holeL);
+            }
+        Check::SetTransform (baseTransform);
+    
+        //Check::SaveTransformed (region);
+        DSegment3d segment = DSegment3d::From (DPoint3d::From (5,-10, 0), DPoint3d::From (4,10,1));
+        Check::SaveTransformed (segment);
+        DVec3d vector = segment.VectorStartToEnd ();
+        vector.Normalize ();
+        for (auto degrees : {0.0, 5.0, 10.0, 20.0, 30.0, 40.0})
+            {
+            SaveAndRestoreCheckTransform shifter (0,0,0);
+            auto transform = Transform::FromMatrixAndFixedPoint (
+                    RotMatrix::FromVectorAndRotationAngle (vector, Angle::DegreesToRadians (degrees)),
+                    segment.point[0]);
+            region->TransformInPlace (transform);
+            auto clipped = clipper.ClipAndMaskPlanarRegion (
+                &clipper,
+                useHole ? &holeClipper : nullptr,
+                *region);
+            if (clipped.IsValid ())
+                {
+                Check::SaveTransformed (*clipped);
+                }
+            Check::Shift (0,10,0);
+            Check::SaveTransformed (*region);
+            }
+        }
+    Check::ClearGeometry ("ClipPlaneSet.ClipRegion");
+    }

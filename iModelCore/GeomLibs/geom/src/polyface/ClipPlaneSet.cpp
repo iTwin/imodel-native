@@ -1536,4 +1536,118 @@ PolyfaceHeaderPtr *outside
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr ClipPlaneSet::ClipPlanarRegion
+(
+CurveVectorCR planarRegion,
+TransformR    localToWorld,
+TransformR    worldToLocal
+) const
+    {
+    DRange3d localRange;
+    auto localRegion = planarRegion.CloneInLocalCoordinates (LOCAL_COORDINATE_SCALE_01RangeLargerAxis,
+            localToWorld, worldToLocal, localRange);
+    if (localRegion.IsValid ())
+        {
+        bvector<DPoint3d> rectangle {
+            DPoint3d::From (0,0,0),
+            DPoint3d::From (1,0,0),
+            DPoint3d::From (1,1,0),
+            DPoint3d::From (0,1,0),
+            DPoint3d::From (0,0,0)};
+        localToWorld.Multiply (rectangle);
+        bvector<DPoint3d> work;
+        bvector<DPoint3d> fragment;
+        bvector<bvector<DPoint3d>> allFragments;
+        // Assemble the (union of) fragments from ConvexClipPlaneSet clips
+        for (auto &convexSet : *this)
+            {
+            convexSet.ConvexPolygonClip (rectangle, fragment, work);
+            if (fragment.size () > 2)
+                {
+                allFragments.push_back (bvector<DPoint3d> ());
+                allFragments.back ().swap (fragment);
+                }
+            }
+        if (allFragments.size () == 0)
+            return nullptr;
+        // The fragemnts are presumed quasi disjoint !!!!
+        // Use each one individually -- don't fuss with parity region
+        CurveVectorPtr clipper;
+        CurveVectorPtr result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+        for (auto &fragment : allFragments)
+            {
+            auto clipper = CurveVector::CreateLinear (fragment, CurveVector::BOUNDARY_TYPE_Outer, false);
+            clipper->TransformInPlace (worldToLocal);
+            auto clippedLocalRegion = CurveVector::AreaIntersection (*localRegion, *clipper);
+            if (clippedLocalRegion.IsValid ())
+                result->Add (clippedLocalRegion);
+            }
+        if (result->size () > 0)
+            {
+            result->TransformInPlace (localToWorld);
+            return result;    
+            }
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr ClipPlaneSet::ClipAndMaskPlanarRegion
+(
+ClipPlaneSetCP outsideClip,
+ClipPlaneSetCP holeClip,
+CurveVectorCR planarRegion
+)
+    {
+    CurveVectorPtr outerRegion, innerRegion;
+    Transform localToWorld, worldToLocal;
+    Transform localToWorldB, worldToLocalB;
+    if (outsideClip)
+        outerRegion = outsideClip->ClipPlanarRegion (planarRegion, localToWorld, worldToLocal);
+    if (holeClip)
+        innerRegion = holeClip->ClipPlanarRegion (planarRegion, localToWorldB, worldToLocalB);
+    if (outsideClip && holeClip)
+        {
+        if (outerRegion.IsValid ())
+            {
+            if (!innerRegion.IsValid ())
+                return outerRegion;
+            // both are valid now ..
+            outerRegion->TransformInPlace (worldToLocal);
+            innerRegion->TransformInPlace (worldToLocal);
+            auto result = CurveVector::AreaDifference (*outerRegion, *innerRegion);
+            result->TransformInPlace (localToWorld);
+            return result;
+            }
+        }
+    else if (outsideClip)
+        {
+        return outerRegion;
+        }
+    else if (holeClip)
+        {
+        if (!innerRegion.IsValid ())
+            return planarRegion.Clone ();
+        outerRegion = planarRegion.Clone ();
+        outerRegion->TransformInPlace (worldToLocal);
+        innerRegion->TransformInPlace (worldToLocal);
+        auto result = CurveVector::AreaDifference (*outerRegion, *innerRegion);
+        result->TransformInPlace (localToWorld);
+        return result;
+        }
+    else
+        {
+        // both missing. return clone.
+        return planarRegion.Clone ();
+        }
+    return nullptr;
+    }
+
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE

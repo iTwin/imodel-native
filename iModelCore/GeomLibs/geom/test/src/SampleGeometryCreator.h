@@ -1057,6 +1057,15 @@ bool closed = true,     //!< [in] true to close with base line.
 double ybase = -1.0    //!< [in] y height for base line
 );
 
+bvector<DPoint3d> CreateL
+(
+double x0,  // x coordinate at point 0,5,6
+double y0,  // y coordinate at point 0,1,6
+double x1,  // x coordinate at point 1,2
+double y1,  // y coordinate at point 2,3
+double x2,  // x coordinate at point 3,4
+double y2   // y coordinate at point 4,5
+);
 
 PolyfaceHeaderPtr CreatePolyface_ExtrudedL
 (
