@@ -410,7 +410,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
 
     //! Clip a planar region to this ClipPlaneset
     //! @param planarRegion [in] A CurveVector of type Loop or ParityRegion.
-    //! @param localToWorld [out] transform from world to the plane of the planarRegion
+    //! @param localToWorld [out] transform from the plane of the planarRegion to world
     //! @param worldToLocal [out] transform from world to the plane of the planarRegion
     GEOMDLLIMPEXP CurveVectorPtr ClipPlanarRegion (
     CurveVectorCR planarRegion,
@@ -419,6 +419,8 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     ) const;
 
     //! Clip a planar region to the (optional) outsideClip. Subtract the (optional) holeClip.
+    //! @param outsideClip [in] optional outer clip
+    //! @param holeClip [in] optional hole clip
     //! @param planarRegion A CurveVector of type Loop or ParityRegion.
     GEOMDLLIMPEXP static CurveVectorPtr ClipAndMaskPlanarRegion (
     ClipPlaneSetCP outsideClip,
