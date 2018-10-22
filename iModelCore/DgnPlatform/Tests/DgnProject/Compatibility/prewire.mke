@@ -7,6 +7,9 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
    
+$(BuildContext)Delivery/GTest/IModelEvolutionTests/ignore_list.txt : $(_MakeFilePath)ignore_list.txt
+    $(LinkFirstDepToFirstTarget)
+
 #----------------------------------------------------------------------
 # Deploy test ECSchemas
 #----------------------------------------------------------------------
