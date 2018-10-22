@@ -1452,6 +1452,8 @@ const Byte * ECValue::GetIGeometry(size_t& size) const
 BentleyStatus ECValue::SetIGeometry(const Byte * data, size_t size, bool holdADuplicate)
     {
     Clear();
+    if (0 == size)
+        return SUCCESS;
 
     m_primitiveType = PRIMITIVETYPE_IGeometry;
 

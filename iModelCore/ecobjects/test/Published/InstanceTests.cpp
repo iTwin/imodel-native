@@ -86,6 +86,20 @@ struct InstanceTests : ECTestFixture
         m_instance = m_ecClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
         }
 
+    template <typename T>
+    ECEnumerationP CreateEnumeration(Utf8CP name, PrimitiveType primitiveType, bool isStrict , std::initializer_list<T> enumerators)
+        {
+        ECEnumerationP enumeration;
+        m_schema->CreateEnumeration(enumeration, name, primitiveType);
+        enumeration->SetIsStrict(isStrict);
+
+        ECEnumeratorP enumerator;
+        for (auto const& value : enumerators)
+            enumeration->CreateEnumerator(enumerator, value);
+
+        return enumeration;
+        }
+
     PrimitiveECPropertyP CreateProperty (Utf8CP name, PrimitiveType primitiveType)
         {
         PrimitiveECPropertyP prop;
@@ -99,6 +113,13 @@ struct InstanceTests : ECTestFixture
         PrimitiveECPropertyP prop;
         m_ecClass->CreatePrimitiveProperty (prop, name);
         m_ecClass->GetDefaultStandaloneEnabler ()->GetPropertyIndex (propIndex, name);
+        return prop;
+        }
+
+    PrimitiveECPropertyP CreateEnumerationProperty (Utf8CP name, ECEnumerationP enumerationType)
+        {
+        PrimitiveECPropertyP prop;
+        m_ecClass->CreateEnumerationProperty(prop, name, *enumerationType);
         return prop;
         }
 
@@ -816,6 +837,73 @@ TEST_F (PropertyTests, GetValueFromInstance)
     ECValueAccessorCR accessor = propValue->GetValueAccessor ();
     EXPECT_STREQ (accessor.GetAccessString (), "Property_1");
     EXPECT_FALSE (propValue->HasChildValues ());
+    }
+
+TEST_F (PropertyTests, GetEnumeratorValueFromInstance)
+    {
+    // Arrange
+    CreateSchema();
+    
+    auto const strictStringEnum = CreateEnumeration("StrictStringEnum", PRIMITIVETYPE_String, true, { "Strict1", "Strict2" });
+    auto const looseStringEnum = CreateEnumeration("LooseStringEnum", PRIMITIVETYPE_String, false, { "Loose3", "Loose4" });
+    
+    auto const strictIntegerEnum = CreateEnumeration("StrictIntegerEnum", PRIMITIVETYPE_Integer, true, { 1, 2 });
+    auto const looseIntegerEnum = CreateEnumeration("LooseIntegerEnum", PRIMITIVETYPE_Integer, false, { 3, 4 });
+
+    CreateEnumerationProperty("StrictStringEnum_ValidValue", strictStringEnum);
+    CreateEnumerationProperty("StrictStringEnum_InvalidValue", strictStringEnum);
+
+    CreateEnumerationProperty("LooseStringEnum_ValidValue", looseStringEnum);
+    CreateEnumerationProperty("LooseStringEnum_InvalidValue", looseStringEnum);
+
+    CreateEnumerationProperty("StrictIntegerEnum_ValidValue", strictIntegerEnum);
+    CreateEnumerationProperty("StrictIntegerEnum_InvalidValue", strictIntegerEnum);
+
+    CreateEnumerationProperty("LooseIntegerEnum_ValidValue", looseIntegerEnum);
+    CreateEnumerationProperty("LooseIntegerEnum_InvalidValue", looseIntegerEnum);
+
+    // Act
+
+    CreateInstance();
+
+    m_instance->SetValue("StrictStringEnum_ValidValue", ECValue("Strict1"));
+    m_instance->SetValue("StrictStringEnum_InvalidValue", ECValue("StrictInvalid"));
+
+    m_instance->SetValue("LooseStringEnum_ValidValue", ECValue("Loose3"));
+    m_instance->SetValue("LooseStringEnum_InvalidValue", ECValue("LooseInvalid"));
+
+    m_instance->SetValue("StrictIntegerEnum_ValidValue", ECValue(2));
+    m_instance->SetValue("StrictIntegerEnum_InvalidValue", ECValue(12));
+
+    m_instance->SetValue("LooseIntegerEnum_ValidValue", ECValue(4));
+    m_instance->SetValue("LooseIntegerEnum_InvalidValue", ECValue(34));
+
+    // Assert
+
+    ECValue actualValue;
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictStringEnum_ValidValue"));
+    EXPECT_STREQ("Strict1", actualValue.GetUtf8CP()) << actualValue.GetUtf8CP();
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictStringEnum_InvalidValue"));
+    ASSERT_TRUE(actualValue.IsNull());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseStringEnum_ValidValue"));
+    EXPECT_STREQ("Loose3", actualValue.GetUtf8CP());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseStringEnum_InvalidValue"));
+    EXPECT_STREQ("LooseInvalid", actualValue.GetUtf8CP());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictIntegerEnum_ValidValue"));
+    ASSERT_EQ(2, actualValue.GetInteger());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "StrictIntegerEnum_InvalidValue"));
+    ASSERT_TRUE(actualValue.IsNull());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseIntegerEnum_ValidValue"));
+    ASSERT_EQ(4, actualValue.GetInteger());
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->GetValue(actualValue, "LooseIntegerEnum_InvalidValue"));
+    ASSERT_EQ(34, actualValue.GetInteger());
     }
 
 /*---------------------------------------------------------------------------------**//**

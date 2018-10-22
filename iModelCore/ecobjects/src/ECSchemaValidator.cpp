@@ -42,6 +42,13 @@ static Utf8CP oldStandardSchemaNames[] =
     "ECDbMap"
     };
 
+static Utf8CP validExtendedTypes[] =
+    {
+    "BeGuid",
+    "GeometryStream",
+    "Json"
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman              01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -287,8 +294,12 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
         LOG.warningv("Class '%s' has no description. Please add a description.", ecClass.GetFullName());
         }
 
+    bool IsModel = (!ecClass.GetSchema().GetName().EqualsI("BisCore")) && ecClass.Is("BisCore", "Model");
+
     // RULE: Properties should not be of type long.
     // RULE: All properties should have a description (warn)
+    // RULE: All extended types of properties should be on the valid list
+    // RULE: All Model subclasses outside of BisCore should not add properties
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
         if (prop->GetTypeName().Equals("long") && !prop->GetIsNavigation())
@@ -300,6 +311,47 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
         if (prop->GetDescription().empty())
             {
             LOG.warningv("Property '%s.%s' has no description. Please add a description.", ecClass.GetFullName(), prop->GetName().c_str());
+            }
+        if (prop->HasExtendedType())
+            {
+            static auto const IsValidExtendedType = [] (Utf8StringCR eType) -> bool
+                {
+                for (auto validType : validExtendedTypes)
+                    {
+                    if (eType.EqualsI(validType))
+                        return true;
+                    }
+                return false;
+                };
+
+            static auto const CheckForValidExtendedType = [] (Utf8StringCR eType, Utf8StringCR className, Utf8StringCR propName) -> ECObjectsStatus
+                {
+                ECObjectsStatus status = ECObjectsStatus::Success;
+                if (!eType.empty() && !IsValidExtendedType(eType))
+                    {
+                    status = ECObjectsStatus::Error;
+                    LOG.errorv("Property '%s.%s' has extended type '%s', which is not on the list of valid extended types (currently 'BeGuid', 'GeometryStream', and 'Json').",
+                               className.c_str(), propName.c_str(), eType.c_str());
+                    }
+                return status;
+                };
+
+            if (nullptr != prop->GetAsPrimitiveProperty())
+                {
+                if (ECObjectsStatus::Success != CheckForValidExtendedType(prop->GetAsPrimitiveProperty()->GetExtendedTypeName(), ecClass.GetFullName(), prop->GetName()))
+                    status = ECObjectsStatus::Error;
+                }
+            else if (nullptr != prop->GetAsPrimitiveArrayProperty())
+                {
+                if (ECObjectsStatus::Success != CheckForValidExtendedType(prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName(), ecClass.GetFullName(), prop->GetName()))
+                    status = ECObjectsStatus::Error;
+                }
+            }
+        if (IsModel && nullptr == prop->GetBaseProperty())
+            {
+            status = ECObjectsStatus::Error;
+            LOG.errorv("Class '%s' adds property '%s.%s' despite being a subclass of 'BisCore:Model' defined outside 'BisCore'. Model subclasses should not add new properties.",
+                       ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
             }
         }
 
@@ -722,6 +774,23 @@ static ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constrai
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Aurora.Lane                  10/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+static ECObjectsStatus CheckEndpointForElementAspect(ECRelationshipConstraintCR endpoint, Utf8CP classname, Utf8CP constraintType)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    ECClassCP abstractClass = endpoint.GetAbstractConstraint();
+    if (nullptr != abstractClass && abstractClass->Is("BisCore", "ElementAspect"))
+        {
+        status = ECObjectsStatus::Error;
+        LOG.errorv("Relationship class '%s' has ElementAspect '%s' listed as a %s. ElementAspects should not be at the receiving end of relationships.",
+                   classname, abstractClass->GetFullName(), constraintType);
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 // static
@@ -747,6 +816,22 @@ ECObjectsStatus ECSchemaValidator::RelationshipValidator(ECClassCR ecClass)
     if (ECObjectsStatus::Success != CheckLocalDefinitions(sourceConstraint, "Source"))
         status = ECObjectsStatus::Error;
 
+    // RULE: ElementAspects should not be on receiving end of a relationship
+    //       if not derived from ElementOwns.
+    if (relClass->Is("BisCore", ElementOwnsUniqueAspect) || relClass->Is("BisCore", ElementOwnsMultiAspects))
+        return status;
+
+    if (ECRelatedInstanceDirection::Backward == relClass->GetStrengthDirection())
+        {
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(sourceConstraint, relClass->GetFullName(), "Source"))
+            status = ECObjectsStatus::Error;
+        }
+    else
+        {
+        if (ECObjectsStatus::Success != CheckEndpointForElementAspect(targetConstraint, relClass->GetFullName(), "Target"))
+            status = ECObjectsStatus::Error;
+        }
+    
     return status;
     }
 

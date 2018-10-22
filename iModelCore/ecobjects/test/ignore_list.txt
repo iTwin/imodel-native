@@ -2,12 +2,10 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
+# VSTS#34672 Strict ECEnumeration allows invalid values
+PropertyTests.GetEnumeratorValueFromInstance
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 # tests - Defect 743895:Custom attribute instances are not properly deserialized when they appear before the CA class definition
 SchemaDeserializationTest.CanLoadCaInstanceWhichAppearsBeforeCaDefinition
-
-#JsonEcInstanceWriter needs to take a class locater in order to resolve a rel class id into a rel class name in the JSON wire format
-NavigationPropertyValueTests.InstanceWithNavProp_Long
-

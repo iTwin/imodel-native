@@ -25,6 +25,44 @@ static Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         </ECEntityClass>
 
         <ECEntityClass typeName="Element" modifier="Abstract" description="Element description"/>
+
+        <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="An Element Aspect is a class that defines a set of properties that are related to (and owned by) a single element. Semantically, an Element Aspect can be considered part of the Element. Thus, an Element Aspect is deleted if its owning Element is deleted."/>
+
+        <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" displayLabel="Element Unique Aspect" description="An Element Unique Aspect is an Element Aspect where there can be only zero or one instance of the Element Aspect class per Element.">
+            <BaseClass>ElementAspect</BaseClass>
+            <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward" description="The owning Element">
+                <ECCustomAttributes>
+                    <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
+        </ECEntityClass>
+    
+        <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+            <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+                <Class class="ElementUniqueAspect"/>
+            </Target>
+        </ECRelationshipClass>
+    
+        <ECEntityClass typeName="Model" modifier="Abstract" description="A Model is a container for persisting a collection of related elements.">
+        <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
+            <ECCustomAttributes>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
     </ECSchema>)xml";
 
 struct SchemaValidatorTests : ECTestFixture
@@ -1384,6 +1422,196 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                             Aurora.Lane                         10/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveElementAspectTargets)
+    {
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ElementOwnsAspectSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestSourceClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElementAspectClass'>"
+        "        <BaseClass>bis:ElementUniqueAspect</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='TestRelationship' modifier='None' strength='embedding'>"
+        "        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>"
+        "        <Source multiplicity='(1..1)' roleLabel='owns' polymorphic='true'>"
+        "            <Class class='TestSourceClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='is owned by' polymorphic='true'>"
+        "            <Class class='TestElementAspectClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "If Relationship is based on ElementOwns[...]Aspect, it should validate regardless of ElementAspects";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ElementAspectTargetSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestSourceClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElementAspectClass'>"
+        "        <BaseClass>bis:ElementAspect</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='TestRelationship' modifier='None' strength='embedding'>"
+        "        <Source multiplicity='(1..1)' roleLabel='owns' polymorphic='true'>"
+        "            <Class class='TestSourceClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='is owned by' polymorphic='true'>"
+        "            <Class class='TestElementAspectClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "If ElementAspect is target of relationship, schema is not valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ElementAspectTargetSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestSourceClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElementAspectClass'>"
+        "        <BaseClass>bis:ElementAspect</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='TestRelationship' modifier='None' strength='embedding'>"
+        "        <Source multiplicity='(1..1)' roleLabel='owns' polymorphic='true'>"
+        "            <Class class='TestElementAspectClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='is owned by' polymorphic='true'>"
+        "            <Class class='TestSourceClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "If ElementAspect is source of forward relationship, schema is valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='NoElementAspectTargetSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestSourceClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestTargetClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='TestRelationship' modifier='None' strength='embedding'>"
+        "        <Source multiplicity='(1..1)' roleLabel='owns' polymorphic='true'>"
+        "            <Class class='TestSourceClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(0..*)' roleLabel='is owned by' polymorphic='true'>"
+        "            <Class class='TestTargetClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "No ElementAspects in relationship, schema is valid";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ElementAspectSourceSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestSourceClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElementAspectClass'>"
+        "        <BaseClass>bis:ElementAspect</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='TestRelationship' modifier='None' strength='embedding' strengthDirection='Backward'>"
+        "        <Source multiplicity='(0..*)' roleLabel='owns' polymorphic='true'>"
+        "            <Class class='TestElementAspectClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(1..1)' roleLabel='is owned by' polymorphic='true'>"
+        "            <Class class='TestSourceClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "If ElementAspect is source of backwards relationship, schema is not valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ElementAspectSourceSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestSourceClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestElementAspectClass'>"
+        "        <BaseClass>bis:ElementAspect</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='TestRelationship' modifier='None' strength='embedding' strengthDirection='Backward'>"
+        "        <Source multiplicity='(0..*)' roleLabel='owns' polymorphic='true'>"
+        "            <Class class='TestSourceClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(1..1)' roleLabel='is owned by' polymorphic='true'>"
+        "            <Class class='TestElementAspectClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "If ElementAspect is target of backwards relationship, schema is valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='NoElementAspectSourceSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BaseClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestSourceClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='TestTargetClass'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "    </ECEntityClass>"
+        "    <ECRelationshipClass typeName='TestRelationship' modifier='None' strength='embedding' strengthDirection='Backward'>"
+        "        <Source multiplicity='(0..*)' roleLabel='owns' polymorphic='true'>"
+        "            <Class class='TestSourceClass'/>"
+        "        </Source>"
+        "        <Target multiplicity='(1..1)' roleLabel='is owned by' polymorphic='true'>"
+        "            <Class class='TestTargetClass'/>"
+        "        </Target>"
+        "    </ECRelationshipClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "No ElementAspects in backwards relationship, schema is valid";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                             Carole.MacDonald                    07/2017
 //---------------------------------------------------------------------------------------
 TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassName)
@@ -1953,6 +2181,139 @@ TEST_F(SchemaValidatorTests, PropertiesMayNotHaveTheSameDisplayLabelAndCategory)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Aurora.Lane                         10/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, PropertyExtendedTypesMustBeOnApprovedList)
+    {
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='NoETypeSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties without ExtendedTypes are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='JsonSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='Json'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties of ExtendedType 'Json' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BeGuidSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='BeGuid'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties of ExtendedType 'BeGuid' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='GeometrySchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='GeometryStream'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Properties of ExtendedType 'GeometryStream' are valid";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='GarbageETypeSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProperty' typeName='string' extendedTypeName='Garbage'>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Properties of any other ExtendedType are not valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayJsonSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='Json'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Array Properties of ExtendedType 'Json' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayBeGuidSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='BeGuid'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Array Properties of ExtendedType 'BeGuid' are valid";
+    }
+    {
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayGeometrySchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='GeometryStream'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Array Properties of ExtendedType 'GeometryStream' are valid";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ArrayGarbageETypeSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECArrayProperty propertyName='TestProperty' typeName='string' extendedTypeName='Garbage'>"
+        "        </ECArrayProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Array Properties of any other ExtendedType are not valid";
+    }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Joseph.Urbano                        05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2154,6 +2515,66 @@ TEST_F(SchemaValidatorTests, NoClassShouldSubclassDefinitionModelWithExceptions)
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "BadEntity"));
     ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisDefinitionModel));
     ASSERT_FALSE(validator.Validate(*schema)) << "Entity class subclasses bis:DefinitionModel, so validation should fail";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Aurora.Lane                         10/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, NoModelSubclassMayHaveProperties)
+    {
+            {
+            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECEntityClass typeName='Model' modifier='Abstract'>"
+                "        <ECProperty propertyName='ModelTestProp' typeName='int'/>"
+                "    </ECEntityClass>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>Model</BaseClass>"
+                "        <ECProperty propertyName='TestProperty' typeName='int'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitContextWithSchemaXml(goodSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with properties in BisCore are valid";
+            }
+            {
+            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>bis:Model</BaseClass>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses without properties are valid";
+            }
+            {
+            Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>bis:Model</BaseClass>"
+                "        <ECProperty propertyName='TestProperty' typeName='int'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitBisContextWithSchemaXml(badSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_FALSE(validator.Validate(*schema)) << "Model Subclasses with properties are not valid";
+            }
+            {
+            Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+                "<ECSchema schemaName='ModelTestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+                "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+                "    <ECEntityClass typeName='TestClass'>"
+                "        <BaseClass>bis:Model</BaseClass>"
+                "        <ECProperty propertyName='IsPrivate' typeName='boolean'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+            InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(validator.Validate(*schema)) << "Model Subclasses with override properties are valid";
+            }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
