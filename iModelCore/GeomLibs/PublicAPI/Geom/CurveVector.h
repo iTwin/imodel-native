@@ -922,11 +922,11 @@ GEOMDLLIMPEXP ICurvePrimitivePtr PlaneSection (DPlane3dCR plane, double toleranc
 //! Test if a point is in, on, or outside when looking at xy plane.
 //! return INOUT_Unknown if the CurveVector is not an area. (i.e. type BOUNDARY_TYPE_Outer, BOUNDARY_TYPE_Inner, BOUNDARY_TYPE_ParityRegion, or BOUNDARY_TYPE_Union
 //! @param [in] xyz test point
-GEOMDLLIMPEXP CurveVector::InOutClassification PointInOnOutXY (DPoint3dCR xyz) const;
+GEOMDLLIMPEXP InOutClassification PointInOnOutXY (DPoint3dCR xyz) const;
 
 //! Test for a ray hit in the curve vector's planar region.
 //! return INOUT_Unknown if the CurveVector is not an area. (i.e. type BOUNDARY_TYPE_Outer, BOUNDARY_TYPE_Inner, BOUNDARY_TYPE_ParityRegion, or BOUNDARY_TYPE_Union
-GEOMDLLIMPEXP CurveVector::InOutClassification RayPierceInOnOut
+GEOMDLLIMPEXP InOutClassification RayPierceInOnOut
 (
 DRay3dCR ray,                    //!< [in] ray to intersect witht the region
 SolidLocationDetailR hitDetail   //!< [out] hit point with parameters relative to the region's local coordinates.

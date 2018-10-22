@@ -184,7 +184,27 @@ PolyfaceHeaderPtr UnitGridPolyface (DPoint3dDVec3dDVec3dCR plane, int numXEdge, 
         return mesh;
         }
     }
-
+bvector<DPoint3d> CreateL
+(
+double x0,  // x coordinate at point 0,5,6
+double y0,  // y coordinate at point 0,1,6
+double x1,  // x coordinate at point 1,2
+double y1,  // y coordinate at point 2,3
+double x2,  // x coordinate at point 3,4
+double y2   // y coordinate at point 4,5
+)
+    {
+    return bvector<DPoint3d>
+        {
+        DPoint3d::From (x0,y0),
+        DPoint3d::From (x1,y0),
+        DPoint3d::From (x1,y1),
+        DPoint3d::From (x2,y1),
+        DPoint3d::From (x2,y2),
+        DPoint3d::From (x0,y2)
+        //,DPoint3d::From (x0,y0)   // closure point
+        };
+    }
 PolyfaceHeaderPtr CreatePolyface_ExtrudedL
 (
 double x0,  // x coordinate at point 0,5,6
@@ -196,16 +216,7 @@ double y2,   // y coordinate at point 4,5
 double h    // z distance for extrusion
 )
     {
-    bvector<DPoint3d> basePoints
-        {
-        DPoint3d::From (x0,y0),
-        DPoint3d::From (x1,y0),
-        DPoint3d::From (x1,y1),
-        DPoint3d::From (x2,y1),
-        DPoint3d::From (x2,y2),
-        DPoint3d::From (x0,y2)
-        //,DPoint3d::From (x0,y0)   // closure point
-        };
+    auto basePoints = CreateL (x0, y0, x1, y1, x2,y2);
     auto mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
     mesh->AddPolygon (basePoints);
     mesh->SweepToSolid (DVec3d::From (0,0,h), false);
