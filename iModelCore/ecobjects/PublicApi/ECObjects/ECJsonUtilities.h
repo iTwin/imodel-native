@@ -518,13 +518,13 @@ struct JsonECInstanceConverter final
 struct JsonEcInstanceWriter final
 {
 private:
-    static void          AppendAccessString(Utf8String& compoundAccessString, Utf8String& baseAccessString, const Utf8String& propertyName);
-    static StatusInt     WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
+    static void          AppendAccessString(Utf8String& compoundAccessString, Utf8CP baseAccessString, Utf8StringCR propertyName);
+    static StatusInt     WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECN::ECClassCR ecClass, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false);
     static StatusInt     WritePrimitiveValue(Json::Value& valueToPopulate, Utf8CP propertyName, ECN::ECValueCR ecValue, ECN::PrimitiveType propertyType, KindOfQuantityCP koq = nullptr);
-    static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
-    static StatusInt     WriteNavigationPropertyValue(Json::Value& valueToPopulate, ECN::NavigationECPropertyR navigationProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
-    static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
-    static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties = false, bool serializeNullValues = false);
+    static StatusInt     WriteArrayPropertyValue(Json::Value& valueToPopulate, ECN::ArrayECPropertyR arrayProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false);
+    static StatusInt     WriteNavigationPropertyValue(Json::Value& valueToPopulate, ECN::NavigationECPropertyR navigationProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, ECClassLocatorByClassIdCP classLocator, bool writeFormattedQuantities = false, bool serializeNullValues = false);
+    static StatusInt     WritePrimitivePropertyValue(Json::Value& valueToPopulate, ECN::PrimitiveECPropertyR primitiveProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false);
+    static StatusInt     WriteEmbeddedStructPropertyValue(Json::Value& valueToPopulate, ECN::StructECPropertyR structProperty, ECN::IECInstanceCR ecInstance, Utf8CP baseAccessString, bool writeFormattedQuantities = false, bool serializeNullValues = false);
 
 public:
     //! Write the supplied primitive property value as JSON
@@ -565,21 +565,24 @@ public:
     //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
     //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
     //! @param[in] serializeNullValues If true all values, even null values, of the IECInstance will be serialized.
+    //! @param[in] classLocator to look-up class by ECClassId.
     //! @return SUCCESS or error status.
-    ECOBJECTS_EXPORT static StatusInt WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool serializeNullValues = false);
+    ECOBJECTS_EXPORT static StatusInt WriteInstanceToJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, bool serializeNullValues = false, ECClassLocatorByClassIdCP classLocator = nullptr);
 
     //! Write the supplied instance in the ECSchemaJSON format
     //! @param[out] valueToPopulate the JSON object to populate
     //! @param[in] ecInstance the IEInstance containing the property values
-    ECOBJECTS_EXPORT static StatusInt WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance);
+    //! @param[in] classLocator to look-up class by ECClassId.
+    ECOBJECTS_EXPORT static StatusInt WriteInstanceToSchemaJson(Json::Value& valueToPopulate, ECN::IECInstanceCR ecInstance, ECClassLocatorByClassIdCP classLocator = nullptr);
 
     //! Write the supplied instance as JSON and include presentation data such as KOQ info in the Json
     //! @param[out] valueToPopulate the JSON object to populate
     //! @param[in] ecInstance the IEInstance containing the property values
     //! @param[in] instanceName the name of the JSON object that will contain the IEInstance values. This allows the valueToPopulate to contain multiple instances.
     //! @param[in] writeInstanceId if true the instance Id is saved in the JSON data.
+    //! @param[in] classLocator to look-up class by ECClassId.
     //! @return SUCCESS or error status.
-    ECOBJECTS_EXPORT static StatusInt WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId);
+    ECOBJECTS_EXPORT static StatusInt WriteInstanceToPresentationJson(Json::Value& valueToPopulate, IECInstanceCR ecInstance, Utf8CP instanceName, bool writeInstanceId, ECClassLocatorByClassIdCP classLocator = nullptr);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

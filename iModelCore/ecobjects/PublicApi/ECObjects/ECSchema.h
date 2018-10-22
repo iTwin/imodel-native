@@ -4248,7 +4248,7 @@ public:
 //* @bsistruct                                                  Ramanujam.Raman   12/12
 //+===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE IECClassLocater
-{
+    {
 protected:
     virtual ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) = 0;
     virtual ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) 
@@ -4268,6 +4268,44 @@ public:
     };
 
 typedef IECClassLocater& IECClassLocaterR;
+
+//=======================================================================================
+// @bsiclass                                                 Gintaras.Volkvicius 09/18
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ECClassLocatorByClassId : NonCopyableClass
+    {
+protected:
+    ECSchemaCP m_schema;
+    
+    virtual ECClassCP LocateClassHelper(ECClassId const& classId) const
+        {
+        if (nullptr == m_schema)
+            return nullptr;
+
+        auto const& ecClasses = m_schema->GetClasses();
+
+        auto const it = std::find_if(std::begin(ecClasses), std::end(ecClasses),
+            [&classId] (auto const& ecClass)
+                {
+                return nullptr != ecClass && ecClass->HasId() && ecClass->GetId() == classId;
+                });
+
+        if (std::end(ecClasses) == it)
+            return nullptr;
+
+        return *it;
+        }
+ 
+public:
+    ECClassLocatorByClassId(ECSchemaCP schema = nullptr) : m_schema(schema) {}
+    virtual ~ECClassLocatorByClassId() {}
+
+    ECClassCP LocateClass(ECClassId const& classId) const { return LocateClassHelper(classId); }
+
+    };
+
+typedef ECClassLocatorByClassId const& ECClassLocatorByClassIdCR;
+typedef ECClassLocatorByClassId const* ECClassLocatorByClassIdCP;
 
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
