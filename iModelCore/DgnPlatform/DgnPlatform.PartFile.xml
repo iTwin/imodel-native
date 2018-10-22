@@ -305,6 +305,7 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/IModelEvolutionTests.*.ecschema.xml
             </Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="IModelEvolutionTests" SubPartDirectory="IModelEvolutionTests">Delivery/Gtest/IModelEvolutionTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
