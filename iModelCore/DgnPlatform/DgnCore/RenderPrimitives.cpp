@@ -1733,7 +1733,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
         polyface = FixPolyface(*polyface, facetOptions);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
-        return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface, false, false, facetOptions.GetChordTolerance()));
+        return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface, true, false, facetOptions.GetChordTolerance()));
         }
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
