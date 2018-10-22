@@ -9,7 +9,7 @@
 #pragma once
 
 #include "ConnectTestsHelper.h"
-#include <WebServices\Connect\SimpleConnectTokenProvider.h>
+#include <WebServices/Connect/SimpleConnectTokenProvider.h>
 
 class SimpleConnectTokenProviderTests : public WSClientBaseTest
     {
