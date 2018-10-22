@@ -1074,7 +1074,7 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
 //            ReportProgress();
             BECN::ECSchemaPtr rightSchema;
             if (BECN::SchemaReadStatus::Success != BECN::ECSchema::ReadFromXmlString(rightSchema, schemaIter->second.c_str(), schemaContext))
-                return nullptr;
+                continue;
             auto diff = ECDiff::Diff(*leftSchema, *rightSchema);
             if (diff->GetStatus() == DiffStatus::Success)
                 {
