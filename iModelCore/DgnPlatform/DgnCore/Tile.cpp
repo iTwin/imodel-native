@@ -812,6 +812,7 @@ private:
     DeferredGlyphList         m_deferredGlyphs;
     std::map<Utf8String,bool> m_uniqueGlyphKeys;
 
+    // ###TODO Revisit decimation...lots of small polyfaces can produce excessive vetices.
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; } // Only decimate meshes with at least this many points.
     static constexpr double GetDecimatePolyfaceMinRatio() { return 0.25; } // Decimation must reduce point count by at least this percentage.
 
@@ -1121,7 +1122,8 @@ Utf8CP Cache::GetCurrentVersion()
     // 0: Initial version following db schema change
     // 1: Packed feature table
     // 2: Texture atlas for rastter text
-    return "2";
+    // 3: Re-enable polyface decimation
+    return "3";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2294,13 +2296,12 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 
     polyface = m_loader.GetLoader().Preprocess(*polyface);
 
-    bool doDecimate = geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
-
+    bool doDecimate = tilePolyface.CanDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
     if (doDecimate)
         {
-        BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
-        PolyfaceHeaderPtr   decimated;
-        if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(GetTolerance(), GetDecimatePolyfaceMinRatio())).IsValid())
+        BeAssert(0 == polyface->GetEdgeChainCount()); // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
+        PolyfaceHeaderPtr decimated = polyface->ClusteredVertexDecimate(tilePolyface.m_decimationTolerance, GetDecimatePolyfaceMinRatio());
+        if (decimated.IsValid())
             {
             polyface = decimated.get();
             m_didDecimate = true;
