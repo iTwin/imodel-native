@@ -50,6 +50,7 @@
         <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync" />
         <SubPart PartName="DgnV8ConverterDLL" Repository="DgnDbSync" PartFile="DgnDbSync"/>
         <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
+        <SubPart PartName="DgnV8OpenRoadsDesigner" PartFile="DgnV8OpenRoadsDesigner" Repository="DgnDomains-DgnV8OpenRoadsDesigner"/>
         <SubPart PartName="DgnV8ConverterSqlang" PartFile="DgnDbSync" Repository="DgnDbSync" />
         <Bindings>
             <Libs Required="false">Delivery/$(libprefix)ORDBridge$(libext)</Libs>
@@ -83,9 +84,7 @@
     <Part Name="ORDBridgePublicAPI" BentleyBuildMakeFile="ORDBridge/ORDBridge.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ORDBridge"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application">
-                ECSchemas/Application/DgnV8OpenRoadsDesigner*.xml
-            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Application" SubPartDirectory="ECSchemas/Application"/>
         </Bindings>
     </Part>
 

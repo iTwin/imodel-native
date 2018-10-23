@@ -898,10 +898,6 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
 ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_converter(converter)
     {
     m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
-    m_ordCorridorSurfaceAspectClassCP = converter.GetDgnDb().Schemas().GetClass(ORD_SCHEMA_NAME, ORD_CLASS_CorridorSurfaceAspect);
-    m_ordFeatureAspectClassCP = converter.GetDgnDb().Schemas().GetClass(ORD_SCHEMA_NAME, ORD_CLASS_FeatureAspect);
-
-    BeAssert(m_ordCorridorSurfaceAspectClassCP && m_ordFeatureAspectClassCP);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -967,29 +963,24 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void assignORDFeatureAspect(Dgn::DgnElementR element, Cif::FeaturizedConsensusItemCR featurizedItem, ECN::ECClassCR featureAspectClass)
+void assignORDFeatureAspect(Dgn::DgnElementR element, Cif::FeaturizedConsensusItemCR featurizedItem)
     {
-    auto name = featurizedItem.GetName();
+    auto name = Utf8String(featurizedItem.GetName().c_str());
     auto featureDefPtr = featurizedItem.GetFeatureDefinition();
 
-    if (!WString::IsNullOrEmpty(name.c_str()) || featureDefPtr.IsValid())
+    if (!Utf8String::IsNullOrEmpty(name.c_str()) || featureDefPtr.IsValid())
         {
-        if (auto featureAspectP = Dgn::DgnElement::UniqueAspect::GetAspectP(element, featureAspectClass))
+        if (auto featureAspectP = DgnV8ORDBim::FeatureAspect::GetP(element))
             {
-            featureAspectP->SetPropertyValue(ORD_PROP_FeatureAspect_Name, ECN::ECValue(name.c_str()));
+            featureAspectP->SetName(name.c_str());
 
             if (featureDefPtr.IsValid())
-                featureAspectP->SetPropertyValue(ORD_PROP_FeatureAspect_DefinitionName, ECN::ECValue(featureDefPtr->GetName().c_str()));
+                featureAspectP->SetDefinitionName(Utf8String(featureDefPtr->GetName().c_str()).c_str());
             }
         else
             {
-            auto featureAspectPtr = Dgn::DgnElement::GenericUniqueAspect::CreateAspect(element.GetDgnDb(), featureAspectClass);
-            featureAspectPtr->SetPropertyValue(ORD_PROP_FeatureAspect_Name, ECN::ECValue(name.c_str()));
-
-            if (featureDefPtr.IsValid())
-                featureAspectPtr->SetPropertyValue(ORD_PROP_FeatureAspect_DefinitionName, ECN::ECValue(featureDefPtr->GetName().c_str()));
-
-            Dgn::DgnElement::UniqueAspect::SetAspect(element, *featureAspectPtr);
+            auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(name.c_str(), (featureDefPtr.IsValid()) ? Utf8String(featureDefPtr->GetName().c_str()).c_str() : nullptr);
+            DgnV8ORDBim::FeatureAspect::Set(element, *featureAspectPtr);
             }
         }
     }
@@ -997,22 +988,20 @@ void assignORDFeatureAspect(Dgn::DgnElementR element, Cif::FeaturizedConsensusIt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCorridorSurface, ECN::ECClassCR corridorSurfaceAspectClass)
+void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCorridorSurface)
     {
     bool isTopMesh = cifCorridorSurface.IsTopMesh();
     bool isBottomMesh = cifCorridorSurface.IsBottomMesh();
 
-    if (auto corridorSurfaceAspectP = Dgn::DgnElement::UniqueAspect::GetAspectP(element, corridorSurfaceAspectClass))
+    if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
         {
-        corridorSurfaceAspectP->SetPropertyValue(ORD_PROP_CorridorSurfaceAspect_IsTopMesh, ECN::ECValue(isTopMesh));
-        corridorSurfaceAspectP->SetPropertyValue(ORD_PROP_CorridorSurfaceAspect_IsBottomMesh, ECN::ECValue(isBottomMesh));
+        corridorSurfaceAspectP->SetIsTopMesh(isTopMesh);
+        corridorSurfaceAspectP->SetIsBottomMesh(isBottomMesh);
         }
     else
         {
-        auto corridorSurfaceAspectPtr = Dgn::DgnElement::GenericUniqueAspect::CreateAspect(element.GetDgnDb(), corridorSurfaceAspectClass);
-        corridorSurfaceAspectPtr->SetPropertyValue(ORD_PROP_CorridorSurfaceAspect_IsTopMesh, ECN::ECValue(isTopMesh));
-        corridorSurfaceAspectPtr->SetPropertyValue(ORD_PROP_CorridorSurfaceAspect_IsBottomMesh, ECN::ECValue(isBottomMesh));
-        Dgn::DgnElement::UniqueAspect::SetAspect(element, *corridorSurfaceAspectPtr);
+        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh);
+        DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
         }
     }
 
@@ -1027,15 +1016,13 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
     auto featurizedPtr = FeaturizedConsensusItem::CreateFromElement(v8el);
     if (featurizedPtr.IsValid())
         {
-        if (m_ordFeatureAspectClassCP)
-            assignORDFeatureAspect(*elRes.m_element, *featurizedPtr, *m_ordFeatureAspectClassCP);
+        assignORDFeatureAspect(*elRes.m_element, *featurizedPtr);
 
         if (v8mm.GetV8Model().Is3D())
             {
             if (auto cifCorridorSurfaceCP = dynamic_cast<CorridorSurfaceCP>(featurizedPtr.get()))
                 {
-                if (m_ordCorridorSurfaceAspectClassCP)
-                    assignCorridorSurfaceAspect(*elRes.m_element, *cifCorridorSurfaceCP, *m_ordCorridorSurfaceAspectClassCP);
+                assignCorridorSurfaceAspect(*elRes.m_element, *cifCorridorSurfaceCP);
                 return;
                 }
             }

@@ -9,6 +9,3 @@
 
 $(BuildContext)PublicAPI/ORDBridge : $(_MakeFilePath)PublicAPI/ORDBridge
     $(LinkFirstDepToFirstTargetAsDirectory)
-
-$(BuildContext)ECSchemas/Application/DgnV8OpenRoadsDesigner.ecschema.xml : $(_MakeFilePath)DgnV8OpenRoadsDesigner.ecschema.xml
-    $(LinkFirstDepToFirstTarget)

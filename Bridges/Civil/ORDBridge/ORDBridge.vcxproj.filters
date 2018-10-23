@@ -75,6 +75,5 @@
     <Xml Include="installer\ORDBridgeinstaller.wix.xml">
       <Filter>Installer Files</Filter>
     </Xml>
-    <Xml Include="DgnV8OpenRoadsDesigner.ecschema.xml" />
   </ItemGroup>
 </Project>
