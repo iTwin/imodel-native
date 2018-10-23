@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GraphiteResourceUri.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -560,7 +560,7 @@ static BentleyStatus makeElementByProvenance(Utf8StringR uriStr, DgnElementCR el
      * In the case of N-1 mapping between V8 and DgnDb Elements, the URIs may just not 
      * capture the right V8 element. 
      */
-    uint32_t v8FileId;
+    BeSQLite::BeGuid v8FileId;
     int64_t v8ElementId;
     if (SUCCESS != DgnV8ElementProvenance::FindFirst(&v8FileId, nullptr, &v8ElementId, el.GetElementId(), dgndb))
         return ERROR;
@@ -597,7 +597,7 @@ static DgnElementId findElementIdByProvenance(DgnDbR db, DgnResourceURI::QueryPa
         }
 
     //  This query is one of mine. From here on, I return SUCCESS to indicate that I handled it (even if the provenance can't be found).
-    uint32_t v8FileId;
+    BeSQLite::BeGuid v8FileId;
     bool findByUniqueName = !isGraphiteUri; // Unfortunately Graphite05 stored references to non-unique names!!!
     if (SUCCESS != DgnV8FileProvenance::FindFirst(&v8FileId, v8NameOrUniqueName, findByUniqueName, db))
         {
