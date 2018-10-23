@@ -50,7 +50,7 @@ struct Texture : Render::Texture
     Texture(Render::ImageSource&& source, uint32_t width, uint32_t height) : Render::Texture(CreateParams()),
         m_imageSource(std::move(source)), m_dimensions(width, height) { }
 
-    Render::ImageSource GetImageSource() const override { return m_imageSource; } // ###TODO don't make a copy...
+    Render::ImageSourceCP GetImageSource() const override { return &m_imageSource; }
     Dimensions GetDimensions() const override { return m_dimensions; }
 };
 

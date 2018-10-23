@@ -1498,17 +1498,17 @@ BentleyStatus IModelTileWriter::AddTextureJson(TextureMappingCR mapping, Json::V
 
     if (!m_json.isMember("namedTextures") || !m_json["namedTextures"].isMember(name))
         {
-        ImageSource img = texture.GetImageSource();
-        if (!img.IsValid())
+        ImageSourceCP img = texture.GetImageSource();
+        if (nullptr == img || !img->IsValid())
             {
             BeAssert(false);
             return ERROR;
             }
 
-        AddBufferView(name.c_str(), img.GetByteStream());
+        AddBufferView(name.c_str(), img->GetByteStream());
 
         Json::Value& json = m_json["namedTextures"][name];
-        json["format"] = static_cast<uint32_t>(img.GetFormat());
+        json["format"] = static_cast<uint32_t>(img->GetFormat());
         json["bufferView"] = name;
         json["isGlyph"] = texture.IsGlyph();
 

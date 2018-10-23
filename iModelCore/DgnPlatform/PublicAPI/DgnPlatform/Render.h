@@ -512,7 +512,7 @@ public:
     bool IsTileSection() const { return m_isTileSection; }
 
     // Named textures should preserve their image data so it can be obtained later.
-    virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }
+    virtual ImageSourceCP GetImageSource() const { return nullptr; }
     virtual Dimensions GetDimensions() const = 0;
 };
 

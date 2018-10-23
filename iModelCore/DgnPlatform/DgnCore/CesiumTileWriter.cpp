@@ -507,10 +507,10 @@ void CesiumTileWriter::AddTextureSampler(Utf8StringCR sampler, TextureCR texture
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String CesiumTileWriter::AddTextureImage (TextureCR texture, Utf8StringCR idStr)
     {
-    Render::ImageSource imageSource = texture.GetImageSource();
-    BeAssert(imageSource.IsValid());
+    Render::ImageSourceCP imageSource = texture.GetImageSource();
+    BeAssert(imageSource->IsValid());
 
-    bool hasAlpha = imageSource.GetFormat() == ImageSource::Format::Png;
+    bool hasAlpha = imageSource->GetFormat() == ImageSource::Format::Png;
 
     Utf8String  textureId = Utf8String ("texture_") + idStr;
     Utf8String  imageId   = Utf8String ("image_")   + idStr;
@@ -534,7 +534,7 @@ Utf8String CesiumTileWriter::AddTextureImage (TextureCR texture, Utf8StringCR id
 
     m_json["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
     m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
-    m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = imageSource.GetFormat() == ImageSource::Format::Png ? "image/png" : "image/jpeg";
+    m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = imageSource->GetFormat() == ImageSource::Format::Png ? "image/png" : "image/jpeg";
 
     Render::Texture::Dimensions dimensions = texture.GetDimensions();
     BeAssert(0 < dimensions.width && 0 < dimensions.height);
@@ -542,7 +542,7 @@ Utf8String CesiumTileWriter::AddTextureImage (TextureCR texture, Utf8StringCR id
     m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"]  = dimensions.width;
     m_json["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = dimensions.height;
 
-    ByteStream const& imageData = imageSource.GetByteStream();
+    ByteStream const& imageData = imageSource->GetByteStream();
     m_json["bufferViews"][bvImageId]["byteOffset"] = static_cast<uint32_t>(BinaryDataSize());
     m_json["bufferViews"][bvImageId]["byteLength"] = static_cast<uint32_t>(imageData.size());
     AddBinaryData (imageData.data(), imageData.size());
