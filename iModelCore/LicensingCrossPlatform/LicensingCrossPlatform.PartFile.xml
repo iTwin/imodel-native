@@ -13,6 +13,7 @@
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" /> 
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
+        <SubPart PartName="NativeClient.Docs"/>
         
         <Bindings>
             <Libs>Delivery/$(libprefix)Licensing$(libext)</Libs>
@@ -80,6 +81,15 @@
         
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/LicensingTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="NativeClient.Docs" BMakeFile="Licensing\docs.mke">
+        <RequiredRepository>bsitools-doxygen</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="LicenseClientCrossPlatform" IfNotPresent="Warn" Required="false">
+                Delivery\NativeClient.chm
+            </Files>
         </Bindings>
     </Part>
     
