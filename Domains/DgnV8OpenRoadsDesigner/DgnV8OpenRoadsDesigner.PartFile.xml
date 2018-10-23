@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="DgnV8OpenRoadsDesigner" BentleyBuildMakeFile="DgnV8OpenRoadsDesigner.mke">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Libs Required="false">Delivery/$(libprefix)DgnV8OpenRoadsDesigner$(libext)</Libs>
+            <Assemblies Required="false">Delivery/$(shlibprefix)DgnV8OpenRoadsDesigner$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="DgnV8OpenRoadsDesigner.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="DgnV8OpenRoadsDesigner" />
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/DgnV8OpenRoadsDesigner*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>
