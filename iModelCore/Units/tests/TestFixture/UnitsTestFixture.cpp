@@ -140,6 +140,7 @@ void UnitsTestFixture::ReadCSVFile(WCharCP fileName, SingleTokenProcessor const&
     while (std::getline(ifs, line))
         {
         Utf8String token(line.c_str());
+        token.Trim();
         lineProcessor(token);
         }
     }
