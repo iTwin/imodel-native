@@ -20,13 +20,17 @@ Http::Request::ProgressCallback TestsProgressCallback::Get()
             }
 
         EXPECT_GE(bytesTransfered, m_lastProgressBytesTransfered);
-        if (m_lastProgressBytesTotal > 0.0)
+        if (bytesTotal > 0.0)
             {
-            EXPECT_EQ(bytesTotal, m_lastProgressBytesTotal);
+            if (m_lastProgressBytesTotal > 0.0)
+                {
+                EXPECT_EQ(bytesTotal, m_lastProgressBytesTotal);
+                }
+
+            m_lastProgressBytesTotal = bytesTotal;
             }
 
         m_lastProgressBytesTransfered = bytesTransfered;
-        m_lastProgressBytesTotal = bytesTotal;
         };
     }
 
