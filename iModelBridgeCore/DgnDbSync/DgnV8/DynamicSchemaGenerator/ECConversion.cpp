@@ -3491,12 +3491,13 @@ void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::CreateProvenanceTables()
     {
-    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
-        {
+    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
         DgnV8FileProvenance::CreateTable(*m_dgndb);
+    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel))
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
+    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
         DgnV8ElementProvenance::CreateTable(*m_dgndb);
-        }
+    
     }
 
 /*---------------------------------------------------------------------------------**//**

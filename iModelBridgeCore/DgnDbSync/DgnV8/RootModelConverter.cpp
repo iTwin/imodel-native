@@ -1359,7 +1359,10 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
 
             Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
             ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+            continue;
             }
+        //The file is assigned to the bridge. Check whether another model exists that already maps this same model.
+
         }
     for (auto const& mappingToRemove : mappingsToRemove)
         {

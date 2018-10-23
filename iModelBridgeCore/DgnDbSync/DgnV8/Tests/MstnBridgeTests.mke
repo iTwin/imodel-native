@@ -65,6 +65,8 @@ $(o)MstnBridgeTests.obj     : $(BEGTEST_INPUT)MstnBridgeTests.cpp               
 
 $(o)V8FileEditor.obj        : $(BEGTEST_INPUT)V8FileEditor.cpp                 $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)FakeRegistry.obj        : $(SrcRoot)DgnDbSync/iModelBridge/Tests/NonPublished/FakeRegistry.cpp   $(TestsHeaders) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts

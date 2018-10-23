@@ -2484,7 +2484,7 @@ struct RootModelConverter : SpatialConverterBase
         void AddDrawingOrSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
 
         //!private
-        bool m_keepHostAliveForUnitTests;
+        bool m_keepHostAliveForUnitTests {};
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };

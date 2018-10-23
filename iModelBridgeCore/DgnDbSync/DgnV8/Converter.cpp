@@ -248,11 +248,37 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
     SyncInfo::V8FileProvenance provenance(file, m_syncInfo, policy);
     if (!provenance.FindByName(true))
         {
+        if (SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+            {
+            BeSQLite::BeGuid guid;
+            if (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()))
+                {
+                DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
+                }
+            }
+
         provenance.Insert();
-
-        if (_WantProvenanceInBim())
-            DgnV8FileProvenance::Insert(provenance.m_syncId.GetValue(), provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
-
+        BeSQLite::BeGuid guid;
+        bool hasValidGuid = (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()));
+            
+        if (hasValidGuid && SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+            DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
+        else if (hasValidGuid)
+            {
+            //We found dgnv8file provenance for a model that was mapped from another bridge. 
+            //Transfer the model mapping from there to this one.
+            bvector <DgnV8ModelProvenance::ModelProvenanceEntry> entries;
+            DgnV8ModelProvenance::FindAll(entries, guid, GetDgnDb());
+            for (auto& entry : entries)
+                {
+                SyncInfo::V8ModelMapping mInfo;
+                mInfo.m_v8Name = entry.m_modelName;
+                mInfo.m_transform = entry.m_trans;
+                mInfo.m_modelId = entry.m_modelId;
+                mInfo.m_source = SyncInfo::V8ModelSource(provenance.m_syncId, SyncInfo::V8ModelId(entry.m_dgnv8ModelId));
+                mInfo.Insert(GetDgnDb());
+                }
+            }
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev("+ %s => %lld", Bentley::Utf8String(file.GetFileName()).c_str(), provenance.m_syncId.GetValue());
 
@@ -2452,9 +2478,6 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
     if (IChangeDetector::ChangeType::Insert == updatePlan.m_changeType)
         {
         m_syncInfo.InsertElement(results.m_mapping);
-
-        if (_WantProvenanceInBim())
-            DgnV8ElementProvenance::Insert(elementId, v8mm.GetV8FileSyncInfoId().GetValue(), v8mm.GetV8ModelId().GetValue(), v8eh.GetElementId(), GetDgnDb());
         }
     else
         {
@@ -3175,8 +3198,18 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         return ResolvedModelMapping();
         }
 
-    if (_WantProvenanceInBim())
-        DgnV8ModelProvenance::Insert(modelId, mapping.GetV8FileSyncInfoId().GetValue(), mapping.GetV8ModelId().GetValue(), mapping.GetV8Name(), GetDgnDb());
+    DgnV8FileP file = v8Model.GetDgnFileP();
+    SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
+    BeSQLite::BeGuid guid;
+    if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+        {
+        DgnV8ModelProvenance::ModelProvenanceEntry entry;
+        entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
+        entry.m_modelId = modelId;
+        entry.m_modelName = mapping.GetV8Name();
+        entry.m_trans = trans;
+        DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
+        }
 
     DgnModelPtr model = m_dgndb->Models().GetModel(mapping.GetModelId());
     if (!model.IsValid())

@@ -278,6 +278,11 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         }
     }
 
+extern "C"
+    {
+    EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -306,6 +311,31 @@ TEST_F(MstnBridgeTests, ConvertAttachment)
     BentleyApi::BeFileName dbFile(testDir);
     dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
 
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"test1Assignments.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+
+    testRegistry.AddBridge(bridgeRegSubKey, iModelBridge_getAffinity);
+
+    BentleyApi::BeFileName refFile;
+    MakeCopyOfFile(refFile, L"Test3d.dgn", L"-Ref-1");
+
+    AddLine(refFile);
+
+    BentleyApi::BeSQLite::BeGuid guid, refGuid;
+    guid.Create();
+    refGuid.Create();
+
+    iModelBridgeDocumentProperties docProps(guid.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties refDocProps(guid.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    testRegistry.SetDocumentProperties(docProps, inputFile);
+    testRegistry.SetDocumentProperties(refDocProps, refFile);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile, L"");
+    
+
     int modelCount = 0;
     if (true)
         {
@@ -319,10 +349,7 @@ TEST_F(MstnBridgeTests, ConvertAttachment)
         ASSERT_EQ(8, modelCount);
         }
 
-    BentleyApi::BeFileName refFile;
-    MakeCopyOfFile(refFile, L"Test3d.dgn", L"-Ref-1");
-
-    AddLine(refFile);
+   
     AddAttachment(inputFile, refFile, 1, true);
     if (true)
         {
