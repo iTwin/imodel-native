@@ -34,34 +34,37 @@ private:
 
     static RefCountedPtr<JsTexture> CreateForImage(CreateParams const& params, ImageCR image);
 
-    static Dimensions ComputeImageSourceDimensions(ImageSourceCR);
+    static bool HasAlpha(ImageCR);
+    static void StripAlpha(ImageR);
 public:
     static RefCountedPtr<JsTexture> Create(CreateParams const& params, ImageSourceCR image);
     static RefCountedPtr<JsTexture> Create(CreateParams const& params, ImageCR image) { return params.GetKey().IsValid() ? CreateForImage(params, image) : nullptr; }
     static RefCountedPtr<JsTexture> Create(GradientSymbCR);
 
-    ImageSource GetImageSource() const override { return m_imageSource; } // ###TODO why does this return a copy??
+    ImageSourceCP GetImageSource() const override { return &m_imageSource; }
     Dimensions GetDimensions() const override { return m_dimensions; }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<JsTexture> JsTexture::Create(CreateParams const& params, ImageSourceCR image)
+RefCountedPtr<JsTexture> JsTexture::Create(CreateParams const& params, ImageSourceCR src)
     {
-    if (params.GetKey().IsValid() && image.IsValid())
-        return new JsTexture(params, image.GetFormat(), ByteStream(image.GetByteStream()), ComputeImageSourceDimensions(image));
-    else
+    if (!params.GetKey().IsValid() || !src.IsValid())
         return nullptr;
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   06/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Texture::Dimensions JsTexture::ComputeImageSourceDimensions(ImageSourceCR src)
-    {
-    Image img(src, Image::Format::Rgb);
-    return Dimensions(img.GetWidth(), img.GetHeight());
+    auto imgFormat = ImageSource::Format::Png == src.GetFormat() ? Image::Format::Rgba : Image::Format::Rgb;
+    Image img(src, imgFormat);
+    Dimensions dims(img.GetWidth(), img.GetHeight());
+
+    if (Image::Format::Rgba == imgFormat && !HasAlpha(img))
+        {
+        StripAlpha(img);
+        ImageSource jpeg(img, ImageSource::Format::Jpeg);
+        return new JsTexture(params, jpeg.GetFormat(), std::move(jpeg.GetByteStreamR()), dims);
+        }
+
+    return new JsTexture(params, src.GetFormat(), ByteStream(src.GetByteStream()), dims);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -82,12 +85,69 @@ RefCountedPtr<JsTexture> JsTexture::CreateForImage(CreateParams const& params, I
     if (!image.IsValid())
         return nullptr;
 
+    Dimensions dims(image.GetWidth(), image.GetHeight());
+    if (Image::Format::Rgba == image.GetFormat() && !HasAlpha(image))
+        {
+        ByteStream opaqueBytes(image.GetWidth() * image.GetHeight() * 3);
+        uint8_t* pDst = opaqueBytes.GetDataP();
+        uint8_t const* pSrc = image.GetByteStream().GetData();
+        for (size_t src = 0, dst = 0; src < image.GetByteStream().size(); src += 4, dst += 3)
+            {
+            pDst[dst + 0] = pSrc[src + 0];
+            pDst[dst + 1] = pSrc[src + 1];
+            pDst[dst + 2] = pSrc[src + 2];
+            }
+
+        Image opaque(image.GetWidth(), image.GetHeight(), std::move(opaqueBytes), Image::Format::Rgb);
+        ImageSource jpeg(opaque, ImageSource::Format::Jpeg);
+        return jpeg.IsValid() ? new JsTexture(params, jpeg.GetFormat(), std::move(jpeg.GetByteStreamR()), dims) : nullptr;
+        }
+
     auto format = Image::Format::Rgba == image.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
     ImageSource src(image, format);
-    if (src.IsValid())
-        return new JsTexture(params, format, std::move(src.GetByteStreamR()), Dimensions(image.GetWidth(), image.GetHeight()));
-    else
-        return nullptr;
+    return src.IsValid() ? new JsTexture(params, format, std::move(src.GetByteStreamR()), dims) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool JsTexture::HasAlpha(ImageCR image)
+    {
+    if (Image::Format::Rgba != image.GetFormat())
+        return false;
+
+    uint8_t maxAlpha = 255 - Render::Primitives::DisplayParams::GetMinTransparency();
+    ByteStreamCR bytes = image.GetByteStream();
+    uint8_t const* data = bytes.GetData();
+    for (size_t i = 0; i < bytes.size(); i += 4)
+        {
+        uint8_t a = data[i + 3];
+        if (a <= maxAlpha)
+            return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsTexture::StripAlpha(ImageR image)
+    {
+    BeAssert(Image::Format::Rgba == image.GetFormat());
+
+    ByteStreamR bytes = image.GetByteStreamR();
+    uint8_t* data = bytes.GetDataP();
+    for (size_t src = 0, dst = 0; src < bytes.size(); src += 4, dst += 3)
+        {
+        data[dst + 0] = data[src + 0];
+        data[dst + 1] = data[src + 1];
+        data[dst + 2] = data[src + 2];
+        }
+
+    size_t newSize = image.GetWidth() * image.GetHeight() * 3;
+    bytes.resize(newSize);
+    image.SetFormat(Image::Format::Rgb);
     }
 
 //=======================================================================================
