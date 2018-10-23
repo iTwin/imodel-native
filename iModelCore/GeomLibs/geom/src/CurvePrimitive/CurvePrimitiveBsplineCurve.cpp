@@ -762,7 +762,7 @@ public:
 MSBsplineCurveCP _GetBsplineCurveCP() const override {return NULL;}  // Users do not see the bspline !!
 MSBsplineCurvePtr _GetBsplineCurvePtr() const override {return NULL;}  // Users do not see the bspline !!
 
-static ICurvePrimitive* Create (DPoint3dCP points, size_t nPoints)
+static ICurvePrimitivePtr Create (DPoint3dCP points, size_t nPoints)
     {
     MSBsplineCurve curve;
     if (SUCCESS == curve.InitAkima (points, nPoints))
@@ -770,6 +770,8 @@ static ICurvePrimitive* Create (DPoint3dCP points, size_t nPoints)
         MSBsplineCurvePtr curvePtr = curve.CreateCapture ();
         return new CurvePrimitiveAkimaCurve (curvePtr, points, nPoints);
         }
+    if (nPoints > 0)
+        return ICurvePrimitive::CreateLineString (points, nPoints);
     return nullptr;
     }
 }; // CurvePrimitiveAkimaCurve
