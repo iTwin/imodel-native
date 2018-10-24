@@ -5,6 +5,9 @@
 
     <ECEntityClass typeName="CorridorSurfaceAspect" modifier="Sealed" displayLabel="Component Layer" description="UniqueAspect to be applied to elements carrying CorridorSurface data from ORD.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="IsTopMesh" typeName="boolean" displayLabel="Is Top Mesh?">
             <ECCustomAttributes>
                 <HiddenProperty xmlns="CoreCustomAttributes.01.00.00"/>
@@ -25,9 +28,11 @@
             <Class class="CorridorSurfaceAspect"/>
         </Target>
     </ECRelationshipClass>
-
     <ECEntityClass typeName="FeatureAspect" modifier="Sealed" displayLabel="Feature" description="UniqueAspect to be applied to elements carrying Featurized data from ORD.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" displayLabel="Feature Name" />
         <ECProperty propertyName="DefinitionName" typeName="string" displayLabel="Feature Definition" />
     </ECEntityClass>
