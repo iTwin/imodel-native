@@ -12,7 +12,7 @@ HANDLER_DEFINE_MEMBERS(StripFootingHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-StripFootingPtr StripFooting::Create(Dgn::PhysicalModelR model)
+StripFootingPtr StripFooting::Create(Dgn::PhysicalModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;

@@ -13,9 +13,9 @@ HANDLER_DEFINE_MEMBERS(PileCapHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras             12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PileCapPtr PileCap::Create(Structural::StructuralPhysicalModelCPtr model)
+PileCapPtr PileCap::Create(Dgn::PhysicalModelCR model)
     {
-    Dgn::DgnModelId modelId = model.get()->GetModelId();
+    Dgn::DgnModelId modelId = model.GetModelId();
 
     BeAssert(modelId.IsValid());
 
@@ -24,7 +24,7 @@ PileCapPtr PileCap::Create(Structural::StructuralPhysicalModelCPtr model)
         return nullptr;
         }
 
-    Dgn::DgnDbR db = model.get()->GetDgnDb();
+    Dgn::DgnDbR db = model.GetDgnDb();
 
     ECN::ECClassCP structuralClass = db.GetClassLocater().LocateClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, PileCap::MyHandlerECClassName());
 

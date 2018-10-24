@@ -30,7 +30,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(Column)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(Column)
 
-    STRUCTURAL_DOMAIN_EXPORT static ColumnPtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static ColumnPtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

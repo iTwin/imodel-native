@@ -31,7 +31,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(Pile)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(Pile)
 
-    STRUCTURAL_DOMAIN_EXPORT static PilePtr Create(Structural::StructuralPhysicalModelCPtr model);
+    STRUCTURAL_DOMAIN_EXPORT static PilePtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

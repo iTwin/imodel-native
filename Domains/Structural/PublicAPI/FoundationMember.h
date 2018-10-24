@@ -30,7 +30,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(FoundationMember)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(FoundationMember)
 
-    STRUCTURAL_DOMAIN_EXPORT static FoundationMemberPtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static FoundationMemberPtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

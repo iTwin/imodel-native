@@ -29,7 +29,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(StripFooting)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(StripFooting)
 
-    STRUCTURAL_DOMAIN_EXPORT static StripFootingPtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static StripFootingPtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

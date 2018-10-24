@@ -29,7 +29,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(Beam)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(Beam)
 
-    STRUCTURAL_DOMAIN_EXPORT static BeamPtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static BeamPtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

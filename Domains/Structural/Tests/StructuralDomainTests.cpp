@@ -158,7 +158,7 @@ TEST_F(StructuralDomainTestFixture, StructuralMemberClassTest_2)
     Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, *physicalModel, STRUCTURALMEMBER_CODE_VALUE2);
 
     Dgn::DgnDbStatus status;
-    StructuralMemberPtr pw = StructuralMember::Create(physicalModel);
+    StructuralMemberPtr pw = StructuralMember::Create(*physicalModel);
     status = pw->SetCode(code);
     ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
     pw->Insert(&status);

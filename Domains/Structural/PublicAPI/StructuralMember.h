@@ -30,7 +30,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(StructuralMember)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(StructuralMember)
 
-    STRUCTURAL_DOMAIN_EXPORT static StructuralMemberPtr Create(Structural::StructuralPhysicalModelCPtr model);
+    STRUCTURAL_DOMAIN_EXPORT static StructuralMemberPtr Create(Dgn::PhysicalModelCR model);
     STRUCTURAL_DOMAIN_EXPORT StructuralMemberCPtr Insert(Dgn::DgnDbStatus* insertStatus = nullptr);
     STRUCTURAL_DOMAIN_EXPORT StructuralMemberCPtr Update(Dgn::DgnDbStatus* updateStatus = nullptr);
 #ifdef _EXCLUDED_FROM_EAP_BUILD_    

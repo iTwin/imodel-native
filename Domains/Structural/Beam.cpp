@@ -13,7 +13,7 @@ HANDLER_DEFINE_MEMBERS(BeamHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeamPtr Beam::Create(Dgn::PhysicalModelR model)
+BeamPtr Beam::Create(Dgn::PhysicalModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;

@@ -13,7 +13,7 @@ HANDLER_DEFINE_MEMBERS(ColumnHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColumnPtr Column::Create(Dgn::PhysicalModelR model)
+ColumnPtr Column::Create(Dgn::PhysicalModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;

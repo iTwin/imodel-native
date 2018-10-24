@@ -29,7 +29,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(Brace)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(Brace)
 
-    STRUCTURAL_DOMAIN_EXPORT static BracePtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static BracePtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

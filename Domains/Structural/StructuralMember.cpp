@@ -11,9 +11,9 @@
 
 HANDLER_DEFINE_MEMBERS(StructuralMemberHandler)
 
-StructuralMemberPtr StructuralMember::Create(Structural::StructuralPhysicalModelCPtr model)
+StructuralMemberPtr StructuralMember::Create(Dgn::PhysicalModelCR model)
     {
-    Dgn::DgnModelId modelId = model.get()->GetModelId();
+    Dgn::DgnModelId modelId = model.GetModelId();
 
     BeAssert(modelId.IsValid());
 
@@ -22,7 +22,7 @@ StructuralMemberPtr StructuralMember::Create(Structural::StructuralPhysicalModel
         return nullptr;
         }
 
-    Dgn::DgnDbR db = model.get()->GetDgnDb();
+    Dgn::DgnDbR db = model.GetDgnDb();
 
     ECN::ECClassCP structuralClass = db.GetClassLocater().LocateClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, StructuralMember::MyHandlerECClassName());
 

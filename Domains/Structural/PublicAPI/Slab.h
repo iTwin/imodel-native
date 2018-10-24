@@ -29,7 +29,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(Slab)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(Slab)
 
-    STRUCTURAL_DOMAIN_EXPORT static SlabPtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static SlabPtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

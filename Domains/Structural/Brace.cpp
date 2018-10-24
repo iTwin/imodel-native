@@ -12,7 +12,7 @@ HANDLER_DEFINE_MEMBERS(BraceHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BracePtr Brace::Create(Dgn::PhysicalModelR model)
+BracePtr Brace::Create(Dgn::PhysicalModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;

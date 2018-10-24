@@ -12,7 +12,7 @@ HANDLER_DEFINE_MEMBERS(SlabHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SlabPtr Slab::Create(Dgn::PhysicalModelR model)
+SlabPtr Slab::Create(Dgn::PhysicalModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;

@@ -29,7 +29,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(SpreadFooting)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(SpreadFooting)
 
-    STRUCTURAL_DOMAIN_EXPORT static SpreadFootingPtr Create(Dgn::PhysicalModelR model);
+    STRUCTURAL_DOMAIN_EXPORT static SpreadFootingPtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

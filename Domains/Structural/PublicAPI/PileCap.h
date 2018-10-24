@@ -30,7 +30,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(PileCap)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(PileCap)
 
-    STRUCTURAL_DOMAIN_EXPORT static PileCapPtr Create(Structural::StructuralPhysicalModelCPtr model);
+    STRUCTURAL_DOMAIN_EXPORT static PileCapPtr Create(Dgn::PhysicalModelCR model);
     };
 
 //=======================================================================================

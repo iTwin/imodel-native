@@ -31,7 +31,7 @@ public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(Wall)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(Wall)
 
-    STRUCTURAL_DOMAIN_EXPORT static WallPtr Create(Dgn::PhysicalModelCPtr model);
+    STRUCTURAL_DOMAIN_EXPORT static WallPtr Create(Dgn::PhysicalModelCR model);
 
     STRUCTURAL_DOMAIN_EXPORT WallCPtr Insert(Dgn::DgnDbStatus* insertStatus = nullptr);
     STRUCTURAL_DOMAIN_EXPORT WallCPtr Update(Dgn::DgnDbStatus* updateStatus = nullptr);

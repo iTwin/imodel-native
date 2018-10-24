@@ -13,9 +13,9 @@ HANDLER_DEFINE_MEMBERS(WallHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WallPtr Wall::Create(Dgn::PhysicalModelCPtr model)
+WallPtr Wall::Create(Dgn::PhysicalModelCR model)
     {
-    Dgn::DgnModelId modelId = model.get()->GetModelId();
+    Dgn::DgnModelId modelId = model.GetModelId();
 
     BeAssert(modelId.IsValid());
 
@@ -24,7 +24,7 @@ WallPtr Wall::Create(Dgn::PhysicalModelCPtr model)
         return nullptr;
         }
 
-    Dgn::DgnDbR db = model.get()->GetDgnDb();
+    Dgn::DgnDbR db = model.GetDgnDb();
 
     ECN::ECClassCP structuralClass = db.GetClassLocater().LocateClass(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, Wall::MyHandlerECClassName());
     

@@ -12,7 +12,7 @@ HANDLER_DEFINE_MEMBERS(SpreadFootingHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpreadFootingPtr SpreadFooting::Create(Dgn::PhysicalModelR model)
+SpreadFootingPtr SpreadFooting::Create(Dgn::PhysicalModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;

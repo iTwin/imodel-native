@@ -12,7 +12,7 @@ HANDLER_DEFINE_MEMBERS(FoundationMemberHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-FoundationMemberPtr FoundationMember::Create(Dgn::PhysicalModelR model)
+FoundationMemberPtr FoundationMember::Create(Dgn::PhysicalModelCR model)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
