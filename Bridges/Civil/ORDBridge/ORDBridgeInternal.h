@@ -58,16 +58,4 @@ namespace AlignmentBim = BENTLEY_NAMESPACE_NAME::RoadRailAlignment;
 namespace RoadRailBim = BENTLEY_NAMESPACE_NAME::RoadRailPhysical;
 namespace DgnV8ORDBim = BENTLEY_NAMESPACE_NAME::DgnV8OpenRoadsDesigner;
 
-#define ORD_SCHEMA_NAME                              "DgnV8OpenRoadsDesigner"
-#define ORD_SCHEMA_FILE                              L"DgnV8OpenRoadsDesigner.ecschema.xml"
-#define ORD_SCHEMA_LOCATION                          L"ECSchemas/Application/"
-
-#define ORD_CLASS_CorridorSurfaceAspect              "CorridorSurfaceAspect"
-#define ORD_CLASS_FeatureAspect                      "FeatureAspect"
-
-#define ORD_PROP_CorridorSurfaceAspect_IsBottomMesh  "IsBottomMesh"
-#define ORD_PROP_CorridorSurfaceAspect_IsTopMesh     "IsTopMesh"
-#define ORD_PROP_FeatureAspect_DefinitionName        "DefinitionName"
-#define ORD_PROP_FeatureAspect_Name                  "Name"
-
 #endif

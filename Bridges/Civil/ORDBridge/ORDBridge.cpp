@@ -289,44 +289,6 @@ BentleyStatus ORDBridge::_MakeSchemaChanges()
     {
     auto status = m_converter->MakeSchemaChanges();
 
-    auto schemasDir = _GetParams().GetAssetsDir();
-    schemasDir.AppendToPath(L"ECSchemas");
-
-    auto schemaContextPtr = ECN::ECSchemaReadContext::CreateContext(true, true);
-    auto dgnSchemasDir = schemasDir;
-    dgnSchemasDir.AppendToPath(L"Dgn");
-
-    auto ecdbSchemasDir = schemasDir;
-    ecdbSchemasDir.AppendToPath(L"ECDb");
-
-    auto stdSchemasDir = schemasDir;
-    stdSchemasDir.AppendToPath(L"Standard");
-
-    auto domainSchemasDir = schemasDir;
-    domainSchemasDir.AppendToPath(L"Domain");
-
-    schemaContextPtr->AddSchemaPath(ecdbSchemasDir.c_str());
-    schemaContextPtr->AddSchemaPath(stdSchemasDir.c_str());
-    schemaContextPtr->AddSchemaPath(dgnSchemasDir.c_str());
-    schemaContextPtr->AddSchemaPath(domainSchemasDir.c_str());
-
-    ECN::ECSchemaPtr ordSchemaPtr;
-    auto ordSchemaFileName = _GetParams().GetAssetsDir();
-    ordSchemaFileName.AppendToPath(ORD_SCHEMA_LOCATION);
-    ordSchemaFileName.AppendToPath(ORD_SCHEMA_FILE);
-
-    if (ECN::SchemaReadStatus::Success != ECN::ECSchema::ReadFromXmlFile(ordSchemaPtr, ordSchemaFileName.c_str(), *schemaContextPtr))
-        return ERROR;
-
-    auto lockSchemasResponse = GetDgnDbR().BriefcaseManager().LockSchemas();
-    if (Dgn::RepositoryStatus::Success != lockSchemasResponse.Result())
-        return BentleyStatus::ERROR;
-
-    bvector<ECN::ECSchemaCP> schemas;
-    schemas.push_back(ordSchemaPtr.get());
-    if (Dgn::SchemaStatus::Success != GetDgnDbR().ImportSchemas(schemas))
-        return BentleyStatus::ERROR;
-
     GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
 
     return ((BSISUCCESS != status) || m_converter->WasAborted()) ? BSIERROR : BSISUCCESS;
