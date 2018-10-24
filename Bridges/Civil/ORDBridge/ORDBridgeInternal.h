@@ -27,6 +27,7 @@
 #include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
+#include <DgnV8OpenRoadsDesigner/DgnV8OpenRoadsDesignerApi.h>
 #include <CifApi/Cif/SDK/Bentley.Cif.SDK.h>
 #include <CifApi/Cif/SDK/ConsensusConnection.h>
 #include <CifApi/Cif/SDK/CIFGeometryModelSDK.h>
@@ -55,5 +56,6 @@ DGNV8_USING_NAMESPACE_BENTLEY_CIF_GEOMETRYMODEL_SDK
 
 namespace AlignmentBim = BENTLEY_NAMESPACE_NAME::RoadRailAlignment;
 namespace RoadRailBim = BENTLEY_NAMESPACE_NAME::RoadRailPhysical;
+namespace DgnV8ORDBim = BENTLEY_NAMESPACE_NAME::DgnV8OpenRoadsDesigner;
 
 #endif

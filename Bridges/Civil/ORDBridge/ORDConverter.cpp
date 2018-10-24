@@ -32,7 +32,6 @@ struct ORDConverterUtils
 public:
     static BeSQLite::BeGuid CifSyncIdToBeGuid(Bentley::WStringCR cifSyncId);
     static bool AssignFederationGuid(DgnElementR bimElement, Bentley::WStringCR cifSyncId);
-    static void AssignFeatureDefinition(DgnElementR bimElement, Bentley::WStringCR featureDefinitionName);
 }; // ORDConverterUtils
 
 /*---------------------------------------------------------------------------------**//**
@@ -70,16 +69,6 @@ bool ORDConverterUtils::AssignFederationGuid(DgnElementR bimElement, Bentley::WS
         }
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ORDConverterUtils::AssignFeatureDefinition(DgnElementR bimElement, Bentley::WStringCR featureDefinitionName)
-    {
-    ECN::AdHocJsonValue userProps = bimElement.GetUserProperties("OpenRoadsDesigner");
-    userProps.SetValueText("FeatureDefinitionName", Utf8String(featureDefinitionName.c_str()).c_str());
-    bimElement.SetUserProperties("OpenRoadsDesigner", userProps);
     }
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ORDAlignmentsConverter)
@@ -303,14 +292,6 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     Utf8String userLabel(cifAlignment.GetName().c_str());
     bimAlignmentPtr->SetUserLabel(userLabel.c_str());
     
-    Bentley::WString featureDefName;
-    if (cifAlignment.GetFeatureDefinition().IsValid())
-        {
-        featureDefName = cifAlignment.GetFeatureDefinition()->GetName();
-        if (!Bentley::WString::IsNullOrEmpty(featureDefName.c_str()))
-            ORDConverterUtils::AssignFeatureDefinition(*bimAlignmentPtr, featureDefName);
-        }
-
     ORDConverterUtils::AssignFederationGuid(*bimAlignmentPtr, cifSyncId);
 
     iModelBridgeSyncInfoFile::ConversionResults results;
@@ -331,9 +312,6 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
 
     if (bimCode.IsValid())
         bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimCode.GetValueUtf8()));
-
-    if (!Bentley::WString::IsNullOrEmpty(featureDefName.c_str()))
-        ORDConverterUtils::AssignFeatureDefinition(*bimHorizAlignmPtr, featureDefName);
 
     bimHorizAlignmPtr->GenerateElementGeom();
     if (bimHorizAlignmPtr->Insert().IsNull())
@@ -422,13 +400,6 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
 
     auto verticalModelCPtr = AlignmentBim::VerticalAlignmentModel::Get(alignment.GetDgnDb(), verticalModelId);;
     auto verticalAlignmPtr = AlignmentBim::VerticalAlignment::Create(*verticalModelCPtr, *bimVertGeometryPtr);
-
-    if (cifProfile.GetFeatureDefinition().IsValid())
-        {
-        auto featureDefName = cifProfile.GetFeatureDefinition()->GetName();
-        if (!Bentley::WString::IsNullOrEmpty(featureDefName.c_str()))
-            ORDConverterUtils::AssignFeatureDefinition(*verticalAlignmPtr, featureDefName);
-        }
 
     verticalAlignmPtr->GenerateElementGeom();
 
@@ -926,7 +897,8 @@ void updateProjectExtents(SpatialModelCR spatialModel, ORDConverter::Params& par
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConvertORDElementXDomain::ConvertORDElementXDomain(ORDConverter& converter): m_converter(converter)
     {
-    m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);
+    m_cifConsensusConnection = ConsensusConnection::Create(*m_converter.GetRootModelRefP());
+    m_graphic3dClassId = converter.GetDgnDb().Schemas().GetClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASS_Graphic3d);    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -990,12 +962,72 @@ void ConvertORDElementXDomain::_DetermineElementParams(DgnClassId& classId, DgnC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignORDFeatureAspect(Dgn::DgnElementR element, Cif::FeaturizedConsensusItemCR featurizedItem)
+    {
+    auto name = Utf8String(featurizedItem.GetName().c_str());
+    auto featureDefPtr = featurizedItem.GetFeatureDefinition();
+
+    if (!Utf8String::IsNullOrEmpty(name.c_str()) || featureDefPtr.IsValid())
+        {
+        if (auto featureAspectP = DgnV8ORDBim::FeatureAspect::GetP(element))
+            {
+            featureAspectP->SetName(name.c_str());
+
+            if (featureDefPtr.IsValid())
+                featureAspectP->SetDefinitionName(Utf8String(featureDefPtr->GetName().c_str()).c_str());
+            }
+        else
+            {
+            auto featureAspectPtr = DgnV8ORDBim::FeatureAspect::Create(name.c_str(), (featureDefPtr.IsValid()) ? Utf8String(featureDefPtr->GetName().c_str()).c_str() : nullptr);
+            DgnV8ORDBim::FeatureAspect::Set(element, *featureAspectPtr);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void assignCorridorSurfaceAspect(Dgn::DgnElementR element, Cif::CorridorSurfaceCR cifCorridorSurface)
+    {
+    bool isTopMesh = cifCorridorSurface.IsTopMesh();
+    bool isBottomMesh = cifCorridorSurface.IsBottomMesh();
+
+    if (auto corridorSurfaceAspectP = DgnV8ORDBim::CorridorSurfaceAspect::GetP(element))
+        {
+        corridorSurfaceAspectP->SetIsTopMesh(isTopMesh);
+        corridorSurfaceAspectP->SetIsBottomMesh(isBottomMesh);
+        }
+    else
+        {
+        auto corridorSurfaceAspectPtr = DgnV8ORDBim::CorridorSurfaceAspect::Create(isTopMesh, isBottomMesh);
+        DgnV8ORDBim::CorridorSurfaceAspect::Set(element, *corridorSurfaceAspectPtr);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const&, DgnDbSync::DgnV8::Converter&)
+void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversionResults& elRes, DgnV8EhCR v8el, DgnDbSync::DgnV8::ResolvedModelMapping const& v8mm, DgnDbSync::DgnV8::Converter&)
     {
     if (m_converter.m_v8ToBimElmMap.end() != m_converter.m_v8ToBimElmMap.find(v8el.GetElementRef()))
         return;
+
+    auto featurizedPtr = FeaturizedConsensusItem::CreateFromElementHandle(*m_cifConsensusConnection, v8el);
+    if (featurizedPtr.IsValid())
+        {
+        assignORDFeatureAspect(*elRes.m_element, *featurizedPtr);
+
+        if (v8mm.GetV8Model().Is3D())
+            {
+            if (auto cifCorridorSurfaceCP = dynamic_cast<CorridorSurfaceCP>(featurizedPtr.get()))
+                {
+                assignCorridorSurfaceAspect(*elRes.m_element, *cifCorridorSurfaceCP);
+                return;
+                }
+            }
+        }
 
     if (m_alignmentV8RefSet.end() == m_alignmentV8RefSet.find(v8el.GetElementRef()) &&
         m_corridorV8RefSet.end() == m_corridorV8RefSet.find(v8el.GetElementRef()))

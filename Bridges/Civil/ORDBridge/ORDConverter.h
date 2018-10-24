@@ -89,6 +89,7 @@ private:
     bset<Bentley::ElementRefP> m_elementsSeen;    
     bset<Bentley::ElementRefP> m_alignmentV8RefSet;
     bset<Bentley::ElementRefP> m_corridorV8RefSet;
+    Bentley::Cif::ConsensusConnectionPtr m_cifConsensusConnection;
 
 protected:
     virtual void _DetermineElementParams(Dgn::DgnClassId&, Dgn::DgnCode&, Dgn::DgnCategoryId&, DgnV8EhCR, Dgn::DgnDbSync::DgnV8::Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, Dgn::DgnDbSync::DgnV8::ResolvedModelMapping const&) override;
