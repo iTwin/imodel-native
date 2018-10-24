@@ -708,6 +708,7 @@ void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibr
     std::call_once(s_initOnce, [&]
         {
         BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
+        dllDirectory.AppendToPath(L"DgnV8");
         initializeV8HostConfigVars(Bentley::BeFileName(dllDirectory.c_str()), 0, nullptr);
         DgnV8Api::DgnPlatformLib::Initialize(*new MinimalV8Host, true);
         BentleyApi::BeFileName realdwgDirectory(dllDirectory);
