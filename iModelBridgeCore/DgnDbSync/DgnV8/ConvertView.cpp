@@ -574,6 +574,9 @@ void Converter::ConvertViewClips(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInf
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ConvertViewGrids(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters)
     {
+    if (nullptr == v8Model.GetDgnFileP()->GetPersistentTcb())
+        return;
+
     // Set grid settings from V8 model info (orientation is stored in tcb, yuck!)...
     GridOrientationType gridOrientation = (GridOrientationType) v8Model.GetDgnFileP()->GetPersistentTcb()->gridOrientation;
     DgnV8Api::ModelInfo const& v8ModelInfo = v8Model.GetModelInfo();
