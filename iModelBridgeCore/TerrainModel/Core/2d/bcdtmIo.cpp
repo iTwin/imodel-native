@@ -3517,10 +3517,16 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
 ** Scan DTM Feature File And Count Points And DTM Features
 */
   featureFileOffset = dtmHeader.featureFileOffset ;
+
+
 #if _WIN32
   _fseeki64(dtmFP,featureFileOffset,SEEK_SET) ;
 #else
-fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
+    #ifdef __APPLE__
+        fseek(dtmFP,featureFileOffset,SEEK_SET) ;
+    #else
+        fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
+    #endif
 #endif
   while( fread( &dtmFeature,sizeof(BC_DTM_FEATURE_RECORD),1,dtmFP) == 1 )
     {
@@ -3531,7 +3537,11 @@ fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
 #if _WIN32
      _fseeki64(dtmFP,featureFileOffset,SEEK_SET) ;
 #else
-    fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
+    #ifdef __APPLE__
+        fseek(dtmFP,featureFileOffset,SEEK_SET) ;
+    #else
+        fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
+    #endif
 #endif
     }
 /*
@@ -3714,7 +3724,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 #if _WIN32
  dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
 #else
-dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #ifdef __APPLE__
+        dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #else
+        dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #endif
 #endif
 /*
 ** Create DTm Object
@@ -3818,7 +3832,11 @@ dtmHeader.featureFileOffset = ftello64(dtmFP) ;
 #if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
 #else
- fseeko64(dtmFP,0,SEEK_SET) ;
+    #ifdef __APPLE__
+        fseek(dtmFP,0,SEEK_SET) ;
+    #else
+        fseeko64(dtmFP,0,SEEK_SET) ;
+    #endif
 #endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {
@@ -3925,7 +3943,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 #if _WIN32
  dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
 #else
-dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #ifdef __APPLE__
+        dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #else
+        dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #endif
 #endif
 /*
 ** Create DTm Object
@@ -4018,7 +4040,11 @@ dtmHeader.featureFileOffset = ftello64(dtmFP) ;
 #if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
 #else
- fseeko64(dtmFP,0,SEEK_SET) ;
+    #ifdef __APPLE__
+        fseek(dtmFP,0,SEEK_SET) ;
+    #else
+        fseeko64(dtmFP,0,SEEK_SET) ;
+    #endif
 #endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {
@@ -4277,7 +4303,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 #if _WIN32
     dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
 #else
-dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #ifdef __APPLE__
+           dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #else
+           dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #endif
 #endif
    }
 /*
@@ -4342,7 +4372,11 @@ dtmHeader.featureFileOffset = ftello64(dtmFP) ;
 #if _WIN32
     _fseeki64(dtmFP,0,SEEK_END) ;
 #else
-    fseeko64(dtmFP,0,SEEK_END) ;
+    #ifdef __APPLE__
+       fseek(dtmFP,0,SEEK_END) ;
+    #else
+       fseeko64(dtmFP,0,SEEK_END) ;
+    #endif
 #endif
    }
 /*
@@ -4396,7 +4430,11 @@ dtmHeader.featureFileOffset = ftello64(dtmFP) ;
 #if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
 #else
- fseeko64(dtmFP,0,SEEK_SET) ;
+    #ifdef __APPLE__
+        fseek(dtmFP,0,SEEK_SET) ;
+    #else
+        fseeko64(dtmFP,0,SEEK_SET) ;
+    #endif
 #endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {
@@ -4560,7 +4598,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 #if _WIN32
     dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
 #else
-dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #ifdef __APPLE__
+       dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #else
+       dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+    #endif
 #endif
    }
 /*
@@ -4625,7 +4667,11 @@ dtmHeader.featureFileOffset = ftello64(dtmFP) ;
 #if _WIN32
     _fseeki64(dtmFP,0,SEEK_END) ;
 #else
-    fseeko64(dtmFP,0,SEEK_END) ;
+    #ifdef __APPLE__
+       fseek(dtmFP,0,SEEK_END) ;
+    #else
+       fseeko64(dtmFP,0,SEEK_END) ;
+    #endif
 #endif
    }
 /*
@@ -4680,7 +4726,11 @@ dtmHeader.featureFileOffset = ftello64(dtmFP) ;
 #if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
 #else
- fseeko64(dtmFP,0,SEEK_SET) ;
+    #ifdef __APPLE__
+        fseek(dtmFP,0,SEEK_SET) ;
+    #else
+        fseeko64(dtmFP,0,SEEK_SET) ;
+    #endif
 #endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {

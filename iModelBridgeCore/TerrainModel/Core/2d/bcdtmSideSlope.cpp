@@ -12078,7 +12078,7 @@ int bcdtmSideSlope_removeDuplicatesPointArray
 /*
 ** Check For Presence Of Line String
 */
- if( sizeLineString <= 0 || lineString == nullptr ) goto errexit ;
+ if( sizeLineString == nullptr || lineString == nullptr ) goto errexit ;
 /*
 ** Check Point To Point Tolerance Is Greater Than Or Equal To Zero
 */
