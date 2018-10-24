@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTimeUtilities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,7 +35,7 @@ BEGIN_BENTLEY_NAMESPACE
 //! @ingroup GROUP_Time
 //=======================================================================================
 struct BeTimeUtilities
-{
+    {
     //! @name Elapsed time
     //! @{
 
@@ -124,7 +124,7 @@ struct BeTimeUtilities
     //! @return SUCCESS if the conversion was successful
     BENTLEYDLL_EXPORT static BentleyStatus ConvertUnixMillisToLocalTime(struct tm& localTime, uint64_t unixMilliseconds);
     /// @}
-};
+    };
 
 //=======================================================================================
 //! A duration, in steady_clock units (usually nanoseconds), int64. This is a std::chrono::steady_clock::duration with a
@@ -132,7 +132,7 @@ struct BeTimeUtilities
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
 struct BeDuration : std::chrono::steady_clock::duration
-{
+    {
     DEFINE_T_SUPER(std::chrono::steady_clock::duration)
     typedef std::chrono::nanoseconds Nanoseconds;
     typedef std::chrono::milliseconds Milliseconds;
@@ -172,7 +172,7 @@ struct BeDuration : std::chrono::steady_clock::duration
 
     //! Suspend the current thread for this duration
     BENTLEYDLL_EXPORT void Sleep();
-};
+    };
 
 //=======================================================================================
 //! A time point in steady_clock units (usually nanoseconds). This is a std::chrono::steady_clock::time_point with a few
@@ -180,7 +180,7 @@ struct BeDuration : std::chrono::steady_clock::duration
 // @bsiclass                                                    Keith.Bentley   01/17
 //=======================================================================================
 struct BeTimePoint : std::chrono::steady_clock::time_point
-{
+    {
     DEFINE_T_SUPER(std::chrono::steady_clock::time_point)
     using T_Super::time_point;
 
@@ -212,14 +212,14 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
     //! return true if this BeTimePoint was a valid time that has past before the time this method is called (it calls Now()!)
     //! @note always returns false and does not call Now() if this is not a valid BeTimePoint
     bool IsInPast() const {return IsValid() && (Now() > *this);}
-};
+    };
 
 /*=================================================================================**//**
 * Measures elapsed time using std::chrono::steady_clock (not std::chrono::high_resolution_clock).
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct StopWatch : NonCopyableClass
-{
+    {
 private:
     Utf8CP m_description = nullptr;
     BeTimePoint m_start;
@@ -256,6 +256,20 @@ public:
     //! Get the elapsed time between Start() and Stop() on this timer.
     BeDuration GetElapsed() {return m_stop - m_start;}
     double GetElapsedSeconds() {return GetElapsed();}
-};
+    };
+
+//=======================================================================================
+//! Class used as dependency when time-based code needs to be written. This allows tests
+//! passing fake clock with overriden Now() amd control what values testable code gets.
+// @bsiclass                                                     Vincas.Razma    10/2018
+//=======================================================================================
+struct BeClock
+    {
+    //! Singleton for easy use when BeClock* parameter is required.
+    BENTLEYDLL_EXPORT static BeClock& Get();
+    //! Returns current time point.
+    virtual BeTimePoint Now() const { return BeTimePoint::Now(); }
+    virtual ~BeClock() {};
+    };
 
 END_BENTLEY_NAMESPACE
