@@ -265,7 +265,6 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents() const
     // Set the project extents to the union of the ranges of all of the spatial models.
     // We can't just use the range index for this since some models (e.g. reality models) have volumes of interest
     // that don't have any elements. This is slower, but it should only be called after an "import from external source" operation
-    AxisAlignedBox3d extent;
     for (auto& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)))
         {
         auto model = models.Get<SpatialModel>(entry.GetModelId());
