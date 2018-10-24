@@ -13,8 +13,8 @@
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" /> 
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
-<!--         <SubPart PartName="NativeClient.Docs"/>
- -->        
+        <SubPart PartName="NativeClient.Docs"/>
+        
         <Bindings>
             <Libs>Delivery/$(libprefix)Licensing$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)Licensing$(shlibext)</Assemblies>
@@ -84,11 +84,11 @@
         </Bindings>
     </Part>
 
-    <Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke">
+    <Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-doxygen</RequiredRepository>
         <Bindings>
             <Files ProductDirectoryName="LicenseClientCrossPlatform" IfNotPresent="Warn" Required="false">
-                Delivery\NativeClient.chm
+                Delivery/NativeClient.chm
             </Files>
         </Bindings>
     </Part>
