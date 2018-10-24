@@ -234,11 +234,32 @@ void DgnGeoLocation::InitializeProjectExtents()
     Save();
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents() const
     {
+    AxisAlignedBox3d extent;
+
+#ifdef RANGE_WITHOUT_OUTLIERS
+    extent.Extend(GetDgnDb().ComputeGeometryExtentsWithoutOutliers());
+    auto& models = GetDgnDb().Models();
+
+    // Set the project extents to the union of the ranges of all of the spatial models.
+    // We can't just use the range index for this since some models (e.g. reality models) have volumes of interest
+    // that don't have any elements. This is slower, but it should only be called after an "import from external source" operation
+    for (auto& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)))
+        {
+        auto model = models.Get<SpatialModel>(entry.GetModelId());
+        if (model.IsValid())
+            extent.Extend(model->QueryNonElementModelRange());
+        }
+
+    if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a reasonable default
+        extent = GetDefaultProjectExtents();
+
+#else
     auto& models = GetDgnDb().Models();
 
     // Set the project extents to the union of the ranges of all of the spatial models.
@@ -254,7 +275,7 @@ AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents() const
 
     if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a reasonable default
         extent = GetDefaultProjectExtents();
-
+#endif
     return extent;
     }
 
