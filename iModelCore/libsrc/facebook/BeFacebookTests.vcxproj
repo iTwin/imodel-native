@@ -29,7 +29,6 @@
   <ItemGroup>
     <ClCompile Include="folly\BeTimekeeper.cpp" />
     <ClCompile Include="folly\BeFolly.cpp" />
-    <ClCompile Include="folly\executors\InlineExecutor.cpp" />
     <ClCompile Include="folly\futures\InlineExecutor.cpp" />
     <ClCompile Include="Tests\Published\BeTimekeeperTests.cpp" />
     <ClCompile Include="Tests\Published\Futures\HelpersTests.cpp" />
@@ -39,7 +38,6 @@
     <ClInclude Include="Tests\Published\AsyncTestCheckpoint.h" />
     <ClInclude Include="VendorApi\folly\BeTimekeeper.h" />
     <ClInclude Include="VendorApi\folly\BeFolly.h" />
-    <ClInclude Include="VendorApi\folly\executors\InlineExecutor.h" />
     <ClInclude Include="VendorApi\folly\futures\helpers.h" />
     <ClInclude Include="VendorApi\folly\futures\InlineExecutor.h" />
   </ItemGroup>

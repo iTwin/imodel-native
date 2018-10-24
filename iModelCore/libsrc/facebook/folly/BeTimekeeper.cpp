@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <folly/BeTimekeeper.h>
 #include <folly/Singleton.h>
-#include <folly/executors/InlineExecutor.h>
+#include <folly/futures/InlineExecutor.h>
 
 #include <Bentley/DateTime.h>
 

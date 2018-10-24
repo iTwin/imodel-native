@@ -64,7 +64,7 @@ $(o)SharedMutex$(oext) : $(FollyDir)SharedMutex.cpp ${MultiCompileDepends}
 
 $(o)ExceptionWrapper$(oext) : $(FollyDir)ExceptionWrapper.cpp $(FollyVendorAPISrc)ExceptionWrapper.h ${MultiCompileDepends}
 
-$(o)InlineExecutor$(oext) : $(FollyDir)executors/InlineExecutor.cpp $(FollyVendorAPISrc)executors/InlineExecutor.h ${MultiCompileDepends}
+$(o)InlineExecutor$(oext) : $(FollyDir)futures/InlineExecutor.cpp $(FollyVendorAPISrc)futures/InlineExecutor.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

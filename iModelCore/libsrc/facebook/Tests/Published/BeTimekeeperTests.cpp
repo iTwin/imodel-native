@@ -8,7 +8,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/DateTime.h>
 #include <folly/BeTimekeeper.h>
-#include <folly/executors/InlineExecutor.h>
+#include <folly/futures/InlineExecutor.h>
 #include "AsyncTestCheckpoint.h"
 
 struct BeTimekeeperTests : public ::testing::Test {};
