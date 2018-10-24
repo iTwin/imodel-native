@@ -161,6 +161,8 @@ void SpatialViewController::_OnRenderFrame()
         m_vp->InvalidateScene();
     }
 
+DgnModelId              s_webMercatorPseudoModelId((uint64_t) 0);
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -219,8 +221,6 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         // WebMercator display style setting...  Add at modelId 0.
         if (m_definition->GetDisplayStyle().GetDisplayBackgroundMap())
             {
-            DgnModelId              s_webMercatorPseudoModelId((uint64_t) 0);
-
             if (m_roots.find(s_webMercatorPseudoModelId) == m_roots.end())
                 {
                 TileTree::RootPtr modelRoot = m_definition->GetDisplayStyle().GetBackgroundMapTileTree(context);
@@ -249,7 +249,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
         {
         for (auto pair : m_roots)
             if (pair.second.IsValid())
-                pair.second->DrawInView(context);
+                pair.second->DrawInView(context);                                                                                   
         }
     else
         {
@@ -443,6 +443,9 @@ void ViewController::SetViewFlags(Render::ViewFlags newFlags)
         SetFeatureOverridesDirty();
 
     m_definition->GetDisplayStyle().SetViewFlags(newFlags);
+
+    if (oldFlags.ShowBackgroundMap() != newFlags.ShowBackgroundMap() && nullptr != ToSpatialViewP())
+        ToSpatialViewP()->SynchBackgroundMapDisplay();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,6 +492,28 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 
     if (nullptr != m_vp)
         m_vp->InvalidateScene();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::SynchBackgroundMapDisplay()
+    {
+    bool onOff = GetViewFlags().ShowBackgroundMap();
+
+    if (onOff == (m_roots.find(s_webMercatorPseudoModelId) != m_roots.end()))
+        return;
+
+    if (onOff)
+        {
+        m_allRootsLoaded = false;
+        }
+    else
+        {
+        auto rootIter = m_roots.find(s_webMercatorPseudoModelId);
+        if (m_roots.end() != rootIter)
+            m_roots.erase(rootIter);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

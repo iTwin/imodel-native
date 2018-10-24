@@ -629,6 +629,9 @@ public:
     //! @param onOff    If true, elements in the model displayed
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
 
+    //! Synchronize display of background map after viewflags display...
+    void SynchBackgroundMapDisplay();
+
     DgnModelIdSet const& GetViewedModels() const {return GetSpatialViewDefinition().GetModelSelector().GetModels();}
     void SetViewedModels(DgnModelIdSet const& models) { _SetViewedModels(models); }
     
@@ -704,7 +707,7 @@ public:
     DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
     void _UnloadAllTileTrees() override { m_root = nullptr; }
 
-    TileTree::RootP GetRoot(SceneContextR context);
+    TileTree::RootP GetRoot(SceneContextR context);            
     BentleyStatus CreateScene(TileTree::DrawArgsR args);
 };
 
