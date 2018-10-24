@@ -27,9 +27,11 @@ namespace WebMercator
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MapTile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MapRoot)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(WebMercatorModel)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(WebMercatorDisplay)
 
 DEFINE_REF_COUNTED_PTR(MapTile)
 DEFINE_REF_COUNTED_PTR(MapRoot)
+DEFINE_REF_COUNTED_PTR(WebMercatorDisplay)
 
 enum class MapType : int {None=0, Street=1, Aerial=2, Hybrid=3};
 
@@ -116,7 +118,7 @@ struct MapRoot : TileTree::QuadTree::Root
     Utf8String _ConstructTileResource(TileTree::TileCR tile) const override;
     Utf8CP _GetName() const override {return "WebMercator";}
 
-    MapRoot(WebMercatorModelCR, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
+    MapRoot(DgnDbR db, DgnModelId modelId, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}
 };
 
@@ -415,9 +417,25 @@ public:
     MapType _GetMapType () const override {return m_mapType; }
 
     static HereImageryProvider* Create (Json::Value const& providerDataValue);
-    };
+};
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     10/2018
+//=======================================================================================
+struct WebMercatorDisplayHandler : DisplayStyle::BackgroundMapDisplayHandler
+{
+    ImageryProviderPtr  m_provider;
+    Json::Value         m_settings;
+
+    WebMercatorDisplayHandler(Json::Value const&  settings);
+    void _Initialize(Json::Value const& settings);
+
+    TileTree::RootPtr _GetTileTree(SceneContextR sceneContext) override;
+};
+
 
 }; // end WebMercator namespace
+
 
 //! @endGroup
 

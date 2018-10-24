@@ -45,26 +45,22 @@ struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
     friend struct ViewDefinition;
 
 public:
-    //! The background map.  Generally supplied through a web mercator provider.
-    struct BackgroundMap
-    {
-        Utf8String  m_provider;     // Provider name (bing, mapbox etc.).
-        double      m_groundBias = 0.0;
-        double      m_transparency = 0.0;
-        Utf8String  m_providerData;
-        Utf8String  m_bingProvider;
+    //! The background map type.  Generally supplied through a web mercator provider.
+    enum class MapType : int {None=0, Street=1, Aerial=2, Hybrid=3};
 
-        bool IsValid() const { return !m_provider.empty(); }
-        Json::Value   ToJson() const;
-        void FromJson(JsonValueCR value);  
-    };
+
+    struct BackgroundMapDisplayHandler : RefCountedBase
+        {
+        virtual void _Initialize(Json::Value const& settings) = 0;
+        virtual RefCountedPtr<TileTree::Root> _GetTileTree(SceneContextR sceneContext) = 0;
+        };
 
 protected:
     mutable BeMutex m_mutex;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
     Render::ViewFlags m_viewFlags;
-    BackgroundMap m_backgroundMap;
+    RefCountedPtr<struct BackgroundMapDisplayHandler> m_backGroundMapDisplayHandler;
 
     DgnSubCategory::Appearance LoadSubCategory(DgnSubCategoryId) const;
     Utf8String ToJson() const;
@@ -146,8 +142,10 @@ public:
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
     //! Get the background map.
-    BackgroundMap const& GetBackgroundMap() const { return m_backgroundMap; }
-    void SetBackgroundMap(BackgroundMap const& backgroundMap) { m_backgroundMap = backgroundMap; }
+    BentleyStatus GetBackgroundMapSettings(MapType& mapType, Utf8StringR provider, double& groundBias, bool returnDefaults = true) const; 
+    void SetBackgroundMapSettings(MapType mapType, Utf8StringCR& provider, double groundBias);
+    bool GetDisplayBackgroundMap() const;
+    RefCountedPtr<TileTree::Root>  GetBackgroundMapTileTree(SceneContextR sceneContext);
 
     //! Create a DgnCode for a DisplayStyle given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_DisplayStyle, scope, name);}
