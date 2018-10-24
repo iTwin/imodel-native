@@ -1832,7 +1832,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_ID, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_PROVIDER, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetProvider().c_str());
-    ASSERT_STREQ("PUBLIC", pPackage->GetImageryGroup()[0]->GetDataSource(0).GetVisibilityTag().c_str()); // Default value
+    ASSERT_STREQ("UNDEFINED", pPackage->GetImageryGroup()[0]->GetDataSource(0).GetVisibilityTag().c_str()); // Default value
     ASSERT_EQ(RPACKAGE_IMDATA_A_SRC_1_SIZE, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetSize());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_A_SRC_1_URI_PART2, pPackage->GetImageryGroup()[0]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
@@ -1860,7 +1860,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_TERMOFUSE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetMetadataCP()->GetTermsOfUse().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_ID, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_PROVIDER, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetProvider().c_str());
-    ASSERT_STREQ("PUBLIC", pPackage->GetImageryGroup()[1]->GetDataSource(0).GetVisibilityTag().c_str());
+    ASSERT_STREQ("UNDEFINED", pPackage->GetImageryGroup()[1]->GetDataSource(0).GetVisibilityTag().c_str());
     ASSERT_EQ(RPACKAGE_IMDATA_B_SRC_1_SIZE, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetSize());
 
     ASSERT_STREQ(RPACKAGE_IMDATA_B_SRC_1_URI_PART2, pPackage->GetImageryGroup()[1]->GetDataSource(0).GetUri().GetFileInCompound().c_str());
@@ -2119,7 +2119,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_COPYRIGHT, pGreenBand->GetMetadataCP()->GetLegal().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_ID, pGreenBand->GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_GREEN_SRC_PROVIDER, pGreenBand->GetProvider().c_str());
-    ASSERT_STREQ("PUBLIC", pGreenBand->GetVisibilityTag().c_str()); // Default value
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_A_SRC_VISIBILITY, pGreenBand->GetVisibilityTag().c_str()); // Default value
 
     ASSERT_STREQ("", pGreenBand->GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ("", pGreenBand->GetMetadataCP()->GetDescription().c_str());
@@ -2224,7 +2224,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERREGISTRATIONPAGE, pGreenBand->GetServerCP()->GetRegistrationPage().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_SERVERORGANISATIONPAGE, pGreenBand->GetServerCP()->GetOrganisationPage().c_str());
 
-    ASSERT_STREQ("PUBLIC", pGreenBand->GetVisibilityTag().c_str()); // Default value
+    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_SRC_VISIBILITY, pGreenBand->GetVisibilityTag().c_str()); // Default value
 
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_GREEN_SRC_URI_PART2, pGreenBand->GetUri().GetFileInCompound().c_str());
     ASSERT_STREQ("", pGreenBand->GetMetadataCP()->GetDescription().c_str());
@@ -2246,7 +2246,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_BLUE_SRC_NODATA   , pBlueBand->GetNoDataValue().c_str());
 
 
-    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_PART1      , pPanchromaticBand->GetUri().GetSource().c_str());
+//    ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_PART1      , pPanchromaticBand->GetUri().GetSource().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_URI_TYPE , pPanchromaticBand->GetDataType().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_ID       , pPanchromaticBand->GetId().c_str());
     ASSERT_STREQ(RPACKAGE_IMDATA_MULTI_B1_PANCHROMATIC_SRC_SERVERLOGINKEY, pPanchromaticBand->GetServerCP()->GetLoginKey().c_str());
@@ -2312,7 +2312,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
 
     // Undefined group
-    ASSERT_TRUE(pPackage->GetUndefinedGroup().size() == 1);
+    ASSERT_TRUE(pPackage->GetUndefinedGroup().size() == 2);
 
     // image data 1
     ASSERT_TRUE(pPackage->GetUndefinedGroup()[0]->GetDataSourceCount() == 1);

@@ -357,7 +357,6 @@ protected:
     mutable Utf8String m_coordSys;
 
     Visibility m_visibility;
-    Utf8String m_visibilityString;
     }; 
 
 

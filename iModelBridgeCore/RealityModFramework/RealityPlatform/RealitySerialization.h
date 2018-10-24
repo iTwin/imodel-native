@@ -89,6 +89,7 @@
 #define PACKAGE_ELEMENT_ServerLoginMethod   "ServerLoginMethod"
 #define PACKAGE_ELEMENT_ServerRegPage       "ServerRegistrationPage"
 #define PACKAGE_ELEMENT_ServerOrgPage       "ServerOrganisationPage"
+#define PACKAGE_ELEMENT_Visibility          "Visibility"
 #define PACKAGE_ELEMENT_Size                "Size"
 #define PACKAGE_ELEMENT_Filesize            "Filesize"
 #define PACKAGE_ELEMENT_Metadata            "Metadata"

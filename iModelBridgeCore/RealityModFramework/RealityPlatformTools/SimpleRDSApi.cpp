@@ -798,7 +798,6 @@ void ConnectedRealityData::Clone(RealityDataPtr rd)
     m_footprintExtent = rd->GetFootprintExtent();
     m_description = rd->GetDescription();
     m_visibility = rd->GetVisibility();
-    m_visibilityString = rd->GetVisibilityTag();
 
     m_realityDataType = rd->GetRealityDataType();
     m_streamed = rd->IsStreamed();
@@ -1023,7 +1022,7 @@ ConnectedResponse ConnectedRealityData::Upload(BeFileName filePath, Utf8StringR 
         properties.Insert(RealityDataField::ResolutionInMeters, m_resolution);
     if (!m_accuracy.empty())
         properties.Insert(RealityDataField::AccuracyInMeters, m_accuracy);
-    if ((m_visibility != Visibility::UNDEFINED_VISIBILITY) || !m_visibilityString.empty())
+    if ((m_visibility != Visibility::UNDEFINED_VISIBILITY))
         properties.Insert(RealityDataField::Visibility, GetVisibilityTag());
     properties.Insert(RealityDataField::Listable, m_listable ? "true" : "false");
     if (!m_owner.empty())

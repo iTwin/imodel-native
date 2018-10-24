@@ -111,8 +111,7 @@ SpatialEntityDataSource::SpatialEntityDataSource(UriR uri, Utf8CP type)
     m_dataType = type;
     m_pMetadata = SpatialEntityMetadata::Create();
     m_pServer = SpatialEntityServer::Create();
-    m_visibilityString = "PUBLIC";
-    m_visibility = RealityDataBase::Visibility::PUBLIC_VISIBILITY;
+    m_visibility = RealityDataBase::Visibility::UNDEFINED_VISIBILITY;
     }
 
 //----------------------------------------------------------------------------------------
@@ -125,8 +124,7 @@ SpatialEntityDataSource::SpatialEntityDataSource(Utf8CP uri, Utf8CP type)
     m_dataType = type;
     m_pMetadata = SpatialEntityMetadata::Create();
     m_pServer = SpatialEntityServer::Create();
-    m_visibilityString = "PUBLIC";
-    m_visibility = RealityDataBase::Visibility::PUBLIC_VISIBILITY;
+    m_visibility = RealityDataBase::Visibility::UNDEFINED_VISIBILITY;
     }
 
 //-------------------------------------------------------------------------------------
@@ -200,7 +198,6 @@ Utf8String SpatialEntityDataSource::GetTagFromVisibility(RealityDataBase::Visibi
 //-------------------------------------------------------------------------------------
 StatusInt SpatialEntityDataSource::SetVisibilityByTag(Utf8CP visibilityTag)
     {
-    m_visibilityString = visibilityTag;
     return GetVisibilityFromTag(m_visibility, visibilityTag);
     }
 

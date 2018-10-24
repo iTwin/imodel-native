@@ -351,6 +351,11 @@ SpatialEntityDataSourcePtr RealityDataSerializer::_ReadSource(RealityPackageStat
 
     pDataSource->SetServer(pServer);
 
+    // Visibility.
+    Utf8String visibilityTag;
+    pNode->GetContent(visibilityTag, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Visibility);
+    pDataSource->SetVisibilityByTag(visibilityTag.c_str());
+
     // Size.
     uint64_t size;
     if (BeXmlStatus::BEXML_Success != pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Filesize))
@@ -479,6 +484,11 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
 
     pDataSource->SetServer(pServer);
 
+    // Visibility.
+    Utf8String visibilityTag;
+    pNode->GetContent(visibilityTag, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Visibility);
+    pDataSource->SetVisibilityByTag(visibilityTag.c_str());
+
     // Size.
     uint64_t size;
     pNode->GetContentUInt64Value(size, PACKAGE_PREFIX ":" PACKAGE_ELEMENT_Size);
@@ -535,8 +545,13 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     if (pRedBandNode != NULL)
         {
         SpatialEntityDataSourcePtr pRedBandSource = ReadSource(status, pRedBandNode->GetFirstChild());
+
         if (pRedBandSource != NULL)
+            {
+            // Force visibility to same as multiband
+            pRedBandSource->SetVisibility(pDataSource->GetVisibility());
             pDataSource->SetRedBand(*pRedBandSource);
+            }
         }
 
     // Green band.
@@ -544,8 +559,13 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
     if (pGreenBandNode != NULL)
         {
         SpatialEntityDataSourcePtr pGreenBandSource = ReadSource(status, pGreenBandNode->GetFirstChild());
+
         if (pGreenBandSource != NULL)
+            {
+            // Force visibility to same as multiband
+            pGreenBandSource->SetVisibility(pDataSource->GetVisibility());
             pDataSource->SetGreenBand(*pGreenBandSource);
+            }
         }
 
     // Blue band.
@@ -554,7 +574,11 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
         {
         SpatialEntityDataSourcePtr pBlueBandSource = ReadSource(status, pBlueBandNode->GetFirstChild());
         if (pBlueBandSource != NULL)
+            {
+            // Force visibility to same as multiband
+            pBlueBandSource->SetVisibility(pDataSource->GetVisibility());
             pDataSource->SetBlueBand(*pBlueBandSource);
+            }
         }
 
     // Panchromatic band.
@@ -563,7 +587,11 @@ MultiBandSourcePtr RealityDataSerializer::_ReadMultiBandSource(RealityPackageSta
         {
         SpatialEntityDataSourcePtr pPanchromaticBandSource = ReadSource(status, pPanchromaticNode->GetFirstChild());
         if (pPanchromaticBandSource != NULL)
+            {
+            // Force visibility to same as multiband
+            pPanchromaticBandSource->SetVisibility(pDataSource->GetVisibility());
             pDataSource->SetPanchromaticBand(*pPanchromaticBandSource);
+            }
         }
 
     return pDataSource;

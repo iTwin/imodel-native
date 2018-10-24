@@ -531,6 +531,7 @@ public:
 
     //! Enables setting the visibility by a string. The only valid values are "PUBLIC", "ENTERPRISE", "PERMISSION" and "PRIVATE"
     //! Returns SUCCESS if value set and ERROR if given tag is invalid
+    //! Note that the tag value UNDEFINED is supported but should not be used if possible. It remains the default value.
     REALITYDATAPLATFORM_EXPORT Utf8String GetVisibilityTag() const;
     REALITYDATAPLATFORM_EXPORT StatusInt SetVisibilityByTag(Utf8CP visibility);
 
@@ -592,7 +593,6 @@ protected:
     Utf8String m_coordinateSystem;
 
     RealityDataBase::Visibility m_visibility;
-    Utf8String m_visibilityString;
 
     Utf8String m_provider;
     Utf8String m_providerName;
