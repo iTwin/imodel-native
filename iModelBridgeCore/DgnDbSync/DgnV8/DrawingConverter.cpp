@@ -209,10 +209,18 @@ void RootModelConverter::_ConvertDrawings()
     for (auto v8mm : drawings)
         {
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
+        uint32_t start = GetElementsConverted();
+        StopWatch timer(true);
         DrawingsConvertModelAndViews(v8mm);
         // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
         DgnV8Api::PSolidKernelManager::StopSession();
         DgnV8Api::PSolidKernelManager::StartSession();
+
+        uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
+        ConverterLogging::LogPerformance(timer, "Convert Drawing Elements> Model '%s' (%" PRIu32 " element(s))",
+                                         v8mm.GetDgnModel().GetName().c_str(),
+                                         convertedElementCount);
+
         }
 
     }
