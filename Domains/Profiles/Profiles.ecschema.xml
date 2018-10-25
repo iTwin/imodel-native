@@ -75,7 +75,7 @@
         <ECProperty propertyName="StandardsOrganization" typeName="string" description="The organization that creates the table where this section appears." />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ProfileOwnsStandardProfileAspect" strength="embedding">
+    <ECRelationshipClass typeName="ProfileOwnsStandardProfileAspect" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Profile" />
@@ -85,31 +85,31 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="SinglePerimiterProfile" modifier="Abstract" description="A Profile with a single outer perimiter.">
+    <ECEntityClass typeName="SinglePerimeterProfile" modifier="Abstract" description="A Profile with a single outer perimiter.">
         <BaseClass>Profile</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="CustomShapeProfile" modifier="Sealed">
-        <BaseClass>SinglePerimiterProfile</BaseClass>
+        <BaseClass>SinglePerimeterProfile</BaseClass>
         <BaseClass>ICustomProfile</BaseClass>
         <ECProperty propertyName="OuterCurve" typeName="Bentley.Geometry.Common.IGeometry" description="" />
         <ECArrayProperty propertyName="InnerCurves" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded" description="" />
     </ECEntityClass>
 
     <ECEntityClass typeName="CustomCenterLineProfile" modifier="Sealed">
-        <BaseClass>SinglePerimiterProfile</BaseClass>
+        <BaseClass>SinglePerimeterProfile</BaseClass>
         <BaseClass>ICustomProfile</BaseClass>
         <BaseClass>ICenterLineProfile</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="CenteredProfile" modifier="Abstract" description="A SinglePerimeterProfile that is guaranteed to have the center of the bounding box at (0, 0).">
-        <BaseClass>SinglePerimiterProfile</BaseClass>
+        <BaseClass>SinglePerimeterProfile</BaseClass>
     </ECEntityClass>
 
     <!-- Letter shapes -->
     <ECEntityClass typeName="CShapeProfile" modifier="Sealed" description="A C shaped Profile similar to rolled steel C-shapes.">
-        <BaseClass>ICShapeProfile</BaseClass>
         <BaseClass>CenteredProfile</BaseClass>
+        <BaseClass>ICShapeProfile</BaseClass>
         <ECProperty propertyName="FlangeThickness" typeName="double" description="Constant wall thickness of flanges." />
         <ECProperty propertyName="WebThickness" typeName="double" description="Constant wall thickness of the web." />
         <!--Optional-->
@@ -245,7 +245,7 @@
     <ECEntityClass typeName="HollowEllipseProfile" modifier="Sealed" description="">
         <BaseClass>CenteredProfile</BaseClass>
         <BaseClass>ICenterLineProfile</BaseClass>
-        <BaseClass>IEllipseProfile</Baseclass>
+        <BaseClass>IEllipseProfile</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="RectangleProfile" modifier="Sealed" description="">
@@ -286,7 +286,7 @@
 
     <!-- TODO: move stuff from cmap description -->
     <ECEntityClass typeName="DerivedProfile" modifier="Sealed" description="This class represents a SinglePerimeterProfile that has been converted into a different shape via a matrix transform. Usage outside of IFC compatability is not recommended">
-        <BaseClass>SinglePerimiterProfile</BaseClass>
+        <BaseClass>SinglePerimeterProfile</BaseClass>
         <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
         <ECProperty propertyName="Rotation" typeName="point2d" description="" />
@@ -294,7 +294,8 @@
         <ECProperty propertyName="CardinalPoint" typeName="point2d" description="" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="SinglePerimeterProfileOwnsDerivedProfile" strength="embedding">
+    <ECRelationshipClass typeName="SinglePerimeterProfileOwnsDerivedProfile" modifier="None" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is base profile of" polymorphic="true">
             <Class class="SinglePerimeterProfile" />
         </Source>
@@ -304,7 +305,7 @@
     </ECRelationshipClass>
 
     <!-- Composite Profile classes -->
-    <ECEntityClass typeName="CompositeProfile" modifier="Abstract" description="A Profile comprised of multiple SinglePerimiterProfiles.">
+    <ECEntityClass typeName="CompositeProfile" modifier="Abstract" description="A Profile comprised of multiple SinglePerimeterProfiles.">
         <BaseClass>Profile</BaseClass>
     </ECEntityClass>
 
@@ -314,7 +315,7 @@
         <ECProperty propertyName="Enum" typeName="int" description="(SLBB vs LLBB)" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="DoubleLProfileRefersToLProfiles" strength="referencing">
+    <ECRelationshipClass typeName="DoubleLProfileRefersToLProfiles" modifier="None" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleLProfile" />
@@ -329,7 +330,7 @@
         <ECProperty propertyName="Spacing" typeName="double" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="DoubleCProfileRefersToCProfiles" strength="referencing">
+    <ECRelationshipClass typeName="DoubleCProfileRefersToCProfiles" modifier="None" strength="referencing">
     <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleCProfile" />
@@ -343,13 +344,13 @@
         <BaseClass>CompositeProfile</BaseClass>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="CustomCompositeProfileRefersToSinglePerimeterProfiles" strength="referencing">
+    <ECRelationshipClass typeName="CustomCompositeProfileRefersToSinglePerimeterProfiles" modifier="None" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="has profiles" polymorphic="false">
             <Class class="CustomCompositeProfile" />
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is part of" polymorphic="true">
-            <Class class="SinglePerimiterProfile" />
+            <Class class="SinglePerimeterProfile" />
         </Target>
     </ECRelationshipClass>
 </ECSchema>
