@@ -51,7 +51,7 @@ TEST_F(ProfilesDomainTestsFixture, ValidateSchema)
     ECN::ECSchemaPtr refSchema = context->LocateSchema(refKey, ECN::SchemaMatchType::LatestWriteCompatible);
     ASSERT_TRUE(refSchema.IsValid());
 
-    ASSERT_TRUE(ECN::ECSchemaValidator::Validate(*refSchema));
+    ASSERT_TRUE(refSchema->Validate());
     }
 
 TEST_F(ProfilesDomainTestsFixture, CreateModel)

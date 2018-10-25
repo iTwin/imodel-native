@@ -66,7 +66,8 @@
     </Part>
 
     <Part Name="RunProfilesDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
-          BentleyBuildMakeOptions="-dGTEST_PRODUCT=ProfilesDomainTested\  -dGTEST_NAME=ProfilesDomainTests" ExcludeLibType="Static">
+          BentleyBuildMakeOptions="-dGTEST_PRODUCT=ProfilesDomainTested\ -dGTEST_NAME=ProfilesDomainTests" ExcludeLibType="Static">
+        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest" />
         <SubPart PartName="ProfilesDomainTestsExe"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">
