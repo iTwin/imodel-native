@@ -1960,15 +1960,26 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an argument", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         Napi::Value blobVal = info[0];
+        if (blobVal.IsTypedArray())
+            {
+            Napi::TypedArray typedArray = blobVal.As<Napi::TypedArray>();
+            if (typedArray.TypedArrayType() == napi_uint8_array)
+                {
+                Napi::Uint8Array uint8Array = typedArray.As<Napi::Uint8Array>();
+                ECSqlStatus stat = m_binder->BindBlob(uint8Array.Data(), (int) uint8Array.ByteLength(), IECSqlBinder::MakeCopy::Yes);
+                return Napi::Number::New(Env(), (int) ToDbResult(stat));
+                }
+            }
+
         if (blobVal.IsArrayBuffer())
             {
-            auto arrayBuf = blobVal.As<Napi::ArrayBuffer>();
-            ECSqlStatus stat = m_binder->BindBlob(arrayBuf.Data(), (int) arrayBuf.ByteLength(), IECSqlBinder::MakeCopy::Yes);
+            Napi::ArrayBuffer buf = blobVal.As<Napi::ArrayBuffer>();
+            ECSqlStatus stat = m_binder->BindBlob(buf.Data(), (int) buf.ByteLength(), IECSqlBinder::MakeCopy::Yes);
             return Napi::Number::New(Env(), (int) ToDbResult(stat));
             }
 
         if (!blobVal.IsString())
-            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires either a base64-encoded-string or an ArrayBuffer", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires either a Uint8Buffer, ArrayBuffer or a base64-encoded string.", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
         Utf8String base64Str(blobVal.ToString().Utf8Value().c_str());
         ByteStream blob;
@@ -2518,7 +2529,7 @@ public:
 
         int blobSize;
         void const* data = m_ecsqlValue->GetBlob(&blobSize);
-        auto blob = Napi::ArrayBuffer::New(Env(), blobSize);
+        auto blob = Napi::Uint8Array::New(Env(), blobSize);
         memcpy(blob.Data(), data, blobSize);
         return blob;
         }
@@ -3126,14 +3137,25 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
                 THROW_TYPE_EXCEPTION_AND_RETURN("Invalid parameter index or name passed to BindBlob", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
 
             Napi::Value const& blobVal = info[1];
+            if (blobVal.IsTypedArray())
+                {
+                Napi::TypedArray typedArray = blobVal.As<Napi::TypedArray>();
+                if (typedArray.TypedArrayType() == napi_uint8_array)
+                    {
+                    Napi::Uint8Array uint8Array = typedArray.As<Napi::Uint8Array>();
+                    const DbResult stat = m_stmt->BindBlob(paramIndex, uint8Array.Data(), (int) uint8Array.ByteLength(), Statement::MakeCopy::Yes);
+                    return Napi::Number::New(Env(), (int) stat);
+                    }
+                }
+
             if (blobVal.IsArrayBuffer())
                 {
-                Napi::ArrayBuffer arrayBuf = blobVal.As<Napi::ArrayBuffer>();
-                const DbResult stat = m_stmt->BindBlob(paramIndex, arrayBuf.Data(), (int) arrayBuf.ByteLength(), Statement::MakeCopy::Yes);
+                Napi::ArrayBuffer buf = blobVal.As<Napi::ArrayBuffer>();
+                const DbResult stat = m_stmt->BindBlob(paramIndex, buf.Data(), (int) buf.ByteLength(), Statement::MakeCopy::Yes);
                 return Napi::Number::New(Env(), (int) stat);
                 }
-            else
-                THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an ArrayBuffer arg", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
+
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires a Uint8Array or ArrayBuffer arg", Napi::Number::New(Env(), (int) BE_SQLITE_ERROR));
             }
 
         Napi::Value BindDouble(Napi::CallbackInfo const& info)
@@ -3326,7 +3348,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
 
             void const* data = m_stmt->GetValueBlob(colIndex);
             int blobSize = m_stmt->GetColumnBytes(colIndex);
-            Napi::ArrayBuffer blob = Napi::ArrayBuffer::New(Env(), blobSize);
+            Napi::Uint8Array blob = Napi::Uint8Array::New(Env(), blobSize);
             memcpy(blob.Data(), data, blobSize);
             return blob;
             }
