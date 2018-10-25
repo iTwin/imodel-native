@@ -1831,6 +1831,9 @@ napi_status napi_is_arraybuffer(napi_env env, napi_value value, bool* result) {
   return napi_clear_last_error(env);
 }
 
+static void jsTypedArrayBytesDeallocator(void* bytes, void* deallocatorContext) {
+    free(bytes);
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1840,11 +1843,16 @@ napi_status napi_create_arraybuffer(napi_env env,
                                     napi_value* result) {
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-
-  return GET_RETURN_STATUS(env);
+  JSContextRef ctx = env->GetContext();
+  *data = malloc(byte_length);
+  memset(*data, 0, byte_length);
+  *result = JSObjectMakeArrayBufferWithBytesNoCopy(ctx,
+                                                   *data,
+                                                   byte_length,
+                                                   jsTypedArrayBytesDeallocator,
+                                                   nullptr,
+                                                   nullptr);
+  return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1858,10 +1866,7 @@ napi_status napi_create_external_arraybuffer(napi_env env,
                                              napi_value* result) {
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-
+    
   return GET_RETURN_STATUS(env);
 }
 
@@ -1908,45 +1913,24 @@ napi_status napi_create_typedarray(napi_env env,
   CHECK_ARG(env, arraybuffer);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-
-  /*
-  switch (type) {
-    case napi_int8_array:
-      typedArray = v8::Int8Array::New(buffer, byte_offset, length);
-      break;
-    case napi_uint8_array:
-      typedArray = v8::Uint8Array::New(buffer, byte_offset, length);
-      break;
-    case napi_uint8_clamped_array:
-      typedArray = v8::Uint8ClampedArray::New(buffer, byte_offset, length);
-      break;
-    case napi_int16_array:
-      typedArray = v8::Int16Array::New(buffer, byte_offset, length);
-      break;
-    case napi_uint16_array:
-      typedArray = v8::Uint16Array::New(buffer, byte_offset, length);
-      break;
-    case napi_int32_array:
-      typedArray = v8::Int32Array::New(buffer, byte_offset, length);
-      break;
-    case napi_uint32_array:
-      typedArray = v8::Uint32Array::New(buffer, byte_offset, length);
-      break;
-    case napi_float32_array:
-      typedArray = v8::Float32Array::New(buffer, byte_offset, length);
-      break;
-    case napi_float64_array:
-      typedArray = v8::Float64Array::New(buffer, byte_offset, length);
-      break;
-    default:
-      return napi_set_last_error(env, napi_invalid_arg);
-  }
-  */
-
-
-  return GET_RETURN_STATUS(env);
+ JSContextRef ctx = env->GetContext();
+    JSTypedArrayType targetType;
+    switch (type) {
+        case napi_int8_array: targetType = kJSTypedArrayTypeInt8Array; break;
+        case napi_uint8_array: targetType = kJSTypedArrayTypeUint8Array; break;
+        case napi_uint8_clamped_array: targetType = kJSTypedArrayTypeUint8ClampedArray; break;
+        case napi_int16_array: targetType = kJSTypedArrayTypeInt16Array; break;
+        case napi_uint16_array: targetType = kJSTypedArrayTypeUint16Array; break;
+        case napi_int32_array: targetType = kJSTypedArrayTypeInt32Array; break;
+        case napi_uint32_array: targetType = kJSTypedArrayTypeUint32Array; break;
+        case napi_float32_array: targetType = kJSTypedArrayTypeFloat32Array; break;
+        case napi_float64_array: targetType = kJSTypedArrayTypeFloat64Array; break;
+        default:
+            return napi_set_last_error(env, napi_invalid_arg);
+    }
+    
+ *result = JSObjectMakeTypedArrayWithArrayBufferAndOffset(ctx, targetType, const_cast<JSObjectRef>(arraybuffer), byte_offset, length, nullptr);
+  return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
