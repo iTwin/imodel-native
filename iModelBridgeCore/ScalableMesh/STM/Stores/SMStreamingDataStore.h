@@ -184,8 +184,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         SMNodeGroupPtr GetGroup(HPMBlockID blockID);
             
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, size_t maxCountData) const;
+        
+#ifndef LINUX_SCALABLEMESH_BUILD
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::vector<DataSourceBuffer::BufferData>& dest);
-
+#endif
+        
         void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader);
 
     private :

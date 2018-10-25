@@ -28,11 +28,13 @@ SMGroupingStrategy<DRange3d>* s_groupingStrategy = nullptr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifndef LINUX_SCALABLEMESH_BUILD
 bool ConvertToJsonFromBytes(Json::Value & outputJson, std::vector<DataSourceBuffer::BufferData>& dest)
     {
     char* jsonBlob = reinterpret_cast<char *>(dest.data());
     return Json::Reader().parse(jsonBlob, jsonBlob + dest.size(), outputJson);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
