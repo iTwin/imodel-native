@@ -2074,20 +2074,32 @@ TEST_F(ECSqlStatementTestFixture, BindIdStrings)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                10/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BindNumericAndDateTimeStrings)
+TEST_F(ECSqlStatementTestFixture, BindSpecialKindsOfStrings)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("BindSpecialKindsOfStrings.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Foo" modifier="None">
                     <ECProperty propertyName="n" typeName="int" />
                     <ECProperty propertyName="dt" typeName="dateTime" />
                     <ECProperty propertyName="fooId" typeName="long" extendedTypeName="Id" />
+                    <ECProperty propertyName="fooIdUntyped" typeName="long" />
+                    <ECProperty propertyName="fooGuid" typeName="binary" extendedTypeName="BeGuid" />
+                    <ECProperty propertyName="fooGuidUntyped" typeName="binary" />
                 </ECEntityClass>
               </ECSchema>)xml")));
 
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Foo(n,dt,fooId) VALUES (20, TIMESTAMP '2018-10-18T12:00:00Z',20)"));
+    Utf8CP guidStr = "8b8837f7-f53b-458d-be2c-11ea57065f88";
+    BeGuid guid;
+    ASSERT_EQ(SUCCESS, guid.FromString(guidStr));
 
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(n,dt,fooId,fooIdUntyped,fooGuid,fooGuidUntyped) VALUES (20, TIMESTAMP '2018-10-18T12:00:00Z',20,20,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(2, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    }
 
     {
     const int nInt = 20;
@@ -2114,6 +2126,11 @@ TEST_F(ECSqlStatementTestFixture, BindNumericAndDateTimeStrings)
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, nDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nDtStr << ") | Date strings only parsed for date time props";
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << nDtStr << ") | Date strings only parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Date strings only parsed for date time props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Date strings only parsed for date time props";
     stmt.Reset();
     stmt.ClearBindings();
     }
@@ -2145,10 +2162,14 @@ TEST_F(ECSqlStatementTestFixture, BindNumericAndDateTimeStrings)
     ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, nHexStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nHexStr << ") | Only ISO date times can be bound to DateTime parameter";
     stmt.ClearBindings();
 
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Date strings only parsed for date time props";
+    stmt.ClearBindings();
+
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, nDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nDtStr << ")";
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << nDtStr << ")";
     stmt.Reset();
     stmt.ClearBindings();
+
     }
 
     {
@@ -2188,6 +2209,193 @@ TEST_F(ECSqlStatementTestFixture, BindNumericAndDateTimeStrings)
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, idDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idDtStr << ")";
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idDtStr << ") |  | Date strings only parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Date strings only parsed for date time props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Date strings only parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    const int idInt = 20;
+    const uint64_t idInt64 = UINT64_C(20);
+    Utf8CP idStr = "20";
+    Utf8CP idHexStr = "0x14";
+    Utf8CP idDtStr = "-4713-01-21T12:00:00Z";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE fooIdUntyped=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, BeInt64Id(idInt64))) << stmt.GetECSql() << " | BindId(" << idInt64 << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << idInt64 << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, idInt64)) << stmt.GetECSql() << " | BindInt64(" << idInt64 << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << idInt64 << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, idInt)) << stmt.GetECSql() << " | BindInt(" << idInt << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << idInt << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, idStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, idHexStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idHexStr << ")";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idHexStr << ") | hex string can be parsed for Id parameters only";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, idDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idDtStr << ")";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idDtStr << ") |  | Date strings only parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Date strings only parsed for date time props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Date strings only parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    const int idInt = 20;
+    const uint64_t idInt64 = UINT64_C(20);
+    Utf8CP idStr = "20";
+    Utf8CP idHexStr = "0x14";
+    Utf8CP idDtStr = "-4713-01-21T12:00:00Z";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE fooGuid=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string can be parsed for Guid parameters";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, idStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idStr << ") | id string can only be parsed for Id parameters";
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, idHexStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idHexStr << ")";
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, idDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idDtStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    Utf8CP str = "20";
+    Utf8CP hexStr = "0x14";
+    Utf8CP dtStr = "-4713-01-21T12:00:00Z";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE fooGuidUntyped=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, str, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << str << ") | id string can only be parsed for Id parameters";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << str << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, hexStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << hexStr << ")";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << hexStr << ") | hex string can only be parsed for Id parameters";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, dtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << dtStr << ")";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << dtStr << ") |  | Date strings only parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindStringToGuidParameter)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("BindStringToGuidParameter.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="beguid" typeName="binary" extendedTypeName="BeGuid" />
+                <ECProperty propertyName="guid" typeName="binary" extendedTypeName="Guid" />
+                <ECProperty propertyName="other" typeName="binary" />
+            </ECEntityClass>
+            </ECSchema>)xml")));
+
+    Utf8CP guidStr = "8b8837f7-f53b-458d-be2c-11ea57065f88";
+    BeGuid guid;
+    ASSERT_EQ(SUCCESS, guid.FromString(guidStr));
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(beguid,guid,other) VALUES (?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(2, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(3, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE beguid=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE guid=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE other=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
     stmt.Reset();
     stmt.ClearBindings();
     }

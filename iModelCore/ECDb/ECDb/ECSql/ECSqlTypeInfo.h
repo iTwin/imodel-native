@@ -11,6 +11,7 @@
 #include <Bentley/Nullable.h>
 
 #define EXTENDEDTYPENAME_Id "Id"
+#define EXTENDEDTYPENAME_BeGuid "BeGuid"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
