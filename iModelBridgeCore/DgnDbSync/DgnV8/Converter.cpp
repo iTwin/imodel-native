@@ -248,15 +248,6 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
     SyncInfo::V8FileProvenance provenance(file, m_syncInfo, policy);
     if (!provenance.FindByName(true))
         {
-        if (SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
-            {
-            BeSQLite::BeGuid guid;
-            if (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()))
-                {
-                DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
-                }
-            }
-
         provenance.Insert();
         BeSQLite::BeGuid guid;
         bool hasValidGuid = (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()));

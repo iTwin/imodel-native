@@ -1346,7 +1346,6 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
             if (!isRootModel)
                 {
                 mref->Delete();
-                GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
                 if (element.IsValid())
                     element->Delete();
                 }
