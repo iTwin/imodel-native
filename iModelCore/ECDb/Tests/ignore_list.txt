@@ -7,8 +7,6 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-ECSqlStatementTestFixture.BindDateTimeStrings
-
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
