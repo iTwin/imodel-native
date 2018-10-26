@@ -116,6 +116,9 @@ void const* ArrayECSqlField::JsonECSqlValue::_GetBlob(int* blobSize) const
         return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
         }
 
+    if (blobSize != nullptr)
+        *blobSize = (int) m_blobCache.size();
+
     return m_blobCache.data();
     }
 

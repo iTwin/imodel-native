@@ -1972,7 +1972,7 @@ TEST_F(ECSqlStatementTestFixture, HexLiteral)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                10/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BindIdStrings)
+TEST_F(ECSqlStatementTestFixture, BindECInstanceIdAsString)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -2074,123 +2074,897 @@ TEST_F(ECSqlStatementTestFixture, BindIdStrings)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                10/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, BindNumericAndDateTimeStrings)
+TEST_F(ECSqlStatementTestFixture, BindIdStrings)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                <ECEntityClass typeName="Foo" modifier="None">
-                    <ECProperty propertyName="n" typeName="int" />
-                    <ECProperty propertyName="dt" typeName="dateTime" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                    <ECProperty propertyName="i" typeName="int" />
+                    <ECProperty propertyName="l" typeName="long" />
                     <ECProperty propertyName="fooId" typeName="long" extendedTypeName="Id" />
+                    <ECStructProperty propertyName="struct" typeName="Struct"/>
+                    <ECArrayProperty propertyName="iArray" typeName="int"/>
+                    <ECArrayProperty propertyName="lArray" typeName="long"/>
+                    <ECArrayProperty propertyName="idArray" typeName="long" extendedTypeName="Id" />
+                    <ECStructArrayProperty propertyName="structArray" typeName="Struct"/>
                 </ECEntityClass>
+                <ECStructClass typeName="Struct" modifier="None">
+                    <ECProperty propertyName="i" typeName="int" />
+                    <ECProperty propertyName="l" typeName="long" />
+                    <ECProperty propertyName="fooId" typeName="long" extendedTypeName="Id" />
+                </ECStructClass>
               </ECSchema>)xml")));
 
+    constexpr int i = 20;
+    constexpr int64_t l = INT64_C(20);
+    BeInt64Id id(l);
+    Utf8CP iStr = "20";
+    Utf8CP iHexStr = "0x14";
+
     ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Foo(n,dt,fooId) VALUES (20, TIMESTAMP '2018-10-18T12:00:00Z',20)"));
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(i,l,fooId,struct,iArray,lArray,idArray,structArray) VALUES (20,20,20,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1)["i"].BindInt(i)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1)["l"].BindInt64(l)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1)["fooId"].BindId(id)) << stmt.GetECSql();
 
+    // add 2 elements for each array prop
+    for (int j = 0; j < 2; j++)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindInt(i)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3).AddArrayElement().BindInt64(l)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(4).AddArrayElement().BindId(id)) << stmt.GetECSql();
+
+        IECSqlBinder& structArrayElementBinder = stmt.GetBinder(5).AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["i"].BindInt(i)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["l"].BindInt64(l)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["fooId"].BindId(id)) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    }
+
+    // test that data was correctly inserted
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT i,l,fooId,struct,iArray,lArray,idArray,structArray FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << stmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    EXPECT_EQ(i, stmt.GetValueInt(0)) << stmt.GetECSql();
+    EXPECT_EQ(l, stmt.GetValueInt64(1)) << stmt.GetECSql();
+    EXPECT_EQ(id, stmt.GetValueId<BeInt64Id>(2)) << stmt.GetECSql();
+
+    EXPECT_EQ(i, stmt.GetValue(3)["i"].GetInt()) << stmt.GetECSql();
+    EXPECT_EQ(l, stmt.GetValue(3)["l"].GetInt64()) << stmt.GetECSql();
+    EXPECT_EQ(id, stmt.GetValue(3)["fooId"].GetId<BeInt64Id>()) << stmt.GetECSql();
+
+    EXPECT_EQ(2, stmt.GetValue(4).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(4).GetArrayIterable())
+        {
+        EXPECT_EQ(i, arrayElementVal.GetInt()) << stmt.GetECSql();
+        }
+
+    EXPECT_EQ(2, stmt.GetValue(5).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(5).GetArrayIterable())
+        {
+        EXPECT_EQ(l, arrayElementVal.GetInt64()) << stmt.GetECSql();
+        }
+
+    EXPECT_EQ(2, stmt.GetValue(6).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(6).GetArrayIterable())
+        {
+        EXPECT_EQ(id, arrayElementVal.GetId<BeInt64Id>()) << stmt.GetECSql();
+        }
+
+    EXPECT_EQ(2, stmt.GetValue(7).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(7).GetArrayIterable())
+        {
+        EXPECT_EQ(i, arrayElementVal["i"].GetInt()) << stmt.GetECSql();
+        EXPECT_EQ(l, arrayElementVal["l"].GetInt64()) << stmt.GetECSql();
+        EXPECT_EQ(id, arrayElementVal["fooId"].GetId<BeInt64Id>()) << stmt.GetECSql();
+        }
+    }
 
     {
-    const int nInt = 20;
-    Utf8CP nStr = "20";
-    Utf8CP nHexStr = "0x14";
-    Utf8CP nDtStr = "-4713-01-21T12:00:00Z";
-
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE n=?"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, nInt));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << nInt << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE i=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, nStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nStr << ")";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << nStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, nHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << nHexStr << ") | Hex strings only parsed for id props";
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << nHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, nDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nDtStr << ") | Date strings only parsed for date time props";
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << nDtStr << ") | Date strings only parsed for date time props";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
     stmt.Reset();
     stmt.ClearBindings();
     }
 
     {
-    const int dtInt = 2458410;
-    const double dtDouble = 2458410.0;
-    Utf8CP nStr = "2458410";
-    Utf8CP nHexStr = "0x25832A";
-    Utf8CP nDtStr = "2018-10-18T12:00:00Z";
-
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE dt=?"));
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, DateTime(DateTime::Kind::Utc, 2018,10,18,12,00))) << stmt.GetECSql();
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindDateTime";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE l=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Error, stmt.BindInt(1, dtInt)) << stmt.GetECSql() << " | BindInt(" << dtInt << ") | No numbers allowed when binding to DateTime parameter";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
+    stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDouble(1, dtDouble)) << stmt.GetECSql() << " | BindDouble(" << dtDouble << ") | No numbers allowed when binding to DateTime parameter";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
+    stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, nStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nStr << ") | Only ISO date times can be bound to DateTime parameter";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, nHexStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nHexStr << ") | Only ISO date times can be bound to DateTime parameter";
-    stmt.ClearBindings();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, nDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << nDtStr << ")";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << nDtStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
     stmt.Reset();
     stmt.ClearBindings();
     }
 
     {
-    const int idInt = 20;
-    const uint64_t idInt64 = UINT64_C(20);
-    Utf8CP idStr = "20";
-    Utf8CP idHexStr = "0x14";
-    Utf8CP idDtStr = "-4713-01-21T12:00:00Z";
-
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE fooId=?"));
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, BeInt64Id(idInt64))) << stmt.GetECSql() << " | BindId(" << idInt64 << ")";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << idInt64 << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, idInt64)) << stmt.GetECSql() << " | BindInt64(" << idInt64 << ")";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << idInt64 << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, idInt)) << stmt.GetECSql() << " | BindInt(" << idInt << ")";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << idInt << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, idStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idStr << ")";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ")";
     stmt.Reset();
     stmt.ClearBindings();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, idHexStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idHexStr << ")";
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idHexStr << ") | hex string can be parsed for Id parameters";
-    stmt.Reset();
-    stmt.ClearBindings();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, idDtStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << idDtStr << ")";
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << idDtStr << ") |  | Date strings only parsed for date time props";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ")";
     stmt.Reset();
     stmt.ClearBindings();
     }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE struct.i=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE struct.l=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE struct.fooId=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE iArray=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(i));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt64(l));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt64(l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindId(id));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindId(id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ") | For arrays we cannot leverage SQLite's type comparisons, so strings are not the same as numbers in arrays.";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ") | hex strings are only parsed for Id props";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE lArray=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(i));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt64(l));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt64(l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindId(id));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindId(id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ") | For arrays we cannot leverage SQLite's type comparisons, so strings are not the same as numbers in arrays.";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ") | hex strings are only parsed for Id props";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE idArray=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(i));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(i));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt(" << i << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt64(l));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt64(l));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindInt64(" << l << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindId(id));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindId(id));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindId(" << id.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << iStr << ")";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iStr << ").";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindText(iHexStr, IECSqlBinder::MakeCopy::No)) << " | BindText(" << iHexStr << ") | Hex strings only parsed for id props";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << iHexStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    }
+
+//-------------------------------------------------------------------------------------- -
+// @bsimethod                                 Krischan.Eberle                10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindDateTimeStrings)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECProperty propertyName="dt" typeName="dateTime" />
+                    <ECProperty propertyName="dtUtc" typeName="dateTime">
+                      <ECCustomAttributes>
+                          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                              <DateTimeKind>Utc</DateTimeKind>
+                          </DateTimeInfo>
+                      </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="d" typeName="dateTime">
+                      <ECCustomAttributes>
+                          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                              <DateTimeComponent>Date</DateTimeComponent>
+                          </DateTimeInfo>
+                      </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="s" typeName="string" />
+                    <ECStructProperty propertyName="struct" typeName="Struct"/>
+                    <ECArrayProperty propertyName="dtArray" typeName="dateTime"/>
+                    <ECArrayProperty propertyName="dtUtcArray" typeName="dateTime">
+                      <ECCustomAttributes>
+                          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                              <DateTimeKind>Utc</DateTimeKind>
+                          </DateTimeInfo>
+                      </ECCustomAttributes>
+                    </ECProperty>
+                    <ECArrayProperty propertyName="dArray" typeName="dateTime">
+                      <ECCustomAttributes>
+                          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                              <DateTimeComponent>Date</DateTimeComponent>
+                          </DateTimeInfo>
+                      </ECCustomAttributes>
+                    </ECProperty>
+                    <ECArrayProperty propertyName="sArray" typeName="string" />
+                    <ECStructArrayProperty propertyName="structArray" typeName="Struct"/>
+                </ECEntityClass>
+                <ECStructClass typeName="Struct" modifier="None">
+                    <ECProperty propertyName="dt" typeName="dateTime" />
+                    <ECProperty propertyName="dtUtc" typeName="dateTime">
+                      <ECCustomAttributes>
+                          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                              <DateTimeKind>Utc</DateTimeKind>
+                          </DateTimeInfo>
+                      </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="d" typeName="dateTime">
+                      <ECCustomAttributes>
+                          <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                              <DateTimeComponent>Date</DateTimeComponent>
+                          </DateTimeInfo>
+                      </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="s" typeName="string" />
+                </ECStructClass>
+              </ECSchema>)xml")));
+
+    Utf8CP dtStr = "2018-10-26T12:00:00";
+    Utf8CP dtUtcStr = "2018-10-26T12:00:00Z";
+    Utf8CP dStr = "2018-10-26";
+    Utf8CP str = dtStr;
+
+    DateTime dt, dtUtc, d;
+    ASSERT_EQ(SUCCESS, DateTime::FromString(dt, dtStr));
+    ASSERT_EQ(SUCCESS, DateTime::FromString(dtUtc, dtUtcStr));
+    ASSERT_EQ(SUCCESS, DateTime::FromString(d, dStr));
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(dt,dtUtc,d,s,struct,dtArray,dtUtcArray,dArray,sArray,structArray) VALUES (?,?,?,?,?,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, dt)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(2, dtUtc)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(3, d)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(4, str, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(5)["dt"].BindDateTime(dt)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(5)["dtUtc"].BindDateTime(dtUtc)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(5)["d"].BindDateTime(d)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(5)["s"].BindText(str, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+
+    // add 2 elements for each array prop
+    for (int j = 0; j < 2; j++)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(6).AddArrayElement().BindDateTime(dt)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(7).AddArrayElement().BindDateTime(dtUtc)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(8).AddArrayElement().BindDateTime(d)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(9).AddArrayElement().BindText(str, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+
+        IECSqlBinder& structArrayElementBinder = stmt.GetBinder(10).AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["dt"].BindDateTime(dt)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["dtUtc"].BindDateTime(dtUtc)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["d"].BindDateTime(d)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["s"].BindText(str, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    }
+
+    // test that data was correctly inserted
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT dt,dtUtc,d,s,struct,dtArray,dtUtcArray,dArray,sArray,structArray FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << stmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    EXPECT_EQ(dt, stmt.GetValueDateTime(0)) << stmt.GetECSql();
+    EXPECT_EQ(dtUtc, stmt.GetValueDateTime(1)) << stmt.GetECSql();
+    EXPECT_EQ(d, stmt.GetValueDateTime(2)) << stmt.GetECSql();
+    EXPECT_STREQ(str, stmt.GetValueText(3)) << stmt.GetECSql();
+
+    EXPECT_EQ(dt, stmt.GetValue(4)["dt"].GetDateTime()) << stmt.GetECSql();
+    EXPECT_EQ(dtUtc, stmt.GetValue(4)["dtUtc"].GetDateTime()) << stmt.GetECSql();
+    EXPECT_EQ(d, stmt.GetValue(4)["d"].GetDateTime()) << stmt.GetECSql();
+    EXPECT_STREQ(str, stmt.GetValue(4)["s"].GetText()) << stmt.GetECSql();
+
+    EXPECT_EQ(2, stmt.GetValue(5).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(5).GetArrayIterable())
+        {
+        EXPECT_EQ(dt, arrayElementVal.GetDateTime()) << stmt.GetECSql();
+        }
+
+    EXPECT_EQ(2, stmt.GetValue(6).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(6).GetArrayIterable())
+        {
+        EXPECT_EQ(dtUtc, arrayElementVal.GetDateTime()) << stmt.GetECSql();
+        }
+
+    EXPECT_EQ(2, stmt.GetValue(7).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(7).GetArrayIterable())
+        {
+        EXPECT_EQ(d, arrayElementVal.GetDateTime()) << stmt.GetECSql();
+        }
+
+    EXPECT_EQ(2, stmt.GetValue(8).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(8).GetArrayIterable())
+        {
+        EXPECT_STREQ(str, arrayElementVal.GetText()) << stmt.GetECSql();
+        }
+
+    EXPECT_EQ(2, stmt.GetValue(9).GetArrayLength()) << stmt.GetECSql();
+    for (IECSqlValue const& arrayElementVal : stmt.GetValue(9).GetArrayIterable())
+        {
+        EXPECT_EQ(dt, arrayElementVal["dt"].GetDateTime()) << stmt.GetECSql();
+        EXPECT_EQ(dtUtc, arrayElementVal["dtUtc"].GetDateTime()) << stmt.GetECSql();
+        EXPECT_EQ(d, arrayElementVal["d"].GetDateTime()) << stmt.GetECSql();
+        EXPECT_STREQ(str, arrayElementVal["s"].GetText()) << stmt.GetECSql();
+        }
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE dt=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, dt)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindDateTime(" << dt.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, dtUtc)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindDateTime(" << dtUtc.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, d)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindDateTime(" << d.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, dt.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << dt.ToString() << ") | date strings are parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, dtUtc.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindDateTime(" << dtUtc.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, d.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindDateTime(" << d.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, "Foo text", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE dtUtc=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, dtUtc)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindDateTime(" << dtUtc.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDateTime(1, dt)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDateTime(1, d)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, dtUtc.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << str << ") | date strings are parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, dt.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, d.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, "Foo text", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE d=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(1, d)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindDateTime(" << dtUtc.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDateTime(1, dt)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDateTime(1, d)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, d.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << d.ToString() << ") | date strings are parsed for date time props";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, dt.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, dtUtc.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindText(1, "Foo text", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE s=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, str, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << str << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, dt.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << dt.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, dtUtc.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << dtUtc.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, d.ToString().c_str(), IECSqlBinder::MakeCopy::Yes)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << d.ToString() << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDateTime(1, dt)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDateTime(1, dtUtc)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindDateTime(1, d)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindStringToGuidParameter)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("BindStringToGuidParameter.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECStructClass typeName="GuidStruct" modifier="None">
+                <ECProperty propertyName="beguid" typeName="binary" extendedTypeName="BeGuid" />
+                <ECProperty propertyName="guid" typeName="binary" extendedTypeName="Guid" />
+                <ECProperty propertyName="bin" typeName="binary" />
+            </ECStructClass>
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="beguid" typeName="binary" extendedTypeName="BeGuid" />
+                <ECProperty propertyName="guid" typeName="binary" extendedTypeName="Guid" />
+                <ECProperty propertyName="bin" typeName="binary" />
+                <ECStructProperty propertyName="struct" typeName="GuidStruct" />
+                <ECArrayProperty propertyName="beguidArray" typeName="binary" extendedTypeName="BeGuid" />
+                <ECArrayProperty propertyName="guidArray" typeName="binary" extendedTypeName="Guid" />
+                <ECArrayProperty propertyName="binArray" typeName="binary" />
+                <ECStructArrayProperty propertyName="structArray" typeName="GuidStruct" />
+            </ECEntityClass>
+         </ECSchema>)xml")));
+
+    Utf8CP guidStr = "8b8837f7-f53b-458d-be2c-11ea57065f88";
+    BeGuid guid;
+    ASSERT_EQ(SUCCESS, guid.FromString(guidStr));
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(beguid,guid,bin,struct,beguidArray,guidArray,binArray,structArray) VALUES (?,?,?,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(2, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(3, guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+
+    IECSqlBinder& structBinder = stmt.GetBinder(4);
+    ASSERT_EQ(ECSqlStatus::Success, structBinder["beguid"].BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, structBinder["guid"].BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, structBinder["bin"].BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+
+    //add 2 elements to each array prop
+    for (int i = 0; i < 2; i++)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(5).AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(6).AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(7).AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No));
+
+        IECSqlBinder& structArrayElementBinder = stmt.GetBinder(8).AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["beguid"].BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["guid"].BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, structArrayElementBinder["bin"].BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    }
+
+    // test that data was correctly inserted
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT beguid,guid,bin,beguidArray,guidArray,binArray,struct,structArray FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId())) << stmt.GetECSql();
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < 3; i++)
+        {
+        EXPECT_STRCASEEQ(guidStr, stmt.GetValueGuid(i).ToString().c_str()) << "ECSQL " << stmt.GetECSql() << " Column index: " << i;
+
+        EXPECT_EQ(2, stmt.GetValue(i + 3).GetArrayLength());
+        for (IECSqlValue const& arrayElement : stmt.GetValue(i + 3).GetArrayIterable())
+            {
+            EXPECT_STRCASEEQ(guidStr, arrayElement.GetGuid().ToString().c_str()) << "ECSQL " << stmt.GetECSql() << " Column index: " << i + 3;
+            }
+        }
+
+    EXPECT_STRCASEEQ(guidStr, stmt.GetValue(6)["beguid"].GetGuid().ToString().c_str());
+    EXPECT_STRCASEEQ(guidStr, stmt.GetValue(6)["guid"].GetGuid().ToString().c_str());
+    EXPECT_STRCASEEQ(guidStr, stmt.GetValue(6)["bin"].GetGuid().ToString().c_str());
+
+    EXPECT_EQ(2, stmt.GetValue(7).GetArrayLength());
+    for (IECSqlValue const& arrayElement : stmt.GetValue(7).GetArrayIterable())
+        {
+        EXPECT_STRCASEEQ(guidStr, arrayElement["beguid"].GetGuid().ToString().c_str());
+        EXPECT_STRCASEEQ(guidStr, arrayElement["guid"].GetGuid().ToString().c_str());
+        EXPECT_STRCASEEQ(guidStr, arrayElement["bin"].GetGuid().ToString().c_str());
+        }
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE beguid=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE guid=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE bin=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE struct.beguid=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE struct.guid=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE struct.bin=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGuid(1, guid)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ") | GUID string only can be parsed for Guid parameters";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE beguidArray=?"));
+    IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    IECSqlBinder& arrayBinder2 = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindText(guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindText(guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE guidArray=?"));
+    IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    IECSqlBinder& arrayBinder2 = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindText(guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindText(guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Guid is only parsed for props with BeGuid extended type name";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM ts.Foo WHERE binArray=?"));
+    IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGuid(guid, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << " | BindGuid(" << guidStr << ")";
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    IECSqlBinder& arrayBinder2 = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindText(guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder2.AddArrayElement().BindText(guidStr, IECSqlBinder::MakeCopy::No)) << stmt.GetECSql() << " | BindText(" << guidStr << ")";
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql() << " | BindText(" << guidStr << ") | Guid is only parsed for props with BeGuid extended type name";
+    stmt.Reset();
+    stmt.ClearBindings();
+    }
+
     }
 
 //---------------------------------------------------------------------------------------

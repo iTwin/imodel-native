@@ -167,16 +167,44 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
     if (!stat.IsSuccess())
         return stat;
 
-    if (!Utf8String::IsNullOrEmpty(value) && GetTypeInfo().IsDateTime())
+    if (!Utf8String::IsNullOrEmpty(value))
         {
-        DateTime dt;
-        if (SUCCESS != DateTime::FromString(dt, value))
+        if (GetTypeInfo().IsDateTime())
             {
-            LOG.errorv("Type mismatch. Failed to bind string '%s' to DateTime parameter. String must be a valid ISO 8601 date, time or timestamp.", value);
-            return ECSqlStatus::Error;
+            DateTime dt;
+            if (SUCCESS != DateTime::FromString(dt, value))
+                {
+                LOG.errorv("Type mismatch. Failed to bind string '%s' to DateTime parameter. String must be a valid ISO 8601 date, time or timestamp.", value);
+                return ECSqlStatus::Error;
+                }
+
+            return BindDateTime(dt);
             }
 
-        return BindDateTime(dt);
+        if (GetTypeInfo().IsId())
+            {
+            BentleyStatus stat = ERROR;
+            uint64_t id = BeStringUtilities::ParseUInt64(value, &stat);
+            if (SUCCESS != stat)
+                {
+                LOG.errorv("Type mismatch. Failed to bind string to Id parameter: Could not parse the bound string '%s' to an id.", value);
+                return ECSqlStatus::Error;
+                }
+
+            return _BindInt64(id);
+            }
+
+        if (GetTypeInfo().IsBinary() && GetTypeInfo().GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_BeGuid))
+            {
+            BeGuid guid;
+            if (SUCCESS != guid.FromString(value))
+                {
+                LOG.errorv("Type mismatch. Failed to bind string to BeGuid parameter. Value '%s' is not a valid GUID string.", value);
+                return ECSqlStatus::Error;
+                }
+
+            return BindGuid(guid, IECSqlBinder::MakeCopy::Yes);
+            }
         }
 
     const DbResult sqliteStat = GetSqliteStatement().BindText(GetSqlParameterIndex(), value, ToBeSQliteBindMakeCopy(makeCopy), byteCount);
