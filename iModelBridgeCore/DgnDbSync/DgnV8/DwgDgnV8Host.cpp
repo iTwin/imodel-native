@@ -396,6 +396,10 @@ DwgConversionSettings () : m_textStyleNameTemplate(L"Style-$s") , m_saveVersion(
     m_rscFileHandle = 0;
     m_data = static_cast<RscDwgOpenOptions*> (::calloc(1, sizeof(RscDwgOpenOptions)));
     m_ignoreXData = true;
+
+    // default to drawing objects as renderable:
+    if (nullptr != m_data)
+        m_data->m_flags.m_customObjectDisplayMode = V8RD::ObjectDisplayMode::CustomObjectDisplay_Rendered;
     }
 
 // the destructor

@@ -12,6 +12,7 @@
 #include <VersionedDgnV8Api/DgnPlatform/LxoEnvironment.h>
 
 #include <PointCloud/PointCloudSettings.h>
+#include <DgnPlatform/WebMercator.h>
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -680,6 +681,27 @@ bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, 
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void Converter::ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewInfo, DgnV8ModelR v8Model)
+    {
+    Bentley::WString name;
+    DgnV8Api::BackgroundMapType type;
+    double offset;
+    double transparency;
+
+    DgnV8ViewInfoP info = const_cast<DgnV8ViewInfoP>(viewInfo);
+    info->GetBackgroundMapSettings(&name, &type, &offset, &transparency);
+    DisplayStyle::MapType mapType = (DisplayStyle::MapType) type;
+    Utf8String providerName;
+    if (0 == wcsicmp(L"Bing",name.c_str()))
+        providerName = WebMercator::BingImageryProvider::prop_BingProvider();
+
+    view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -831,6 +853,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ConvertViewClips(view, viewInfo, *v8Model, trans);
     ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
     ConvertViewACS(view, viewInfo, *v8Model, trans, name);
+    if (nullptr != m_dgndb->GeoLocation().GetDgnGCS())
+        ConvertMapSettings(view, &viewInfo, *v8Model);
 
     if (existingViewId.IsValid())
         {
