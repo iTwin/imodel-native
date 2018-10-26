@@ -75,7 +75,7 @@
         <ECProperty propertyName="StandardsOrganization" typeName="string" description="The organization that creates the table where this section appears." />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ProfileOwnsStandardProfileAspect" modifier="None" strength="embedding">
+    <ECRelationshipClass typeName="ProfileOwnsStandardProfileAspect" modifier="Sealed" strength="embedding">
         <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Profile" />
@@ -294,7 +294,7 @@
         <ECProperty propertyName="CardinalPoint" typeName="point2d" description="" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="SinglePerimeterProfileOwnsDerivedProfile" modifier="None" strength="embedding">
+    <ECRelationshipClass typeName="SinglePerimeterProfileOwnsDerivedProfile" modifier="Sealed" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is base profile of" polymorphic="true">
             <Class class="SinglePerimeterProfile" />
@@ -315,7 +315,7 @@
         <ECProperty propertyName="Enum" typeName="int" description="(SLBB vs LLBB)" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="DoubleLProfileRefersToLProfiles" modifier="None" strength="referencing">
+    <ECRelationshipClass typeName="DoubleLProfileRefersToLProfiles" modifier="Sealed" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleLProfile" />
@@ -330,7 +330,7 @@
         <ECProperty propertyName="Spacing" typeName="double" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="DoubleCProfileRefersToCProfiles" modifier="None" strength="referencing">
+    <ECRelationshipClass typeName="DoubleCProfileRefersToCProfiles" modifier="Sealed" strength="referencing">
     <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleCProfile" />
@@ -344,7 +344,7 @@
         <BaseClass>CompositeProfile</BaseClass>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="CustomCompositeProfileRefersToSinglePerimeterProfiles" modifier="None" strength="referencing">
+    <ECRelationshipClass typeName="CustomCompositeProfileRefersToSinglePerimeterProfiles" modifier="Sealed" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="has profiles" polymorphic="false">
             <Class class="CustomCompositeProfile" />
