@@ -117,7 +117,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204;4691</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PreprocessorDefinitions>BENTLEY_WINRT;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -125,7 +125,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;WindowsApp.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -133,12 +133,12 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204;4691</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PreprocessorDefinitions>BENTLEY_WINRT;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;WindowsApp.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -146,7 +146,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204;4691</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PreprocessorDefinitions>BENTLEY_WINRT;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -154,7 +154,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;WindowsApp.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -162,12 +162,12 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204;4691</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PreprocessorDefinitions>BENTLEY_WINRT;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;WindowsApp.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -175,7 +175,7 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204;4691</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PreprocessorDefinitions>BENTLEY_WINRT;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -183,7 +183,7 @@
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;WindowsApp.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -191,12 +191,12 @@
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <DisableSpecificWarnings>4453;28204;4691</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\include;$(ProjectDir);$(IntermediateOutputPath);$(ProjectDir)\PublicApi;$(ProjectDir)\VendorApi;$(ProjectDir)\gensrc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PreprocessorDefinitions>BENTLEY_WINRT;_SCL_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib\UWP;$(VCInstallDir)Auxiliary\VS\UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>UnitTests.lib;Bentley.lib;BeSQLite.lib;WindowsApp.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
