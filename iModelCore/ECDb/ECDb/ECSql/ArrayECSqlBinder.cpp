@@ -282,6 +282,19 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::_BindText(Utf8CP value, IECSqlBin
             return BindDateTime(dt);
             }
 
+        if (m_typeInfo.IsId())
+            {
+            BentleyStatus stat = ERROR;
+            uint64_t id = BeStringUtilities::ParseUInt64(value, &stat);
+            if (SUCCESS != stat)
+                {
+                LOG.errorv("Type mismatch. Failed to bind string to Id parameter: Could not parse the bound string '%s' to an id.", value);
+                return ECSqlStatus::Error;
+                }
+
+            return _BindInt64(id);
+            }
+
         if (m_typeInfo.IsBinary() && m_typeInfo.GetExtendedTypeName().EqualsIAscii(EXTENDEDTYPENAME_BeGuid))
             {
             BeGuid guid;
