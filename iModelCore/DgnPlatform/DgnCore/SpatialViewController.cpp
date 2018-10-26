@@ -216,6 +216,26 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
                     }
                 }
             }
+        // WebMercator display style setting...  Add at modelId 0.
+        if (m_definition->GetDisplayStyle().GetDisplayBackgroundMap())
+            {
+            DgnModelId              s_webMercatorPseudoModelId((uint64_t) 0);
+
+            if (m_roots.find(s_webMercatorPseudoModelId) == m_roots.end())
+                {
+                TileTree::RootPtr modelRoot = m_definition->GetDisplayStyle().GetBackgroundMapTileTree(context);
+                if (modelRoot.IsNull())
+                    {
+                    rootCreationDeferred = true;
+                    }
+                else
+                    {
+                    m_roots.Insert(s_webMercatorPseudoModelId, modelRoot);
+                    InvalidateCopyrightInfo();
+                    }
+                }
+            }
+
 
         // if we either didn't have time to create all roots, or one of our models deferred root creation, go through this loop again later.
         m_allRootsLoaded = !timedOut && !rootCreationDeferred;

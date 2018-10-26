@@ -44,6 +44,9 @@
   <ItemGroup>
     <None Include="prewire.mke" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>

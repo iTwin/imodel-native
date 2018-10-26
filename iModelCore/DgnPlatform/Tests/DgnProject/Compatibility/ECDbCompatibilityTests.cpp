@@ -1401,30 +1401,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImport_Formats_API)
             spec.SetFormatTraits((Formatting::FormatTraits) ((int) Formatting::FormatTraits::KeepSingleZero | (int) Formatting::FormatTraits::KeepDecimalPoint));
             ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DefaultReal", "real", nullptr, &spec)) << testDb.GetDescription();
 
-            const BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas({schema.get()});
-            switch (testDb.GetAge())
-                {
-                    case ProfileState::Age::Older:
-                    {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
-                    testDb.AssertFormat("TestSchema", "DefaultReal", "real", nullptr, JsonValue(R"json({"type": "Decimal", "formatTraits": ["keepSingleZero", "keepDecimalPoint"], "precision": 6})json"), JsonValue());
-                    break;
-                    }
-                    case ProfileState::Age::UpToDate:
-                    {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << testDb.GetDescription();
-                    testDb.AssertFormat("TestSchema", "DefaultReal", "real", nullptr, JsonValue(R"json({"type": "Decimal", "formatTraits": ["keepSingleZero", "keepDecimalPoint"], "precision": 6})json"), JsonValue());
-                    break;
-                    }
-                    case ProfileState::Age::Newer:
-                    {
-                    EXPECT_EQ(ERROR, schemaImportStat) << testDb.GetDescription();
-                    break;
-                    }
-                    default:
-                        FAIL() << "Unhandled ProfileState::Age enum value | " << testDb.GetDescription();
-                        break;
-                }
+            ASSERT_EQ(ERROR, testDb.GetDb().Schemas().ImportSchemas({schema.get()})) << testDb.GetDescription();
             }
         }
     }
@@ -1467,7 +1444,8 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
             testDb.GetDb().CloseDb();
             ASSERT_EQ(BE_SQLITE_OK, testDb.GetDb().OpenBeSQLiteDb(testDb.GetTestFile().GetPath(), testDb.GetOpenParams())) << testDb.GetDescription();
 
-            // now build new version with API and add a format
+            // now build new version with API and add a format -> this should fail as ECDb does not support
+            // schemas that are 3.1 but have EC3.2 features
             ECSchemaPtr schema;
             ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 1)) << testDb.GetDescription();
             schema->SetOriginalECXmlVersion(3, 1);
@@ -1482,17 +1460,11 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
             spec.SetFormatTraits((Formatting::FormatTraits) ((int) Formatting::FormatTraits::KeepSingleZero | (int) Formatting::FormatTraits::KeepDecimalPoint));
             ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DefaultReal", "real", nullptr, &spec)) << testDb.GetDescription();
 
-            ASSERT_EQ(SUCCESS, testDb.GetDb().Schemas().ImportSchemas({schema.get()})) << testDb.GetDescription();
-            ASSERT_EQ(BE_SQLITE_OK, testDb.GetDb().SaveChanges()) << testDb.GetDescription();
-            testDb.AssertProfileVersion();
-            testDb.AssertLoadSchemas();
-    
-            testDb.GetDb().ClearECDbCache();
-            EXPECT_TRUE(testDb.GetDb().Schemas().GetClass("TestSchema", "Foo") != nullptr) << testDb.GetDescription();
-            testDb.AssertFormat("TestSchema", "DefaultReal", "real", nullptr, JsonValue(R"json({"type": "Decimal", "formatTraits": ["keepSingleZero", "keepDecimalPoint"], "precision": 6})json"), JsonValue());
+            ASSERT_EQ(ERROR, testDb.GetDb().Schemas().ImportSchemas({schema.get()})) << testDb.GetDescription();
             }
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      08/18
 //+---------------+---------------+---------------+---------------+---------------+------

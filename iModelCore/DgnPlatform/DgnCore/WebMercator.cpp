@@ -257,10 +257,9 @@ Utf8String MapRoot::_ConstructTileResource(TileCR tile) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapRoot::MapRoot(WebMercatorModelCR model, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
-        uint32_t maxSize) : QuadTree::Root(model, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider(&imageryProvider)
+MapRoot::MapRoot(DgnDbR db, DgnModelId modelId, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
+        uint32_t maxSize) : QuadTree::Root(db, modelId, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider(&imageryProvider)
     {
-    auto& db = model.GetDgnDb();
     AxisAlignedBox3d extents = db.GeoLocation().GetProjectExtents();
     DPoint3d center = extents.GetCenter();
     center.z = 0.0;
@@ -408,7 +407,7 @@ TileTree::RootPtr WebMercatorModel::LoadTileTree(SystemP renderSys) const
 
 
         uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
-        return new MapRoot(*this, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
+        return new MapRoot(this->GetDgnDb(), this->GetModelId(), biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
         }
 
     // Here we do not yet have the TemplateUrl. _FetchTemplateUrl can be called multiple times - it takes care of checking the status, etc.
@@ -567,7 +566,7 @@ BingImageryProviderPtr  BingImageryProvider::s_hybridMapProvider;
 BingImageryProvider*  BingImageryProvider::Create (Json::Value const& providerDataValue)
     {
     // the only thing currently stored in the BingImageryProvider Json is the MapType.
-    MapType mapType = (MapType) providerDataValue[WebMercatorModel::json_mapType()].asInt((int)MapType::Street);
+    MapType mapType = (MapType) providerDataValue[WebMercatorModel::json_mapType()].asInt((int)MapType::Hybrid);
 
     // if the background tupe is None, return nullptr.
     if (MapType::None == mapType)
@@ -1236,6 +1235,7 @@ void    HereImageryProvider::_ToJson(Json::Value& value) const
     value[WebMercatorModel::json_mapType()] = (int)m_mapType;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1252,3 +1252,62 @@ TileTree::RootPtr WebMercatorModel::_CreateTileTree(Render::SystemP system)
     return LoadTileTree(system);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WebMercatorDisplayHandler::WebMercatorDisplayHandler(Json::Value const& settings) 
+    { 
+    _Initialize(settings);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void WebMercatorDisplayHandler::_Initialize(Json::Value const& settings)
+    {
+    Utf8String providerName = settings[WebMercatorModel::json_providerName()].asString(WebMercator::BingImageryProvider::prop_BingProvider());
+    Json::Value const& providerData = settings[WebMercatorModel::json_providerData()];
+
+    if (0 == providerName.CompareToI(WebMercator::MapBoxImageryProvider::prop_MapBoxProvider()))
+        {
+        m_provider = MapBoxImageryProvider::Create(providerData);
+        }
+    else if (0 == providerName.CompareToI(WebMercator::BingImageryProvider::prop_BingProvider()))
+        {
+        m_provider = BingImageryProvider::Create(providerData);
+        }
+    else if (0 == providerName.CompareToI(WebMercator::HereImageryProvider::prop_HereProvider()))
+        {
+        m_provider = HereImageryProvider::Create(providerData);
+        }
+    m_settings = settings;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr WebMercatorDisplayHandler::_GetTileTree(SceneContextR sceneContext) 
+    {
+    if (m_provider.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    // Here we would like to create the TileTree root (MapRoot), but we might not be ready to do that for some ImageryProviders.
+    // For example, the Bing provider isn't ready to go until it has fetched the template URL.
+    ImageryProvider::TemplateUrlLoadStatus templateStatus = m_provider->_GetTemplateUrlLoadStatus();
+    if (ImageryProvider::TemplateUrlLoadStatus::Received == templateStatus)
+        {
+        Transform biasTrans;
+        biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_settings[WebMercatorModel::json_groundBias()].asDouble(-1.0)));
+
+
+        uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
+        return new MapRoot(sceneContext.GetDgnDb(), DgnModelId((uint64_t) 0), biasTrans, *m_provider.get(), sceneContext.GetRenderSystem(), ImageSource::Format::Jpeg, 0.0, maxSize);
+        }
+
+    // Here we do not yet have the TemplateUrl. _FetchTemplateUrl can be called multiple times - it takes care of checking the status, etc.
+    m_provider->_FetchTemplateUrl();
+    return nullptr;
+    }

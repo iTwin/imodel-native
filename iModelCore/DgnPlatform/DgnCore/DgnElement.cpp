@@ -225,6 +225,13 @@ DgnDbStatus DgnElement::_OnInsert()
             return DgnDbStatus::InvalidCode;
         }
 
+    if (m_code.GetValueUtf8().length() > (size_t)IModelHubConstants::MaxCodeValueLength)
+        {
+        BeAssert(false);
+        LOG.errorv("Element insert rejected because code value [%s] is too long. ECClass=%s", m_code.GetValueUtf8CP(), GetHandlerECClassName());
+        return DgnDbStatus::InvalidCode;
+        }
+
     if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
@@ -754,7 +761,7 @@ DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8StringCR name)
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
+    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
         {
         BeAssert(false);
         return nullptr;
@@ -771,7 +778,7 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8StringCR
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SectionDrawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid() || name.empty())
+    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
         {
         BeAssert(false);
         return nullptr;
