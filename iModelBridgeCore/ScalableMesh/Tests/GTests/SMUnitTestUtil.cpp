@@ -248,7 +248,7 @@ bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> 
 		BeFileName name;
 		ScalableMeshGTestUtil::GetDataPath(name);
 		name.AppendToPath(SM_DATA_PATH);
-		name.AppendToPath(WString(nameStr.c_str()).c_str());
+		name.AppendToPath(WString(nameStr.c_str(), true).c_str());
 		std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>> entries(name, mat,sourcePts, resultPts);
 		resultList.push_back(entries);
 	}
@@ -264,7 +264,11 @@ Json::Value ScalableMeshGTestUtil::GetGroundTruthJsonFile(BeFileName jsonFile)
     Json::Value result;
 
     BeFile f;
+#ifdef VANCOUVER_API
     if (BeFileStatus::Success != f.Open(jsonFile.c_str(), BeFileAccess::Read, BeFileSharing::None))
+#else
+    if (BeFileStatus::Success != f.Open(jsonFile.c_str(), BeFileAccess::Read))
+#endif
         return Json::Value();
 
     bvector<byte> fileBuffer;
@@ -335,7 +339,7 @@ bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> S
         BeFileName name;
         ScalableMeshGTestUtil::GetDataPath(name);
         name.AppendToPath(SM_DATA_PATH);
-        name.AppendToPath(WString(nameStr.c_str()).c_str());
+        name.AppendToPath(WString(nameStr.c_str(), true).c_str());
         std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>> entries(name, mat, clipPlanes, results);
         resultList.push_back(entries);
         }
@@ -378,7 +382,7 @@ bvector<std::tuple<BeFileName, bvector<DPoint3d>, uint64_t>> ScalableMeshGTestUt
         BeFileName name;
         ScalableMeshGTestUtil::GetDataPath(name);
         name.AppendToPath(SM_GROUND_DETECTION_PATH);
-        name.AppendToPath(WString(nameStr.c_str()).c_str());
+        name.AppendToPath(WString(nameStr.c_str(), true).c_str());
         std::tuple<BeFileName, bvector<DPoint3d>, uint64_t> entries(name, groundArea, expectedGroundPts);
         resultList.push_back(entries);
         }

@@ -32,6 +32,12 @@ need be.
 USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.
 USING_NAMESPACE_IMAGEPP
     
+#ifndef VANCOUVER_API
+class SMSQLiteFile;
+
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMSQLiteFile> SMSQLiteFilePtr;
+#endif
+
 enum class SMStoreDataType
     {
     Points = 0,
@@ -204,6 +210,19 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual uint32_t _GetExcessiveRefCountThreshold() const override { return numeric_limits<uint32_t>::max(); } 
 #endif
 
+    protected:
+
+        bool IsSisterFileType(SMStoreDataType dataType)
+            {
+            return (dataType == SMStoreDataType::DiffSet ||
+                    dataType == SMStoreDataType::Graph ||
+                    dataType == SMStoreDataType::LinearFeature ||
+                    dataType == SMStoreDataType::ClipDefinition ||
+                    dataType == SMStoreDataType::CoveragePolygon ||
+                    dataType == SMStoreDataType::CoverageName ||
+                    dataType == SMStoreDataType::Skirt);
+            }
+
     public:
 
         ISMDataStore() {};
@@ -291,6 +310,8 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
 		virtual bool DoesClipFileExist() const = 0;
 
+        virtual void EraseClipFile() const = 0;
+
 		/**----------------------------------------------------------------------------
 		Accept a way for the application to register its own callback for the clip polygons, instead of using file storage.
 		-----------------------------------------------------------------------------*/
@@ -327,5 +348,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
         virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
-        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;        
+        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;       
+
+        virtual SMSQLiteFilePtr GetSQLiteFilePtr(SMStoreDataType dataType) { return nullptr; }
     };

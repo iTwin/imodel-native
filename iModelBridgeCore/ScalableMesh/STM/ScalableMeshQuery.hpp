@@ -2161,13 +2161,16 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
 
 	if(!IsTextured() || !isTextureRequired) return true;
 
+    if (m_cachedDisplayTextureData.size() == 0)
+        return false;
+
     for (auto& textureData : m_cachedDisplayTextureData)
         {
         if (!textureData.IsValid() || textureData->GetData()->GetDisplayCacheManager() != mgr || textureData->GetData() == nullptr)
             return false;
         }
-    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty() && m_loadTexture) return false;
+   // auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+   // if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty() && isTextureRequired) return false;
     return true;
     }
 

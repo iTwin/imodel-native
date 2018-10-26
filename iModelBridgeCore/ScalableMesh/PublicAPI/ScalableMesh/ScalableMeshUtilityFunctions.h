@@ -135,7 +135,7 @@ BENTLEY_SM_EXPORT bool SetLinearsForPresentationModeCallback(addLinearsForPresen
 
 BENTLEY_SM_EXPORT void GetCoverageTerrainAbsFileName(BeFileName& coverageFileName, const WString& baseExtraFilesPath, const Utf8String& coverageName);
 
-void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvector<DSegment3d>& segments);
+BENTLEY_SM_EXPORT void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvector<DSegment3d>& segments);
 
 #ifdef SCALABLE_MESH_ATP
 

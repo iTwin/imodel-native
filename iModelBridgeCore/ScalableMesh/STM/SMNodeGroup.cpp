@@ -28,11 +28,13 @@ SMGroupingStrategy<DRange3d>* s_groupingStrategy = nullptr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConvertToJsonFromBytes(Json::Value & outputJson, std::unique_ptr<DataSource::Buffer[]>& bufferPtr, DataSource::DataSize bufferSize)
+#ifndef LINUX_SCALABLEMESH_BUILD
+bool ConvertToJsonFromBytes(Json::Value & outputJson, std::vector<DataSourceBuffer::BufferData>& dest)
     {
-    char* jsonBlob = reinterpret_cast<char *>(bufferPtr.get());
-    return Json::Reader().parse(jsonBlob, jsonBlob + bufferSize, outputJson);
+    char* jsonBlob = reinterpret_cast<char *>(dest.data());
+    return Json::Reader().parse(jsonBlob, jsonBlob + dest.size(), outputJson);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
@@ -310,7 +312,7 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize destSize)
+DataSource * SMNodeGroup::InitializeDataSource()
     {
     assert(GetDataSourceAccount() != nullptr);      // The data source account must be set
 
@@ -321,11 +323,6 @@ DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffe
         assert(!"Could not initialize data source");
         return nullptr;
         }
-
-    // Make sure caching is enabled for this DataSource
-//  dataSource->setCachingEnabled(s_stream_enable_caching);
-
-    dest.reset(new unsigned char[destSize]);
 
     return dataSource;
     }
@@ -350,12 +347,11 @@ StatusInt SMNodeGroup::Load()
             }
         else
             {
-            std::unique_ptr<DataSource::Buffer[]> dest;
-            DataSource::DataSize                  readSize;
+            std::vector<DataSourceBuffer::BufferData> dest;
 
             m_isLoading = true;
 
-            if (this->DownloadFromID(dest, readSize))
+            if (this->DownloadFromID(dest))
                 {
                 m_isLoading = false;
                 m_groupCV.notify_all();
@@ -363,25 +359,25 @@ StatusInt SMNodeGroup::Load()
                 }
 
 
-            if (readSize > 0)
+            if (!dest.empty())
                 {
                 uint32_t position = 0;
                 uint32_t id;
-                memcpy(&id, dest.get(), sizeof(uint32_t));
+                memcpy(&id, dest.data(), sizeof(uint32_t));
                 assert(m_groupHeader->GetID() == id);
                 position += sizeof(uint32_t);
 
                 uint32_t numNodes;
-                memcpy(&numNodes, dest.get() + position, sizeof(numNodes));
+                memcpy(&numNodes, dest.data() + position, sizeof(numNodes));
                 assert(m_groupHeader->size() == numNodes);
                 position += sizeof(numNodes);
 
-                memcpy(m_groupHeader->data(), dest.get() + position, numNodes * sizeof(SMNodeHeader));
+                memcpy(m_groupHeader->data(), dest.data() + position, numNodes * sizeof(SMNodeHeader));
                 position += numNodes * sizeof(SMNodeHeader);
 
-                const auto headerSectionSize = readSize - position;
+                const auto headerSectionSize = dest.size() - position;
                 m_rawHeaders.resize(headerSectionSize);
-                memcpy(m_rawHeaders.data(), dest.get() + position, headerSectionSize);
+                memcpy(m_rawHeaders.data(), dest.data() + position, headerSectionSize);
                 }
             else
                 {
@@ -623,20 +619,24 @@ uint64_t SMNodeGroup::GetRootTileID()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value* SMNodeGroup::DownloadNodeHeader(const uint64_t & id)
     {
+    uint64_t idToLoad = id;
     // *this* is the root tileset, try to load it if needed
-    if (!this->IsLoaded() && SUCCESS != this->Load(id))
-        return nullptr;
+    if (!this->IsLoaded())
+        {
+        if (SUCCESS != this->Load(id)) return nullptr;
+        if (m_isRoot) idToLoad = GetRootTileID();
+        }
 
     // Find the actual group that contains the node *id* (may not be the root tileset) and then load it if needed
-    auto group = m_groupCachePtr->GetGroupForNodeIDFromCache(id);
+    auto group = m_groupCachePtr->GetGroupForNodeIDFromCache(idToLoad);
     if (group == nullptr) return nullptr;
     if (!group->IsLoaded())
         {
         // Remove node from cache so that it gets replaced with appropriate node when loading the group
-        m_groupCachePtr->RemoveNodeFromCache(id);
-        if (SUCCESS != group->Load(id)) return nullptr;
+        m_groupCachePtr->RemoveNodeFromCache(idToLoad);
+        if (SUCCESS != group->Load(idToLoad)) return nullptr;
         }
-    return m_groupCachePtr->GetNodeFromCache(id);
+    return m_groupCachePtr->GetNodeFromCache(idToLoad);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -674,11 +674,10 @@ const DataSource::SessionName &SMNodeGroup::GetDataSourceSessionName(void)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value & tileset)
     {
-    std::unique_ptr<DataSource::Buffer[]>       dest;
-    DataSource::DataSize                        readSize;
-    if (this->DownloadBlob(dest, readSize, url))
+    std::vector<DataSourceBuffer::BufferData>         dest;
+    if (this->DownloadBlob(dest, url))
         {
-        return ConvertToJsonFromBytes(tileset, dest, readSize);
+        return ConvertToJsonFromBytes(tileset, dest);
         }
 
     assert(!"A problem occured while downloading a group.");
@@ -688,14 +687,13 @@ bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value &
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize & readSize, const DataSourceURL & url)
+bool SMNodeGroup::DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, const DataSourceURL & url)
     {
-    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
     DataSourceStatus                status;
     bool                            isFromCache = false;
 
-    DataSource *dataSource = this->InitializeDataSource(dest, destSize);
-    if (dataSource == nullptr)
+    DataSource *dataSource = nullptr;
+    if (nullptr ==  (dataSource = this->InitializeDataSource()))
         return false;
 
     try
@@ -703,7 +701,7 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
         if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
             throw status;
 
-        if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+        if ((status = dataSource->read(dest)).isFailed())
             throw status;
 
         isFromCache = dataSource->isFromCache();
@@ -724,16 +722,14 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
     if (m_isRoot && isFromCache)
         { // Must download so that we can check timestamp and clear cache if necessary
         Json::Value cachedTileset;
-        if (ConvertToJsonFromBytes(cachedTileset, dest, readSize) &&
+        if (ConvertToJsonFromBytes(cachedTileset, dest) &&
             !cachedTileset.isNull() &&
             cachedTileset["root"].isMember("SMMasterHeader") &&
             cachedTileset["root"]["SMMasterHeader"].isMember("LastModifiedDateTime"))
             {
-//          bool cacheEnabled = dataSource->getCachingEnabled();
-            std::unique_ptr<DataSource::Buffer[]> newDest;
-            DataSourceBuffer::BufferSize newSize;
+            std::vector<DataSourceBuffer::BufferData> newDest;
 
-            if ((dataSource = this->InitializeDataSource(newDest, destSize)) != nullptr)
+            if ((dataSource = this->InitializeDataSource()) != nullptr)
                 {
                 dataSource->setCachingEnabled(false);
 
@@ -742,7 +738,7 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
                     if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
                         throw status;
 
-                    if((status = dataSource->read(newDest.get(), destSize, newSize, 0)).isFailed())
+                    if((status = dataSource->read(newDest)).isFailed())
                         throw status;
                     }
                 catch (DataSourceStatus)
@@ -755,7 +751,7 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
                     // Compare timestamps
                 Json::Value networkTileset;
 
-                if (ConvertToJsonFromBytes(networkTileset, newDest, newSize) &&
+                if (ConvertToJsonFromBytes(networkTileset, newDest) &&
                     !networkTileset.isNull() &&
                     networkTileset["root"].isMember("SMMasterHeader") &&
                     networkTileset["root"]["SMMasterHeader"].isMember("LastModifiedDateTime"))
@@ -816,20 +812,19 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
 uint64_t SMNodeGroup::GetSingleNodeFromStore(const uint64_t & pi_pNodeID, bvector<uint8_t>& pi_pData)
     {
 #ifndef LINUX_SCALABLEMESH_BUILD
-    std::unique_ptr<DataSource::Buffer[]>dest;
-    DataSource::DataSize                 readSize;
+    std::vector<DataSourceBuffer::BufferData> dest;
 
     DataSourceURL dataSourceURL(m_dataSourcePrefix.c_str());
     dataSourceURL += std::to_wstring(pi_pNodeID) + m_dataSourceExtension.c_str();
 
-    if (this->DownloadBlob(dest, readSize, dataSourceURL) && readSize > 0)
+    if (this->DownloadBlob(dest, dataSourceURL))
         {
-        pi_pData.resize(readSize);
-        memmove(pi_pData.data(), reinterpret_cast<char *>(dest.get()), readSize);
+        pi_pData.resize(dest.size());
+        memmove(pi_pData.data(), reinterpret_cast<char *>(dest.data()), dest.size());
         }
 
-    assert(readSize > 0); // A problem occured while downloading a blob
-    return readSize;
+    assert(!pi_pData.empty()); // A problem occured while downloading a blob
+    return pi_pData.size();
 #else
     return 0;
 #endif

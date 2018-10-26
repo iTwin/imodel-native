@@ -79,6 +79,7 @@ public:
     virtual            bool                         destroyAll          (void);
 
     virtual            DataSourceStatus             read                (Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;
+    virtual            DataSourceStatus             read                (std::vector<Buffer>& dest) = 0;
     virtual            DataSourceStatus             write               (const Buffer *source, DataSize size) = 0;
 
     virtual            bool                         isValid             (void);

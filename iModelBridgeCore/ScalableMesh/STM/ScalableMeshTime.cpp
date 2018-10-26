@@ -194,9 +194,16 @@ Time GetFileLastModificationTimeFor(const WChar*  filePath)
     
     return CreateTimeFrom(fileStats.st_mtime);
 #else
-    struct stat64 fileStats;
-    Utf8String utf8Name(filePath);
-    int status = stat64(utf8Name.c_str(), &fileStats);
+
+    #ifdef __APPLE__
+        struct stat fileStats;
+        Utf8String utf8Name(filePath);
+        int status = stat(utf8Name.c_str(), &fileStats);
+    #else
+        struct stat64 fileStats;
+        Utf8String utf8Name(filePath);
+        int status = stat64(utf8Name.c_str(), &fileStats);
+    #endif
     
     if (0 != status)
         return CreateUnknownModificationTime();

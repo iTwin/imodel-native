@@ -68,6 +68,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
 		virtual bool DoesClipFileExist() const override;
 
+        virtual void EraseClipFile() const override;
+
 		virtual void SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider) override;
 
 		virtual void WriteClipDataToProjectFilePath() override;
@@ -95,6 +97,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+
+        virtual SMSQLiteFilePtr GetSQLiteFilePtr(SMStoreDataType dataType) override;
 
         static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create (SMSQLiteFilePtr database)
         {

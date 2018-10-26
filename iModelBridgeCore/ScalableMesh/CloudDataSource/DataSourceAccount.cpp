@@ -292,6 +292,15 @@ DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName,
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
 
+DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &url, DataSourceBuffer* buffer, const DataSource::SessionName &session)
+    {
+    (void)url;
+    (void)buffer;
+    (void)session;
+
+    return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
+    }
+
 DataSourceStatus DataSourceAccount::uploadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
     {
     (void)dataSource;
@@ -316,6 +325,14 @@ DataSourceStatus DataSourceAccount::uploadBlobSync(const DataSourceURL &segmentN
     (void)segmentName;
     (void)source;
     (void)size;
+
+    return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
+    }
+
+DataSourceStatus DataSourceAccount::uploadBlobSync(const DataSourceURL &blobPath, DataSourceBuffer *source)
+    {
+    (void)blobPath;
+    (void)source;
 
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
@@ -394,4 +411,25 @@ DataSourceStatus DataSourceAccount::download(DataSource &dataSource, DataSourceB
     readSize = buffer->getReadSize();
 
     return status;
+    }
+
+DataSourceStatus DataSourceAccount::download(DataSource &dataSource, std::vector<DataSourceBuffer::BufferData>& dest)
+    {
+    DataSourceBuffered  *        dataSourceBuffered;
+    DataSourceBuffer    *        buffer;
+
+    (void)dest;
+
+    // Only buffered datasources are supported, so downcast
+    if ((dataSourceBuffered = dynamic_cast<DataSourceBuffered *>(&dataSource)) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
+
+    buffer = dataSourceBuffered->getBuffer();
+    buffer->setLocator(*dataSourceBuffered);
+
+    // Transfer the buffer to the upload scheduler
+    getTransferScheduler()->addBuffer(*buffer);
+
+    // Wait for specified timeout
+    return buffer->waitForSegments(dataSource.getTimeout());
     }
