@@ -593,6 +593,7 @@ struct Converter
     private:
         bool m_skipUnchangedFiles;
         bool m_wantProvenanceInBim;
+        bool m_wantModelProvenanceInBim {};
         bool m_isPowerplatformBased;
         bool m_processAffected;
         bool m_convertViewsOfAllDrawings;
@@ -622,6 +623,7 @@ struct Converter
             m_wantProvenanceInBim = false;
             m_processAffected = false;
             m_convertViewsOfAllDrawings = true;
+            m_wantModelProvenanceInBim = false;
             }
 
         void SetInputRootDir(BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -639,6 +641,7 @@ struct Converter
             }
         void SetSkipUnchangedFiles(bool v) {m_skipUnchangedFiles = v;}
         void SetWantProvenanceInBim(bool v) {m_wantProvenanceInBim = v;}
+        void SetWantModelProvenanceInBim(bool v) { m_wantModelProvenanceInBim = v; }
         void SetCopyLevel(CopyLevel v) {m_copyLevel = v;}
         void SetProjectWiseExtensionDll(BeFileNameCR pwExtensionDll) {m_pwExtensionDll = pwExtensionDll;}
         void SetProjectWiseWorkDir(BeFileNameCR pwWorkDir) {m_pwWorkDir = pwWorkDir;}
@@ -669,6 +672,7 @@ struct Converter
         Utf8StringCR GetProjectWiseDataSource() const {return  m_pwDataSource;}
         bool GetIsPowerplatformBased() const {return m_isPowerplatformBased;}
         bool GetWantProvenanceInBim() const {return m_wantProvenanceInBim;}
+        bool GetWantModelProvenanceInBim() const { return m_wantModelProvenanceInBim; }
         bool GetProcessAffected() const { return m_processAffected; }
         bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
     };
@@ -1046,6 +1050,8 @@ public:
     void AddFinisher(IFinishConversion& f) {m_finishers.push_back(&f);}
 
     virtual bool _WantProvenanceInBim() {return _GetParams().GetWantProvenanceInBim();}
+
+    virtual bool _WantModelProvenanceInBim() { return _GetParams().GetWantModelProvenanceInBim(); }
 
     //! Get the DMS document properties for a specified file, if available.
     void GetDocumentProperties(iModelBridgeDocumentProperties& docProps, BeFileNameCR localFilename)

@@ -3491,9 +3491,9 @@ void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::CreateProvenanceTables()
     {
-    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
+    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceFile) && _WantModelProvenanceInBim())
         DgnV8FileProvenance::CreateTable(*m_dgndb);
-    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel))
+    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel) && _WantModelProvenanceInBim())
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
     if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
         DgnV8ElementProvenance::CreateTable(*m_dgndb);
@@ -3513,7 +3513,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
     _GetParamsR().SetIsUpdating(FindImportJobForModel(*GetRootModelP()).IsValid());
 
 #ifndef NDEBUG
-    if (_WantProvenanceInBim())
+    if (_WantModelProvenanceInBim())
         {
         BeAssert(m_dgndb->TableExists(DGN_TABLE_ProvenanceFile));
         }

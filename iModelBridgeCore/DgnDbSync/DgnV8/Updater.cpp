@@ -236,7 +236,8 @@ void Converter::_DeleteModel(SyncInfo::V8ModelMapping const& mm)
     model->Delete();
     GetSyncInfo().DeleteModel(mm.GetV8ModelSyncInfoId());
 
-    DgnV8ModelProvenance::Delete(mid, GetDgnDb());
+    if (_WantModelProvenanceInBim())
+        DgnV8ModelProvenance::Delete(mid, GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1353,7 +1353,8 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
             {
             DgnModelId modelId = mref->GetModelId();
             mref->Delete();
-            DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
+            if (_WantModelProvenanceInBim())
+                DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
             GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
             if (element.IsValid())
                 element->Delete();

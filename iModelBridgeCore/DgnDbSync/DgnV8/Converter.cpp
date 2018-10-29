@@ -250,11 +250,11 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
         {
         provenance.Insert();
         BeSQLite::BeGuid guid;
-        bool hasValidGuid = (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()));
+        bool insertProvenance = _WantModelProvenanceInBim() && (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()));
             
-        if (hasValidGuid && SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+        if (insertProvenance && SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
             DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
-        else if (hasValidGuid)
+        else if (insertProvenance)
             {
             //We found dgnv8file provenance for a model that was mapped from another bridge. 
             //Transfer the model mapping from there to this one.
@@ -3228,17 +3228,20 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         return ResolvedModelMapping();
         }
 
-    DgnV8FileP file = v8Model.GetDgnFileP();
-    SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
-    BeSQLite::BeGuid guid;
-    if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+    if (_WantModelProvenanceInBim())
         {
-        DgnV8ModelProvenance::ModelProvenanceEntry entry;
-        entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
-        entry.m_modelId = modelId;
-        entry.m_modelName = mapping.GetV8Name();
-        entry.m_trans = trans;
-        DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
+        DgnV8FileP file = v8Model.GetDgnFileP();
+        SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
+        BeSQLite::BeGuid guid;
+        if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+            {
+            DgnV8ModelProvenance::ModelProvenanceEntry entry;
+            entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
+            entry.m_modelId = modelId;
+            entry.m_modelName = mapping.GetV8Name();
+            entry.m_trans = trans;
+            DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
+            }
         }
 
     DgnModelPtr model = m_dgndb->Models().GetModel(mapping.GetModelId());
