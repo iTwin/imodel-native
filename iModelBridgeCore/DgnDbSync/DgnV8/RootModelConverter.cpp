@@ -1335,33 +1335,39 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
     DgnV8ModelP rootModel = GetRootModelP();
     for (auto& modelMapping : m_v8ModelMappings)
         {
-        if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
-            {
-            BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
-            keepAlive.push_back(mref);
-            
-            DgnElementId partition = mref->GetModeledElementId();
-            DgnElementCPtr element = GetDgnDb().Elements().GetElement(partition);
-            bool isRootModel = &modelMapping.GetV8Model() == rootModel;
-            if (!isRootModel)
-                {
-                mref->Delete();
-                if (element.IsValid())
-                    element->Delete();
-                }
-            else
-                {
-                mref->SetIsPrivate(true);
-                mref->Update();
-                }
-            mappingsToRemove.push_back(modelMapping);
-
-            Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
-            ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+        if (IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
             continue;
-            }
-        //The file is assigned to the bridge. Check whether another model exists that already maps this same model.
 
+        BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
+        DgnModelId modelId = mref->GetModelId();
+        if (!IsBimModelAssignedToJobSubject(modelId))
+            continue;
+        
+        DgnElementId partition = mref->GetModeledElementId();
+        //Check whether the root models partition element is the same as this models parition rppt
+        keepAlive.push_back(mref);
+        
+        DgnElementCPtr element = GetDgnDb().Elements().GetElement(partition);
+        bool isRootModel = &modelMapping.GetV8Model() == rootModel;
+        if (!isRootModel)
+            {
+            DgnModelId modelId = mref->GetModelId();
+            mref->Delete();
+            DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
+            GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
+            if (element.IsValid())
+                element->Delete();
+            }
+        else
+            {
+            mref->SetIsPrivate(true);
+            mref->Update();
+            }
+        mappingsToRemove.push_back(modelMapping);
+
+        Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
+        ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+        
         }
     for (auto const& mappingToRemove : mappingsToRemove)
         {

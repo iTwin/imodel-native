@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ConverterInternal.h"
 #include "MstnBridgeTestsFixture.h"
-#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include <iModelBridge/TestIModelHubClientForBridges.h>
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/FakeRegistry.h>
@@ -206,14 +205,9 @@ void MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-int32_t MstnBridgeTestsFixture::GetElementCount(BentleyApi::BeFileNameCR fileName)
+int32_t MstnBridgeTestsFixture::DbFileInfo::GetElementCount()
     {
-    ScopedDgnHost host;
-    BentleyApi::BeSQLite::DbResult result;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
-    EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, result);
-
-    CachedStatementPtr stmt = db->Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Element) "");
+    CachedStatementPtr stmt = m_db->Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Element) "");
     stmt->Step();
     return stmt->GetValueInt(0);
     }
@@ -221,16 +215,33 @@ int32_t MstnBridgeTestsFixture::GetElementCount(BentleyApi::BeFileNameCR fileNam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-int32_t MstnBridgeTestsFixture::GetModelCount(BentleyApi::BeFileNameCR fileName)
+MstnBridgeTestsFixture::DbFileInfo::DbFileInfo(BentleyApi::BeFileNameCR fileName)
     {
-    ScopedDgnHost host;
+    
     BentleyApi::BeSQLite::DbResult result;
-    DgnDbPtr db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
-    EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, result);
+    m_db = DgnDb::OpenDgnDb(&result, fileName, DgnDb::OpenParams(BentleyApi::BeSQLite::Db::OpenMode::Readonly));
+    BeAssert(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK ==  result);
+    }
 
-    CachedStatementPtr stmt = db->Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Model) "");
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelCount ()
+    {
+    CachedStatementPtr stmt = m_db->Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Model) "");
     stmt->Step();
     return stmt->GetValueInt(0);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid)
+    {
+    CachedStatementPtr stmt = m_db->Elements().GetStatement("SELECT count(*) FROM " DGN_TABLE_ProvenanceModel " WHERE  V8FileId = ?");
+    BentleyApi::Utf8String guidString = fileGuid.ToString();
+    stmt->BindText(1, guidString.c_str(), Statement::MakeCopy::No);
+    stmt->Step();
+    return  stmt->GetValueInt(0);
     }
 
 /*---------------------------------------------------------------------------------**//**

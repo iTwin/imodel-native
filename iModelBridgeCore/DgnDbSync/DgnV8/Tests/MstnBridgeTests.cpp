@@ -61,12 +61,12 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         RunTheBridge(args);
         }
 
-    int prevCount = GetElementCount(dbFile);
+    int prevCount = DbFileInfo(dbFile).GetElementCount();
     if (true)
         {
         //Make sure a second run of the bridge does not add any elements.
         RunTheBridge(args);
-        EXPECT_EQ(prevCount, GetElementCount(dbFile));
+        EXPECT_EQ(prevCount, DbFileInfo(dbFile).GetElementCount());
         }
 
 
@@ -75,14 +75,14 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         {
         // and run an update
         RunTheBridge(args);
-        EXPECT_EQ(1 + prevCount, GetElementCount(dbFile));
+        EXPECT_EQ(1 + prevCount, DbFileInfo(dbFile).GetElementCount());
         }
 
     if (true)
         {
         //Make sure a second run of the bridge does not add any elements.
         RunTheBridge(args);
-        EXPECT_EQ(1 + prevCount, GetElementCount(dbFile));
+        EXPECT_EQ(1 + prevCount, DbFileInfo(dbFile).GetElementCount());
         }
     }
 
@@ -152,7 +152,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         RunTheBridge(args);
         
-        modelCount = GetModelCount(dbFile);
+        modelCount = DbFileInfo(dbFile).GetModelCount();
         ASSERT_EQ(8, modelCount);
         }
 
@@ -163,7 +163,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
         {
         //We added a new attachment.
         RunTheBridge(args);
-        ASSERT_EQ(modelCount + 1, GetModelCount(dbFile));
+        ASSERT_EQ(modelCount + 1, DbFileInfo(dbFile).GetModelCount());
         }
 
     }
@@ -252,7 +252,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
         margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
         RunTheBridge(margs);
 
-        modelCount = GetModelCount(dbFile);
+        modelCount = DbFileInfo(dbFile).GetModelCount();
         ASSERT_EQ(8, modelCount);
         }
 
@@ -264,7 +264,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
 
         RunTheBridge(rargs);
-        ASSERT_EQ(modelCount + 1, GetModelCount(dbFile));
+        ASSERT_EQ(modelCount + 1, DbFileInfo(dbFile).GetModelCount());
         }
 
     }
@@ -304,9 +304,9 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     //AddAttachment(inputFile1, refFile, 1, true);
 
     BentleyApi::BeSQLite::BeGuid guid1, refGuid, guid2;
-    guid1.Create();
-    guid2.Create();
-    refGuid.Create();
+    guid1.FromString("C9A63366-81F3-471D-B7CB-F4827E94BB03");
+    guid2.FromString("85E950D7-6F9C-4FA8-B195-F1B9982D1E2C");
+    refGuid.FromString("586AF9AD-8AA3-4126-9410-8E7F6B4AB5E2");
 
     BentleyApi::BeFileName testDir1;
     SetupTestDirectory(testDir1, L"ConvertAttachmentMultiBridgeSharedReference1", inputFile1, guid1, refFile, refGuid);
@@ -323,7 +323,12 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 
         BentleyApi::BeFileName dbFile(testDir1);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
-        modelCount = GetModelCount(dbFile);
+        DbFileInfo info(dbFile);
+        modelCount = info.GetModelCount();
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(0, provenanceCountRef);
         ASSERT_EQ(8, modelCount);
         }
 
@@ -338,7 +343,15 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         RunTheBridge(rargs);
         BentleyApi::BeFileName dbFile(testDir1);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
-        ASSERT_EQ(modelCount + 1, GetModelCount(dbFile));
+
+        DbFileInfo info(dbFile);
+        ASSERT_EQ(modelCount + 1, info.GetModelCount());
+
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        
         }
 
     BentleyApi::BeFileName testDir2;
@@ -354,7 +367,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         RunTheBridge(margs);
         BentleyApi::BeFileName dbFile(testDir2);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
-        ASSERT_EQ(modelCount + 6, GetModelCount(dbFile));
+        ASSERT_EQ(modelCount + 6, DbFileInfo(dbFile).GetModelCount());
         }
 
     if (true)
@@ -367,6 +380,6 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         BentleyApi::BeFileName dbFile(testDir2);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
         RunTheBridge(rargs);
-        ASSERT_EQ(modelCount + 6, GetModelCount(dbFile));
+        ASSERT_EQ(modelCount + 6, DbFileInfo(dbFile).GetModelCount());
         }
     }

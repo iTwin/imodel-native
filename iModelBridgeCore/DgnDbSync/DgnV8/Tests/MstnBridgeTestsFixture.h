@@ -8,6 +8,8 @@
 #pragma once
 #include <Bentley/BeTest.h>
 #include <BeSQLite/BeSQLite.h>
+#include <DgnPlatform/DgnDb.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 
 //=======================================================================================
 // @bsistruct                              
@@ -36,9 +38,16 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     void AddLine(BentleyApi::BeFileName& inputFile);
 
-    int32_t GetElementCount(BentleyApi::BeFileNameCR fileName);
-
-    int32_t GetModelCount(BentleyApi::BeFileNameCR fileName);
+    struct DbFileInfo
+        {
+        BentleyApi::Dgn::DgnDbPtr m_db;
+        BentleyApi::Dgn::ScopedDgnHost m_host;
+        DbFileInfo(BentleyApi::BeFileNameCR fileName);
+        int32_t GetElementCount();
+        int32_t GetModelCount();
+        int32_t GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid);
+        };
+    
 
     static void RunTheBridge(BentleyApi::bvector<BentleyApi::WString> const& args);
     
