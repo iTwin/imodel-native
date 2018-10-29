@@ -36,6 +36,8 @@ static Napi::Object RegisterModule(Napi::Env env, Napi::Object exports)
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    John.Majerle                      06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+
+
 int RunBridge(const char* jsonString)
     {
     auto json = Json::Value(jsonString);
@@ -46,74 +48,117 @@ int RunBridge(const char* jsonString)
     WCharCP argv[14];
 
     // [NEEDSWORK] Perhaps should use json.isNull("membername") instead?
+    //             Also add non-fwk variables!
 
     if(json.isMember("fwk_bridge_library")) {
-        argv[argc] = Utf8PrintfString("--fwk-bridge-library=%s", json.get("fwk_bridge_library", "" ).asString());
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-bridge-library=%s", json.get("fwk_bridge_library", "" ).asString());
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
 
     if(json.isMember("fwk_bridge_regsubkey")) {
-        argv[argc] = Utf8PrintfString("--fwk-bridge-regsubkey=%s)", json.get("fwk_bridge_regsubkey", "" ).asString());         
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-bridge-regsubkey=%s)", json.get("fwk_bridge_regsubkey", "" ).asString());         
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
     
     if(json.isMember("fwk_staging_dir")) {
-        argv[argc] = Utf8PrintfString("--fwk-staging-dir=%s)", json.get("fwk_staging_dir", "" ).asString());    
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-staging-dir=%s)", json.get("fwk_staging_dir", "" ).asString());    
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
 
     if(json.isMember("fwk_input")) {
-        argv[argc] = Utf8PrintfString("--fwk-input=%s)", json.get("fwk_input", "" ).asString());        
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-input=%s)", json.get("fwk_input", "" ).asString());        
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
 
     if(json.isMember("fwk_input_sheet")) {
-        argv[argc] = Utf8PrintfString("--fwk-input-sheet=%s)", json.get("fwk_input_sheet", "" ).asString());        
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-input-sheet=%s)", json.get("fwk_input_sheet", "" ).asString());        
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
 
     if(json.isMember("fwk_revision_comment")) {
-        argv[argc] = Utf8PrintfString("--fwk-revision-comment=%s)", json.get("fwk_revision_comment", "" ).asString());              
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-revision-comment=%s)", json.get("fwk_revision_comment", "" ).asString());              
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
 
     if(json.isMember("fwk_logging_config_file")) {
-        argv[argc] = Utf8PrintfString("--fwk-logging-config-file=%s)", json.get("fwk_logging_config_file", "" ).asString());         
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-logging-config-file=%s)", json.get("fwk_logging_config_file", "" ).asString());         
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
 
     if(json.isMember("fwk_argsJson")) {
-        argv[argc] = Utf8PrintfString("--fwk-argsJson=%s)", json.get("fwk_argsJson", "" ).asString());                
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-argsJson=%s)", json.get("fwk_argsJson", "" ).asString());                
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
 
     if(json.isMember("fwk_max_wait")) {
-        argv[argc] = Utf8PrintfString("--fwk_max-wait=%s)", json.get("fwk_max_wait", "" ).asString());           
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk_max-wait=%s)", json.get("fwk_max_wait", "" ).asString());           
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }    
 
     if(json.isMember("fwk_jobrun_guid")) {
-        argv[argc] = Utf8PrintfString("--fwk-jobrun-guid=%s)", json.get("fwk_jobrun_guid", "" ).asString()); 
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-jobrun-guid=%s)", json.get("fwk_jobrun_guid", "" ).asString()); 
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }    
     
     if(json.isMember("fwk_assetsDir")) {
-        argv[argc] = Utf8PrintfString("--fwk-assetsDir=%s)", json.get("fwk_assetsDir", "" ).asString());            
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-assetsDir=%s)", json.get("fwk_assetsDir", "" ).asString());            
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }       
 
     if(json.isMember("fwk_bridgeAssetsDir")) {
-        argv[argc] = Utf8PrintfString("--fwk-bridgeAssetsDir=%s)", json.get("fwk_bridgeAssetsDir", "" ).asString()); 
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-bridgeAssetsDir=%s)", json.get("fwk_bridgeAssetsDir", "" ).asString()); 
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }      
     
     if(json.isMember("fwk_imodelbank_url")) {
-        argv[argc] = Utf8PrintfString("--fwk-imodelbank-url=%s)", json.get("fwk_imodelbank_url", "" ).asString());               
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-imodelbank-url=%s)", json.get("fwk_imodelbank_url", "" ).asString());               
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }      
 
     if(json.isMember("fwk_jobrequest_guid")) {
-        argv[argc] = Utf8PrintfString("--fwk-jobrequest-guid=%s)", json.get("fwk_jobrequest_guid", "" ).asString());  
+        WString tempWString;
+        Utf8String strUtf8 = Utf8PrintfString("--fwk-jobrequest-guid=%s)", json.get("fwk_jobrequest_guid", "" ).asString());  
+        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
+        argv[argc] = tempWString.c_str();
         ++argc;
     }
     
