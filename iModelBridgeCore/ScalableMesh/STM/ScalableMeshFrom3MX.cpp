@@ -256,18 +256,33 @@ private:
             return;
         }
 
+        size_t offset = 0;
+        size_t indicesOffset = 0;
         // If there is already a geometry, return with an error. Scalable Mesh does not support several geometries per node
         if (!node.vertices.empty())
         {
-            m_convertStatus = SMFrom3MXStatus::SeveralGeometriesError;
-            return;
+            if (textureId != node.textureID)
+            {
+                offset = node.vertices.size();
+                node.vertices.resize(node.vertices.size() + nbVertices);
+                indicesOffset = node.ptsIndices.size();
+                node.ptsIndices.resize(node.ptsIndices.size()+3 * nbTriangles);
+            }
+            else
+            {
+                m_convertStatus = SMFrom3MXStatus::SeveralGeometriesError;
+                return;
+            }
         }
-
-        // Convert vertices and indices to a bvector of the correct type
-        // Also compute the extent of the mesh
-        node.geomExtent = DRange3d::NullRange();
-        node.vertices.resize(nbVertices);
-        for (size_t i = 0; i < node.vertices.size(); i++)
+        else
+        {
+            node.geomExtent = DRange3d::NullRange();
+            node.vertices.resize(nbVertices);
+            node.ptsIndices.resize(3 * nbTriangles);
+            // Convert vertices and indices to a bvector of the correct type
+            // Also compute the extent of the mesh
+        }
+        for (size_t i = offset; i < node.vertices.size(); i++)
         {
             DPoint3d& p = node.vertices[i];
             float x = *positions++, y = *positions++, z = *positions++;
@@ -285,19 +300,17 @@ private:
 
             node.geomExtent.Extend(p);
         }
-
-        node.ptsIndices.resize(3 * nbTriangles);
-        for (size_t i = 0; i < node.ptsIndices.size(); i++)
+        for (size_t i = indicesOffset; i < node.ptsIndices.size(); i++)
         {
-            node.ptsIndices[i] = (*indices++) + 1; // Indices start at 1 in ScalableMesh
+            node.ptsIndices[i] = (*indices++) +(int)offset+ 1; // Indices start at 1 in ScalableMesh
         }
 
         // Handle differently textured and untextured meshes
         if (textureCoordinates)
         {
             // Convert uvs to a bvector of the correct type
-            node.uvCoords.resize(nbVertices);
-            for (size_t i = 0; i < node.uvCoords.size(); i++)
+            node.uvCoords.resize(node.vertices.size());
+            for (size_t i = offset; i < node.uvCoords.size(); i++)
             {
                 float u = *textureCoordinates++, v = *textureCoordinates++;
                 node.uvCoords[i] = DPoint2d::From(u, v);
@@ -683,7 +696,11 @@ public:
             return SMFrom3MXStatus::SeveralLayersError;
 
         BeFileName root3MXBPath(BeFileName::GetDirectoryName(input3MXPath).c_str());
-        root3MXBPath.AppendToPath(BeFileName(sceneInfo.meshChildren[0].c_str(), false));
+        BeFileName name = BeFileName(sceneInfo.meshChildren[0].c_str(), false);
+        if (name.IsUrl())
+            return SMFrom3MXStatus::URLNotSupportedError;
+
+        root3MXBPath.AppendToPath(name);
 
         DRange3d contentExtent;
         float dataResolution = std::numeric_limits<float>::max();

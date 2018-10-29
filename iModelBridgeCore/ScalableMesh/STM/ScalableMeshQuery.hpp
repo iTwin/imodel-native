@@ -2157,6 +2157,8 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
     for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
         {
         if ((*m_cachedDisplayMeshData)[i].GetDisplayCacheManager() != mgr) return false;
+        if (!mgr->_HasCompatibleSettings((*m_cachedDisplayMeshData)[i].GetCachedDisplayMesh()))
+            return false;
         }
 
 	if(!IsTextured() || !isTextureRequired) return true;
@@ -2184,6 +2186,8 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRA
         {
             if ((*m_cachedDisplayMeshData)[i].GetDisplayCacheManager() != mgr) return false;
             if (!(*m_cachedDisplayMeshData)[i].IsInVRAM() && mgr->_IsUsingVideoMemory()) return false;
+            if (!mgr->_HasCompatibleSettings((*m_cachedDisplayMeshData)[i].GetCachedDisplayMesh()))
+                return false;
         }
 
         if (!IsTextured() || !isTextureRequired) return true;

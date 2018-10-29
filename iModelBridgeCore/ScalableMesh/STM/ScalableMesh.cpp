@@ -391,6 +391,11 @@ bool IScalableMesh::GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
     return _GetClip(clipID, clipData);
 }
 
+bool IScalableMesh::GetClip(uint64_t clipID, ClipVectorPtr& clipData)
+{
+    return _GetClip(clipID, clipData);
+}
+
 bool IScalableMesh::IsInsertingClips()
     {
     return _IsInsertingClips();
@@ -1211,7 +1216,9 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr&  smSQLiteFile,
             if (isFromPWCS = !pwcsLink.empty())
                 newFilePath = WString(pwcsLink.c_str(), true);
             }
+#ifndef VANCOUVER_API
         ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
+#endif
         }
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -1399,8 +1406,9 @@ template <class POINT> int ScalableMesh<POINT>::Close
         if (!pwcsLink.empty())
             path = WString(pwcsLink.c_str(), true);
         }
-
+#ifndef VANCOUVER_API
     ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
+#endif
     m_viewedNodes.clear();
     ClearProgressiveQueriesInfo();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
@@ -2779,6 +2787,16 @@ template <class POINT> bool ScalableMesh<POINT>::_GetClip(uint64_t clipID, bvect
     return !clipData.empty();
 }
 
+template <class POINT> bool ScalableMesh<POINT>::_GetClip(uint64_t clipID, ClipVectorPtr& clipData)
+{
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    SMClipGeometryType geom; 
+    SMNonDestructiveClipType type; 
+    bool isActive;
+    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipData, geom, type, isActive);
+    return clipData.IsValid();
+}
+
 template <class POINT> bool ScalableMesh<POINT>::_IsInsertingClips()
     {
     return m_scmIndexPtr->m_isInsertingClips;
@@ -3617,6 +3635,9 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                              // Reproject data using this new GCS
         auto newGCS = m_sourceGCS;
         std::swap(m_sourceGCS, ecefGCS);
+
+        if (newGCS.GetGeoRef().GetBasePtr().get() == nullptr)
+            return ERROR;
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnModel));
         return this->_Reproject(newDgnGcsPtr.get(), dgnModel);
         }

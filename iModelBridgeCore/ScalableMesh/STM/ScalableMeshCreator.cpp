@@ -388,10 +388,9 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     m_workingLayer(DEFAULT_WORKING_LAYER),
     m_isShareable(false),
     m_isCanceled(false),
-    m_progress(new ScalableMeshProgress())
+    m_progress(new ScalableMeshProgress()), 
+    m_isShareable(false)
     {
-
-
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 
@@ -414,10 +413,9 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_workingLayer(DEFAULT_WORKING_LAYER),
         m_isShareable(false),
         m_isCanceled(false),
-	m_progress(new ScalableMeshProgress())
-    {
-  
-
+        m_progress(new ScalableMeshProgress()), 
+        m_isShareable(false)
+    {  
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
 	s_useThreadsInMeshing = true;
@@ -428,8 +426,6 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
 	m_progress->Progress() = 0;
 	m_progress->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
 	m_progress->SetTotalNumberOfSteps(0);
-
-
     }
 
 IScalableMeshCreator::Impl::~Impl()
