@@ -13,6 +13,7 @@
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh/IScalableMeshPolicy.h>
+#include "InternalUtilityFunctions.h"
 
 #include <stack>
 #include <map>
@@ -697,7 +698,7 @@ public:
 
         BeFileName root3MXBPath(BeFileName::GetDirectoryName(input3MXPath).c_str());
         BeFileName name = BeFileName(sceneInfo.meshChildren[0].c_str(), false);
-        if (name.IsUrl())
+        if (IsUrl(name.c_str()))
             return SMFrom3MXStatus::URLNotSupportedError;
 
         root3MXBPath.AppendToPath(name);
