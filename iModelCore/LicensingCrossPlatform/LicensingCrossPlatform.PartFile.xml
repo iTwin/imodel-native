@@ -87,9 +87,9 @@
     <Part Name="NativeClient.Docs" BMakeFile="Licensing/docs.mke" OnlyPlatforms="x64">
         <RequiredRepository>bsitools-doxygen</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="LicenseClientCrossPlatform" IfNotPresent="Warn" Required="false">
+            <!-- <Files ProductDirectoryName="LicenseClientCrossPlatform" IfNotPresent="Warn" Required="false">
                 Delivery/NativeClient.chm
-            </Files>
+            </Files> -->
         </Bindings>
     </Part>
     

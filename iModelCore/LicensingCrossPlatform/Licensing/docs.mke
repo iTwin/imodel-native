@@ -40,7 +40,7 @@ doxygenDocPrivate = NO
 
 %include $(SrcRoot)licensingcrossplatform/mki/lcdoxygen.mki
 
-chmFile = $(outputDir)\$(doxygenProject)\chm\$(doxygenProject).chm
+#chmFile = $(outputDir)\$(doxygenProject)\chm\$(doxygenProject).chm
 
-always:
-    @CreateSymLinks.py "$(ContextDeliveryDir)$(doxygenProject).chm=$(chmFile)"
+#always:
+#    @CreateSymLinks.py "$(ContextDeliveryDir)$(doxygenProject).chm=$(chmFile)"
