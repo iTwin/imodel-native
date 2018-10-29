@@ -2608,3 +2608,83 @@ double  ViewDefinition3d::MinimumFrontDistance(double nearScaleLimit) const
     {
     return GetDgnDb().GeoLocation().GetProjectExtents().DiagonalDistance() * nearScaleLimit;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DisplayStyle::GetBackgroundMapSettings(MapType& mapType, Utf8StringR providerName, double& groundBias, bool returnDefaults) const
+    {
+    Json::Value     value = GetStyle(json_backgroundMap());
+    if (!returnDefaults && value.isNull())
+        return ERROR;
+
+    mapType = (MapType) value[WebMercator::WebMercatorModel::json_providerData()][WebMercator::WebMercatorModel::json_mapType()].asInt((int) MapType::Hybrid);
+    providerName = value[WebMercator::WebMercatorModel::json_providerName()].asString(WebMercator::BingImageryProvider::prop_BingProvider());
+    groundBias =  value[WebMercator::WebMercatorModel::json_groundBias()].asDouble(-1.0);
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayStyle::SetBackgroundMapSettings(MapType mapType, Utf8StringCR& providerName, double groundBias) 
+    {
+    Json::Value     value;
+
+    value[WebMercator::WebMercatorModel::json_providerData()][WebMercator::WebMercatorModel::json_mapType()] = (int) mapType;
+    value[WebMercator::WebMercatorModel::json_providerName()] = providerName;
+    value[WebMercator::WebMercatorModel::json_groundBias()] = groundBias;
+
+    if (m_backGroundMapDisplayHandler.IsValid())
+        m_backGroundMapDisplayHandler->_Initialize(value);
+
+    SetStyle(json_backgroundMap(), value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayStyle::GetDisplayBackgroundMap() const
+    {
+    MapType     mapType;
+    Utf8String  providerName;
+    double      groundBias;
+
+    return m_viewFlags.ShowBackgroundMap() &&
+        GetDgnDb().GeoLocation().GetEcefLocation().m_isValid  &&
+        SUCCESS == GetBackgroundMapSettings(mapType, providerName, groundBias) &&
+        mapType != MapType::None;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<TileTree::Root>  DisplayStyle::GetBackgroundMapTileTree(SceneContextR sceneContext)
+    {
+    if (!GetDisplayBackgroundMap())
+        return nullptr;
+
+    if (!m_backGroundMapDisplayHandler.IsValid())
+        m_backGroundMapDisplayHandler = new WebMercator::WebMercatorDisplayHandler(GetStyle(json_backgroundMap()));;
+
+    return m_backGroundMapDisplayHandler->_GetTileTree(sceneContext);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            

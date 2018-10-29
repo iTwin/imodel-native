@@ -476,6 +476,8 @@ public:
     BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
 
     BeSQLite::DbResult CreateRebaseTable(); //!< @private
+    DRange3d ComputeGeometryExtentsWithoutOutliers() const;  //!< @private
+
 };
 
 END_BENTLEY_DGN_NAMESPACE
