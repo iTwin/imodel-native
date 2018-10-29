@@ -323,164 +323,6 @@ static void testModelUndoRedo(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Test undo/redo of properties and settings. Normal properties behave normally in response to undo/redo.
-* But "Settings" are not supposed to be affected by undo/redo except that
-* the undo operation *is* supposed to reverse the effect of "SaveSettings". So,
-* if we change setting, then call SaveSettings/SaveChanges, and then call "undo", the setting should remain in the
-* post-changed state in memory but that change should *not* be saved to disk. If we call SaveSettings again, the change
-* will be saved, again.
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void testSettings(DgnDbR db)
-    {
-    auto& txns = db.Txns();
-    PropertySpec setting("setting1", "Test", PropertySpec::Mode::Setting);
-    PropertySpec setting2("setting2", "Test", PropertySpec::Mode::Setting);
-    PropertySpec setting3("setting3", "Test", PropertySpec::Mode::Setting);
-    PropertySpec compressedSetting("commpressedSetting", "Test", PropertySpec::Mode::Setting);
-    PropertySpec fakeSetting("setting1", "Test", PropertySpec::Mode::Normal);
-    PropertySpec nonsetting("nonSetting", "Test", PropertySpec::Mode::Normal);
-
-    // There are really 3 types of properties/settings:
-    // - a string
-    // - an uncompressed binary value
-    // - a compressed binary value.
-    // Each can have updates that change the size of the data. We need to test all permutations with undo/redo
-
-    // first, save a setting that has compressed data
-    int compressed[500];
-    memset(compressed, 0, sizeof(compressed));
-    db.SaveProperty(compressedSetting, compressed, sizeof(compressed));
-
-    // save a string setting.
-    Utf8String orig("setting original val");
-    db.SavePropertyString(setting, orig.c_str(), 2, 6);
-
-    // save a normal property
-    Utf8String nonprop1 = "prop 1";
-    db.SavePropertyString(nonsetting, nonprop1.c_str(), 3, 56);
-
-    // save an uncompressed binary setting, we will change its size
-    int a[5] = {1,2,3,5,100};
-    db.SaveProperty(setting2, a, sizeof(a));
-
-    int sizeSame[12] = {1,2,3,4,5,6,7,8,9,10,11,12}; // save an uncompressed binary setting, we will keep its size
-    db.SaveProperty(setting3, sizeSame, sizeof(sizeSame));
-
-    db.SaveSettings(); // this copies all settings changes into the permanent table.
-
-    auto rc = db.SaveChanges("settings change 1"); // save all this as a Txn
-    ASSERT_TRUE(BE_SQLITE_OK == rc);
-
-    bool exists = db.HasProperty(setting, 2, 6); // make sure we can still see both properties and settings
-    ASSERT_TRUE(exists);
-    exists = db.HasProperty(nonsetting, 3, 56);
-    ASSERT_TRUE(exists);
-
-    auto stat = txns.ReverseSingleTxn(); // undo all the adds
-    ASSERT_TRUE(DgnDbStatus::Success == stat);
-
-    exists = db.HasProperty(setting, 2, 6); // both properties and settings should now be non-existent
-    ASSERT_TRUE(!exists);
-    exists = db.HasProperty(nonsetting, 3, 56);
-    ASSERT_TRUE(!exists);
-
-    Utf8String val;
-    stat = txns.ReinstateTxn(); // redo the Txn
-
-    exists = db.HasProperty(setting, 2, 6); // they should all be back
-    ASSERT_TRUE(exists);
-    exists = db.HasProperty(nonsetting, 3, 56);
-    ASSERT_TRUE(exists);
-
-    // now test updating existing settings
-    Utf8String state2("setting state 2");
-    db.SavePropertyString(setting, state2.c_str(), 2, 6); // change the string setting
-    db.QueryProperty(val, setting, 2, 6); // make sure its OK
-    ASSERT_TRUE(val.Equals(state2));
-
-    int b[10] = {23,2321,43,12,3400,32,3,21,4}; // change the uncompressed binary setting, changing its size
-    db.SaveProperty(setting2, b, sizeof(b));
-
-    Utf8String nonprop2 = "prop in state 2";
-    db.SavePropertyString(nonsetting, nonprop2, 3, 56); // change a normal property
-
-    compressed[22]=34;
-    db.SaveProperty(compressedSetting, compressed, sizeof(compressed)); // change a compressed binary property
-
-    db.SaveSettings(); // settings become part of the Txn
-    db.SaveChanges("settings change 2"); // save Txn
-
-    uint32_t propsize;
-    sizeSame[1] = 333;
-    db.SaveProperty(setting3, sizeSame, sizeof(sizeSame)); // change this again.
-    db.SaveSettings(); // we're going to undo below - this SaveSettings will get abandoned.
-
-    db.QueryPropertySize(propsize, setting3); // make sure the sizes are OK
-    ASSERT_TRUE(propsize == sizeof(sizeSame));
-
-    db.QueryProperty(val, setting, 2, 6);
-    ASSERT_TRUE(val.Equals(state2));
-
-    db.QueryPropertySize(propsize, setting2);
-    ASSERT_TRUE(propsize == sizeof(b));
-
-    int c[10];
-    db.QueryProperty(c, propsize, setting2);
-    ASSERT_TRUE(0 == memcmp(b,c,propsize));
-
-    db.QueryProperty(val, setting, 2, 6);
-    ASSERT_TRUE(val.Equals(state2));
-
-    stat = txns.ReverseSingleTxn(); // now undo the Txn. All settings should remain unchanged.
-    ASSERT_TRUE(DgnDbStatus::Success == stat);
-
-    int compressed2[500]; // this is the same size as original array
-    db.QueryPropertySize(propsize, compressedSetting); // make sure the size of the compressed setting didn't change
-    ASSERT_TRUE(propsize == sizeof(compressed2));
-
-    db.QueryProperty(compressed2, propsize, compressedSetting); // get the compressed data
-    ASSERT_TRUE(0 == memcmp(compressed2,compressed,propsize)); // make sure it has the 2nd value, not all zeros
-
-    db.QueryPropertySize(propsize, setting3);
-    ASSERT_TRUE(propsize == sizeof(sizeSame));
-
-    // verify that the other settings are in their post-changed state
-    int sizeSame2[12];
-    db.QueryProperty(sizeSame2, propsize, setting3);
-    ASSERT_TRUE(0 == memcmp(sizeSame2,sizeSame,propsize));
-
-    db.QueryProperty(val, nonsetting, 3, 56);
-    ASSERT_TRUE(val.Equals(nonprop1));
-
-    db.QueryPropertySize(propsize, setting2);
-    ASSERT_TRUE(propsize == sizeof(b));
-
-    db.QueryProperty(c, propsize, setting2);
-    ASSERT_TRUE(0 == memcmp(b,c,propsize));
-
-    db.QueryProperty(val, setting, 2, 6);
-    ASSERT_TRUE(val.Equals(state2));
-
-    db.QueryProperty(val, fakeSetting, 2, 6); // this is used to peek that the persistent state is post-changed
-    ASSERT_TRUE(val.Equals(orig));
-
-    db.QueryProperty(val, fakeSetting, 2, 6);
-    ASSERT_TRUE(val.Equals(orig));
-
-    stat = txns.ReinstateTxn(); // redo the updates
-    ASSERT_TRUE(DgnDbStatus::Success == stat);
-
-    db.QueryProperty(val, nonsetting, 3, 56);
-    ASSERT_TRUE(val.Equals(nonprop2));
-
-    db.QueryProperty(val, setting, 2, 6);
-    ASSERT_TRUE(val.Equals(state2));
-
-    stat = txns.ReinstateTxn();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void testRangeIndex()
@@ -548,7 +390,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
     DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.bim");
     OpenDb(m_db, outFileName, mode);
-    
+
     TestDataManager::MustBeBriefcase(m_db, mode);
     ASSERT_TRUE(m_db->IsBriefcase());
 
@@ -639,7 +481,6 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(!m_db->Elements().GetElement(el2->GetElementId()).IsValid());
 
     testModelUndoRedo(*m_db);
-    testSettings(*m_db);
     testRangeIndex();
     }
 
@@ -1026,7 +867,7 @@ TEST_F(DynamicTxnsTest, DynamicTxns)
     auto& txns = db.Txns();
     bvector<DgnElementId> persistentElemIds,
                           dynamicElemIds;
-                        
+
     AssertScope V_V_V_;
 
     // Elements created during dynamics are reverted afterward
@@ -1581,7 +1422,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     BeSQLite::EC::ECInstanceId relid = insertRelationship(*m_db, *relcls, eid1, eid2);
     ASSERT_TRUE(relid.IsValid());
     ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
-    
+
     // Verify that my relationship monitor is NOT called, since I haven't started tracking this rel class yet.
     ASSERT_FALSE(monitor.HasChanges());
 
