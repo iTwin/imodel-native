@@ -91,16 +91,12 @@ synchronized id-administration server, enforced outside of the scope of BeSQLite
 created locally and require a connection to the (one, globally administered) server to obtain a new value. Generally
 they are useful for "rarely changed but often used" ids such as styles and fonts, etc.
 
-@section OVRBeSQLiteProperties 4. Properties and Settings
+@section OVRBeSQLiteProperties 4. Properties
 
 Every BeSQlite database has a table named "be_Prop" that can be used to save name-id-value triplets, referred to as
 Properties. Properties are often used for storing ad-hoc values that don't warrant the creation of a specific
 class/table. The "name" for a Property is defined by a #PropertySpec that includes a two-part namespace/name to uniquely
 identify the property. The id for a Property is also a two-part majorId/subId pair to permit arrays.
-
-A PropertySpec has a flag that indicates that it is a "Setting." When Settings are changed, their value remains in
-effect only for the duration of the session, unless an explicit call to #Db::SaveSettings is made. If the database is
-closed without a call to Db::SaveSettings, the changes are not saved.
 
 @section OVRBeSQLiteProperties 5. Briefcase Local Values
 
@@ -1894,11 +1890,6 @@ public:
 //! and a flag indicating how the property is to be transacted. The combination of Name and Namespace must be unique. The Namespace part
 //! identifies a group of Properties that are related somehow. The Name part specifies the Property's meaning within the Namespace. When instances of properties
 //! are saved or queried, they are identified by two ids (called "Id" and "SubId"), forming a 2 dimensional array of instances of a given PropertySpec.
-//! <p>
-//! <h2>Settings Properties</h2>
-//! If a PropertySpec indicates txnMode=TXN_MODE_Setting, then changes to its values are held in memory and are not saved to the database unless/until
-//! Db::SaveSettings is called. If the Db is closed without a call to Db::SaveSettings, the changes are lost. Note that QueryProperty will
-//! always return the most recent value of a setting, even if it hasn't be saved persistently yet.
 //! <h2>Cached Properties</h2>
 //! Some properties hold values that are accessed or changed frequently. While the property system is relatively efficient, its primary goal is
 //! not access speed, and does not use any memory except while accessing properties. By specifying txnMode=TXN_MODE_Cached, a property's value will
@@ -1920,7 +1911,7 @@ public:
         Yes=1
     };
 
-    enum class Mode {Normal=0, Setting=1, Cached=2,};
+    enum class Mode {Normal=0, Cached=2,};
 
 private:
     Mode m_mode;
@@ -1940,13 +1931,12 @@ public:
     //! @note name and namespace should always point to static strings.
     PropertySpec(Utf8CP name, Utf8CP nameSpace, Mode mode=Mode::Normal, Compress compress=Compress::Yes, bool saveIfNull=false) : m_name(name), m_namespace(nameSpace), m_compress(compress), m_mode(mode), m_saveIfNull(saveIfNull){}
 
-    //! Copy a PropertySpec, changing only the setting flag
+    //! Copy a PropertySpec, changing only the mode
     PropertySpec(PropertySpec const& other, Mode mode) {*this = other; m_mode=mode;}
 
     Utf8CP GetName() const {return m_name;}
     Utf8CP GetNamespace() const {return m_namespace;}
 
-    bool IsSetting() const {return Mode::Setting == m_mode;}    //!< Determine whether this PropertySpec refers to a setting or not.
     bool IsCached()  const {return Mode::Cached == m_mode;}     //!< Determine whether this PropertySpec is cached or not.
     bool SaveIfNull() const {return m_saveIfNull;}              //!< Determine whether this PropertySpec saves NULL values or not.
     bool IsCompress() const {return Compress::Yes==m_compress;} //!< Determine whether this PropertySpec requests to compress or not.
@@ -2119,8 +2109,6 @@ protected:
     typedef bvector<Savepoint*> DbTxns;
     typedef DbTxns::iterator DbTxnIter;
 
-    bool m_settingsTableCreated;
-    bool m_settingsDirty;
     bool m_allowImplicitTxns;
     bool m_inCommit;
     mutable bool m_readonly;
@@ -2140,7 +2128,7 @@ protected:
     ~DbFile();
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
-    DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp);
+    DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl);
     DbResult SaveCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId, Utf8CP stringData, void const* value, uint32_t size) const;
     struct CachedPropertyMap& GetCachedPropMap() const;
     struct CachedPropertyValue& GetCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const;
@@ -2156,7 +2144,6 @@ protected:
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryProperty(void* value, uint32_t propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
-    BE_SQLITE_EXPORT void SaveSettings();
     BE_SQLITE_EXPORT DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId);
     BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
@@ -2171,8 +2158,6 @@ public:
     Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
     int OnCommit();
 
-    bool UseSettingsTable(PropertySpecCR spec) const;
-    void OnSettingsDirtied() {m_settingsDirty=true;}
     bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
     SqlDbP GetSqlDb() const {return m_sqlDb;}
 };
@@ -2414,8 +2399,7 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     virtual DbResult _OnDbCreated(CreateParams const& params) {return BE_SQLITE_OK;}
 
-    //!< override to perform additional processing on save settings
-    //! @note implementers should always forward this call to their superclass.
+    //! @deprecated
     virtual void _OnSaveSettings() {}
 
     //! override to perform additional processing when Db is opened
@@ -2787,10 +2771,8 @@ public:
     //! @return BE_SQLITE_DONE if the property was either deleted or did not exist, error code otherwise.
     DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId) {return m_dbFile->DeleteProperties(spec, majorId);}
 
-    //! Make any previous changes to settings properties part of the current transaction. They will be written to disk if/when the transaction is committed.
-    //! Unless this method is called after changes are made to setting properties, the changes are held in memory only and not saved to disk.
-    //! @note This method does *not* commit the current transaction. You must call SaveChanges to write the settings changes to disk.
-    BE_SQLITE_EXPORT void SaveSettings();
+    //! @deprecated
+    void SaveSettings() {}
     //! @}
 
     //! @name BriefcaseLocalValue
@@ -2968,7 +2950,6 @@ public:
     //! @note If this Db already has a ChangeTracker active, the new one replaces it.
     BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker* tracker);
 
-    BE_SQLITE_EXPORT bool IsSettingProperty(Utf8CP space, Utf8CP name, uint64_t id, uint64_t subId) const;
     Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
 
     //! Check if the Db is at or beyond its expiration date.

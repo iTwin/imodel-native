@@ -13,7 +13,7 @@
 
 #include "SQLite/sqlite3.h"
 
-#define STREAM_PAGE_BYTE_SIZE 2048
+#define STREAM_PAGE_BYTE_SIZE 64 * 1024
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
 USING_NAMESPACE_BENTLEY
@@ -290,10 +290,14 @@ static int filterTableCallback(void *pCtx, Utf8CP tableName) {return (int) ((Cha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::_ApplyChanges(DbR db, Rebase* rebase)
+DbResult ChangeSet::_ApplyChanges(DbR db, Rebase* rebase, bool invert)
     {
+    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+    if (invert) 
+        flags |= SQLITE_CHANGESETAPPLY_INVERT;
+
     return (DbResult) sqlite3changeset_apply_v2(db.GetSqlDb(), m_size, m_changeset, filterTableCallback, conflictCallback, this, 
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,10 +321,11 @@ DbResult ChangeSet::ConcatenateWith(ChangeSet const& second)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Changes::Changes(ChangeSet const& changeSet)
+Changes::Changes(ChangeSet const& changeSet, bool invert)
     {
     m_data = (void*) changeSet.GetData();
     m_size = changeSet.GetSize();
+    m_invert = invert;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -346,10 +351,10 @@ Changes::Change Changes::begin() const
     Finalize();
 
     if (nullptr != m_data)
-        sqlite3changeset_start(&m_iter, m_size, m_data);
+        sqlite3changeset_start_v2(&m_iter, m_size, m_data, m_invert ? SQLITE_CHANGESETSTART_INVERT : 0);
 
     if (nullptr != m_changeStream)
-        sqlite3changeset_start_strm(&m_iter, ChangeStream::InputCallback, (void*) m_changeStream);
+        sqlite3changeset_start_v2_strm(&m_iter, ChangeStream::InputCallback, (void*) m_changeStream, m_invert ? SQLITE_CHANGESETSTART_INVERT : 0);
 
     if (nullptr == m_iter)
         return Change(0, false);
@@ -573,7 +578,7 @@ void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLeve
 
     bset<Utf8String> tablesSeen;
 
-    Changes changes(*const_cast<ChangeSet*>(this));
+    Changes changes(*const_cast<ChangeSet*>(this), false);
     for (auto& change : changes)
         {
         change.Dump(db, isPatchSet, tablesSeen, detailLevel);
@@ -682,76 +687,10 @@ DbResult ChangeSet::_FromChangeGroup(ChangeGroupCR changegroup)
 
 /*---------------------------------------------------------------------------------**//**
 * This method is called whenever an update to a row in the property table is reversed (that is, undo or abandon changes).
-* Normal properties do not need any special treatment. But, "Settings" are not supposed to be affected by undo.
-* However the undo operation *is* supposed to reverse the effect of "SaveSettings". So,
-* if someone changes setting, then calls SaveSettings/SaveChanges, and then calls "undo", the setting should remain in the
-* post-changed state in memory, but that change should *not* saved to disk. If they call SaveSettings again, the change
-* will be saved, again. 
-* To facilitate that, we first note that the persistent be_Props table has been rolled
-* back to the pre-changed state. To get the post-changed value we look at the "old" values in the Change object.
-* We save that state into the temporary settings table so it holds the post-changed values.
-* Things are a bit tricky in that the Change object only holds the columns that are modified. We therefore have
-* to read the current state of the persistent be_Props table to get the unchanged columns.
-* Note: Redo does not need any special treatment because it simply reinstates what we already put back in undo. This
-* method is only called for undo or abandon changes.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Change::OnPropertyUpdateReversed(Db& db) const
     {
-    Utf8CP space= GetOldValue(0).GetValueText();
-    Utf8CP name = GetOldValue(1).GetValueText();
-    uint64_t id = GetOldValue(2).GetValueInt64();
-    uint64_t subid = GetOldValue(3).GetValueInt();
-
-    // since the "TxnMode" column will never be in the changeset (you're not allowed to change it), we have to query to
-    // determine whether this is setting property or not.
-    if (!db.IsSettingProperty(space, name, id, subid))
-        return;
-
-    // first get the values from the current (reversed) state of the row
-    Statement selectStmt;
-    DbResult rc = selectStmt.Prepare(db, "SELECT RawSize,Data,StrData FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=? AND Id=? AND SubId=?");
-    selectStmt.BindText(1, space, Statement::MakeCopy::No);
-    selectStmt.BindText(2, name, Statement::MakeCopy::No);
-    selectStmt.BindInt64(3, id);
-    selectStmt.BindInt64(4, subid);
-    rc = selectStmt.Step();
-
-    // turn the name/namespace into a property spec. Note that we tested above that this is a setting.
-    PropertySpec spec(name, space, PropertySpec::Mode::Setting);
-
-    // get the old values, from the Change object if they were changed. Otherwise, they weren't changed and the current value is correct.
-    DbValue str = GetOldValue(5);
-    Utf8CP strVal = str.IsValid() ? str.GetValueText() : (selectStmt.IsColumnNull(2) ? nullptr : selectStmt.GetValueText(2));
-
-    DbValue raw = GetOldValue(6);
-    int rawSize = raw.IsValid() ? raw.GetValueInt() : selectStmt.GetValueInt(0);
-
-    DbValue data = GetOldValue(7);
-    void const* dataPtr = data.IsValid() ? data.GetValueBlob() : (selectStmt.IsColumnNull(1) ? nullptr : selectStmt.GetValueBlob(1));
-    int dataSize = data.IsValid() ? data.GetValueBytes() : (selectStmt.IsColumnNull(1) ? 0 : selectStmt.GetColumnBytes(1));
-
-    // Save the post-changed version of the setting into the temporary table. Note that we can't just call the SaveProperty
-    // method because it attempts to compress, and the values we have are already (potentially) compressed.
-    CachedStatementPtr stmt;
-    db.GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TEMP_TABLE_UNIQUE(BEDB_TABLE_Property) " (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) VALUES(?,?,?,?,?,?,?,?)");
-    stmt->BindText(1, space, Statement::MakeCopy::No);
-    stmt->BindText(2, name, Statement::MakeCopy::No);
-    stmt->BindInt64(3, id);
-    stmt->BindInt64(4, subid);
-    stmt->BindInt(5, 1);
-
-    if (0 != rawSize)
-        stmt->BindInt(6, rawSize);
-    if (nullptr != dataPtr)
-        stmt->BindBlob(7, dataPtr, dataSize, Statement::MakeCopy::No);
-    if (nullptr != strVal)
-        stmt->BindText(8, strVal, Statement::MakeCopy::No);
-
-    rc = stmt->Step(); // do the insert/replace
-    BeAssert(rc==BE_SQLITE_DONE);
-
-    db.GetDbFile()->OnSettingsDirtied();    // save the fact that we have data in the temporary settings table
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -822,6 +761,15 @@ DbResult ChangeStream::ToChangeGroup(ChangeGroup& changeGroup)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Affan.Khan                        10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChangeStream::_IsEmpty() const
+    {
+    Changes changes = const_cast<ChangeStream*>(this)->GetChanges(false); 
+    return changes.begin() == changes.end(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
@@ -844,10 +792,14 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::_ApplyChanges(DbR db, Rebase* rebase)
+DbResult ChangeStream::_ApplyChanges(DbR db, Rebase* rebase, bool invert)
     {
+    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+    if (invert) 
+        flags |= SQLITE_CHANGESETAPPLY_INVERT;
+
     DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this,
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, flags);
     _Reset();
     return result;
     }

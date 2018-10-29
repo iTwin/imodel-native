@@ -176,22 +176,22 @@ private:
     int    m_size = 0;
     void*  m_data = nullptr;
     mutable SqlChangesetIterP m_iter = 0;
-
+    bool m_invert = false;
     void Finalize() const;
 
 public:
     //! Construct an iterator for a ChangeSet
-    BE_SQLITE_EXPORT explicit Changes(ChangeSet const& changeSet);
+    BE_SQLITE_EXPORT explicit Changes(ChangeSet const& changeSet, bool invert);
 
     //! Construct an iterator for a ChangeStream
     //! @remarks The ChangeStream needs to implement _InputPage to send the stream
-    explicit Changes(ChangeStream& changeStream) : m_changeStream(&changeStream) {}
+    Changes(ChangeStream& changeStream, bool invert) : m_changeStream(&changeStream), m_invert(invert) {}
 
     //! Construct an iterator for a page of changes in a ChangeStream
-    Changes(void* data, int size) : m_data(data), m_size(size) {}
+    Changes(void* data, int size, bool invert) : m_data(data), m_size(size), m_invert(invert)  {}
 
     //! Copy constructor
-    Changes(Changes const& other) : m_data(other.m_data), m_size(other.m_size), m_changeStream(other.m_changeStream), m_iter(0) {}
+    Changes(Changes const& other) : m_data(other.m_data), m_size(other.m_size), m_changeStream(other.m_changeStream), m_iter(0), m_invert(other.m_invert) {}
 
     BE_SQLITE_EXPORT ~Changes();
 
@@ -345,9 +345,9 @@ public:
 private:
     virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) = 0;
     virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) = 0;
-    virtual DbResult _ApplyChanges(DbR db, Rebase* rebase) = 0;
-    virtual Changes _GetChanges() = 0;
-
+    virtual DbResult _ApplyChanges(DbR db, Rebase* rebase, bool invert) = 0;
+    virtual Changes _GetChanges(bool invert) = 0;
+    virtual bool _IsEmpty() const = 0;
 protected:
     ~IChangeSet() = default;
     
@@ -379,15 +379,21 @@ public:
     //! Apply all of the changes in this IChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
     //! @param[in] rebase a Rebase object to record conflict resolutions
+    //! @param[in] invert invert the changeset and apply
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _InputPage to send the stream. 
     //! If the apply fails, it's upto the caller to call AbandonChanges() to abandon the 
     //! transaction containing partially applied changes. 
-    DbResult ApplyChanges(DbR db, Rebase* rebase=nullptr) {return _ApplyChanges(db, rebase);}
+    DbResult ApplyChanges(DbR db, Rebase* rebase = nullptr, bool invert = false) {return _ApplyChanges(db, rebase, invert);}
 
     //! Returns a Changes object for iterating over the changes contained within this IChangeSet
+    //! @param[in] invert reverse the changeset when interating
     //! @remarks If using a ChangeStream, implement _InputPage to send the stream
-    Changes GetChanges() {return _GetChanges();}
+    Changes GetChanges(bool invert = false) {return _GetChanges(invert);}
+
+    //! Returns true if change is not empty
+    bool IsEmpty() const {return _IsEmpty();}
+
 };
 
 //=======================================================================================
@@ -415,9 +421,9 @@ private:
 
     BE_SQLITE_EXPORT DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override final;
     BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
-    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db, Rebase*) override final;
-    Changes _GetChanges() override final {return Changes(*this);}
-
+    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db, Rebase*, bool) override final;
+    bool _IsEmpty() const override final { return !m_changeset || !m_size; }
+    Changes _GetChanges(bool invert) override final {return Changes(*this, invert);}    
 public:
     //! construct a blank, empty ChangeSet
     ChangeSet() {m_size=0; m_changeset=nullptr;}
@@ -484,8 +490,9 @@ private:
 
     BE_SQLITE_EXPORT DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override final;
     BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
-    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db, Rebase*) override final;
-    Changes _GetChanges() override final {return Changes(*this);}
+    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db, Rebase*, bool) override final;
+    BE_SQLITE_EXPORT bool _IsEmpty() const override final;
+    Changes _GetChanges(bool invert) override final {return Changes(*this, invert);}
 
     //! Application implements this to supply input to the system. 
     //! @param[out] pData Buffer to copy data into. 
