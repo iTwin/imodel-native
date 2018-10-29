@@ -54,7 +54,7 @@ private:
     BentleyApi::Dgn::DrawPurpose m_drawPurpose;
     DMatrix4d     m_localToViewTransformation;
     DRange3d      m_range;
-    bset<__int64> m_ancestorsOfCorrectNodes;
+    bset<int64_t> m_ancestorsOfCorrectNodes;
     
 
     void AccumulateAncestorNodes(IScalableMeshNodePtr& parentNode)
@@ -102,7 +102,7 @@ public:
         return 0;
         }    
 
-    bset<__int64>& GetAncestors()
+    bset<int64_t>& GetAncestors()
         {
         if (m_ancestorsOfCorrectNodes.size() == 0 && m_meshNodes.size() != 0)
             { 
@@ -442,9 +442,9 @@ private:
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
     
-    Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo();
+    Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo() override;
 
-    void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range);
+    void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range) override;
 
 protected:
     struct Properties
@@ -469,7 +469,7 @@ protected:
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
 
-    virtual bool _IsMultiResolution() const { return true; };
+    virtual bool _IsMultiResolution() const override { return true; };
     BentleyApi::AxisAlignedBox3d _GetRange() const override;
     SCALABLEMESH_SCHEMA_EXPORT BentleyApi::AxisAlignedBox3d _QueryModelRange() const override;
 

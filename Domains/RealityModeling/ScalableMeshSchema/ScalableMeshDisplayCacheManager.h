@@ -2,7 +2,7 @@
 #include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 #include <ScalableMeshSchema/ExportMacros.h>
 #include <ScalableMesh/IScalableMesh.h>
-#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 #define QV_NO_MSTN_TYPES
 
 #include <DgnPlatform/Render.h>
@@ -39,7 +39,7 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
         Dgn::Render::SystemP m_renderSys;
         bool m_resourcesOutOfDate;
 
-        virtual uint32_t _GetExcessiveRefCountThreshold() const { return 4000000000; }
+        virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 4000000000; }
 
     public:
 
@@ -76,7 +76,7 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         virtual BentleyStatus _DeleteFromVideoMemory(SmCachedDisplayTexture* cachedDisplayTex) override { return SUCCESS; }
 
-        virtual bool _IsUsingVideoMemory() { return false;  }
+        virtual bool _IsUsingVideoMemory() override { return false;  }
 
         //virtual void _SetCacheDirty(bool isDirty) override;
         void SetRenderSys(Dgn::Render::SystemP renderSys);

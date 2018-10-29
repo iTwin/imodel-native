@@ -1,5 +1,5 @@
 #include "ScalableMeshSchemaPCH.h"
-#include <ScalableMeshSchema\ScalableMeshHandler.h>
+#include <ScalableMeshSchema/ScalableMeshHandler.h>
 #include "ScalableMeshDisplayCacheManager.h"
 #include <mutex>
 //#include <QuickVision/qvision.h>
