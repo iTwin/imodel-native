@@ -2457,6 +2457,10 @@ void Converter::RecordConversionResultsInSyncInfo(ElementConversionResults& resu
     if (IChangeDetector::ChangeType::Insert == updatePlan.m_changeType)
         {
         m_syncInfo.InsertElement(results.m_mapping);
+
+        //TODO Provenance of an element in an iModel.
+        //if (_WantProvenanceInBim())
+        //    DgnV8ElementProvenance::Insert(elementId, v8mm.GetV8FileSyncInfoId().GetValue(), v8mm.GetV8ModelId().GetValue(), v8eh.GetElementId(), GetDgnDb());
         }
     else
         {

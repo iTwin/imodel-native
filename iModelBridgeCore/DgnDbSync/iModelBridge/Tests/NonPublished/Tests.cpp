@@ -509,7 +509,7 @@ struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
 
         TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) : TestIModelHubClientForBridges(testWorkDir) {}
 
-        virtual void CaptureChangeSet(DgnDbP db) override;
+        virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db) override;
     };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -644,30 +644,31 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
+DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
     {
-    ASSERT_TRUE(db != nullptr);
+    BeAssert(db != nullptr);
 
-    ASSERT_TRUE(db->IsBriefcase());
+    BeAssert(db->IsBriefcase());
 
-    ASSERT_EQ(m_expect.haveTxns, anyTxnsInFile(*db));
+    BeAssert(m_expect.haveTxns == anyTxnsInFile(*db));
 
     DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
 
     if (!changeSet.IsValid())
         {
-        ASSERT_TRUE(!m_expect.haveTxns);
-        return;
+        BeAssert(!m_expect.haveTxns);
+        return changeSet;
         }
 
-    ASSERT_TRUE(m_expect.haveTxns);
+    BeAssert(m_expect.haveTxns);
 
-    ASSERT_TRUE(changeSet.IsValid());
-    ASSERT_EQ(Dgn::RevisionStatus::Success, db->Revisions().FinishCreateRevision());
-    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
+    BeAssert(changeSet.IsValid());
+    BeAssert(Dgn::RevisionStatus::Success ==  db->Revisions().FinishCreateRevision());
+    BeAssert(BE_SQLITE_OK == db->SaveChanges());
 
     // *** TBD: test for expected changes
     changeSet->Dump(*db);
+    return changeSet;
     }
 
 /*---------------------------------------------------------------------------------**//**

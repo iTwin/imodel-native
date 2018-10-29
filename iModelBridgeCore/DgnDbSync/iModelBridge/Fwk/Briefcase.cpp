@@ -441,7 +441,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
         {
-        GetLogger().error("Briefcase_PullAndMerge failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()");
+        GetLogger().error("Briefcase_PullMergePush failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()");
         BeAssert(false);
         return BSIERROR;
         }
@@ -480,43 +480,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
         }
 
     SetSyncState(SyncState::Pushed);
-
+    LogPerformance(pullpushTimer, "Briefcase_PullMergePush to iModelHub");
     GetLogger().infov("PullMergePush %s : Done", m_briefcaseBasename.c_str());
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_PullAndMerge()
-    {
-    m_lastServerError = EffectiveServerError::Unknown;
-
-    GetProgressMeter().SetCurrentStepName("PullAndMerge");
-    GetLogger().infov("PullAndMerge %s", m_briefcaseBasename.c_str());
-
-    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
-        {
-        GetLogger().error("Briefcase_PullAndMerge failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()");
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    if (BSISUCCESS != m_client->OpenBriefcase(*m_briefcaseDgnDb))
-        {
-        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
-        return BSIERROR;
-        }
-
-    auto status = m_client->PullAndMerge();
-
-    m_client->CloseBriefcase();
-
-    if (BSISUCCESS != status)
-        {
-        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
-        return BSIERROR;
-        }
 
     return BSISUCCESS;
     }
@@ -542,6 +507,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
     if (!m_briefcaseDgnDb.IsValid())
         return BSIERROR;
 
+    StopWatch releaseLockTimer(true);
     GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");
 
     DgnLockSet toRelease;
@@ -574,7 +540,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
         }
 
     SetSyncState(SyncState::Initial);
-
+    LogPerformance(releaseLockTimer, "Briefcase_ReleaseAllPublicLocks to iModelHub");
     return BSISUCCESS;
     }
 

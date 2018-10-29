@@ -283,7 +283,6 @@ protected:
     void Briefcase_MakeBriefcaseName(); // Sets m_outputName
     BentleyStatus Briefcase_AcquireBriefcase();
     BentleyStatus Briefcase_AcquireExclusiveLocks();
-    BentleyStatus Briefcase_PullAndMerge();
     BentleyStatus Briefcase_PullMergePush(Utf8CP);
     BentleyStatus Briefcase_ReleaseAllPublicLocks();
     //! @}
@@ -307,8 +306,9 @@ protected:
     BentleyStatus SetupDmsFiles();
     int ProcessSchemaChange();
     int StoreHeaderInformation();
-    void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...);
+    
 public:
+
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();
 
@@ -340,6 +340,9 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
+
+    //!Internal function.
+    static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...);
 };
 
 END_BENTLEY_DGN_NAMESPACE
