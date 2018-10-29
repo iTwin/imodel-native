@@ -962,6 +962,8 @@ napi_status napi_typeof(napi_env env,
         break;
       case kJSTypeObject:
         *result = napi_object;
+        if (JSObjectIsFunction(ctx, const_cast<JSObjectRef>(value)))
+            *result = napi_function;
         break;
       }
 
@@ -1831,9 +1833,22 @@ napi_status napi_is_arraybuffer(napi_env env, napi_value value, bool* result) {
   return napi_clear_last_error(env);
 }
 
+struct NapiCallBackInfo {
+    napi_finalize m_finalize_cb;
+    void* m_finalize_hint;
+    napi_env m_env;
+};
+
 static void jsTypedArrayBytesDeallocator(void* bytes, void* deallocatorContext) {
-    free(bytes);
+    NapiCallBackInfo* cbInfo = static_cast<NapiCallBackInfo*>(deallocatorContext);
+    if (cbInfo) {
+        cbInfo->m_finalize_cb(cbInfo->m_env, bytes, cbInfo->m_finalize_hint);
+        delete cbInfo;
+    } else {
+        free(bytes);
+    }
 }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1866,8 +1881,32 @@ napi_status napi_create_external_arraybuffer(napi_env env,
                                              napi_value* result) {
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
-    
-  return GET_RETURN_STATUS(env);
+  JSContextRef ctx = env->GetContext();
+    void* data;
+    if (!finalize_cb) {
+        data = malloc(byte_length);
+        memcpy(data, external_data, byte_length);
+        *result = JSObjectMakeArrayBufferWithBytesNoCopy(ctx,
+                                                         data,
+                                                         byte_length,
+                                                         jsTypedArrayBytesDeallocator,
+                                                         nullptr,
+                                                         nullptr);
+    } else {
+        NapiCallBackInfo* cbInfo = new NapiCallBackInfo();
+        cbInfo->m_finalize_cb = finalize_cb;
+        cbInfo->m_finalize_hint = finalize_hint;
+        cbInfo->m_env = env;
+        *result = JSObjectMakeArrayBufferWithBytesNoCopy(ctx,
+                                                         external_data,
+                                                         byte_length,
+                                                         jsTypedArrayBytesDeallocator,
+                                                         cbInfo,
+                                                         nullptr);
+    }
+
+
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1880,9 +1919,10 @@ napi_status napi_get_arraybuffer_info(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, arraybuffer);
 
-//  JSContextRef ctx = env->GetContext();
+  JSContextRef ctx = env->GetContext();
   // TODO
-
+    *data = JSObjectGetArrayBufferBytesPtr(ctx, const_cast<JSObjectRef>(arraybuffer), nullptr);
+    *byte_length = JSObjectGetArrayBufferByteLength(ctx, const_cast<JSObjectRef>(arraybuffer), nullptr);
   return napi_clear_last_error(env);
 }
 
@@ -1896,9 +1936,7 @@ napi_status napi_is_typedarray(napi_env env, napi_value value, bool* result) {
 
 //  JSContextRef ctx = env->GetContext();
   // TODO
- 
-  return napi_clear_last_error(env);
-}
+  return napi_clear_last_error(env);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1913,7 +1951,7 @@ napi_status napi_create_typedarray(napi_env env,
   CHECK_ARG(env, arraybuffer);
   CHECK_ARG(env, result);
 
- JSContextRef ctx = env->GetContext();
+  JSContextRef ctx = env->GetContext();
     JSTypedArrayType targetType;
     switch (type) {
         case napi_int8_array: targetType = kJSTypedArrayTypeInt8Array; break;
@@ -1943,11 +1981,36 @@ napi_status napi_get_typedarray_info(napi_env env,
                                      void** data,
                                      napi_value* arraybuffer,
                                      size_t* byte_offset) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, typedarray);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+    CHECK_ENV(env);
+    CHECK_ARG(env, typedarray);
+    JSContextRef ctx = env->GetContext();
+    if (type) {
+        JSTypedArrayType jstype = JSValueGetTypedArrayType(ctx, const_cast<JSObjectRef>(typedarray), nullptr);
+        switch (jstype) {
+            case kJSTypedArrayTypeInt8Array: *type = napi_int8_array ; break;
+            case kJSTypedArrayTypeUint8Array: *type = napi_uint8_array; break;
+            case kJSTypedArrayTypeUint8ClampedArray: *type = napi_uint8_clamped_array ; break;
+            case kJSTypedArrayTypeInt16Array: *type = napi_int16_array; break;
+            case kJSTypedArrayTypeUint16Array: *type = napi_uint16_array; break;
+            case kJSTypedArrayTypeInt32Array: *type = napi_int32_array; break;
+            case kJSTypedArrayTypeUint32Array: *type = napi_uint32_array; break;
+            case kJSTypedArrayTypeFloat32Array: *type = napi_float32_array; break;
+            case kJSTypedArrayTypeFloat64Array: *type = napi_float64_array; break;
+            default:
+                return napi_set_last_error(env, napi_invalid_arg);
+        }
+    }
+    if (length)
+        *length = JSObjectGetTypedArrayLength(ctx, const_cast<JSObjectRef>(typedarray), nullptr);
+    
+    if (arraybuffer)
+        *arraybuffer = JSObjectGetTypedArrayBuffer(ctx, const_cast<JSObjectRef>(typedarray), nullptr);
+    
+    if (byte_offset)
+        *byte_offset = JSObjectGetTypedArrayByteOffset(ctx, const_cast<JSObjectRef>(typedarray), nullptr);
+    
+    if (data)
+        *data = JSObjectGetTypedArrayBytesPtr(ctx, const_cast<JSObjectRef>(typedarray), nullptr);
 
   return napi_clear_last_error(env);
 }

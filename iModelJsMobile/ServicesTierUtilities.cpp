@@ -924,11 +924,11 @@ MobileGateway::MobileGateway()
             {
             if (event == WebSockets::Event::Message)
                 {
-                BeAssert (message->get_opcode() == websocketpp::frame::opcode::value::text);
-
+                BeAssert (message->get_opcode() == websocketpp::frame::opcode::value::binary);
                 auto& env = Host::GetInstance().GetJsRuntime().Env();
                 Napi::HandleScope scope (env);
-                auto payload = Napi::String::New (env, message->get_payload());
+                std::string const& data = message->get_payload();
+                auto payload = Napi::ArrayBuffer::New (env, (void*)data.c_str(), data.size());
                 
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS)
                 env.Global().Get("__imodeljs_mobilegateway_handler__").As<Napi::Function>().Call({ payload }); //WIP: napi add ref not implemented yet for jsc
@@ -938,72 +938,15 @@ MobileGateway::MobileGateway()
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
             {
-#if defined(PRINT_STAT)
-                int count = 40;
-                int charCount = c < count?c:count;
-                std::string str1(s, charCount);
-                std::string str2(s+c-charCount,charCount);
-                printf("SEND> [%zu] |%s|...|%s|\n",c, str1.c_str(),str2.c_str());
-#endif
-            const size_t packe_size = 1024 * 100;
-            if(c > packe_size && false)
+            auto writeResult = m_client->Write (s, c, [&] (Uv::StatusCR status)
                 {
-                const size_t sz = c / packe_size;
-                const size_t left_over = c - sz * packe_size;
-                for(size_t i = 0 ; i < sz ; ++i)
+                if (status.IsError())
                     {
-                    auto writeResult = m_client->Write( s + i * packe_size, packe_size,
-                        [&] (Uv::StatusCR status)
-                           {
-                               if (status.IsError())
-                               {
-#if defined(PRINT_STAT)
-                                   printf("Error: %s\n ", uv_strerror(status.GetCode()));
-                                   printf("after queue size = %zu \n", m_client->GetStreamPointer()->write_queue_size);
-#endif
-                                   BeAssert (!status.IsError());
-
-                               }
-                           });
-                        
-                    BeAssert (!writeResult.IsError());
+                    BeAssert (!status.IsError());
                     }
-                    
-                if (left_over > 0)
-                    {
-                    auto writeResult = m_client->Write( s + sz * packe_size, left_over,
-                        [&] (Uv::StatusCR status)
-                            {
-                                if (status.IsError())
-                                {
-#if defined(PRINT_STAT)
-                                    printf("Error: %s\n ", uv_strerror(status.GetCode()));
-                                    printf("after queue size = %zu \n", m_client->GetStreamPointer()->write_queue_size);
-#endif
-                                    BeAssert (!status.IsError());
-                                }
-                            });
-                    
-                    BeAssert (!writeResult.IsError());
-                    }
-                }
-            else
-                {
-                auto writeResult = m_client->Write (s, c, [&] (Uv::StatusCR status)
-                    {
-                    if (status.IsError())
-                        {
-#if defined(PRINT_STAT)
-                         printf("Error: %s\n ", uv_strerror(status.GetCode()));
-                         printf("after queue size = %zu \n", m_client->GetStreamPointer()->write_queue_size);
-#endif
-                            BeAssert (!status.IsError());
-                        }
-                    });
-                    
-                BeAssert (!writeResult.IsError());
-                }
+                });
                 
+            BeAssert (!writeResult.IsError());
             return c;
             });
 
@@ -1014,10 +957,8 @@ MobileGateway::MobileGateway()
                 return false;
 
             BeAssert (!status.IsError());
-
             auto processed = m_connection->Process (buffer.base, 0, nread);
             BeAssert (processed);
-
             return true;
             });
 
@@ -1041,14 +982,32 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
         {
         BeAssert (m_client.IsValid());
         JS_CALLBACK_REQUIRE_N_ARGS (1);
-
-        auto arg = JS_CALLBACK_GET_STRING (0);
-        auto payload = arg.Utf8Value();
-        if(!m_connection->Send (payload.c_str(), payload.length(), websocketpp::frame::opcode::value::text))
+        auto binArray = JS_CALLBACK_GET_ARRAY (0);
+        size_t totalBytes = 0;
+        for(int i=0; i < binArray.Length(); ++i) {
+            Napi::Value val = binArray[i];
+            totalBytes += val.As<Napi::Uint8Array>().ByteLength();
+        }
+        
+        size_t pos = 0;
+        void* data = malloc (totalBytes);
+        for(int i=0; i < binArray.Length(); ++i) {
+            Napi::Value val = binArray[i];
+            Napi::Uint8Array intArray = val.As<Napi::Uint8Array>();
+            Napi::ArrayBuffer buffer = intArray.ArrayBuffer();
+            const size_t byteLength = intArray.ByteLength();
+            const size_t byteOffset = intArray.ByteOffset();
+            void* target = (void*)((unsigned char*)data + pos);
+            void* source = (void*)((unsigned char*)buffer.Data() + byteOffset);
+            memcpy(target, source, byteLength);
+            pos += byteLength;
+        }
+        BeAssert(pos == totalBytes);
+        if(!m_connection->Send ((const char*)data, totalBytes, websocketpp::frame::opcode::value::binary))
             {
             BeAssert(false);
             }
-
+        free(data);
         return info.Env().Undefined();
         }));
 
