@@ -1255,6 +1255,9 @@ public:
     //! convert the auxiliary coordinate system for a view
     void ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, TransformCR, Utf8StringCR);
 
+    // Convert the map settings, if available
+    void ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewInfo, DgnV8ModelR v8Model);
+
     //! Convert a View
     BentleyStatus ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo, Utf8StringCR defaultName, Utf8StringCR defaultDescription, BentleyApi::TransformCR, ViewFactory&);
 

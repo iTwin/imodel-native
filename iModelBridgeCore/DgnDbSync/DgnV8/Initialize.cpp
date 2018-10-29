@@ -454,7 +454,14 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
         {
         Bentley::WChar  tmp[MAX_PATH];
         if (::GetTempPathW(MAX_PATH, tmp))
-            DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TMP", tmp);
+            {
+            BeFileName  dir(tmp);
+            dir.AppendToPath (L"\\Bentley\\DgnV8Converter");
+            if (dir.DoesPathExist() || BeFileName::CreateNewDirectory(dir.c_str()) == BeFileNameStatus::Success)
+                DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TMP", dir.c_str());
+            else
+                DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TMP", tmp);
+            }
         }
     }
 
