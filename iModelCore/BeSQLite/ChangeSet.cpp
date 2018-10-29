@@ -13,7 +13,7 @@
 
 #include "SQLite/sqlite3.h"
 
-#define STREAM_PAGE_BYTE_SIZE 2048
+#define STREAM_PAGE_BYTE_SIZE 64 * 1024
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
 USING_NAMESPACE_BENTLEY

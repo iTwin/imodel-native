@@ -9,6 +9,7 @@
 
 #define SQLITE_AMALGAMATION 1
 #define SQLITE_HAS_CODEC 1
+#define SQLITE_ENABLE_SESSION 1
 
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/BeLzma.h>
@@ -5184,6 +5185,10 @@ DbResult BeSQLiteLib::Initialize(BeFileNameCR tempDir, LogErrors logErrors)
 
     sqlite3_temp_directory = (char*) sqlite3_malloc((int) (tempDirUtf8.size()) + 1);
     strcpy(sqlite3_temp_directory, tempDirUtf8.c_str());
+
+    //Set streaming chuck size to 64KiB
+    const int streamChuckSize = 64 * 1024;
+    sqlite3session_config (SQLITE_SESSION_CONFIG_STRMSIZE, (void*)&streamChuckSize);
     return BE_SQLITE_OK;
     }
 
