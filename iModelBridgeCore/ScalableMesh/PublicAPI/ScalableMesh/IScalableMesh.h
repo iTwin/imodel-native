@@ -245,7 +245,7 @@ struct IScalableMesh :  IRefCounted
 
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) = 0;
 
-        virtual bool                               _GetClip(uint64_t clipID, ClipVectorPtr& clipData) = 0;
+        virtual bool                               _GetClip(uint64_t clipID, CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clipData) = 0;
 
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
@@ -463,7 +463,7 @@ struct IScalableMesh :  IRefCounted
 
         BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, bvector<DPoint3d>& clipData);
 
-        BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, ClipVectorPtr& clipData);
+        BENTLEY_SM_EXPORT bool                   GetClip(uint64_t clipID, CLIP_VECTOR_NAMESPACE::ClipVectorPtr& clipData);
 
         BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
 
