@@ -114,7 +114,6 @@
         <SubPart PartName="DgnPlatformDll"   PartFile="DgnPlatform"                          Repository="DgnPlatform" LibType="Static" />
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"  LibType="Static" />
         <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP"  LibType="Static" />
-       
         <SubPart PartName="CoreStatic"            PartFile="TerrainModelDgnDb"                         Repository="TerrainModel" LibType="Static" />      
         <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" LibType="Static" />
        

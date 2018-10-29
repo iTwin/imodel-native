@@ -404,7 +404,7 @@ void IScalableMeshSourceCreatorWorker::Impl::GetGenerationTasks(bvector<Generati
     
     IScalableMeshNodePtr meshRootNode(new ScalableMeshNode<DPoint3d>(rootNode));
             
-    uint64_t pointThreshold = 60000; 
+    uint64_t pointThreshold = 10000; 
     int childrenGroupingSize = 0;     
     int nbResolutions = (int)(pDataIndex->GetDepth() + 1);
 
