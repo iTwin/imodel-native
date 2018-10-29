@@ -78,6 +78,8 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
 
         virtual bool _IsUsingVideoMemory() { return false;  }
 
+        virtual bool _HasCompatibleSettings(SmCachedDisplayMesh* cachedDisplayMesh) override { assert(!"Not implemented");  return false; }
+
         //virtual void _SetCacheDirty(bool isDirty) override;
         void SetRenderSys(Dgn::Render::SystemP renderSys);
         bool IsDirty();
@@ -91,6 +93,8 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
             return true;
             //return m_renderSys != nullptr;
             }
+
+        
 
         ScalableMeshDisplayCacheManager();
 
