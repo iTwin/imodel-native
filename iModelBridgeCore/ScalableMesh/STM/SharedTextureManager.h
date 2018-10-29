@@ -16,10 +16,7 @@ struct SharedTextureManager
 
     ~SharedTextureManager()
         {
-        assert(m_texMap.size() == 0);
-        assert(m_texDataMap.size() == 0);
-        assert(m_texVideoMap.size() == 0);
-        
+             
         /*
         std::lock_guard<std::mutex> lock(m_texMutex);
         for (auto& data : m_texMap)
