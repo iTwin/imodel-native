@@ -3800,5 +3800,21 @@ void Converter::CheckForAndSaveChanges()
     m_dgndb->SaveChanges();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::_WantModelProvenanceInBim()
+    {
+    if (m_dgndb.IsNull())
+        return false;
+
+    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel))
+        return true;
+
+    if (m_dgndb->ColumnExists(DGN_TABLE_ProvenanceModel, "Transform"))
+        return true;
+        
+    return false;
+    }
 END_DGNDBSYNC_DGNV8_NAMESPACE
 
