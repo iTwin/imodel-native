@@ -3,11 +3,11 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
-    <Part Name="ProfilesDomainWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+    <!-- <Part Name="ProfilesDomainWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
         <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
         <SubProduct ProductName="ProfilesDomainTested"/>
-    </Part>
+    </Part> -->
 
     <Product Name="ProfilesDomainSDK">
         <SubPart PartName="ProfilesDomainDLL"/>
@@ -21,25 +21,25 @@
         <Directories DirectoryListName="ProfilesDomainTestDirs"/>
     </Product>
 
-    <Part Name="ProfilesDomainPublicAPI" BentleyBuildMakeFile="Profiles.prewire.mke" ApiNumber="B02">
+    <Part Name="ProfilesDomainPublicAPI" BentleyBuildMakeFile="Profiles/Profiles.prewire.mke" ApiNumber="B02">
         <Bindings>
-            <PublicAPI Domain="ProfilesDomain"/>
+            <PublicAPI Domain="Profiles"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/Profiles.ecschema.xml
             </Files>
-            <Directory SourceName="PublicAPI/ProfilesDomain" ProductDirectoryName="ProfilesDomainIncludes" />
+            <Directory SourceName="PublicAPI/Profiles" ProductDirectoryName="ProfilesDomainIncludes" />
         </Bindings>
     </Part>
 
-    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles.mke" ApiNumber="B02">
+    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/Profiles.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="ProfilesDomainPublicAPI"/>
         <Bindings>
             <Libs>
-                Delivery/$(libprefix)ProfilesDomain$(libext)
+                Delivery/$(libprefix)Profiles$(libext)
             </Libs>
             <Assemblies>
-                Delivery/$(shlibprefix)ProfilesDomain$(ApiNumber)$(shlibext)
+                Delivery/$(shlibprefix)Profiles$(ApiNumber)$(shlibext)
             </Assemblies>
             <!-- <Files ProductDirectoryName="Libs" >
                 Delivery/$(libprefix)StructuralDomain$(libext)
@@ -92,7 +92,7 @@
         <ProductDirectory Name="Libs"                            RelativeTo="ProfilesDomainRoot" Path=""/>
         <ProductDirectory Name="Assets"                          RelativeTo="ProfilesDomainRoot" Path="Assets"/>
         <ProductDirectory Name="Assets"                          LibType="static" Deliver="false" />
-        <ProductDirectory Name="ProfilesDomainIncludes"          RelativeTo="ProfilesDomainRoot" Path="Include/ProfilesDomain"/>
+        <ProductDirectory Name="ProfilesDomainIncludes"          RelativeTo="ProfilesDomainRoot" Path="Include/Profiles"/>
         <ProductDirectory Name="VendorNotices"                   RelativeTo="ProfilesDomainRoot" Path="VendorNotices"/>
         <ProductDirectory Name="VendorNotices"                   LibType="static" RelativeTo="ProfilesDomainRoot" Path="VendorNotices"/>
     </ProductDirectoryList>
