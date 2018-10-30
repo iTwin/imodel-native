@@ -15,6 +15,7 @@
 
 #define STREAM_PAGE_BYTE_SIZE 64 * 1024
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
+#define LOGCHANGESET (*NativeLogging::LoggingManager::GetLogger(L"Changeset"))
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -54,11 +55,11 @@ void DbSchemaChangeSet::AddDDL(Utf8CP ddl)
 void DbSchemaChangeSet::Dump(Utf8CP label) const
     {
     if (label)
-        LOG.infov("%s", label);
+        LOGCHANGESET.infov("%s", label);
 
     if (IsEmpty())
         {
-        LOG.info("Empty");
+        LOGCHANGESET.info("Empty");
         return;
         }
 
@@ -66,7 +67,7 @@ void DbSchemaChangeSet::Dump(Utf8CP label) const
     BeStringUtilities::Split(m_ddl.c_str(), ";", tokens);
     for (Utf8StringCR str : tokens)
         {
-        LOG.info(str.c_str());
+        LOGCHANGESET.info(str.c_str());
         }
     }
 
@@ -558,11 +559,11 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
         {
-        LOG.infov("Table: %s", tableName);
+        LOGCHANGESET.infov("Table: %s", tableName);
         tablesSeen.insert(tableName);
         }
 
-    LOG.info(FormatChange(db, tableName, opcode, indirect, detailLevel).c_str());
+    LOGCHANGESET.info(FormatChange(db, tableName, opcode, indirect, detailLevel).c_str());
 
     if ((detailLevel > 0) && (DbOpcode::Insert != opcode))
         DumpCurrentValuesOfChangedColumns(db);
@@ -574,7 +575,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLevel) const
     {
     if (label)
-        LOG.infov("%s", label);
+        LOGCHANGESET.infov("%s", label);
 
     bset<Utf8String> tablesSeen;
 
