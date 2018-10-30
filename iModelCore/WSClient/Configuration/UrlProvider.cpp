@@ -329,6 +329,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::IMSOpenID(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProductSettingsService(
+    "ProductSettingsService.RP",
+    "https://dev-connect-productsettingsservice.bentley.com",
+    "https://qa-connect-productsettingsservice.bentley.com",
+    "https://connect-productsettingsservice.bentley.com",
+    "https://qa-connect-productsettingsservice.bentley.com",
+    &s_urlRegistry
+    );
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
