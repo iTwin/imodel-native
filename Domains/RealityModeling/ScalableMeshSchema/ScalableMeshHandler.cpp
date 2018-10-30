@@ -2577,7 +2577,8 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 */
         }
 
-    db.SaveChanges();
+    // Leave it to iModelBridge to do SaveChanges; otherwise it breaks bridge's bulk operation.
+    // db.SaveChanges();
 
     return model.get();
     }
