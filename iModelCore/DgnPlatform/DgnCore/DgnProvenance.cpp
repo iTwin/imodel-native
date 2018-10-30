@@ -134,7 +134,7 @@ void DgnV8ModelProvenance::CreateTable(DgnDbR dgndb)
                       "V8ModelId INT,"//Maps to V8Id
                       "V8ModelName CHAR NOT NULL,"
                       "Transform BLOB,"
-                      "CONSTRAINT FileModelId UNIQUE(V8FileId, V8ModelId,Transform)"
+                      "CONSTRAINT FileModelId UNIQUE(ModelId, V8FileId, V8ModelId,Transform)"
                       );//Maps to V8Name
     dgndb.ExecuteSql("CREATE INDEX " DGN_TABLE_ProvenanceModel "_ModelId ON "  DGN_TABLE_ProvenanceModel "(ModelId)");
     }
