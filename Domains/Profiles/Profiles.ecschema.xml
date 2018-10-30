@@ -2,6 +2,12 @@
 <ECSchema schemaName="Profiles" alias="prf" description="EC Schema for Profiles" version="01.00.00" displayLabel="Profiles" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
 
+    <!-- Enumerations -->
+    <ECEnumeration typeName="DoubleLProfilePlacement" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="LLBB"/>
+        <ECEnumerator value="1" displayLabel="SLBB"/>
+    </ECEnumeration>
+
     <!-- Mixins -->
     <ECEntityClass typeName="ICustomProfile" modifier="Abstract" displayLabel="Custom Profile Mixin">
         <ECCustomAttributes>
@@ -352,5 +358,9 @@
         <Target multiplicity="(0..*)" roleLabel="is part of" polymorphic="true">
             <Class class="SinglePerimeterProfile" />
         </Target>
+        <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
+        <ECProperty propertyName="Offset" typeName="point2d" description="" />
+        <ECProperty propertyName="Rotation" typeName="double" description="" />
+        <ECProperty propertyName="CardinalPoint" typeName="point2d" description="" />
     </ECRelationshipClass>
 </ECSchema>
