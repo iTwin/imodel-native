@@ -8,6 +8,7 @@
 #include <iModelBridge/iModelBridge.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <iModelBridge/iModelBridgeFwk.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -34,7 +35,7 @@ struct iModelBridgeCallOpenCloseFunctions
 
     void CallOpenFunctions(DgnDbR db)
         {
-        Stopwatch stopWatch;
+        StopWatch stopWatch;
         m_bstatus = m_bridge._OnOpenBim(db);
         if (BSISUCCESS == m_bstatus)
             m_sstatus = m_bridge._OpenSource();
@@ -44,7 +45,7 @@ struct iModelBridgeCallOpenCloseFunctions
 
     void CallCloseFunctions()
         {
-        Stopwatch stopWatch;
+        StopWatch stopWatch;
         if (BSISUCCESS != m_bstatus)    // If I never opened the BIM, then don't make any callbacks
             return;
 

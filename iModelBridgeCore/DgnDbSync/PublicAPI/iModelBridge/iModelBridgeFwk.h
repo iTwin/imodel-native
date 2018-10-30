@@ -342,7 +342,25 @@ public:
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 
     //!Internal function.
-    static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...);
+    static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
+        {
+        stopWatch.Stop();
+        const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
+        NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger("iModelBridge.Performance");
+        if (NULL == logger)
+            return;
+
+        if (logger->isSeverityEnabled(severity))
+            {
+            va_list args;
+            va_start(args, description);
+            Utf8String formattedDescription;
+            formattedDescription.VSprintf(description, args);
+            va_end(args);
+
+            logger->messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
+            }
+        }
 };
 
 END_BENTLEY_DGN_NAMESPACE
