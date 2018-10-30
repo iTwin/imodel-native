@@ -1,0 +1,46 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Profiles/PublicAPI/CenterLineCShapeProfile.h $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+#include "ProfilesDefinitions.h"
+#include "CenteredProfile.h"
+#include "ProfileMixins.h"
+
+BEGIN_BENTLEY_PROFILES_NAMESPACE
+
+//=======================================================================================
+//! A C shaped Profile with rounded corners, similar to cold-formed steel C-shapes.
+//! @ingroup GROUP_Profiles
+//=======================================================================================
+struct CenterLineCShapeProfile : CenteredProfile, ICShapeProfile, ICenterLineProfile
+{
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CenterLineCShapeProfile, CenteredProfile);
+    friend struct CenterLineCShapeProfileHandler;
+
+protected:
+    explicit CenterLineCShapeProfile(CreateParams const& params) : T_Super(params) {}
+
+protected:
+    virtual Dgn::DgnElementR _ICShapeProfileToDgnElement() override { return *this; }
+    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() override { return *this; }
+
+public:
+    DECLARE_PROFILES_QUERYCLASS_METHODS(CenterLineCShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CenterLineCShapeProfile)
+
+    PROFILES_EXPORT static CenterLineCShapeProfilePtr Create(/*TODO: args*/);
+
+public:
+    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_CenterLineCShapeProfile_FilletRadius); }
+    PROFILES_EXPORT void SetFilletRadius(double val);
+    double GetLipLength() const { return GetPropertyValueDouble(PRF_PROP_CenterLineCShapeProfile_LipLength); }
+    PROFILES_EXPORT void SetLipLength(double val);
+
+}; // CenterLineCShapeProfile
+
+END_BENTLEY_PROFILES_NAMESPACE

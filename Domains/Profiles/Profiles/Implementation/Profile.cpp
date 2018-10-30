@@ -1,0 +1,31 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Profiles/Implementation/Profile.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "ProfilesInternal.h"
+#include <Profiles\Profile.h>
+
+BEGIN_BENTLEY_PROFILES_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Profile::SetName(Utf8String val)
+    {
+    SetPropertyValue(PRF_PROP_Profile_Name, ECN::ECValue(val.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Profile::SetShape(IGeometryPtr val)
+    {
+    ECN::ECValue ecValue;
+    ecValue.SetIGeometry(*val);
+    SetPropertyValue(PRF_PROP_Profile_Shape, ecValue);
+    }
+
+END_BENTLEY_PROFILES_NAMESPACE
