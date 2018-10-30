@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/tests.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 programName = ProfilesDomainTests
@@ -22,8 +22,6 @@ BEGTEST_NAME=$(programName)
 BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
-TestsHeaders = $(baseDir)ProfilesDomainTests.h  $(baseDir)ProfilesTestUtils.h
-
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
 o = $(OutputRootDir)build/ProfilesDomainTests/$(programName)/
 
@@ -34,13 +32,11 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
 
-$(o)ProfilesTestUtils.obj       : $(BEGTEST_INPUT)ProfilesTestUtils.cpp       $(TestsHeaders) ${MultiCompileDepends}
+$(o)ProfilesDomainTestFixture.obj       : $(BEGTEST_INPUT)ProfilesDomainTestFixture.cpp ${MultiCompileDepends}
 
-$(o)ProfilesDomainTestFixture.obj     : $(BEGTEST_INPUT)ProfilesDomainTestFixture.cpp $(TestsHeaders) ${MultiCompileDepends}
+$(o)ProfilesDomainTestsMain.obj         : $(BEGTEST_INPUT)ProfilesDomainTestsMain.cpp ${MultiCompileDepends}
 
-$(o)ProfilesDomainTestsMain.obj   : $(BEGTEST_INPUT)ProfilesDomainTestsMain.cpp   $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)ProfilesDomainTests.obj       : $(BEGTEST_INPUT)ProfilesDomainTests.cpp       $(TestsHeaders) ${MultiCompileDepends}
+$(o)ProfilesDomainTests.obj             : $(BEGTEST_INPUT)ProfilesDomainTests.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
