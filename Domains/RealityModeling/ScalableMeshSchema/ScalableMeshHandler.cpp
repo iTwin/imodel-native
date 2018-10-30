@@ -603,11 +603,7 @@ Dgn::TileTree::Tile::SelectParent SMNode::SelectViewTiles(bvector<Dgn::TileTree:
             return SelectParent::No;
             }
         else
-            {
-            /*
-            SMNodePtr thisTile(const_cast<SMNode*>(this));
-            m_3smModel->m_currentDrawingInfoPtr->m_nodesToLoad.push_back(thisTile);
-            */
+            {            
             args.InsertMissing(*this);
             parentSelected = true;
             return SelectParent::Yes;
@@ -1085,8 +1081,7 @@ void ScalableMeshModel::ClearAllDisplayMem()
         return;
 
     IScalableMeshProgressiveQueryEngine::CancelAllQueries();
-    ClearProgressiveQueriesInfo();
-    m_currentDrawingInfoPtr = nullptr;    
+    ClearProgressiveQueriesInfo();    
     m_smPtr->RemoveAllDisplayData();    
     RefreshClips();
     }
@@ -1518,9 +1513,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_loadedAllModels = false;
     m_startClipCount = 0;
     
-    m_displayTexture = true;
-
-    m_displayNodesCache = new ScalableMeshDisplayCacheManager();
+    m_displayTexture = true;    
     }
 
 //----------------------------------------------------------------------------------------
@@ -1532,13 +1525,7 @@ ScalableMeshModel::~ScalableMeshModel()
     }
 
 void ScalableMeshModel::Cleanup(bool isModelDelete)
-    {
-    if (nullptr != m_currentDrawingInfoPtr.get())
-    {
-        m_currentDrawingInfoPtr->m_meshNodes.clear();
-        m_currentDrawingInfoPtr->m_overviewNodes.clear();
-    }
-
+    {    
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(GetDgnDb()));
     if (appData != nullptr && appData->m_smTerrainPhysicalModelP == this)
         ScalableMeshTerrainModelAppData::Delete(GetDgnDb());
@@ -1552,7 +1539,6 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
             m_smPtr->GetExtraFileNames(extraFileNames);
 
         //Close the 3SM file, to close extra clip files.
-		m_currentDrawingInfoPtr = nullptr;		
         m_smPtr = nullptr;        
 
         for (auto& extraFileName : extraFileNames)
@@ -1752,9 +1738,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     m_smPtr->Reproject(projGCS, dgnProject);
 
     m_smToModelUorTransform = m_smPtr->GetReprojectionTransform();
-    
-    m_storageToUorsTransfo = DMatrix4d::From(m_smToModelUorTransform);
-
+        
     bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
     assert(invertResult);
     
@@ -1824,19 +1808,11 @@ bool ScalableMeshModel::_AllowPublishing() const
 void ScalableMeshModel::CloseFile()
     {
 	if (m_subModel)
-	{
+	    {
 		m_loadedAllModels = false;
-	}
-
-    if (nullptr != m_currentDrawingInfoPtr.get())
-        {
-        m_currentDrawingInfoPtr->m_meshNodes.clear();
-        m_currentDrawingInfoPtr->m_overviewNodes.clear();
-        m_currentDrawingInfoPtr->m_smPtr = nullptr;
-        }
+	    }
     
-    m_smPtr = nullptr;
-    m_displayNodesCache = nullptr;
+    m_smPtr = nullptr;    
     m_tryOpen = false;
 
     //Ensure the file has really been closed.
@@ -1961,11 +1937,8 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb,
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 Transform ScalableMeshModel::GetUorsToStorage()
-    {
-    Transform t;
-    t.InitFrom(m_storageToUorsTransfo);
-    t = t.ValidatedInverse();
-    return t;
+    {    
+    return m_modelUorToSmTransform;
     }
 
 //----------------------------------------------------------------------------------------
@@ -2462,6 +2435,7 @@ void ScalableMeshModel::SetDisplayTexture(bool displayTexture)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
     {
+    assert(!"Not implemented yet in the tiletree display mechanism.");
     m_isProgressiveDisplayOn = isProgressiveDisplayOn;
     }
 
