@@ -19,41 +19,89 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BuiltUpProfile.cpp" />
-    <ClCompile Include="BuiltUpProfileComponent.cpp" />
-    <ClCompile Include="ConstantProfile.cpp" />
-    <ClCompile Include="ParametricProfile.cpp" />
-    <ClCompile Include="Profile.cpp" />
-    <ClCompile Include="ProfilesDomain.cpp" />
-    <ClCompile Include="ProfilesDomainUtilities.cpp" />
-    <ClCompile Include="ProfilesModel.cpp" />
-    <ClCompile Include="ProfilesPartition.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Profiles.mke" />
+    <None Include="Profiles.mki" />
     <None Include="Profiles.prewire.mke" />
-    <None Include="ProfilesCompileOptions.mki" />
   </ItemGroup>
   <ItemGroup>
+    <Xml Include="..\ProfilesDomain.Partfile.xml" />
     <Xml Include="Profiles.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="ProfilesDomain.Partfile.xml">
-      <SubType>Designer</SubType>
-    </Xml>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PublicAPI\BuiltUpProfile.h" />
-    <ClInclude Include="PublicAPI\BuiltUpProfileComponent.h" />
-    <ClInclude Include="PublicAPI\ConstantProfile.h" />
-    <ClInclude Include="PublicAPI\ParametricProfile.h" />
+    <ClCompile Include="Implementation\AsymmetricIShapeProfile.cpp" />
+    <ClCompile Include="Implementation\BentPlateProfile.cpp" />
+    <ClCompile Include="Implementation\CapsuleProfile.cpp" />
+    <ClCompile Include="Implementation\CenteredProfile.cpp" />
+    <ClCompile Include="Implementation\CenterLineCShapeProfile.cpp" />
+    <ClCompile Include="Implementation\CenterLineLShapeProfile.cpp" />
+    <ClCompile Include="Implementation\CenterLineZShapeProfile.cpp" />
+    <ClCompile Include="Implementation\CompositeProfile.cpp" />
+    <ClCompile Include="Implementation\CShapeProfile.cpp" />
+    <ClCompile Include="Implementation\CustomCenterLineProfile.cpp" />
+    <ClCompile Include="Implementation\CustomCompositeProfile.cpp" />
+    <ClCompile Include="Implementation\CustomShapeProfile.cpp" />
+    <ClCompile Include="Implementation\DerivedProfile.cpp" />
+    <ClCompile Include="Implementation\DoubleCProfile.cpp" />
+    <ClCompile Include="Implementation\DoubleLProfile.cpp" />
+    <ClCompile Include="Implementation\EllipseProfile.cpp" />
+    <ClCompile Include="Implementation\Handlers.cpp" />
+    <ClCompile Include="Implementation\HollowEllipseProfile.cpp" />
+    <ClCompile Include="Implementation\HollowRectangleProfile.cpp" />
+    <ClCompile Include="Implementation\IShapeProfile.cpp" />
+    <ClCompile Include="Implementation\LShapeProfile.cpp" />
+    <ClCompile Include="Implementation\Profile.cpp" />
+    <ClCompile Include="Implementation\ProfileMixins.cpp" />
+    <ClCompile Include="Implementation\ProfilesDomain.cpp" />
+    <ClCompile Include="Implementation\ProfilesInternal.cpp" />
+    <ClCompile Include="Implementation\RectangleProfile.cpp" />
+    <ClCompile Include="Implementation\RegularPolygonProfile.cpp" />
+    <ClCompile Include="Implementation\RoundedRectangleProfile.cpp" />
+    <ClCompile Include="Implementation\SinglePerimeterProfile.cpp" />
+    <ClCompile Include="Implementation\StandardProfileAspect.cpp" />
+    <ClCompile Include="Implementation\TrapeziumProfile.cpp" />
+    <ClCompile Include="Implementation\TShapeProfile.cpp" />
+    <ClCompile Include="Implementation\TTShapeProfile.cpp" />
+    <ClCompile Include="Implementation\ZShapeProfile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Implementation\ProfilesInternal.h" />
+    <ClInclude Include="PublicAPI\AsymmetricIShapeProfile.h" />
+    <ClInclude Include="PublicAPI\BentPlateProfile.h" />
+    <ClInclude Include="PublicAPI\CapsuleProfile.h" />
+    <ClInclude Include="PublicAPI\CenteredProfile.h" />
+    <ClInclude Include="PublicAPI\CenterLineCShapeProfile.h" />
+    <ClInclude Include="PublicAPI\CenterLineLShapeProfile.h" />
+    <ClInclude Include="PublicAPI\CenterLineZShapeProfile.h" />
+    <ClInclude Include="PublicAPI\CompositeProfile.h" />
+    <ClInclude Include="PublicAPI\CShapeProfile.h" />
+    <ClInclude Include="PublicAPI\CustomCenterLineProfile.h" />
+    <ClInclude Include="PublicAPI\CustomCompositeProfile.h" />
+    <ClInclude Include="PublicAPI\CustomShapeProfile.h" />
+    <ClInclude Include="PublicAPI\DerivedProfile.h" />
+    <ClInclude Include="PublicAPI\DoubleCProfile.h" />
+    <ClInclude Include="PublicAPI\DoubleLProfile.h" />
+    <ClInclude Include="PublicAPI\EllipseProfile.h" />
+    <ClInclude Include="PublicAPI\Handlers.h" />
+    <ClInclude Include="PublicAPI\HollowEllipseProfile.h" />
+    <ClInclude Include="PublicAPI\HollowRectangleProfile.h" />
+    <ClInclude Include="PublicAPI\IShapeProfile.h" />
+    <ClInclude Include="PublicAPI\LShapeProfile.h" />
     <ClInclude Include="PublicAPI\Profile.h" />
+    <ClInclude Include="PublicAPI\ProfileMixins.h" />
+    <ClInclude Include="PublicAPI\ProfilesApi.h" />
+    <ClInclude Include="PublicAPI\ProfilesDefinitions.h" />
     <ClInclude Include="PublicAPI\ProfilesDomain.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomainApi.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomainDefinitions.h" />
-    <ClInclude Include="PublicAPI\ProfilesDomainUtilities.h" />
-    <ClInclude Include="PublicAPI\ProfilesModel.h" />
-    <ClInclude Include="PublicAPI\ProfilesPartition.h" />
+    <ClInclude Include="PublicAPI\RectangleProfile.h" />
+    <ClInclude Include="PublicAPI\RegularPolygonProfile.h" />
+    <ClInclude Include="PublicAPI\RoundedRectangleProfile.h" />
+    <ClInclude Include="PublicAPI\SinglePerimeterProfile.h" />
+    <ClInclude Include="PublicAPI\StandardProfileAspect.h" />
+    <ClInclude Include="PublicAPI\TrapeziumProfile.h" />
+    <ClInclude Include="PublicAPI\TShapeProfile.h" />
+    <ClInclude Include="PublicAPI\TTShapeProfile.h" />
+    <ClInclude Include="PublicAPI\ZShapeProfile.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A06410FD-60FD-4D2E-A74B-9E4B11E013AE}</ProjectGuid>

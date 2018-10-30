@@ -1,0 +1,256 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Schema">
+      <UniqueIdentifier>{63a23246-07cc-48b0-bf8f-23cbfc20be92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mke">
+      <UniqueIdentifier>{4946b62f-72d3-4ea8-a292-5609a8727bcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Partfile">
+      <UniqueIdentifier>{8ab8f151-a8a9-46ed-a400-413a444e20cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src">
+      <UniqueIdentifier>{5cdf2964-269e-45a8-8fba-2029ba6351c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\PublicAPI">
+      <UniqueIdentifier>{d910926c-3714-473a-92e9-0443d2ae49d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Pch">
+      <UniqueIdentifier>{b030262e-d434-4042-b86d-adbff5f057f4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Profiles.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="Profiles.prewire.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="Profiles.mki">
+      <Filter>Mke</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Profiles.ecschema.xml">
+      <Filter>Schema</Filter>
+    </Xml>
+    <Xml Include="..\ProfilesDomain.Partfile.xml">
+      <Filter>Partfile</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Implementation\AsymmetricIShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\BentPlateProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CapsuleProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CenteredProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CenterLineCShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CenterLineLShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CenterLineZShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CompositeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CustomCenterLineProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CustomCompositeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CustomShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\DerivedProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\DoubleCProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\DoubleLProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\EllipseProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\Handlers.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\HollowEllipseProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\HollowRectangleProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\IShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\LShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\Profile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\ProfileMixins.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\ProfilesDomain.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\RectangleProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\RegularPolygonProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\RoundedRectangleProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\SinglePerimeterProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\StandardProfileAspect.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\TrapeziumProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\TShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\TTShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\ZShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\ProfilesInternal.cpp">
+      <Filter>Src\Pch</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Implementation\ProfilesInternal.h">
+      <Filter>Src\Pch</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\AsymmetricIShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BentPlateProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CapsuleProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CenteredProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CenterLineCShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CenterLineLShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CenterLineZShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CompositeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CustomCenterLineProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CustomCompositeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CustomShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DerivedProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DoubleCProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DoubleLProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\EllipseProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Handlers.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\HollowEllipseProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\HollowRectangleProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\IShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\LShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Profile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ProfileMixins.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ProfilesApi.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ProfilesDefinitions.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ProfilesDomain.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RectangleProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RegularPolygonProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoundedRectangleProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\SinglePerimeterProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StandardProfileAspect.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\TrapeziumProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\TShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\TTShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ZShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
