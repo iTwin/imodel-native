@@ -50,6 +50,8 @@ template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
                                              const EXTENT&  pi_rExtentInMeters, 
                                              const DPoint3d pi_pViewBox[]);
 
+#ifndef LINUX_SCALABLEMESH_BUILD
+
 template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent, 
                                              const EXTENT&  pi_rExtent,
                                              const DPoint3d pi_pViewBox[])
@@ -92,6 +94,8 @@ template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
     
     return isVisible;  
     }
+
+#endif
 
 BENTLEY_SM_EXPORT int CreateBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 

@@ -117,11 +117,11 @@ public:
     using                           MyBase::operator*;
     using                           MyBase::operator->;
 
-    reference                       operator*                  ()                                       { return m_base.Dereference(); }
-    pointer                         operator->                 ()                                       { return &m_base.Dereference(); }
+    reference                       operator*                  ()                                       { return this->m_base.Dereference(); }
+    pointer                         operator->                 ()                                       { return &this->m_base.Dereference(); }
 
-    Type&                           operator++                 ()                                       { m_base.Increment(); return *this; }
-    Type                            operator++                 (int)                                    { Type tmp = *this; m_base.Increment(); return tmp; }
+    Type&                           operator++                 ()                                       { this->m_base.Increment(); return *this; }
+    Type                            operator++                 (int)                                    { Type tmp = *this; this->m_base.Increment(); return tmp; }
     };
 
 

@@ -9,9 +9,9 @@
 
 /*__PUBLISH_SECTION_START__*/
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <ScalableMesh\IScalableMesh.h>
+#include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 
 #undef static_assert
