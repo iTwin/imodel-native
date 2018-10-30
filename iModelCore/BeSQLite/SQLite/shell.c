@@ -8774,7 +8774,7 @@ static void editFunc(
   if( bBin ){
     sqlite3_result_blob64(context, p, sz, sqlite3_free);
   }else{
-    int i, j;
+    sqlite3_int64 i, j;
     if( hasCRNL ){
       /* If the original contains \r\n then do no conversions back to \n */
       j = sz;
@@ -11007,13 +11007,19 @@ static const char *(azHelp[]) = {
 ** Return the number of matches.
 */
 static int showHelp(FILE *out, const char *zPattern){
-  int i, j;
+  int i = 0;
+  int j = 0;
   int n = 0;
   char *zPat;
-  if( zPattern==0 || zPattern[0]=='0' ){
+  if( zPattern==0
+   || zPattern[0]=='0'
+   || strcmp(zPattern,"-a")==0
+   || strcmp(zPattern,"-all")==0
+  ){
     /* Show all commands, but only one line per command */
+    if( zPattern==0 ) zPattern = "";
     for(i=0; i<ArraySize(azHelp); i++){
-      if( azHelp[i][0]=='.' ){
+      if( azHelp[i][0]=='.' || zPattern[0] ){
         utf8_printf(out, "%s\n", azHelp[i]);
         n++;
       }
@@ -11088,7 +11094,7 @@ static char *readFile(const char *zName, int *pnByte){
   nIn = ftell(in);
   rewind(in);
   pBuf = sqlite3_malloc64( nIn+1 );
-  if( pBuf==0 ) return 0;
+  if( pBuf==0 ){ fclose(in); return 0; }
   nRead = fread(pBuf, nIn, 1, in);
   fclose(in);
   if( nRead!=1 ){
@@ -12472,6 +12478,7 @@ static void shellPreparePrintf(
     char *z;
     va_start(ap, zFmt);
     z = sqlite3_vmprintf(zFmt, ap);
+    va_end(ap);
     if( z==0 ){
       *pRc = SQLITE_NOMEM;
     }else{
@@ -13664,7 +13671,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
     if( nArg>=2 ){
-      int n = showHelp(p->out, azArg[1]);
+      n = showHelp(p->out, azArg[1]);
       if( n==0 ){
         utf8_printf(p->out, "Nothing matches '%s'\n", azArg[1]);
       }
@@ -16354,7 +16361,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     */
     if( stdin_is_interactive ){
       char *zHome;
-      char *zHistory = 0;
+      char *zHistory;
       int nHistory;
       printf(
         "SQLite version %s %.19s\n" /*extra-version-info*/
@@ -16367,8 +16374,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         printf(".\nUse \".open FILENAME\" to reopen on a "
                "persistent database.\n");
       }
-      zHome = find_home_dir(0);
-      if( zHome ){
+      zHistory = getenv("SQLITE_HISTORY");
+      if( zHistory ){
+        zHistory = strdup(zHistory);
+      }else if( (zHome = find_home_dir(0))!=0 ){
         nHistory = strlen30(zHome) + 20;
         if( (zHistory = malloc(nHistory))!=0 ){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
