@@ -283,7 +283,6 @@ protected:
     void Briefcase_MakeBriefcaseName(); // Sets m_outputName
     BentleyStatus Briefcase_AcquireBriefcase();
     BentleyStatus Briefcase_AcquireExclusiveLocks();
-    BentleyStatus Briefcase_PullAndMerge();
     BentleyStatus Briefcase_PullMergePush(Utf8CP);
     BentleyStatus Briefcase_ReleaseAllPublicLocks();
     //! @}
@@ -307,8 +306,9 @@ protected:
     BentleyStatus SetupDmsFiles();
     int ProcessSchemaChange();
     int StoreHeaderInformation();
-    void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...);
+    
 public:
+
     IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
     IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();
 
@@ -340,6 +340,27 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
+
+    //!Internal function.
+    static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
+        {
+        stopWatch.Stop();
+        const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
+        NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger("iModelBridge.Performance");
+        if (NULL == logger)
+            return;
+
+        if (logger->isSeverityEnabled(severity))
+            {
+            va_list args;
+            va_start(args, description);
+            Utf8String formattedDescription;
+            formattedDescription.VSprintf(description, args);
+            va_end(args);
+
+            logger->messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
+            }
+        }
 };
 
 END_BENTLEY_DGN_NAMESPACE

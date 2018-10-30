@@ -335,7 +335,7 @@ struct RscDwgOpenFlags
 
 struct RscDwgOpenOptions
     {
-    public:
+public:
     RscVersionNumber8       m_rscVersion;
     Bentley::RgbColorDef    m_designBackgroundColor;
     Bentley::RgbColorDef    m_sheetBackgroundColor;
@@ -387,6 +387,7 @@ private:
     RscDwgOpenOptions*      m_data;
     // from configuration variables
     bool                    m_ignoreXData;
+    bmap<Utf8String, int>   m_dwgLineWeights;
 
 
 public:
@@ -397,9 +398,31 @@ DwgConversionSettings () : m_textStyleNameTemplate(L"Style-$s") , m_saveVersion(
     m_data = static_cast<RscDwgOpenOptions*> (::calloc(1, sizeof(RscDwgOpenOptions)));
     m_ignoreXData = true;
 
-    // default to drawing objects as renderable:
-    if (nullptr != m_data)
-        m_data->m_flags.m_customObjectDisplayMode = V8RD::ObjectDisplayMode::CustomObjectDisplay_Rendered;
+    m_dwgLineWeights["From AutoCAD Registry"] = -1;
+    m_dwgLineWeights["0.00 mm"] =   0;
+    m_dwgLineWeights["0.05 mm"] =   5;
+    m_dwgLineWeights["0.09 mm"] =   9;
+    m_dwgLineWeights["0.13 mm"] =  13;
+    m_dwgLineWeights["0.15 mm"] =  15;
+    m_dwgLineWeights["0.18 mm"] =  18;
+    m_dwgLineWeights["0.20 mm"] =  20;
+    m_dwgLineWeights["0.25 mm"] =  25;
+    m_dwgLineWeights["0.30 mm"] =  30;
+    m_dwgLineWeights["0.35 mm"] =  35;
+    m_dwgLineWeights["0.40 mm"] =  40;
+    m_dwgLineWeights["0.50 mm"] =  50;
+    m_dwgLineWeights["0.53 mm"] =  53;
+    m_dwgLineWeights["0.60 mm"] =  60;
+    m_dwgLineWeights["0.70 mm"] =  70;
+    m_dwgLineWeights["0.80 mm"] =  80;
+    m_dwgLineWeights["0.90 mm"] =  90;
+    m_dwgLineWeights["1.00 mm"] = 100;
+    m_dwgLineWeights["1.06 mm"] = 106;
+    m_dwgLineWeights["1.20 mm"] = 120;
+    m_dwgLineWeights["1.40 mm"] = 140;
+    m_dwgLineWeights["1.58 mm"] = 158;
+    m_dwgLineWeights["2.00 mm"] = 200;
+    m_dwgLineWeights["2.11 mm"] = 211;
     }
 
 // the destructor
@@ -423,15 +446,14 @@ Bentley::StatusInt  Initialize (Converter* v8converter)
     {
     m_v8converter = v8converter;
     
+    Bentley::StatusInt  status = BSIERROR;
     Bentley::BeFileName settingsFile;
-    if (!this->GetRscFileNameFromV8ConfigVars(settingsFile))
-        return  BSIERROR;
-
-    Bentley::StatusInt  status = RmgrResource::OpenFile (&m_rscFileHandle, settingsFile, RSC_READONLY);
-    if (BSISUCCESS != status)
+    if (!this->GetRscFileNameFromV8ConfigVars(settingsFile) || 
+        (status = RmgrResource::OpenFile(&m_rscFileHandle, settingsFile, RSC_READONLY)) != BSISUCCESS)
+        {
+        this->OverrideSettingsByConfigVars ();
         return  status;
-
-    status = BSIERROR;
+        }
 
     void* bytesRead = RmgrResourceMT::Load (m_rscFileHandle, RTYPE_DWGOpenOptions, RSCID_DWGOpenOptions);
     if (nullptr != bytesRead)
@@ -465,6 +487,8 @@ Bentley::StatusInt  Initialize (Converter* v8converter)
 
     m_ignoreXData = ConfigurationManager::IsVariableDefined (L"MS_DWG_SKIP_XDATA");
 
+    this->OverrideSettingsByConfigVars ();
+
     return  status;
     }
     
@@ -491,6 +515,244 @@ bool GetRscFileNameFromV8ConfigVars (Bentley::BeFileNameR settingsFile)
 
     settingsFile.Clear ();
     return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    OverrideSettingsByConfigVars ()
+    {
+    Bentley::WString cfgValue;
+    int     intValue;
+    double  realValue;
+    byte    r, g, b;
+    
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_ARCH_ENG_UNITS") &&
+        !this->GetUnitsFromConfigVar((int&)m_data->m_archEngUnitsMode, cfgValue))
+        this->ReportInvalidConfigVar ("MS_DWG_ARCH_ENG_UNITS");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_DEC_FRC_SCI_UNITS") &&
+        !this->GetUnitsFromConfigVar((int&)m_data->m_decimalUnitsMode, cfgValue))
+        this->ReportInvalidConfigVar ("MS_DWG_DEC_FRC_SCI_UNITS");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_DESIGNCENTER_UNITS") &&
+        !this->GetUnitsFromConfigVar((int&)m_data->m_unspecifiedDesignCenterUnitMode, cfgValue))
+        this->ReportInvalidConfigVar ("MS_DWG_DESIGNCENTER_UNITS");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_DESIGNBACKGROUND_COLOR"))
+        {
+        if (3 == ::swscanf(cfgValue.c_str(), L"%hhd,%hhd,%hhd", &r, &g, &b))
+            {
+            m_data->m_designBackgroundColor.red = r;
+            m_data->m_designBackgroundColor.green = g;
+            m_data->m_designBackgroundColor.blue = b;
+            }
+        else
+            {
+            this->ReportInvalidConfigVar ("MS_DWG_DESIGNBACKGROUND_COLOR");
+            }
+        }
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_SHEETBACKGROUND_COLOR"))
+        {
+        if (3 == ::swscanf(cfgValue.c_str(), L"%hhd,%hhd,%hhd", &r, &g, &b))
+            {
+            m_data->m_sheetBackgroundColor.red = r;
+            m_data->m_sheetBackgroundColor.green = g;
+            m_data->m_sheetBackgroundColor.blue = b;
+            }
+        else
+            {
+            this->ReportInvalidConfigVar ("MS_DWG_SHEETBACKGROUND_COLOR");
+            }
+        }
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_MODELSPACE"))
+        m_data->m_flags.m_openModelSpaceAs2D = cfgValue.EqualsI(L"2D");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_PAPERSPACE"))
+        m_data->m_flags.m_openPaperSpaceAs2D = cfgValue.EqualsI(L"2D");
+
+    if (DgnV8Api::ConfigurationManager::IsVariableDefined(L"MS_DWG_AXISLOCK_FROM_ORTHOMODE"))
+        m_data->m_flags.m_setAxisLockFromOrthoMode = !cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_LOGICALNAME_TO_XREFNAME"))
+        m_data->m_flags.m_disallowLogicalNameFromXRefBlockNames = cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_DISCARD_INVALID"))
+        m_data->m_flags.m_discardInvalidEntities = cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_HLINK_AS_ELINK"))
+        m_data->m_flags.m_hyperlinkAsEngineeringLink = !cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_ATTRIBUTE_AS_TAG"))
+        m_data->m_flags.m_attributesAsTags = !cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_GRAPHIC_GROUP_ATTRIBUTES"))
+        m_data->m_flags.m_graphicGroupAttributes = !cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_LWDEFAULT"))
+        {
+        if (1 == ::swscanf(cfgValue.c_str(), L"%d", &intValue) && intValue > -2 && intValue < 212)
+            {
+            m_data->m_defaultLineWeight = intValue;
+            }
+        else
+            {
+            auto found = m_dwgLineWeights.find (Utf8String(cfgValue.c_str()));
+            if (found != m_dwgLineWeights.end())
+                m_data->m_defaultLineWeight = found->second;
+            else
+                this->ReportInvalidConfigVar ("MS_DWG_LWDEFAULT");
+            }
+        }
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_PROXYSHOW"))
+        {
+        if (1 == ::swscanf(cfgValue.c_str(), L"%d", &intValue) && intValue > -1 && intValue < 3)
+            {
+            m_data->m_flags.m_proxyShow = 0 == intValue ? 2 : intValue - 1;
+            }
+        else
+            {
+            if (0 == BeStringUtilities::Wcsicmp(cfgValue.c_str(), L"Do Not Show Proxy"))
+                m_data->m_flags.m_proxyShow = V8RD::ProxyShowMode::ProxyObject_Suppressed;
+            else if (0 == BeStringUtilities::Wcsicmp(cfgValue.c_str(), L"Show Proxy Image"))
+                m_data->m_flags.m_proxyShow = V8RD::ProxyShowMode::ProxyObject_Show;
+            else if (0 == BeStringUtilities::Wcsicmp(cfgValue.c_str(), L"Show Proxy Box"))
+                m_data->m_flags.m_proxyShow = V8RD::ProxyShowMode::ProxyObject_BoundingBox;
+            else
+                this->ReportInvalidConfigVar ("MS_DWG_PROXYSHOW");
+            }
+        }
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_PROXY_VIEW"))
+        {
+        if (cfgValue.EqualsI(L"Active View Direction"))
+            m_data->m_flags.m_proxyView = 0;
+        else if (cfgValue.EqualsI(L"Isometric"))
+            m_data->m_flags.m_proxyView = static_cast<UInt32>(StandardView::Iso);
+        else if (cfgValue.EqualsI(L"Top"))
+            m_data->m_flags.m_proxyView = static_cast<UInt32>(StandardView::Top);
+        else if (cfgValue.EqualsI(L"Left"))
+            m_data->m_flags.m_proxyView = static_cast<UInt32>(StandardView::Left);
+        else if (cfgValue.EqualsI(L"Front"))
+            m_data->m_flags.m_proxyView = static_cast<UInt32>(StandardView::Front);
+        else
+            this->ReportInvalidConfigVar ("MS_DWG_PROXY_VIEW");
+        }
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_CUSTOMOBJECT_DISPLAY"))
+        {
+        if (1 == ::swscanf(cfgValue.c_str(), L"%d", &intValue) && intValue >= V8RD::CustomObjectDisplay_Default && intValue <= V8RD::CustomObjectDisplay_AsProxyGraphics)
+            {
+            m_data->m_flags.m_customObjectDisplayMode = intValue;
+            }
+        else
+            {
+            if (cfgValue.EqualsI(L"Active Display Mode"))
+                m_data->m_flags.m_customObjectDisplayMode = V8RD::CustomObjectDisplay_Default;
+            else if (cfgValue.EqualsI(L"Standard"))
+                m_data->m_flags.m_customObjectDisplayMode = V8RD::CustomObjectDisplay_Standard;
+            else if (cfgValue.EqualsI(L"Rendered"))
+                m_data->m_flags.m_customObjectDisplayMode = V8RD::CustomObjectDisplay_Rendered;
+            else if (cfgValue.EqualsI(L"Hidden or Shaded"))
+                m_data->m_flags.m_customObjectDisplayMode = V8RD::CustomObjectDisplay_Hidden;
+            else if (cfgValue.EqualsI(L"As Proxy Graphics"))
+                m_data->m_flags.m_customObjectDisplayMode = V8RD::CustomObjectDisplay_AsProxyGraphics;
+            else
+                this->ReportInvalidConfigVar ("MS_DWG_CUSTOMOBJECT_DISPLAY");
+            }
+        }
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_RENDER_MATERIAL_OPEN"))
+        m_data->m_flags.m_dontCreateDGNMaterials = cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_RENDER_LIGHTSOURCE_OPEN"))
+        m_data->m_flags.m_dontCreateDGNLights = !cfgValue.EqualsI(L"OFF");
+
+    if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(cfgValue, L"MS_DWG_LINEWEIGHT_MAPPING"))
+        {
+        size_t  count = 0;
+        T_WStringVector allEntries;
+        BeStringUtilities::Split (cfgValue.c_str(), L";", allEntries);
+
+        for (auto entry : allEntries)
+            {
+            // parse "DgnLineWeight=DwgLineWeight"
+            auto assigned = entry.find (L"=");
+            if (assigned == WString::npos)
+                continue;
+
+            auto val = entry.substr (0, assigned);
+            auto dgnlw = BeStringUtilities::Wtoi (val.c_str());
+
+            val = entry.substr (assigned + 1, WString::npos);
+            auto dwglw = BeStringUtilities::Wtof (val.c_str());
+
+            if (dgnlw > 0 && dgnlw < 32)
+                {
+                m_data->m_dgnToDWGLineWeights[dgnlw] = dwglw;
+                count++;
+                }
+            }
+        if (count < allEntries.size())
+            this->ReportInvalidConfigVar ("MS_DWG_LINEWEIGHT_MAPPING");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    GetUnitsFromConfigVar (int& unitsMode, Bentley::WStringCR cfgValue) const
+    {
+    bool    found = false;
+
+    // first check for units mode (as opposed to true units)
+    if (cfgValue.EqualsI(L"Master Units"))
+        {
+        unitsMode = V8RD::DWGOpenUnitMode_SeedFileMasterUnits;
+        found = true;
+        }
+    if (cfgValue.EqualsI(L"Sub Units"))
+        {
+        unitsMode = V8RD::DWGOpenUnitMode_SeedFileSubUnits;
+        found = true;
+        }
+    else if (cfgValue.EqualsI(L"Design Center Units"))
+        {
+        unitsMode = DWG_UNITMODE_UseDesignCenter;
+        found = true;
+        }
+    else
+        {
+        // check for true units
+        DgnV8Api::UnitIteratorOptionsPtr  opts = DgnV8Api::UnitIteratorOptions::Create ();
+        DgnV8Api::UserUnitCollection    allUserUnits (*opts);
+        for (auto unit : allUserUnits)
+            {
+            if (cfgValue.EqualsI(unit.GetName(false).c_str()))
+                {
+                unitsMode = static_cast<V8RD::DwgOpenUnitMode>(unit.GetNumber());
+                found = true;
+                break;
+                }
+            }
+        }
+
+    return  found;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ReportInvalidConfigVar (Utf8CP cfgvar) const
+    {
+    if (m_v8converter != nullptr && cfgvar != nullptr)
+        {
+        Utf8PrintfString msg("%s is set to an invalid value", cfgvar);
+        m_v8converter->ReportIssueV (Converter::IssueSeverity::Warning, Converter::IssueCategory::VisualFidelity(), Converter::Issue::Message(), "Configuration variable", msg.c_str());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1530,7 +1792,7 @@ BentleyStatus Converter::InitializeDwgSettings (Converter* v8converter)
         }
 
     if (BSISUCCESS != s_dwgHost->InitializeDwgSettings(v8converter))
-        v8converter->ReportIssueV (Converter::IssueSeverity::Warning, Converter::IssueCategory::VisualFidelity(), Converter::Issue::Message(), nullptr, "file dwgsettings.rsc not found for DWG reference files, using defaults");
+        v8converter->ReportIssueV (Converter::IssueSeverity::Info, Converter::IssueCategory::VisualFidelity(), Converter::Issue::Message(), nullptr, "file dwgsettings.rsc not found for DWG reference files, using configuration vars if set");
 
     return  BSISUCCESS;
     }

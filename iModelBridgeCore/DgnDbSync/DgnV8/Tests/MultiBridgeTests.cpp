@@ -87,7 +87,7 @@ static void doConvert(DefinitionModelIds& defids,
     params.SetBridgeRegSubKey(bridgeRegSubKey);
     params.SetDocumentPropertiesAccessor(docaccessor);
     params.SetInputFileName(inputFileName);
-    
+    params.m_keepHostAliveForUnitTests = true;
     RootModelConverter converter(params);
     converter.SetDgnDb(db);
     converter.SetIsUpdating(isUpdate);
