@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: Profiles/Profiles.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/Profiles : $(_MakeFilePath)PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/Profiles.ecschema.xml : $(_MakeFilePath)Profiles.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

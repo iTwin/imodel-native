@@ -1,0 +1,17 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: Profiles/Profiles.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------+
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+appName = Profiles
+o = $(OutputRootDir)build/$(appName)/
+CCompPDBName = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __PROFILES_BUILD__
+%include cdefapnd.mki

@@ -1,0 +1,136 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: Profiles/Profiles.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/Profiles/Profiles/Profiles.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc = $(_MakeFilePath)Implementation/
+appPublicApi = $(_MakeFilePath)PublicAPI/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)ProfilesInternal.h $(appPublicApi)ProfilesApi.h
+
+always :
+!~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre - compiled header
+#----------------------------------------------------------------------
+PchCompiland = $(appSrc)ProfilesInternal.cpp
+PchOutputDir = $(o)
+PchExtraOptions = -Zm160
+PchExplicitDepends = $(MultiCompileDepends)
+
+% if defined(winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+# Avoid internal compiler error in GCC using windows ndk toolchain
+GCC_NO_PRE_COMPILED_HEADER = 1
+% endif
+
+CompileOptionsMki = $(SrcRoot)DgnDomains/Profiles/Profiles/Profiles.mki
+%include $(CompileOptionsMki)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)AsymmetricIShapeProfile$(oext) : $(appSrc)AsymmetricIShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)AsymmetricIShapeProfile.h
+
+$(o)BentPlateProfile$(oext) : $(appSrc)BentPlateProfile.cpp ${MultiCompileDepends} $(appPublicApi)BentPlateProfile.h
+
+$(o)CShapeProfile$(oext) : $(appSrc)CShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CShapeProfile.h
+
+$(o)CapsuleProfile$(oext) : $(appSrc)CapsuleProfile.cpp ${MultiCompileDepends} $(appPublicApi)CapsuleProfile.h
+
+$(o)CenterLineCShapeProfile$(oext) : $(appSrc)CenterLineCShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenterLineCShapeProfile.h
+
+$(o)CenterLineLShapeProfile$(oext) : $(appSrc)CenterLineLShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenterLineLShapeProfile.h
+
+$(o)CenterLineZShapeProfile$(oext) : $(appSrc)CenterLineZShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenterLineZShapeProfile.h
+
+$(o)CenteredProfile$(oext) : $(appSrc)CenteredProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenteredProfile.h
+
+$(o)CompositeProfile$(oext) : $(appSrc)CompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CompositeProfile.h
+
+$(o)CustomCenterLineProfile$(oext) : $(appSrc)CustomCenterLineProfile.cpp ${MultiCompileDepends} $(appPublicApi)CustomCenterLineProfile.h
+
+$(o)CustomCompositeProfile$(oext) : $(appSrc)CustomCompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CustomCompositeProfile.h
+
+$(o)CustomShapeProfile$(oext) : $(appSrc)CustomShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CustomShapeProfile.h
+
+$(o)DerivedProfile$(oext) : $(appSrc)DerivedProfile.cpp ${MultiCompileDepends} $(appPublicApi)DerivedProfile.h
+
+$(o)DoubleCProfile$(oext) : $(appSrc)DoubleCProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleCProfile.h
+
+$(o)DoubleLProfile$(oext) : $(appSrc)DoubleLProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleLProfile.h
+
+$(o)EllipseProfile$(oext) : $(appSrc)EllipseProfile.cpp ${MultiCompileDepends} $(appPublicApi)EllipseProfile.h
+
+$(o)Handlers$(oext) : $(appSrc)Handlers.cpp ${MultiCompileDepends} $(appPublicApi)Handlers.h
+
+$(o)HollowEllipseProfile$(oext) : $(appSrc)HollowEllipseProfile.cpp ${MultiCompileDepends} $(appPublicApi)HollowEllipseProfile.h
+
+$(o)HollowRectangleProfile$(oext) : $(appSrc)HollowRectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)HollowRectangleProfile.h
+
+$(o)IShapeProfile$(oext) : $(appSrc)IShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)IShapeProfile.h
+
+$(o)LShapeProfile$(oext) : $(appSrc)LShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)LShapeProfile.h
+
+$(o)Profile$(oext) : $(appSrc)Profile.cpp ${MultiCompileDepends} $(appPublicApi)Profile.h
+
+$(o)ProfileMixins$(oext) : $(appSrc)ProfileMixins.cpp ${MultiCompileDepends} $(appPublicApi)ProfileMixins.h
+
+$(o)ProfilesDomain$(oext) : $(appSrc)ProfilesDomain.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesDomain.h
+
+$(o)RectangleProfile$(oext) : $(appSrc)RectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)RectangleProfile.h
+
+$(o)RegularPolygonProfile$(oext) : $(appSrc)RegularPolygonProfile.cpp ${MultiCompileDepends} $(appPublicApi)RegularPolygonProfile.h
+
+$(o)RoundedRectangleProfile$(oext) : $(appSrc)RoundedRectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)RoundedRectangleProfile.h
+
+$(o)SinglePerimeterProfile$(oext) : $(appSrc)SinglePerimeterProfile.cpp ${MultiCompileDepends} $(appPublicApi)SinglePerimeterProfile.h
+
+$(o)StandardProfileAspect$(oext) : $(appSrc)StandardProfileAspect.cpp ${MultiCompileDepends} $(appPublicApi)StandardProfileAspect.h
+
+$(o)TShapeProfile$(oext) : $(appSrc)TShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)TShapeProfile.h
+
+$(o)TTShapeProfile$(oext) : $(appSrc)TTShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)TTShapeProfile.h
+
+$(o)TrapeziumProfile$(oext) : $(appSrc)TrapeziumProfile.cpp ${MultiCompileDepends} $(appPublicApi)TrapeziumProfile.h
+
+$(o)ZShapeProfile$(oext) : $(appSrc)ZShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ZShapeProfile.h
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME = $(appName)
+DLM_OBJECT_FILES = $(MultiCompileObjectList)
+DLM_OBJECT_DEST = $(o)
+DLM_OBJECT_PCH = $(o)ProfilesInternal$(oext)
+DLM_DEST = $(o)
+DLM_EXPORT_DEST = $(o)
+DLM_NOENTRY = 1
+DLM_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+
+% include $(sharedMki)linkLibrary.mki
