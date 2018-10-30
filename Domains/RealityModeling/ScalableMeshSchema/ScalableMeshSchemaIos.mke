@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ScalableMeshSchema/ScalableMeshSchema.mke $
+#     $Source: ScalableMeshSchema/ScalableMeshSchemaIos.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -39,8 +39,7 @@ meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
                                   $(ScMeshSchemaPublicApiSrc)IMeshSpatialModel.h  \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshHandler.h \
                                   $(ScMeshSchemaPublicApiSrc)ScalableMeshDomain.h \
-                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h \
-                                  $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.h
+                                  $(ScMeshSchemaPublicApiSrc)ScalableMeshSchemaApi.h
 always:
     !~@mkdir $(o)
 
@@ -66,13 +65,9 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 $(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
-#NEEDS_WORK_SM_TEMP_OUT
 $(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
-
-$(o)ScalableMeshDisplayCacheManager$(oext)        : $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.cpp       $(meshmodelDepends) ${MultiCompileDepends}
-
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

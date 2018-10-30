@@ -11,7 +11,6 @@
 #include <ScalableMesh/IScalableMeshClippingOptions.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>
-#include "ScalableMeshDisplayCacheManager.h"
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <DgnPlatform/LinkElement.h>
 #include <Bentley/BeDirectoryIterator.h>
