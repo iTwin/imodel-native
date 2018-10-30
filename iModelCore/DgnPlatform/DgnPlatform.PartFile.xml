@@ -74,7 +74,6 @@
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
             <Files ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="SkyBox" Feature="SkyBox" FeatureDefault="Yes">Delivery/SkyBox/SkyBox.jpg</Files>
-            <Directory SourceName="Delivery/icons" ProductDirectoryName="Assets" ProductSubDirectory="decorators/dgncore" />
         </Bindings>
     </Part>
 
