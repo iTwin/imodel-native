@@ -8709,7 +8709,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
                     "Values": {
                         "Sprocket_Description": null,
                         "Sprocket_MyID": null
-                        }
+                        },
+                    "DisplayValues": {
+                        "Sprocket_Description": null,
+                        "Sprocket_MyID": null
+                        },
+                    "MergedFieldNames": []
                     }]
                 },
             "DisplayValues": {
