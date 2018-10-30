@@ -90,12 +90,9 @@
     <ClCompile Include="ProfilesDomainTestFixture.cpp" />
     <ClCompile Include="ProfilesDomainTests.cpp" />
     <ClCompile Include="ProfilesDomainTestsMain.cpp" />
-    <ClCompile Include="ProfilesTestUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProfilesDomainTestFixture.h" />
-    <ClInclude Include="ProfilesDomainTests.h" />
-    <ClInclude Include="ProfilesTestUtils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

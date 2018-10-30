@@ -3,7 +3,7 @@
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 
-#include "ProfilesDomain\ProfilesDomainUtilities.h"
+#include <Profiles/ProfilesApi.h>
 
 using namespace BeSQLite;
 using namespace Dgn;
@@ -97,7 +97,8 @@ void ProfilesDomainTestsFixture::SetUp_CreateNewDgnDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUp()
     {
-    Profiles::ProfilesDomainUtilities::RegisterDomainHandlers();
+    BentleyStatus registrationStatus = Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -130,7 +131,8 @@ void ProfilesDomainTestsFixture::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr ProfilesDomainTestsFixture::CreateDgnDb()
     {
-    Profiles::ProfilesDomainUtilities::RegisterDomainHandlers();
+    BentleyStatus registrationStatus = Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::No, Dgn::DgnDomain::Readonly::No);
+    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
 
     BeFileName tmpDir;
     BeTest::GetHost().GetTempDir(tmpDir);
@@ -140,10 +142,13 @@ DgnDbPtr ProfilesDomainTestsFixture::CreateDgnDb()
     m_workingBimFile = tmpDir;
     m_workingBimFile.AppendToPath(L"ProfilesDomain.bim");
 
-    //This should create a DGN db with building domain.
     CreateDgnDbParams createProjectParams;
-    createProjectParams.SetRootSubjectName("DomainTestFile");
-    Dgn::DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, m_workingBimFile, createProjectParams);
+    createProjectParams.SetOverwriteExisting(true);
+    createProjectParams.SetRootSubjectName("ProfilesTest");
+    createProjectParams.SetRootSubjectDescription("Tests for Profiles domain handlers");
+
+    BeSQLite::DbResult status = BeSQLite::DbResult::BE_SQLITE_ERROR;
+    Dgn::DgnDbPtr db = DgnDb::CreateDgnDb(&status, m_workingBimFile, createProjectParams);
 
     return db;
     }
@@ -153,7 +158,8 @@ DgnDbPtr ProfilesDomainTestsFixture::CreateDgnDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr ProfilesDomainTestsFixture::OpenDgnDb()
     {
-    Profiles::ProfilesDomainUtilities::RegisterDomainHandlers();
+    BentleyStatus registrationStatus = Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::No, Dgn::DgnDomain::Readonly::No);
+    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
 
     BeFileName tmpDir;
     BeTest::GetHost().GetTempDir(tmpDir);

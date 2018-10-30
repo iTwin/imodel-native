@@ -4,17 +4,16 @@
 #include <DgnView/DgnViewAPI.h>
 #include <Bentley/BeFileName.h>
 
-using namespace Dgn;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Arturas.Mizaras                 11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ProfilesDomainTestsHost : DgnViewLib::Host
+struct ProfilesDomainTestsHost : Dgn::DgnViewLib::Host
     {
     protected:
         virtual void _SupplyProductName(BentleyApi::Utf8StringR name) override { name.assign("StructuralDomainTests"); }
         virtual NotificationAdmin& _SupplyNotificationAdmin() override;
-        virtual ViewManager& _SupplyViewManager() override;
+        virtual Dgn::ViewManager& _SupplyViewManager() override;
         virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
         virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     };
@@ -56,6 +55,6 @@ class ProfilesDomainTestsFixture : public testing::Test
         /// </summary>
         static void TearDownTestCase();
 
-        DgnDbPtr CreateDgnDb();
-        DgnDbPtr OpenDgnDb();
+        Dgn::DgnDbPtr CreateDgnDb();
+        Dgn::DgnDbPtr OpenDgnDb();
     };

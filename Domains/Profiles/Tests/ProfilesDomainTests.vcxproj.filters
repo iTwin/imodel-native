@@ -35,18 +35,9 @@
     <ClCompile Include="ProfilesDomainTestsMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProfilesTestUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProfilesDomainTestFixture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProfilesDomainTests.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ProfilesTestUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
