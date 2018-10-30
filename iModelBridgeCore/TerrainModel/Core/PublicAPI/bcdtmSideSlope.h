@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcdtmSideSlope.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,16 +44,16 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
 int bcdtmSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double Sy,double Sz,double Angle,double Slope,long SideSlopeFlag,double EndValue,double *Lx, double *Ly,double *Lz,long *StartFlag,long *EndFlag) ;
 int bcdtmSideSlope_getNextInterceptDtmObject(BC_DTM_OBJ *Tin,double Px,double Py,long *Ptype,double Ex,double Ey,long *P1,long *P2,long *P3,double *Nx,double *Ny, double *Nz ) ;
 int bcdtmSideSlope_strokeConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,long SideSlopeDirection,long CornerOption,double CornerStrokeTolerance) ;
-int bcdtmSideSlope_writeRadialsToBinaryDTMFile(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long WriteElement,wchar_t *DataFileP) ;
-int bcdtmSideSlope_writeElementToBinaryDTMFile(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,wchar_t *DataFileP) ;
+int bcdtmSideSlope_writeRadialsToBinaryDTMFile(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long WriteElement,wchar_t const*DataFileP) ;
+int bcdtmSideSlope_writeElementToBinaryDTMFile(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,wchar_t const*DataFileP) ;
 int bcdtmSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *RightSideSlopeTable,long RightSideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *LeftSideSlopeTable,long LeftSideSlopeTableSize,DPoint3d *ParallelEdgePts,long NumParallelEdgePts,long SideDirection,double CornerTolerance,double RadialExtension,DTMUserTag RadialTag,DTMUserTag ElementTag,double Pptol,double Pltol,BC_DTM_OBJ *SideSlopes) ;
 int bcdtmSideSlope_removeType2RadialsCoincicidentWithType1(DTM_OVERLAP_RADIAL_TABLE **sideSlopeRadialsPP, long *numSideSlopeRadialsP ) ;
 int bcdtmSideSlope_extendRadialsAtTransistionPoints(long SideSlopeElementType,DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,double RadialExtension) ;
 int bcdtmSideSlope_createRadialOverlapTable(long sideSlopeElementType,DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTM_OVERLAP_RADIAL_TABLE **Radials,long *NumRadials) ;
 int bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *radialsP,long *numRadialsP,double tolerance,long *numRemovedP) ;
 int bcdtmSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(DTM_OVERLAP_RADIAL_TABLE *Radials,long *NumRadials,double Tolerance) ;
-int bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,wchar_t *DataFileP) ;
-int bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,char *Message) ;
+int bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,wchar_t const*DataFileP) ;
+int bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,char const*Message) ;
 int bcdtmSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *PadPts,long NumPadPts,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long *NumOvlPts) ;
 int bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DPoint3d *ParallelPts,long NumParallelPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe) ;
 int bcdtmSideSlope_scanForRadialParallelEdgeIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc) ;

@@ -20,7 +20,7 @@ BENTLEYDTM_EXPORT bool sOutputToConsole = false;
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long MessageNumber,char *DtmMessage,...)
+BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long MessageNumber,char const*DtmMessage,...)
 /*
 ** Called By DTM Functions for Outputting Messages
 **
