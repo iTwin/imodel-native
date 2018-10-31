@@ -17,6 +17,15 @@ static bset<T> StubBSet (std::initializer_list<T> list)
     bset<T> set (list.begin (), list.end ());
     return set;
     }
+ 
+template<typename T>
+AsyncTaskPtr<T> StubStartedAsyncTask(T returnValue)
+    {
+    return std::make_shared<PackagedAsyncTask<T>>([=]
+        {
+        return returnValue;
+        });
+    }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Benediktas.Lipnickas
@@ -29,10 +38,7 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledWithDifferentIds_ReturnsDifferentT
     auto newTaskCallback = [&] (ICancellationTokenPtr token)
         {
         timesCalled++;
-        return std::make_shared<PackagedAsyncTask<int>> ([=]
-            {
-            return 1;
-            });
+        return StubStartedAsyncTask<int>(1);
         };
 
     auto t1 = holder.GetTask (1, newTaskCallback);
@@ -53,10 +59,7 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledWithSameId_ReturnsSameTaskWithoutC
     auto newTaskCallback = [&] (ICancellationTokenPtr token)
         {
         timesCalled++;
-        return std::make_shared<PackagedAsyncTask<int>> ([=]
-            {
-            return 1;
-            });
+        return StubStartedAsyncTask<int>(1);
         };
 
     auto t1 = holder.GetTask (1, newTaskCallback);
@@ -71,9 +74,10 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledWithSameId_ReturnsSameTaskWithoutC
 //---------------------------------------------------------------------------------------
 TEST_F (UniqueTasksHolderTests, GetTask_CalledTwiceInSequence_ReturnsSameTaskAndParentTaskGetsBlockedByExistingTaskRetrieval)
     {
+    UniqueTasksHolder<int, int> holder;
+
     auto thread = WorkerThread::Create();
     auto thread2 = WorkerThread::Create();
-    UniqueTasksHolder<int, int> holder;
 
     AsyncTestCheckpoint checkpointA;
     AsyncTestCheckpoint checkpointB;
@@ -132,10 +136,7 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterTaskIsFinished_ReturnsDiffere
     auto newTaskCallback = [&] (ICancellationTokenPtr token)
         {
         timesCalled++;
-        return std::make_shared<PackagedAsyncTask<int>> ([=]
-            {
-            return 1;
-            });
+        return StubStartedAsyncTask<int>(1);
         };
 
     auto t1 = holder.GetTask (1, newTaskCallback);
@@ -157,10 +158,7 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterTaskIsCanceled_ReturnsDiffere
 
     auto newTaskCallback = [&] (ICancellationTokenPtr token)
         {
-        return std::make_shared<PackagedAsyncTask<int>> ([=]
-            {
-            return 1;
-            });
+        return StubStartedAsyncTask<int>(1);
         };
 
     auto t1 = holder.GetTask (1, newTaskCallback);
@@ -229,7 +227,6 @@ TEST_F (UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenIsSetT
         return std::make_shared<PackagedAsyncTask<int>> ([=]
             {
             EXPECT_TRUE (token->IsCanceled ());
-
             return 1;
             });
         });
@@ -250,7 +247,6 @@ TEST_F (UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenForNew
         return std::make_shared<PackagedAsyncTask<int>> ([=]
             {
             EXPECT_TRUE (token->IsCanceled ());
-
             return 1;
             });
         });
@@ -261,7 +257,6 @@ TEST_F (UniqueTasksHolderTests, CancelTask_CalledForExistingTask_TaskTokenForNew
         return std::make_shared<PackagedAsyncTask<int>> ([=]
             {
             EXPECT_FALSE (token->IsCanceled ());
-
             return 1;
             });
         });
