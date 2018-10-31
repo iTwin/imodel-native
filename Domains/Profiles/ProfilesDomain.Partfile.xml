@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
@@ -10,18 +9,18 @@
     </Part> -->
 
     <Product Name="ProfilesDomainSDK">
-        <SubPart PartName="ProfilesDomainDLL"/>
-        <Directories DirectoryListName="ProfilesDomainSDKDirs"/>
+        <SubPart PartName="ProfilesDLL"/>
+        <Directories DirectoryListName="ProfilesSDKDirs"/>
     </Product>
 
     <Product Name="ProfilesDomainTested">
         <SubProduct ProductName="ProfilesDomainSDK"/>
-        <SubPart PartName="RunProfilesDomainTests"/>
-        <Directories DirectoryListName="ProfilesDomainSDKDirs"/>
-        <Directories DirectoryListName="ProfilesDomainTestDirs"/>
+        <SubPart PartName="RunProfilesTests"/>
+        <Directories DirectoryListName="ProfilesSDKDirs"/>
+        <Directories DirectoryListName="ProfilesTestsDirs"/>
     </Product>
 
-    <Part Name="ProfilesDomainPublicAPI" BentleyBuildMakeFile="Profiles/Profiles.prewire.mke" ApiNumber="B02">
+    <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles/Profiles.prewire.mke" ApiNumber="B02">
         <Bindings>
             <PublicAPI Domain="Profiles"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
@@ -31,9 +30,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/Profiles.mke" ApiNumber="B02">
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform" Repository="DgnPlatform" />
-        <SubPart PartName="ProfilesDomainPublicAPI"/>
+    <Part Name="ProfilesDLL" BentleyBuildMakeFile="Profiles/Profiles.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="ProfilesPublicAPI"/>
         <Bindings>
             <Libs>
                 Delivery/$(libprefix)Profiles$(libext)
@@ -41,18 +40,14 @@
             <Assemblies>
                 Delivery/$(shlibprefix)Profiles$(ApiNumber)$(shlibext)
             </Assemblies>
-            <!-- <Files ProductDirectoryName="Libs" >
-                Delivery/$(libprefix)StructuralDomain$(libext)
-                Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)
-            </Files> -->
         </Bindings>
     </Part>
     
-    <Part Name="ProfilesDomainTestsExe" DeferType="ProfilesDomainTests" BentleyBuildMakeFile="Tests/Tests.mke">
-        <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
-        <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
-        <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
-        <SubPart PartName="ProfilesDomainDLL"/>
+    <Part Name="ProfilesTests" DeferType="ProfilesDomainTests" BentleyBuildMakeFile="Tests/Tests.mke">
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
+        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="ProfilesDLL"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ProfilesDomainTests.exe</Assemblies>
             <Files ProductDirectoryName="ProfilesDomainRoot">
@@ -65,10 +60,10 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunProfilesDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
+    <Part Name="RunProfilesTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
           BentleyBuildMakeOptions="-dGTEST_PRODUCT=ProfilesDomainTested\ -dGTEST_NAME=ProfilesDomainTests" ExcludeLibType="Static">
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest" />
-        <SubPart PartName="ProfilesDomainTestsExe"/>
+        <SubPart PartName="ProfilesTests"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">
                 Delivery/Gtest/Logs/ProfilesDomainTests.log
@@ -76,7 +71,7 @@
         </Bindings>
     </Part>
 
-    <ProductDirectoryList ListName="ProfilesDomainTestDirs">
+    <ProductDirectoryList ListName="ProfilesTestsDirs">
         <ProductDirectory Name="VendorNotices"                  Deliver="false" />
         <ProductDirectory Name="Libs"                           Deliver="false" />
         <ProductDirectory Name="ProfilesDomainIncludes"         Deliver="false" />
@@ -85,7 +80,7 @@
         <ProductDirectory Name="UnitTests-Objects"              Deliver="false" />
     </ProductDirectoryList>
 
-    <ProductDirectoryList ListName="ProfilesDomainSDKDirs">
+    <ProductDirectoryList ListName="ProfilesSDKDirs">
         <ProductDirectory Name="ProfilesDomainRoot"              Path=""/>
         <ProductDirectory Name="Assemblies"                      RelativeTo="ProfilesDomainRoot" Path=""/>
         <ProductDirectory Name="Assemblies"                      LibType="static" Deliver="false"/>
