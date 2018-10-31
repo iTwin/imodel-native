@@ -77,6 +77,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(Message)                     // =="%s"==
     L10N_STRING(MissingLinetype)             // =="Could not find linetype [%s]. Some elements may not display properly."==
     L10N_STRING(MaterialError)               // =="Material import error [%s]"==
+    L10N_STRING(MaterialNoFile)              // =="Material [%lls] has no texture file attached"==
     L10N_STRING(ModelAlreadyImported)        // =="Model [%s] has already been converted."==
     L10N_STRING(ModelFilteredOut)            // =="Model [%s] was not imported."==
     L10N_STRING(NotADgnDb)                   // =="The file is not a DgnDb"==

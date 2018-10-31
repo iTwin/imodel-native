@@ -11,6 +11,9 @@
 #include <VersionedDgnV8Api/DgnPlatform/RenderStore.h>
 #include <VersionedDgnV8Api/DgnPlatform/LxoEnvironment.h>
 
+#include <PointCloud/PointCloudSettings.h>
+#include <DgnPlatform/WebMercator.h>
+
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 static Utf8CP VIEW_SETTING_PointCloud = "pointCloud";
@@ -572,6 +575,9 @@ void Converter::ConvertViewClips(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInf
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ConvertViewGrids(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters)
     {
+    if (nullptr == v8Model.GetDgnFileP()->GetPersistentTcb())
+        return;
+
     // Set grid settings from V8 model info (orientation is stored in tcb, yuck!)...
     GridOrientationType gridOrientation = (GridOrientationType) v8Model.GetDgnFileP()->GetPersistentTcb()->gridOrientation;
     DgnV8Api::ModelInfo const& v8ModelInfo = v8Model.GetModelInfo();
@@ -642,7 +648,7 @@ void Converter::ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, DgnFileR dgnFile)
+bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, DgnFileR dgnFile, DgnV8ModelCR v8Model)
     {
     auto        elementRef = dgnFile.FindByElementId(viewInfo.GetElementId(), true);
     size_t      stringLength = 0;
@@ -662,9 +668,38 @@ bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, 
     Json::Value     value = Json::Reader::DoParse(Utf8String(wBackgroundMapJson));
 
     if (value.isObject())
+        {
+        if (value.isMember("groundBias"))
+            {
+            auto const&        modelInfo = v8Model.GetModelInfo();
+            value["groundBias"] =  value["groundBias"].asDouble() * (DgnV8Api::ModelInfo::GetUorPerMaster(&modelInfo) / DgnV8Api::ModelInfo::GetUorPerMeter(&modelInfo));
+            }
+            
         displayStyle.SetStyle(DisplayStyle::json_backgroundMap(), value);
+        }
 
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void Converter::ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewInfo, DgnV8ModelR v8Model)
+    {
+    Bentley::WString name;
+    DgnV8Api::BackgroundMapType type;
+    double offset;
+    double transparency;
+
+    DgnV8ViewInfoP info = const_cast<DgnV8ViewInfoP>(viewInfo);
+    info->GetBackgroundMapSettings(&name, &type, &offset, &transparency);
+    DisplayStyle::MapType mapType = (DisplayStyle::MapType) type;
+    Utf8String providerName;
+    if (0 == wcsicmp(L"Bing",name.c_str()))
+        providerName = WebMercator::BingImageryProvider::prop_BingProvider();
+
+    view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -683,12 +718,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     Utf8String v8ViewName;
     if (IsUpdating())
         {
-        // For imodels that were created during the EAP, but before this table was implemented, need to do a check
-        if (GetSyncInfo().ViewTableExists())
-            {
-            double lastModified;
-            GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
-            }
+        double lastModified;
+        GetSyncInfo().TryFindView(existingViewId, lastModified, v8ViewName, viewInfo);
         if (!existingViewId.IsValid())
             existingViewId = ViewDefinition::QueryViewId(*definitionModel, name);
         }
@@ -741,7 +772,7 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     // DisplayStyle
     ViewFlags flags = ConvertV8Flags(viewInfo.GetViewFlags());
 
-    flags.SetShowBackgroundMap(convertBackgroundMap(*parms.m_dstyle, parms.m_viewInfo, *v8File));
+    flags.SetShowBackgroundMap(convertBackgroundMap(*parms.m_dstyle, parms.m_viewInfo, *v8File, *v8Model));
 
     parms.m_dstyle->SetViewFlags(flags);
     ColorDef bgColor(DgnV8Api::IntColorDef(viewInfo.ResolveBGColor()).m_int); // Always set view's background color to "resolved" background color from V8.
@@ -760,6 +791,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
                 parms.m_dstyle->SetCode(DisplayStyle::CreateCode(*definitionModel, styleName));
             ConvertDisplayStyle(*parms.m_dstyle, *v8displayStyle);
             }
+        // Need to ensure that the json value holds a uint, not an int
+        parms.m_dstyle->SetBackgroundColor(parms.m_dstyle->GetBackgroundColor());
         }
 
     // View geometry
@@ -798,6 +831,16 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
         // When the display style is loaded from the db, the type of the background color is set to type int instead of uint.  This makes comparisons to a display style that was set on the
         // fly give a false negative.
         existingDef->GetDisplayStyle().SetBackgroundColor(existingDef->GetDisplayStyle().GetBackgroundColor());
+        ViewControllerPtr viewController = existingDef->LoadViewController();
+        if (viewController.IsValid())
+            {
+            auto spatialVC = viewController->ToSpatialViewP();
+            if (spatialVC)
+                {
+                PointCloudViewSettings pcvs = PointCloudViewSettings::FromView(*spatialVC);
+                pcvs._Save(*existingDef);
+                }
+            }
 
         view = viewFactory._UpdateView(*this, parms, *existingDef);
         }
@@ -810,6 +853,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ConvertViewClips(view, viewInfo, *v8Model, trans);
     ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
     ConvertViewACS(view, viewInfo, *v8Model, trans, name);
+    if (nullptr != m_dgndb->GeoLocation().GetDgnGCS())
+        ConvertMapSettings(view, &viewInfo, *v8Model);
 
     if (existingViewId.IsValid())
         {

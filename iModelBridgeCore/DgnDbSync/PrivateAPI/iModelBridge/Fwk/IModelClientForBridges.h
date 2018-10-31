@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/IModelClientForBridges.h $
+|     $Source: PrivateAPI/iModelBridge/Fwk/IModelClientForBridges.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |

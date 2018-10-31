@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwk.h>
-#include "IModelClientForBridges.h"
+#include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <WebServices/iModelHub/Client/Client.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <DgnPlatform/DgnProgressMeter.h>
@@ -325,12 +325,14 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
 
     if (nullptr == m_client || !m_client->IsConnected())
         {
+        GetLogger().error("Briefcase_AcquireBriefcase failed in nullptr == m_client || !m_client->IsConnected()");
         BeAssert(false);
         return BSIERROR;
         }
 
     if (m_briefcaseName.empty() || !m_briefcaseName.GetDirectoryName().IsDirectory())
         {
+        GetLogger().errorv(L"Briefcase_AcquireBriefcase failed for %s", m_briefcaseName.c_str());
         BeAssert(false);
         return BSIERROR;
         }
@@ -340,7 +342,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         if (Error::Id::iModelDoesNotExist == m_client->GetLastError().GetId())
             {
             m_lastServerError = EffectiveServerError::iModelDoesNotExist;
-            GetLogger().infov("%s - iModel not found in project\n", m_briefcaseBasename.c_str());
+            GetLogger().errorv("%s - iModel not found in project\n", m_briefcaseBasename.c_str());
             }
         else
             {
@@ -431,6 +433,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
     {
+    StopWatch pullpushTimer(true);
     m_lastServerError = EffectiveServerError::Unknown;
 
     GetProgressMeter().SetCurrentStepName("PullMergePush");
@@ -438,6 +441,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
 
     if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
         {
+        GetLogger().error("Briefcase_PullMergePush failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()");
         BeAssert(false);
         return BSIERROR;
         }
@@ -476,41 +480,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
         }
 
     SetSyncState(SyncState::Pushed);
-
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_PullAndMerge()
-    {
-    m_lastServerError = EffectiveServerError::Unknown;
-
-    GetProgressMeter().SetCurrentStepName("PullAndMerge");
-    GetLogger().infov("PullAndMerge %s", m_briefcaseBasename.c_str());
-
-    if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    if (BSISUCCESS != m_client->OpenBriefcase(*m_briefcaseDgnDb))
-        {
-        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
-        return BSIERROR;
-        }
-
-    auto status = m_client->PullAndMerge();
-
-    m_client->CloseBriefcase();
-
-    if (BSISUCCESS != status)
-        {
-        GetLogger().error(m_client->GetLastError().GetMessage().c_str());
-        return BSIERROR;
-        }
+    LogPerformance(pullpushTimer, "Briefcase_PullMergePush to iModelHub");
+    GetLogger().infov("PullMergePush %s : Done", m_briefcaseBasename.c_str());
 
     return BSISUCCESS;
     }
@@ -536,6 +507,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
     if (!m_briefcaseDgnDb.IsValid())
         return BSIERROR;
 
+    StopWatch releaseLockTimer(true);
     GetProgressMeter().SetCurrentStepName("ReleaseSharedLocks");
 
     DgnLockSet toRelease;
@@ -562,13 +534,13 @@ BentleyStatus iModelBridgeFwk::Briefcase_ReleaseAllPublicLocks()
         auto rstatus = m_briefcaseDgnDb->BriefcaseManager().DemoteLocks(toRelease);
         if (RepositoryStatus::Success != rstatus)
             {
-            GetLogger().infov("DemoteLocks failed with error %x", (int)rstatus);
+            GetLogger().errorv("DemoteLocks failed with error %x", (int)rstatus);
             return BSIERROR;
             }
         }
 
     SetSyncState(SyncState::Initial);
-
+    LogPerformance(releaseLockTimer, "Briefcase_ReleaseAllPublicLocks to iModelHub");
     return BSISUCCESS;
     }
 
@@ -598,7 +570,11 @@ void iModelBridgeFwk::SetIModelClientForBridgesForTesting(IModelClientForBridges
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     {
-    BeAssert((nullptr != DgnPlatformLib::QueryHost()) && "framework must initialize the host before calling this.");
+    if (nullptr == DgnPlatformLib::QueryHost())
+        {
+        GetLogger().fatal("framework must initialize the host before calling this.");
+        BeAssert(false);
+        }
 
     // Note that we use the framework's asset directory, which is different from the bridge's assets dir.
     BeFileName assetsDir = m_jobEnvArgs.m_fwkAssetsDir;
@@ -625,7 +601,10 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
         }
 
     if (!m_client->IsConnected())
+        {
+        GetLogger().error("iModelBridgeFwk client is not connected.");
         return BSIERROR;
+        }
 
     return BSISUCCESS;
     }
@@ -641,7 +620,10 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireExclusiveLocks()
     DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
     auto db = DgnDb::OpenDgnDb(nullptr, m_briefcaseName, openParams);
     if (!db.IsValid())
+        {
+        GetLogger().errorv(L"iModelBridgeFwk unable to open db %s for Briefcase_AcquireExclusiveLocks.", m_briefcaseName.c_str());
         return BSIERROR;
+        }
 
     LockRequest req;
     for (auto mid : m_modelsInserted)

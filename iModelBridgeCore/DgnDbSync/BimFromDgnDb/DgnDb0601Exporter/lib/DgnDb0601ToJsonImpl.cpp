@@ -2504,6 +2504,9 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportPropertyData()
         ECN::ECJsonUtilities::Point3DToJson(propData["globalOrigin"], globalOrigin);
         }
 
+    Utf8String value;
+    if (BE_SQLITE_ROW == m_dgndb->QueryProperty(value, DgnProjectProperty::Extents()))
+        propData["projectExtents"] = value;
     (QueueJson) (entry.toStyledString().c_str());
 
     return SUCCESS;

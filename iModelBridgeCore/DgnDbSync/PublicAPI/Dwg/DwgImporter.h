@@ -357,6 +357,7 @@ public:
         Utf8String          m_namePrefix;
         bool                m_includeDwgPathInMaterialSearchPaths;
         bool                m_runAsStandaloneApp;
+        bool                m_blockAsSharedParts;
 
     public:
         Options ()
@@ -377,6 +378,7 @@ public:
             m_asmAsParasolid = false;
             m_includeDwgPathInMaterialSearchPaths = false;
             m_runAsStandaloneApp = false;
+            m_blockAsSharedParts = true;
             }
 
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -399,6 +401,7 @@ public:
         void SetPointCloudLevelOfDetails (uint16_t lod) { if (lod <= 100) m_pointCloudLevelOfDetails = lod; }
         void SetPreferRenderableGeometry (bool forRendering) { m_preferRenderableGeometry = forRendering; }
         void SetAsmAsParasolid (bool toBrep) { m_asmAsParasolid = toBrep; }
+        void SetBlockAsSharedParts (bool v) { m_blockAsSharedParts = v; }
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
         void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
         void SetRunAsStandaloneApp (bool v) { m_runAsStandaloneApp = v; }
@@ -428,6 +431,7 @@ public:
         uint16_t GetPointCloudLevelOfDetails () const { return m_pointCloudLevelOfDetails; }
         bool IsRenderableGeometryPrefered () const { return m_preferRenderableGeometry; }
         bool IsAsmAsParasolid () const { return m_asmAsParasolid; }
+        bool IsBlockAsSharedParts () const { return m_blockAsSharedParts; }
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
         bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
         bool IsRunAsStandaloneApp () const { return m_runAsStandaloneApp; }
@@ -1317,6 +1321,7 @@ public:
     DgnProgressMeterR           GetProgressMeter() const;
     DWG_EXPORT MessageCenter&   GetMessageCenter () { return m_messageCenter; }
     DWG_EXPORT Options const&   GetOptions () const { return m_options; }
+    DWG_EXPORT Options&         GetOptionsForEdit () { return m_options; }
     DWG_EXPORT DgnCategoryId    GetUncategorizedCategory () const { return m_uncategorizedCategoryId; }
     DWG_EXPORT CodeSpecId       GetBusinessKeyCodeSpec () const { return m_businessKeyCodeSpecId; }
     StableIdPolicy              GetCurrentIdPolicy () const { return m_currIdPolicy; }

@@ -15,7 +15,37 @@
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="PSet_Application_ArchDoor" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application_ArchSpace" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application_ArchWallCasework" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application_ArchWindow" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="PSet_Application_Building" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application_Constraints" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application_Construction" isDomainClass="True">
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
@@ -160,42 +190,12 @@
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="PSet_Application_Dimensions" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="PSet_Application__Draughting" isDomainClass="True">
-        <ECCustomAttributes>
-            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="PSet_Application__name" isDomainClass="True">
-        <ECCustomAttributes>
-            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="PSet_Application_ArchDoor" isDomainClass="True">
-        <ECCustomAttributes>
-            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="PSet_Application_ArchSpace" isDomainClass="True">
-        <ECCustomAttributes>
-            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="PSet_Application_ArchWallCasework" isDomainClass="True">
-        <ECCustomAttributes>
-            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="PSet_Application_ArchWindow" isDomainClass="True">
-        <ECCustomAttributes>
-            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="PSet_Application_Constraints" isDomainClass="True">
-        <ECCustomAttributes>
-            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
-        </ECCustomAttributes>
-    </ECClass>
-    <ECClass typeName="PSet_Application_Construction" isDomainClass="True">
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
@@ -205,7 +205,7 @@
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
-    <ECClass typeName="PSet_Application_Electrical" isDomainClass="True">
+    <ECClass typeName="PSet_Application_Egenskaper" isDomainClass="True">
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
@@ -350,6 +350,11 @@
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="PSet_Application_Informasjon" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="PSet_Application_InsulationSymbology" isDomainClass="True">
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
@@ -361,6 +366,11 @@
         </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="PSet_Application_Mechanical___Flow" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application__name" isDomainClass="True">
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
@@ -415,7 +425,17 @@
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
     </ECClass>
+    <ECClass typeName="PSet_Application_Prosjektinformasjon" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="PSet_Application_Properties" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PSet_Application_Prosjektinformasjon" isDomainClass="True">
         <ECCustomAttributes>
             <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>

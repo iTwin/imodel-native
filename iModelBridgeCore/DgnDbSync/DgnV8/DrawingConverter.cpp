@@ -68,6 +68,37 @@ ConverterMadeCopyMarker::Key ConverterMadeCopyMarker::s_key;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+struct CodelessModelMarker : DgnV8Api::DgnModelAppData
+    {
+    static Key s_key;
+
+    void _OnCleanup (DgnV8ModelR host) override {delete this;}
+    static bool IsFoundOn(DgnV8ModelCR model) {return nullptr != model.FindAppData(s_key);}
+    static void AddTo(DgnV8ModelR model) {model.AddAppData(s_key, new CodelessModelMarker);}
+    };
+
+CodelessModelMarker::Key CodelessModelMarker::s_key;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct SuggestedModelUserLabel : DgnV8Api::DgnModelAppData
+    {
+    static Key s_key;
+
+    Utf8String m_userLabel;
+
+    void _OnCleanup (DgnV8ModelR host) override {delete this;}
+    static SuggestedModelUserLabel* Find(DgnV8ModelCR model) {return (SuggestedModelUserLabel*)model.FindAppData(s_key);}
+    static void AddTo(DgnV8ModelR model, Utf8CP userLabel) {model.AddAppData(s_key, new SuggestedModelUserLabel(userLabel));}
+    SuggestedModelUserLabel(Utf8CP l) { m_userLabel = l; }
+    };
+
+SuggestedModelUserLabel::Key SuggestedModelUserLabel::s_key;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 struct ModelsToBeMerged : DgnV8Api::DgnModelAppData
     {
     static Key s_key;
@@ -80,6 +111,23 @@ struct ModelsToBeMerged : DgnV8Api::DgnModelAppData
     };
 
 ModelsToBeMerged::Key ModelsToBeMerged::s_key;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::_ModelHasNoCode(DgnV8ModelCR v8model)
+    {
+    return CodelessModelMarker::IsFoundOn(v8model);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP Converter::_GetSuggestedUserLabel(DgnV8ModelCR v8model, Utf8CP defaultLabel)
+    {
+    auto s = SuggestedModelUserLabel::Find(v8model);
+    return s? s->m_userLabel.c_str(): defaultLabel;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
@@ -161,10 +209,18 @@ void RootModelConverter::_ConvertDrawings()
     for (auto v8mm : drawings)
         {
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
+        uint32_t start = GetElementsConverted();
+        StopWatch timer(true);
         DrawingsConvertModelAndViews(v8mm);
         // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
         DgnV8Api::PSolidKernelManager::StopSession();
         DgnV8Api::PSolidKernelManager::StartSession();
+
+        uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
+        ConverterLogging::LogPerformance(timer, "Convert Drawing Elements> Model '%s' (%" PRIu32 " element(s))",
+                                         v8mm.GetDgnModel().GetName().c_str(),
+                                         convertedElementCount);
+
         }
 
     }
@@ -188,6 +244,7 @@ bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev(" %s was previously converted to %s", IssueReporter::FmtModel(v8model).c_str(), IssueReporter::FmtModel(foundmm.GetDgnModel()).c_str());
 
+        GetChangeDetector()._OnModelSeen(*this, foundmm);
         return make_bpair(foundmm, false); // v8model has already been imported
         }
 	
@@ -405,7 +462,7 @@ static WString computeFullV8ModelName(DgnV8ModelR v8Model, wchar_t const* suffix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationScale(DgnV8ModelP v8Model, double newAnnotationScale)
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationScale(DgnV8ModelP v8Model, double newAnnotationScale, bool isNameless)
     {
     DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is how V8 remaps IDs. See below.
 
@@ -452,6 +509,12 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
 
     ScaledCopyMarker::AddTo(*newModel);
     ConverterMadeCopyMarker::AddTo(*newModel);
+    if (isNameless)
+        {
+        CodelessModelMarker::AddTo(*newModel);
+        Utf8PrintfString label("%s (%lf)", _ComputeModelName(*v8Model).c_str(), newAnnotationScale);
+        SuggestedModelUserLabel::AddTo(*newModel, label.c_str());
+        }
 
     DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
 
@@ -461,7 +524,7 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix)
+Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix, bool isNameless, Utf8CP displayLabel)
     {
     DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is how V8 remaps IDs. See below.
 
@@ -502,57 +565,11 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyModel(DgnV8ModelP v8Mo
     DgnV8Api::DependencyManager::SetProcessingDisabled(true);
 
     ConverterMadeCopyMarker::AddTo(*newModel);
-
-    return newModel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawing(DgnV8ModelP v8Model)
-    {
-    DgnV8Api::DependencyManager::SetProcessingDisabled(false);   // must allow dependency mgr to "process" as that is how V8 remaps IDs. See below.
-
-    auto v8file = v8Model->GetDgnFileP();
-
-    BeAssert(v8Model->GetModelType() == DgnV8Api::DgnModelType::Sheet);
-
-    // Generate a new name for the drawing model based on the attachment
-    WString newModelName = computeFullV8ModelName(*v8Model, L" (drawing) DgnV8Converter");
-
-    //  See if we already made such a copy. This can happen if the same drawing is attached to many different sheets 
-    //  or to the same sheet, each time with a different clip
-    if (true)
+    if (isNameless)
         {
-        DgnV8ModelP existingModel = v8file->FindLoadedModelById(v8file->FindModelIdByName(newModelName.c_str()));
-        if (nullptr != existingModel)
-            return existingModel;
+        CodelessModelMarker::AddTo(*newModel);
+        SuggestedModelUserLabel::AddTo(*newModel, displayLabel);
         }
-
-    // *** TRICKY: V8's ITxn::CreateNewModel function always sets up the new model as a rootmodel. V8 requires
-    //              that there be a non-zero refcount on a DgnFile that owns rootmodels. So, we must make sure that
-    //              there is such a ref.
-    _KeepFileAlive(*v8file);
-
-    //  Make a copy of the model
-    auto newModelInfo = v8Model->GetModelInfo().MakeCopy();
-    newModelInfo->SetName(newModelName.c_str());
-    newModelInfo->SetModelType(DgnV8Api::DgnModelType::Drawing);
-    newModelInfo->SetIsHidden(true);
-
-    DgnV8ModelP newModel = DgnV8Api::ITxnManager::GetCurrentTxn().CreateNewModel(nullptr, *v8file, *newModelInfo);
-    if (nullptr == newModel)
-        return nullptr;
-
-    v8file->CopyModelContents(*newModel, *v8Model, NULL);
-
-    SetEffectiveModelType(*newModel, newModel->GetModelType());
-
-    DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
-
-    DgnV8Api::DependencyManager::SetProcessingDisabled(true);
-
-    ConverterMadeCopyMarker::AddTo(*newModel);
 
     return newModel;
     }
@@ -604,7 +621,7 @@ void            Converter::MakeAttachedModelMatchRootAnnotationScale(DgnAttachme
 
     if (fabs(requiredEffectiveAnnotationScale - refAnnotationScale) > 10.E-8  * std::max(requiredEffectiveAnnotationScale, refAnnotationScale))
         {
-        auto scaledChild = CopyAndChangeAnnotationScale(ref.GetDgnModelP(), requiredEffectiveAnnotationScale);
+        auto scaledChild = CopyAndChangeAnnotationScale(ref.GetDgnModelP(), requiredEffectiveAnnotationScale, true);
         if (scaledChild.IsValid())
             {
             ref.SetDgnModel(scaledChild.get()); // v8DgnAttachment will add a reference to the new model, keeping it alive.
@@ -657,11 +674,12 @@ void Converter::TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_A
             continue;
 
         // See if the caller really wants me to make a copy of this particular attachment
-        if (!filter(*attachment))
+        BentleyApi::Utf8String displayLabel;
+        if (!filter(displayLabel, *attachment))
             continue;
 
         // Give the parent a hidden copy of the attached model.
-        auto copyOfAttached = CopyModel(attachment->GetDgnModelP(), L" (attachment) DgnV8Converter");
+        auto copyOfAttached = CopyModel(attachment->GetDgnModelP(), L" (attachment) DgnV8Converter", true, displayLabel.c_str());
         if (!copyOfAttached.IsValid())
             continue;
 
@@ -697,10 +715,14 @@ void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIn
 
     Transform2dAttachments(*v8model);
 
-    TransformDrawingAttachmentsToCopies(*v8model, [this] (DgnV8Api::DgnAttachment const& attachment)    // See "Why do sheets need to make copies of their attachments?"
+    TransformDrawingAttachmentsToCopies(*v8model, [this] (BentleyApi::Utf8StringR displayLabel, DgnV8Api::DgnAttachment const& attachment)    // See "Why do sheets need to make copies of their attachments?"
         {
         if (nullptr == attachment.GetDgnModelP())
             return false;
+
+        displayLabel.Sprintf("%s (rendered)", Utf8String(attachment.GetLogicalName()).c_str());
+
+        // WIP_ASK_RAY: Do we have to make a copy of the root model if it has no rendered attachment?
 
         // If this attachment is the root model OR the drawing has rendered view attachments (which will be merged into sheet) then make a copy.
         return (attachment.GetDgnModelP() == this->GetRootModelP() || HasRenderedViewAttachments(*attachment.GetDgnModelP()));
@@ -795,6 +817,8 @@ ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefi
     // need to update the DisplayStyle and CategorySelector.
 
     DisplayStyleR newDisplayStyle = drawing->GetDisplayStyle();
+    newDisplayStyle.SetBackgroundColor(newDisplayStyle.GetBackgroundColor());
+
     newDisplayStyle.ForceElementIdForInsert(existingViewDef.GetDisplayStyleId());
     if (!existingViewDef.GetDisplayStyle().EqualState(newDisplayStyle))
         {
@@ -808,8 +832,10 @@ ViewDefinitionPtr DrawingViewFactory::_UpdateView(Converter& converter, ViewDefi
     // even if there were no changes.  Therefore, we have to manually determine if there were changes to the list of categories and only call Update if there were.
     CategorySelectorR newCategorySelector = drawing->GetCategorySelector();
     newCategorySelector.ForceElementIdForInsert(existingViewDef.GetCategorySelectorId());
+
+    CategorySelectorR oldCategorySelector = existingViewDef.GetCategorySelector();
     Json::Value newCategoryVal = newCategorySelector.ToJson();
-    Json::Value oldCategoryVal = existingViewDef.GetCategorySelector().ToJson();
+    Json::Value oldCategoryVal = oldCategorySelector.ToJson();
     if (newCategoryVal != oldCategoryVal)
         {
         newCategorySelector.Update(&stat);

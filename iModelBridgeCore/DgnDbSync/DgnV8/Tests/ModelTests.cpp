@@ -34,7 +34,7 @@ void ModelTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNa
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-
+    params.m_keepHostAliveForUnitTests = true;
     params.SetInputFileName(input);
     params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
 
@@ -410,13 +410,14 @@ TEST_F(ModelTests, DrawingModel2D)
     {
     LineUpFiles(L"drawingmodel2d.ibim", L"Test3d.dgn", false);
 
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-    DgnV8Api::DgnModelStatus modelStatus;
-    v8editor.m_file->CreateNewModel(&modelStatus, TESTMODELNEWW, DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
-    ASSERT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-    v8editor.Save();
-
+        {
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+        DgnV8Api::DgnModelStatus modelStatus;
+        v8editor.m_file->CreateNewModel(&modelStatus, TESTMODELNEWW, DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+        ASSERT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.Save();
+        }
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);

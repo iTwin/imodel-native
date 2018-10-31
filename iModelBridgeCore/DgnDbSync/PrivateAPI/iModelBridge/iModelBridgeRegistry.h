@@ -34,14 +34,6 @@ extern "C" int main(int argc, char** argv)                                      
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson   02/15
-//=======================================================================================
-struct iModelBridgeRegistryUtils
-    {
-    static void InitCrt(bool quietAsserts);
-    static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
-    };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
@@ -109,7 +101,7 @@ public:
     //! @private
     static BeFileName MakeDbName(BeFileNameCR stagingDir, Utf8StringCR iModelName);
     //! @private
-    static int ComputeAffinityMain(int argc, WCharCP argv[]);
+    
     //! @private
     static int AssignMain(int argc, WCharCP argv[]);
 };

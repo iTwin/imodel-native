@@ -228,7 +228,13 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
             crd.SetVisibility(RealityDataBase::Visibility::PERMISSION);
             crd.SetDataset(model->GetName().c_str());
             crd.SetRealityDataType("RealityMesh3DTiles");
-            RealityDataService::SetProjectId("fb1696c8-c074-4c76-a539-a5546e048cc6"); // This is the project id  used for testing on qa.
+            BeGuid guid = GetDgnDb().QueryProjectGuid();
+            Utf8String projectId;
+            if (guid.IsValid())
+                projectId = guid.ToString();
+            else
+                projectId = "fb1696c8-c074-4c76-a539-a5546e048cc6"; // This is the project id  used for testing on qa.
+            RealityDataService::SetProjectId(projectId); 
                                               
             Utf8String empty = "";
             ConnectedResponse response = crd.Upload(modelDir, empty);

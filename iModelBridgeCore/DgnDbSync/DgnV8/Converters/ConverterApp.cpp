@@ -321,7 +321,10 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
 BentleyStatus RootModelConverterApp::_Initialize(int argc, WCharCP argv[])
     {
     DetectDrawingsDirs();    // populate m_params.m_drawingAndSheetFiles
-    return T_Super::_Initialize(argc, argv);
+    BentleyStatus status = SUCCESS;
+    status = T_Super::_Initialize(argc, argv);
+    
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

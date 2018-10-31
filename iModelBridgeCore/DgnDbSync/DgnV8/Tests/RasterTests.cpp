@@ -999,11 +999,23 @@ TEST_F(RasterTests, CRUD)
         ASSERT_TRUE(row2.IsEqual(actual2, 0.0001));
         }
 
-    BentleyApi::BeFileName popotons = GetOutputFileName(L"popotons.jpg");
-    time_t mtime;
-    popotons.GetFileTime(nullptr, nullptr, &mtime);
-    mtime += 1000;
-    popotons.SetFileTime(nullptr, &mtime);
-    DoUpdate(m_dgnDbFileName, m_v8FileName, false, false);
+    // This test only works if either uploading to the reality data server or storing to local server
+    Bentley::WString uploadConfigVar;
+    Bentley::WString serverConfigVar;
+    bool doCheck = false;
+    if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(uploadConfigVar, L"DGNDB_REALITY_MODEL_UPLOAD"))
+        doCheck = true;
+    else if (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(serverConfigVar, L"DGNDB_REALITY_MODEL_TEMPDIR"))
+        doCheck = true;
+
+    if (doCheck)
+        {
+        BentleyApi::BeFileName popotons = GetOutputFileName(L"popotons.jpg");
+        time_t mtime;
+        popotons.GetFileTime(nullptr, nullptr, &mtime);
+        mtime += 1000;
+        popotons.SetFileTime(nullptr, &mtime);
+        DoUpdate(m_dgnDbFileName, m_v8FileName, false, true);
+        }
     }
 

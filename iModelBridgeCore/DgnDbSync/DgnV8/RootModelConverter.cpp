@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 
+#include <ScalableMesh/ScalableMeshLib.h>
+
 // We enter this namespace in order to avoid having to qualify all of the types, such as bmap, that are common
 // to bim and v8. The problem is that the V8 Bentley namespace is shifted in.
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
@@ -360,6 +362,7 @@ SpatialConverterBase::ImportJobCreateStatus SpatialConverterBase::InitializeJob(
     v8JobProps["BridgeVersion"] = 1;//TODO: Move it to #define
     v8JobProps["BridgeType"] = "IModelBridgeForMstn";
     JobSubjectUtils::InitializeProperties(*ed, _GetParams().GetBridgeRegSubKeyUtf8(), comments, &v8JobProps);
+    JobSubjectUtils::SetTransform(*ed, BentleyApi::Transform::FromIdentity());
 
     SubjectCPtr jobSubject = ed->InsertT<Subject>();
     if (!jobSubject.IsValid())
@@ -458,6 +461,10 @@ bool Converter::IsFileAssignedToBridge(DgnV8FileCR v8File) const
     bool isMyFile = _GetParams().IsFileAssignedToBridge(fn);
     if (!isMyFile)
         {
+        // Always own a .i.dgn file and all its embedded references:
+        if (v8File.IsIModel() || v8File.IsEmbeddedFile())
+            return  true;
+
         // Before we get the bridge affinity work for references of foreign file formats, treat them as owned, so they get processed - TFS's 916434,921023.
         auto rootFilename = _GetParams().GetInputFileName ();
         if (!DgnV8Api::DgnFile::IsSameFile(fn.c_str(), rootFilename.c_str(), DgnV8Api::FileCompareMask::BaseNameAndExtension))
@@ -743,6 +750,25 @@ RootModelConverter::~RootModelConverter()
         //              files all have appdata saying that the converter already knows about them.
         DiscardV8FileSyncInfoAppData(*file);
         }
+
+    m_v8Files.clear();
+    m_filesKeepAlive.clear();
+
+    m_rootFile = nullptr;
+    if (!m_params.m_keepHostAliveForUnitTests)
+        {
+        if (ScalableMesh::ScalableMeshLib::IsInitialized())
+            ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
+
+        ClearV8ProgressMeter();
+
+        if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
+            DgnV8Api::Raster::RasterCoreLib::GetHost().Terminate(false);
+
+        DgnV8Api::DgnViewLib::Host* host = dynamic_cast<DgnV8Api::DgnViewLib::Host*>(DgnV8Api::DgnPlatformLib::QueryHost());
+        if (NULL != host)
+            host->Terminate(false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,7 +798,7 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
         return;
         }
-
+    m_hadAnyChanges = true;
 
     DgnV8Api::DgnModel& v8Model = v8mm.GetV8Model();
 
@@ -1309,31 +1335,40 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
     DgnV8ModelP rootModel = GetRootModelP();
     for (auto& modelMapping : m_v8ModelMappings)
         {
-        if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
-            {
-            BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
-            keepAlive.push_back(mref);
-            
-            DgnElementId partition = mref->GetModeledElementId();
-            DgnElementCPtr element = GetDgnDb().Elements().GetElement(partition);
-            bool isRootModel = &modelMapping.GetV8Model() == rootModel;
-            if (!isRootModel)
-                {
-                mref->Delete();
-                GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
-                if (element.IsValid())
-                    element->Delete();
-                }
-            else
-                {
-                mref->SetIsPrivate(true);
-                mref->Update();
-                }
-            mappingsToRemove.push_back(modelMapping);
+        if (IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
+            continue;
 
-            Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
-            ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+        BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
+        DgnModelId modelId = mref->GetModelId();
+        if (!IsBimModelAssignedToJobSubject(modelId))
+            continue;
+        
+        DgnElementId partition = mref->GetModeledElementId();
+        //Check whether the root models partition element is the same as this models parition rppt
+        keepAlive.push_back(mref);
+        
+        DgnElementCPtr element = GetDgnDb().Elements().GetElement(partition);
+        bool isRootModel = &modelMapping.GetV8Model() == rootModel;
+        if (!isRootModel)
+            {
+            DgnModelId modelId = mref->GetModelId();
+            mref->Delete();
+            if (_WantModelProvenanceInBim())
+                DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
+            GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
+            if (element.IsValid())
+                element->Delete();
             }
+        else
+            {
+            mref->SetIsPrivate(true);
+            mref->Update();
+            }
+        mappingsToRemove.push_back(modelMapping);
+
+        Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
+        ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+        
         }
     for (auto const& mappingToRemove : mappingsToRemove)
         {

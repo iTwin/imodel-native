@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: iModelBridge/Tests/NonPublished/FakeRegistry.h $
+|  $Source: PrivateAPI/iModelBridge/FakeRegistry.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |

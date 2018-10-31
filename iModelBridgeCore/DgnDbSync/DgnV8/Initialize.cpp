@@ -253,6 +253,17 @@ struct ConfigDebugOutput : DgnV8Api::IMacroDebugOutput
         }
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool     IsValidConfigFilePath(WCharCP configVar)
+    {
+    Bentley::WString cfgVarValue;
+    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, configVar))
+        return false;
+
+    return BeFileName::DoesPathExist(cfgVarValue.c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BentleySystems  
@@ -344,21 +355,21 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 
         }
 
-    // if we didn't find any of our command line arguments, then we don't try to use any configuration files, and don't install the MacroConfigurationAdmin ConfigurationAdmin
-    // NOTE: Need to revisit this if we ship fallback configuration files.
-    if (!configRootDir.empty() || !installDir.empty() ||!msConfigFileName.empty())
+    BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
+    BeFileName  fallbackConnectConfigDir(exeDir);
+    fallbackConnectConfigDir.AppendToPath(L"Dgnv8");
+    BeFileName  fallbackV8iConfigDir(exeDir);
+    fallbackV8iConfigDir.AppendToPath(L"Dgnv8\\v8iConfig");
+
+    bool fallbackExist = isV8i ? fallbackV8iConfigDir.DoesPathExist() : fallbackConnectConfigDir.DoesPathExist();
+    if (!configRootDir.empty() || !installDir.empty() ||!msConfigFileName.empty() || fallbackExist)
         {
         s_macros = new DgnV8Api::MacroConfigurationAdmin;
         DgnV8Api::ConfigurationManager::SetGetAdminFunc(getConvertMacros);  // *** TRICKY: Our startup code, including LoadMacros below, makes calls on ConfigurationManager, but it isn't set up yet,
                                                                              // so Sam implemented this scheme to get it while it's used. It's not really right, but it works. See comment in MicroStation's msmacro.cpp
 
         // If we want to operate without  MicroStation installation we have to ship fallback configuration files for both V8i and CONNECT with the DgnV8 converter. We find those relative to this dll.
-        BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
-        BeFileName  fallbackV8iConfigDir(exeDir);
-        fallbackV8iConfigDir.AppendToPath(L"Dgnv8\\v8iConfig");
-        BeFileName  fallbackConnectConfigDir(exeDir);
-        fallbackConnectConfigDir.AppendToPath(L"Dgnv8");
-
+        
         // if enough information is supplied, read either CONNECT or V8i configuration files to define the macros.
         if (!isV8i)
             {
@@ -387,7 +398,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
     Bentley::WString cfgVarValue;
 
     // Setting MS_FONTCONFIGFILE means we don't have to provide our own DgnV8 FontAdmin just to set the paths.
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, L"MS_FONTCONFIGFILE"))
+    if (!IsValidConfigFilePath(L"MS_FONTCONFIGFILE"))
         {
         Bentley::BeFileName cfgFileName(v8RootDir);
         cfgFileName.AppendToPath(L"Fonts");
@@ -417,7 +428,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
         DgnV8Api::ConfigurationManager::DefineVariable(L"MS_SEEDFILES", seedFilesPath);        
         }    
     
-    if (SUCCESS != DgnV8Api::ConfigurationManager::GetVariable(cfgVarValue, L"MS_TRANSSEED"))
+    if (!IsValidConfigFilePath(L"MS_TRANSSEED"))
         {
         Bentley::BeFileName transeed(v8RootDir);
         transeed.AppendToPath(L"Seed\\seed3d.dgn");
@@ -427,9 +438,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
     // If MS_SMARTSOLID is not defined, Vancouver will look for a "schema" sub-directory next to the process's EXE to provide ParaSolid with its schema files.
     // In DgnDb, we place ParaSolid schemas in a "PSolidSchemas" sub-directory for clarity, so we need to inject a better path.
     // Further, might as well ensure V8 uses the schema from the V8 delivery, and not ours.
-    Bentley::WString parasolidCfgVarValue;
-    bool hasPsolidDir = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(parasolidCfgVarValue, L"MS_SMARTSOLID")) && BeFileName::DoesPathExist(parasolidCfgVarValue.c_str());
-    if (!hasPsolidDir)
+    if (!IsValidConfigFilePath(L"MS_SMARTSOLID"))
         {
         WString smartSolidDir = v8RootDir;
         
@@ -439,6 +448,21 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 
         DgnV8Api::ConfigurationManager::DefineVariable(L"MS_SMARTSOLID", smartSolidDir.c_str());
         }    
+
+    // PSolidCore depends on MS_TMP - VSTS 39658:
+    if (!IsValidConfigFilePath(L"MS_TMP"))
+        {
+        Bentley::WChar  tmp[MAX_PATH];
+        if (::GetTempPathW(MAX_PATH, tmp))
+            {
+            BeFileName  dir(tmp);
+            dir.AppendToPath (L"\\Bentley\\DgnV8Converter");
+            if (dir.DoesPathExist() || BeFileName::CreateNewDirectory(dir.c_str()) == BeFileNameStatus::Success)
+                DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TMP", dir.c_str());
+            else
+                DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TMP", tmp);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -664,25 +688,40 @@ class SupplyBlankPassword : public DgnV8Api::DgnFileSupplyRights
         return SUCCESS;
         }
     };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::InitializeDllPath(BentleyApi::BeFileName const& thisLibraryPath)
+    {
+    static std::once_flag s_initOnce;
+    std::call_once(s_initOnce, [&]
+        {
+        BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
+        dllDirectory.AppendToPath(L"DgnV8");
+        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
+        realdwgDirectory.AppendToPath(L"RealDwg");
+        Converter::SetDllSearchPath(dllDirectory, &realdwgDirectory);
+        });
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibraryPath)
     {
+    InitializeDllPath(thisLibraryPath);
+
     static std::once_flag s_initOnce;
     std::call_once(s_initOnce, [&]
-    {
+        {
         BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
         dllDirectory.AppendToPath(L"DgnV8");
-        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
-        realdwgDirectory.AppendToPath(L"RealDwg");
-        Converter::SetDllSearchPath(dllDirectory, &realdwgDirectory);
-
         initializeV8HostConfigVars(Bentley::BeFileName(dllDirectory.c_str()), 0, nullptr);
         DgnV8Api::DgnPlatformLib::Initialize(*new MinimalV8Host, true);
+        BentleyApi::BeFileName realdwgDirectory(dllDirectory);
+        realdwgDirectory.AppendToPath(L"RealDwg");
         Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
-    });
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -717,6 +756,14 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
     if (SUCCESS != openStatus)
         return BSIERROR;
     
+    if (file->IsIModel())
+        {
+        // Fulfill the request of VSTS 32629 - assign an i.dgn file to MicroStation Bridge by default:
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::High;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"iModelBridgeForMstn");
+        return  BSISUCCESS;
+        }
+
     Bentley::WString applicationName;
     if (SUCCESS == file->GetAuthoringProductName(applicationName))
         {
@@ -735,7 +782,7 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
 #endif
 
     affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
-    BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+    BeStringUtilities::Wcsncpy(buffer, bufferSize, L"iModelBridgeForMstn");
     return BSISUCCESS;
     }
 
@@ -779,7 +826,7 @@ void            Converter::GetAffinity(WCharP buffer, const size_t bufferSize, i
 #ifdef USEABDFILECHECKER
         BeStringUtilities::Wcsncpy(buffer, bufferSize, L"AECOsimBuildingDesigner");
 #else
-        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"iModelBridgeForMstn");
 #endif
         return;
         }
