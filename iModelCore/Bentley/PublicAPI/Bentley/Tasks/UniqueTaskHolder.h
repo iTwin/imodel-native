@@ -63,7 +63,7 @@ struct UniqueTasksHolder
             auto impl = m_impl;
 
             BeMutexHolder mutex(impl->taskCS);
-            
+
             AsyncTaskPtr<T> resultTask;
 
             auto it = impl->tasks.find(id);
@@ -74,7 +74,7 @@ struct UniqueTasksHolder
                     {
                     resultTask = task->runningTask;
                     }
-                else 
+                else
                     {
                     if (task->queue.size() < maxQueue)
                         {
@@ -115,24 +115,18 @@ struct UniqueTasksHolder
 
                     auto it = impl->tasks.find(id);
                     if (it != impl->tasks.end() && it->second.get() == task.get())
-                        {
                         impl->tasks.erase(id);
-                        }
                     });
 
                 if (!task->runningTask->IsCompleted())
-                    {
                     impl->tasks[id] = task;
-                    }
 
                 resultTask = task->runningTask;
                 }
 
             auto parentTask = AsyncTasksManager::GetCurrentThreadAsyncTask();
             if (nullptr != parentTask)
-                {
                 parentTask->AddSubTask(resultTask);
-                }
 
             return resultTask;
             }
