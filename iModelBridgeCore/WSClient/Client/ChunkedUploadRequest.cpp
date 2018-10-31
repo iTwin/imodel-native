@@ -89,14 +89,30 @@ void ChunkedUploadRequest::SetCancellationToken(ICancellationTokenPtr token)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                       Mantas.Smicius 10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChunkedUploadRequest::AddHeadersToRequest(HttpHeaderMap& headers, Http::RequestR request)
+    {
+    for (auto& header : headers)
+        {
+        request.GetHeaders().AddValue(header.first, header.second);
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                       Mantas.Smicius 10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChunkedUploadRequest::AddRequestsHeadersTo(Http::RequestR request)
+    {
+    AddHeadersToRequest(GetRequestsHeaders().GetMap(), request);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChunkedUploadRequest::AddLastRequestHeadersTo(Http::RequestR request)
     {
-    for (auto& value : GetLastRequestHeaders().GetMap())
-        {
-        request.GetHeaders().AddValue(value.first, value.second);
-        }
+    AddHeadersToRequest(GetLastRequestHeaders().GetMap(), request);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -113,6 +129,14 @@ void ChunkedUploadRequest::SetUploadTransferTime(uint32_t time)
 uint32_t ChunkedUploadRequest::GetUploadTransferTime()
     {
     return m_uploadTransferTime;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                       Mantas.Smicius 10/2019
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpRequestHeadersR ChunkedUploadRequest::GetRequestsHeaders()
+    {
+    return m_requestsHeaders;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -188,6 +212,7 @@ AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue(std::shared_pt
     bool isOnlyHandshakeRequest = cuRequest->m_mainBody.IsNull();
     bool isOneRequestAndNoHandshake = cuRequest->m_handshakeBody.IsNull() && !cuRequest->m_mainBody.IsNull() && DefaultChunkSize >= cuRequest->m_mainBody->GetLength();
 
+    cuRequest->AddRequestsHeadersTo(request);
     if (isOnlyHandshakeRequest || isOneRequestAndNoHandshake)
         cuRequest->AddLastRequestHeadersTo(request);
 
@@ -285,6 +310,7 @@ void ChunkedUploadRequest::SendChunkAndContinue(std::shared_ptr<ChunkedUploadReq
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
 
+    cuRequest->AddRequestsHeadersTo(request);
     if (isLastChunk)
         {
         // TODO VRA: workaround to issue when large file (1GB+) is being copied/sent to WSG ECPlugin backend (PW/eB)

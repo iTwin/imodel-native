@@ -16,6 +16,7 @@
 #define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
 #define HEADER_MasFileETag                 "Mas-File-ETag"
 #define HEADER_MasServerHeader             "Mas-Server"
+#define HEADER_MasRequestId                "Mas-Request-Id"
 
 #define VALUE_FileAccessUrlType_Azure      "AzureBlobSasUrl"
 #define VALUE_True                         "true"
@@ -65,7 +66,7 @@ bool WebApiV2::IsSupported(WSInfoCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMaxUploadSize) const
+uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, ActivityLoggerR activityLogger, uint64_t defaultMaxUploadSize) const
     {
     if (!m_info.IsMaxUploadSizeSupported())
         return defaultMaxUploadSize;
@@ -78,7 +79,7 @@ uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMa
 
     if (instances.IsEmpty())
         {
-        LOG.error("GetMaxUploadSize: Response was empty");
+        activityLogger.error("GetMaxUploadSize: Response was empty");
         return defaultMaxUploadSize;
         }
 
@@ -87,7 +88,7 @@ uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMa
         !instance.GetObjectId().schemaName.Equals(SCHEMA_Policies) ||
         !instance.GetObjectId().className.Equals(CLASS_PolicyAssertion))
         {
-        LOG.errorv("GetMaxUploadSize: Expected '%s' schema and '%s' class. Actually it was: '%s' schema and '%s' class", SCHEMA_Policies, CLASS_PolicyAssertion,
+        activityLogger.errorv("GetMaxUploadSize: Expected '%s' schema and '%s' class. Actually it was: '%s' schema and '%s' class", SCHEMA_Policies, CLASS_PolicyAssertion,
                    instance.GetObjectId().schemaName.c_str(), instance.GetObjectId().className.c_str());
         return defaultMaxUploadSize;
         }
@@ -95,7 +96,7 @@ uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMa
     if(!instance.GetObjectId().GetRemoteId().Equals(INSTANCE_PersistenceFileBackable) &&
        !instance.GetObjectId().GetRemoteId().Equals(INSTANCE_PersistenceStreamBackable))
         {
-        LOG.errorv("GetMaxUploadSize: InstanceId was expected to be '%s' or '%s'. Actually it was: '%s'", INSTANCE_PersistenceFileBackable,
+        activityLogger.errorv("GetMaxUploadSize: InstanceId was expected to be '%s' or '%s'. Actually it was: '%s'", INSTANCE_PersistenceFileBackable,
                    INSTANCE_PersistenceStreamBackable, instance.GetObjectId().GetRemoteId().c_str());
         return defaultMaxUploadSize;
         }
@@ -103,7 +104,7 @@ uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMa
     if (!instance.GetProperties().HasMember(PROPERTY_AdhocProperties) ||
         !instance.GetProperties()[PROPERTY_AdhocProperties].IsArray())
         {
-        LOG.error("GetMaxUploadSize: AdhocProperties did not exist in the response");
+        activityLogger.error("GetMaxUploadSize: AdhocProperties did not exist in the response");
         return defaultMaxUploadSize;
         }
 
@@ -116,7 +117,7 @@ uint64_t WebApiV2::GetMaxUploadSize(Http::Response& response, uint64_t defaultMa
             return BeRapidJsonUtilities::UInt64FromValue((*itr)["Value"], defaultMaxUploadSize);
         }
 
-    LOG.error("GetMaxUploadSize: MaxUploadSize property did not exist in the response");
+    activityLogger.error("GetMaxUploadSize: MaxUploadSize property did not exist in the response");
     return defaultMaxUploadSize;
     }
 
@@ -236,6 +237,40 @@ Utf8String WebApiV2::CreateNavigationSubPath(ObjectIdCR parentId) const
         return "Navigation/NavNode";
 
     return CreateObjectSubPath(parentId) + "/NavNode";
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ActivityLogger WebApiV2::CreateActivityLogger(Utf8StringCR activityName, IWSRepositoryClient::RequestOptionsPtr options) const
+    {
+    if (m_info.GetWebApiVersion() < BeVersion(2, 7))
+        return ActivityLogger(LOG, activityName);
+
+    Utf8String activityId = m_configuration->GetActivityIdGenerator().GenerateNextId();
+    return ActivityLogger(LOG, activityName, HEADER_MasRequestId, activityId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request)
+    {
+    if (!activityLogger.HasValidActivityInfo())
+        return;
+
+    request.GetHeaders().AddValue(activityLogger.GetHeaderName(), activityLogger.GetActivityId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void WebApiV2::SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request)
+    {
+    if (!activityLogger.HasValidActivityInfo())
+        return;
+
+    request.GetRequestsHeaders().AddValue(activityLogger.GetHeaderName(), activityLogger.GetActivityId());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -427,25 +462,32 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
     {
+    auto activityLogger = CreateActivityLogger("Get Repository Info");
+    activityLogger.debug("Started");
+
     auto repository = WSRepositoryClient::ParseRepositoryUrl(GetUrl("/"));
 
     const uint64_t defaultMaxUploadSize = 0;
     repository.SetMaxUploadSize(defaultMaxUploadSize);
 
     if (!repository.IsValid())
+        {
+        activityLogger.error("Configured repository is not valid");
         return CreateCompletedAsyncTask(WSRepositoryResult::Error(WSError::CreateServerNotSupportedError()));
+        }
 
     if (GetMaxWebApiVersion() < BeVersion(2, 8))
         return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
 
     Http::Request request = CreateGetRepositoryRequest();
+    SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoryResult>([=] (Http::Response& response) mutable
         {
         if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
             return WSRepositoryResult::Error(response);
 
-        repository.SetMaxUploadSize(GetMaxUploadSize(response, defaultMaxUploadSize));
+        repository.SetMaxUploadSize(GetMaxUploadSize(response, activityLogger, defaultMaxUploadSize));
         repository.SetPluginVersion(GetRepositoryPluginVersion(response, m_configuration->GetPersistenceProviderId()));
         return WSRepositoryResult::Success(repository);
         });
@@ -461,10 +503,14 @@ const bvector<Utf8String>& providerIds,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Get Repositories");
+    activityLogger.debug("Started");
+
     // TODO: implement filtering query by PluginId if needed
     Utf8String url = GetRepositoryUrl("");
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
+    SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
     return request.PerformAsync()->Then<WSRepositoriesResult>([this] (Http::Response& httpResponse)
         {
@@ -482,12 +528,19 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Get Object");
+    activityLogger.debug("Started");
+
     if (!objectId.IsValid())
+        {
+        activityLogger.errorv("Specified 'objectId' is not valid. 'objectId':'%s'", objectId.ToString().c_str());
         return CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
 
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
 
+    SetActivityIdToRequest(activityLogger, request);
     request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 1);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObject);
@@ -510,9 +563,13 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Get Children");
+    activityLogger.debug("Started");
+
     Utf8String url = GetUrl(CreateNavigationSubPath(parentObjectId), CreateSelectPropertiesQuery(propertiesToSelect));
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
 
+    SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
 
     return request.PerformAsync()->Then<WSObjectsResult>([this] (Http::Response& httpResponse)
@@ -533,13 +590,19 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Get File");
+    activityLogger.debug("Started");
+
     if (!objectId.IsValid())
+        {
+        activityLogger.errorv("Specified 'objectId' is not valid. 'objectId':'%s'", objectId.ToString().c_str());
         return CreateCompletedAsyncTask(WSResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
 
     bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
 
     Utf8String url = GetUrl(CreateFileSubPath(objectId));
-    Http::Request request = CreateFileDownloadRequest(url, bodyResponseOut, eTag, downloadProgressCallback, ct);
+    Http::Request request = CreateFileDownloadRequest(url, bodyResponseOut, eTag, activityLogger, downloadProgressCallback, ct);
 
     if (isExternalFileAccessSupported)
         {
@@ -548,7 +611,7 @@ ICancellationTokenPtr ct
         }
 
     auto finalResult = std::make_shared<WSResult>();
-    return request.PerformAsync()->Then([=] (Http::Response& response)
+    return request.PerformAsync()->Then([=] (Http::Response& response) mutable
         {
         if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
             {
@@ -557,7 +620,7 @@ ICancellationTokenPtr ct
             }
 
         Utf8String redirectUrl = response.GetHeaders().GetLocation();
-        Http::Request request = CreateFileDownloadRequest(redirectUrl, bodyResponseOut, eTag, downloadProgressCallback, ct);
+        Http::Request request = CreateFileDownloadRequest(redirectUrl, bodyResponseOut, eTag, activityLogger, downloadProgressCallback, ct);
         request.PerformAsync()->Then([=] (Http::Response& response)
             {
             *finalResult = ResolveFileDownloadResponse(response);
@@ -576,11 +639,13 @@ Http::Request WebApiV2::CreateFileDownloadRequest
 Utf8StringCR url,
 HttpBodyPtr responseBody,
 Utf8StringCR eTag,
+ActivityLoggerR activityLogger,
 Http::Request::ProgressCallbackCR onProgress,
 ICancellationTokenPtr ct
 ) const
     {
     Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url);
+    SetActivityIdToRequest(activityLogger, request);
     request.SetResponseBody(responseBody);
     request.SetRetryOptions(Http::Request::RetryOption::ResumeTransfer, 0);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
@@ -614,9 +679,13 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Get Schemas");
+    activityLogger.debug("Started");
+
     Utf8String url = GetUrl(CreateClassSubPath("MetaSchema", "ECSchemaDef"));
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
+    SetActivityIdToRequest(activityLogger, request);
     request.GetHeaders().SetIfNoneMatch(eTag);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
@@ -639,6 +708,9 @@ Utf8StringCR skipToken,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Send Query");
+    activityLogger.debug("Started");
+
     Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
     Utf8String url = GetUrlWithoutLengthWarning(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
     Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
@@ -665,6 +737,7 @@ ICancellationTokenPtr ct
         requestHasSkipToken = true;
         }
 
+    SetActivityIdToRequest(activityLogger, request);
     request.GetHeaders().SetIfNoneMatch(eTag);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
@@ -687,11 +760,18 @@ IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Send Changeset", options);
+    activityLogger.debug("Started");
+
     if (GetMaxWebApiVersion() < BeVersion(2, 1))
+        {
+        activityLogger.error("Supported from WebApi 2.1 only");
         return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
 
     Utf8String url = GetUrl("$changeset");
     Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
+    SetActivityIdToRequest(activityLogger, request);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
     if (nullptr != options) 
@@ -746,6 +826,9 @@ IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Create Object", options);
+    activityLogger.debug("Started");
+
     Utf8String url;
     if (!relatedObjectId.IsEmpty())
         {
@@ -785,6 +868,7 @@ ICancellationTokenPtr ct
         }
 
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
+    SetActivityIdToRequest(activityLogger, request);
     if (nullptr != options)
         request.SetUploadTransferTime(options->GetTransferTimeOut());
 
@@ -821,8 +905,14 @@ IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Update Object", options);
+    activityLogger.debug("Started");
+
     if (!objectId.IsValid())
+        {
+        activityLogger.errorv("Specified 'objectId' is not valid. 'objectId':'%s'", objectId.ToString().c_str());
         return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
 
     if (!filePath.empty() && GetMaxWebApiVersion() < BeVersion(2, 4))
         {
@@ -832,6 +922,7 @@ ICancellationTokenPtr ct
 
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
+    SetActivityIdToRequest(activityLogger, request);
     if (nullptr != options)
         request.SetUploadTransferTime(options->GetTransferTimeOut());
     // WSG 2.x does not support instance validation in update request
@@ -875,11 +966,18 @@ IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Delete Object", options);
+    activityLogger.debug("Started");
+
     if (!objectId.IsValid())
+        {
+        activityLogger.errorv("Specified 'objectId' is not valid. 'objectId':'%s'", objectId.ToString().c_str());
         return CreateCompletedAsyncTask(WSDeleteObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
 
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
+    SetActivityIdToRequest(activityLogger, request);
     request.SetCancellationToken(ct);
     if (nullptr != options)
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
@@ -911,16 +1009,22 @@ IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
+    auto activityLogger = CreateActivityLogger("Update File", options);
+    activityLogger.debug("Started");
+
     if (!objectId.IsValid())
+        {
+        activityLogger.errorv("Specified 'objectId' is not valid. 'objectId':'%s'", objectId.ToString().c_str());
         return CreateCompletedAsyncTask(WSUpdateFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
 
     bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
 
     BeFile beFile;
     beFile.Open(filePath, BeFileAccess::Read);
-
     Utf8String url = GetUrl(CreateFileSubPath(objectId));
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
+    SetActivityIdToRequest(activityLogger, request);
     if (nullptr != options)
         request.SetUploadTransferTime(options->GetTransferTimeOut());
 
@@ -941,7 +1045,7 @@ ICancellationTokenPtr ct
     auto finalResult = std::make_shared<WSUpdateFileResult>();
     return m_jobApi
         ->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
-        ->Then([=] (HttpJobResult& response)
+        ->Then([=] (HttpJobResult& response) mutable
         {
         if (!response.IsSuccess())
             {
@@ -950,7 +1054,7 @@ ICancellationTokenPtr ct
             }
 
         auto httpResponse = response.GetValue();
-        ResolveUpdateFileResponse(httpResponse, url, filePath, uploadProgressCallback, ct)
+        ResolveUpdateFileResponse(httpResponse, url, filePath, activityLogger, uploadProgressCallback, ct)
             ->Then([=] (WSUpdateFileResult result)
             {
             *finalResult = result;
@@ -970,6 +1074,7 @@ AsyncTaskPtr<WSUpdateFileResult> WebApiV2::ResolveUpdateFileResponse
 Http::Response& httpResponse,
 Utf8StringCR url,
 BeFileNameCR filePath,
+ActivityLoggerR activityLogger,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
@@ -990,12 +1095,12 @@ ICancellationTokenPtr ct
 
     if (redirectType != VALUE_FileAccessUrlType_Azure)
         {
-        LOG.errorv("Header field '%s' contains not supported value: '%s'", HEADER_MasFileAccessUrlType, redirectType.c_str());
+        activityLogger.errorv("Header field '%s' contains not supported value: '%s'", HEADER_MasFileAccessUrlType, redirectType.c_str());
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateServerNotSupportedError()));
         }
 
     auto finalResult = std::make_shared<WSUpdateFileResult>();
-    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult)
+    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult) mutable
         {
         if (!azureResult.IsSuccess())
             {
@@ -1008,6 +1113,7 @@ ICancellationTokenPtr ct
             return;
 
             Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "PUT");
+            SetActivityIdToRequest(activityLogger, request);
             request.GetHeaders().SetValue(HEADER_MasUploadConfirmationId, confirmationId);
             request.PerformAsync()->Then([=] (Http::Response& response)
                 {
