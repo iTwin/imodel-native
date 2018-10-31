@@ -87,7 +87,7 @@ struct UniqueTasksHolder
                                 *finalResult = result;
                                 });
                             });
-                        queuedTask.resultTask = queuedTask.runTask->Then<T>([=]
+                        queuedTask.resultTask = queuedTask.runTask->template Then<T>([=]
                             {
                             return *finalResult;
                             });
