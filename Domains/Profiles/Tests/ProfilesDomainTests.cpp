@@ -30,3 +30,22 @@ TEST_F(ProfilesDomainTestsFixture, EnsureBimCanBeCreated)
     DgnDomainCP profilesDomain = db->Domains().FindDomain(Profiles::ProfilesDomain::GetDomain().GetDomainName());
     ASSERT_TRUE(NULL != profilesDomain);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ProfilesDomainTestsFixture, ValidateSchema)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(true, true);
+    context->AddSchemaLocater((*db).GetSchemaLocater());
+
+    ECN::SchemaKey refKey(PRF_SCHEMA_NAME, 1, 0);
+
+    ECN::ECSchemaPtr refSchema = context->LocateSchema(refKey, ECN::SchemaMatchType::LatestWriteCompatible);
+    ASSERT_TRUE(refSchema.IsValid());
+
+    ASSERT_TRUE(refSchema->Validate());
+    }
