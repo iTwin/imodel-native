@@ -1047,6 +1047,8 @@ public:
 
     virtual bool _WantProvenanceInBim() {return _GetParams().GetWantProvenanceInBim();}
 
+    DGNDBSYNC_EXPORT virtual bool _WantModelProvenanceInBim();
+
     //! Get the DMS document properties for a specified file, if available.
     void GetDocumentProperties(iModelBridgeDocumentProperties& docProps, BeFileNameCR localFilename)
         {
@@ -2486,6 +2488,8 @@ struct RootModelConverter : SpatialConverterBase
         RootModelChoice const& GetRootModelChoice() const {return m_rootModelChoice;}
         void AddDrawingOrSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
 
+        //!private
+        bool m_keepHostAliveForUnitTests {};
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };
