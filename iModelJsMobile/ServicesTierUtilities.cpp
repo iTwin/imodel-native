@@ -542,8 +542,12 @@ Uv::Request::~Request()
 //---------------------------------------------------------------------------------------
 Uv::WriteRequest::WriteRequest (uv_stream_t* handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status)
     : Request    (reinterpret_cast<uv_req_t*>(malloc (sizeof (uv_write_t)))),
-      m_callback (callback),m_payload((char*)data,length)
+      m_callback (callback)
     {
+        m_payload.reserve(length);
+        char const * pl = (char const *)(data);
+        m_payload.assign(pl, pl + length);
+        
     auto buf = ::uv_buf_init ((char*)m_payload.c_str(), m_payload.length() );
     status = ::uv_write (GetPointerUnchecked<uv_write_t>(), handle, &buf, 1, &Handler);
     if (status >= 0)
@@ -929,7 +933,7 @@ MobileGateway::MobileGateway()
                 Napi::HandleScope scope (env);
                 std::string const& data = message->get_payload();
                 auto payload = Napi::ArrayBuffer::New (env, (void*)data.c_str(), data.size());
-                
+                 printf("Recieving %ld Bytes\n", data.size());
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS)
                 env.Global().Get("__imodeljs_mobilegateway_handler__").As<Napi::Function>().Call({ payload }); //WIP: napi add ref not implemented yet for jsc
 #else
@@ -938,8 +942,10 @@ MobileGateway::MobileGateway()
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
             {
+            printf("Sending %ld Bytes\n", c);
             auto writeResult = m_client->Write (s, c, [&] (Uv::StatusCR status)
                 {
+     
                 if (status.IsError())
                     {
                     BeAssert (!status.IsError());
@@ -965,7 +971,10 @@ MobileGateway::MobileGateway()
         BeAssert (!readResult.IsError());
         });
     }
-
+#define Swap4Bytes(val) \
+                      ( (((val) >> 24) & 0x000000FF) | (((val) >>  8) & 0x0000FF00) | \
+                       (((val) <<  8) & 0x00FF0000) | (((val) << 24) & 0xFF000000) )
+                      
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Steve.Wilson                    6/17
 //---------------------------------------------------------------------------------------
@@ -990,17 +999,27 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
         }
         
         size_t pos = 0;
-        void* data = malloc (totalBytes);
+            uint32_t header =0;
+        unsigned char* data = (unsigned char*)malloc (totalBytes);
+            
         for(int i=0; i < binArray.Length(); ++i) {
             Napi::Value val = binArray[i];
             Napi::Uint8Array intArray = val.As<Napi::Uint8Array>();
             Napi::ArrayBuffer buffer = intArray.ArrayBuffer();
             const size_t byteLength = intArray.ByteLength();
             const size_t byteOffset = intArray.ByteOffset();
+            if (i == 0) {
+                header = Swap4Bytes(*((uint32_t*)buffer.Data()));
+            }
             void* target = (void*)((unsigned char*)data + pos);
             void* source = (void*)((unsigned char*)buffer.Data() + byteOffset);
             memcpy(target, source, byteLength);
+            printf("%d. size: %.2f KiB\n", i, ((double)byteLength)/1024);
             pos += byteLength;
+        }
+        printf("Total: %.2f Kib\n", ((double)totalBytes/1024));
+        if (header != (totalBytes - 4)) {
+            printf("header do not match pay load size \n" );
         }
         BeAssert(pos == totalBytes);
         if(!m_connection->Send ((const char*)data, totalBytes, websocketpp::frame::opcode::value::binary))

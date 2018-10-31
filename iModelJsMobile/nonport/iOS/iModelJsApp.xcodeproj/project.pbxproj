@@ -17,6 +17,7 @@
 		26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0BF2076B63F0031769D /* LaunchScreen.storyboard */; };
 		26E6C0C42076B63F0031769D /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0C32076B63F0031769D /* main.m */; };
 		26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E6C0CB2076B8200031769D /* WebKit.framework */; };
+		41412606218895B800E09671 /* jsc in Resources */ = {isa = PBXBuildFile; fileRef = 41412605218895B800E09671 /* jsc */; };
 		4153DBBB2138250200F4A0D2 /* WindowTimers.m in Sources */ = {isa = PBXBuildFile; fileRef = 4153DBBA2138250200F4A0D2 /* WindowTimers.m */; };
 		41999A86211CB34000489006 /* XMLHTTPRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 41999A84211CB34000489006 /* XMLHTTPRequest.m */; };
 		41999A89211CD90500489006 /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41999A88211CD90400489006 /* Utilities.cpp */; };
@@ -71,6 +72,7 @@
 		26E6C0C32076B63F0031769D /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		26E6C0CB2076B8200031769D /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		3B3F6FD1208FBF4A00F27DF1 /* JsInterop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
+		41412605218895B800E09671 /* jsc */ = {isa = PBXFileReference; lastKnownFileType = folder; name = jsc; path = ../../jsc; sourceTree = "<group>"; };
 		4153DBB92138250200F4A0D2 /* WindowTimers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WindowTimers.h; sourceTree = "<group>"; };
 		4153DBBA2138250200F4A0D2 /* WindowTimers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WindowTimers.m; sourceTree = "<group>"; };
 		4161BC1020FE83D4001830CF /* ServicesTierHost.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../ServicesTierHost.cpp; sourceTree = "<group>"; };
@@ -285,6 +287,7 @@
 		4161BC1820FE83E5001830CF /* Src */ = {
 			isa = PBXGroup;
 			children = (
+				41412605218895B800E09671 /* jsc */,
 				41999A88211CD90400489006 /* Utilities.cpp */,
 				41999A87211CC44300489006 /* iModelJsInternal.h */,
 				41E94103210FAC8A0089D2A6 /* PublicAPI */,
@@ -391,6 +394,7 @@
 				26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */,
 				26E6C0BE2076B63F0031769D /* Assets.xcassets in Resources */,
 				26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */,
+				41412606218895B800E09671 /* jsc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

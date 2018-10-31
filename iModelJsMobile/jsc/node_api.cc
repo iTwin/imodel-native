@@ -1780,10 +1780,14 @@ napi_status napi_make_callback(napi_env env,
     CHECK_ARG(env, argv);
   }
 
-//  JSContextRef ctx = env->GetContext();
+  JSContextRef ctx = env->GetContext();
   // TODO
 
-  return GET_RETURN_STATUS(env);
+  napi_value ret = JSObjectCallAsFunction(ctx, const_cast<JSObjectRef>(func), const_cast<JSObjectRef>(recv), argc, argv, nullptr);
+  if (result)
+      *result = ret;
+    
+    return GET_RETURN_STATUS(env);
 }
 
 // Methods to support catching exceptions
@@ -2111,6 +2115,122 @@ napi_status napi_adjust_external_memory(napi_env env,
   return napi_clear_last_error(env);
 }
 
+
+namespace {
+    namespace uvimpl {
+        
+        static napi_status ConvertUVErrorCode(int code) {
+            switch (code) {
+                case 0:
+                    return napi_ok;
+                case UV_EINVAL:
+                    return napi_invalid_arg;
+                case UV_ECANCELED:
+                    return napi_cancelled;
+            }
+            
+            return napi_generic_failure;
+        }
+        
+        // Wrapper around uv_work_t which calls user-provided callbacks.
+        class Work {
+            
+        private:
+            explicit Work(napi_env env,
+                           napi_value async_resource,
+                          napi_value async_resource_name,
+                          napi_async_execute_callback execute,
+                          napi_async_complete_callback complete = nullptr,
+                          void* data = nullptr):
+            _async_resource(async_resource),
+            _async_resource_name(async_resource_name),
+            _env(env),
+            _data(data),
+            _execute(execute),
+            _complete(complete) {
+                memset(&_request, 0, sizeof(_request));
+                _request.data = this;
+                (void)_async_resource;
+                (void)_async_resource_name;
+            }
+            
+            ~Work() { }
+            
+        public:
+            static Work* New(napi_env env,
+                             napi_value async_resource,
+                             napi_value async_resource_name,
+                             napi_async_execute_callback execute,
+                             napi_async_complete_callback complete,
+                             void* data) {
+                return new Work(env, async_resource, async_resource_name,
+                                execute, complete, data);
+            }
+            
+            static void Delete(Work* work) {
+                delete work;
+            }
+            
+            static void ExecuteCallback(uv_work_t* req) {
+                Work* work = static_cast<Work*>(req->data);
+                work->_execute(work->_env, work->_data);
+            }
+            
+            static void CompleteCallback(uv_work_t* req, int status) {
+                Work* work = static_cast<Work*>(req->data);
+                
+                if (work->_complete != nullptr) {
+                    napi_env env = work->_env;
+                    
+                    // Establish a handle scope here so that every callback doesn't have to.
+                    // Also it is needed for the exception-handling below.
+                    //CallbackScope callback_scope(work);
+                    
+                    work->_complete(env, ConvertUVErrorCode(status), work->_data);
+                    
+                    // Note: Don't access `work` after this point because it was
+                    // likely deleted by the complete callback.
+                    
+                    // If there was an unhandled exception in the complete callback,
+                    // report it as a fatal exception. (There is no JavaScript on the
+                    // callstack that can possibly handle it.)
+                    /*
+                    if (!env->last_exception.IsEmpty()) {
+                        v8::TryCatch try_catch(env->isolate);
+                        env->isolate->ThrowException(
+                                                     v8::Local<v8::Value>::New(env->isolate, env->last_exception));
+                    */
+                        // TODO: Call our own version of FatalException
+                        // node::FatalException(env->isolate, try_catch);
+                    // }
+                }
+            }
+            
+            uv_work_t* Request() {
+                return &_request;
+            }
+            
+        private:
+            napi_env _env;
+            void* _data;
+            uv_work_t _request;
+            napi_async_execute_callback _execute;
+            napi_async_complete_callback _complete;
+            napi_value _async_resource;
+            napi_value _async_resource_name;
+        };
+        
+    }  // end of namespace uvimpl
+}  // end of anonymous namespace
+
+#define CALL_UV(env, condition)                                 \
+do {                                                            \
+int result = (condition);                                       \
+napi_status status = uvimpl::ConvertUVErrorCode(result);        \
+if (status != napi_ok) {                                        \
+return napi_set_last_error(env, status, result);                \
+}                                                               \
+} while (0)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -2121,53 +2241,75 @@ napi_status napi_create_async_work(napi_env env,
                                    napi_async_complete_callback complete,
                                    void* data,
                                    napi_async_work* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, execute);
-  CHECK_ARG(env, result);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-
-  return napi_clear_last_error(env);
+    CHECK_ENV(env);
+    CHECK_ARG(env, execute);
+    CHECK_ARG(env, result);
+    /*
+    v8::Local<v8::Context> context = env->isolate->GetCurrentContext();
+    
+    v8::Local<v8::Object> resource;
+    if (async_resource != nullptr) {
+        CHECK_TO_OBJECT(env, context, resource, async_resource);
+    } else {
+        resource = v8::Object::New(env->isolate);
+    }
+    
+    v8::Local<v8::String> resource_name;
+    CHECK_TO_STRING(env, context, resource_name, async_resource_name);
+    */
+    uvimpl::Work* work =
+    uvimpl::Work::New(env, async_resource, async_resource_name,
+                      execute, complete, data);
+    
+    *result = reinterpret_cast<napi_async_work>(work);
+    printf("napi_create_async_work [%p]\n", work);
+    return napi_clear_last_error(env);
 }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_delete_async_work(napi_env env, napi_async_work work) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, work);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-
-  return napi_clear_last_error(env);
+    CHECK_ENV(env);
+    CHECK_ARG(env, work);
+    printf("napi_delete_async_work [%p]\n", work);
+    uvimpl::Work::Delete(reinterpret_cast<uvimpl::Work*>(work));
+    
+    return napi_clear_last_error(env);
 }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_queue_async_work(napi_env env, napi_async_work work) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, work);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-
-  return napi_clear_last_error(env);
+    CHECK_ENV(env);
+    CHECK_ARG(env, work);
+    
+    // Consider: Encapsulate the uv_loop_t into an opaque pointer parameter.
+    // Currently the environment event loop is the same as the UV default loop.
+    // Someday (if node ever supports multiple isolates), it may be better to get
+    // the loop from node::Environment::GetCurrent(env->isolate)->event_loop();
+    uv_loop_t* event_loop = uv_default_loop();
+    
+    uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
+    printf("napi_queue_async_work [%p]\n", w);
+    CALL_UV(env, uv_queue_work(event_loop,
+                               w->Request(),
+                               uvimpl::Work::ExecuteCallback,
+                               uvimpl::Work::CompleteCallback));
+    
+    return napi_clear_last_error(env);
 }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_cancel_async_work(napi_env env, napi_async_work work) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, work);
-
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-
-  return napi_clear_last_error(env);
+    CHECK_ENV(env);
+    CHECK_ARG(env, work);
+    
+    uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
+    printf("napi_cancel_async_work [%p]\n", w);
+    CALL_UV(env, uv_cancel(reinterpret_cast<uv_req_t*>(w->Request())));
+    
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------

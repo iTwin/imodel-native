@@ -1255,7 +1255,7 @@ template <typename T>
 inline TypedArrayOf<T> TypedArrayOf<T>::New(napi_env env,
                                             size_t elementLength,
                                             napi_typedarray_type type) {
-  Napi::ArrayBuffer arrayBuffer = Napi::ArrayBuffer::New(env, elementLength * sizeof (T));
+   Napi::ArrayBuffer arrayBuffer = Napi::ArrayBuffer::New(env, elementLength * sizeof (T));
   return New(env, elementLength, arrayBuffer, 0, type);
 }
 
