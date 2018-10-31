@@ -428,7 +428,7 @@ struct WebMercatorDisplayHandler : DisplayStyle::BackgroundMapDisplayHandler
     Json::Value         m_settings;
 
     WebMercatorDisplayHandler(Json::Value const&  settings);
-    void _Initialize(Json::Value const& settings);
+    void _Initialize(Json::Value const& settings) override;
 
     TileTree::RootPtr _GetTileTree(SceneContextR sceneContext) override;
 };

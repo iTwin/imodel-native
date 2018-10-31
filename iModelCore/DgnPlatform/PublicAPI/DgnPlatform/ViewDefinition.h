@@ -142,8 +142,8 @@ public:
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
     //! Get the background map.
-    BentleyStatus GetBackgroundMapSettings(MapType& mapType, Utf8StringR provider, double& groundBias, bool returnDefaults = true) const; 
-    void SetBackgroundMapSettings(MapType mapType, Utf8StringCR& provider, double groundBias);
+    BentleyStatus GetBackgroundMapSettings(MapType& mapType, Utf8StringR provider, double& groundBias, bool returnDefaults = true) const;
+    DGNPLATFORM_EXPORT void SetBackgroundMapSettings(MapType mapType, Utf8StringCR& provider, double groundBias);
     bool GetDisplayBackgroundMap() const;
     RefCountedPtr<TileTree::Root>  GetBackgroundMapTileTree(SceneContextR sceneContext);
 
