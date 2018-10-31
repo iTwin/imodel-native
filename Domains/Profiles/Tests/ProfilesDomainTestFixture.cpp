@@ -1,8 +1,7 @@
 #include "ProfilesDomainTestFixture.h"
-#include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
-#include <DgnPlatform/UnitTests/ScopedDgnHost.h>
-
+#include <DgnPlatform\DgnPlatformLib.h>
+#include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
+#include <DgnPlatform\UnitTests\ScopedDgnHost.h>
 #include <Profiles/ProfilesApi.h>
 
 using namespace BeSQLite;
@@ -40,14 +39,6 @@ struct ConverterNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewLib::Host::NotificationAdmin& ProfilesDomainTestsHost::_SupplyNotificationAdmin()
-    {
-    return *new ConverterNotificationAdmin();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Arturas.Mizaras          11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ConverterViewManager : ViewManager
@@ -56,6 +47,22 @@ struct ConverterViewManager : ViewManager
         virtual Display::SystemContext* _GetSystemContext() override {return nullptr;}
         virtual bool _DoesHostHaveFocus() override {return true;}
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProfilesDomainTestsHost::_SupplyProductName(BentleyApi::Utf8StringR name)
+    {
+    name.assign("ProfilesDomainTests");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Arturas.Mizaras          11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewLib::Host::NotificationAdmin& ProfilesDomainTestsHost::_SupplyNotificationAdmin()
+    {
+    return *new ConverterNotificationAdmin();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
@@ -94,15 +101,15 @@ void ProfilesDomainTestsFixture::SetUp_CreateNewDgnDb()
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
+* @description Method called before each test.
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUp()
     {
-    BentleyStatus registrationStatus = Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
+* @description Method called after each test.
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::TearDown()
     {
@@ -115,6 +122,9 @@ void ProfilesDomainTestsFixture::TearDown()
 void ProfilesDomainTestsFixture::SetUpTestCase()
     {
     DgnViewLib::Initialize(m_host, true); // this initializes the DgnDb libraries
+
+    BentleyStatus status = DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    BeAssert(BentleyStatus::SUCCESS == status);
     }
 
 /*---------------------------------------------------------------------------------**//**

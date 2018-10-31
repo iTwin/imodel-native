@@ -1,8 +1,9 @@
 #pragma once
-#include <Bentley/BeTest.h>
-#include <DgnView/DgnViewLib.h>
-#include <DgnView/DgnViewAPI.h>
-#include <Bentley/BeFileName.h>
+#include <Bentley\BeTest.h>
+#include <Bentley\BeAssert.h>
+#include <Bentley\BeFileName.h>
+#include <DgnView\DgnViewLib.h>
+#include <DgnView\DgnViewAPI.h>
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -11,7 +12,7 @@
 struct ProfilesDomainTestsHost : Dgn::DgnViewLib::Host
     {
     protected:
-        virtual void _SupplyProductName(BentleyApi::Utf8StringR name) override { name.assign("StructuralDomainTests"); }
+        virtual void _SupplyProductName(BentleyApi::Utf8StringR name) override;
         virtual NotificationAdmin& _SupplyNotificationAdmin() override;
         virtual Dgn::ViewManager& _SupplyViewManager() override;
         virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
@@ -38,12 +39,12 @@ class ProfilesDomainTestsFixture : public testing::Test
         /// <summary>
         /// Sets up the test fixture
         /// </summary>
-        virtual void SetUp();
+        virtual void SetUp() override;
 
         /// <summary>
         /// Tears down.
         /// </summary>
-        virtual void TearDown();
+        virtual void TearDown() override;
 
         /// <summary>
         /// Sets up DgnDb host.

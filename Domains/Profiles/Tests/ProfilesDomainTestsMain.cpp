@@ -3,9 +3,9 @@
 #include <windows.h>
 #endif
 
-#include <Bentley/BeTest.h>
-#include <Bentley/BeFileName.h>
-#include <Logging/bentleylogging.h>
+#include <Bentley\BeTest.h>
+#include <Bentley\BeFileName.h>
+#include <Logging\bentleylogging.h>
 
 static wchar_t const* s_configFileName = L"ProfilesTestFixtureTests.logging.config.xml";
 
