@@ -13,6 +13,7 @@
 #include <Bentley/bmap.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
+#include <Bentley/Tasks/TaskScheduler.h>
 #include <Bentley/CancellationToken.h>
 #include <queue>
 
