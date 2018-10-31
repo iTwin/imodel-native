@@ -4,7 +4,7 @@
 #include "DataSourceAzure.h"
 #include <cpprest/rawptrstream.h>
 #include <cpprest/producerconsumerstream.h>
-#include "include\DataSourceAccountAzure.h"
+#include "include/DataSourceAccountAzure.h"
 #include <Bentley\BeStringUtilities.h>
 #include <Bentley/WString.h>
 

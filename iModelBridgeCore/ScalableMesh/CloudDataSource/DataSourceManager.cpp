@@ -6,7 +6,7 @@
 #include "DataSourceAzure.h"
 #include "DataSourceServiceFile.h"
 #include "DataSourceServiceAzure.h"
-#include "include\DataSourceManager.h"
+#include "include/DataSourceManager.h"
 #include <assert.h>
 
 DataSourceManager *DataSourceManager::dataSourceManager = nullptr;

@@ -110,6 +110,8 @@ public:
 
     virtual bool _IsUsingVideoMemory() override;
 
+    virtual bool _HasCompatibleSettings(SmCachedDisplayMesh* cachedDisplayMesh) override;
+
     ScalableMeshDisplayCacheManager(/*ViewContextR viewContext*/);
 
     ~ScalableMeshDisplayCacheManager();
@@ -253,6 +255,11 @@ bool ScalableMeshDisplayCacheManager::_IsUsingVideoMemory()
 {
     return false;
 }
+
+bool ScalableMeshDisplayCacheManager::_HasCompatibleSettings(SmCachedDisplayMesh* cachedDisplayMesh) 
+    {
+    return true;
+    }
 
 ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
 {
