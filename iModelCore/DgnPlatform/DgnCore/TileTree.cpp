@@ -1425,6 +1425,17 @@ QuadTree::Root::Root(GeometricModelCR model, TransformCR trans, Utf8CP rootUrl, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+QuadTree::Root::Root(DgnDbR db, DgnModelId modelId, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
+    : T_Super::Root(db, modelId, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+    {
+    m_tileColor = ColorDef::White();
+    if (0.0 != transparency)
+        m_tileColor.SetAlpha((Byte) (255.* transparency));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 OctTree::Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
@@ -1676,7 +1687,12 @@ uint32_t DrawArgs::GetMinDepth() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t DrawArgs::GetMaxDepth() const
     {
+// #define DEBUG_MAX_DEPTH 1
+#if defined(DEBUG_MAX_DEPTH)
+    return DEBUG_MAX_DEPTH;
+#else
     return m_context.GetUpdatePlan().GetTileOptions().GetMaxDepth();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

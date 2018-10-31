@@ -666,15 +666,18 @@ struct Polyface
 {
     DisplayParamsCPtr   m_displayParams;
     PolyfaceHeaderPtr   m_polyface;
-    bool                m_displayEdges = true;
-    bool                m_isPlanar = false;
+    // If the original geometry was a polyface, this is the chord tolerance to use for decimation. Otherwise it is zero.
+    double              m_decimationTolerance;
+    bool                m_displayEdges;
+    bool                m_isPlanar;
 
-    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false)
-        : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar) { }
+    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false, double decimationTolerance=0.0)
+        : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar), m_decimationTolerance(decimationTolerance) { }
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
-    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar); }
-    DisplayParamsCR     GetDisplayParams() const { return *m_displayParams; }
+    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar, m_decimationTolerance); }
+    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
+    bool CanDecimate() const { return 0.0 < m_decimationTolerance; }
 };
 
 //=======================================================================================
@@ -729,7 +732,6 @@ protected:
 
     virtual PolyfaceList _GetPolyfaces(double chordTolerance, NormalMode, ViewContextR) = 0;
     virtual StrokesList _GetStrokes(double chordTolerance, ViewContextR) { return StrokesList(); }
-    virtual bool _DoDecimate() const { return false; }
     virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
     virtual GeomPartCPtr _GetPart() const { return nullptr; }
@@ -752,7 +754,6 @@ public:
     bool HasTexture() const { return m_hasTexture; }
 
     PolyfaceList GetPolyfaces(double chordTolerance, NormalMode normalMode, ViewContextR context);
-    bool DoDecimate() const { return _DoDecimate(); }
     bool DoVertexCluster() const { return _DoVertexCluster(); }
     StrokesList GetStrokes (double chordTolerance, ViewContextR context);
     GeomPartCPtr GetPart() const { return _GetPart(); }
@@ -818,6 +819,7 @@ private:
 protected:
     GeomPart(DRange3dCR range, GeometryList const& geometry);
 
+    double ComputeTolerance(GeometryCP instance, double tolerance) const;
 public:
     static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
     PolyfaceList GetPolyfaces(double chordTolerance, NormalMode, GeometryCP instance, ViewContextR);

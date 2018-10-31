@@ -945,3 +945,85 @@ void ECSqlStatementIteratorBase::MoveFirst()
     MoveNext();
     }
 
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     11/2018
+//=======================================================================================
+struct RangeWithoutOutlierCalculator
+{
+    struct Stat
+        {
+        DRange3d                m_range;
+        DgnElementId            m_id;
+        double                  m_diagonal;
+
+        Stat() {}
+        Stat(DRange3dCR range, DgnElementId id): m_range(range), m_id(id), m_diagonal(range.DiagonalDistance()) { }
+        DPoint3d GetCenter() const { return m_range.LocalToGlobal(.5, .5, .5); }
+        };
+
+    bvector<Stat>       m_stats;
+
+    void Add(DRange3dCR range, DgnElementId id) { m_stats.push_back(Stat(range, id)); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d     ComputeRange(bvector<DgnElementId>* outliers =  nullptr, double sigmaMultiplier = 5.0)       
+    {
+    double      variance = 0.0;
+    DPoint3d    centroid = DPoint3d::FromZero();
+
+    for (auto const& stat : m_stats)
+        centroid.SumOf(centroid, stat.GetCenter(), stat.m_diagonal);
+
+    for (auto const& stat : m_stats)
+        {
+        double  delta = stat.GetCenter().Distance(centroid);
+        variance += stat.m_diagonal * delta * delta;
+        }
+    double      deviation = sqrt(variance);
+    double      limit= sigmaMultiplier * deviation;
+    DRange3d    range = DRange3d::NullRange();
+
+    for (auto const& stat : m_stats)
+        {
+        if (stat.GetCenter().Distance(centroid) < limit)
+            range.Extend(stat.m_range);
+        else if (nullptr != outliers)
+            outliers->push_back(stat.m_id);
+        }
+    return range;
+    }
+};  //  RangeWithoutOutlierCalculator.
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers() const
+    {
+    auto stmt = GetPreparedECSqlStatement("SELECT ECInstanceId,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d));
+    RangeWithoutOutlierCalculator   rangeCalculator;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        if (stmt->IsValueNull(1)) // has no placement
+            continue;
+
+        double yaw   = stmt->GetValueDouble(2);
+        double pitch = stmt->GetValueDouble(3);
+        double roll  = stmt->GetValueDouble(4);
+
+        DPoint3d low = stmt->GetValuePoint3d(5);
+        DPoint3d high = stmt->GetValuePoint3d(6);
+
+        Placement3d placement(stmt->GetValuePoint3d(1),
+                              YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
+                              ElementAlignedBox3d(low.x, low.y, low.z, high.x, high.y, high.z));
+
+        rangeCalculator.Add(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0));
+        }
+    return rangeCalculator.ComputeRange();
+    }
+

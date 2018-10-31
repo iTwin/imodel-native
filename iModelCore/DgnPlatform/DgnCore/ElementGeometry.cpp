@@ -2733,6 +2733,7 @@ static void debugGeomId(GeometryStreamIO::IDebugOutput& output, GeometricPrimiti
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnDbR db, bool isPart)
     {
+// #define DEBUG_POLYFACE_POINT_COUNTS
     Collection  collection(stream.GetData(), stream.GetSize());
     Reader      reader(db);
 
@@ -2976,7 +2977,12 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
             case GeometryStreamIO::OpCode::Polyface:
                 {
+#if defined(DEBUG_POLYFACE_POINT_COUNTS)
+                PolyfaceHeaderPtr mesh = BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(egOp.m_data);
+                output._DoOutputLine(Utf8PrintfString("OpCode::Polyface %u points\n", mesh.IsValid() ? static_cast<uint32_t>(mesh->GetPointCount()) : 0).c_str());
+#else
                 output._DoOutputLine(Utf8PrintfString("OpCode::Polyface\n").c_str());
+#endif
                 break;
                 }
 
@@ -3006,7 +3012,12 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
 
             case GeometryStreamIO::OpCode::BRepPolyface:
                 {
+#if defined(DEBUG_POLYFACE_POINT_COUNTS)
+                PolyfaceHeaderPtr mesh = BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(egOp.m_data);
+                output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyface %u points\n", mesh.IsValid() ? static_cast<uint32_t>(mesh->GetPointCount()) : 0).c_str());
+#else
                 output._DoOutputLine(Utf8PrintfString("OpCode::BRepPolyface\n").c_str());
+#endif
                 break;
                 }
 
@@ -3238,14 +3249,14 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
             break;
         }
 
-    if (nullptr == context.GetViewport())
-        return true;
-
     if (nullptr != range && !range->IsNull())
         {
         if (!context.IsRangeVisible(*range))
             return false; // Sub-graphic outside range...
         }
+
+    if (nullptr == context.GetViewport())
+        return true;
 
     DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
 

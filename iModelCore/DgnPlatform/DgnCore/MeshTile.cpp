@@ -142,6 +142,22 @@ private:
 
             AddElement(placement.CalculateRange(), stmt->GetValueId<DgnElementId>(0), false);
             }
+
+        // See scaleSpatialRange() in ElementTileTree.cpp - prevent clipping of geometry that is either:
+        //  - coplanar with one side of the range; or
+        //  - coplanar with a tile boundary
+        constexpr double loScale = 1.0001,
+                  hiScale = 1.0002,
+                  fLo = 0.5 * (1.0 + loScale),
+                  fHi = 0.5 * (1.0 + hiScale);
+
+        DRange3d result = m_range;
+        if (!result.IsNull())
+            {
+            result.high.Interpolate(m_range.low, fHi, m_range.high);
+            result.low.Interpolate(m_range.high, fLo, m_range.low);
+            m_range = result;
+            }
         }
 
     void Accumulate2d()
@@ -763,6 +779,9 @@ bool TileMeshBuilder::GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb)
 void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor, bool requireNormals)
     {
     auto const&         points = visitor.Point();
+    if (points.size() <= 2)
+        return; // degenerate triangle...
+
     bool const*         visitorVisibility = visitor.GetVisibleCP();
     size_t              nTriangles = points.size() - 2;
 
@@ -1138,13 +1157,6 @@ static void addRegion (IPolyfaceConstructionR builder, CurveVectorR curveVector)
     constexpr size_t    s_minDecimateCount = 25;
 
     builder.Stroke (curveVector, points, numLoop);
-
-#ifndef NDEBUG    
-    DRange3d        range = DRange3d::From(points);
-    static          double s_sizeTest = 1.0E3;
-
-    BeAssert (range.DiagonalDistance() < s_sizeTest);
-#endif
 
     if (s_doCurveVectorDecimation && 1 == numLoop && points.size() > s_minDecimateCount)
         {

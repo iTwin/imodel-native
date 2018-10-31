@@ -784,6 +784,8 @@ struct Root : TileTree::Root
 
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(GeometricModelCR, TransformCR location, Utf8CP rootResource, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
+    Root(DgnDbR, DgnModelId, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
+
 };
     
 //=======================================================================================

@@ -1153,6 +1153,97 @@ TEST_F(IModelCompatibilityTestFixture, EC32SchemaImport_Koqs)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, EC31SchemaImport_Formats_API)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            ECSchemaPtr schema;
+            ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0)) << testDb.GetDescription();
+            schema->SetOriginalECXmlVersion(3, 1);
+            ECFormatP format = nullptr;
+            Formatting::NumericFormatSpec spec;
+            spec.SetPresentationType(Formatting::PresentationType::Decimal);
+            spec.SetPrecision(Formatting::DecimalPrecision::Precision6);
+            spec.SetFormatTraits((Formatting::FormatTraits) ((int) Formatting::FormatTraits::KeepSingleZero | (int) Formatting::FormatTraits::KeepDecimalPoint));
+            ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DefaultReal", "real", nullptr, &spec)) << testDb.GetDescription();
+
+            ASSERT_EQ(SchemaStatus::SchemaImportFailed, testDb.GetDgnDb().ImportSchemas({schema.get()}));
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IModelCompatibilityTestFixture, EC31SchemaUpgrade_Formats_API)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            if (testDb.GetOpenParams().IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+            testDb.AssertProfileVersion();
+            testDb.AssertLoadSchemas();
+
+            // Import base line of a schema, which is then upgraded in the next step
+            ECSchemaReadContextPtr deserializationCtx = TestFileCreator::DeserializeSchema(testDb.GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                   <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                      <ECStructClass typeName="Foo">
+                            <ECProperty propertyName="Size" typeName="double" />
+                       </ECStructClass>
+                    </ECSchema>)xml"));
+
+            ASSERT_TRUE(deserializationCtx != nullptr) << testDb.GetDescription();
+            SchemaStatus schemaImportStat = testDb.GetDgnDb().ImportSchemas(deserializationCtx->GetCache().GetSchemas());
+            if (testDb.GetAge() == ProfileState::Age::Newer)
+                {
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, schemaImportStat) << testDb.GetDescription();
+                continue;
+                }
+
+            ASSERT_EQ(SchemaStatus::Success, schemaImportStat) << testDb.GetDescription();
+            ASSERT_EQ(BE_SQLITE_OK, testDb.GetDb().SaveChanges()) << testDb.GetDescription();
+            testDb.GetDb().CloseDb();
+            ASSERT_EQ(BE_SQLITE_OK, testDb.GetDb().OpenBeSQLiteDb(testDb.GetTestFile().GetPath(), testDb.GetOpenParams())) << testDb.GetDescription();
+
+            // now build new version with API and add a format -> this should fail as ECDb does not support
+            // schemas that are 3.1 but have EC3.2 features
+            ECSchemaPtr schema;
+            ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 1)) << testDb.GetDescription();
+            schema->SetOriginalECXmlVersion(3, 1);
+            ECStructClassP fooClass = nullptr;
+            ASSERT_EQ(ECObjectsStatus::Success, schema->CreateStructClass(fooClass, "Foo")) << testDb.GetDescription();
+            PrimitiveECPropertyP prop = nullptr;
+            ASSERT_EQ(ECObjectsStatus::Success, fooClass->CreatePrimitiveProperty(prop, "Code", PRIMITIVETYPE_Integer)) << testDb.GetDescription();
+            ECFormatP format = nullptr;
+            Formatting::NumericFormatSpec spec;
+            spec.SetPresentationType(Formatting::PresentationType::Decimal);
+            spec.SetPrecision(Formatting::DecimalPrecision::Precision6);
+            spec.SetFormatTraits((Formatting::FormatTraits) ((int) Formatting::FormatTraits::KeepSingleZero | (int) Formatting::FormatTraits::KeepDecimalPoint));
+            ASSERT_EQ(ECObjectsStatus::Success, schema->CreateFormat(format, "DefaultReal", "real", nullptr, &spec)) << testDb.GetDescription();
+
+            ASSERT_EQ(SchemaStatus::SchemaImportFailed, testDb.GetDgnDb().ImportSchemas({schema.get()})) << testDb.GetDescription();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      08/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, EC31Enum_SchemaUpgrade)
