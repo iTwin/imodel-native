@@ -72,11 +72,8 @@ namespace iModelHubHelpers
     void CreateOidcClient(ClientPtr& client, CredentialsCR credentials)
         {
         auto securityToken = GenerateNewToken(credentials);
-        SimpleConnectTokenProvider::UpdateTokenCallback updateTokenCallback = [=]() {
-            auto newToken = std::make_shared<SecurityToken>(GenerateNewToken(credentials));
-            return CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken);
-        };
-        auto oidcTokenProvider = std::make_shared<SimpleConnectTokenProvider>(securityToken, updateTokenCallback);
+        auto onUpdateToken = [=] { return CreateCompletedAsyncTask<Utf8String>(GenerateNewToken(credentials)); };
+        auto oidcTokenProvider = std::make_shared<SimpleConnectTokenProvider>(securityToken, onUpdateToken);
 
         client = ClientHelper::CreateClient(oidcTokenProvider);
         ASSERT_TRUE(client.IsValid());
