@@ -10,6 +10,7 @@
 
 #include "WebApi.h"
 #include "WebApiV2Utils/JobApi.h"
+#include "WebApiV2Utils/ActivityLogger.h"
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -28,7 +29,7 @@ struct WebApiV2 : public WebApi
         JobApiPtr m_jobApi;
 
     private:
-        uint64_t GetMaxUploadSize(Http::Response& response, uint64_t defaultMaxUploadSize = 0) const;
+        uint64_t GetMaxUploadSize(Http::Response& response, ActivityLoggerR activityLogger, uint64_t defaultMaxUploadSize = 0) const;
         BeVersion GetMaxWebApiVersion() const;
         Utf8String GetVersionedUrl() const;
         Utf8String GetRepositoryUrl(Utf8StringCR repositoryId) const;
@@ -40,6 +41,10 @@ struct WebApiV2 : public WebApi
         Utf8String CreateClassSubPath(Utf8StringCR schemaName, Utf8StringCR className) const;
         Utf8String CreatePostQueryPath(Utf8StringCR classSubPath) const;
         Utf8String CreateNavigationSubPath(ObjectIdCR parentId) const;
+
+        ActivityLogger CreateActivityLogger(Utf8StringCR activityName, IWSRepositoryClient::RequestOptionsPtr options = nullptr) const;
+        static void SetActivityIdToRequest(ActivityLoggerR activityLogger, Http::RequestR request);
+        static void SetActivityIdToRequest(ActivityLoggerR activityLogger, ChunkedUploadRequestR request);
 
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
         Http::Request CreateGetRepositoryRequest() const;
@@ -59,6 +64,7 @@ struct WebApiV2 : public WebApi
             Utf8StringCR url,
             HttpBodyPtr responseBody,
             Utf8StringCR eTag,
+            ActivityLoggerR activityLogger,
             Http::Request::ProgressCallbackCR onProgress,
             ICancellationTokenPtr ct
             ) const;
@@ -69,6 +75,7 @@ struct WebApiV2 : public WebApi
             Http::Response& httpResponse,
             Utf8StringCR url,
             BeFileNameCR filePath,
+            ActivityLoggerR activityLogger,
             Http::Request::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ) const;
