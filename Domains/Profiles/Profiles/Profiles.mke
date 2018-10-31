@@ -75,8 +75,6 @@ $(o)DoubleLProfile$(oext) : $(appSrc)DoubleLProfile.cpp ${MultiCompileDepends} $
 
 $(o)EllipseProfile$(oext) : $(appSrc)EllipseProfile.cpp ${MultiCompileDepends} $(appPublicApi)EllipseProfile.h
 
-$(o)Handlers$(oext) : $(appSrc)Handlers.cpp ${MultiCompileDepends} $(appPublicApi)Handlers.h
-
 $(o)HollowEllipseProfile$(oext) : $(appSrc)HollowEllipseProfile.cpp ${MultiCompileDepends} $(appPublicApi)HollowEllipseProfile.h
 
 $(o)HollowRectangleProfile$(oext) : $(appSrc)HollowRectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)HollowRectangleProfile.h

@@ -88,9 +88,6 @@
     <ClCompile Include="Implementation\EllipseProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Implementation\Handlers.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="Implementation\HollowEllipseProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -193,9 +190,6 @@
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\EllipseProfile.h">
-      <Filter>Src\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\Handlers.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\HollowEllipseProfile.h">
