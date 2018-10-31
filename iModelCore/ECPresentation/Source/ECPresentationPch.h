@@ -2,7 +2,7 @@
 |
 |     $Source: Source/ECPresentationPch.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __ECPRESENTATIONPCH_H__
@@ -14,7 +14,7 @@
 #include <Bentley/BeDebugLog.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
-#include <rapidjson/rapidjson.h>
+#include <BeRapidJson/BeRapidJson.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>

@@ -80,7 +80,7 @@ struct UpdateTests : ECPresentationTest
         m_updateRecordsHandler = TestUpdateRecordsHandler::Create();
         m_eventsSource = TestECInstanceChangeEventsSource::Create();
 
-        m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+        m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
         m_manager->SetLocalState(&m_localState);
         m_manager->GetLocaters().RegisterLocater(*m_locater);
         m_manager->RegisterECInstanceChangeEventSource(*m_eventsSource);

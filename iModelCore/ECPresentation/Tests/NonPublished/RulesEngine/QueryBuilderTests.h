@@ -46,6 +46,27 @@ struct NavigationQueryBuilderTests : ECPresentationTest
     NavigationQueryBuilder& GetBuilder() {return *m_builder;}
     ECClassCP GetECClass(Utf8CP schemaName, Utf8CP className);
     bvector<ECClassCP> GetECClasses(Utf8CP schemaName);
+
+    void Cache(JsonNavNodeR node)
+        {
+        NavNodeExtendedData extendedData(node);
+        uint64_t virtualParentId = extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0;
+        HierarchyLevelInfo hlInfo = m_nodesCache.FindHierarchyLevel(extendedData.GetConnectionId(), 
+            extendedData.GetRulesetId(), extendedData.GetLocale(), extendedData.HasVirtualParentId() ? &virtualParentId : nullptr);
+        if (!hlInfo.IsValid())
+            {
+            hlInfo = HierarchyLevelInfo(extendedData.GetConnectionId(), extendedData.GetRulesetId(), 
+                extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
+            m_nodesCache.Cache(hlInfo);
+            }
+        DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), 0);
+        if (!dsInfo.IsValid())
+            {
+            dsInfo = DataSourceInfo(hlInfo.GetId(), 0);
+            m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+            }
+        m_nodesCache.Cache(node, dsInfo, 0, false);
+        }
     };
 
 /*=================================================================================**//**

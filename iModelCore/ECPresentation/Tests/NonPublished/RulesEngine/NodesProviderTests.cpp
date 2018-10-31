@@ -44,6 +44,7 @@ void NodesProviderTests::SetUp()
     m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
 
     m_context = m_providerContextFactory.Create(*m_connection, m_ruleset->GetRuleSetId().c_str(), "", nullptr);
+    m_context->SetProviderIndexAllocator(this);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -209,7 +209,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
 TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSymbols)
     {
     JsonNavNodePtr parentNode = CreateNode("Parent", "description", "imageId", "ParentType");
-    m_nodesCache.Cache(*parentNode, false);
+    m_nodesCache.Cache(*parentNode, DataSourceInfo(), 0, false);
     uint64_t parentNodeId = parentNode->GetNodeId();
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);

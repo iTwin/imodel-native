@@ -1,11 +1,7 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-NavigationQueryBuilderTests.RelatedInstanceNodes_ShowEmptyGroups                                # Placeholder for a missing feature.
-NavigationQueryBuilderTests.InstancesOfSpecificClasses_ShowEmptyGroups                          # Placeholder for a missing feature.
-RulesDrivenECPresentationManagerNavigationTests.InstancesOfSpecificClassesNodes_ShowEmptyGroups # Placeholder for a missing feature.
-NavigationQueryBuilderTests.AllRelatedInstanceNodes_GroupByRelationship                         # Placeholder for a missing feature.
-NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationshipGroupingNodes   # Placeholder for a missing feature.
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------

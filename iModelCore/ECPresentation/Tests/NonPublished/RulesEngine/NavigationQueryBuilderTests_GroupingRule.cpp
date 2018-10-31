@@ -253,7 +253,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_ClassGroup_ECInstanceNodesChildren
     spec.SetDoNotSort(true);
 
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *GetECClass("Basic2", "Class2"), "MyLabel");
-    m_nodesCache.Cache(*parentNode, false);
+    Cache(*parentNode);
     NavNodeExtendedData extendedData(*parentNode);
     extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::BaseClass);
@@ -384,7 +384,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_ValueFiltering)
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A", false);
 
     TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("Name"), "MyCustomLabel", rapidjson::Value(9), false);
-    m_nodesCache.Cache(*propertyGroupingNode, false);
+    Cache(*propertyGroupingNode);
     NavNodeExtendedData extendedData(*propertyGroupingNode);
     extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Property);
@@ -418,7 +418,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_RangeFiltering)
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A", false);
 
     TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("Name"), "MyCustomLabel", rapidjson::Value(0), true);
-    m_nodesCache.Cache(*propertyGroupingNode, false);
+    Cache(*propertyGroupingNode);
     NavNodeExtendedData extendedData(*propertyGroupingNode);
     extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Property);
@@ -454,7 +454,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_PropertyGroup_OtherRangeFiltering)
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "Basic1:Class1A", false);
 
     TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecClass->GetPropertyP("Name"), "MyCustomLabel", rapidjson::Value(-1), true);
-    m_nodesCache.Cache(*propertyGroupingNode, false);
+    Cache(*propertyGroupingNode);
     NavNodeExtendedData extendedData(*propertyGroupingNode);
     extendedData.SetSpecificationHash(spec.GetHash());
     extendedData.SetGroupingType((int)GroupingType::Property);
@@ -676,7 +676,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_GroupsByRelatedInstanceProperty)
 TEST_F (NavigationQueryBuilderTests, Grouping_GroupsByRelationshipPropertyWhenUsedWithRelatedInstancesSpecification)
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Widget"));
-    m_nodesCache.Cache(*rootInstanceNode, false);
+    Cache(*rootInstanceNode);
     
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "WidgetHasGadget", "", "", "");
     groupingRule->AddGroup(*new PropertyGroup("", "", true, "Priority"));
@@ -704,7 +704,7 @@ TEST_F (NavigationQueryBuilderTests, Grouping_GroupsByRelationshipPropertyWhenUs
 TEST_F(NavigationQueryBuilderTests, Grouping_GroupsMultipleClassesByTheSameRelationshipProperty)
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "ClassD"));
-    m_nodesCache.Cache(*rootInstanceNode, false);
+    Cache(*rootInstanceNode);
 
     // create the rules    
     GroupingRuleP groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "ClassDReferencesClassE", "", "", "");
@@ -889,38 +889,15 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, RootNodesQueryReturnsBas
 
 /*---------------------------------------------------------------------------------**//**
 * Uses AllRelatedInstanceNodes specification
-* WIP: need support for metadata queries to allow relationship grouping nodes
-* @bsitest                                      Grigas.Petraitis                07/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, RootNodesQueryReturnsRelationshipGroupingNodes)
-    {
-    TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic4", "ClassB"));
-    m_nodesCache.Cache(*rootInstanceNode, false);
-
-    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, *m_specification3, *rootInstanceNode);
-    ASSERT_EQ(1, queries.size());
-
-    NavigationQueryPtr query = queries[0];
-    ASSERT_TRUE(query.IsValid());
-
-    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("RootNodesQueryReturnsRelationshipGroupingNodes", *m_specification3);
-    ASSERT_TRUE(expected.IsValid());
-    EXPECT_TRUE(expected->IsEqual(*query)) 
-        << "Expected: " << expected->ToString() << "\r\n"
-        << "Actual:   " << query->ToString();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Uses AllRelatedInstanceNodes specification
 * @bsitest                                      Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, RelationshipGroupingNodeChildrenQueryReturnsBaseClassGroupingNodes)
     {
     TestNavNodePtr rootInstanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic4", "ClassB"));
     TestNavNodePtr relationshipGroupingNode = TestNodesHelper::CreateRelationshipGroupingNode(*m_connection, *GetECClass("Basic4", "ClassBHasClassC")->GetRelationshipClassCP(), "test");
-    m_nodesCache.Cache(*rootInstanceNode, false);
+    Cache(*rootInstanceNode);
     relationshipGroupingNode->SetParentNode(*rootInstanceNode);
-    m_nodesCache.Cache(*relationshipGroupingNode, false);
+    Cache(*relationshipGroupingNode);
     NavNodeExtendedData extendedData(*relationshipGroupingNode);
     extendedData.SetSpecificationHash(m_specification3->GetHash());
     extendedData.SetGroupingType((int)GroupingType::Relationship);
@@ -948,7 +925,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, BaseClassNodeChildrenQue
     ECClassCP ecClassA = GetECClass("Basic4", "ClassA");
 
     TestNavNodePtr baseClassGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassA, "test");
-    m_nodesCache.Cache(*baseClassGroupingNode, false);
+    Cache(*baseClassGroupingNode);
     NavNodeExtendedData extendedData(*baseClassGroupingNode);
     extendedData.SetSpecificationHash(m_specification1->GetHash());
     extendedData.SetGroupingType((int)GroupingType::BaseClass);
@@ -974,7 +951,7 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, BaseClassNodeChildrenQue
     ECClassCP ecClassA = GetECClass("Basic4", "ClassA");
 
     TestNavNodePtr baseClassGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassA, "test");
-    m_nodesCache.Cache(*baseClassGroupingNode, false);
+    Cache(*baseClassGroupingNode);
     NavNodeExtendedData extendedData(*baseClassGroupingNode);
     extendedData.SetSpecificationHash(m_specification2->GetHash());
     extendedData.SetGroupingType((int)GroupingType::BaseClass);
@@ -1006,9 +983,9 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, ClassNodeChildrenQueryRe
     baseClassGroupingNodeExtendedData.SetGroupingType((int)GroupingType::BaseClass);
 
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassB, "test");
-    m_nodesCache.Cache(*baseClassGroupingNode, false);
+    Cache(*baseClassGroupingNode);
     classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    m_nodesCache.Cache(*classGroupingNode, false);
+    Cache(*classGroupingNode);
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
@@ -1035,21 +1012,21 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, FirstPropertyNodeChildre
     ECClassCP ecClassB = GetECClass("Basic4", "ClassB");
 
     TestNavNodePtr baseClassGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassA, "test");
-    m_nodesCache.Cache(*baseClassGroupingNode, false);
+    Cache(*baseClassGroupingNode);
     NavNodeExtendedData baseClassGroupingNodeExtendedData(*baseClassGroupingNode);
     baseClassGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     baseClassGroupingNodeExtendedData.SetGroupingType((int)GroupingType::BaseClass);
 
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassB, "test");
     classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    m_nodesCache.Cache(*classGroupingNode, false);
+    Cache(*classGroupingNode);
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
     
     TestNavNodePtr propertyGroupingNode = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value((uint64_t)10000000000), false);
     propertyGroupingNode->SetParentNode(*classGroupingNode);
-    m_nodesCache.Cache(*propertyGroupingNode, false);
+    Cache(*propertyGroupingNode);
     NavNodeExtendedData propertyGroupingNodeExtendedData(*propertyGroupingNode);
     propertyGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Property);
@@ -1076,28 +1053,28 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, SecondPropertyGroupingNo
     ECClassCP ecClassB = GetECClass("Basic4", "ClassB");
 
     TestNavNodePtr baseClassGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassA, "test");
-    m_nodesCache.Cache(*baseClassGroupingNode, false);
+    Cache(*baseClassGroupingNode);
     NavNodeExtendedData baseClassGroupingNodeExtendedData(*baseClassGroupingNode);
     baseClassGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     baseClassGroupingNodeExtendedData.SetGroupingType((int)GroupingType::BaseClass);
 
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassB, "test");
     classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    m_nodesCache.Cache(*classGroupingNode, false);
+    Cache(*classGroupingNode);
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
     
     TestNavNodePtr propertyGroupingNode1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value(2.5), false);
     propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    m_nodesCache.Cache(*propertyGroupingNode1, false);
+    Cache(*propertyGroupingNode1);
     NavNodeExtendedData propertyGroupingNodeExtendedData1(*propertyGroupingNode1);
     propertyGroupingNodeExtendedData1.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData1.SetGroupingType((int)GroupingType::Property);
     
     TestNavNodePtr propertyGroupingNode2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("Description"), "test2", rapidjson::Value("TestGroupingDescription"), false);
     propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    m_nodesCache.Cache(*propertyGroupingNode2, false);
+    Cache(*propertyGroupingNode2);
     NavNodeExtendedData propertyGroupingNodeExtendedData2(*propertyGroupingNode2);
     propertyGroupingNodeExtendedData2.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData2.SetGroupingType((int)GroupingType::Property);
@@ -1125,35 +1102,35 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, ThirdPropertyGroupingNod
     ECClassCP ecClassC = GetECClass("Basic4", "ClassC");
 
     TestNavNodePtr baseClassGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassA, "test");
-    m_nodesCache.Cache(*baseClassGroupingNode, false);
+    Cache(*baseClassGroupingNode);
     NavNodeExtendedData baseClassGroupingNodeExtendedData(*baseClassGroupingNode);
     baseClassGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     baseClassGroupingNodeExtendedData.SetGroupingType((int)GroupingType::BaseClass);
 
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassB, "test");
     classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    m_nodesCache.Cache(*classGroupingNode, false);
+    Cache(*classGroupingNode);
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
     
     TestNavNodePtr propertyGroupingNode1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value(9), false);
     propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    m_nodesCache.Cache(*propertyGroupingNode1, false);
+    Cache(*propertyGroupingNode1);
     NavNodeExtendedData propertyGroupingNodeExtendedData1(*propertyGroupingNode1);
     propertyGroupingNodeExtendedData1.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData1.SetGroupingType((int)GroupingType::Property);
     
     TestNavNodePtr propertyGroupingNode2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("Description"), "test2", rapidjson::Value("TestGroupingDescription"), false);
     propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    m_nodesCache.Cache(*propertyGroupingNode2, false);
+    Cache(*propertyGroupingNode2);
     NavNodeExtendedData propertyGroupingNodeExtendedData2(*propertyGroupingNode2);
     propertyGroupingNodeExtendedData2.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData2.SetGroupingType((int)GroupingType::Property);
     
     TestNavNodePtr propertyGroupingNode3 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassC, *ecClassC->GetPropertyP("SomeProperty"), "test3", rapidjson::Value(true), false);
     propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
-    m_nodesCache.Cache(*propertyGroupingNode3, false);
+    Cache(*propertyGroupingNode3);
     NavNodeExtendedData propertyGroupingNodeExtendedData3(*propertyGroupingNode3);
     propertyGroupingNodeExtendedData3.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData3.SetGroupingType((int)GroupingType::Property);
@@ -1181,42 +1158,42 @@ TEST_F (NavigationQueryBuilder_MultiLevelGroupingTests, LabelGroupingNodeChildre
     ECClassCP ecClassC = GetECClass("Basic4", "ClassC");
 
     TestNavNodePtr baseClassGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassA, "test");
-    m_nodesCache.Cache(*baseClassGroupingNode, false);
+    Cache(*baseClassGroupingNode);
     NavNodeExtendedData baseClassGroupingNodeExtendedData(*baseClassGroupingNode);
     baseClassGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     baseClassGroupingNodeExtendedData.SetGroupingType((int)GroupingType::BaseClass);
 
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClassB, "test");
     classGroupingNode->SetParentNode(*baseClassGroupingNode);
-    m_nodesCache.Cache(*classGroupingNode, false);
+    Cache(*classGroupingNode);
     NavNodeExtendedData classGroupingNodeExtendedData(*classGroupingNode);
     classGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     classGroupingNodeExtendedData.SetGroupingType((int)GroupingType::Class);
     
     TestNavNodePtr propertyGroupingNode1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("SomeProperty"), "test1", rapidjson::Value(9), false);
     propertyGroupingNode1->SetParentNode(*classGroupingNode);
-    m_nodesCache.Cache(*propertyGroupingNode1, false);
+    Cache(*propertyGroupingNode1);
     NavNodeExtendedData propertyGroupingNodeExtendedData1(*propertyGroupingNode1);
     propertyGroupingNodeExtendedData1.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData1.SetGroupingType((int)GroupingType::Property);
     
     TestNavNodePtr propertyGroupingNode2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassB, *ecClassB->GetPropertyP("Description"), "test2", rapidjson::Value("TestGroupingDescription"), false);
     propertyGroupingNode2->SetParentNode(*propertyGroupingNode1);
-    m_nodesCache.Cache(*propertyGroupingNode2, false);
+    Cache(*propertyGroupingNode2);
     NavNodeExtendedData propertyGroupingNodeExtendedData2(*propertyGroupingNode2);
     propertyGroupingNodeExtendedData2.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData2.SetGroupingType((int)GroupingType::Property);
     
     TestNavNodePtr propertyGroupingNode3 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClassC, *ecClassC->GetPropertyP("SomeProperty"), "test3", rapidjson::Value(99), false);
     propertyGroupingNode3->SetParentNode(*propertyGroupingNode2);
-    m_nodesCache.Cache(*propertyGroupingNode3, false);
+    Cache(*propertyGroupingNode3);
     NavNodeExtendedData propertyGroupingNodeExtendedData3(*propertyGroupingNode3);
     propertyGroupingNodeExtendedData3.SetSpecificationHash(m_specification2->GetHash());
     propertyGroupingNodeExtendedData3.SetGroupingType((int)GroupingType::Property);
     
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "test");
     labelGroupingNode->SetParentNode(*propertyGroupingNode3);
-    m_nodesCache.Cache(*labelGroupingNode, false);
+    Cache(*labelGroupingNode);
     NavNodeExtendedData labelGroupingNodeExtendedData(*labelGroupingNode);
     labelGroupingNodeExtendedData.SetSpecificationHash(m_specification2->GetHash());
     labelGroupingNodeExtendedData.SetGroupingType((int)GroupingType::DisplayLabel);

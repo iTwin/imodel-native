@@ -90,6 +90,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
 
+    HierarchyLevelInfo const* cachedHierarchyLevel = nullptr;
     DataSourceInfo const* cachedDataSource = nullptr;
     int nodesCached = 0;
     ICancelationTokenPtr cancelationToken = new TestCancelationToken([&nodesCached]()
@@ -99,6 +100,10 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
         });
     m_context->SetCancelationToken(cancelationToken.get());
 
+    m_nodesCache.SetCacheHierarchyLevelHandler([&](HierarchyLevelInfo& hl)
+        {
+        cachedHierarchyLevel = &hl;
+        });
     m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool)
         {
         cachedDataSource = &ds;
@@ -112,8 +117,9 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     provider->GetNodesCount();
 
     // verify the data source is still invalid
+    ASSERT_TRUE(nullptr != cachedHierarchyLevel);
     ASSERT_TRUE(nullptr != cachedDataSource);
-    EXPECT_FALSE(cachedDataSource->IsValid());
+    EXPECT_FALSE(m_nodesCache.IsInitialized(*cachedDataSource));
 
     // verify the initialization was aborted after creating the first node
     EXPECT_EQ(1, nodesCached);
@@ -123,14 +129,14 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     EXPECT_EQ(0, provider->GetNodesCount());
 
     // verify the nodes cache is empty
-    EXPECT_TRUE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), "", nullptr)).IsNull());
+    EXPECT_TRUE(m_nodesCache.GetHierarchyLevel(*cachedHierarchyLevel).IsNull());
 
     // remove the cancelation token and verify provider gets initialized successfully
     m_context->SetCancelationToken(nullptr);
 
     EXPECT_TRUE(provider->HasNodes());
     EXPECT_EQ(2, provider->GetNodesCount());
-    EXPECT_FALSE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), "", nullptr)).IsNull());
+    EXPECT_FALSE(m_nodesCache.GetHierarchyLevel(*cachedHierarchyLevel).IsNull());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015

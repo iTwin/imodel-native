@@ -1314,30 +1314,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClass
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas                02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/   
-TEST_F (RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClassesNodes_ShowEmptyGroups)
-    {
-    // insert some widget instance
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    RootNodeRule* rule = new RootNodeRule();
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, true, false, true, "", "RulesEngineTest:Widget,Gadget", false));
-    rules->AddPresentationRule(*rule);
-
-    // request for nodes
-    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
-    DataContainer<NavNodeCPtr> classGroupingNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
-    
-    // make sure we have 2 class grouping nodes
-    ASSERT_EQ(2, classGroupingNodes.GetSize());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Pranciskus.Ambrazas                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstancesOfSpecificClassesNodes_DoNotSort_ReturnsUnsortedNodes)
     {    
