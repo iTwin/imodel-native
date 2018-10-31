@@ -88,8 +88,8 @@ struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_thi
         std::shared_ptr<ConnectionClientListener> m_connectionClientListener;
 
     private:
-        void _CheckAndUpdateToken() override;
-        void _SignOut() override;
+        AsyncTaskPtr<WSConnectVoidResult> _CheckAndUpdateToken() override;
+        AsyncTaskPtr<WSConnectVoidResult> _SignOut() override;
         bool _IsSignedIn() const override;
         UserInfo _GetUserInfo() const override;
         Utf8String _GetLastUsername() const override;

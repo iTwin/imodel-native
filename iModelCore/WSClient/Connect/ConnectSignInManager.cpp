@@ -79,12 +79,13 @@ IConnectionClientInterfacePtr connectionClient)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_CheckAndUpdateToken()
+AsyncTaskPtr<WSConnectVoidResult> ConnectSignInManager::_CheckAndUpdateToken()
     {
     if (!_IsSignedIn())
-        return;
+        return CreateCompletedAsyncTask(WSConnectVoidResult::Success());
 
     m_auth.tokenProvider->GetToken(); // Will renew identity token if needed
+    return CreateCompletedAsyncTask(WSConnectVoidResult::Success());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -200,7 +201,7 @@ bool ConnectSignInManager::_IsSignedIn() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_SignOut()
+AsyncTaskPtr<WSConnectVoidResult> ConnectSignInManager::_SignOut()
     {
     for (auto provider : m_publicDelegationTokenProviders)
         provider.second->ClearCache();
@@ -210,6 +211,8 @@ void ConnectSignInManager::_SignOut()
     m_auth.persistence->SetToken(nullptr);
     m_auth.persistence->SetCredentials(Credentials());
     m_auth = CreateAuthentication(AuthenticationType::None);
+
+    return CreateCompletedAsyncTask(WSConnectVoidResult::Success());
     }
 
 /*--------------------------------------------------------------------------------------+
