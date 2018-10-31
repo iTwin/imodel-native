@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct RectangleProfile : CenteredProfile, IRectangleShapeProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RectangleProfile, CenteredProfile);
     friend struct RectangleProfileHandler;
 
@@ -34,7 +34,17 @@ public:
 
     PROFILES_EXPORT static RectangleProfilePtr Create(/*TODO: args*/);
 
+    }; // RectangleProfile
 
-}; // RectangleProfile
+//=======================================================================================
+//! Handler for RectangleProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RectangleProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RectangleProfile, RectangleProfile, RectangleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // RectangleProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

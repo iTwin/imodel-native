@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct AsymmetricIShapeProfile : CenteredProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_AsymmetricIShapeProfile, CenteredProfile);
     friend struct AsymmetricIShapeProfileHandler;
 
@@ -56,6 +56,17 @@ public:
     double GetBottomFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope); }
     PROFILES_EXPORT void SetBottomFlangeSlope(double val);
 
-}; // AsymmetricIShapeProfile
+    }; // AsymmetricIShapeProfile
+
+//=======================================================================================
+//! Handler for AsymmetricIShapeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AsymmetricIShapeProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_AsymmetricIShapeProfile, AsymmetricIShapeProfile, AsymmetricIShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // AsymmetricIShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

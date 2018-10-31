@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct RoundedRectangleProfile : CenteredProfile, IRectangleShapeProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RoundedRectangleProfile, CenteredProfile);
     friend struct RoundedRectangleProfileHandler;
 
@@ -38,6 +38,17 @@ public:
     double GetRoundingRadius() const { return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_RoundingRadius); }
     PROFILES_EXPORT void SetRoundingRadius(double val);
 
-}; // RoundedRectangleProfile
+    }; // RoundedRectangleProfile
+
+//=======================================================================================
+//! Handler for RoundedRectangleProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RoundedRectangleProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RoundedRectangleProfile, RoundedRectangleProfile, RoundedRectangleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // RoundedRectangleProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

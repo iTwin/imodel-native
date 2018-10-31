@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct CenterLineLShapeProfile : CenteredProfile, ILShapeProfile, ICenterLineProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CenterLineLShapeProfile, CenteredProfile);
     friend struct CenterLineLShapeProfileHandler;
 
@@ -41,6 +41,17 @@ public:
     double GetLipLength() const { return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_LipLength); }
     PROFILES_EXPORT void SetLipLength(double val);
 
-}; // CenterLineLShapeProfile
+    }; // CenterLineLShapeProfile
+
+//=======================================================================================
+//! Handler for CenterLineLShapeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CenterLineLShapeProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CenterLineLShapeProfile, CenterLineLShapeProfile, CenterLineLShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // CenterLineLShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

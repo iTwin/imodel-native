@@ -16,7 +16,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct Profile : Dgn::DefinitionElement
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_Profile, Dgn::DefinitionElement);
     friend struct ProfileHandler;
 
@@ -33,6 +33,18 @@ public:
     //IGeometryPtr GetShape() const { return GetPropertyValue(PRF_PROP_Profile_Shape); }
     PROFILES_EXPORT void SetShape(IGeometryPtr val);
 
-}; // Profile
+    }; // Profile
+
+
+//=======================================================================================
+//! Handler for Profile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ProfileHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_Profile, Profile, ProfileHandler, Dgn::dgn_ElementHandler::Definition, PROFILES_EXPORT)
+
+    }; // ProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

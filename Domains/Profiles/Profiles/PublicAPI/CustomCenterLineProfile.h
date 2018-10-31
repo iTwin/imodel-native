@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct CustomCenterLineProfile : SinglePerimeterProfile, ICustomProfile, ICenterLineProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomCenterLineProfile, SinglePerimeterProfile);
     friend struct CustomCenterLineProfileHandler;
 
@@ -35,7 +35,17 @@ public:
 
     PROFILES_EXPORT static CustomCenterLineProfilePtr Create(/*TODO: args*/);
 
+    }; // CustomCenterLineProfile
 
-}; // CustomCenterLineProfile
+//=======================================================================================
+//! Handler for CustomCenterLineProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CustomCenterLineProfileHandler : SinglePerimeterProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CustomCenterLineProfile, CustomCenterLineProfile, CustomCenterLineProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+
+    }; // CustomCenterLineProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

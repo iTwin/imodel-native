@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct TrapeziumProfile : CenteredProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, CenteredProfile);
     friend struct TrapeziumProfileHandler;
 
@@ -40,6 +40,17 @@ public:
     double GetTopOffset() const { return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_TopOffset); }
     PROFILES_EXPORT void SetTopOffset(double val);
 
-}; // TrapeziumProfile
+    }; // TrapeziumProfile
+
+//=======================================================================================
+//! Handler for TrapeziumProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TrapeziumProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, TrapeziumProfile, TrapeziumProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // TrapeziumProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

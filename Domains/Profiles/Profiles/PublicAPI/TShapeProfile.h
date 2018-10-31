@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct TShapeProfile : CenteredProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_TShapeProfile, CenteredProfile);
     friend struct TShapeProfileHandler;
 
@@ -50,6 +50,17 @@ public:
     double GetWebSlope() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebSlope); }
     PROFILES_EXPORT void SetWebSlope(double val);
 
-}; // TShapeProfile
+    }; // TShapeProfile
+
+//=======================================================================================
+//! Handler for TShapeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TShapeProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_TShapeProfile, TShapeProfile, TShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // TShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

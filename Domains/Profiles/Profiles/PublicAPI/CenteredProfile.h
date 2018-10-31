@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct CenteredProfile : SinglePerimeterProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CenteredProfile, SinglePerimeterProfile);
     friend struct CenteredProfileHandler;
 
@@ -28,7 +28,17 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CenteredProfile)
     DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(CenteredProfile)
 
+    }; // CenteredProfile
 
-}; // CenteredProfile
+//=======================================================================================
+//! Handler for CenteredProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CenteredProfileHandler : SinglePerimeterProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CenteredProfile, CenteredProfile, CenteredProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+
+    }; // CenteredProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct DerivedProfile : SinglePerimeterProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DerivedProfile, SinglePerimeterProfile);
     friend struct DerivedProfileHandler;
 
@@ -42,6 +42,17 @@ public:
     DPoint2d GetCardinalPoint() const { return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_CardinalPoint); }
     PROFILES_EXPORT void SetCardinalPoint(DPoint2dCR val);
 
-}; // DerivedProfile
+    }; // DerivedProfile
+
+//=======================================================================================
+//! Handler for DerivedProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DerivedProfileHandler : SinglePerimeterProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DerivedProfile, DerivedProfile, DerivedProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+
+    }; // DerivedProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct HollowRectangleProfile : CenteredProfile, IRectangleShapeProfile, ICenterLineProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, CenteredProfile);
     friend struct HollowRectangleProfileHandler;
 
@@ -39,6 +39,17 @@ public:
     double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_FilletRadius); }
     PROFILES_EXPORT void SetFilletRadius(double val);
 
-}; // HollowRectangleProfile
+    }; // HollowRectangleProfile
+
+//=======================================================================================
+//! Handler for HollowRectangleProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE HollowRectangleProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, HollowRectangleProfile, HollowRectangleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // HollowRectangleProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

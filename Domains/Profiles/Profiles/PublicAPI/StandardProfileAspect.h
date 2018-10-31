@@ -16,7 +16,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct StandardProfileAspect : Dgn::DgnElement::UniqueAspect
-{
+    {
     DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect);
     friend struct StandardProfileAspectHandler;
 
@@ -32,6 +32,17 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(StandardProfileAspect)
     PROFILES_EXPORT static StandardProfileAspectPtr Create(/*TODO: args*/);
 
-}; // StandardProfileAspect
+    }; // StandardProfileAspect
+
+//=======================================================================================
+//! Handler for StandardProfileAspect class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE StandardProfileAspectHandler : Dgn::dgn_AspectHandler::Aspect
+    {
+    DOMAINHANDLER_DECLARE_MEMBERS(PRF_CLASS_StandardProfileAspect, StandardProfileAspectHandler, Dgn::dgn_AspectHandler::Aspect, PROFILES_EXPORT);
+
+    }; // StandardProfileAspectHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

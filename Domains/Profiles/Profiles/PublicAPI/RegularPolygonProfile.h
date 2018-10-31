@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct RegularPolygonProfile : CenteredProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, CenteredProfile);
     friend struct RegularPolygonProfileHandler;
 
@@ -30,7 +30,17 @@ public:
 
     PROFILES_EXPORT static RegularPolygonProfilePtr Create(/*TODO: args*/);
 
+    }; // RegularPolygonProfile
 
-}; // RegularPolygonProfile
+//=======================================================================================
+//! Handler for RegularPolygonProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RegularPolygonProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, RegularPolygonProfile, RegularPolygonProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // RegularPolygonProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

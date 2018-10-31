@@ -8,3 +8,8 @@
 #include "ProfilesInternal.h"
 #include <Profiles\CenteredProfile.h>
 
+BEGIN_BENTLEY_PROFILES_NAMESPACE
+
+HANDLER_DEFINE_MEMBERS(CenteredProfileHandler)
+
+END_BENTLEY_PROFILES_NAMESPACE

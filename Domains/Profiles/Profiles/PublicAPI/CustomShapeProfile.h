@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct CustomShapeProfile : SinglePerimeterProfile, ICustomProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomShapeProfile, SinglePerimeterProfile);
     friend struct CustomShapeProfileHandler;
 
@@ -40,6 +40,17 @@ public:
     //IGeometryPtr GetInnerCurves() const { return GetPropertyValue(PRF_PROP_CustomShapeProfile_InnerCurves); }
     PROFILES_EXPORT void SetInnerCurves(IGeometryPtr val);
 
-}; // CustomShapeProfile
+    }; // CustomShapeProfile
+
+//=======================================================================================
+//! Handler for CustomShapeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CustomShapeProfileHandler : SinglePerimeterProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CustomShapeProfile, CustomShapeProfile, CustomShapeProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+
+    }; // CustomShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

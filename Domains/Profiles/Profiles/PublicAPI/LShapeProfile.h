@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct LShapeProfile : CenteredProfile, ILShapeProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, CenteredProfile);
     friend struct LShapeProfileHandler;
 
@@ -46,6 +46,17 @@ public:
     double GetVerticalLegSlope() const { return GetPropertyValueDouble(PRF_PROP_LShapeProfile_VerticalLegSlope); }
     PROFILES_EXPORT void SetVerticalLegSlope(double val);
 
-}; // LShapeProfile
+    }; // LShapeProfile
+
+//=======================================================================================
+//! Handler for LShapeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE LShapeProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, LShapeProfile, LShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // LShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

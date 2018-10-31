@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct DoubleCProfile : CompositeProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleCProfile, CompositeProfile);
     friend struct DoubleCProfileHandler;
 
@@ -34,6 +34,17 @@ public:
     double GetSpacing() const { return GetPropertyValueDouble(PRF_PROP_DoubleCProfile_Spacing); }
     PROFILES_EXPORT void SetSpacing(double val);
 
-}; // DoubleCProfile
+    }; // DoubleCProfile
+
+//=======================================================================================
+//! Handler for DoubleCProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DoubleCProfileHandler : CompositeProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleCProfile, DoubleCProfile, DoubleCProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+
+    }; // DoubleCProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

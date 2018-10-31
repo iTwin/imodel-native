@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct CustomCompositeProfile : CompositeProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomCompositeProfile, CompositeProfile);
     friend struct CustomCompositeProfileHandler;
 
@@ -30,7 +30,17 @@ public:
 
     PROFILES_EXPORT static CustomCompositeProfilePtr Create(/*TODO: args*/);
 
+    }; // CustomCompositeProfile
 
-}; // CustomCompositeProfile
+//=======================================================================================
+//! Handler for CustomCompositeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CustomCompositeProfileHandler : CompositeProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CustomCompositeProfile, CustomCompositeProfile, CustomCompositeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+
+    }; // CustomCompositeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

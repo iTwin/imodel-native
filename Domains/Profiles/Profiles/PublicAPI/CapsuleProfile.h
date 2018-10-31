@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct CapsuleProfile : CenteredProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CapsuleProfile, CenteredProfile);
     friend struct CapsuleProfileHandler;
 
@@ -30,7 +30,17 @@ public:
 
     PROFILES_EXPORT static CapsuleProfilePtr Create(/*TODO: args*/);
 
+    }; // CapsuleProfile
 
-}; // CapsuleProfile
+//=======================================================================================
+//! Handler for CapsuleProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CapsuleProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CapsuleProfile, CapsuleProfile, CapsuleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // CapsuleProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

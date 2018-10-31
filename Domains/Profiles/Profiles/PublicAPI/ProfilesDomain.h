@@ -16,7 +16,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct ProfilesDomain : Dgn::DgnDomain
-{
+    {
 DOMAIN_DECLARE_MEMBERS(ProfilesDomain, PROFILES_EXPORT)
 
 public:
@@ -25,6 +25,6 @@ public:
 
 private:
     WCharCP _GetSchemaRelativePath() const override { return PRF_SCHEMA_PATH; }
-}; // ProfilesDomain
+    }; // ProfilesDomain
 
 END_BENTLEY_PROFILES_NAMESPACE

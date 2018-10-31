@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct DoubleLProfile : CompositeProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleLProfile, CompositeProfile);
     friend struct DoubleLProfileHandler;
 
@@ -36,6 +36,17 @@ public:
     int GetEnum() const { return GetPropertyValueInt32(PRF_PROP_DoubleLProfile_Enum); }
     PROFILES_EXPORT void SetEnum(int val);
 
-}; // DoubleLProfile
+    }; // DoubleLProfile
+
+//=======================================================================================
+//! Handler for DoubleLProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DoubleLProfileHandler : CompositeProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleLProfile, DoubleLProfile, DoubleLProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+
+    }; // DoubleLProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct CShapeProfile : CenteredProfile, ICShapeProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CShapeProfile, CenteredProfile);
     friend struct CShapeProfileHandler;
 
@@ -46,6 +46,17 @@ public:
     double GetFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_CShapeProfile_FlangeSlope); }
     PROFILES_EXPORT void SetFlangeSlope(double val);
 
-}; // CShapeProfile
+    }; // CShapeProfile
+
+//=======================================================================================
+//! Handler for CShapeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CShapeProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CShapeProfile, CShapeProfile, CShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // CShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

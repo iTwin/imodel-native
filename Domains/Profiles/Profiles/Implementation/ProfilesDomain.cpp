@@ -8,7 +8,36 @@
 #include "ProfilesInternal.h"
 #include <Profiles\ProfilesDomain.h>
 
-#include <Profiles\Handlers.h>
+#include <Profiles\Profile.h>
+#include <Profiles\SinglePerimeterProfile.h>
+#include <Profiles\CompositeProfile.h>
+#include <Profiles\CustomCenterLineProfile.h>
+#include <Profiles\CustomCompositeProfile.h>
+#include <Profiles\CenteredProfile.h>
+#include <Profiles\DerivedProfile.h>
+#include <Profiles\AsymmetricIShapeProfile.h>
+#include <Profiles\BentPlateProfile.h>
+#include <Profiles\CapsuleProfile.h>
+#include <Profiles\CenterLineCShapeProfile.h>
+#include <Profiles\CenterLineLShapeProfile.h>
+#include <Profiles\CenterLineZShapeProfile.h>
+#include <Profiles\CShapeProfile.h>
+#include <Profiles\CustomShapeProfile.h>
+#include <Profiles\DoubleCProfile.h>
+#include <Profiles\DoubleLProfile.h>
+#include <Profiles\EllipseProfile.h>
+#include <Profiles\HollowEllipseProfile.h>
+#include <Profiles\HollowRectangleProfile.h>
+#include <Profiles\IShapeProfile.h>
+#include <Profiles\LShapeProfile.h>
+#include <Profiles\RectangleProfile.h>
+#include <Profiles\RegularPolygonProfile.h>
+#include <Profiles\RoundedRectangleProfile.h>
+#include <Profiles\StandardProfileAspect.h>
+#include <Profiles\TrapeziumProfile.h>
+#include <Profiles\TShapeProfile.h>
+#include <Profiles\TTShapeProfile.h>
+#include <Profiles\ZShapeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 

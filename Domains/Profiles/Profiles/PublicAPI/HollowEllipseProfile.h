@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct HollowEllipseProfile : CenteredProfile, ICenterLineProfile, IEllipseProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowEllipseProfile, CenteredProfile);
     friend struct HollowEllipseProfileHandler;
 
@@ -35,7 +35,17 @@ public:
 
     PROFILES_EXPORT static HollowEllipseProfilePtr Create(/*TODO: args*/);
 
+    }; // HollowEllipseProfile
 
-}; // HollowEllipseProfile
+//=======================================================================================
+//! Handler for HollowEllipseProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE HollowEllipseProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowEllipseProfile, HollowEllipseProfile, HollowEllipseProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // HollowEllipseProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

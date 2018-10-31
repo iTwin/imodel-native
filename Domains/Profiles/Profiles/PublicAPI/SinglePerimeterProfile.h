@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct SinglePerimeterProfile : Profile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_SinglePerimeterProfile, Profile);
     friend struct SinglePerimeterProfileHandler;
 
@@ -28,7 +28,17 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(SinglePerimeterProfile)
     DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(SinglePerimeterProfile)
 
+    }; // SinglePerimeterProfile
 
-}; // SinglePerimeterProfile
+//=======================================================================================
+//! Handler for SinglePerimeterProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SinglePerimeterProfileHandler : ProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_SinglePerimeterProfile, SinglePerimeterProfile, SinglePerimeterProfileHandler, ProfileHandler, PROFILES_EXPORT)
+
+    }; // SinglePerimeterProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -18,7 +18,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! @ingroup GROUP_Profiles
 //=======================================================================================
 struct BentPlateProfile : CenteredProfile, ICenterLineProfile
-{
+    {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_BentPlateProfile, CenteredProfile);
     friend struct BentPlateProfileHandler;
 
@@ -44,6 +44,17 @@ public:
     double GetBendOffset() const { return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_BendOffset); }
     PROFILES_EXPORT void SetBendOffset(double val);
 
-}; // BentPlateProfile
+    }; // BentPlateProfile
+
+//=======================================================================================
+//! Handler for BentPlateProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE BentPlateProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_BentPlateProfile, BentPlateProfile, BentPlateProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // BentPlateProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE
