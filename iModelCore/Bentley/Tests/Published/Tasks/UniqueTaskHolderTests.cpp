@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Tasks/UniqueTaskHolderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -126,7 +126,7 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledOnceAndExecutorDeleted_DoesN
     auto thread = WorkerThread::Create ("TestThread");
 
     auto taskHolder = new UniqueTaskHolder<int> ();
-
+    
     BeAtomic<bool> block (true);
     auto task = taskHolder->GetTask ([&]
         {
