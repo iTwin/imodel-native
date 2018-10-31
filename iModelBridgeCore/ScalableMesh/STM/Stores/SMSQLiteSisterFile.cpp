@@ -195,8 +195,13 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                     {         
 #ifndef NDEBUG
                     //Non sharing process should have create the sister file before sharing process can access it.
+#ifdef __APPLE__
+                    struct stat buffer;
+                    assert(stat(sqlNameUtf8.c_str(), &buffer) == 0);
+#else
                     struct _stat64i32 buffer;
                     assert(_wstat(sqlFileName.c_str(), &buffer) == 0);
+#endif
 #endif
                     m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, true, SQLDatabaseType::SM_GENERATION_FILE, false);
                     BeAssert(status == SUCCESS);
@@ -237,7 +242,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 StatusInt status;
                 m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_CLIP_DEF_FILE, createSisterIfMissing);
-                BeAssert(status == SUCCESS || !createSisterIfMissing);
+                BeAssert(status == SUCCESS || createSisterIfMissing == false);
                 }
 
             sqlFilePtr = m_smClipDefinitionSQLiteFile;

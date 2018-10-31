@@ -191,6 +191,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) override;
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) override;
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
+        virtual bool                               _GetClip(uint64_t clipID, ClipVectorPtr& clipData) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual bool                               _IsInsertingClips() override;

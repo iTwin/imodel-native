@@ -4,7 +4,7 @@
 #include "DataSourceManagerTest.h"
 #include "DataSourceAzure.h"
 #include "DataSourceStatus.h"
-#include "include\DataSourceManagerTest.h"
+#include "include/DataSourceManagerTest.h"
 
 typedef    unsigned long        TestValue;
 
