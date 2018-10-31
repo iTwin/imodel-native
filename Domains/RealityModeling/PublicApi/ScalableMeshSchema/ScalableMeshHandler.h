@@ -444,7 +444,7 @@ private:
     
     Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo();
 
-    void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range);
+    void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& transform);
 
 protected:
     struct Properties
@@ -594,7 +594,7 @@ public:
 
         SCALABLEMESH_SCHEMA_EXPORT void CreateBreaklines(const BeFileName& extraLinearFeatureAbsFileName, bvector<DSegment3d> const& breaklines);
 
-        SCALABLEMESH_SCHEMA_EXPORT void WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir) const;
+        SCALABLEMESH_SCHEMA_EXPORT void WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& transform) const;
 
         uint64_t GetAssociatedRegionId() const { return m_associatedRegion; }
 
