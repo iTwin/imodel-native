@@ -194,7 +194,9 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
         auto smModel = dynamic_cast<ScalableMeshModelCP>(geometricModel);
         if (smModel != nullptr)
             {
-            smModel->WriteCesiumTileset(rootJsonFile, modelDir);
+            DPoint3d initialCenter = m_dgndb->GeoLocation().GetInitialProjectCenter();
+            dbToEcefTransform = Transform::FromProduct(dbToEcefTransform, Transform::From(initialCenter.x, initialCenter.y, initialCenter.z));
+            smModel->WriteCesiumTileset(rootJsonFile, modelDir, dbToEcefTransform);
             }
         else
             {
@@ -258,6 +260,10 @@ BentleyStatus Converter::GenerateRealityModelTilesets()
 
             tilesetToDb.InverseOf (dbToTileset);
             StoreRealityTilesetTransform(*model, tilesetToDb);
+
+            // Put everything back as it was
+            unConstSMModel->CloseFile();
+            unConstSMModel->UpdateFilename(BeFileName(fileName.c_str(), true));
             }
         model->SetJsonProperties(json_tilesetUrl(), url);
         model->Update();
