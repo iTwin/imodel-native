@@ -118,13 +118,18 @@ void BatchIdMap::ToJson(Json::Value& value) const
 TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
     : m_batchIds(TileSource::None), m_centroid(tile.GetTileCenter()), m_tile(&tile), m_context(nullptr)
     {
+    m_centroid = DPoint3d::From(0, 0, 0);
     m_meshes = m_tile->GenerateMeshes();
+#if 0
+    // 1. CESIUM_RTC does not work when root tileset contains a non-identity transform
+    // 2. Point to point reprojection is not necessary
+    // 3. TODO: Must investigate the use of RTC_CENTER instead
     if (!m_meshes.empty())
         {
-        m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
-
         if (sourceGCS != nullptr && sourceGCS != destinationGCS && !destinationGCS->IsEquivalent(*sourceGCS))
             {
+            m_meshes[0]->ReprojectPoints(sourceGCS, destinationGCS);
+
             GeoPoint inLatLong, outLatLong;
             if (sourceGCS->LatLongFromCartesian(inLatLong, m_centroid) != SUCCESS)
                 assert(false);
@@ -136,10 +141,12 @@ TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr source
 
         // Convert points to follow Y-up convention and translate to zero (avoids jittering for distant datasets)
         Transform transform = Transform::FromRowValues(1, 0, 0, -m_centroid.x,
-                                                       0, 0, 1, -m_centroid.z,
-                                                       0, -1, 0, m_centroid.y);
+                                                       0, 1, 0, -m_centroid.y,
+                                                       0, 0, 1, -m_centroid.z);
+        
         m_meshes[0]->ApplyTransform(transform);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -188,6 +195,11 @@ TileMeshList ScalableMeshTileNode::_GenerateMeshes(TileGeometry::NormalMode norm
     builder->AddPolyface(*meshP->GetPolyfaceQuery(), false);
 
     tileMeshes.push_back(builder->GetMesh());
+
+    for (auto& mesh : tileMeshes)
+        {
+        mesh->ApplyTransform(GetTransformFromDgn());
+        }
     return tileMeshes;
     }
 
