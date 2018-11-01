@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #include "stdafx.h"
 #include "inroadstm.h"
@@ -27,7 +27,7 @@ static int _inroadsCallback
 void *dtmP,
 int (*geopakPointsCallBackFunction)(void *dtmP, double X, double Y, double Z),
 int (*geopakCircularListCallBackFunction)(void *dtmP, long pointIndex, long *cirPointIndexP,long numCirPointIndex),
-int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t* dtmFeatureName, wchar_t* dtmFeatureDescription, wchar_t *dtmFeaturStyle, long dtmFeatureType,DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
+int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t const* dtmFeatureName, wchar_t const* dtmFeatureDescription, wchar_t const*dtmFeaturStyle, long dtmFeatureType,DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
 );
 
 extern "C"
@@ -35,7 +35,7 @@ extern "C"
 
 static int (*_geopakPointsCallBackFunction)(void *dtmP,double X,double Y,double Z);
 static int (*_geopakCircularListCallBackFunction)(void *dtmP, long pointIndex, long *cirPointIndexP, long numCirPointIndex);
-static int (*_dtmFeatureCallBackFunction)(void *dtmP, wchar_t *dtmFeatureName, wchar_t* dtmFeatureDescription, wchar_t* dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation);
+static int (*_dtmFeatureCallBackFunction)(void *dtmP, wchar_t const*dtmFeatureName, wchar_t const* dtmFeatureDescription, wchar_t const* dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation);
 
 }
 
@@ -133,7 +133,7 @@ int (*bcdtmInRoads_importGeopakTinFromInroadsDtm)(double maxTriLength, long  num
                 void *dtmP,
                 int (*geopakPointsCallBackFunction)(void *dtmP, double X, double Y, double Z),
                 int (*geopakCircularListCallBackFunction)(void *dtmP, long pointIndex, long *cirPointIndexP,long numCirPointIndex),
-                int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t *dtmFeatureName, wchar_t* dtmFeatureDescription, wchar_t *dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
+                int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t const*dtmFeatureName, wchar_t const* dtmFeatureDescription, wchar_t const*dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
                 ))) bcdtmInRoads_importGeopakTinFromInroadsDtm)(srfP->par.maxsid, _numTriangulatedPoints, _numFeatures, filename, _inroadsCallback);
 
         if (_mapPointsByAddrP)
@@ -154,7 +154,7 @@ static int _inroadsCallback
 void *dtmP,
 int (*geopakPointsCallBackFunction)(void *dtmP, double X, double Y, double Z),
 int (*geopakCircularListCallBackFunction)(void *dtmP, long pointIndex, long *cirPointIndexP,long numCirPointIndex),
-int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t *dtmFeatureName, wchar_t* dtmFeatureDescription, wchar_t* dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
+int (*dtmFeatureCallBackFunction)(void *dtmP, wchar_t const*dtmFeatureName, wchar_t const* dtmFeatureDescription, wchar_t const* dtmFeatureStyle, long dtmFeatureType, DPoint3d *dtmFeaturePointIndiciesP, long numDtmFeaturePointIndicies, int excludeFromTriangulation)
 )
 {
     _dtmP = dtmP;
