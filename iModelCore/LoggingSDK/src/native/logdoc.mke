@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: src/native/logdoc.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+DMS_ENABLE_DOCS = 1
+
+devdocFiles = interface/bsilog.h
+devdocProject = BSILOG
+devdocIgnoredKeywords = BSILOG_API BEGIN_BENTLEY_NAMESPACE UNICODE
+
+#%include mkdevdocs.mki
+
