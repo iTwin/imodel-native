@@ -2,14 +2,11 @@
 #
 #     $Source: ScalableMeshSchema/ScalableMeshSchema.prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-
+    
 $(BuildContext)PublicAPI/ScalableMeshSchema : $(_MakeFilePath)../PublicAPI/ScalableMeshSchema
     $(LinkFirstDepToFirstTargetAsDirectory)
-    
-$(BuildContext)ECSchemas/Domain/ScalableMesh.ecschema.xml : $(_MakeFilePath)ScalableMesh.ecschema.xml
-    $(LinkFirstDepToFirstTarget)

@@ -15,7 +15,7 @@
 #include <ECObjects/ECSchema.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 
-#include <ScalableMeshSchema\ScalableMeshSchemaCommon.h>
+#include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
 
 //-----------------------------------------------------------------------------------------
 // ECSchema macros
@@ -27,7 +27,7 @@
 //-----------------------------------------------------------------------------------------
 // Include from PublicApi
 //-----------------------------------------------------------------------------------------
-#include <ScalableMeshSchema\ScalableMeshDomain.h>
+#include <ScalableMeshSchema/ScalableMeshDomain.h>
 
 //__PUBLISH_SECTION_END__
-#include <ScalableMeshSchema\ScalableMeshHandler.h>
+#include <ScalableMeshSchema/ScalableMeshHandler.h>

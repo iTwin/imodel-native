@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshSchemaPCH.h"
 USING_NAMESPACE_BENTLEY_DGN
-#include <ScalableMeshSchema\ScalableMeshDomain.h>
-#include <ScalableMeshSchema\ScalableMeshHandler.h>
-#include <ScalableMeshSchema\ScalableMeshSchemaApi.h>
+#include <ScalableMeshSchema/ScalableMeshDomain.h>
+#include <ScalableMeshSchema/ScalableMeshHandler.h>
+#include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC

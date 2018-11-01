@@ -1,10 +1,12 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: ScalableMeshSchema/ScalableMeshSchema.mke $
+#     $Source: ScalableMeshSchema/ScalableMeshSchemaIos.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+
+NO_DEFAULT_CLANG_WARNINGS = 1
 
 %include mdl.mki
 
@@ -22,8 +24,11 @@ ScMeshSchemaPublicApiSrc        = $(SrcScMeshSchema)../PublicAPI/ScalableMeshSch
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki
 #----------------------------------------------------------
-CompileOptionsMki               = $(SrcScMeshSchema)ScalableMeshSchema.mki
+CompileOptionsMki               = $(SrcScMeshSchema)ScalableMeshSchemaIos.mki
 %include $(CompileOptionsMki)
+
+nameToDefine = LINUX_SCALABLEMESH_BUILD
+%include cdefapnd.mki
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
@@ -38,12 +43,13 @@ meshmodelDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnModel.h \
 always:
     !~@mkdir $(o)
 
+
 #----------------------------------------------------------------------
 #   Make sure that RasterSchemaInternal.pch is up-to-date.
 #----------------------------------------------------------------------
 PchCompiland        = $(SrcScMeshSchema)ScalableMeshSchemaPCH.cpp
 PchOutputDir        = $(o)
-PchExtraOptions     = -Zm160
+PchExtraOptions     = -Zm160 -DLINUX_SCALABLEMESH_BUILD
 PchExplicitDepends  = $(meshmodelDepends)
 
 %include $(SharedMki)PreCompileHeader.mki
