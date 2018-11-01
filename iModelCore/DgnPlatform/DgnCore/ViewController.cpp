@@ -116,7 +116,7 @@ void ViewFlagsOverrides::Apply(ViewFlags& base) const
     if (IsPresent(kHiddenEdges)) base.SetShowHiddenEdges(m_values.ShowHiddenEdges());
     if (IsPresent(kShadows)) base.SetShowShadows(m_values.ShowShadows());
     if (IsPresent(kClipVolume)) base.SetShowClipVolume(m_values.ShowClipVolume());
-    if (IsPresent(kBackgroundMap)) base.SetShowClipVolume(m_values.ShowBackgroundMap());
+    if (IsPresent(kBackgroundMap)) base.SetShowBackgroundMap(m_values.ShowBackgroundMap());
     if (IsPresent(kConstructions)) base.SetShowConstructions(m_values.ShowConstructions());
     if (IsPresent(kMonochrome)) base.SetMonochrome(m_values.IsMonochrome());
     if (IsPresent(kGeometryMap)) base.SetIgnoreGeometryMap(m_values.IgnoreGeometryMap());
