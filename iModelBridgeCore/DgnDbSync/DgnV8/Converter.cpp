@@ -2953,14 +2953,19 @@ Transform Converter::ComputeUnitsScaleTransform(DgnV8ModelCR v8Model)
 * Find this V8Model/trans combination from a previously converted Syncinfo. This is only valid for updaters.
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8Model, TransformCR trans)
+ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8ModelRef, TransformCR trans)
     {
-    SyncInfo::V8ModelSource source(*v8Model.GetDgnModelP());
+    DgnV8ModelP v8Model = v8ModelRef.GetDgnModelP();
+    if (nullptr == v8Model)
+        {
+        BeAssert(false);
+        return ResolvedModelMapping();
+        }
+    SyncInfo::V8ModelSource source(*v8Model);
 
-    Bentley::DgnPlatform::ModelId modelId = v8Model.GetDgnModelP()->GetModelId();
     SyncInfo::ModelIterator it(*m_dgndb, "V8FileSyncInfoId=? AND V8Id=?");
     it.GetStatement()->BindInt(1, source.GetV8FileSyncInfoId().GetValue());
-    it.GetStatement()->BindInt(2, modelId);
+    it.GetStatement()->BindInt(2, v8Model->GetModelId());
 
     for (auto entry=it.begin(); entry!=it.end(); ++entry)
         {
@@ -2969,48 +2974,62 @@ ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8Model, Tr
             auto model = m_dgndb->Models().GetModel(entry.GetModelId());
             if (!model.IsValid())
                 continue;
-            return ResolvedModelMapping(*model, *v8Model.GetDgnModelP(), entry.GetMapping(), v8Model.AsDgnAttachmentCP());
+            return ResolvedModelMapping(*model, *v8Model, entry.GetMapping(), v8ModelRef.AsDgnAttachmentCP());
             }
         }
 
     //Now search in the files syncinfo
-
-    DgnV8FileP file = v8Model.GetDgnFileP();
-    SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
-    BeSQLite::BeGuid guid;
-    if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+    DgnV8ModelProvenance::ModelProvenanceEntry entryFound;
+    if (BSISUCCESS == FindModelProvenanceEntry(entryFound, *v8Model, trans))
         {
-        bvector <DgnV8ModelProvenance::ModelProvenanceEntry> entries;
-        DgnV8ModelProvenance::FindAll(entries, guid, GetDgnDb());
-
-        for (auto& entry : entries)
+        auto model = m_dgndb->Models().GetModel(entryFound.m_modelId);
+        if (model.IsValid())
             {
-            if (entry.m_dgnv8ModelId != modelId)
-                continue;
-
-            if (!Converter::IsTransformEqualWithTolerance(entry.m_trans, trans))
-                continue;
-
-            auto model = m_dgndb->Models().GetModel(entry.m_modelId);
-            if (!model.IsValid())
-                continue;
-
             //We found a matching model and transform.
             SyncInfo::V8ModelMapping mapping;
-            auto rc = m_syncInfo.InsertModel(mapping, entry.m_modelId, *v8Model.GetDgnModelP(), trans);
+            auto rc = m_syncInfo.InsertModel(mapping, entryFound.m_modelId, *v8Model, trans);
             if (SUCCESS != rc)
                 {
                 BeAssert(false);
-                ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(*v8Model.GetDgnModelP()).c_str());
+                ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(*v8Model).c_str());
                 OnFatalError();
                 return ResolvedModelMapping();
                 }
 
-            return ResolvedModelMapping(*model, *v8Model.GetDgnModelP(), mapping, v8Model.AsDgnAttachmentCP());
+            return ResolvedModelMapping(*model, *v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
             }
         }
 
     return ResolvedModelMapping();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::FindModelProvenanceEntry(DgnV8ModelProvenance::ModelProvenanceEntry& entryFound, DgnV8ModelR v8Model, TransformCR trans)
+    {
+    DgnV8FileP file = v8Model.GetDgnFileP();
+    SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
+    BeSQLite::BeGuid guid;
+    if (SUCCESS != DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+        return BSIERROR;
+        
+    bvector <DgnV8ModelProvenance::ModelProvenanceEntry> entries;
+    DgnV8ModelProvenance::FindAll(entries, guid, GetDgnDb());
+
+    for (auto& entry : entries)
+        {
+        if (entry.m_dgnv8ModelId != v8Model.GetModelId())
+            continue;
+
+        if (!Converter::IsTransformEqualWithTolerance(entry.m_trans, trans))
+            continue;
+
+        entryFound = entry;
+        return BSISUCCESS;
+        }
+
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
