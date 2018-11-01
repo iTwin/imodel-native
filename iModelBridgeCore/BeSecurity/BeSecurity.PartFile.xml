@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="BeSecurity">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="PublishedAPI" />
+        <SubPart PartName="BeSecurityLibrary" />
+      <!-- 
+        Don't include anything that requires gradle in here. Do that in higher-level parts like DgnClientFxJar. We want it to be
+          possible for a developer to build all native code using the NDK only, without having to install gradle, etc.
+        <SubPart PartName="BeSecurityMavenArchive" />
+      -->
+      </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke" ApiNumber="M02">
+        <SubPart PartName="OpenSSL" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="PublicAPI"            PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="Base"                 PartFile="Bentley"          Repository="Bentley" />
+        <Bindings>
+            <PublicAPI Domain="BeSecurity" />
+        </Bindings>
+    </Part>
+
+    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+        <SubPart PartName="PublicAPI" PartFile="BeJsonCpp" Repository="libsrc-jsoncpp"/>
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeSecurity" />
+        </Bindings>
+    </Part>
+
+    <Part Name="BeSecurityLibrary" BentleyBuildMakeFile="BeSecurity.mke" ApiNumber="M02">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BentleyDll"                 PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="OpenSSL" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BeSecurity$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeSecurity$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BeSecurityMavenArchive" BentleyBuildMakeFile="nonport/android/BeSecurity/BeSecurityMavenArchive.mke" OnlyPlatforms="Android*">
+        <Bindings>
+            <Directory SourceName="Delivery/MavenArchive/com/bentley/android/BeSecurity"
+                       ProductDirectoryName="MavenDependencies" ProductSubDirectory="com/bentley/android/BeSecurity"
+                       SubPartDirectory="MavenDependencies/com/bentley/android/BeSecurity" />
+        </Bindings>
+    </Part>
+
+    <!-- ******************************** Unit Tests ************************************** -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke"><!---->
+        <SubPart PartName="BeSecurityLibrary"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeSecurity" SubPartDirectory="UnitTests/BeSecurity">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="PublishedAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSecurity/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate-->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-Published"/>
+    </Part>
+
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts-->
+    <Product Name="BeSecurity-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=BeSecurityTest -dTEST_COLLECTION_PRODUCT=BeSecurity-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
+        <SubProduct ProductName="BeSecurity-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/BeSecurityTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/BeSecurityTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="BeSecurity-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BeSecurity-Gtest -dGTEST_NAME=BeSecurityTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="BeSecurity-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeSecurityTest.log</Files>
+        </Bindings>
+    </Part>
+</BuildContext>
