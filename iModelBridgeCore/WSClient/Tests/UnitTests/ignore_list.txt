@@ -1,0 +1,330 @@
+#--------------------------------------------------------------------------------
+# PLEASE keep this file structurized and add new issues to specific sections:
+# KNOWN, BREAKAGES, RANDOM, NEW
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# KNOWN issues
+#--------------------------------------------------------------------------------
+
+# Reproduceable hang that break DEV runs
+BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
+    # bim0200, NDEBUG, x64, random
+    # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
+
+# Tests that fail for know reasons and require larger fixes
+*_KnownIssue*
+
+#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
+*ConnectWebServicesClientCTests*
+
+#----------------------------------------------------------------------------------------
+#   Test that fail becouse of issue with Web Api version 2.7
+#----------------------------------------------------------------------------------------
+WSRepositoryClientTests.SendQueryRequest_WebApiV26_CapsWebApiToV26
+WSRepositoryClientTests.SendQueryRequest_WebApiV28_CapsWebApiToV27
+WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2ResponseSendsJobsSequence_SendsJobDeleteRequest
+WSRepositoryClientTests.SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
+
+#--------------------------------------------------------------------------------
+# RANDOM reproduceable crashes/hangs that break DEV builds
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
+#--------------------------------------------------------------------------------
+#TFS 775875 (Client SDK Cpp) Calculated properties no linger supported in ecdb, follow-up if it needs fixing on WSClient
+DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue
+#[ RUN      ] DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue
+    #{SRC}\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(4440): error:       Expected: "OldValue"
+    #      Which is: 00007FF6619F9600
+    #To be equal to: properties["TestCalculatedProperty"]
+    #      Which is: {}
+    #{SRC}\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(4447): error:       Expected: "NewValue"
+    #      Which is: 00007FF6619F9610
+    #To be equal to: properties["TestCalculatedProperty"]
+    #      Which is: {}
+    #[  FAILED  ] DataSourceCacheTests.CacheResponse_InstanceWithCalculatedProperty_CachesAndUpdatesCalculatedPropertyValue (129 ms)
+
+#TFS 733272
+CachingDataSourceTests.CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads
+CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
+CachingDataSourceTests.GetFile_CalledMultipleTimes*
+    # bim0200, NDEBUG, x64 and x86
+    # The first hung on line 751 of the test body: while (!downloadStarted);
+    # The rest seemed to randomly hang as well.
+
+UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # DgnDb61-16Q4, x64, NDEBUG (PRG)
+    # Crash (no stack printed)
+    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # e:\Builds\dcsdk06010416\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUrl
+    # DgnDb61-16Q4, x64, NDEBUG (PRG)
+    # Crash (no stack printed)
+    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUrl
+    # e:\Builds\dcsdk06010417\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    #          Expected: to be called once
+    #            Actual: never called - unsatisfied and active
+    # *********************************************************************************
+
+ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
+    # bim0200dev, x86, DEBUG
+    # End of tests reports:
+    # f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\client\MockWSClient.h(31): ERROR: this mock object (used in test ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults) should be deleted but never is. Its address is @080BFB7C.
+    # ERROR: 1 leaked mock object found at program exit.
+
+UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi
+    # bim0200, x64, NDEBUG
+    # Also dgndb61-16q4, x64, NDEBUG, PRG
+    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    #          Expected: to be called once
+    #            Actual: never called - unsatisfied and active
+    #
+    # GMOCK WARNING:
+    # Uninteresting mock function call - taking default action specified at:
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(130):
+    #     Function call: _GetValue(00007FFCFB8A20D8 pointing to "UrlCache", 00007FFCFB8A20C8 pointing to "Environment")
+    #           Returns: "null"
+    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
+    #
+    # GMOCK WARNING:
+    # Uninteresting mock function call - taking default action specified at:
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(131):
+    #     Function call: _SaveValue(00007FFCFB8A20D8 pointing to "UrlCache", 00007FFCFB8A20C8 pointing to "Environment", @000000A33FF3EE40 "0
+    # ")
+    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(141): error: Mock function called more times than expected - taking default action specified at:
+    # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(132):
+    #     Function call: GetUrl(@0000022B5DDBFD98 "Mobile.PunchListWsg", 103)
+    #           Returns: 0000022B5DFF1260
+    #          Expected: to be called once
+    #            Actual: called twice - over-saturated and active
+    # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
+
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
+# bim0200dev, x64, DEBUG
+# [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent
+# F:\Bim0200Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(122): error: Mock function called more times than expected - taking default action specified at:
+# f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\connect\MockImsClient.h(26):
+#     Function call: RequestToken(@049A70EC 56-byte object <94-61 57-04 02-01 00-00 60-92 F4-6B 00-00 00-00 00-00 00-00 00-00 00-00 02-00 00-00 17-71 9A-04 77-73 63-5F 4E-6F 64-65 00-5D 00-45 FF-FF FF-FF 00-00 00-00 70-67 0E-04>, { 'h' (104, 0x68), 't' (116, 0x74), 't' (116, 0x74), 'p' (112, 0x70), 's' (115, 0x73), ':' (58, 0x3A), '/' (47, 0x2F), '/' (47, 0x2F), 'c' (99, 0x63), 'o' (111, 0x6F), 'n' (110, 0x6E), 'n' (110, 0x6E), 'e' (101, 0x65), 'c' (99, 0x63), 't' (116, 0x74), '-' (45, 0x2D), 'w' (119, 0x77), 's' (115, 0x73), 'g' (103, 0x67), '2' (50, 0x32), '0' (48, 0x30), '.' (46, 0x2E), 'b' (98, 0x62), 'e' (101, 0x65), 'n' (110, 0x6E), 't' (116, 0x74), 'l' (108, 0x6C), 'e' (101, 0x65), 'y' (121, 0x79), '.' (46, 0x2E), 'c' (99, 0x63), 'o' (111, 0x6F), ... }, 60)
+#           Returns: 040E0560
+#          Expected: to be called once
+#            Actual: called twice - over-saturated and active
+# ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
+
+
+
+#--------------------------------------------------------------------------------
+# NEW not reviewed issues
+#--------------------------------------------------------------------------------
+
+ConnectSignInManagerTests.CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken
+
+    # TFS#821998
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 02/22/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(102): error: Actual function call count doesn't match EXPECT_CALL(*imsClient, RequestToken(*token, _, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+UrlProviderTests.GetUrl_ValidateAllGetters
+
+    # TFS#862962
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/14/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(103): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+CachingDataSourceTests.SyncCachedData_InitialInstanceRemovesChildAndPathToIt_ChildInstanceIsRemovedAndNotCached
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/26/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7442): error: Actual function call count doesn't match EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7441): error: Actual function call count doesn't match EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+CachingDataSourceTests.SyncCachedData_InitialInstanceRemovesNonExistingChildAndPathToIt_ChildInstanceIsRemovedAndNotCached
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/26/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7485): error: Actual function call count doesn't match EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7484): error: Actual function call count doesn't match EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery
+
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/26/2018
+    # GMOCK WARNING:
+    # Uninteresting mock function call - taking default action specified at:
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7844):
+    # Function call: DoUpdateFile(@000000149BDFFB20 24-byte object <40-26 54-15 F8-7F 00-00 48-05 F0-92 A5-01 00-00 E0-90 5F-93 A5-01 00-00>, @000000149BDFFA80 1:2, false)
+    # Returns: false
+    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7855): error:       Expected: expectedProgress[progressCalled]
+    # Which is: Bytes: 0/0, Instances: 0/2, Synced: 0.250000, Label:
+    # To be equal to: progress
+    # Which is: Bytes: 0/0, Instances: 0/1, Synced: 0.333333, Label:
+    # GMOCK WARNING:
+    # Uninteresting mock function call - taking default action specified at:
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7844):
+    # Function call: DoUpdateFile(@000000149BDFFB20 24-byte object <40-26 54-15 F8-7F 00-00 48-05 F0-92 A5-01 00-00 E0-90 5F-93 A5-01 00-00>, @000000149BDFFA80 3:4, false)
+    # Returns: false
+    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
+
+DataSourceCacheTests.GetExtendedData_UpdatedDataForObject_WorksFine
+
+    # TFS#927740
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/04/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.RemoveResponses_ResponsesWithSameName_RemovesResponses
+
+    # TFS#927740
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/04/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted
+
+    # TFS#930240
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults
+
+    # TFS#930240
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.ReadInstanceHierarchy_IvalidInstance_Error
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId
+
+    # TFS#930241
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 08/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(302): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(303): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: C++ exception with description "DataSourceCache is not open!" thrown in the test body.
+
+DataSourceCacheTests.UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate
+
+    # VSTS#31669
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 09/07/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(310): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::EmptyAndRemoveDirectory(s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::FileNotFound
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\BaseCacheTest.cpp(311): error:       Expected: BeFileNameStatus::Success
+    # To be equal to: BeFileName::CloneDirectory(s_seedCacheFolderPath, s_targetCacheFolderPath)
+    # Which is: BeFileNameStatus::AlreadyExists
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [4] _C_specific_handler (0x7ffb4bbfbff0)
+    # [3] _chkstk (0x7ffb570d9ec0)
+    # [2] RtlLookupFunctionEntry (0x7ffb57064710)
+    # [1] KiUserExceptionDispatcher (0x7ffb570d9030)
+    # [0] BentleyB0200::BeSQLite::Db::IsReadonly (0x7ffb1d75da80)

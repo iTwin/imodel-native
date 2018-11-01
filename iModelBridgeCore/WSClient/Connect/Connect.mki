@@ -1,0 +1,70 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Connect/Connect.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+ConnectMkiPublicApiDir = $(ClientPublicApiDirectory)Connect/
+ConnectMkiSourceDir = $(ClientSourceDirectory)Connect/
+
+#--------------------------------------------------------------------------------------
+#   Set up build dependencies
+#--------------------------------------------------------------------------------------
+ConnectMkiHeaders = $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h             \
+                    $(ConnectMkiPublicApiDir)ConnectAuthenticationPersistence.h         \
+                    $(ConnectMkiPublicApiDir)ConnectMessaging.h                         \
+                    $(ConnectMkiPublicApiDir)ConnectSignInManager.h                     \
+                    $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                     \
+                    $(ConnectMkiPublicApiDir)EulaClient.h                               \
+                    $(ConnectMkiPublicApiDir)ISecurityToken.h                           \
+                    $(ConnectMkiPublicApiDir)IConnectSignInManager.h                    \
+                    $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h        \
+                    $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h           \
+                    $(ConnectMkiPublicApiDir)IConnectTokenProvider.h                    \
+                    $(ConnectMkiPublicApiDir)ITokenStore.h                              \
+                    $(ConnectMkiPublicApiDir)ImsClient.h                                \
+                    $(ConnectMkiPublicApiDir)Passport.h                                 \
+                    $(ConnectMkiPublicApiDir)SamlToken.h                                \
+                    $(ConnectMkiPublicApiDir)IConnectionClientInterface.h               \
+                    $(ConnectMkiSourceDir)ConnectSessionAuthenticationPersistence.h     \
+                    $(ConnectMkiSourceDir)DelegationTokenProvider.h                     \
+                    $(ConnectMkiSourceDir)IdentityAuthenticationPersistence.h           \
+                    $(ConnectMkiSourceDir)IdentityTokenProvider.h                       \
+                    %if $(TARGET_PLATFORM)=="Windows"
+                    $(ConnectMkiSourceDir)ConnectionClientInterface.h   
+                    %endif
+
+#---------------------------------------------------------------------------------------+
+#   Files to compile 
+#---------------------------------------------------------------------------------------+
+$(o)ConnectAuthenticationHandler$(oext)             : $(ConnectMkiSourceDir)ConnectAuthenticationHandler.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)ConnectAuthenticationPersistence$(oext)         : $(ConnectMkiSourceDir)ConnectAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)ConnectSessionAuthenticationPersistence$(oext)  : $(ConnectMkiSourceDir)ConnectSessionAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)IConnectSignInManager$(oext)                    : $(ConnectMkiSourceDir)IConnectSignInManager.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)ConnectSignInManager$(oext)                     : $(ConnectMkiSourceDir)ConnectSignInManager.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)ConnectTokenProvider$(oext)                     : $(ConnectMkiSourceDir)ConnectTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)DelegationTokenProvider$(oext)                  : $(ConnectMkiSourceDir)DelegationTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)EulaClient$(oext)                               : $(ConnectMkiSourceDir)EulaClient.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)IdentityAuthenticationPersistence$(oext)        : $(ConnectMkiSourceDir)IdentityAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)IdentityTokenProvider$(oext)                    : $(ConnectMkiSourceDir)IdentityTokenProvider.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)ImsClient$(oext)                                : $(ConnectMkiSourceDir)ImsClient.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)Passport$(oext)                                 : $(ConnectMkiSourceDir)Passport.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+%if $(TARGET_PLATFORM)=="Windows"
+$(o)ConnectionClientInterface$(oext)                : $(ConnectMkiSourceDir)ConnectionClientInterface.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+%endif
+
+$(o)SamlToken$(oext)                                : $(ConnectMkiSourceDir)SamlToken.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}

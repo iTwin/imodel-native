@@ -1,0 +1,17 @@
+{
+  "Environment": "DEV",
+  "Host": "https://dev-imodelhubapi.bentley.com",
+  "Ims": true,
+  "ProjectNr": "c71f2356-7255-42bd-81a5-43a46d8a2f29",
+  "Users": [
+    {
+      "Password": "admin_password_please_change",
+      "Username": "admin_user_please_change",
+      "IsAdmin": true
+    },
+    {
+      "Password": "regular_password_please_change",
+      "Username": "regular_user_please_change"
+    }
+  ]
+}

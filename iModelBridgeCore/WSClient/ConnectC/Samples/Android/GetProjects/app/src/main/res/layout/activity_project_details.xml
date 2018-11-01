@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.bentley.loadprojects.ProjectDetailsActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:text="Project Details View" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical">
+
+        <TextView style="@style/Base.TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
+            android:textStyle="bold"
+            android:id="@+id/label_proj_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lbl_projname" />
+
+        <TextView
+            android:id="@+id/val_proj_name"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Some Project Name"/>
+
+
+
+        <TextView style="@style/Base.TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
+            android:textStyle="bold"
+            android:id="@+id/label_proj_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lbl_projloc" />
+
+        <TextView
+            android:id="@+id/val_proj_location"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cybertron" />
+
+        <TextView style="@style/Base.TextAppearance.AppCompat.Widget.ActionMode.Subtitle"
+            android:textStyle="bold"
+            android:id="@+id/label_proj_lastmodifieddate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lbl_projlmd" />
+
+        <TextView
+            android:id="@+id/val_proj_lastmodifieddate"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingLeft="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2099-01-01T00:00:00.00"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+
+
+    </LinearLayout>
+
+
+</LinearLayout>
