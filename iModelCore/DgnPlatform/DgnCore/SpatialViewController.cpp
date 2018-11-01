@@ -499,21 +499,11 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::SynchBackgroundMapDisplay()
     {
-    bool onOff = GetViewFlags().ShowBackgroundMap();
+    auto rootIter = m_roots.find(s_webMercatorPseudoModelId);
+    if (m_roots.end() != rootIter)
+        m_roots.erase(rootIter);
 
-    if (onOff == (m_roots.find(s_webMercatorPseudoModelId) != m_roots.end()))
-        return;
-
-    if (onOff)
-        {
-        m_allRootsLoaded = false;
-        }
-    else
-        {
-        auto rootIter = m_roots.find(s_webMercatorPseudoModelId);
-        if (m_roots.end() != rootIter)
-            m_roots.erase(rootIter);
-        }
+    m_allRootsLoaded = false;
     }
 
 /*---------------------------------------------------------------------------------**//**

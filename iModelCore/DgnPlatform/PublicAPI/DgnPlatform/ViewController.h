@@ -630,7 +630,7 @@ public:
     void ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}
 
     //! Synchronize display of background map after viewflags display...
-    void SynchBackgroundMapDisplay();
+    DGNPLATFORM_EXPORT void SynchBackgroundMapDisplay();
 
     DgnModelIdSet const& GetViewedModels() const {return GetSpatialViewDefinition().GetModelSelector().GetModels();}
     void SetViewedModels(DgnModelIdSet const& models) { _SetViewedModels(models); }
