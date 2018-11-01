@@ -738,6 +738,16 @@ bool    GetUnitsFromConfigVar (int& unitsMode, Bentley::WStringCR cfgValue) cons
                 break;
                 }
             }
+        if (!found && allUserUnits.begin() == allUserUnits.end())
+            {
+            // log missing units.def file defined by MS_CUSTOMUNITDEF
+            Bentley::WString unitsdef;
+            if (BSISUCCESS == DgnV8Api::ConfigurationManager::GetVariable(unitsdef, L"MS_CUSTOMUNITDEF") && !BeFileName::DoesPathExist(unitsdef.c_str()))
+                {
+                Utf8PrintfString msg("File %ls not found!", unitsdef.c_str());
+                m_v8converter->ReportIssueV (Converter::IssueSeverity::Warning, Converter::IssueCategory::VisualFidelity(), Converter::Issue::Message(), "Units", msg.c_str());
+                }
+            }
         }
 
     return  found;
