@@ -28,6 +28,7 @@ nameToDefine = BSILOG_INTEROP_EXPORTS
 always:
     !~@mkdir $(o)
 
+CCompOptsCLR + -Zc:twoPhase-
 
 #-----------------------------------------------------------------------
 #                           Include Path
