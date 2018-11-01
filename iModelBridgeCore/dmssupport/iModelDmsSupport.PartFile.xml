@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="UnitTests-Integration" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="iModelDmsSupport"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="iModelBridge/Integration" SourceName="Delivery/UnitTests/Objects/Integration"/>
+        </Bindings>
+    </Part>
+
+  <Product Name="iModelBridge-IntegrationTests">
+    <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
+    <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
+    <SubPart PartName="UnitTests-Integration"/>
+    <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+  </Product>
+    <!-- ********************** -->
+    <!-- **** Gtest **** -->
+    <!-- ********************** -->
+
+  <Part Name="IntegrationGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelBridgeIntegrationTest -dTEST_COLLECTION_PRODUCT=iModelBridge-IntegrationTests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
+    <SubProduct ProductName="iModelBridge-IntegrationTests"/>
+    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Bindings>
+      <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelBridgeIntegrationTest/Assemblies/*</Files>
+      <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelBridgeIntegrationTest/Assets" />
+    </Bindings>
+  </Part>
+
+  <Product Name="iModelBridge-IntegrationGtest" >
+    <SubPart PartName="IntegrationGtest"/>
+    <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+  </Product>
+  
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelBridge-Gtest -dGTEST_NAME=iModelBridgeTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="iModelBridge-IntegrationGtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/iModelBridgeTest.log</Files>
+        </Bindings>
+    </Part>
+
+
+  <Part Name="ProjectWise_SDK" BentleyBuildMakeFile="iModelDmsSupport/pwsdkprewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <SdkSource>ProjectWise_InternalSDK</SdkSource>
+    <Bindings>
+      <PublicAPI Domain="ProjectWise_InternalSDK"/>
+      <Libs Required="false">Delivery/ProjectWise_InternalSDK/*$(libext)</Libs>
+    </Bindings>
+  </Part>
+    
+ <Part Name="v8ConfigSupport" BentleyBuildMakeFile="Configuration/Configurationprewire.mke">
+   <NuGetPackage targetFramework="native">V8_InternalSDKNuget</NuGetPackage>
+   <Bindings>
+        <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/CEConfig/Config" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="Config" SubPartDirectory="DgnPlatformV8Sdk/Dlls/CEConfig" Required="true"/>
+        <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/v8iConfig" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="v8iConfig" SubPartDirectory="DgnPlatformV8Sdk/Dlls/v8iConfig" Required="true"/>    
+    </Bindings>
+ </Part>
+  <Part Name="UstationDummy" BentleyBuildMakeFile="iModelDmsSupport/UstationDummy.mke" OnlyPlatforms="x64">
+    <Bindings>
+      <Assemblies ProductDirectoryName="DgnV8DummyUstation">Delivery/$(shlibprefix)ustation$(shlibext)</Assemblies>
+    </Bindings>
+  </Part>
+  <Part Name="iModelDmsPublicApi" BentleyBuildMakeFile="iModelDmsApiprewire.mke"> 
+    <Bindings>
+      <PublicAPI Domain="iModelDmsSupport" />
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelDmsSupport" BentleyBuildMakeFile="iModelDmsSupport/iModelDmsSupport.mke" OnlyPlatforms="x64"  ApiNumber="M02">
+    <SubPart PartName="ProjectWise_SDK"/>
+    <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+    <SubPart PartName="PublicAPI" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+    <SubPart PartName="v8ConfigSupport"/>
+    <SubPart PartName="iModelDmsPublicApi"/>
+    <SubPart PartName="UstationDummy"/>
+    <SubPart PartName="BentleyDll" Repository="Bentley" PartFile="Bentley"/>
+    <Bindings>
+      <Assemblies>Delivery/$(shlibprefix)iModelDmsSupport$(ApiNumber)$(shlibext)</Assemblies>
+      <Libs Required="false">Delivery/iModelDmsSupport$(libext)</Libs>
+    </Bindings>
+  </Part>
+</BuildContext>
