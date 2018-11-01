@@ -114,7 +114,7 @@ struct BeTest
 #endif
 
 #ifdef _WIN32
-    static void BeTest::OnInvalidParameter(const wchar_t * expression, const wchar_t * function, const wchar_t * file, unsigned int line, uintptr_t pReserved);
+    static void OnInvalidParameter(const wchar_t * expression, const wchar_t * function, const wchar_t * file, unsigned int line, uintptr_t pReserved);
 #endif
 
 static void AssertionFailureHandler (WCharCP _Message, WCharCP _File, unsigned _Line, BeAssertFunctions::AssertType atype);
