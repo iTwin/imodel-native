@@ -3249,14 +3249,14 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
             break;
         }
 
-    if (nullptr == context.GetViewport())
-        return true;
-
     if (nullptr != range && !range->IsNull())
         {
         if (!context.IsRangeVisible(*range))
             return false; // Sub-graphic outside range...
         }
+
+    if (nullptr == context.GetViewport())
+        return true;
 
     DgnSubCategory::Appearance appearance = context.GetViewport()->GetViewController().GetSubCategoryAppearance(geomParams.GetSubCategoryId());
 
