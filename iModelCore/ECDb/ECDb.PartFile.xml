@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- Bind my own PublicAPI and VendorAPI into BuildContext. Note that this part does not cause any sub-part PublicAPIs to be bound. Also deliver my notices. -->
+    <Part Name="PublicAPI" BentleyBuildMakeFile="ECDb.prewire.mke">
+        <SubPart PartName="StandardSchemasV3" PartFile="ECStandards"  Repository="ECStandards"/>
+        <Bindings>
+            <PublicAPI Domain="ECDb" />
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
+                ECSchemas/ECDb/*.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="ECDb">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
+        <SubPart PartName="ECDbPrepareDocGeneration" />
+    </Part>
+
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="ECDbLibrary" BentleyBuildMakeFile="ECDb/ECDb.mke" ApiNumber="M02">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BeSQLite"        PartFile="BeSQLite"  Repository="BESQLite"/>
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects" />
+        <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="geomlibs" />
+        <SubPart PartName="BeJsonCpp"       PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BeSQLiteEC$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>
+            <VendorNotices>
+                Delivery/openoffice-notice.txt
+                Delivery/openoffice-license.txt
+            </VendorNotices>
+            <Directory SourceName="Dox/Pages/ECDb" SubPartDirectory="Dox/Pages/ECDb"/>
+            <Directory SourceName="Dox/Images/ECDb" SubPartDirectory="Dox/Images/ECDb"/>
+            <Directory SourceName="Dox/Files/ECDb" SubPartDirectory="Dox/Files/ECDb"/>
+        </Bindings>
+    </Part>
+
+    
+
+    <Part Name="ECDbPrepareDocGeneration" DeferType="BuildDocs">
+        <SubPart PartName="PublishedApi" />
+        <SubPart PartName="ECDbExtractCodeSamples" />
+        <SubPart PartName="ECDbBuildCodeSamples" />
+    </Part>
+
+    <Part Name="ECDbExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECDb/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECDb">
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/ECDb" SubPartDirectory="Dox/Extractions/ECDb"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="ECDbBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecdbsamplecode -dPolicyFile=$(SrcRoot)ECDb/ECDb/ECDbPolicy.mki">
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
+    </Part>
+  
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
+        <SubPart PartName="ECDbLibrary" />
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi"  SubPartDirectory="PublishedApi/ECDb"/>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** NuGet package creation                            **** -->
+    <!-- *********************************************************** -->
+    <Part Name="NuGetPackage" DeferType="BuildSamples" BentleyBuildMakeFile="BeSQLiteEC.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="ECDbLibrary" />
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\BeSQLiteEC\BeSQLiteEC.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="ECDb"/>
+        <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECDb" SubPartDirectory="UnitTests/ECDb"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-ECDbTestData" SourceName="Delivery/UnitTests/ECDbTestData" />    
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+        <SubPart PartName="PrewireForUnitTests" />
+        <SubPart PartName="BackDoorForUnitTests"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="BackDoorForUnitTests" />
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ECDb/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- Builds the ECDb tests (except performance tests) -->
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-Published" />
+    </Part>
+
+    <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
+    <Product Name="ECDb-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTest -dTEST_COLLECTION_PRODUCT=ECDb-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECDb-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECDbTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECDbTest/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-Gtest" >
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest -dGTEST_NAME=ECDbTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECDb-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECDbTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Memory leak testing of ECDb tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest -dGTEST_NAME=ECDbTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="ECDb-Gtest" />
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECDb-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECDb-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECDb-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECDb-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/ECDb-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECDb-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECDb/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECDb-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECDb-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/ECDb-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="M02"
+        >
+        <SubProduct ProductName="ECDb-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/ECDbUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        DeferType="RunUnitTests"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECDb-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubProduct ProductName="ECDb-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/ECDb-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Performance tests -->
+    <Product Name="ECDb-Tests-Performance">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Performance" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTestPerformance -dTEST_COLLECTION_PRODUCT=ECDb-Tests-Performance" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECDb-Tests-Performance"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECDbTestPerformance/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECDbTestPerformance/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-Gtest-Performance" >
+        <SubPart PartName="Gtest-Performance"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest-Performance" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest-Performance -dGTEST_NAME=ECDbTestPerformance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECDb-Gtest-Performance" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <ProductDirectoryList ListName="ECDbTestedDirList" >
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Assemblies"            Path=""/>
+        <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+
+    <Product Name="ECDbTested">
+        <SubPart PartName="RunGtest" />
+        <!--  *** NEEDS WORK: What's the best way to include all platforms? Redefine this container product as a 'MultiPlatform'? -->
+        <Directories DirectoryListName="ECDbTestedDirList" />
+    </Product>
+
+
+</BuildContext>
