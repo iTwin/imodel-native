@@ -254,22 +254,6 @@ SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, St
             
         if (insertProvenance && SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
             DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
-        else if (insertProvenance)
-            {
-            //We found dgnv8file provenance for a model that was mapped from another bridge. 
-            //Transfer the model mapping from there to this one.
-            bvector <DgnV8ModelProvenance::ModelProvenanceEntry> entries;
-            DgnV8ModelProvenance::FindAll(entries, guid, GetDgnDb());
-            for (auto& entry : entries)
-                {
-                SyncInfo::V8ModelMapping mInfo;
-                mInfo.m_v8Name = entry.m_modelName;
-                mInfo.m_transform = entry.m_trans;
-                mInfo.m_modelId = entry.m_modelId;
-                mInfo.m_source = SyncInfo::V8ModelSource(provenance.m_syncId, SyncInfo::V8ModelId(entry.m_dgnv8ModelId));
-                mInfo.Insert(GetDgnDb());
-                }
-            }
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev("+ %s => %lld", Bentley::Utf8String(file.GetFileName()).c_str(), provenance.m_syncId.GetValue());
 
