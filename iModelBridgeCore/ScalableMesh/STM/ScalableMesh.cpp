@@ -1408,6 +1408,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
             path = WString(pwcsLink.c_str(), true);
         }
 #ifndef VANCOUVER_API
+    BeAssert(ScalableMeshLib::IsInitialized()); // Must initialize lib first!
     ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
 #endif
     m_viewedNodes.clear();
