@@ -296,14 +296,14 @@ void DataSourceAccountCURL::setupProxyToCurl(CURL* curl)
     
     if (!proxyServerUrl.empty())
         {
-        curl_easy_setopt(curl, CURLOPT_PROXY, proxyServerUrl);
+        curl_easy_setopt(curl, CURLOPT_PROXY, proxyServerUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
         if (!proxyUser.empty() && !proxyPassword.empty())
             {
             Utf8String proxyCreds = proxyUser;
             proxyCreds.append(":");
             proxyCreds.append(proxyPassword);
-            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds);
+            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds.c_str());
             }
         }
     }
