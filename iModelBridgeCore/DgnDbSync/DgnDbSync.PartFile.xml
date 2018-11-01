@@ -389,6 +389,7 @@
 
     <Part Name="MstnBridgeTestsExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="DgnV8/Tests/MstnBridgeTests.mke" OnlyPlatforms="x64">
         <SubPart PartName="DgnV8ConverterTestsExe"/>
+        <SubPart PartName="DgnV8ConverterExe"/>
         <Bindings>
             <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/MstnBridgeTests.exe</Files>
             <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/MstnBridgeTests.logging.config.xml</Files>
