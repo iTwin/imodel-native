@@ -1,0 +1,86 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/IntegrationTests/IntegrationTests.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%include mdl.mki
+
+beHttpUnitTestsDir = $(SrcRoot)BeHttp/Tests/UnitTests/Published/
+
+#---------------------------------------------------------------------------------------+
+#   Compile unit tests
+#---------------------------------------------------------------------------------------+
+baseDir = $(_MakeFilePath)
+
+BEGTEST_NAME = BeHttpIntegrationTests
+BEGTEST_INPUT = $(baseDir)
+BEGTEST_OUTPUT = $(OutputRootDir)build/BeHttp/IntegrationTests/
+o = $(PartBuildDir)$(BEGTEST_NAME)/Objects/
+
+dirToSearch = $(beHttpUnitTestsDir)
+%include cincapnd.mki
+dirToSearch = $(OutRoot)Winx64/BuildContexts/BeHttp/VendorAPI
+%include cincapnd.mki
+dirToSearch = $(OutRoot)Winx64/BuildContexts/BeHttp/PublicAPI
+%include cincapnd.mki
+
+# Generate <prg.h> version file for tests
+%include $(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki 
+
+#---------------------------------------------------------------------------------------+
+#   Build test files
+#---------------------------------------------------------------------------------------+
+
+NO_DEFAULT_CLANG_WARNINGS=1
+%include mdl.mki
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+#---------------------------------------------------------------------------------------+
+#   Compile test utilities
+#---------------------------------------------------------------------------------------+
+
+# Compile rule
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+# Sources to compile
+$(o)ValuePrinter$(oext)				: $(beHttpUnitTestsDir)ValuePrinter.cpp ${MultiCompileDepends}
+
+$(o)WebTestsHelper$(oext)           : $(beHttpUnitTestsDir)WebTestsHelper.cpp ${MultiCompileDepends}
+
+$(o)TestsHelper$(oext)              : $(beHttpUnitTestsDir)TestsHelper.cpp ${MultiCompileDepends}
+
+$(o)FSTest$(oext)                   : $(beHttpUnitTestsDir)FSTest.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#---------------------------------------------------------------------------------------+
+#   Deliver objects
+#---------------------------------------------------------------------------------------+
+
+$(BuildContext)Delivery/BeHttpIntegrationTests/Objects : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+#---------------------------------------------------------------------------------------+
+#   Deliver assets
+#---------------------------------------------------------------------------------------+
+
+o = $(PartBuildDir)$(BEGTEST_NAME)/Assets/
+
+$(o)Scripts/Executables:
+    @CreateSymLinks.py -d"$(o)Scripts/Executables=$(baseDir)Scripts/Executables"
+
+$(o)Scripts/Resources/Data:
+    @CreateSymLinks.py -d"$(o)Scripts/Resources/Data=$(baseDir)Scripts/Resources/Data"
+
+%ifnofile $(o)Scripts/Resources/Logs
+always:
+    mkdir $(o)Scripts/Resources/Logs
+%endif
+
+$(BuildContext)Delivery/BeHttpIntegrationTests/Assets : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
