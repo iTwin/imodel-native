@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+<title>$title</title>
+<link href="bentley-doxygen.css" rel="stylesheet" type="text/css">
+<link href="tabs.css" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="$relpath$jquery.js"></script>
+<script type="text/javascript" src="$relpath$dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/search.js"></script>
+<script type="text/javascript">
+  $(document).ready(function() { searchBox.OnSelectItem(0); });
+</script>
+<style type="text/css">
+    .BentleyPlatformSampleCode
+        {
+        border: 1px solid #C4CFE5;
+        padding: 4px 6px;
+        margin: 4px 8px 4px 2px;
+        overflow: auto;
+        word-wrap: break-word;
+        font-size:  9pt;
+        line-height: 125%;
+        font-family: monospace, fixed;
+        font-size: 105%;
+        }
+</style>
+<script>
+        $(function()
+            {
+            $('a.BentleyPlatformSampleCodeOpener').click (function()
+                {
+                $('.' + $(this).attr ('targetsection')).toggle();
+
+                if (this.innerText == '+')
+                    this.innerText = '-';
+                else
+                    this.innerText = '+';
+                
+                this.blur();
+
+                return false;
+                });
+            });
+    </script>
+</head><body>

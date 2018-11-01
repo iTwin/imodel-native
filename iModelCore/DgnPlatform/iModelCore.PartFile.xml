@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <!-- ======================================================================================================================================== -->
+    <!-- == PUBLIC ============================================================================================================================== -->
+    <!-- ======================================================================================================================================== -->
+
+    <Part Name="iModelCorePRG" PrgOutputDir="iModelCore">
+        <SubPart PartName="__iModelCorePRG-Dynamic"/>
+        <SubPart PartName="__iModelCorePRG-Static"/>
+    </Part>
+    
+    <!--
+        iModelCore needs to include at least the platform SubParts required for the
+        iModelJsNodeAddon. See iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
+     -->
+    <Part Name="iModelCore">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="iModelCoreSqlang" PartFile="iModelCoreL10N" Repository="DgnPlatform"/>
+    </Part>
+
+    <Part Name="RunUnitTests" DeferType="RunUnitTests">
+        <SubPart PartName="RunUnitGTest" PartFile="iModelCoreTesting" Repository="DgnPlatform"/>
+        <SubPart PartName="RunUnitJUnit" PartFile="iModelCoreTesting" Repository="DgnPlatform"/>
+        <SubPart PartName="RunUnitXCTest" PartFile="iModelCoreTesting" Repository="DgnPlatform"/>
+        <SubPart PartName="RunUnitCppTest" PartFile="iModelCoreTesting" Repository="DgnPlatform"/>
+    </Part>
+
+    <!-- ======================================================================================================================================== -->
+    <!-- == PRIVATE ============================================================================================================================= -->
+    <!-- ======================================================================================================================================== -->
+
+    <Part Name="__iModelCorePRG-Dynamic" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="iModelCore" LibType="Dynamic"/>
+        <SubPart PartName="RunUnitTests" LibType="Dynamic"/>
+        <SubPart PartName="__ParasiteSubParts" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="__iModelCorePRG-Static" OnlyPlatforms="android*,ios*,macos*,linux*">
+        <SubPart PartName="iModelCore" LibType="Static"/>
+        <SubPart PartName="RunUnitTests" LibType="Static"/>
+        <SubPart PartName="__ParasiteSubParts" LibType="Static"/>
+    </Part>
+
+    <!--
+        These are "parasites" because they aren't strictly required for the iModelJsNodeAddon
+        library itself. However, they may be required for its non-library parts of the build (e.g.
+        testing, which we'd normally exclude from our build), or for other downstream builds
+        pulling LKGs.
+    -->
+    <Part Name="__ParasiteSubParts">
+        <!-- Testing -->
+        <!-- .................................................................................. -->
+        <SubPart PartName="__ParasiteSubParts_Gtest"/>
+        <SubPart PartName="__ParasiteSubParts_JUnit"/>
+        <SubPart PartName="__ParasiteSubParts_XCTest"/>
+        <SubPart PartName="__ParasiteSubParts_CppTest"/>
+
+        <!-- For DgnClientSdk -->
+        <!-- .................................................................................. -->
+        <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformExtractions" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="Docs" PartFile="ECPresentation" Repository="ECPresentation"/>
+
+        <SubPart PartName="PerformanceTests" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="UnitTests-Performance" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="UnitTests-Performance" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="UnitTests-Performance" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="UnitTests-PerformanceTest" PartFile="geomlibs" Repository="GeomLibs"/>
+
+        <SubPart PartName="__ParasiteSubParts_DcsX64Parts"/>
+    </Part>
+    
+    <Part Name="__ParasiteSubParts_Gtest" OnlyPlatforms="x64,macos*,linux*">
+        <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock"/>
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_JUnit" OnlyPlatforms="android*">
+        <SubPart PartName="AndroidJUnitTest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_XCTest" OnlyPlatforms="ios*">
+        <SubPart PartName="iOSXCTest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_CppTest" OnlyPlatforms="winrt*">
+        <SubPart PartName="UwpTest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+    </Part>
+
+    <Part Name="__ParasiteSubParts_DcsX64Parts" OnlyPlatforms="x64">
+        <SubProduct ProductName="IModelExtractor" PartFile="IModelExtractor" Repository="BeSQLite"/>
+        <SubProduct ProductName="iModelConsole" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+
+        <SubPart PartName="NuGetPackage" PartFile="ecobjects" Repository="ecobjects"/>
+        <SubPart PartName="NuGetPackage" PartFile="ecdb" Repository="ECDb"/>
+        <SubPart PartName="NuGetPackage" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="NuGetPackage" PartFile="dgnplatform" Repository="DgnPlatform"/>
+    </Part>
+
+</BuildContext>

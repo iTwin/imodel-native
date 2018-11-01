@@ -1,0 +1,76 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: docs/overview/CustomElement.doxpage $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
+
+BEGIN_BENTLEY_DGN_NAMESPACE
+
+/** @page PAGE_CustomElement Custom Element
+
+@tableofcontents
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElement1 Create Element ECClass
+
+The first step is to create a new ECEntityClass in the ecschema.xml file (data model) that subclasses the appropriate ECEntityClass:
+
+__PUBLISH_INSERT_FILE__ ToyTileECSchema_ToyTilePhysicalElement.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElement2 Create Element C++ Class
+
+The next step is to create a new C++ class that subclasses the appropriate C++ DgnElement subclass:
+
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_Declare.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElement3 Define element virtual methods
+
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_VirtualMethods.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElement4 Declare element handler
+
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_DeclareHandler.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElement5 Define handler members
+
+__PUBLISH_INSERT_FILE__ ToyTileDomain_DefineMembers.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElement6 Register element handlers
+
+__PUBLISH_INSERT_FILE__ ToyTileDomain_RegisterHandlers.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElement7 Call Create method
+
+__PUBLISH_INSERT_FILE__ ToyTilePhysicalElement_StaticCreate.sampleCode
+
+@note DgnElement::Insert must be called to persist the element.
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CustomElementSeeAlso See Also
+
+@see GROUP_DgnElement
+
+For details on writing an element handler and a DgnElement subclass, see
+- @ref ElementProperties
+- @ref ElementRestrictions
+- @ref ElementCopyVirtualFunctions
+
+*/
+
+END_BENTLEY_DGN_NAMESPACE
