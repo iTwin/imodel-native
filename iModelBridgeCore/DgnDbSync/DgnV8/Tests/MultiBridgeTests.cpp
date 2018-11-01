@@ -374,7 +374,7 @@ TEST_F(MultiBridgeTests, Sandwich)
         ASSERT_TRUE(db.IsValid());
 
         // Now that we have run both bridges, we should see all of the original models.
-        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(2, masterModels.size());
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
         auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
         auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
 
@@ -395,7 +395,7 @@ TEST_F(MultiBridgeTests, Sandwich)
         ASSERT_TRUE(db.IsValid());
 
         // The model and element counts should not have changed.
-        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(2, masterModels.size());
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
         auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
         auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
 
