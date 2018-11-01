@@ -1,0 +1,9 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/GTests/filter_list.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+#filter_list = -*ScalableMeshTest.CanOpen3SM*

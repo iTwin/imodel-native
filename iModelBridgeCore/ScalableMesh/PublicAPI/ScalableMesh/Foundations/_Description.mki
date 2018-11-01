@@ -1,0 +1,41 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: PublicAPI/ScalableMesh/Foundations/_Description.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if defined (__FoundationPublicAPIDescriptionMki__)
+    %return
+%endif
+__FoundationPublicAPIDescriptionMki__ = 1
+
+FoundationsPublicAPILocation = $(BuildContext)PublicAPI/Foundations/
+
+#----------------------------------------------------------------------
+#   Non-recursive listing
+#----------------------------------------------------------------------
+FoundationsPublicAPIListing = \
+    $(FoundationsPublicAPILocation)Definitions.h \
+    $(FoundationsPublicAPILocation)Algorithm.h \
+    $(FoundationsPublicAPILocation)Algorithm.hpp \
+    $(FoundationsPublicAPILocation)Error.h \
+    $(FoundationsPublicAPILocation)Exception.h \
+    $(FoundationsPublicAPILocation)Iterator.h \
+    $(FoundationsPublicAPILocation)Log.h \
+    $(FoundationsPublicAPILocation)Message.h \
+    $(FoundationsPublicAPILocation)Traits.h \
+    $(FoundationsPublicAPILocation)Warning.h 
+
+#----------------------------------------------------------------------
+#   Recursive listing
+#----------------------------------------------------------------------
+FoundationsPublicAPIRecursiveListing = \
+    $(FoundationsPublicAPIListing)
+
+
+#----------------------------------------------------------------------
+#   Full recursive listing with dependencies
+#----------------------------------------------------------------------
+FoundationsPublicAPIFullListing = \
+    $(FoundationsPublicAPIRecursiveListing)
