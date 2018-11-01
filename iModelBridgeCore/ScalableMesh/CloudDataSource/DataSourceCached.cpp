@@ -4,7 +4,7 @@
 #include <Bentley/BeFileName.h>
 
 #ifndef NDEBUG
-void SetThreadName(DWORD dwThreadID, char* threadName)
+void SetThreadName(DWORD dwThreadID, char const* threadName)
 {
 THREADNAME_INFO info;
 info.dwType = 0x1000;

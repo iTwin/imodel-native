@@ -8,6 +8,8 @@
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors in cpprest's header files
+
 VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 
