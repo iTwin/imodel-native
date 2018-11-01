@@ -1,0 +1,75 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: folly.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+%include mdl.mki
+
+FollyDir = $(SrcRoot)libsrc/facebook/folly/
+FollyVendorAPISrc = $(_MakeFilePath)VendorApi/folly/
+
+cDefs +% -D__BE_FOLLY_DLL__
+
+$(BuildContext)VendorAPI/folly : $(FollyVendorAPISrc)
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)Delivery/folly-notice.txt : $(_MakeFilePath)folly/LICENSE
+    $(LinkFirstDepToFirstTarget)
+
+o = $(OutBuildDir)Folly/
+
+always:
+    !~@mkdir $(o)
+
+CCPchOpts           =
+CPchOpts            =
+MultiCompileDepends =$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)FunctionalExcept$(oext) : $(FollyDir)detail/FunctionalExcept.cpp ${MultiCompileDepends}
+
+$(o)MemoryIdler$(oext) : $(FollyDir)detail/MemoryIdler.cpp ${MultiCompileDepends}
+
+$(o)Futex$(oext) : $(FollyDir)detail/Futex.cpp ${MultiCompileDepends}
+
+$(o)Time$(oext) : $(FollyDir)portability/Time.cpp ${MultiCompileDepends}
+
+$(o)Singleton$(oext) : $(FollyDir)Singleton.cpp ${MultiCompileDepends}
+
+$(o)BeFolly$(oext) : $(FollyDir)BeFolly.cpp $(FollyVendorAPISrc)BeFolly.h ${MultiCompileDepends}
+
+$(o)Demangle$(oext) : $(FollyDir)Demangle.cpp ${MultiCompileDepends}
+
+$(o)Request$(oext) : $(FollyDir)io/async/Request.cpp ${MultiCompileDepends}
+
+$(o)ThreadLocalDetail$(oext) : $(FollyDir)detail/ThreadLocalDetail.cpp ${MultiCompileDepends}
+
+$(o)StaticSingletonManager$(oext) : $(FollyDir)detail/StaticSingletonManager.cpp ${MultiCompileDepends}
+
+$(o)MallocImpl$(oext) : $(FollyDir)detail/MallocImpl.cpp ${MultiCompileDepends}
+
+$(o)CacheLocality$(oext) : $(FollyDir)detail/CacheLocality.cpp ${MultiCompileDepends}
+
+$(o)SysResource$(oext) : $(FollyDir)portability/SysResource.cpp ${MultiCompileDepends}
+
+$(o)SharedMutex$(oext) : $(FollyDir)SharedMutex.cpp ${MultiCompileDepends}
+
+$(o)ExceptionWrapper$(oext) : $(FollyDir)ExceptionWrapper.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NAME            = BeFolly
+DLM_DEST            = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+DLM_OBJECT_DEST     = $(o)
+
+%include $(sharedMki)linkLibrary.mki
