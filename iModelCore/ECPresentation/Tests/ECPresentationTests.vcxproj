@@ -1,0 +1,211 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackDoor\BackDoor.cpp" />
+    <ClCompile Include="BackDoor\Localization.cpp" />
+    <ClCompile Include="BackDoor\SelectionManager.cpp" />
+    <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentCacheTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_ContentInstancesOfSpecificClasses.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_ContentRelatedInstances.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_NestedContentField.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests_SelectedNodeInstances.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CustomFunctionTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CustomizationHelperTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\CustomNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECDbTestProject.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECExpressionContextsProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECExpressionsOptimizerTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECExpressionsToECSqlConverterTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECInstanceChangeEventSourceTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ECSchemaHelperTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ExpectedQueriesTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\JsonMessageUpdateRecordsHandlerTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\LocalizationTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\MultiSpecificationNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_AllInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_AllRelatedInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_GroupingRule.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_InstancesOfSpecificClasses.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_RelatedInstanceNodes.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_SearchNode.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryBuilderTests_SortingRule.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavigationQueryTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavNodesCacheTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavNodesDataSourceTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NavNodeTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\NodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\OptimizedExpressionsEvaluationTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\PresentationManagerImplTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\QueryBasedNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\QueryBasedSpecificationNodesProviderTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\QueryExecutorTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\RuleSetLocaterTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\RulesPreprocessorTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\SingleThreadedQueueExecutorTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\TestHelpers.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\TestNavNode.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\UpdateTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\UserSettingsTests.cpp" />
+    <ClCompile Include="Published\ConnectionManagerTests.cpp" />
+    <ClCompile Include="Published\DefaultCategorySupplierTests.cpp" />
+    <ClCompile Include="Published\DefaultECPresentationSerializerTests.cpp" />
+    <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp" />
+    <ClCompile Include="Published\IECPresentationManagerTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\AllInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\CheckBoxRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ChildNodeRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentInstancesOfSpecificClassesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentModifierTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentRelatedInstancesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ContentSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\CustomNodeSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\GroupingRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\ImageIdOverrideTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\InstanceNodesOfSpecificClassesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\LabelOverrideTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\LocalizationResourceKeyDefinitionTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PresentationRuleSetTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PropertiesDisplaySpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PropertyEditorRulesTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\RelatedInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\RelatedInstanceSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\RelatedPropertiesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\SearchResultInstanceNodesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\SelectedNodeInstancesSpecificationTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\SortingRuleTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\StyleOverrideTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\UserSettingsGroupTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp" />
+    <ClCompile Include="Published\RulesEngine\ECInstanceChangeHandlerTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\PresentationManagerNavigationTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\PresentationManagerTests.cpp" />
+    <ClCompile Include="Published\RulesEngine\RuleSetEmbedderTests.cpp" />
+    <ClCompile Include="Published\SelectionTests.cpp" />
+    <ClCompile Include="Published\PresentationRules\PresentationRulesHashingTests.cpp" />
+    <ClCompile Include="TestHelpers\ECPresentationTest.cpp" />
+    <ClCompile Include="TestHelpers\IssueReporter.cpp" />
+    <ClCompile Include="TestHelpers\PresentationRulesetTest.cpp" />
+    <ClCompile Include="TestHelpers\TestRuleSetLocater.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\BackDoor.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\Localization.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\SelectionManager.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\StubLocalState.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ContentProviderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ECDbTestProject.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ECSchemaHelperTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\ExpectedQueries.h" />
+    <ClInclude Include="NonPublished\RulesEngine\NodesProviderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\QueryBuilderTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\QueryExecutorTests.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestRulesDrivenPresentationManagerImpl.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestHelpers.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestLocalizationProvider.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestNavNode.h" />
+    <ClInclude Include="NonPublished\RulesEngine\TestNodesProvider.h" />
+    <ClInclude Include="Published\PresentationRules\PresentationRulesTests.h" />
+    <ClInclude Include="Published\RulesEngine\PresentationManagerTests.h" />
+    <ClInclude Include="TestHelpers\ECPresentationTest.h" />
+    <ClInclude Include="TestHelpers\IssueReporter.h" />
+    <ClInclude Include="TestHelpers\PresentationRulesetTest.h" />
+    <ClInclude Include="TestHelpers\TestConnectionCache.h" />
+    <ClInclude Include="TestHelpers\TestECPresentationManager.h" />
+    <ClInclude Include="TestHelpers\TestRuleSetLocater.h" />
+    <ClInclude Include="TestHelpers\TestSelectionProvider.h" />
+    <ClInclude Include="TestHelpers\TestUserSettings.h" />
+    <ClInclude Include="TestUtils\TestRuleSetLocater.h" />
+    <ClInclude Include="TestUtils\TestUserSettings.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Data\RulesEngineTest.01.00.ecschema.xml" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <LocalDebuggerCommandArguments>--gtest_repeat=1 --gtest_break_on_failure --gtest_filter=*</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{32B7C8B2-D05F-4F49-A4DD-BCEFA608DAEF}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <IntDir>$(TEMP)</IntDir>
+    <OutDir />
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -N0 -r ECPresentation -f ECPresentation -p ECPresentation-Gtest rebuild ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 -r ECPresentation -f ECPresentation -p ECPresentation-Gtest clean ECPresentation:Test* ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation:Gtest</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>_DEBUG;_WIN32;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)libsrc\facebook\VendorApi\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>bb -r ECPresentation -f ECPresentation -p ECPresentation-Gtest build</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -N0 -r ECPresentation -f ECPresentation -p ECPresentation-Gtest rebuild ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation-Gtest</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -N0 -r ECPresentation -f ECPresentation -p ECPresentation-Gtest clean ECPresentation:BackdoorForUnitTests ECPresentation:UnitTests-* ECPresentation-Gtest</NMakeCleanCommandLine>
+    <NMakePreprocessorDefinitions>NDEBUG;_WIN32;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeOutput>$(OutRoot)Winx64\Product\ECPresentation-Gtest\ECPresentationTest.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(SrcRoot)Bentley\PublicAPI\;$(SrcRoot)libsrc\jsoncpp\PublicAPI;$(SrcRoot)libsrc\jsoncpp\include;$(SrcRoot)libsrc\libxml2\BeXml\PublicApi;$(SrcRoot)libsrc\libxml2\include;$(SrcRoot)libsrc\rapidjson\include\;$(SrcRoot)libsrc\facebook\VendorApi\;$(SrcRoot)BeGTest\PublicAPI\;$(SrcRoot)util\gtest\include;$(SrcRoot)BeSQLite\PublicAPI;$(SrcRoot)ecobjects\PublicApi;$(SrcRoot)GeomLibs\PublicAPI;$(SrcRoot)ECDb\PublicAPI\;$(SrcRoot)ECPresentation\PublicAPI;$(OutRoot)Winx64\BuildContexts\ECPresentation\SubParts\UnitTests\include</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(TEMP)\$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
