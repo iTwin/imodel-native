@@ -757,9 +757,6 @@ RootModelConverter::~RootModelConverter()
     m_rootFile = nullptr;
     if (!m_params.m_keepHostAliveForUnitTests)
         {
-        if (ScalableMesh::ScalableMeshLib::IsInitialized())
-            ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
-
         ClearV8ProgressMeter();
 
         if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
