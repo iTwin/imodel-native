@@ -1,0 +1,8 @@
+message CircularArc
+{
+required IPlacement placement = 1;
+required double radius = 2;
+required Angle startAngle = 3;
+required Angle sweepAngle = 4;
+}
+

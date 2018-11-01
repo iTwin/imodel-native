@@ -1,0 +1,96 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: geom/build/bsiplatformgeom/bsiplatformgeom.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include    $(srcGeomLibs)common/inc/geomlibsdev.mki
+%include    mdl.mki
+
+#-------------------------------------------------
+# Make Directories
+#-------------------------------------------------
+$(geomObj)$(tstdir)     :   $(geomObj)$(tstdir)
+
+#----------------------------------------------------------------------
+# During compilation, look in the output tree for include files.
+#----------------------------------------------------------------------
+dirToSearch = $(geomBuildInc)
+%include cincapnd.mki
+
+dirToSearch = $(utilSharedInc)
+%include cincapnd.mki
+
+dirToSearch = $(baseGeom_include)
+%include cincapnd.mki
+
+dirToSearch = $(geomSrcPlatform)
+%include cincapnd.mki
+
+#-----------------------------------------------------------------------
+# Local macros / modifications
+#-----------------------------------------------------------------------
+nameToDefine = COMPILE_FOR_PLATFORMGEOM
+%include cdefapnd.mki
+
+#-----------------------------------------------------------------------
+# Common dependency lists
+#-----------------------------------------------------------------------
+geomObjects = $(geomObj)bsiplatformgeom_init$(oExt)
+
+%include $(geomBuildInc)platform_objlist.mki
+
+OUT_DIR = $(geomObj)
+OUT_EXT = $(oExt)
+OTHER_DEPENDENCIES =
+OTHER_DEPENDENCIES +$(geomSrcPubinc)msgeomstructs.hpp
+OTHER_DEPENDENCIES +$(geomSrcPubinc)msgeomstructs.h
+OTHER_DEPENDENCIES +$(geomSrcBsiinc)migeomstructs.h
+OTHER_DEPENDENCIES +$(geomSrcPubincGeom)jgeomtypes.h
+OTHER_DEPENDENCIES +$(geomSrcPubinc)platformgeometry.h
+OTHER_DEPENDENCIES +$(geomSrcPlatform)virtuals_segment3d.h
+OTHER_DEPENDENCIES +$(geomSrcPlatform)virtuals_ellipse3d.h
+OTHER_DEPENDENCIES +$(geomSrcPlatform)virtuals_bezier3d.h
+OTHER_DEPENDENCIES +$(geomSrcPlatform)virtuals_nurbs.h
+OTHER_DEPENDENCIES +$(geomSrcPlatform)virtuals_parallelogram3d.h
+OTHER_DEPENDENCIES +$(geomSrcPlatform)virtuals_disk3d.h
+
+FileTypeControl = $(FileTypeControlCPP)
+
+%include $(geomBuildInc)platform_sources.mki
+
+FileTypeControl =
+
+$(geomObj)bsiplatformgeom_init$(oExt)   : $(_MakeFilePath)bsiplatformgeom_init.c
+
+#-----------------------------------------------------------------------
+# Set up to indicate that we are rights-compliant.
+#-----------------------------------------------------------------------
+rightsCompliantAppsFile     = $(_MakeFilePath)rightscompliant.txt
+nonRightsCompliantAppsFile  = $(_MakeFilePath)nonrightscompliant.txt
+rightsNeutralFile           = $(_MakeFilePath)rightsNeutralLibraries.txt
+
+#-----------------------------------------------------------------------
+# link
+#-----------------------------------------------------------------------
+DLM_NAME            = bsiplatformgeom
+DLM_LIBDEF_SRC      = $(_MakeFilePath)
+DLM_OBJECT_DEST     = $(geomObj)
+DLM_DEST            = $(baseGeom_bin)
+DLM_DLO_DEST        = $(baseGeom_lib)
+DLM_EXPORT_DEST     = $(baseGeom_lib)
+DLM_EXP_DEST        = $(geomObj)
+DLM_OBJECT_FILES    = $(geomObjects)
+
+DLM_EXPORT_OBJS     = $(DLM_OBJECT_FILES)
+
+DLM_LIBRARY_FILES   = $(baseGeom_lib)bsibasegeom.lib
+DLM_NOENTRY         = 1
+dlmspecCmd          + -i$(_MakeFilePath)
+DLM_SYMB_DEST       = $(baseGeom_symbols)
+
+%include    dlmlink.mki
+
+
+
