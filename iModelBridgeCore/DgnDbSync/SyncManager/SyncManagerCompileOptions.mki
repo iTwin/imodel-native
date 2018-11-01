@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: SyncManager/SyncManagerCompileOptions.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+# target platform needs to be defined (this is included before mdl.mki when it is included by PreCompileHeader.mke)
+%if !defined (__mdlMKI__)
+    %include mdl.mki
+%endif
+
+nameToDefine = __DGNDBSYNC_BUILD__
+%include cdefapnd.mki

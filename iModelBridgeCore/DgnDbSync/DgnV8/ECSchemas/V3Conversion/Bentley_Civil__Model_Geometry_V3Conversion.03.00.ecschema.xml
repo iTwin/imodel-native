@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Bentley_Civil__Model_Geometry_V3Conversion" nameSpacePrefix="bcmgv3" version="3.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="ImportedEntity" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="StationEquation" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CorridorDropRule" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KeyStation" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CurveWideningRule" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DistanceAlongSlopeEntity" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EndConditionExceptionsRule" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KeyStationRule" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LinearPointCollectionEntityPoint" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ParametricConstraintRule" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PointControlRule" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SecondaryAlignmentRule" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+</ECSchema>
+

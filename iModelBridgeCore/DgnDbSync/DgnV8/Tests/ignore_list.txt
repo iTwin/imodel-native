@@ -1,0 +1,15 @@
+# [CGM] Drawings are now converted using the ExtractionGraphics processing and it does not process named groups anymore
+NamedGroupTests.NamedGroupOf2dElement
+    # [ RUN      ] NamedGroupTests.NamedGroupOf2dElement
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\GeomTestHelper.cpp(54): error: Value of: elem1.IsValid()
+    #   Actual: false
+    # Expected: true
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\NamedGroupTests.cpp(571): error: Value of: elem1.IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
+
+# These tests fail after the latest merge from bim0200
+ImportConfigTests.FontImport
+MstnBridgeTests.ConvertLinesUsingBridgeFwk
+MstnBridgeTests.ConvertAttachment

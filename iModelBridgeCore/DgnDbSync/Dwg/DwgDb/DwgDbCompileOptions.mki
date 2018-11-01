@@ -1,0 +1,145 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: Dwg/DwgDb/DwgDbCompileOptions.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+#
+# Only the Release Teigha delivery is available from the CVS repository. If you want to debug Teigha,
+# you will either have the Debug delivery available, or have made a full build from Teigha source files.
+# Set one of these env vars to Debug with Teigha(teigha.prewire.mke should've symlink'ed the build for you):
+#
+#   DEBUG_TEIGHA_SOURCE=<output_path>   <= root folder containing the full build(Core, exe, lib, etc sub folders) from Teigha source
+# or
+#   DEBUG_TEIGHA_DLL=<delivery_path>    <= root folder where you have unzipped Teigha's Debug build.
+#
+%if !defined (__mdlMKI__)
+
+%if $(DWGTOOLKIT) == "RealDwg"
+    %if !defined (VendorVersion)
+        VendorVersion = 2018
+    %endif
+
+    %if $(VendorVersion) <= 2016
+        OVERRIDE_DEFAULT_VC_TOOLSET = VS2012
+    %endif
+%endif
+    %if !defined (VendorVersion)
+        VendorVersion = 4.3.1
+    %endif
+
+    %include mdl.mki
+%endif
+
+DgnDbSyncPubApi     = $(SrcRoot)DgnDbSync/PublicAPI/
+DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+%if defined(MSVC_VERSION)
+
+    %if exists($(DEBUG_TEIGHA_SOURCE)) || exists($(DEBUG_TEIGHA_DLL))
+        CCompOpts + -D_DEBUG -MDd
+    %endif
+
+    # Use shared libraries on Windows
+    CCompOpts + -D_TOOLKIT_IN_DLL_
+
+    #C4005: 'WIN32_LEAN_AND_MEAN' macro redefinition
+    CCompOpts + -wd4005
+
+    # C4189: local variable is initialized but not referenced
+    CCompOpts + -wd4189
+
+    # C4245: conversion from '...' to '...', signed/unsigned mismatch
+    CCompOpts + -wd4245
+
+    # C4505: unreferenced local function has been removed
+    CCompOpts + -wd4505
+
+%if defined (DEBUG_TEIGHA_SOURCE)
+    # C4005: 'WIN32_LEAN_AND_MEAN' : macro redefinition in ExSystemServices.cpp
+    CCompOpts + -wd4005
+    # C4996: 'std::copy_backward::_Unchecked_iterators::_Deprecate' unsafe in ..\VC\INCLUDE\xutility
+    CCompOpts + -D_SCL_SECURE_NO_WARNINGS
+%endif
+
+%if defined (DLM_API_NUMBER)
+    CCompOpts + -DDLM_API_NUMBER=\"$(DLM_API_NUMBER)\"
+%endif
+
+    # LNK4099: PDB was not found with obj; linking object as if no debug info
+    BENTLEY_WIN32_LINK_CommonOptions + -Ignore:4099
+
+%endif  # MSVC_VERSION
+
+
+%if $(VendorVersion) == "4.1.1"
+    Kernel = Core
+    Drawing = Core
+%else
+    Kernel = Kernel
+    Drawing = Drawing
+%endif
+
+ToolkitRoot         = $(BuildContext)VendorAPI/Teigha/
+ToolkitCoreInc      = $(ToolkitRoot)$(Kernel)/Include/
+ToolkitCoreServices = $(ToolkitRoot)$(Kernel)/Extensions/ExServices/
+ToolkitAecInc       = $(ToolkitRoot)Architecture/
+ToolkitDrawingInc   = $(ToolkitRoot)$(Drawing)/Include/
+ToolkitHostServices = $(ToolkitRoot)$(Drawing)/Extensions/ExServices/
+ToolkitGripPoints   = $(ToolkitRoot)$(Drawing)/Examples/GripPoints/
+ToolkitLibs         = $(BuildContext)SubParts/Libs/Teigha/
+
+%if $(TARGET_PLATFORM)=="Windows"
+    ToolkitCryptInc = $(ToolkitRoot)$(Drawing)/Extensions/win/Crypt/
+%endif
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+ToolkitRoot         = $(BuildContext)VendorAPI/Realdwg$(VendorVersion)/
+ToolkitCoreInc      = $(ToolkitRoot)
+ToolkitBaseInc      = $(ToolkitCoreInc)RealDwg/Base/
+ToolkitLibs         = $(BuildContext)SubParts/Libs/RealDwg$(VendorVersion)/
+
+%if defined(MSVC_VERSION)
+    # adding -Ignore:4099 in link opts does not stop treating warning as error!
+    NOSTRICT        = 1
+%endif
+
+%else
+
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+
+%endif  # DWGTOOLKIT
+
+CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT) -DVendorVersion=$(VendorVersion)
+
+#----------------------------------------------------------------------------------------
+#   Include search path
+#----------------------------------------------------------------------------------------
+%if defined(ToolkitCoreInc)
+    cIncs + -I$(ToolkitCoreInc)
+%endif
+%if defined(ToolkitBaseInc)
+    # Needed for brep header files!
+    cIncs + -I$(ToolkitBaseInc)
+%endif
+%if defined(ToolkitDrawingInc)
+    cIncs + -I$(ToolkitDrawingInc)
+%endif
+%if defined(ToolkitCoreServices)
+    cIncs + -I$(ToolkitCoreServices)
+%endif
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+%if defined(DEBUG) && !defined(NDEBUG)
+always:
+        |  -------- -------- --------- -------- -------- ---------
+        |  Compiler options: $(cDefs) $(CCompOpts) $(CCPchOpts) $(cIncs)
+        |  -------- -------- --------- -------- -------- ---------
+%endif
+

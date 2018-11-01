@@ -1,0 +1,105 @@
+#----------------------------------------------------------------------
+#
+#     $Source: iModelBridge/addon/bridge-addon.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+CLANG_ALLOW_UNDEFINED=1
+DLM_NO_IMPLIB=1
+%include mdl.mki
+
+appName     = bridge-addon
+
+# I get the impression that node addons names should be all lower case. At least, that's what I see out there.
+
+baseDir     = $(_MakeFilePath)
+
+cDefs + -DBUILDING_NODE_EXTENSION -DEXTERNAL_NAPI
+
+%if $(TARGET_PLATFORM) == "MacOS"
+  cDefs + -D_DARWIN_USE_64_BIT_INODE=1
+%endif
+
+o = $(OutputRootDir)Build/bridge-addon/
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Compile
+#----------------------------------------------------------------------
+#
+# Burn the package version # into the code
+#
+PACKAGE_VERSION=$[@readfile $(baseDir)package_version.txt]
+
+$(o)bridge-addon-package-version.h: $(baseDir)/bridge-addon-package-version.h $(baseDir)/package_version.txt
+    $(msg)
+    $(copyCmd) "$<" $@
+    python $(baseDir)makePackgeVersionHeaderFile.py $@ $(baseDir)/package_version.txt
+    ~time
+
+cIncs + -I$(o)
+
+# DLM_NAME and CCompPDBName must be the same.
+CCompPDBName    =% $(appName)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)BridgeAddon$(oext) : $(baseDir)BridgeAddon.cpp $(baseDir)BridgeAddon.h ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the shared library (.node) file
+#----------------------------------------------------------------------
+# DLM_NAME and CCompPDBName must be the same.
+DLM_NAME            =% $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOENTRY         = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%include $(baseDir)bridge-addon-input-libs.mki
+
+%ifdef __unix
+
+    THIN_ARCHIVE_INPUTS = $(BRIDGE_ADDON_LIBS)
+
+    THIN_ARCHIVE_NAME = libBridgeAddon.inputs.a
+
+    %include $(sharedMki)rollUpSubPartsLibsThin.mki
+
+    DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
+
+    %ifdef __apple
+        # OSX Specific library
+        LINKER_LIBRARIES  + -framework CoreFoundation
+        LINKER_LIBRARIES  + -framework CFNetwork
+        BENTLEY_TOOLCONTEXT_LINK_OUT_NAME = $(DLM_OUT_NAME)
+    %endif
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
+
+%else
+
+    DLM_OBJECT_FILES  + $(BRIDGE_ADDON_LIBS)
+
+    LINKER_LIBRARIES +  $(ContextSubpartsLibs)$(stlibprefix)node$(stlibext)
+
+    # Always produce a .SO (even though this is a static build)
+    %undef CREATE_STATIC_LIBRARIES
+    %include dlmlink.mki
+
+%endif
+
+#----------------------------------------------------------------------
+#   Deliver the shared library using the .node extension
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/bridge-addon/bridge-addon.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+    $(LinkFirstDepToFirstTarget)

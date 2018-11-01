@@ -1,0 +1,2590 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="PDMx_Base_V3Conversion" nameSpacePrefix="pdmxv3" version="1.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="PDMX_BASE_ELEMENT" description="Base type for main PDMx entities" displayLabel="PDMx Base Element" isDomainClass="true">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRAPHICS_PRIMITIVE" description="Base class for all Graphics Primitive" displayLabel="Graphics Primitive" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRAPHICS_PRIMITIVE_POSITIVE" description="Base class for all Positive Graphics Primitive" displayLabel="Graphics Positive Primitive" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRAPHICS_PRIMITIVE_NEGATIVE" description="Base class for all Negative Graphics Primitive" displayLabel="Graphics Negative Primitive" isStruct="True" isDomainClass="False">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ABOX" displayLabel="Area Box Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACCPNT" displayLabel="Access Point Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACCSET" displayLabel="Access Point Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACDT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACONE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACTORUS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ACYLINDER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ADISH" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AEXTRUSION" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AHU" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="APOLYHEDRON" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="APPDAREA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="APPLDATA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="APPLDWORLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="APYRAMID" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ARCHIV" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREADEF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREASET" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREAWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="AREVOLUTION" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ARTORUS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASDFGP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASDFWL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASITEM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASLCYLINDER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASMBLY" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASNOUT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASREQU" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASSDEF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASSMBR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASSOC" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASSOGP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASSOWL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASTATU" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ASWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ATTACHMENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ATTRRL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BATTERY" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BBLOCK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BBOLT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BEND" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BFDT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BLEVEL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BLOCK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BNDLIN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BORE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BOTEXT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BOUNDARY" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BOX" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BPANEL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BPFEAT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BPFITTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BPOPEN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BRANCH" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BRCO" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="BWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CABLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CAGSEG" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CAP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CCURVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CEILIN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CFLOOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CGRDCP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CGRDLP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CHOLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CLEVIS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CLNCGR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CLNLATTICE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CLNPNGRID" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CLNTIL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CLOSURE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CMFITTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CMPFITTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CNODE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COFITTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMFIXING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COMWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CONSEQ" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CORE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COUPLING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="COWL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPANBO" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPANEL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPLANE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPLATE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPNISE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPOINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPRCUT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPREND" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPRHOL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPRMRK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPRNOT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPROF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CPROTR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CROSS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CSCREED" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CSEAM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CSTIFF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CSURF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CSURPX" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTBEND" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTCROS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTFEAT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTJOIN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTMTRL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTORUS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTRAY" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTREDU" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTRISE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTSTRA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTSUPP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTTEE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CTWALL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CURVE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CWALL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CWAY" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CWBRAN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CYLINDER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CYMGRP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CYMLNK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="CYMWRL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DAMPER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DATDEF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DATUM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DB_N_REF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DB_REF" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DDAREA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DDATA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DDSE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DERDAT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DETGRP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DISH" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DOCU" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DOOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DOST" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DOWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DPCARTESIAN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DPCYLINDRICAL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DPSET" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DPSPHERICAL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DRAWING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DSIGRO" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DSINST" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DSIWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DUCTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELBOW" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELCONN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ELFITTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EQUIPMENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOZZLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SUBEQUIPMENT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TEXT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TMPLATE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EXTFRM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EXTGEO" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EXTRUSION" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EYENUT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="EYRD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FBLIND" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FCUTPLANE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FEMIMG" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FEMODL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FEMWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FILTER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FITTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FIXING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FIXTUR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLANGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLEXIBLE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLOOR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLRCOV" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FLRLAY" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMBDIM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMBEND" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMBPLN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMBSST" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMEDIM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMEDNE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMEXTR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMGRP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMSSBK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMWCON" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMWDIM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMWELD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FMWSK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FPFITTING" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FRMWORK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FTUBE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FURNIT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GASKET" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GENCUR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GENPRI" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GENSEC" displayLabel="Structural Generic Section Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GPSET" displayLabel="Group Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GPWLD" displayLabel="Group World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRAPHICS_PRIMITIVE_ARRAY" displayLabel="Graphics Primitive Array" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRIDAXIS" displayLabel="Grid Axis Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRIDLN" displayLabel="Grid Plane Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRIDSYSTEM" displayLabel="Grid System Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRIDWLD" displayLabel="Grid World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRILLE" displayLabel="Grille Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GROUP" displayLabel="Group Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GRULE" displayLabel="General Rule Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="GWALL" displayLabel="Wall Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HACC" displayLabel="Access Panel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HANDRA" displayLabel="Handrail Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HANGER" displayLabel="Pipe Hanger Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HATTA" displayLabel="Head Attachment Point Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HBEAD" displayLabel="Planar Panel Bead Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HBLWLD" displayLabel="Hull Block World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HBRABO" displayLabel="Planar Panel Bracket Boundary Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HBRAPN" displayLabel="Bracket Panel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HBRCKT" displayLabel="Planar Panel Bracket Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HBRFLA" displayLabel="Planar Panel Bracket Flange Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HBRSTI" displayLabel="Planar Panel Bracket Stiffener Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HCLIP" displayLabel="Planar Panel Clip Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HCMWLD" displayLabel="Hull Curved Model World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HCOMPT" displayLabel="Exposed Compartment Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HCTOUT" displayLabel="Planar Panel Cutout Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HCURVE" displayLabel="Planar Panel Curve Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HDOPLA" displayLabel="Planar Panel Doubling Plate Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HELEMENT" displayLabel="Hanger Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HFAN" displayLabel="Fan Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HFLANG" displayLabel="Planar Panel Flange Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HHOLE" displayLabel="Planar Panel Hole Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIBLO" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIBOU" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIBRA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HICHOL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HICPAN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HICPLA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HICSTI" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HICUR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HICUT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIDOU" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIFLA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIHOL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HINOT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIPAN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIPIL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIPLA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HIPOI" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HISEA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HISTI" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HMARK" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HMKWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HNOTCH" displayLabel="Planar Panel Notch Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HNUT" displayLabel="Hanger Nut Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HOOPSE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPANBI" displayLabel="Planar Panel Boundary Interval Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPANBO" displayLabel="Planar Panel Boundary Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPANEL" displayLabel="Planar Panel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPILLR" displayLabel="Planar Panel Pillar Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPIN" displayLabel="Hanger Pin Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPLATE" displayLabel="Planar Panel Plate Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPOINT" displayLabel="Planar Panel Point Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPRCUT" displayLabel="Planar Panel Profile Cutout Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPREND" displayLabel="Planar Panel Profile End Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPRHOL" displayLabel="Planar Panel Profile Hole Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HPRNOT" displayLabel="Planar Panel Profile Notch Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRFEAT" displayLabel="Handrail Features Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRGATE" displayLabel="Handrail Gate Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRKPSE" displayLabel="Kickplate Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HROD" displayLabel="Hanger Rod Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRPANE" displayLabel="Handrail Panel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRPNSE" displayLabel="Handrail Panel Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRPOST" displayLabel="Handrail Post Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRSO" displayLabel="Exposed Reference Surface Object Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRSOF" displayLabel="Exposed Reference Surface Object Face Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRSOL" displayLabel="Exposed Reference Surface Object Limit Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HRTERM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HSADDLE" displayLabel="Saddle Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HSEAM" displayLabel="Planar Panel Seam Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HSTBRA" displayLabel="Standard Bracket Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HSTIFF" displayLabel="Planar Panel Stiffener Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HSUBPN" displayLabel="Subpanel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HTAP" displayLabel="Planar Panel Tap Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HVAC" displayLabel="HVAC Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="HVACFITTING" displayLabel="HVAC Fitting Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IDAM" displayLabel="Internal Damper Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INFITTING" displayLabel="Information Fitting Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INSTRUMENT" displayLabel="Instrument Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INSURQ" displayLabel="Insulation Requirements Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INTFRM" displayLabel="Platform Internal Framework Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INTLNG" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INVELEMENT" displayLabel="Inventory Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="INVLST" displayLabel="Inventory List Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="IPOINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="JLDATUM" displayLabel="Justification Line Datum Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="KICKPL" displayLabel="Kickplate Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LADDER" displayLabel="Ladder Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LCCARTESIAN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LCCYLINDRICAL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LCDESCRIPTOR" displayLabel="Load Case Descriptor Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LCSPHERICAL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LDRCAGE" displayLabel="Ladder Cage Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LDREXT" displayLabel="Ladder Exit Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LDRRUN" displayLabel="Ladder Rung Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LDRSTR" displayLabel="Ladder Stringer Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LINKWLD" displayLabel="Link Document Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LJSE" displayLabel="Lap-joint Stub End Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LNCLAS" displayLabel="Link Class Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LNDESC" displayLabel="Link Descriptor Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LNFOLD" displayLabel="Link Folder Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LNKITEM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LNKSET" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LNLINK" displayLabel="Link Link Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LOAPOINT" displayLabel="Equipment Load Point Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LOOP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="LOOPTS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MBRDEF" displayLabel="Member Definition Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MBRMAP" displayLabel="Mapped Member Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MESH" displayLabel="Mesh Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOGOBJ" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MOGWLD" displayLabel="Mog World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MWELD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MWLDJT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MWLDTB" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MWLWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="MWPART" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NBOX" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NCONE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NCTORUS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NCYLINDER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NDISH" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NODISPLACEMENT" displayLabel="Nodal Displacement Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NOLOAD" displayLabel="Nodal Load Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NPOLYHEDRON" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NPYRAMID" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NREVOLUTION" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NRTORUS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NSLCYLINDER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NSNOUT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="NXTRUSION" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OFST" displayLabel="Offset Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OLET" displayLabel="Olet Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPENFE" displayLabel="Open Features Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="OPENSPACE" displayLabel="Open Space Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PAIR" displayLabel="Pair" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PALJOINT" displayLabel="Panel Linear Joint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PANEL" displayLabel="Panel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PAVERT" displayLabel="Panel Vertex Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PCLAMP" displayLabel="Pipe Clamp Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PCLIP" displayLabel="Pipe Clip Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PCOJOINT" displayLabel="Primary Compound Joint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PCOMPONENT" displayLabel="Piping Component Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PDMX_SPEC_RECORD" displayLabel="PDMx Spec Record" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PFITTING" displayLabel="Panel Fitting Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPCARTESIAN" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PIPE" displayLabel="Pipe Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PJOINT" displayLabel="Primary Joint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLATE" displayLabel="Plate Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLDATUM" displayLabel="Pline Datum Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLENUM" displayLabel="Plenum Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLFEAT" displayLabel="Platform Features Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLOOP" displayLabel="Panel Loop Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLOPEN" displayLabel="Platform Opening Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLTFRM" displayLabel="Platform Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLTGRD" displayLabel="Plating Grid Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PLUG" displayLabel="Pipe Lug Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PNODE" displayLabel="Primary Node Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POGON" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POHEDRON" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POINSP" displayLabel="Point (on Spine) Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POINTR" displayLabel="Point on Path Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POLFACE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POLOOP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POLPTLIST" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POLYHEDRON" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PORI" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PORSET" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POST" displayLabel="PCLA Overstrap Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="POSTSE" displayLabel="Post Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PTAPPING" displayLabel="Pipe Tapping Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PTRACK" displayLabel="Pipe Track Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PVOLUME" displayLabel="Penalty or Preferred Volume Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="PYRAMID" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RAIL" displayLabel="Rail Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RAILSET" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RATTA" displayLabel="Route Attachment Point Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RBRAN" displayLabel="Multidiscipline Routing Branch Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RCPL" displayLabel="Rod Coupling Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="REDUCER" displayLabel="Reducer Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="REFDAT" displayLabel="Ref Data Group Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RELEASE" displayLabel="Nodal Release Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RESDEF" displayLabel="Restriction Definition Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RESTGP" displayLabel="Restriction Group Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RESTRAINT" displayLabel="Restraint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RESTRIC" displayLabel="Restriction Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="REVOLUTION" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RLADDR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RLCAGE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RLGATE" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RLST" displayLabel="Rule Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RLWLD" displayLabel="Rule World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RNODE" displayLabel="Route Node Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ROOM" displayLabel="Room Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RPATH" displayLabel="Route Path Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RPLANE" displayLabel="Routing Plane Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RPLGROUP" displayLabel="Routing Plane Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RSECT" displayLabel="Curve (on Spine) Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RSEG" displayLabel="Routing Segment Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RSOWLD" displayLabel="Reference Surface World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RSTAREA" displayLabel="Restricted Area Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RTFEAT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RTORUS" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RUNGSET" displayLabel="Rung Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="RUTVOLUME" displayLabel="Routing Volume Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SBFITTING" displayLabel="Subfitting Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SBFRAMEWORK" displayLabel="Subframework Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SCLAMP" displayLabel="Steel Clamp Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SCOJOINT" displayLabel="Secondary Compound Joint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SCREED" displayLabel="Screed Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SCTN" displayLabel="Structural Section Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SDLOAD" displayLabel="Section Distributed Load Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SEGSEQ" displayLabel="Sequence of Segments Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SELJOINT" displayLabel="Section Linear Joint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SEVERT" displayLabel="Section Vertex Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SHOE" displayLabel="Shoe Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SHU" displayLabel="Standard Hook-up Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SILENCER" displayLabel="Silencer Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SITE" displayLabel="Site Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="ZONE" displayLabel="Zone Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SJOINT" displayLabel="Secondary Joint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SKIR" displayLabel="Skirt Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SLADDR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SLCYLINDER" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SLRAIL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SLUG" displayLabel="Steel Lug Attachment Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SNODE" displayLabel="Secondary Node Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SNOUT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SNUB" displayLabel="Snubber Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SOST" displayLabel="SCLA Overstrap Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPACER" displayLabel="Spacer Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPBSET" displayLabel="Boundary Element Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPINE" displayLabel="Spine (of Gensec) Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPLOAD" displayLabel="Section Point Load Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SPLR" displayLabel="Splitter Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SSBDOCU" displayLabel="Sub-sub Document Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SSOWLD" displayLabel="Surface World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STDWLD" displayLabel="Standard World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STIFFENER" displayLabel="Stiffener Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STLS" displayLabel="Steel Section Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRFLT" displayLabel="Stair Flight Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRLNG" displayLabel="Stair Landing Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRSTR" displayLabel="Stair String Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRT" displayLabel="Straight Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRTWR" displayLabel="Stair Tower Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRUCTURE" displayLabel="Structure Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STRWELL" displayLabel="Stairwell Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="STWALL" displayLabel="Structural Wall Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SUBDOCU" displayLabel="Sub Document Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SUBJOINT" displayLabel="Subjoint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SUBSTRUCTURE" displayLabel="Substructure Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SUPNFO" displayLabel="Generic Setup Info Object Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SVOLMODEL" displayLabel="Sub Volume Model Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SWBR" displayLabel="Sway Brace Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SYGPAR" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SYGPWL" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SYSCDA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SYSGRP" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="SYSMDA" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TANPOINT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TAPER" displayLabel="Taper Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TATTA" displayLabel="Tail Attachment Point Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TEE" displayLabel="Tee Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="THREEWAY" displayLabel="Threeway Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TMAREA" displayLabel="Template Area Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TMRPSET" displayLabel="Repeat Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TMRRELEMENT" displayLabel="Rule Repeat Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TOPEXT" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TP" displayLabel="Test Point Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TPWLD" displayLabel="Template World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TRAP" displayLabel="Trap Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TREAD" displayLabel="Tread Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TREADSET" displayLabel="Tread Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TRNB" displayLabel="Turnbuckle Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TRNN" displayLabel="Trunnion Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TRNS" displayLabel="Transformation Piece Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="TWRSTL" displayLabel="Tower Steel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="UBOLT" displayLabel="U Bolt Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="UNION" displayLabel="Union Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VALVE" displayLabel="Valve Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VENT" displayLabel="Vent Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VERTEX" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VFWAY" displayLabel="Four Way Valve Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VOLMODEL" displayLabel="Volume Model Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VSPR" displayLabel="Variable Effort String Hanger Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VTWAY" displayLabel="Three Way Valve Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="VVALUE" displayLabel="Valid Value Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WALL" displayLabel="Wall Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WASH" displayLabel="Washer Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WELD" displayLabel="Weld Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WINDOW" displayLabel="Window Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLCOMPONENTS" displayLabel="Wall Components Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLFEAT" displayLabel="Wall Features Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLFITTING" displayLabel="Wall Fitting Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLJNTS" displayLabel="Wall Joints Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLJOIN" displayLabel="Wall Joint Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLOPEN" displayLabel="Wall Openings Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLPANEL" displayLabel="Wall Panel Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLPROF" displayLabel="Wall Profile Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WLPRSE" displayLabel="Wall Profile Set Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WORD" displayLabel="Word" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WORLD" displayLabel="World Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="WPAD" displayLabel="Wear Pad Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="XGEOMETRY" displayLabel="External Geometry Element" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="XPIFLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="XPITEM" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="XPIWLD" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+</ECSchema>
+

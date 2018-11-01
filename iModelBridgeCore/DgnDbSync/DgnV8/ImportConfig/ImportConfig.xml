@@ -1,0 +1,59 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ImportConfig
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:schemas-bentley-com:xml-dgndbimportconfiguration ImportConfig.xsd"
+    >
+    <Levels copy="IfDifferent"/>
+    <Models>
+        <ImportRules>
+            <If name="Model">
+                <Then newName="%file"/>
+            </If>
+            <If name="Design Model">
+                <Then newName="%file"/>
+            </If>
+            <If name="Default">
+                <Then newName="%file"/>
+            </If>
+            <If name="3D Imperial Design">
+                <Then newName="%file"/>
+            </If>
+           <If name="3D Metric Design">
+             <Then newName="%file"/>
+           </If>
+        </ImportRules>
+    </Models>
+
+    <Raster importAttachments="true" exportNonPortableFormats="false"/>
+    <PointCloud importAttachments="true"/>
+
+    <Thumbnails viewTypes="Physical Drawing" pixelResolution="768" renderModeOverride="None"/>
+    
+    <Fonts searchPaths="$(AppRoot)$(v8SdkDir)/Fonts/;$(V8WorkspaceFontPaths)">
+        <!--
+        Wild cards can be used for defaults; any explicitly-named entry takes precedence over wildcards.
+        Wild cards cannot be used to specify EmbedAction=Always; such fonts must be explicitly listed.
+        Name wildcards take precedence over type wildcards.
+        First in wins if duplicates exist.
+        -->
+        <Font type="*" name="*">
+            <EmbedAction>IfUsed</EmbedAction>
+        </Font>
+    </Fonts>
+    <Options>
+        <OptionBool name="CompactDatabase" value="false"/>          <!-- compact (vacuum) database after import completes-->
+        <OptionBool name="Consider2dModelsSpatial" value="false"/>  <!-- consider 2d models other than Drawing or Sheet models to be spatial models -->
+        <OptionBool name="EmbedIssues" value="false"/>              <!-- save a copy of the import issues file in the .bim -->
+        <OptionBool name="EmbedConfigFile" value="false"/>          <!-- save a copy of this file the .bim after import-->
+        <OptionBool name="EmbedDgnLinkFiles" value="true"/>         <!-- convert file-based Dgn links by embedding their target-->
+        <OptionBool name="SaveIdsAsCodes" value="false"/>           <!-- store v8 element ids as code.values. Useful for debugging -->
+        <OptionBool name="SaveAllDrawings" value="false"/>          <!-- if true, all drawings in input set are preserved, otherwise only from root file  -->
+        <OptionBool name="CreateECClassViews" value="false"/>       <!-- if true, creates views in the .bim to visualize the ECClasses  -->
+        <OptionBool name="SkyBox" value="true"/>                    <!-- if true, add skybox to spatial views -->
+        <OptionBool name="GroundPlane" value="false"/>              <!-- if true, add ground plane to spatial views -->
+        <OptionDouble name="ThumbnailTimeout" value="30"/>          <!-- number of seconds to wait for each thumbnail to be generated -->
+        <OptionBool name="AutoDetectMixinParams" value="true"/>     <!-- if true, schemas will be automatically searched for mixin conversion parameters -->
+        <OptionBool name="ValidateSchemas" value="false" />         <!-- if true, will validate the classes and properties of the imported schemas with the original V8 schemas -->
+    </Options>
+</ImportConfig>
