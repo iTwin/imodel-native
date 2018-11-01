@@ -1,0 +1,26 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/ecschema",
+  "name": "ExampleSchema",
+  "version": "03.01.00",
+  "alias": "ex",
+  "label": "Example Schema",
+  "description": "The quick brown fox jumps over the lazy dog.",
+  "references": [
+    {
+      "name": "refSchemaA",
+      "version": "03.01.00"
+    },
+    {
+      "name": "refSchemaB",
+      "version": "03.01.00"
+    }
+  ],
+  "customAttributes": [
+    {
+      "className" : "refSchemaA.SomeCustomAttributeClass"
+    },
+    {
+      "className" : "refSchemaB.AnotherCustomAttributeClass"
+    }
+  ]
+}

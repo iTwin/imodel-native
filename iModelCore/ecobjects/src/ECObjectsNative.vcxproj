@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{01917E3B-2174-4AC9-860E-BAAAA15C606D}</ProjectGuid>
+    <RootNamespace>ecobjects</RootNamespace>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <OutDir>$(OutRoot)Winx64\Build\ECObjects\</OutDir>
+    <IntDir>$(OutRoot)Winx64\Build\ECObjects\</IntDir>
+    <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjects\</IntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjects\</BaseIntermediateOutputPath>
+    <NMakeOutput>ecobjects.exe</NMakeOutput>
+    <NMakeIncludeSearchPath>$(ProjectDir)..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;__ECOBJECTS_BUILD__</NMakePreprocessorDefinitions>
+    <NMakeForcedIncludes>$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath>$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies>$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NMakeReBuildCommandLine>bb re ECObjects:ECObjectsNative ECObjects::PublicApi</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ECObjects:ECObjectsNative ECObjects::PublicApi -c</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="CalculatedProperty.cpp" />
+    <ClCompile Include="DateTimeInfoAccessor.cpp" />
+    <ClCompile Include="DesignByContract.cpp" />
+    <ClCompile Include="ECClass.cpp" />
+    <ClCompile Include="ECContext.cpp" />
+    <ClCompile Include="ECCustomAttribute.cpp" />
+    <ClCompile Include="ECDBuffer.cpp" />
+    <ClCompile Include="ECEnabler.cpp" />
+    <ClCompile Include="ECInstance.cpp" />
+    <ClCompile Include="ECJsonUtilities.cpp" />
+    <ClCompile Include="ECObjectsPch.cpp" />
+    <ClCompile Include="ECProperty.cpp" />
+    <ClCompile Include="ECQuantityFormatting.cpp" />
+    <ClCompile Include="ECRelationshipPath.cpp" />
+    <ClCompile Include="ECSchema.cpp" />
+    <ClCompile Include="ECEnumeration.cpp" />
+    <ClCompile Include="ECSchemaDownConverter.cpp" />
+    <ClCompile Include="ECSchemaUnitsContext.cpp" />
+    <ClCompile Include="ECSchemaValidator.cpp" />
+    <ClCompile Include="Format.cpp" />
+    <ClCompile Include="KindOfQuantity.cpp" />
+    <ClCompile Include="ECSchemaConverter.cpp" />
+    <ClCompile Include="ECType.cpp" />
+    <ClCompile Include="ECValue.cpp" />
+    <ClCompile Include="ExpressionContext.cpp" />
+    <ClCompile Include="ExpressionHandler.cpp" />
+    <ClCompile Include="ExpressionNode.cpp" />
+    <ClCompile Include="Phenomenon.cpp" />
+    <ClCompile Include="PresentationMetadataHelper.cpp" />
+    <ClCompile Include="PropertyCategory.cpp" />
+    <ClCompile Include="SchemaComparer.cpp" />
+    <ClCompile Include="SchemaJson.cpp" />
+    <ClCompile Include="SchemaLocalizedStrings.cpp" />
+    <ClCompile Include="SchemaParseUtils.cpp" />
+    <ClCompile Include="SchemaResourceKeyHelper.cpp" />
+    <ClCompile Include="SchemaXml.cpp" />
+    <ClCompile Include="StandaloneECInstance.cpp" />
+    <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
+    <ClCompile Include="StandardCustomAttributeHelper.cpp" />
+    <ClCompile Include="SupplementalSchema.cpp" />
+    <ClCompile Include="SystemSymbolProvider.cpp" />
+    <ClCompile Include="ECUnit.cpp" />
+    <ClCompile Include="UnitSystem.cpp" />
+    <ClCompile Include="Units\ECUnitsClassLocater.cpp" />
+    <ClCompile Include="Units\Units.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PrivateApi\ECObjects\SchemaParseUtils.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonValue.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECDBuffer.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECInstance.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECJsonUtilities.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECName.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECQuantityFormatting.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECRelationshipPath.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaDownConverter.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECUnit.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaComparer.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\SystemSymbolProvider.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\VirtualCollectionIterator.h" />
+    <ClInclude Include="..\PublicApi\ECUnits\ECUnitsClassLocater.h" />
+    <ClInclude Include="..\PublicApi\ECUnits\Units.h" />
+    <ClInclude Include="DateTimeInfoAccessor.h" />
+    <ClInclude Include="ecobjectsnativelog.h" />
+    <ClInclude Include="ECObjectsPch.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECSchema.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\StandaloneECInstance.h" />
+    <ClInclude Include="SchemaJson.h" />
+    <ClInclude Include="SchemaXml.h" />
+    <ClInclude Include="StronglyConnectedGraph.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\mki\ECObjects.mki" />
+    <None Include="ECObjects.mke" />
+    <None Include="ECObjectsCompileOpts.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\ECObjects.PartFile.xml" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

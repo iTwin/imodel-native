@@ -1,0 +1,60 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "EntityClass",
+  "name": "ExampleEntityClass",
+  "properties": [
+    {
+      "name" : "ExamplePrimitiveProperty",
+      "type" : "PrimitiveProperty",
+      "description" : "An example primitive property.",
+      "label" : "PrimitivePropertyDisplayLabel",
+      "isReadOnly" : true,
+      "category" : "ExampleSchema.ExamplePropertyCategory",
+      "kindOfQuantity" : "ExampleSchema.TestKindOfQuantity",
+      "typeName" : "int",
+      "extendedTypeName" : "Example Primitive Property",
+      "minValue" : 42,
+      "maxValue" : 1999
+    },
+    {
+      "name" : "ExampleEnumerationProperty",
+      "type" : "PrimitiveProperty",
+      "description" : "An example primitive enumeration property.",
+      "label" : "Enumeration Property DisplayLabel",
+      "isReadOnly" : true,
+      "category" : "ExampleSchema.ExamplePropertyCategory",
+      "typeName" : "ExampleSchema.ExampleEnumeration",
+      "extendedTypeName" : "Example_ExtendedType",
+      "minValue" : 42,
+      "maxValue" : 1999
+    },
+    {
+      "name" : "ExampleStructProperty",
+      "type" : "StructProperty",
+      "typeName" : "ExampleSchema.ExampleStructClass"
+    },
+    {
+      "name" : "ExamplePrimitiveArrayProperty",
+      "type" : "PrimitiveArrayProperty",
+      "minLength" : 3,
+      "maxLength" : 50,
+      "minOccurs" : 7,
+      "typeName" : "string"
+    },
+    {
+      "name" : "ExampleStructArrayProperty",
+      "type" : "StructArrayProperty",
+      "minOccurs" : 867,
+      "maxOccurs" : 5309,
+      "typeName" : "ExampleSchema.ExampleStructClass"
+    },
+    {
+      "name" : "ExampleNavigationProperty",
+      "type" : "NavigationProperty",
+      "direction" : "backward",
+      "relationshipName" : "ExampleSchema.ExampleRelationshipClass"
+    }
+  ]
+}

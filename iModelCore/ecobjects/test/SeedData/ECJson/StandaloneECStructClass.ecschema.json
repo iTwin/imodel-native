@@ -1,0 +1,21 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "StructClass",
+  "name": "ExampleStruct",
+  "modifier": "sealed",
+  "properties": [
+    {
+      "type": "PrimitiveArrayProperty",
+      "name": "ExamplePrimitiveArray",
+      "label": "ExPrimitiveArray",
+      "typeName": "int",
+      "extendedTypeName": "FooBar",
+      "minValue": 7,
+      "maxValue": 20,
+      "minOccurs": 10,
+      "maxOccurs": 25
+    }
+  ]
+}
