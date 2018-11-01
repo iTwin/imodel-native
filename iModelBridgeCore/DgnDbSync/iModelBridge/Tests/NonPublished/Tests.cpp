@@ -64,6 +64,8 @@ struct iModelBridgeTests : ::testing::Test
         DgnDbTestUtils::InsertPhysicalModel(*db, "PhysicalModel");
         DgnDbTestUtils::InsertSpatialCategory(*db, "SpatialCategory");
 
+        DgnV8FileProvenance::CreateTable(*db);
+        DgnV8ModelProvenance::CreateTable(*db);
         // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
         db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
         db->SaveChanges();
@@ -591,6 +593,10 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
         auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
+        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceFile))
+            DgnV8FileProvenance::CreateTable(GetDgnDbR());
+        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
+            DgnV8ModelProvenance::CreateTable(GetDgnDbR());
         return subjectObj->InsertT<Subject>();
         }
 

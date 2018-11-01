@@ -45,6 +45,8 @@ struct MstnBridgeTestsFixture : ::testing::Test
         DbFileInfo(BentleyApi::BeFileNameCR fileName);
         int32_t GetElementCount();
         int32_t GetModelCount();
+        int32_t GetPhysicalModelCount();
+        int32_t GetBISClassCount(CharCP className);
         int32_t GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid);
         };
     
