@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "DataSourceLocator.h"
-#include "include\DataSourceLocator.h"
+#include "include/DataSourceLocator.h"
 #include "DataSourceAccount.h"
 
 DataSourceSession::SessionInstance DataSourceSession::instanceCounter = 0;
