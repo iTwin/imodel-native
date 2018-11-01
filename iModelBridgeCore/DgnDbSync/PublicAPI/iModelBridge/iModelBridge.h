@@ -919,6 +919,8 @@ public:
     //! @}
 
     bool HadAnyChanges() const { return m_hadAnyChanges; }
+
+    IMODEL_BRIDGE_EXPORT static bool WantModelProvenanceInBim(DgnDbR db);
     };
 
 //=======================================================================================

@@ -1627,6 +1627,11 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
+        if (!m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb))
+            DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
+        if (!m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb))
+            DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
+
         //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
         iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
         if (!callCloseOnReturn.IsReady())
