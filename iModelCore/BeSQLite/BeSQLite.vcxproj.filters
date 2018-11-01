@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{13d7d3b1-9c48-4111-8fe3-9648e2682bbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Crypt">
+      <UniqueIdentifier>{7cfe7432-362c-4475-abaf-622de927200b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\BeSQLite\BeSQLite.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\DownloadAdmin.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\L10N.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\RTreeMatch.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="BeSQLiteProfileManager.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\SHA1.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\md5.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\IModelDb.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\ChangeSet.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\BeSQLite\BeBriefcaseBasedIdSequence.h" />
+    <ClInclude Include="PublicAPI\BeSQLite\BeLzma.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BeSQLite.cpp" />
+    <ClCompile Include="BeSQLiteProfileManager.cpp" />
+    <ClCompile Include="L10N.cpp" />
+    <ClCompile Include="ChangeSet.cpp" />
+    <ClCompile Include="Crypt\md5.cpp">
+      <Filter>Crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="Crypt\sha1.cpp">
+      <Filter>Crypt</Filter>
+    </ClCompile>
+    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
+    <ClCompile Include="BeLzma.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BeSQLite.mke" />
+    <None Include="BeSQLite.prewire.mke" />
+  </ItemGroup>
+</Project>
