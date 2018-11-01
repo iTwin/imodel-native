@@ -1543,6 +1543,7 @@ inline		void	getGLmatrix16(T *m) const
 		}
 				// Debugging functions
 
+#ifdef NEEDS_WORK_VORTEX_DGNDB
 #ifdef _MSC_VER
 inline		void		debugTrace() const
 				{
@@ -1561,6 +1562,7 @@ inline		void		debugTrace() const
 					}
 					TRACE("\n");
 				}
+#endif
 #endif
 
 #ifdef _H_LOGGER
