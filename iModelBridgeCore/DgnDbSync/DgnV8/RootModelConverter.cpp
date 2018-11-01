@@ -753,8 +753,9 @@ RootModelConverter::~RootModelConverter()
 
     m_v8Files.clear();
     m_filesKeepAlive.clear();
-
+    m_viewGroup = nullptr;
     m_rootFile = nullptr;
+    m_drawingModelsKeepAlive.clear();
     if (!m_params.m_keepHostAliveForUnitTests)
         {
         ClearV8ProgressMeter();

@@ -232,6 +232,27 @@ int32_t MstnBridgeTestsFixture::DbFileInfo::GetModelCount ()
     stmt->Step();
     return stmt->GetValueInt(0);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int32_t MstnBridgeTestsFixture::DbFileInfo::GetPhysicalModelCount()
+    {
+    ModelIterator iterator = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel));
+    return iterator.BuildIdSet().size();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int32_t MstnBridgeTestsFixture::DbFileInfo::GetBISClassCount(CharCP className)
+    {
+    CachedStatementPtr stmt = m_db->Elements().GetStatement(Utf8PrintfString ("SELECT count(*) FROM %s ", className));
+    stmt->Step();
+    return stmt->GetValueInt(0);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

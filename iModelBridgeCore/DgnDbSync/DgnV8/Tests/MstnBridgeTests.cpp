@@ -308,12 +308,13 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
     guid2.FromString("85E950D7-6F9C-4FA8-B195-F1B9982D1E2C");
     refGuid.FromString("586AF9AD-8AA3-4126-9410-8E7F6B4AB5E2");
 
-    BentleyApi::BeFileName testDir1;
-    SetupTestDirectory(testDir1, L"ConvertAttachmentMultiBridgeSharedReference1", inputFile1, guid1, refFile, refGuid);
 
     int modelCount = 0;
     if (true)
         {
+        BentleyApi::BeFileName testDir1;
+        SetupTestDirectory(testDir1, L"ConvertAttachmentMultiBridgeSharedReference1", inputFile1, guid1, refFile, refGuid);
+
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         bvector<WString> margs(args);
         margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile1.c_str()));
@@ -324,28 +325,31 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         BentleyApi::BeFileName dbFile(testDir1);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
         DbFileInfo info(dbFile);
-        modelCount = info.GetModelCount();
+        modelCount = info.GetPhysicalModelCount();
         int provenanceCount1 = info.GetModelProvenanceCount(guid1);
         int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
         ASSERT_EQ(1, provenanceCount1);
         ASSERT_EQ(0, provenanceCountRef);
-        ASSERT_EQ(8, modelCount);
+        ASSERT_EQ(1, modelCount);
         }
-
+    
     if (true)
         {
+        BentleyApi::BeFileName testDir2;
+        SetupTestDirectory(testDir2, L"ConvertAttachmentMultiBridgeSharedReference2", inputFile1, guid1, refFile, refGuid);
+
         //We added a new attachment.
         bvector<WString> rargs(args);
         rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile1.c_str()));
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
-        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir1));
+        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir2));
 
         RunTheBridge(rargs);
-        BentleyApi::BeFileName dbFile(testDir1);
+        BentleyApi::BeFileName dbFile(testDir2);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
 
         DbFileInfo info(dbFile);
-        ASSERT_EQ(modelCount + 1, info.GetModelCount());
+        ASSERT_EQ(++modelCount, info.GetPhysicalModelCount());
 
         int provenanceCount1 = info.GetModelProvenanceCount(guid1);
         int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
@@ -354,32 +358,56 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         
         }
 
-    BentleyApi::BeFileName testDir2;
-    SetupTestDirectory(testDir2, L"ConvertAttachmentMultiBridgeSharedReference2", inputFile2, guid2, refFile, refGuid);
-
+    
     if (true)
         {
+        BentleyApi::BeFileName testDir3;
+        SetupTestDirectory(testDir3, L"ConvertAttachmentMultiBridgeSharedReference3", inputFile2, guid2, refFile, refGuid);
+
         // Ask the framework to run our test bridge to do the initial conversion and create the repo
         bvector<WString> margs(args);
         margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
         margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
-        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir2));
+        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir3));
         RunTheBridge(margs);
-        BentleyApi::BeFileName dbFile(testDir2);
+        BentleyApi::BeFileName dbFile(testDir3);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
-        ASSERT_EQ(modelCount + 6, DbFileInfo(dbFile).GetModelCount());
+
+        DbFileInfo info(dbFile);
+        ASSERT_EQ(++modelCount, info.GetPhysicalModelCount());
+
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);
         }
 
     if (true)
         {
+        BentleyApi::BeFileName testDir4;
+        SetupTestDirectory(testDir4, L"ConvertAttachmentMultiBridgeSharedReference4", inputFile2, guid2, refFile, refGuid);
+
         //We added a new attachment.
         bvector<WString> rargs(args);
         rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
-        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir2));
-        BentleyApi::BeFileName dbFile(testDir2);
+        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir4));
+        BentleyApi::BeFileName dbFile(testDir4);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
         RunTheBridge(rargs);
-        ASSERT_EQ(modelCount + 6, DbFileInfo(dbFile).GetModelCount());
+        DbFileInfo info(dbFile);
+        ASSERT_EQ(modelCount, info.GetPhysicalModelCount());
+
+        int provenanceCount1 = info.GetModelProvenanceCount(guid1);
+        int provenanceCountRef = info.GetModelProvenanceCount(refGuid);
+        int provenanceCount2 = info.GetModelProvenanceCount(guid2);
+        ASSERT_EQ(1, provenanceCount1);
+        ASSERT_EQ(1, provenanceCountRef);
+        ASSERT_EQ(1, provenanceCount2);        
         }
     }
+
+//Sandwich test ?
+//Test for locks and codes ?

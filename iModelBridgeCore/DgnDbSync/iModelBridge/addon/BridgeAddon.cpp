@@ -33,143 +33,101 @@ static Napi::Object RegisterModule(Napi::Env env, Napi::Object exports)
     return exports;
     }
 
+    // printf("BridgeAddon.cpp: _setArgV() argc = %d member %s command %s\n", argc, MEMBER, COMMAND);      \
+    // printf("BridgeAddon.cpp: _setArgV() isMember = %s\n", (json.isMember(MEMBER)?"TRUE":"FALSE"));      \
+    // printf("BridgeAddon.cpp: _setArgV() value-0  = %s\n", json.get(MEMBER, "" ).asString().c_str());    \
+    // printf("BridgeAddon.cpp: _setArgV() value-1  = %s\n", json[MEMBER].asString().c_str());             \
+    // printf("BridgeAddon.cpp: _setArgV() empty    = %s\n", (json.get(MEMBER, "" ).asString().empty()?"TRUE":"FALSE"));    \    
+
+#define _setArgV(json, argc, argv, MEMBER, COMMAND) \
+{ \
+    if(json.isMember(MEMBER) && (!json.get(MEMBER, "" ).asString().empty())) {                          \
+        Utf8String strUtf8 = Utf8PrintfString("--%s=%s", COMMAND, json.get(MEMBER, "" ).asString());    \
+        if (!Utf8String::IsNullOrEmpty(strUtf8.c_str())) {                                              \
+            WString tempWString;                                                                        \
+            BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());                               \
+            argv[argc] = tempWString.c_str();                                                           \
+            ++argc;                                                                                     \
+        }                                                                                               \
+    }                                                                                                   \
+}
+
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    John.Majerle                      06/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-
 int RunBridge(const char* jsonString)
     {
-    auto json = Json::Value(jsonString);
-    printf("%s", json.ToString().c_str());
+    int status = 1;  // Assume failure
+
+    printf("BridgeAddon.cpp: RunBridge() jsonString = %s\n", jsonString);
+
+    Json::Value json;
+    Json::Reader::Parse(jsonString, json); 
+
+    printf("BridgeAddon.cpp: List of json members:\n");
+    bvector<Utf8String> memberNames = json.getMemberNames();
+    for(unsigned int ii = 0; ii < memberNames.size(); ++ii) {
+        BentleyB0200::Utf8String memberName = memberNames[ii];
+        Json::Value value = json[memberName];
+        printf("BridgeAddon.cpp: RunBridge() json[%s] = %s\n", memberName.c_str(), value.toStyledString().c_str());
+    }
 
     // Convert json to argv/argc
     int argc = 0;
     WCharCP argv[14];
 
-    // [NEEDSWORK] Perhaps should use json.isNull("membername") instead?
-    //             Also add non-fwk variables!
-
-    if(json.isMember("fwk_bridge_library")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-bridge-library=%s", json.get("fwk_bridge_library", "" ).asString());
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
+    try {
+        _setArgV(json, argc, argv, "server_user", "server-user");
+        _setArgV(json, argc, argv, "server_password", "server-password");
+        _setArgV(json, argc, argv, "server_repository", "server-repository");
+        _setArgV(json, argc, argv, "server_project", "server-project");
+        _setArgV(json, argc, argv, "server_environment", "server-environment");
+ 
+        _setArgV(json, argc, argv, "fwk_bridge_library", "fwk-bridge-library");
+        _setArgV(json, argc, argv, "fwk_bridge_regsubkey", "fwk-bridge-regsubkey");
+        _setArgV(json, argc, argv, "fwk_staging_dir", "fwk-staging-dir");
+        _setArgV(json, argc, argv, "fwk_input", "fwk-input");
+        _setArgV(json, argc, argv, "fwk_input_sheet", "fwk-input-sheet");
+        _setArgV(json, argc, argv, "fwk_revision_comment", "fwk-revision-comment");
+        _setArgV(json, argc, argv, "fwk_logging_config_file", "fwk-logging-config-file");
+        _setArgV(json, argc, argv, "fwk_argsJson", "fwk-argsJson");
+        _setArgV(json, argc, argv, "fwk_max_wait", "fwk_max-wait");
+        _setArgV(json, argc, argv, "fwk_jobrun_guid", "fwk-jobrun-guid");
+        _setArgV(json, argc, argv, "fwk_assetsDir", "fwk-assetsDir");
+        _setArgV(json, argc, argv, "fwk_bridgeAssetsDir", "fwk-bridgeAssetsDir");        
+        _setArgV(json, argc, argv, "fwk_imodelbank_url", "fwk-imodelbank-url");    
+        _setArgV(json, argc, argv, "fwk_jobrequest_guid", "fwk-jobrequest-guid");           
+    } catch (...) {
+        printf("BridgeAddon.cpp: RunBridge() exception occurred processing json. argc = %d\n", argc);
+        return status;
     }
 
-    if(json.isMember("fwk_bridge_regsubkey")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-bridge-regsubkey=%s)", json.get("fwk_bridge_regsubkey", "" ).asString());         
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }
-    
-    if(json.isMember("fwk_staging_dir")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-staging-dir=%s)", json.get("fwk_staging_dir", "" ).asString());    
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
+    if(0 == argc) {
+        printf("BridgeAddon.cpp: RunBridge() No valid members passed in json\n");
+        return status;    
     }
 
-    if(json.isMember("fwk_input")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-input=%s)", json.get("fwk_input", "" ).asString());        
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }
-
-    if(json.isMember("fwk_input_sheet")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-input-sheet=%s)", json.get("fwk_input_sheet", "" ).asString());        
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }
-
-    if(json.isMember("fwk_revision_comment")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-revision-comment=%s)", json.get("fwk_revision_comment", "" ).asString());              
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }
-
-    if(json.isMember("fwk_logging_config_file")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-logging-config-file=%s)", json.get("fwk_logging_config_file", "" ).asString());         
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }
-
-    if(json.isMember("fwk_argsJson")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-argsJson=%s)", json.get("fwk_argsJson", "" ).asString());                
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }
-
-    if(json.isMember("fwk_max_wait")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk_max-wait=%s)", json.get("fwk_max_wait", "" ).asString());           
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }    
-
-    if(json.isMember("fwk_jobrun_guid")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-jobrun-guid=%s)", json.get("fwk_jobrun_guid", "" ).asString()); 
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }    
-    
-    if(json.isMember("fwk_assetsDir")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-assetsDir=%s)", json.get("fwk_assetsDir", "" ).asString());            
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }       
-
-    if(json.isMember("fwk_bridgeAssetsDir")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-bridgeAssetsDir=%s)", json.get("fwk_bridgeAssetsDir", "" ).asString()); 
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }      
-    
-    if(json.isMember("fwk_imodelbank_url")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-imodelbank-url=%s)", json.get("fwk_imodelbank_url", "" ).asString());               
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
-    }      
-
-    if(json.isMember("fwk_jobrequest_guid")) {
-        WString tempWString;
-        Utf8String strUtf8 = Utf8PrintfString("--fwk-jobrequest-guid=%s)", json.get("fwk_jobrequest_guid", "" ).asString());  
-        BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());
-        argv[argc] = tempWString.c_str();
-        ++argc;
+    printf("BridgeAddon.cpp: RunBridge() argv[]:\n");
+    for(int ii = 0; ii < argc; ++ii) {
+       printf("BridgeAddon.cpp: argv[%d] = %S\n", ii, argv[ii]); 
     }
     
-    Dgn::iModelBridgeFwk app;
+    try {
+        Dgn::iModelBridgeFwk app;
 
-    if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv))
-        return 1;
+        if (BentleyApi::BSISUCCESS != app.ParseCommandLine(argc, argv)) {
+            printf("\n");
+            printf("BridgeAddon.cpp: RunBridge() ParseCommandLine failure\n");
+            return status;
+        }
+            
+        status = app.Run(argc, argv);
+    } catch (...) {
+        printf("BridgeAddon.cpp: RunBridge() exception occurred processing argv[]\n");
+        return status;
+    }
 
-    return app.Run(argc, argv);
-
-    return 0;
+    return status;
     }
 
 NODE_API_MODULE(NODE_GYP_MODULE_NAME, RegisterModule)
