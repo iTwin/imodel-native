@@ -178,5 +178,5 @@ END_BENTLEY_IMODELJS_JS_NAMESPACE
 #define JS_CALLBACK_GET_CALLBACK(_argIndex_)     _JS_CALLBACK_GET_ARG (_argIndex_, Callback)
 #define JS_CALLBACK_GET_EXTERNAL(_argIndex_)     _JS_CALLBACK_GET_ARG (_argIndex_, External)
 #define JS_CALLBACK_GET_POINTER(_argIndex_)      _JS_CALLBACK_GET_ARG (_argIndex_, Pointer)
-
+#define JS_CALLBACK_GET_UINT8ARRAY(_argIndex_)   info[_argIndex_].As<Napi::Uint8Array>()
 //__PUBLISH_SECTION_END__

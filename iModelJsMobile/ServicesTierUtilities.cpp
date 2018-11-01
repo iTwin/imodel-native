@@ -928,16 +928,23 @@ MobileGateway::MobileGateway()
             {
             if (event == WebSockets::Event::Message)
                 {
-                BeAssert (message->get_opcode() == websocketpp::frame::opcode::value::binary);
+                Napi::Value arg;
                 auto& env = Host::GetInstance().GetJsRuntime().Env();
                 Napi::HandleScope scope (env);
-                std::string const& data = message->get_payload();
-                auto payload = Napi::ArrayBuffer::New (env, (void*)data.c_str(), data.size());
-                 printf("Recieving %ld Bytes\n", data.size());
+                if (message->get_opcode() == websocketpp::frame::opcode::value::binary)
+                    {
+                    std::string const& data = message->get_payload();
+                    arg = Napi::ArrayBuffer::New (env, (void*)data.c_str(), data.size());
+                    }
+                else if (message->get_opcode() == websocketpp::frame::opcode::value::text)
+                    {
+                    std::string const& data = message->get_payload();
+                    arg = Napi::String::New (env, data.c_str(), data.size());
+                    }
 #if defined(BENTLEYCONFIG_OS_APPLE_IOS)
-                env.Global().Get("__imodeljs_mobilegateway_handler__").As<Napi::Function>().Call({ payload }); //WIP: napi add ref not implemented yet for jsc
+                env.Global().Get("__imodeljs_mobilegateway_handler__").As<Napi::Function>().Call({ arg }); //WIP: napi add ref not implemented yet for jsc
 #else
-                m_exports.Get("handler").As<Napi::Function>().Call({ payload });
+                m_exports.Get("handler").As<Napi::Function>().Call({ arg });
 #endif
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
@@ -987,49 +994,32 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
 
     exports.Set ("handler", env.Null());
     exports.Set ("port", Napi::Number::New (env, GetPort()));
-    exports.Set ("send", Napi::Function::New (env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+    exports.Set ("sendString", Napi::Function::New (env, [this](Napi::CallbackInfo const& info) -> Napi::Value
         {
         BeAssert (m_client.IsValid());
         JS_CALLBACK_REQUIRE_N_ARGS (1);
-        auto binArray = JS_CALLBACK_GET_ARRAY (0);
-        size_t totalBytes = 0;
-        for(int i=0; i < binArray.Length(); ++i) {
-            Napi::Value val = binArray[i];
-            totalBytes += val.As<Napi::Uint8Array>().ByteLength();
-        }
-        
-        size_t pos = 0;
-            uint32_t header =0;
-        unsigned char* data = (unsigned char*)malloc (totalBytes);
-            
-        for(int i=0; i < binArray.Length(); ++i) {
-            Napi::Value val = binArray[i];
-            Napi::Uint8Array intArray = val.As<Napi::Uint8Array>();
-            Napi::ArrayBuffer buffer = intArray.ArrayBuffer();
-            const size_t byteLength = intArray.ByteLength();
-            const size_t byteOffset = intArray.ByteOffset();
-            if (i == 0) {
-                header = Swap4Bytes(*((uint32_t*)buffer.Data()));
-            }
-            void* target = (void*)((unsigned char*)data + pos);
-            void* source = (void*)((unsigned char*)buffer.Data() + byteOffset);
-            memcpy(target, source, byteLength);
-            printf("%d. size: %.2f KiB\n", i, ((double)byteLength)/1024);
-            pos += byteLength;
-        }
-        printf("Total: %.2f Kib\n", ((double)totalBytes/1024));
-        if (header != (totalBytes - 4)) {
-            printf("header do not match pay load size \n" );
-        }
-        BeAssert(pos == totalBytes);
-        if(!m_connection->Send ((const char*)data, totalBytes, websocketpp::frame::opcode::value::binary))
+        std::string str = JS_CALLBACK_GET_STRING (0);
+        if(!m_connection->Send ((const char*)str.c_str(), str.size(), websocketpp::frame::opcode::value::text))
             {
             BeAssert(false);
             }
-        free(data);
         return info.Env().Undefined();
         }));
-
+    exports.Set ("sendBinary", Napi::Function::New (env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+        {
+        BeAssert (m_client.IsValid());
+        JS_CALLBACK_REQUIRE_N_ARGS (1);
+        Napi::Uint8Array binArray = JS_CALLBACK_GET_UINT8ARRAY (0);
+        Napi::ArrayBuffer buffer = binArray.ArrayBuffer();
+        const size_t byteLength = binArray.ByteLength();
+        const size_t byteOffset = binArray.ByteOffset();
+        if(!m_connection->Send ((const char*)buffer.Data() + byteOffset, byteLength, websocketpp::frame::opcode::value::binary))
+            {
+            BeAssert(false);
+            }
+        return info.Env().Undefined();
+        }));
+        
     return exports;
     }
 
