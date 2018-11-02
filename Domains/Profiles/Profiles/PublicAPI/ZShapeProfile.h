@@ -31,19 +31,25 @@ public:
     PROFILES_EXPORT static ZShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetFlangeWidth() const { return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeWidth); }
+    PROFILES_EXPORT double GetFlangeWidth() const;
     PROFILES_EXPORT void SetFlangeWidth(double val);
-    double GetDepth() const { return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_Depth); }
+
+    PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);
-    double GetFlangeThickness() const { return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeThickness); }
+
+    PROFILES_EXPORT double GetFlangeThickness() const;
     PROFILES_EXPORT void SetFlangeThickness(double val);
-    double GetWebThickness() const { return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_WebThickness); }
+
+    PROFILES_EXPORT double GetWebThickness() const;
     PROFILES_EXPORT void SetWebThickness(double val);
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FilletRadius); }
+
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
-    double GetFlangeEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeEdgeRadius); }
+
+    PROFILES_EXPORT double GetFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetFlangeEdgeRadius(double val);
-    double GetFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeSlope); }
+
+    PROFILES_EXPORT double GetFlangeSlope() const;
     PROFILES_EXPORT void SetFlangeSlope(double val);
 
     }; // ZShapeProfile

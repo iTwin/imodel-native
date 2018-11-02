@@ -23,6 +23,14 @@ DoubleCProfilePtr DoubleCProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double DoubleCProfile::GetSpacing() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_DoubleCProfile_Spacing);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void DoubleCProfile::SetSpacing(double val)
     {
     SetPropertyValue(PRF_PROP_DoubleCProfile_Spacing, ECN::ECValue(val));

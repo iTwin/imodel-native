@@ -35,15 +35,19 @@ public:
     PROFILES_EXPORT static CShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetFlangeThickness() const { return GetPropertyValueDouble(PRF_PROP_CShapeProfile_FlangeThickness); }
+    PROFILES_EXPORT double GetFlangeThickness() const;
     PROFILES_EXPORT void SetFlangeThickness(double val);
-    double GetWebThickness() const { return GetPropertyValueDouble(PRF_PROP_CShapeProfile_WebThickness); }
+
+    PROFILES_EXPORT double GetWebThickness() const;
     PROFILES_EXPORT void SetWebThickness(double val);
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_CShapeProfile_FilletRadius); }
+
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
-    double GetEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_CShapeProfile_EdgeRadius); }
+
+    PROFILES_EXPORT double GetEdgeRadius() const;
     PROFILES_EXPORT void SetEdgeRadius(double val);
-    double GetFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_CShapeProfile_FlangeSlope); }
+
+    PROFILES_EXPORT double GetFlangeSlope() const;
     PROFILES_EXPORT void SetFlangeSlope(double val);
 
     }; // CShapeProfile

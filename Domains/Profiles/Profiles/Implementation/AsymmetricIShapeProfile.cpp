@@ -23,9 +23,25 @@ AsymmetricIShapeProfilePtr AsymmetricIShapeProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetTopWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopWidth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void AsymmetricIShapeProfile::SetTopWidth(double val)
     {
     SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_TopWidth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetBottomWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,9 +55,25 @@ void AsymmetricIShapeProfile::SetBottomWidth(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void AsymmetricIShapeProfile::SetDepth(double val)
     {
     SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetTopFlangeThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeThickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,9 +87,25 @@ void AsymmetricIShapeProfile::SetTopFlangeThickness(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetBottomFlangeThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeThickness);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void AsymmetricIShapeProfile::SetBottomFlangeThickness(double val)
     {
     SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeThickness, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetWebThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_WebThickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,9 +119,25 @@ void AsymmetricIShapeProfile::SetWebThickness(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetTopFlangeFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeFilletRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void AsymmetricIShapeProfile::SetTopFlangeFilletRadius(double val)
     {
     SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_TopFlangeFilletRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetTopFlangeEdgeRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeEdgeRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,9 +151,25 @@ void AsymmetricIShapeProfile::SetTopFlangeEdgeRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetTopFlangeSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void AsymmetricIShapeProfile::SetTopFlangeSlope(double val)
     {
     SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetBottomFlangeFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeFilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,9 +183,25 @@ void AsymmetricIShapeProfile::SetBottomFlangeFilletRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetBottomFlangeEdgeRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeEdgeRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void AsymmetricIShapeProfile::SetBottomFlangeEdgeRadius(double val)
     {
     SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeEdgeRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double AsymmetricIShapeProfile::GetBottomFlangeSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**

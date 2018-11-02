@@ -35,7 +35,7 @@ public:
     PROFILES_EXPORT static RoundedRectangleProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetRoundingRadius() const { return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_RoundingRadius); }
+    PROFILES_EXPORT double GetRoundingRadius() const;
     PROFILES_EXPORT void SetRoundingRadius(double val);
 
     }; // RoundedRectangleProfile

@@ -23,9 +23,25 @@ LShapeProfilePtr LShapeProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Thickness);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void LShapeProfile::SetThickness(double val)
     {
     SetPropertyValue(PRF_PROP_LShapeProfile_Thickness, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_FilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,6 +55,14 @@ void LShapeProfile::SetFilletRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetEdgeRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_EdgeRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void LShapeProfile::SetEdgeRadius(double val)
     {
     SetPropertyValue(PRF_PROP_LShapeProfile_EdgeRadius, ECN::ECValue(val));
@@ -47,9 +71,25 @@ void LShapeProfile::SetEdgeRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetHorizontalLegSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_HorizontalLegSlope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void LShapeProfile::SetHorizontalLegSlope(double val)
     {
     SetPropertyValue(PRF_PROP_LShapeProfile_HorizontalLegSlope, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetVerticalLegSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_VerticalLegSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -36,9 +36,10 @@ public:
     PROFILES_EXPORT static CenterLineLShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_FilletRadius); }
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
-    double GetLipLength() const { return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_LipLength); }
+
+    PROFILES_EXPORT double GetLipLength() const;
     PROFILES_EXPORT void SetLipLength(double val);
 
     }; // CenterLineLShapeProfile

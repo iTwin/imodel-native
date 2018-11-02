@@ -23,9 +23,31 @@ CustomShapeProfilePtr CustomShapeProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CustomShapeProfile::GetOuterCurve() const
+    {
+    ECN::ECValue ecValue;
+    GetPropertyValue(ecValue, PRF_PROP_CustomShapeProfile_OuterCurve);
+    return ecValue.GetIGeometry();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void CustomShapeProfile::SetOuterCurve(IGeometryPtr val)
     {
-    //SetPropertyValue(PRF_PROP_CustomShapeProfile_OuterCurve, val);
+    ECN::ECValue ecValue;
+    ecValue.SetIGeometry(*val);
+    SetPropertyValue(PRF_PROP_CustomShapeProfile_OuterCurve, ecValue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IGeometryPtr CustomShapeProfile::GetInnerCurves() const
+    {
+    ECN::ECValue ecValue;
+    GetPropertyValue(ecValue, PRF_PROP_CustomShapeProfile_InnerCurves);
+    return ecValue.GetIGeometry();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,7 +55,9 @@ void CustomShapeProfile::SetOuterCurve(IGeometryPtr val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CustomShapeProfile::SetInnerCurves(IGeometryPtr val)
     {
-    //SetPropertyValue(PRF_PROP_CustomShapeProfile_InnerCurves, val);
+    ECN::ECValue ecValue;
+    ecValue.SetIGeometry(*val);
+    SetPropertyValue(PRF_PROP_CustomShapeProfile_InnerCurves, ecValue);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

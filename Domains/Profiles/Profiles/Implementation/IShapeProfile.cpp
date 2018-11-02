@@ -15,9 +15,17 @@ HANDLER_DEFINE_MEMBERS(IShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IShapeProfilePtr IShapeProfile::Create(/*TODO: args*/)
+IShapeProfilePtr IShapeProfile::Create(Dgn::DgnDbR db, Dgn::DgnModelId const& modelId, Dgn::DgnClassId const& classId)
     {
-    return nullptr; // TODO: Not Implemented
+    return new IShapeProfile(CreateParams(db, modelId, classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double IShapeProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_Width);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -31,9 +39,25 @@ void IShapeProfile::SetWidth(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double IShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void IShapeProfile::SetDepth(double val)
     {
     SetPropertyValue(PRF_PROP_IShapeProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double IShapeProfile::GetFlangeThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FlangeThickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,9 +71,25 @@ void IShapeProfile::SetFlangeThickness(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double IShapeProfile::GetWebThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_WebThickness);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void IShapeProfile::SetWebThickness(double val)
     {
     SetPropertyValue(PRF_PROP_IShapeProfile_WebThickness, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double IShapeProfile::GetFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,9 +103,25 @@ void IShapeProfile::SetFilletRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double IShapeProfile::GetFlangeEdgeRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FlangeEdgeRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void IShapeProfile::SetFlangeEdgeRadius(double val)
     {
     SetPropertyValue(PRF_PROP_IShapeProfile_FlangeEdgeRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double IShapeProfile::GetFlangeSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FlangeSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**

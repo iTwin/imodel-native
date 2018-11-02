@@ -31,7 +31,7 @@ public:
     PROFILES_EXPORT static DoubleCProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetSpacing() const { return GetPropertyValueDouble(PRF_PROP_DoubleCProfile_Spacing); }
+    PROFILES_EXPORT double GetSpacing() const;
     PROFILES_EXPORT void SetSpacing(double val);
 
     }; // DoubleCProfile

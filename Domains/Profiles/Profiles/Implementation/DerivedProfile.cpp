@@ -23,9 +23,25 @@ DerivedProfilePtr DerivedProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool DerivedProfile::GetMirrorProfileAboutYAxis() const
+    {
+    return GetPropertyValueBoolean(PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void DerivedProfile::SetMirrorProfileAboutYAxis(bool val)
     {
     SetPropertyValue(PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d DerivedProfile::GetOffset() const
+    {
+    return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_Offset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,6 +55,14 @@ void DerivedProfile::SetOffset(DPoint2dCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d DerivedProfile::GetRotation() const
+    {
+    return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_Rotation);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void DerivedProfile::SetRotation(DPoint2dCR val)
     {
     SetPropertyValue(PRF_PROP_DerivedProfile_Rotation, ECN::ECValue(val));
@@ -47,9 +71,25 @@ void DerivedProfile::SetRotation(DPoint2dCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d DerivedProfile::GetScale() const
+    {
+    return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_Scale);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void DerivedProfile::SetScale(DPoint2dCR val)
     {
     SetPropertyValue(PRF_PROP_DerivedProfile_Scale, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d DerivedProfile::GetCardinalPoint() const
+    {
+    return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_CardinalPoint);
     }
 
 /*---------------------------------------------------------------------------------**//**

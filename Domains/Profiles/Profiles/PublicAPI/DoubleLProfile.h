@@ -31,9 +31,10 @@ public:
     PROFILES_EXPORT static DoubleLProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetSpacing() const { return GetPropertyValueDouble(PRF_PROP_DoubleLProfile_Spacing); }
+    PROFILES_EXPORT double GetSpacing() const;
     PROFILES_EXPORT void SetSpacing(double val);
-    int GetEnum() const { return GetPropertyValueInt32(PRF_PROP_DoubleLProfile_Enum); }
+
+    PROFILES_EXPORT int GetEnum() const;
     PROFILES_EXPORT void SetEnum(int val);
 
     }; // DoubleLProfile

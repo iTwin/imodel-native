@@ -23,6 +23,14 @@ RoundedRectangleProfilePtr RoundedRectangleProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double RoundedRectangleProfile::GetRoundingRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_RoundingRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void RoundedRectangleProfile::SetRoundingRadius(double val)
     {
     SetPropertyValue(PRF_PROP_RoundedRectangleProfile_RoundingRadius, ECN::ECValue(val));

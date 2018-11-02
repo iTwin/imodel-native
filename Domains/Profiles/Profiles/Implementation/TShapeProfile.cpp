@@ -23,9 +23,25 @@ TShapeProfilePtr TShapeProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_Width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void TShapeProfile::SetWidth(double val)
     {
     SetPropertyValue(PRF_PROP_TShapeProfile_Width, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,9 +55,25 @@ void TShapeProfile::SetDepth(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetFlangeThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeThickness);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void TShapeProfile::SetFlangeThickness(double val)
     {
     SetPropertyValue(PRF_PROP_TShapeProfile_FlangeThickness, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetWebThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebThickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,9 +87,25 @@ void TShapeProfile::SetWebThickness(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FilletRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void TShapeProfile::SetFilletRadius(double val)
     {
     SetPropertyValue(PRF_PROP_TShapeProfile_FilletRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetFlangeEdgeRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeEdgeRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,6 +119,14 @@ void TShapeProfile::SetFlangeEdgeRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetFlangeSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeSlope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void TShapeProfile::SetFlangeSlope(double val)
     {
     SetPropertyValue(PRF_PROP_TShapeProfile_FlangeSlope, val);
@@ -79,9 +135,25 @@ void TShapeProfile::SetFlangeSlope(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetWebEdgeRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebEdgeRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void TShapeProfile::SetWebEdgeRadius(double val)
     {
     SetPropertyValue(PRF_PROP_TShapeProfile_WebEdgeRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TShapeProfile::GetWebSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**

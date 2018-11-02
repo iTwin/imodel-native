@@ -22,28 +22,34 @@ struct IShapeProfile : CenteredProfile
     friend struct IShapeProfileHandler;
 
 protected:
-    explicit IShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit IShapeProfile(T_Super::CreateParams const& params) : T_Super(params) {}
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(IShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(IShapeProfile)
 
-    PROFILES_EXPORT static IShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static IShapeProfilePtr Create(Dgn::DgnDbR db, Dgn::DgnModelId const& modelId, Dgn::DgnClassId const& classId);
 
 public:
-    double GetWidth() const { return GetPropertyValueDouble(PRF_PROP_IShapeProfile_Width); }
+    PROFILES_EXPORT double GetWidth() const;
     PROFILES_EXPORT void SetWidth(double val);
-    double GetDepth() const { return GetPropertyValueDouble(PRF_PROP_IShapeProfile_Depth); }
+
+    PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);
-    double GetFlangeThickness() const { return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FlangeThickness); }
+
+    PROFILES_EXPORT double GetFlangeThickness() const;
     PROFILES_EXPORT void SetFlangeThickness(double val);
-    double GetWebThickness() const { return GetPropertyValueDouble(PRF_PROP_IShapeProfile_WebThickness); }
+
+    PROFILES_EXPORT double GetWebThickness() const;
     PROFILES_EXPORT void SetWebThickness(double val);
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FilletRadius); }
+
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
-    double GetFlangeEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FlangeEdgeRadius); }
+
+    PROFILES_EXPORT double GetFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetFlangeEdgeRadius(double val);
-    double GetFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FlangeSlope); }
+
+    PROFILES_EXPORT double GetFlangeSlope() const;
     PROFILES_EXPORT void SetFlangeSlope(double val);
 
     }; // IShapeProfile

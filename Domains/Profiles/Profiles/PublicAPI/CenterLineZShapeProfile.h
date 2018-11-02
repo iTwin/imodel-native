@@ -35,13 +35,16 @@ public:
     PROFILES_EXPORT static CenterLineZShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetFlangeWidth() const { return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_FlangeWidth); }
+    PROFILES_EXPORT double GetFlangeWidth() const;
     PROFILES_EXPORT void SetFlangeWidth(double val);
-    double GetDepth() const { return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_Depth); }
+
+    PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_FilletRadius); }
+
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
-    double GetLipLength() const { return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_LipLength); }
+
+    PROFILES_EXPORT double GetLipLength() const;
     PROFILES_EXPORT void SetLipLength(double val);
 
     }; // CenterLineZShapeProfile

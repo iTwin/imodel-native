@@ -31,23 +31,31 @@ public:
     PROFILES_EXPORT static TShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetWidth() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_Width); }
+    PROFILES_EXPORT double GetWidth() const;
     PROFILES_EXPORT void SetWidth(double val);
-    double GetDepth() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_Depth); }
+
+    PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);
-    double GetFlangeThickness() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeThickness); }
+
+    PROFILES_EXPORT double GetFlangeThickness() const;
     PROFILES_EXPORT void SetFlangeThickness(double val);
-    double GetWebThickness() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebThickness); }
+
+    PROFILES_EXPORT double GetWebThickness() const;
     PROFILES_EXPORT void SetWebThickness(double val);
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FilletRadius); }
+
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
-    double GetFlangeEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeEdgeRadius); }
+
+    PROFILES_EXPORT double GetFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetFlangeEdgeRadius(double val);
-    double GetFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeSlope); }
+
+    PROFILES_EXPORT double GetFlangeSlope() const;
     PROFILES_EXPORT void SetFlangeSlope(double val);
-    double GetWebEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebEdgeRadius); }
+
+    PROFILES_EXPORT double GetWebEdgeRadius() const;
     PROFILES_EXPORT void SetWebEdgeRadius(double val);
-    double GetWebSlope() const { return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebSlope); }
+
+    PROFILES_EXPORT double GetWebSlope() const;
     PROFILES_EXPORT void SetWebSlope(double val);
 
     }; // TShapeProfile

@@ -23,9 +23,25 @@ DoubleLProfilePtr DoubleLProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double DoubleLProfile::GetSpacing() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_DoubleLProfile_Spacing);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void DoubleLProfile::SetSpacing(double val)
     {
     SetPropertyValue(PRF_PROP_DoubleLProfile_Spacing, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+int DoubleLProfile::GetEnum() const
+    {
+    return GetPropertyValueInt32(PRF_PROP_DoubleLProfile_Enum);
     }
 
 /*---------------------------------------------------------------------------------**//**

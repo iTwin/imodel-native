@@ -23,9 +23,25 @@ CenterLineZShapeProfilePtr CenterLineZShapeProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineZShapeProfile::GetFlangeWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_FlangeWidth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineZShapeProfile::SetFlangeWidth(double val)
     {
     SetPropertyValue(PRF_PROP_CenterLineZShapeProfile_FlangeWidth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineZShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,9 +55,25 @@ void CenterLineZShapeProfile::SetDepth(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineZShapeProfile::GetFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_FilletRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineZShapeProfile::SetFilletRadius(double val)
     {
     SetPropertyValue(PRF_PROP_CenterLineZShapeProfile_FilletRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineZShapeProfile::GetLipLength() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineZShapeProfile_LipLength);
     }
 
 /*---------------------------------------------------------------------------------**//**

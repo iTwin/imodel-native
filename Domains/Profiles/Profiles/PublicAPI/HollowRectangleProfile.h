@@ -36,7 +36,7 @@ public:
     PROFILES_EXPORT static HollowRectangleProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_FilletRadius); }
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
 
     }; // HollowRectangleProfile

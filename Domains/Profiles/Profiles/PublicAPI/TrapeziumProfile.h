@@ -31,13 +31,16 @@ public:
     PROFILES_EXPORT static TrapeziumProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetTopWidth() const { return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_TopWidth); }
+    PROFILES_EXPORT double GetTopWidth() const;
     PROFILES_EXPORT void SetTopWidth(double val);
-    double GetBottomWidth() const { return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_BottomWidth); }
+
+    PROFILES_EXPORT double GetBottomWidth() const;
     PROFILES_EXPORT void SetBottomWidth(double val);
-    double GetDepth() const { return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_Depth); }
+
+    PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);
-    double GetTopOffset() const { return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_TopOffset); }
+
+    PROFILES_EXPORT double GetTopOffset() const;
     PROFILES_EXPORT void SetTopOffset(double val);
 
     }; // TrapeziumProfile

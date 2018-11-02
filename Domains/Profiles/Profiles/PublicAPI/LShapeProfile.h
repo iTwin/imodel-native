@@ -35,15 +35,19 @@ public:
     PROFILES_EXPORT static LShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetThickness() const { return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Thickness); }
+    PROFILES_EXPORT double GetThickness() const;
     PROFILES_EXPORT void SetThickness(double val);
-    double GetFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_LShapeProfile_FilletRadius); }
+
+    PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
-    double GetEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_LShapeProfile_EdgeRadius); }
+
+    PROFILES_EXPORT double GetEdgeRadius() const;
     PROFILES_EXPORT void SetEdgeRadius(double val);
-    double GetHorizontalLegSlope() const { return GetPropertyValueDouble(PRF_PROP_LShapeProfile_HorizontalLegSlope); }
+
+    PROFILES_EXPORT double GetHorizontalLegSlope() const;
     PROFILES_EXPORT void SetHorizontalLegSlope(double val);
-    double GetVerticalLegSlope() const { return GetPropertyValueDouble(PRF_PROP_LShapeProfile_VerticalLegSlope); }
+
+    PROFILES_EXPORT double GetVerticalLegSlope() const;
     PROFILES_EXPORT void SetVerticalLegSlope(double val);
 
     }; // LShapeProfile

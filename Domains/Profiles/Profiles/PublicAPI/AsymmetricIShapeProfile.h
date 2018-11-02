@@ -31,29 +31,40 @@ public:
     PROFILES_EXPORT static AsymmetricIShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetTopWidth() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopWidth); }
+    PROFILES_EXPORT double GetTopWidth() const;
     PROFILES_EXPORT void SetTopWidth(double val);
-    double GetBottomWidth() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomWidth); }
+
+    PROFILES_EXPORT double GetBottomWidth() const;
     PROFILES_EXPORT void SetBottomWidth(double val);
-    double GetDepth() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_Depth); }
+
+    PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);
-    double GetTopFlangeThickness() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeThickness); }
+
+    PROFILES_EXPORT double GetTopFlangeThickness() const;
     PROFILES_EXPORT void SetTopFlangeThickness(double val);
-    double GetBottomFlangeThickness() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeThickness); }
+
+    PROFILES_EXPORT double GetBottomFlangeThickness() const;
     PROFILES_EXPORT void SetBottomFlangeThickness(double val);
-    double GetWebThickness() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_WebThickness); }
+
+    PROFILES_EXPORT double GetWebThickness() const;
     PROFILES_EXPORT void SetWebThickness(double val);
-    double GetTopFlangeFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeFilletRadius); }
+
+    PROFILES_EXPORT double GetTopFlangeFilletRadius() const;
     PROFILES_EXPORT void SetTopFlangeFilletRadius(double val);
-    double GetTopFlangeEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeEdgeRadius); }
+
+    PROFILES_EXPORT double GetTopFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetTopFlangeEdgeRadius(double val);
-    double GetTopFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeSlope); }
+
+    PROFILES_EXPORT double GetTopFlangeSlope() const;
     PROFILES_EXPORT void SetTopFlangeSlope(double val);
-    double GetBottomFlangeFilletRadius() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeFilletRadius); }
+
+    PROFILES_EXPORT double GetBottomFlangeFilletRadius() const;
     PROFILES_EXPORT void SetBottomFlangeFilletRadius(double val);
-    double GetBottomFlangeEdgeRadius() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeEdgeRadius); }
+
+    PROFILES_EXPORT double GetBottomFlangeEdgeRadius() const;
     PROFILES_EXPORT void SetBottomFlangeEdgeRadius(double val);
-    double GetBottomFlangeSlope() const { return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeSlope); }
+
+    PROFILES_EXPORT double GetBottomFlangeSlope() const;
     PROFILES_EXPORT void SetBottomFlangeSlope(double val);
 
     }; // AsymmetricIShapeProfile

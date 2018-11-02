@@ -28,9 +28,10 @@ public:
     DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(Profile)
 
 public:
-    Utf8String GetName() const { return GetPropertyValueString(PRF_PROP_Profile_Name); }
+    PROFILES_EXPORT Utf8String GetName() const;
     PROFILES_EXPORT void SetName(Utf8String val);
-    //IGeometryPtr GetShape() const { return GetPropertyValue(PRF_PROP_Profile_Shape); }
+
+    PROFILES_EXPORT IGeometryPtr GetShape() const;
     PROFILES_EXPORT void SetShape(IGeometryPtr val);
 
     }; // Profile

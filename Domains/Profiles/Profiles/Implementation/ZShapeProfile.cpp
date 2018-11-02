@@ -23,9 +23,25 @@ ZShapeProfilePtr ZShapeProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetFlangeWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeWidth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void ZShapeProfile::SetFlangeWidth(double val)
     {
     SetPropertyValue(PRF_PROP_ZShapeProfile_FlangeWidth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,9 +55,25 @@ void ZShapeProfile::SetDepth(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetFlangeThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeThickness);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void ZShapeProfile::SetFlangeThickness(double val)
     {
     SetPropertyValue(PRF_PROP_ZShapeProfile_FlangeThickness, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetWebThickness() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_WebThickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,6 +87,14 @@ void ZShapeProfile::SetWebThickness(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FilletRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void ZShapeProfile::SetFilletRadius(double val)
     {
     SetPropertyValue(PRF_PROP_ZShapeProfile_FilletRadius, ECN::ECValue(val));
@@ -63,9 +103,25 @@ void ZShapeProfile::SetFilletRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetFlangeEdgeRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeEdgeRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void ZShapeProfile::SetFlangeEdgeRadius(double val)
     {
     SetPropertyValue(PRF_PROP_ZShapeProfile_FlangeEdgeRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double ZShapeProfile::GetFlangeSlope() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_ZShapeProfile_FlangeSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**

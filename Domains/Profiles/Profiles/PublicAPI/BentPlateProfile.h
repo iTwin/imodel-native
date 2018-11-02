@@ -35,13 +35,16 @@ public:
     PROFILES_EXPORT static BentPlateProfilePtr Create(/*TODO: args*/);
 
 public:
-    double GetWidth() const { return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_Width); }
+    PROFILES_EXPORT double GetWidth() const;
     PROFILES_EXPORT void SetWidth(double val);
-    double GetBendAngle() const { return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_BendAngle); }
+
+    PROFILES_EXPORT double GetBendAngle() const;
     PROFILES_EXPORT void SetBendAngle(double val);
-    double GetBendRadius() const { return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_BendRadius); }
+
+    PROFILES_EXPORT double GetBendRadius() const;
     PROFILES_EXPORT void SetBendRadius(double val);
-    double GetBendOffset() const { return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_BendOffset); }
+
+    PROFILES_EXPORT double GetBendOffset() const;
     PROFILES_EXPORT void SetBendOffset(double val);
 
     }; // BentPlateProfile

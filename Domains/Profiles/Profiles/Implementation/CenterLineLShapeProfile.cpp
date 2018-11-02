@@ -23,9 +23,25 @@ CenterLineLShapeProfilePtr CenterLineLShapeProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineLShapeProfile::GetFilletRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_FilletRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void CenterLineLShapeProfile::SetFilletRadius(double val)
     {
     SetPropertyValue(PRF_PROP_CenterLineLShapeProfile_FilletRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineLShapeProfile::GetLipLength() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_LipLength);
     }
 
 /*---------------------------------------------------------------------------------**//**

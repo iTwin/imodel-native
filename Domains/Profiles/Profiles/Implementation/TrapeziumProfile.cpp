@@ -23,9 +23,25 @@ TrapeziumProfilePtr TrapeziumProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double TrapeziumProfile::GetTopWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_TopWidth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void TrapeziumProfile::SetTopWidth(double val)
     {
     SetPropertyValue(PRF_PROP_TrapeziumProfile_TopWidth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TrapeziumProfile::GetBottomWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_BottomWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,9 +55,25 @@ void TrapeziumProfile::SetBottomWidth(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double TrapeziumProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void TrapeziumProfile::SetDepth(double val)
     {
     SetPropertyValue(PRF_PROP_TrapeziumProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double TrapeziumProfile::GetTopOffset() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_TopOffset);
     }
 
 /*---------------------------------------------------------------------------------**//**

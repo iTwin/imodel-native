@@ -31,15 +31,19 @@ public:
     PROFILES_EXPORT static DerivedProfilePtr Create(/*TODO: args*/);
 
 public:
-    bool GetMirrorProfileAboutYAxis() const { return GetPropertyValueBoolean(PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis); }
+    PROFILES_EXPORT bool GetMirrorProfileAboutYAxis() const;
     PROFILES_EXPORT void SetMirrorProfileAboutYAxis(bool val);
-    DPoint2d GetOffset() const { return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_Offset); }
+
+    PROFILES_EXPORT DPoint2d GetOffset() const;
     PROFILES_EXPORT void SetOffset(DPoint2dCR val);
-    DPoint2d GetRotation() const { return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_Rotation); }
+
+    PROFILES_EXPORT DPoint2d GetRotation() const;
     PROFILES_EXPORT void SetRotation(DPoint2dCR val);
-    DPoint2d GetScale() const { return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_Scale); }
+
+    PROFILES_EXPORT DPoint2d GetScale() const;
     PROFILES_EXPORT void SetScale(DPoint2dCR val);
-    DPoint2d GetCardinalPoint() const { return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_CardinalPoint); }
+
+    PROFILES_EXPORT DPoint2d GetCardinalPoint() const;
     PROFILES_EXPORT void SetCardinalPoint(DPoint2dCR val);
 
     }; // DerivedProfile

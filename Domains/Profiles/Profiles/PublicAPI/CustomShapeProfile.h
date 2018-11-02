@@ -35,9 +35,10 @@ public:
     PROFILES_EXPORT static CustomShapeProfilePtr Create(/*TODO: args*/);
 
 public:
-    //IGeometryPtr GetOuterCurve() const { return GetPropertyValue(PRF_PROP_CustomShapeProfile_OuterCurve); }
+    PROFILES_EXPORT IGeometryPtr GetOuterCurve() const;
     PROFILES_EXPORT void SetOuterCurve(IGeometryPtr val);
-    //IGeometryPtr GetInnerCurves() const { return GetPropertyValue(PRF_PROP_CustomShapeProfile_InnerCurves); }
+
+    PROFILES_EXPORT IGeometryPtr GetInnerCurves() const;
     PROFILES_EXPORT void SetInnerCurves(IGeometryPtr val);
 
     }; // CustomShapeProfile
