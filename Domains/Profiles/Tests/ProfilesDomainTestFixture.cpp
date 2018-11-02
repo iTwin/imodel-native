@@ -78,7 +78,7 @@ ViewManager& ProfilesDomainTestsHost::_SupplyViewManager()
 L10N::SqlangFiles ProfilesDomainTestsHost::_SupplySqlangFiles()
     {
     BentleyApi::BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    sqlangFile.AppendToPath(L"sqlang/ProfilesDomainTests_en-US.sqlang.db3");
+    sqlangFile.AppendToPath(L"sqlang/ProfilesTests_en-US.sqlang.db3");
     BeAssert(sqlangFile.DoesPathExist());
 
     return L10N::SqlangFiles(sqlangFile);
