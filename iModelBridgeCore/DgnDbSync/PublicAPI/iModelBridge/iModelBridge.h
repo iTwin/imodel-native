@@ -878,7 +878,7 @@ public:
     //! @param db The DgnDb that is being updated.
     //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
     //! @param maxRowsChangedPerTxn The maximum number of rows (not bytes) that should be in a single transaction.
-    IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment = nullptr, int maxRowsChangedPerTxn = 1000);
+    IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment = nullptr, int maxRowsChangedPerTxn = 100000);
 
     //! Call this function periodically to save changes locally. This creates a local savepoint, and it helps to conserves memory.
     //! A bridge should call SaveChanges at major points in the conversion process, such as after processing all changes

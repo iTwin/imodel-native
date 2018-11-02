@@ -1225,7 +1225,7 @@ struct LoggingContext //This class allows to pass in a logging sequence id to re
     public:
     LoggingContext(iModelBridgeFwk::JobDefArgs const& jobDef, Utf8StringCR projectId, Utf8StringCR iModelId, NativeLogging::Provider::Log4cxxProvider* provider)
         :m_jobRunCorrelationId(jobDef.m_jobRunCorrelationId.c_str(), true), m_provider(provider), m_connectProjectId(projectId.c_str(), true), m_iModelId(iModelId.c_str(), true),
-        m_jobRequestId(jobDef.m_jobRunCorrelationId.c_str(), true), m_bridgeName(jobDef.m_bridgeRegSubKey)
+        m_jobRequestId(jobDef.m_jobRequestId.c_str(), true), m_bridgeName(jobDef.m_bridgeRegSubKey)
         {
         if (NULL == m_provider)
             return;
@@ -1645,7 +1645,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //  Let the bridge generate schema changes
         GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-
+        m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
         int bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
         if (BSISUCCESS != bridgeSchemaChangeStatus)
             {
