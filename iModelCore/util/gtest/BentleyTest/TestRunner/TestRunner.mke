@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
-SrcGtest                = $(SrcRoot)util/gtest/
+SrcGtest                = $(SrcRoot)imodel02/iModelCore/util/gtest/
 BuildContext            = $(OutputRootDir)BuildContexts/gtest/
 
 #----------------------------------------------------------------------------------------

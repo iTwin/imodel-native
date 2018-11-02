@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
-srcGeomLibs = $(SrcRoot)GeomLibs/
+srcGeomLibs = $(SrcRoot)imodel02/iModelCore/GeomLibs/
 %include $(srcGeomLibs)common/inc/geomlibsdev.mki
 
 %include $(_MakefilePath)geomlibsTest.mki
@@ -31,7 +31,7 @@ o = $(PartBuildDir)
 always:
     !~@mkdir $(o)
 
-$(o)gtestmain.obj : $(SrcRoot)GeomLibs/geom/test/gtestmain.cpp
+$(o)gtestmain.obj : $(SrcRoot)imodel02/iModelCore/GeomLibs/geom/test/gtestmain.cpp
 
 #----------------------------------------------------------------------------------------
 #   Link the executable

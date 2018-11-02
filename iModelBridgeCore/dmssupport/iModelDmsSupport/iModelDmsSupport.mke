@@ -19,7 +19,7 @@ nameToDefine = UNICODE
 nameToDefine = _UNICODE
 %include cdefapnd.mki
 
-dmsAPISrc     = $(SrcRoot)DmsSupport/PublicAPI/iModelDmsSupport/
+dmsAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/dmssupport/PublicAPI/iModelDmsSupport/
 
 
 dirToSearch = $(BuildContext)PublicAPI\ProjectWise_InternalSDK\Include

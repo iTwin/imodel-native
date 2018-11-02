@@ -6,9 +6,9 @@
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
-%include $(SrcRoot)Units/mki/Units.mki
+%include $(SrcRoot)imodel02/iModelCore/Units/mki/Units.mki
 
 # Wire in my own public header files.
 always:
    ~linkdir "$(BuildContextPublicApiDir)Units=$(unitsPublicAPISrc)"
-   ~linkdir "$(BuildContextPublicApiDir)Formatting=$(SrcRoot)Units/PublicAPI/Formatting"
+   ~linkdir "$(BuildContextPublicApiDir)Formatting=$(SrcRoot)imodel02/iModelCore/Units/PublicAPI/Formatting"

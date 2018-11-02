@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
-SrcBentley      = $(SrcRoot)Bentley/
+SrcBentley      = $(SrcRoot)imodel02/iModelCore/Bentley/
 BuildContext    = $(OutputRootDir)BuildContexts/Bentley/
 TestDir         = $(BuildContext)SubParts/UnitTests/source/
 

@@ -14,21 +14,21 @@
 
   <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BMakeOptions="-dGTEST_PRODUCT=ScalableMesh-Gtest -dGTEST_NAME=ScalableMeshTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ScalableMesh -dBEGTEST_BREAK_ON_FAILURE"  OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ScalableMesh-Gtest"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
   </Part>
 
   <Product Name="ScalableMesh-Gtest" >
         <SubPart PartName="Gtest"/>
-        <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh"/>
+        <SubPart PartName="ScalableMesh" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
         <SubPart PartName="ScalableMesh-Data" PartFile="ScalableMesh-Data" Repository="ScalableMesh-Data"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Directories DirectoryListName="ScalableMeshUnitTestsDir"/>
   </Product>
 
   <!-- Define a gtest program to run the tests -->
   <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ScalableMeshTest -dTEST_COLLECTION_PRODUCT=ScalableMesh-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
     <SubProduct ProductName="ScalableMesh-Tests"/>
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     <Bindings>
       <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ScalableMeshTest/Assemblies/*</Files>
       <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ScalableMeshTest/Assets" />
@@ -36,16 +36,16 @@
   </Part>
 
   <Product Name="ScalableMesh-Tests">
-    <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+    <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
     <SubPart PartName="ScalableMeshUnitTests"/>
     <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-    <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     <Directories DirectoryListName="ScalableMeshUnitTestsDir"/>
   </Product>
 
   <Part Name="ScalableMeshUnitTests" BentleyBuildMakeFile="Tests/GTests/BuildTests.mke">
     <SubPart PartName="PrewireForUnitTests"/>
-    <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh"/>
+    <SubPart PartName="ScalableMesh" PartFile="iModelBridgeCore/ScalableMesh/ScalableMesh" Repository="imodel02"/>
     <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay"/>
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ScalableMesh" SourceName="Delivery/UnitTests/Objects/ScalableMesh"/>

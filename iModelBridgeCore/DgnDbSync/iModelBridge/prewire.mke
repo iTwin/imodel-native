@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-baseDir         = $(SrcRoot)DgnDbSync/
+baseDir         = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
 
 # Wire in my own public header files.
 always:

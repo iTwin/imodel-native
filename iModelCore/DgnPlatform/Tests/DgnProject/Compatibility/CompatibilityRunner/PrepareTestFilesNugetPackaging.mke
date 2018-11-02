@@ -6,7 +6,7 @@
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+%include $(SrcRoot)imodel02/iModelCore/DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 # Symlink the test files to be packaged to the build context, where
 # the respective part will pick up for packaging

@@ -8,7 +8,7 @@
 
 %ifdef BmakeGeomlibs
 always:
-	bmake $(SrcRoot)geomlibs/geom/build/BentleyGeom/BentleyGeom.mke
+	bmake $(SrcRoot)imodel02/iModelCore/GeomLibs/geom/build/BentleyGeom/BentleyGeom.mke
 
 %endif
 
@@ -31,7 +31,7 @@ libsUsed = $(geomExportLib) $(BuildContext)SubParts/Libs/Bentley.lib
 %endif
 
 appName             = GeomLibsTest
-PUBLIC_API_HEADERS              = $(SrcRoot)geomlibs/PublicAPI/
+PUBLIC_API_HEADERS              = $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/
 HEADER_ROOTS = $(PUBLIC_API_HEADERS)
 
 

@@ -12,7 +12,7 @@ appName     = S3MXECPlugin
 appName     = S3MXECPluginC
 %endif
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------

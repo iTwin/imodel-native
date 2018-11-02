@@ -8,7 +8,7 @@
 
 # %include mdl.mki - the include of BuildUnitTests.mke below does this, and would otherwise emit a warnings.
 
-wsClientUnitTestsDir = $(SrcRoot)WSClient/Tests/UnitTests/Published/
+wsClientUnitTestsDir = $(SrcRoot)imodel02/iModelBridgeCore/WSClient/Tests/UnitTests/Published/
 
 #---------------------------------------------------------------------------------------+
 #   Compile unit tests

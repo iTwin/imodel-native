@@ -11,7 +11,7 @@
 
 __LoggingSdkCommon_mki__  = 1
 
-SrcLoggingSDK           = $(SrcRoot)LoggingSDK/
+SrcLoggingSDK           = $(SrcRoot)imodel02/iModelCore/LoggingSDK/
 OutLoggingSdk           = $(OutBuildDir)LoggingSdk/
 
 PRODUCT_NAME            = Bentley Logging

@@ -11,7 +11,7 @@ DgnPlatformObj                  = $(OutDgnPlatformBuild)DgnPlatform/
 MultiCompileIntermediatePdbFile = $(DgnPlatformObj)$(CCompPDBName).pdb
 IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 
-SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+SrcDgnPlatform                  = $(SrcRoot)imodel02/iModelCore/DgnPlatform/
 PrivateApiSrc                   = $(SrcDgnPlatform)PrivateApi/
 
 #----------------------------------------------------------------------

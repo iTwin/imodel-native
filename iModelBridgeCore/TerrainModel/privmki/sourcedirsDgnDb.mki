@@ -15,7 +15,7 @@ __SourceDirs_MKI__=1
 #----------------------------------------------------------
 #   Top level directories
 #----------------------------------------------------------
-SrcTerrainModel               =       $(SrcRoot)TerrainModel/
+SrcTerrainModel               =       $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/
 TerrainModelCoreDir           =       $(SrcTerrainModel)Core/
 TerrainModelFormatsDir        =       $(SrcTerrainModel)Formats/
 TerrainModelDrainageDir       =       $(SrcTerrainModel)Drainage/

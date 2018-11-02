@@ -6,7 +6,7 @@
 # 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 baseDir          = $(_MakeFilePath)
-PolicyFile       = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
+PolicyFile       = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
 SolutionPolicyMki=$(baseDir)handlerNET.mki
 
 %include  mdl.mki

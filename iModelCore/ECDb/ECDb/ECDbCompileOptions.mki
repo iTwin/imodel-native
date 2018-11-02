@@ -8,7 +8,7 @@
 appName                     = BeSQLiteEC
 CCompPDBName                = $(appName)
 
-publicApiDir                = $(SrcRoot)ECDb/PublicAPI/ECDb/
+publicApiDir                = $(SrcRoot)imodel02/iModelCore/ECDb/PublicAPI/ECDb/
 buildDir                    = $(OutputRootDir)build/
 
 BeSQLiteLib                 = $(libprefix)BeSQLite$(libext)

@@ -7,9 +7,9 @@
     <!-- ........................................................................................................................................ -->
 
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="M02">
-        <SubPart PartName="iModelDmsSupport" Repository="DmsSupport" PartFile="iModelDmsSupport"/>
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
-        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
+        <SubPart PartName="iModelDmsSupport" Repository="imodel02" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
+        <SubPart PartName="WebServicesClient" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02" />
         <SubPart PartName="PublicAPI" />
       
       <Bindings>
@@ -37,7 +37,7 @@
     </Part>
 
     <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="iModelBridge/BuildDoc.mke" >
-        <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="BentleyDocConfig" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
         <SubPart PartName="iModelBridgeLibrary" />
         <Bindings>
             <Directory SourceName="Delivery/docs" ProductDirectoryName="iModelBridgeDoc" />
@@ -85,11 +85,11 @@
     </Part>
 
     <Part Name="Platform-xliffs">
-      <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+      <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform"/>
       <!-- DgnPlatformDLL is responsible for creating DgnPlatform xliffs -->
-      <SubPart PartName="WSClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
-      <SubPart PartName="iModelHubClient-Xliffs" PartFile="WSClient" Repository="WSClient"/>
-      <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
+      <SubPart PartName="WSClient-Xliffs" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02"/>
+      <SubPart PartName="iModelHubClient-Xliffs" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02"/>
+      <SubPart PartName="BeHttp-Xliffs" PartFile="iModelCore/BeHttp/BeHttp" Repository="imodel02"/>
     </Part>
 
     <Part Name="iModelBridgeFwk-Xliffs" BentleyBuildMakeFile="iModelBridge/Fwk/xliffs.mke">
@@ -111,11 +111,11 @@
 
     <Part Name="iModelBridgeFwkLib" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwkLib.mke" ApiNumber="M02">
       <SubPart PartName="PublicAPI"/>
-      <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
-      <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubPart PartName="iModelHubClient" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02"/>
+      <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubPart PartName="iModelBridgeFwk-en"/>
-      <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
-      <SubPart PartName="iModelDmsSupport" Repository="DmsSupport" PartFile="iModelDmsSupport"/>
+      <SubPart PartName="BeSecurity" PartFile="iModelBridgeCore/BeSecurity/BeSecurity" Repository="imodel02"/>
+      <SubPart PartName="iModelDmsSupport" Repository="imodel02" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport"/>
       <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
       <Bindings>
         <Assemblies>Delivery/$(libprefix)iModelBridgeFwkLib$(ApiNumber)$(shlibext)</Assemblies>
@@ -167,11 +167,11 @@
     </Part>
 
     <Part Name="iModelBridgeAssignExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeAssignMain.mke">
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" />
+        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
         <SubPart PartName="PublicApi"/>
         <SubPart PartName="cxxopts" Repository="bsicommon" PartFile="Libsrc-Nugets"/>
-        <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync"/>
+        <SubPart PartName="VersionedV8_InternalSDK" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies">Delivery/exe/iModelBridgeAssign$(exeext)</Files>
         </Bindings>
@@ -189,7 +189,7 @@
     </Part>
 
     <Part Name="iModelBridgeGetAffinityHostExe" BentleyBuildMakeFile="iModelBridge/Fwk/Registry/iModelBridgeGetAffinityHost.mke">
-        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
         <SubPart PartName="PublicApi"/>
         <Bindings>
             <Files ProductDirectoryName="Assemblies" ProductSubDirectory="iModelBridgeGetAffinityHost">Delivery/exe/iModelBridgeGetAffinityHost$(exeext)</Files>
@@ -239,8 +239,8 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="iModelBridge/Tests/Prewire.mke">
         <SubPart PartName="iModelBridgeLibrary"/>
         <SubPart PartName="iModelBridgeFwkLib"/>
-        <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformUnitTestHelpers" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="DgnDbTestUtils" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="iModelBridge" SubPartDirectory="UnitTests/iModelBridge">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
@@ -260,10 +260,10 @@
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
     <Product Name="iModelBridge-Tests">
-        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
-        <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+        <SubPart PartName="DgnPlatformSqlang" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
         <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
         <Directories DirectoryListName="iModelBridge-TestsDirs"/>
     </Product>
 
@@ -277,7 +277,7 @@
 
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelBridgeTest -dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="iModelBridge-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelBridgeTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelBridgeTest/Assets" />
@@ -286,12 +286,12 @@
 
     <Product Name="iModelBridge-Gtest" >
         <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelBridge-Gtest -dGTEST_NAME=iModelBridgeTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="iModelBridge-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/iModelBridgeTest.log</Files>
         </Bindings>
@@ -302,7 +302,7 @@
     <!-- ********************** -->
     <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="iModelBridge-Tests"/>
-        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
         </Bindings>
@@ -310,7 +310,7 @@
 
     <Product Name="iModelBridge-AndroidJUnit" >
         <SubPart PartName="AndroidJUnit" LibType="Static"/>
-        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=iModelBridge-AndroidJUnit" OnlyPlatforms="Android*">
@@ -325,7 +325,7 @@
     <!-- ********************** -->
     <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelBridge -dTEST_COLLECTION_PRODUCT=iModelBridge-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="iModelBridge-Tests"/>
-        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/iModelBridge/Project" />
         </Bindings>
@@ -333,7 +333,7 @@
 
     <Product Name="iModelBridge-iOSXCTest" >
         <SubPart PartName="iOSXCTest" LibType="Static"/>
-        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=iModelBridge-iOSXCTest" OnlyPlatforms="iOS*">
@@ -355,7 +355,7 @@
         ApiNumber="M02"
         >
         <SubProduct ProductName="iModelBridge-Tests"/>
-        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="UwpTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/iModelBridgeUwpTest"/>
         </Bindings>
@@ -363,7 +363,7 @@
 
     <Product Name="iModelBridge-UwpTest">
         <SubPart PartName="UwpTest"/>
-        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part
@@ -373,7 +373,7 @@
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=iModelBridge-UwpTest"
         OnlyPlatforms="WinRT*"
         >
-        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="UwpTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubProduct ProductName="iModelBridge-UwpTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/iModelBridge-UwpTest.log</Files>

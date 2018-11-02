@@ -17,7 +17,7 @@ ContextDeliveryDir  = $(BuildContext)Delivery/
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
 
-DgnDbSyncAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/
+DgnDbSyncAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/DgnDbSync/
 
 DgnV8APISrc         = $(DgnDbSyncAPISrc)DgnV8/
 

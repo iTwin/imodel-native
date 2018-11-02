@@ -6,7 +6,7 @@
 #
 #----------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/ScalableTerrainModel/mki/AssertScalableTerrainModelPolicy.mki
+PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/ScalableTerrainModel/mki/AssertScalableTerrainModelPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableTerrainModel.mki
 
 %include  mdl.mki

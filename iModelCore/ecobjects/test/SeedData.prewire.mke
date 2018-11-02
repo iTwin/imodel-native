@@ -6,10 +6,10 @@
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
-%include $(SrcRoot)ecobjects/mki/ECObjects.mki
+%include $(SrcRoot)imodel02/iModelCore/ecobjects/mki/ECObjects.mki
 
 dataDir         = $(OutECObjects)tests/
-seedDataSource  = $(SrcRoot)ecobjects/test/SeedData/
+seedDataSource  = $(SrcRoot)imodel02/iModelCore/ecobjects/test/SeedData/
 
 # Wire in seed data
 always:

@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 
 %include  mdl.mki
-%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/TerrainModelCommon.mki
 
 #----------------------------------------------------------------------
 #   Macros

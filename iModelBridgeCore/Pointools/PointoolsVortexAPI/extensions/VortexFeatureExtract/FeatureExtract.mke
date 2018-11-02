@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 
 
-%include $(SrcRoot)Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
 %include mdl.mki
 
 # TARGET_PROCESSOR_ARCHITECTURE is not defined before including mdl.mki
@@ -21,7 +21,7 @@
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki
 #----------------------------------------------------------
-CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
+CompileOptionsMki               = $(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/mki/FeatureExtractPolicy.mki
 %include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------
@@ -39,9 +39,9 @@ always:
 VendorAPIDir    = $(BuildContext)VendorAPI/PointoolsVortexAPI_FeatureExtract_DLL
 
 always:
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\GeomTypes.h=${SrcRoot}\Pointools\PointoolsVortexAPI\extensions\VortexFeatureExtract\GeomTypes.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtract.h=${SrcRoot}\Pointools\PointoolsVortexAPI\extensions\VortexFeatureExtract\VortexFeatureExtract.h"
-    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtractAPI.h=${SrcRoot}\Pointools\PointoolsVortexAPI\extensions\VortexFeatureExtract\VortexFeatureExtractAPI.h"
+    @CreateSymLinks.py   -f"$(VendorAPIDir)\GeomTypes.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/GeomTypes.h"
+    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtract.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/VortexFeatureExtract.h"
+    @CreateSymLinks.py   -f"$(VendorAPIDir)\VortexFeatureExtractAPI.h=${SrcRoot}/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/VortexFeatureExtractAPI.h"
 
 #----------------------------------------------------------------------
 #       Build source files

@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)ecobjects/mki/ECObjects.mki
+%include $(SrcRoot)imodel02/iModelCore/ecobjects/mki/ECObjects.mki
 
 NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
 NUGET_BASE_PATH=$(OutputRootDir)\Product\ECObjects

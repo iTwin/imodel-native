@@ -9,8 +9,8 @@
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
-%include $(SrcRoot)ScalableMesh/mki/ScalableMeshCommonDefine.mki
-%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshCommonDefine.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
 
 
 #this means we can use CGAL with the modules that were licensed to us
@@ -74,7 +74,7 @@ CCompOpts + -wd4091
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
 PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
-CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
+CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCreator.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki

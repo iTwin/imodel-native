@@ -13,10 +13,10 @@
 
     <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x86,x64, androidarm7a" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
+        <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
+        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="GeomDlls"    PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
+        <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/> 
         <Bindings>
             <Libs>Delivery/$(libprefix)RealityPlatform$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)RealityPlatform$(ApiNumber)$(shlibext)</Assemblies>
@@ -27,8 +27,8 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
-        <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeHttp"                     PartFile="iModelCore/BeHttp/BeHttp"                    Repository="imodel02"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
         <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"                Repository="bsicommon" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformTools$(stlibext)</Libs>
@@ -40,7 +40,7 @@
     <Part Name="RealityPlatformToolsLight" BentleyBuildMakeFile="RealityPlatformToolsLight\RealityPlatformToolsLight.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
+        <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/> 
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatformToolsLight$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatformToolsLight$(ApiNumber)$(shlibext)</Assemblies>
@@ -49,11 +49,11 @@
     
     <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI"/>
-        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
-        <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
+        <SubPart PartName="ImagePPDll"                 PartFile="iModelBridgeCore/Imagepp/ImagePP"                   Repository="imodel02" />
+        <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="iModelBridgeCore/Pointools/PointoolsVortexAPI/PointoolsVortexAPI"        Repository="imodel02" />
         <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
-        <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeHttp"                     PartFile="iModelCore/BeHttp/BeHttp"                    Repository="imodel02"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"                 Repository="imodel02"/>
         <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"                Repository="bsicommon" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPlatformTools"/>
@@ -68,7 +68,7 @@
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="RealityPlatform" />
         <SubPart PartName="RealityPlatformTools" />
-        <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
+        <SubPart PartName="ImagePPDll"                 PartFile="iModelBridgeCore/Imagepp/ImagePP"                   Repository="imodel02" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)SpatioTemporalSelector$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)SpatioTemporalSelector$(ApiNumber)$(shlibext)</Assemblies>
@@ -158,8 +158,8 @@
 
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <Bindings>
             <PublicAPI Domain="CrawlerLib" />
             <Libs>Delivery/$(stlibprefix)CrawlerLib$(stlibext)</Libs>
@@ -176,7 +176,7 @@
 
     <Part Name="DownloadEngineExample" BentleyBuildMakeFile="RealityPlatformTools\Example\DownloadEngineExample.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -186,7 +186,7 @@
 
     <Part Name="RealityDataServiceExample" BentleyBuildMakeFile="RealityPlatformTools\Example\RealityDataServiceExample.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -196,7 +196,7 @@
 
     <Part Name="RealityDataServiceErrorReportingExample" BentleyBuildMakeFile="RealityPlatformTools\Example\RealityDataServiceErrorReportingExample.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -223,7 +223,7 @@
 
     <Part Name="RealityDataServiceUploader" BentleyBuildMakeFile="RealityPlatformTools\Example\RealityDataServiceUploader.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -233,7 +233,7 @@
     
     <Part Name="RealityDataServiceDownloader" BentleyBuildMakeFile="RealityPlatformTools\Example\RealityDataServiceDownloader.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -243,7 +243,7 @@
 
     <Part Name="RealityDataServiceToolsExample" BentleyBuildMakeFile="RealityPlatformTools\Example\RealityDataServiceToolsExample.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -253,7 +253,7 @@
 
     <Part Name="RealityDataServiceConsole" BentleyBuildMakeFile="RealityAdmin\RealityDataServiceConsole\RealityDataServiceConsole.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
@@ -264,7 +264,7 @@
 
     <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatformTools\Example\WSGServicesExample.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -274,7 +274,7 @@
 
     <Part Name="GeoCoordinationServiceExample" BentleyBuildMakeFile="RealityPlatformTools\Example\GeoCoordinationServiceExample.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="SpatioTemporalSelector"/>
@@ -285,7 +285,7 @@
     
     <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityAdmin\Example\ConversionToolsTester.mke">
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="RealityAdmin"/>
@@ -295,7 +295,7 @@
     </Part>
 
   <Part Name="AustraliaUploader" BentleyBuildMakeFile="RealityAdmin\AustraliaUploader\AustraliaUploader.mke">
-    <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+    <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
     <SubPart PartName="RealityPlatform"/>
     <SubPart PartName="RealityAdmin"/>
     <Bindings>
@@ -304,7 +304,7 @@
   </Part>
     
     <Part Name="DataHandlerTool" BentleyBuildMakeFile="RealityAdmin\Example\DataHandlerTool.mke">
-        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <SubPart PartName="RealityPlatformTools" />
         <SubPart PartName="RealityAdmin"/>
         <Bindings>
@@ -361,8 +361,8 @@
         <SubPart PartName="TranskitTools"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />
+        <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
+        <SubPart PartName="GeomDlls"    PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
         <Bindings>
             <Assemblies>Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
         </Bindings>
@@ -371,7 +371,7 @@
     <Part Name="WMSCapabilitiesNET" BentleyBuildMakeFile="WMSCapabilitiesNET\WMSCapabilitiesNET.mke">
         <SubPart PartName="RealityPlatformTools"/>
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
         <Bindings>
             <Assemblies>Delivery/WMSCapabilitiesNET$(shlibext)</Assemblies>
         </Bindings>
@@ -605,10 +605,10 @@
     </ProductDirectoryList>
     
     <Product Name="RealityModFramework-Tests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
         <Directories DirectoryListName="RealityModFrameworkTestsDir"/>
     </Product>
 
@@ -622,7 +622,7 @@
     <!-- Define a gtest program to run the tests -->
     <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="RealityModFramework-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest"  PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BentleyDesktopClientCCApi"         PartFile="SdkSources"                Repository="bsicommon" />
         <SubPart PartName="RealityFrameworkTestsData"/>
         <Bindings>
@@ -642,13 +642,13 @@
 
     <Product Name="RealityModFramework-Gtest" >
         <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Directories DirectoryListName="RealityModFramework-GtestDir"/>
     </Product>
 
     <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealityModFramework-Gtest -dGTEST_NAME=RealityModFrameworkTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RealityModFramework-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Part>
 
     <!-- This part runs RealityModFrameworkTests on platforms that support it. -->

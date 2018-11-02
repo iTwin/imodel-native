@@ -19,7 +19,7 @@ seedDataSource=$(SrcRoot)GeomLibsTestData/
 $(BuildContext)Delivery/UnitTests/GeomLibsTestData : $(seedDataSource)
     $(LinkFirstDepToFirstTargetAsDirectory)
 %endif
-seedDataSource=$(SrcRoot)GeomLibs/geom/test/data
+seedDataSource=$(SrcRoot)imodel02/iModelCore/GeomLibs/geom/test/data
 
 $(BuildContext)Delivery/UnitTests/GeomLibsTestData : $(seedDataSource)
     $(LinkFirstDepToFirstTargetAsDirectory)

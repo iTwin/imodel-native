@@ -36,16 +36,16 @@
     -->
 
     <Part Name="PushXliffs">
-        <SubPart PartName="L10N-DgnPlatformXliffs-en" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-en" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-en" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-en" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
     </Part>
 
     <Part Name="iModelCoreSqlang-en"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff"
         >
-        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="ECPresentation-Xliffs" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="ECPresentation-Xliffs" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_en.sqlang.db3</Files>
         </Bindings>
@@ -55,8 +55,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_PseudoLocalize=Latin1 -dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_pseudo.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff"
         >
-        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="ECPresentation-Xliffs" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="ECPresentation-Xliffs" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_pseudo.sqlang.db3</Files>
         </Bindings>
@@ -66,8 +66,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_cs.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/cs/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-cs" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-cs" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-cs" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-cs" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_cs.sqlang.db3</Files>
         </Bindings>
@@ -77,8 +77,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_de.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/de/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-de" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-de" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-de" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-de" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_de.sqlang.db3</Files>
         </Bindings>
@@ -88,8 +88,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_es.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/es/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-es" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-es" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-es" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-es" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_es.sqlang.db3</Files>
         </Bindings>
@@ -99,8 +99,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_fi.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/fi/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-fi" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-fi" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-fi" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-fi" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_fi.sqlang.db3</Files>
         </Bindings>
@@ -110,8 +110,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_fr.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/fr/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-fr" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-fr" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-fr" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-fr" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_fr.sqlang.db3</Files>
         </Bindings>
@@ -121,8 +121,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_it.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/it/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-it" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-it" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-it" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-it" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_it.sqlang.db3</Files>
         </Bindings>
@@ -132,8 +132,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_ja.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/ja/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-ja" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-ja" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-ja" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-ja" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_ja.sqlang.db3</Files>
         </Bindings>
@@ -143,8 +143,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_ko.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/ko/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-ko" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-ko" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-ko" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-ko" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_ko.sqlang.db3</Files>
         </Bindings>
@@ -154,8 +154,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_nl.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/nl/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-nl" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-nl" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-nl" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-nl" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_nl.sqlang.db3</Files>
         </Bindings>
@@ -165,8 +165,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_pl.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/pl/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-pl" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-pl" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-pl" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-pl" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_pl.sqlang.db3</Files>
         </Bindings>
@@ -176,8 +176,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_pt.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/pt/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-pt" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-pt" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-pt" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-pt" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_pt.sqlang.db3</Files>
         </Bindings>
@@ -187,8 +187,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_ru.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/ru/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-ru" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-ru" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-ru" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-ru" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_ru.sqlang.db3</Files>
         </Bindings>
@@ -198,8 +198,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_sv.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/sv/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-sv" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-sv" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-sv" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-sv" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_sv.sqlang.db3</Files>
         </Bindings>
@@ -209,8 +209,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_tr.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/tr/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-tr" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-tr" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-tr" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-tr" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_tr.sqlang.db3</Files>
         </Bindings>
@@ -220,8 +220,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_zh-cn.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/zh-cn/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-zh-cn" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-zh-cn" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-zh-cn" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-zh-cn" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_zh-cn.sqlang.db3</Files>
         </Bindings>
@@ -231,8 +231,8 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelCoreL10N/iModelCore_zh-tw.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/l10n/zh-tw/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-zh-tw" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-zh-tw" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-DgnPlatformXliffs-zh-tw" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-zh-tw" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelCore_zh-tw.sqlang.db3</Files>
         </Bindings>

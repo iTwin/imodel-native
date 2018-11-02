@@ -10,7 +10,7 @@
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
-srcGeomLibs=$(SrcRoot)GeomLibs/
+srcGeomLibs=$(SrcRoot)imodel02/iModelCore/GeomLibs/
 %include    $(srcGeomLibs)common/inc/geomlibsdev.mki
 
 %include $(_MakefilePath)protocolBufferTest.mki

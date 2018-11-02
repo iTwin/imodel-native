@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
+%include $(SrcRoot)imodel02/iModelCore/LoggingSDK/mki/LoggingSdkCommon.mki
 
 programName         = BentleyLoggingServer
 

@@ -24,7 +24,7 @@ name            = gtest
 o               = $(OutputRootDir)build/gtest/build/
 nameToDefine    = GTEST_HAS_TR1_TUPLE=1
 %include cdefapnd.mki
-GUnitTestDir    = $(SrcRoot)util/gtest/
+GUnitTestDir    = $(SrcRoot)imodel02/iModelCore/util/gtest/
 
 %if $(BUILD_TOOLSET) == "VC10"
   nameToDefine  = GTEST_USE_OWN_TR1_TUPLE=0

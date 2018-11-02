@@ -32,7 +32,7 @@
     %include mdl.mki
 %endif
 
-DgnDbSyncPubApi     = $(SrcRoot)DgnDbSync/PublicAPI/
+DgnDbSyncPubApi     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/
 DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
 
 %if $(DWGTOOLKIT) == "OpenDwg"

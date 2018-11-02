@@ -20,7 +20,7 @@ o = $(OutputRootDir)Build/BimFromDgnDb/$(appName)/
 always:
     ~mkdir $(o)
 
-PublicApi = $(SrcRoot)DgnDbSync/PublicApi/BimFromDgnDb/
+PublicApi = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicApi/BimFromDgnDb/
 HeaderFiles = $(PublicApi)BimFromDgnDb.h $(PublicApi)DgnDb0601ToJson.h
 
 $(o)DgnDb0601ToJson$(oext): $(baseDir)DgnDb0601ToJson.cpp $(HeaderFiles)

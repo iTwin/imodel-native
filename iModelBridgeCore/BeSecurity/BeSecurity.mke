@@ -5,7 +5,7 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-CompileOptionsMki = $(SrcRoot)BeSecurity/BeSecurityCompileOptions.mki
+CompileOptionsMki = $(SrcRoot)imodel02/iModelBridgeCore/BeSecurity/BeSecurityCompileOptions.mki
 %include $(CompileOptionsMki)
 
 # included by BeHttpCompileOptions.mki? -- %include mdl.mki

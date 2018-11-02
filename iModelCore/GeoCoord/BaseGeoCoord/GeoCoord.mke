@@ -11,7 +11,7 @@ WARNINGS_UP     = 1
 
 appName         = BaseGeoCoord
 baseDir         = $(_MakeFilePath)
-SrcGeoCoord     = $(SrcRoot)GeoCoord/
+SrcGeoCoord     = $(SrcRoot)imodel02/iModelCore/GeoCoord/
 publicAPISrc    = $(SrcGeoCoord)PublicAPI/GeoCoord/
 o               = $(OutBuildDir)$(appname)/
 

@@ -8,7 +8,7 @@
 %include    mdl.mki
 %include    $(srcGeomLibs)common/inc/geomlibsdev.mki
 
-srcGeomLibs             = $(SrcRoot)GeomLibs/
+srcGeomLibs             = $(SrcRoot)imodel02/iModelCore/GeomLibs/
 baseDir                 = $(_MakefilePath)
 srcSerializationTest    = $(_MakefilePath)
 
@@ -69,7 +69,7 @@ GUNITTEST_OBJS      = $(PCHHeaderObject) $(CVTestObjs)
 GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 
-GUnitTestDir = $(SrcRoot)util/gtest/
+GUnitTestDir = $(SrcRoot)imodel02/iModelCore/util/gtest/
 GTEST_MAIN_IS_SUPPLIED = 1
 #--------------------------------------------------------------------------------------
 # Additional code needed to create test

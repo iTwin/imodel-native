@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-conversionDataSource  = $(SrcRoot)Units/tests/ConversionData/
+conversionDataSource  = $(SrcRoot)imodel02/iModelCore/Units/tests/ConversionData/
 
 # Wire in conversion data
 always:

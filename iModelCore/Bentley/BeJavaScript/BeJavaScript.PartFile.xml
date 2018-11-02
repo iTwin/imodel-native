@@ -40,8 +40,8 @@
         <RequiredRepository>Thirdparty-chakracore</RequiredRepository>
         
         <SubPart PartName="BeJavaScriptTools" />
-        <SubPart PartName="BentleyDll"    PartFile="Bentley"          Repository="Bentley" />
-        <SubPart PartName="BeJsonCpp"     PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BentleyDll"    PartFile="iModelCore/Bentley/Bentley"          Repository="imodel02" />
+        <SubPart PartName="BeJsonCpp"     PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"        Repository="imodel02"/>
         <SubPart PartName="BeJavaScriptWindows-Only-SubParts"/>
         <SubPart PartName="BeJavaScriptAndroid-Only-SubParts"/>
         <SubPart PartName="nodejs"        PartFile="nodejs"           Repository="Thirdparty-nodejs" />

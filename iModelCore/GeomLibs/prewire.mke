@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-SrcGeomLibs             = $(SrcRoot)GeomLibs/
+SrcGeomLibs             = $(SrcRoot)imodel02/iModelCore/GeomLibs/
 GeomPublicAPISrc        = $(SrcGeomLibs)PublicAPI/
 
 always:

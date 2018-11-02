@@ -13,7 +13,7 @@
 
 baseDir = $(_MakeFilePath)
 
-iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
 
 dirToSearch  = $(iModelBridgePrivateAPISrc)
 %include cincapnd.mki

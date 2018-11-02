@@ -36,7 +36,7 @@ VendorNoticeName    = realdwg-notice.txt
 
 appName             = $(DWGTOOLKIT)DbExchange
 baseDir             = $(_MakeFilePath)
-pubApiDir           = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/DwgDb/
+pubApiDir           = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/Dwg/DwgDb/
 VendorNoticeDir     = $(baseDir)Notices/
 ContextDeliveryDir  = $(BuildContext)Delivery/$(DeliveryNamespace)/
 

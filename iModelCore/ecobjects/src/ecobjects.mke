@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)ecobjects/mki/ECObjects.mki
+%include $(SrcRoot)imodel02/iModelCore/ecobjects/mki/ECObjects.mki
 
 baseDir             = $(_MakeFilePath)
 programName         = ECObjects
@@ -201,5 +201,5 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 #----------------------------------------------------------------------------------------
 
 always:
-    ~linkdir "$(BuildContext)Dox/Pages/ECObjects=$(SrcRoot)ecobjects/docs/source"
+    ~linkdir "$(BuildContext)Dox/Pages/ECObjects=$(SrcRoot)imodel02/iModelCore/ecobjects/docs/source"
 

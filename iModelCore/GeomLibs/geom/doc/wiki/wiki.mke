@@ -3,25 +3,25 @@
 .h.wiki:
         gema -f $(_MakefilePath)quickDoc.g $< >$@ 
 
-gensrc\RotMatrix.wiki: $(SrcRoot)geomlibs\PublicApi\geom\RotMatrix.h
+gensrc\RotMatrix.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/RotMatrix.h
 
-gensrc\DRange3d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DRange3d.h
+gensrc\DRange3d.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/DRange3d.h
 
-gensrc\DRange2d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DRange2d.h
+gensrc\DRange2d.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/DRange2d.h
 
-gensrc\Transform.wiki: $(SrcRoot)geomlibs\PublicApi\geom\Transform.h
+gensrc\Transform.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/Transform.h
 
-gensrc\DVec3d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DVec3d.h 
+gensrc\DVec3d.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/DVec3d.h 
 
-gensrc\DVec2d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DVec2d.h 
+gensrc\DVec2d.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/DVec2d.h 
 
-gensrc\DPoint2d.wiki: $(SrcRoot)geomlibs\PublicApi\geom\DPoint2d.h 
+gensrc\DPoint2d.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/DPoint2d.h 
 
-gensrc\CurvePrimitive.wiki: $(SrcRoot)geomlibs\PublicApi\geom\CurvePrimitive.h 
+gensrc\CurvePrimitive.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/CurvePrimitive.h 
 
-gensrc\CurveVector.wiki: $(SrcRoot)geomlibs\PublicApi\geom\CurveVector.h 
+gensrc\CurveVector.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/CurveVector.h 
 
-gensrc\MSBsplineCurve.wiki: $(SrcRoot)geomlibs\PublicApi\geom\MSBsplineCurve.h 
+gensrc\MSBsplineCurve.wiki: $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicApi/geom/MSBsplineCurve.h 
 
 always:
 	gema -p "ManagedType=DPoint3d;NativeType=DPoint3d;NativeLink=BentleyGeomDPoint3d" ManagedStub.wiki > gensrc\DPoint3d.mwheader

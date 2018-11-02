@@ -7,8 +7,8 @@
 #--------------------------------------------------------------------------------------*/
 
 %include mdl.mki
-%include $(SrcRoot)TerrainModel/privmki/sourcedirsDgnDb.mki
-%include $(SrcRoot)TerrainModel/privmki/outputdirsDgnDb.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/sourcedirsDgnDb.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/outputdirsDgnDb.mki
 
 always:
     !~@mkdir $(BuildPublicApi)TerrainModel/

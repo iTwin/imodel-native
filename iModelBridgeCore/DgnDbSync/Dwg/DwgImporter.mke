@@ -15,7 +15,7 @@
 
 appName             = DwgImporter
 baseDir             = $(_MakeFilePath)
-DgnDbSyncRoot       = $(SrcRoot)DgnDbSync/
+DgnDbSyncRoot       = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
 DwgPublicApi        = $(DgnDbSyncRoot)PublicAPI/Dwg/
 DwgDbPubApi         = $(DwgPublicApi)DwgDb/
 

@@ -16,10 +16,10 @@ nameToDefine = __IMODEL_BRIDGE_FWK_BUILD__
 always:
     ~mkdir $(o)
 
-iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgeAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
 RegistryDir = $(baseDir)Registry/
 
-iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
 
 dirToSearch  = $(iModelBridgePrivateAPISrc)
 %include cincapnd.mki

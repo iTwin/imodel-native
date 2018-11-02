@@ -9,7 +9,7 @@
 # ------------------------------------
 # Source directories
 # ------------------------------------
-SrcScalableTerrainModel = $(SrcRoot)TerrainModel/ScalableTerrainModel/
+SrcScalableTerrainModel = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/ScalableTerrainModel/
 STMPrivateAPISrc        = $(SrcScalableTerrainModel)PrivateAPI/
 STMPublicAPISrc         = $(SrcScalableTerrainModel)PublicAPI/
 

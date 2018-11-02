@@ -7,13 +7,13 @@
 #----------------------------------------------------------------------------------------
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
+PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 #BUILD_USING_VS2013=1
 OPTIMIZE_FOR_SPEED=1
 
 %include  mdl.mki
-%include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshLibName.mki
 
 
 

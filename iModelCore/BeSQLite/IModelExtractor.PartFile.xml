@@ -12,7 +12,7 @@
     </Product>
     
     <Part Name="IModelExtractorExe" DeferType="BuildSamples" BentleyBuildMakeFile="IModelExtractor/IModelExtractor.mke">
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite"/>
+        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite"/>
         <Bindings>
             <Files ProductDirectoryName="IModelExeDir">Delivery/imodel.exe</Files>
         </Bindings>

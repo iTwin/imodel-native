@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-SrcImagePP      = $(SrcRoot)Imagepp/
+SrcImagePP      = $(SrcRoot)imodel02/iModelBridgeCore/Imagepp/
 %include $(SrcImagepp)mki/imageppdirs.mki
 
 #----------------------------------------------------------------------

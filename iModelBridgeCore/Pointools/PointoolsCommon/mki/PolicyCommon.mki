@@ -22,7 +22,7 @@
 #----------------------------------------------------------------------------------------
 
 PointoolsIO=$(SrcRoot)Pointools/PointoolsIO/
-PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPI=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/
 PointoolsVortexAPIInclude=$(PointoolsVortexAPI)/include/
 PointoolsVortexAPISrc=$(PointoolsVortexAPI)/src/
 

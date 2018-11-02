@@ -15,8 +15,8 @@ o = $(OutputRootDir)Build/$(appName)/
 always:
     ~mkdir $(o)
 
-iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
-iModelBridgePrivateAPISrc = $(SrcRoot)DgnDbSync/PrivateAPI/
+iModelBridgeAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgePrivateAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PrivateAPI/
 dirToSearch  = $(iModelBridgePrivateAPISrc)
 %include cincapnd.mki
 

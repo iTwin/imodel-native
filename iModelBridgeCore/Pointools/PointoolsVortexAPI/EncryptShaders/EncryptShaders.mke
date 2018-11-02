@@ -4,7 +4,7 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------------------------
 
-%include $(SrcRoot)Pointools/PointoolsVortexAPI/mki/EncryptShadersPolicy.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/mki/EncryptShadersPolicy.mki
 %include mdl.mki
 
 #----------------------------------------------------------------------

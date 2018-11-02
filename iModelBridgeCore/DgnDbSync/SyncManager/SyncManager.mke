@@ -12,7 +12,7 @@ baseDir             = $(_MakeFilePath)
 
 ContextDeliveryDir  = $(BuildContext)Delivery/
 
-DgnDbSyncAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/DgnDbSync/
+DgnDbSyncAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/DgnDbSync/
 
 dgndbsyncSyncDir    = $(baseDir)../
 

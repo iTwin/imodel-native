@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
+BentleyTestDir=$(SrcRoot)imodel02/iModelCore/util/gtest/BentleyTest/
 LogDir=$(OutputRootDir)build/BeGTest/run/logs/
 
 always:

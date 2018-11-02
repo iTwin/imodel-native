@@ -12,5 +12,5 @@
 IncludeCompileLinkMki=1
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki=$(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+FoundationPolicyMki=$(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy.mki
 

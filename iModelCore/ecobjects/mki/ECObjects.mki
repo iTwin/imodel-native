@@ -30,7 +30,7 @@ always:
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
-ecobjectsSrc            = $(SrcRoot)ecobjects/
+ecobjectsSrc            = $(SrcRoot)imodel02/iModelCore/ecobjects/
 
 ecPublicAPISrc          = $(ecobjectsSrc)PublicApi/
 ecobjectsPublicAPISrc   = $(ecPublicAPISrc)ECObjects/

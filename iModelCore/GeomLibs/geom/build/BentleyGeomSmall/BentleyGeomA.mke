@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------*/
 %include    mdl.mki
-%include $(SrcRoot)GeomLibs/common/inc/geomlibsdev.mki
+%include $(SrcRoot)imodel02/iModelCore/GeomLibs/common/inc/geomlibsdev.mki
 
 Wp64                = 1
 
@@ -14,7 +14,7 @@ Wp64                = 1
 CompileOptionsMki   = $(_MakeFilePath)BentleyGeom.mki
 %include $(CompileOptionsMki)
 
-srcGeomLibs         = $(SrcRoot)GeomLibs/
+srcGeomLibs         = $(SrcRoot)imodel02/iModelCore/GeomLibs/
 baseGeom_build      = $(geomlibs_build)basegeom/geom_dll/
 o                   = $(PartBuildDir)
 

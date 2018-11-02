@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
-%include $(SrcRoot)GeomLibs/common/inc/geomlibsdev.mki
+%include $(SrcRoot)imodel02/iModelCore/GeomLibs/common/inc/geomlibsdev.mki
 
 # Precompile header options
 CompileOptionsMki   = $(_MakeFilePath)BentleyGeomA.mki

@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-baseDir         = $(SrcRoot)DmsSupport/
+baseDir         = $(SrcRoot)imodel02/iModelBridgeCore/dmssupport/
 
 # Wire in my own public header files.
 always:

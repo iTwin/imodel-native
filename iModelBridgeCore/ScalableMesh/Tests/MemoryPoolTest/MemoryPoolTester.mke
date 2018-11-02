@@ -9,7 +9,7 @@ baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
 #%include $(baseDir)ScalableMeshATPexePolicy.mki
-#%include $(SrcRoot)scalablemesh/ScalableMesh.mki
+#%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/ScalableMesh.mki
 
 consoleAppUnicode = 1
 
@@ -26,7 +26,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 
 
-SrcDir = $(SrcRoot)ScalableMesh/Tests/MemoryPoolTest/
+SrcDir = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/Tests/MemoryPoolTest/
 
 CCompOpts + -DUNICODE
 

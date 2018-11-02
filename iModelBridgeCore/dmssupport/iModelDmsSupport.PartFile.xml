@@ -11,18 +11,18 @@
     </Part>
 
   <Product Name="iModelBridge-IntegrationTests">
-    <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
-    <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
+    <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
+    <SubPart PartName="DgnPlatformSqlang" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
     <SubPart PartName="UnitTests-Integration"/>
-    <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+    <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
   </Product>
     <!-- ********************** -->
     <!-- **** Gtest **** -->
     <!-- ********************** -->
 
-  <Part Name="IntegrationGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelBridgeIntegrationTest -dTEST_COLLECTION_PRODUCT=iModelBridge-IntegrationTests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
+  <Part Name="IntegrationGtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelBridgeIntegrationTest -dTEST_COLLECTION_PRODUCT=iModelBridge-IntegrationTests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
     <SubProduct ProductName="iModelBridge-IntegrationTests"/>
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     <Bindings>
       <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelBridgeIntegrationTest/Assemblies/*</Files>
       <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelBridgeIntegrationTest/Assets" />
@@ -31,13 +31,13 @@
 
   <Product Name="iModelBridge-IntegrationGtest" >
     <SubPart PartName="IntegrationGtest"/>
-    <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
   </Product>
   
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelBridge-Gtest -dGTEST_NAME=iModelBridgeTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}imodel02/iModelCore/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelBridge-Gtest -dGTEST_NAME=iModelBridgeTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="iModelBridge-IntegrationGtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/iModelBridgeTest.log</Files>
         </Bindings>
@@ -72,12 +72,12 @@
 
   <Part Name="iModelDmsSupport" BentleyBuildMakeFile="iModelDmsSupport/iModelDmsSupport.mke" OnlyPlatforms="x64"  ApiNumber="M02">
     <SubPart PartName="ProjectWise_SDK"/>
-    <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync" Repository="DgnDbSync"/>
-    <SubPart PartName="PublicAPI" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+    <SubPart PartName="VersionedV8_InternalSDK" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
+    <SubPart PartName="PublicAPI" PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync" Repository="imodel02"/>
     <SubPart PartName="v8ConfigSupport"/>
     <SubPart PartName="iModelDmsPublicApi"/>
     <SubPart PartName="UstationDummy"/>
-    <SubPart PartName="BentleyDll" Repository="Bentley" PartFile="Bentley"/>
+    <SubPart PartName="BentleyDll" Repository="imodel02" PartFile="iModelCore/Bentley/Bentley"/>
     <Bindings>
       <Assemblies>Delivery/$(shlibprefix)iModelDmsSupport$(ApiNumber)$(shlibext)</Assemblies>
       <Libs Required="false">Delivery/iModelDmsSupport$(libext)</Libs>

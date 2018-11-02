@@ -10,7 +10,7 @@ ENABLE_CPP_CX_EXTENSIONS    = 1
 
 %include mdl.mki
 
-CompileOptionsMki           = $(SrcRoot)WSClient/ClientLibCompileOptions.mki
+CompileOptionsMki           = $(SrcRoot)imodel02/iModelBridgeCore/WSClient/ClientLibCompileOptions.mki
 %include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------

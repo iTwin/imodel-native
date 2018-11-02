@@ -11,5 +11,5 @@
 #--------------------------------------------------------------------------------------*/
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki=$(SrcRoot)TerrainModel/ScalableTerrainModel/mki/ScalableTerrainModelPolicy.mki
+FoundationPolicyMki=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/ScalableTerrainModel/mki/ScalableTerrainModelPolicy.mki
 

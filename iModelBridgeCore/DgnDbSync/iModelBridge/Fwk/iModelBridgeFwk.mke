@@ -15,7 +15,7 @@ o = $(OutputRootDir)Build/$(appName)/
 always:
     ~mkdir $(o)
 
-iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgeAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 DLM_NAME        =% $(appName)

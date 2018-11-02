@@ -9,7 +9,7 @@
 
 appName             = ListProperty
 baseDir             = $(_MakeFilePath)
-DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
+DgnDbSyncRootDir    = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
 DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
 DwgPublicAPI        = $(DgnDbSyncRootDir)PublicAPI/Dwg/
 DwgVendorAPI        = $(BuildContext)VendorAPI/$(DWGTOOLKIT)$(VendorVersion)/

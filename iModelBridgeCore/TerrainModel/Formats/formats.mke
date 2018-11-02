@@ -17,7 +17,7 @@ always:
 
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki
 SolutionPolicyMki=$(baseDir)formats.mki
 
 %include  mdl.mki

@@ -12,7 +12,7 @@
 %include mdl.mki
 
 appName     = FeatureTracking.prewire
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 
 MicrosoftWindowsAzureConfigurationSrc       = $(SrcRoot)nuget/Microsoft.WindowsAzure.ConfigurationManager.3.2.3/lib/net40/

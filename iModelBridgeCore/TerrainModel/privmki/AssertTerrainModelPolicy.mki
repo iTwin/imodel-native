@@ -40,6 +40,6 @@ always:
 %endif
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki=$(SrcRoot)TerrainModel/privmki/TerrainModelPolicy.mki
+FoundationPolicyMki=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/TerrainModelPolicy.mki
 
-MSB-BentleyFoundationProperties = $(SrcRoot)TerrainModel/msbuild/Internal.TerrainModel.properties
+MSB-BentleyFoundationProperties = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/msbuild/Internal.TerrainModel.properties

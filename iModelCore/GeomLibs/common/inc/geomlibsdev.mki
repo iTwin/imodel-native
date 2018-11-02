@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 
 
-GEOMLIBS_ROOT               = $(SrcRoot)GeomLibs/
+GEOMLIBS_ROOT               = $(SrcRoot)imodel02/iModelCore/GeomLibs/
 srcGeomLibs                 = $(GEOMLIBS_ROOT)
 OutGeomLibs                 = $(OutputRootDir)build/geomlibs/
 

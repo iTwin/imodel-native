@@ -16,7 +16,7 @@ nameToDefine = __IMODEL_BRIDGE_BUILD__
 always:
     ~mkdir $(o)
 
-iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+iModelBridgeAPISrc     = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicAPI/iModelBridge/
 
 #--------------------------------------------------------------------------------------
 #   Compile the source

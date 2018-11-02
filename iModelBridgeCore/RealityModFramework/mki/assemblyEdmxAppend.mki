@@ -30,7 +30,7 @@
 # ToDo: we need to write the Python code to extract the 
 #       .csdl, .ssdl and .msl from the edmx.
 %if !defined (EDMGEN)
-    EDMGEN = $(SrcRoot)RealityModFramework/mki/SplitEdmx.py
+    EDMGEN = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/SplitEdmx.py
 %endif
 
 %ifnofile $(o)

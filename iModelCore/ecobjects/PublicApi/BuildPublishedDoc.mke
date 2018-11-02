@@ -11,7 +11,7 @@
     %include $(SharedMki)HtmlHelp.mki
 %endif
 
-%include    $(SrcRoot)ecobjects/mki/ECObjects.mki
+%include    $(SrcRoot)imodel02/iModelCore/ecobjects/mki/ECObjects.mki
 
 OutputName     = ECObjectsAPI
 InputDir       = $(OutECObjects)PublishedAPI/ECObjects/
@@ -45,7 +45,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
         | *  FORCE_CHM is NOT defined - not building .chm file
         | ************************************************
     %endif
-    ~chdir $(SrcRoot)ecobjects/docs
+    ~chdir $(SrcRoot)imodel02/iModelCore/ecobjects/docs
     !$(doxygenCmd) $(DOXYGEN_OUTPUT)doxygen.cfg
     %if defined (FORCE_CHM)
         | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]

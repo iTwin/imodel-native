@@ -8,7 +8,7 @@
 
 %include mdl.mki
 
-beHttpUnitTestsDir = $(SrcRoot)BeHttp/Tests/UnitTests/Published/
+beHttpUnitTestsDir = $(SrcRoot)imodel02/iModelCore/BeHttp/Tests/UnitTests/Published/
 
 #---------------------------------------------------------------------------------------+
 #   Compile unit tests

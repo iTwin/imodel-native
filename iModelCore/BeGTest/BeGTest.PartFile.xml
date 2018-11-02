@@ -88,8 +88,8 @@
     <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->
     <!-- When using gtest, the DetectAndCompileUnitTests.mki will assume that the gtest and gmock include directories have been bound into the buildcontext -->
     <Part Name="BeGtest-Includes" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
-        <SubPart PartName="google_gtest"    PartFile="gtest"        Repository="util-gtest" />
-        <SubPart PartName="google_gmock"    PartFile="gmock"        Repository="util-gmock" />
+        <SubPart PartName="google_gtest"    PartFile="iModelCore/util/gtest/gtest"        Repository="imodel02" />
+        <SubPart PartName="google_gmock"    PartFile="iModelCore/util/gmock/gmock"        Repository="imodel02" />
     </Part>
 
     <!-- *********************************************************************************************** -->
@@ -97,10 +97,10 @@
     <!-- *********************************************************************************************** -->
     <Part Name="Gtest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" ExcludePlatforms="iOS*">
         <SubPart PartName="Base"/>
-        <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
-        <SubPart PartName="google_gmock_lib"    PartFile="gmock"        Repository="util-gmock" />
-        <SubPart PartName="LoggingNative"       PartFile="LoggingSDK"   Repository="loggingsdk" />
-        <SubPart PartName="BeSQLite"            PartFile="BeSQLite"     Repository="BeSQLite" />
+        <SubPart PartName="google_gtest_lib"    PartFile="iModelCore/util/gtest/gtest"        Repository="imodel02" />
+        <SubPart PartName="google_gmock_lib"    PartFile="iModelCore/util/gmock/gmock"        Repository="imodel02" />
+        <SubPart PartName="LoggingNative"       PartFile="iModelCore/LoggingSDK/LoggingSDK"   Repository="imodel02" />
+        <SubPart PartName="BeSQLite"            PartFile="iModelCore/BeSQLite/BeSQLite"     Repository="imodel02" />
         <Bindings>
             <PublicAPI Domain="BeGTest" />
         </Bindings>
@@ -127,7 +127,7 @@
     <!-- *********************************************************************************************** -->
     <Part Name="AndroidJUnitTest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="Android*">
         <SubPart PartName="Base" LibType="Static"/>
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" />
         <SubPart PartName="AndroidNativeCodeTools" PartFile="PublicSDK" Repository="bsicommon"/>
     </Part>
 
@@ -150,7 +150,7 @@
     <!-- *********************************************************************************************** -->
     <Part Name="iOSXCTest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="iOS*">
         <SubPart PartName="Base" LibType="Static"/>
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" />
     </Part>
 
     <!-- *********************************************************************************************** -->
@@ -173,7 +173,7 @@
     <!-- *********************************************************************************************** -->
     <Part Name="UwpTest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="WinRT*">
         <SubPart PartName="Base"/>
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02"/>
     </Part>
 
     <!-- *********************************************************************************************** -->

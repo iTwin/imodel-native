@@ -5,7 +5,7 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+SrcDgnPlatform                  = $(SrcRoot)imodel02/iModelCore/DgnPlatform/
 DgnPlatformPublicAPISrc         = $(SrcDgnPlatform)PublicAPI/
 
 %include mdl.mki

@@ -27,7 +27,7 @@ o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimTeleporter/
+PublicApi = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/PublicApi/BimTeleporter/
 
 HeaderFiles = $(PublicApi)BimTeleporter.h $(PublicApi)BimImporter.h
 

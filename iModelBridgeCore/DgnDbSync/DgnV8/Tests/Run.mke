@@ -18,6 +18,6 @@ always:
         <
     | See $(OutputRootDir)DgnDbSync/gtest.log
     -START \/WAIT $(OutputRootDir)build/DgnDbSync/runtests.bat
-    $(SrcRoot)BeGTest/gtest/CheckResultsForFailures.py $(OutputRootDir)DgnDbSync/gtest.log
+    $(SrcRoot)imodel02/iModelCore/BeGTest/gtest/CheckResultsForFailures.py $(OutputRootDir)DgnDbSync/gtest.log
 
 

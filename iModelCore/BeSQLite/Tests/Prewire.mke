@@ -12,7 +12,7 @@ baseDir = $(_MakeFilePath)
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
-seedDataSource=$(SrcRoot)BeSQLite/Tests/Data/
+seedDataSource=$(SrcRoot)imodel02/iModelCore/BeSQLite/Tests/Data/
 $(BuildContext)Delivery/UnitTests/BeSQLiteTestData : $(seedDataSource)
     $(LinkFirstDepToFirstTargetAsDirectory)
 

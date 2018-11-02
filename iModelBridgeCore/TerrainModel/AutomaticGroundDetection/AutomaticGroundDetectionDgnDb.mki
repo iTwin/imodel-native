@@ -14,8 +14,8 @@
 #MultiCompileIntermediatePdbFile=$(terrainModelCoreObj)$(CCompPDBName).pdb
 #IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
-groundDetectSrcDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/src/
-groundDetectPublicApiDir = $(SrcRoot)TerrainModel/AutomaticGroundDetection/PublicAPI/
+groundDetectSrcDir = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/src/
+groundDetectPublicApiDir = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/PublicAPI/
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.

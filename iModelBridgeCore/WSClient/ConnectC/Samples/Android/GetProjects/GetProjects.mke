@@ -90,12 +90,12 @@ GRADLE_PROPERTIES=buildDirectory=$[@subst \, \/, $(buildOut)] \
 				  AssetsDir=$[@subst \, \/, $(BuildAssetsDir)] 
 
 #Verbose=1
-%include $(SrcRoot)WSClient/mki/Android/gradleBuild.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/WSClient/mki/Android/gradleBuild.mki
 
 #--------------------------------------------------------------------------------------
 #   Link to apk output file.
 #--------------------------------------------------------------------------------------
-%include $(SrcRoot)WSClient/mki/Android/getApkName.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/WSClient/mki/Android/getApkName.mki
 link_apk_to_context:
 	~linkfile $(ContextDeliveryDir)getprojects.apk=$(BuildDir)app/build/outputs/apk/$(TARGET_APK_NAME)
 

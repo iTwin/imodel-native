@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
-%include $(SrcRoot)GeomLibs/common/inc/geomlibsdev.mki
+%include $(SrcRoot)imodel02/iModelCore/GeomLibs/common/inc/geomlibsdev.mki
 
 genDir          = $(OutGeomLibs)PublishedAPI
 

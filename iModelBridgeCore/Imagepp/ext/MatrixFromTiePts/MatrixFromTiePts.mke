@@ -12,7 +12,7 @@
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 
 %include mdl.mki
-%include $(SrcRoot)Imagepp/mki/imageppdirs.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/Imagepp/mki/imageppdirs.mki
 
 appName     = MatrixFromTiePts
 CCompPDBName    = $(appName)

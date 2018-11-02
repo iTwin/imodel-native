@@ -13,10 +13,10 @@
 #----------------------------------------------------------
 # Sourcedirs
 #----------------------------------------------------------
-RealityPlatformPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatform/
-RealityPlatformToolsPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatformTools/
-RealityAdminPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityAdmin/
-SpatioTemporalSelectorPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/SpatioTemporalSelector/
+RealityPlatformPublicAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/PublicAPI/RealityPlatform/
+RealityPlatformToolsPublicAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/PublicAPI/RealityPlatformTools/
+RealityAdminPublicAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/PublicAPI/RealityAdmin/
+SpatioTemporalSelectorPublicAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/PublicAPI/SpatioTemporalSelector/
 
 #----------------------------------------------------------
 # outdirs

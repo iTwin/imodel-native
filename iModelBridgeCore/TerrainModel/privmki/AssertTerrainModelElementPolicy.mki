@@ -11,6 +11,6 @@
 #--------------------------------------------------------------------------------------*/
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki=$(SrcRoot)TerrainModel/privmki/TerrainModelElementPolicy.mki
+FoundationPolicyMki=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/TerrainModelElementPolicy.mki
 
-MSB-BentleyFoundationProperties = $(SrcRoot)TerrainModel/msbuild/Internal.TerrainModel.properties
+MSB-BentleyFoundationProperties = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/msbuild/Internal.TerrainModel.properties

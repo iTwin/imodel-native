@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------
 %include    mdl.mki
-%include    $(SrcRoot)GeomLibs/common/inc/geomlibsdev.mki
+%include    $(SrcRoot)imodel02/iModelCore/GeomLibs/common/inc/geomlibsdev.mki
 %include    $(SharedMki)HtmlHelp.mki
 
 OutputName     = GeomLibsAPI
@@ -41,7 +41,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
         | *  FORCE_CHM is NOT defined - not building .chm file
         | ************************************************
     %endif
-    ~chdir $(SrcRoot)GeomLibs/docs
+    ~chdir $(SrcRoot)imodel02/iModelCore/GeomLibs/docs
     !$(doxygenCmd) $(DOXYGEN_OUTPUT)doxygen.cfg
     %if defined (FORCE_CHM)
         | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]

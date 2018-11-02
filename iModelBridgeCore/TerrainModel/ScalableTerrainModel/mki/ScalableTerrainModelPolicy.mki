@@ -19,7 +19,7 @@ OPTIMIZE_FOR_SPEED=1
 # ------------------------------------
 # Source directories
 # ------------------------------------
-SrcScalableTerrainModel = $(SrcRoot)TerrainModel/ScalableTerrainModel/
+SrcScalableTerrainModel = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/ScalableTerrainModel/
 STMPrivateAPISrc        = $(SrcScalableTerrainModel)PrivateAPI/
 STMPublicAPISrc         = $(SrcScalableTerrainModel)PublicAPI/
 

@@ -14,7 +14,7 @@
 #-----------------------------------------------------------
 # Root DgnPlatform directory
 #-----------------------------------------------------------
-SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
+SrcDgnPlatform                  = $(SrcRoot)imodel02/iModelCore/DgnPlatform/
 
 #------------------------------------------------------
 # Header file locations in source tree

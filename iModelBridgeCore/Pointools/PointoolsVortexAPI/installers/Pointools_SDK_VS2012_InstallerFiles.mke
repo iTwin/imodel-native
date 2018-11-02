@@ -6,7 +6,7 @@
 #
 #--------------------------------------------------------------------------------------*/
 
-PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+PolicyFile=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsCommon/mki/AssertPolicy.mki
 %include mdl.mki
 
 DeliveryDir=$(OutBuildContexts)PointoolsVortexAPI$(VSOutputSubfolder)/Delivery/

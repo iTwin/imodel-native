@@ -9,8 +9,8 @@
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
-%include $(SrcRoot)ScalableMesh/mki/ScalableMeshCommonDefine.mki
-%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshCommonDefine.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -72,7 +72,7 @@ cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-er
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
 PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
-CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
+CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki

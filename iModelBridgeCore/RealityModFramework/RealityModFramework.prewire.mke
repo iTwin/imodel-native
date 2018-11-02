@@ -12,7 +12,7 @@
 %include mdl.mki
 
 appName     = RealityModFramework.prewire
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 # Wire in my own public header files.
 always:

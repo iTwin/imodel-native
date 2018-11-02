@@ -5,7 +5,7 @@
 %include mdl.mki
 
 AppName             = BentleyGeomSerialization
-CompileOptionsMki   = $(SrcRoot)GeomLibs/serialization/mki/GeomLibsSerialization.mki
+CompileOptionsMki   = $(SrcRoot)imodel02/iModelCore/GeomLibs/serialization/mki/GeomLibsSerialization.mki
 
 %include $(CompileOptionsMki)
 
@@ -14,8 +14,8 @@ BuildContext        = $(OutBuildContexts)geomlibs/
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # Convenience variables for our paths
 
-MySrc               = $(SrcRoot)GeomLibs/serialization/src/
-MyPublicApi         = $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/
+MySrc               = $(SrcRoot)imodel02/iModelCore/GeomLibs/serialization/src/
+MyPublicApi         = $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/GeomSerialization/
 
 o                   = $(PartBuildDir)
 ContextDelivery     = $(BuildContext)Delivery/
@@ -60,10 +60,10 @@ nameToDefine = BuildCGJsonValueBuilder
 %include cdefapnd.mki
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 CommonDependencies = \
-    $(SrcRoot)GeomLibs/PublicAPI/Geom/GeomApi.h \
-    $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/GeomLibsFlatBufferApi.h \
-    $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/BeXmlCommonGeometry.h \
-    $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/GeomLibsSerialization.h \
+    $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/Geom/GeomApi.h \
+    $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/GeomSerialization/GeomLibsFlatBufferApi.h \
+    $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/GeomSerialization/BeXmlCommonGeometry.h \
+    $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/GeomSerialization/GeomLibsSerialization.h \
     $(_MakeFilePath)CGNativeFactoryImplementations.h
 
 

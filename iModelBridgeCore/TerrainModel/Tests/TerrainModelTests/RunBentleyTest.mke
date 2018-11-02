@@ -6,7 +6,7 @@
 #
 #----------------------------------------------------------------------------------------
 
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki
 
 %include mdl.mki
 

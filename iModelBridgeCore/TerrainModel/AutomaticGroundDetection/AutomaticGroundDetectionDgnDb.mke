@@ -8,9 +8,9 @@
 baseDir         = $(_MakeFilePath)
 
 %include  mdl.mki
-%include $(SrcRoot)TerrainModel/privmki/sourcedirsdgndb.mki
-%include $(SrcRoot)TerrainModel/privmki/outputdirsdgndb.mki
-%include $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetectionDgnDb.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/sourcedirsdgndb.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/outputdirsdgndb.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/AutomaticGroundDetectionDgnDb.mki
 
 ##  Symlink all src PublicAPI folders into build output PublicAPI folder
 always:
@@ -28,7 +28,7 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)TerrainModel\AutomaticGroundDetection\PublicAPI"
+   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/PublicAPI"
   
 
 CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__
@@ -54,7 +54,7 @@ nameToDefine = BUILDTMFORDGNDB
 PchCompiland = $(groundDetectSrcDir)AutomaticGroundDetection.cpp
 PchOutputDir = $(o)
 PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEY_GROUND_DETECT_BUILD__
-CompileOptionsMki =  $(SrcRoot)TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
+CompileOptionsMki =  $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/AutomaticGroundDetection.mki
 #%include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki

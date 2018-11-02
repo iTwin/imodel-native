@@ -5,12 +5,12 @@
 <!--        <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" /> -->
 
     <Part Name="ElementHandler" BMakeFile="elementhandler\handler\handler.mke">
-        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform"     Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDll" PartFile="iModelCore/DgnPlatform/DgnPlatform"     Repository="imodel02" />
         <SubPart PartName="DgnView"     PartFile="DgnDisplay"      Repository="DgnDisplay" />
-        <SubPart PartName="Core"        PartFile="TerrainModel" />
-        <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord"        Repository="GeoCoord" />
-        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" />
-        <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />
+        <SubPart PartName="Core"        PartFile="iModelBridgeCore/TerrainModel/TerrainModel" />
+        <SubPart PartName="DgnGeoCoord" PartFile="iModelCore/GeoCoord/GeoCoord"        Repository="imodel02" />
+        <SubPart PartName="ScalableTerrainModel" PartFile="iModelBridgeCore/TerrainModel/TerrainModel" />
+        <SubPart PartName="ScalableMesh" PartFile="iModelBridgeCore/ScalableMesh/ScalableMeshCore" Repository="imodel02" />
         <!-- MST TBD - Temp -->
         <SubPart PartName="RasterCore"           PartFile="DgnDisplay"           Repository="DgnDisplay"/>        
         
@@ -29,7 +29,7 @@
 
     <Part Name="ElementHandlerNET" BMakeFile="elementhandler\handlerNET\handlerNET.mke">
         <SubPart PartName="ElementHandler"  />
-        <SubPart PartName="TerrainModel"         PartFile="TerrainModel" />
+        <SubPart PartName="TerrainModel"         PartFile="iModelBridgeCore/TerrainModel/TerrainModel" />
         <SubPart PartName="DgnPlatformNETAssembly"  PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
 
         <Bindings>
@@ -84,7 +84,7 @@
         <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" />
         <SubPart PartName="ElementHandlerApp" />
         <SubPart PartName="ElementTemplate" />
-        <SubPart PartName="TerrainModel" PartFile="TerrainModel"/>
+        <SubPart PartName="TerrainModel" PartFile="iModelBridgeCore/TerrainModel/TerrainModel"/>
         <SubPart PartName="FeatureAspectGenSrc" PartFile="PowerPlatform" Repository="MstnPlatform" />
         <Bindings>
             <Files ProductDirectoryName="TerrainModelElementHandler" FeatureAspect="PP_ID_FeatureAspects_TerrainModel">

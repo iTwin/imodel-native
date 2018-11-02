@@ -10,7 +10,7 @@
 appName = DataHandlerTool
 baseDir = $(_MakeFilePath)
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 
 #----------------------------------------------------------------------

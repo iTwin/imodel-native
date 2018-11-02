@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
 
-SrcDgnPlatform              = $(SrcRoot)DgnPlatform/
+SrcDgnPlatform              = $(SrcRoot)imodel02/iModelCore/DgnPlatform/
 DgnPlatformPublicAPISrc     = $(SrcDgnPlatform)PublicAPI/
 DgnPlatformAPISrc           = $(DgnPlatformPublicAPISrc)DgnPlatform/
 baseDir                     = $(_makeFilePath)

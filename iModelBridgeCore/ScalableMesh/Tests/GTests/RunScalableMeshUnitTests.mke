@@ -6,7 +6,7 @@
 #
 #----------------------------------------------------------------------------------------
 
-PolicyFile      = $(SrcRoot)ScalableMesh/Tests/AssertCompilePublishedScalableMeshUnitTestsPolicy.mki
+PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/Tests/AssertCompilePublishedScalableMeshUnitTestsPolicy.mki
 
 %include mdl.mki
 

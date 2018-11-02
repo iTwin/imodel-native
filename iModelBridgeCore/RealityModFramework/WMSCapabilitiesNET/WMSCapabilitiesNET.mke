@@ -15,7 +15,7 @@ appName     = WMSCapabilitiesNET
 sAppName    = WMSCapabilitiesNET
 baseDir     = $(_MakeFilePath)
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/WMSCapabilitiesNET/
 

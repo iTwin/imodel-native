@@ -29,7 +29,7 @@ always:
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
-unitsSrc                = $(SrcRoot)Units/
+unitsSrc                = $(SrcRoot)imodel02/iModelCore/Units/
 unitsPublicAPISrc       = $(unitsSrc)PublicAPI/Units/
 
 #-----------------------------------------------------------------------

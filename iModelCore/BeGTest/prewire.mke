@@ -15,5 +15,5 @@ always:
     ~linkdir "$(BuildContext)Delivery/BeGTest/gtest=$(srcDir)gtest"
     ~linkdir "$(BuildContext)Delivery/BeGTest/iOS=$(srcDir)iOS"
     ~linkdir "$(BuildContext)Delivery/BeGTest/uwp=$(srcDir)uwp"
-    @CreateSymLinks.py "$(BuildContext)Delivery/BeGTest/IgnoreFilters.py=$(SrcRoot)BeGTest/IgnoreFilters.py"
-    @CreateSymLinks.py "$(BuildContext)Delivery/BeGTest/IgnoreFilters.txt=$(SrcRoot)BeGTest/IgnoreFilters.txt"
+    @CreateSymLinks.py "$(BuildContext)Delivery/BeGTest/IgnoreFilters.py=$(SrcRoot)imodel02/iModelCore/BeGTest/IgnoreFilters.py"
+    @CreateSymLinks.py "$(BuildContext)Delivery/BeGTest/IgnoreFilters.txt=$(SrcRoot)imodel02/iModelCore/BeGTest/IgnoreFilters.txt"

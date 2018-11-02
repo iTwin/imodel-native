@@ -5,9 +5,9 @@
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-SrcTerrainModelTest=$(SrcRoot)TerrainModel/Tests/TerrainModelTests/
-SrcBentleyTest=$(SrcRoot)util/gtest/BentleyTest/
-PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+SrcTerrainModelTest=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/Tests/TerrainModelTests/
+SrcBentleyTest=$(SrcRoot)imodel02/iModelCore/util/gtest/BentleyTest/
+PolicyFile      = $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki
 NO_LEAN_AND_MEAN=1
 
 %include  mdl.mki

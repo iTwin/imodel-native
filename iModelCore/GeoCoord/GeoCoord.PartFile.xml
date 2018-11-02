@@ -11,10 +11,10 @@
     <!-- To Use the GeoCoord part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
     <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
     <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke" ApiNumber="M02">
-        <SubPart PartName="csmapStatic"             PartFile="csmap"                Repository="libsrc-csmap" />
+        <SubPart PartName="csmapStatic"             PartFile="iModelCore/libsrc/csmap/csmap"                Repository="imodel02" />
         <SubPart PartName="GeoCoordHeaderFiles" />
-        <SubPart PartName="BentleyDll"              PartFile="Bentley"              Repository="Bentley" />
-        <SubPart PartName="GeomDlls"                PartFile="geomlibs"             Repository="GeomLibs" />
+        <SubPart PartName="BentleyDll"              PartFile="iModelCore/Bentley/Bentley"              Repository="imodel02" />
+        <SubPart PartName="GeomDlls"                PartFile="iModelCore/GeomLibs/geomlibs"             Repository="imodel02" />
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
             <Libs>Delivery/$(libprefix)BaseGeoCoord$(libext)</Libs>
@@ -38,7 +38,7 @@
     <!-- Geographic Native Parts, plus minimal Geographic Data. Used by viewers that don't want full footprint -->
     <Part Name="GeoCoordMinimal" PrgOutputDir="GeoCoordLib">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="GeoCoordDataMinimal"  PartFile="csmap"          Repository="libsrc-csmap" />
+        <SubPart PartName="GeoCoordDataMinimal"  PartFile="iModelCore/libsrc/csmap/csmap"          Repository="imodel02" />
     </Part>
 
     <!-- Standalone GeoCoord delivery, uses full GeographicData -->
@@ -46,19 +46,19 @@
         <SubPart PartName="GeoCoordMinimal" />
         <SubPart PartName="GeoCoord" />
         <SubPart PartName="GeoCoordManaged" />
-        <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
+        <SubPart PartName="GeoCoordData"            PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02" />
     </Part>
 
     
     <Part Name="GeoCoord-Dev">
-        <SubPart PartName="CsmapCompiler"  PartFile="csmap"          Repository="libsrc-csmap" />
+        <SubPart PartName="CsmapCompiler"  PartFile="iModelCore/libsrc/csmap/csmap"          Repository="imodel02" />
         <SubPart PartName= "GeoCoord-Tested" />
     </Part>
     <!-- ******************************** Unit Tests ************************************** -->
     
     <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="GeoCoord" />
-        <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
+        <SubPart PartName="GeoCoordData"            PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02" />
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
@@ -72,16 +72,16 @@
     </Part>
     
     <Product Name="GeoCoord-Tests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base"/>
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base"/>
         <SubPart PartName="Tests"/>
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
         <Directories DirectoryListName="GeoCoordGTestsDir"/>
     </Product>    
     
     <!-- Define a gtest program to run the tests -->
     <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordTests -dTEST_COLLECTION_PRODUCT=GeoCoord-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
          <SubProduct ProductName="GeoCoord-Tests"/>
-         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+         <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeoCoordTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeoCoordTests/Assets" />
@@ -90,13 +90,13 @@
     
     <Product Name="GeoCoord-Gtest">
         <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Directories DirectoryListName="GeoCoordGTestsDir"/>
     </Product>
     
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeoCoord-GTest -dGTEST_NAME=GeoCoordTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GeoCoord-GTest"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeoCoordTests.log</Files>
         </Bindings>

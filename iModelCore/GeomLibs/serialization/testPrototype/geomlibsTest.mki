@@ -42,7 +42,7 @@ libsUsed = $(geomExportLib) $(BuildContext)SubParts/Libs/Bentley.lib
 %endif
 
 appName             = GeomLibsSerializationTest
-PUBLIC_API_HEADERS              = $(SrcRoot)geomlibs/PublicAPI/
+PUBLIC_API_HEADERS              = $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/
 HEADER_ROOTS = $(PUBLIC_API_HEADERS)
 
 

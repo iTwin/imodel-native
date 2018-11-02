@@ -12,7 +12,7 @@ xxxx
     %return
 %endif
 
-SrcDgnPlatform          = $(SrcRoot)DgnPlatform/
+SrcDgnPlatform          = $(SrcRoot)imodel02/iModelCore/DgnPlatform/
 OutDgnPlatformBuild     = $(OutBuildDir)DgnPlatform/
 
 %if defined (FORCE_CHM)

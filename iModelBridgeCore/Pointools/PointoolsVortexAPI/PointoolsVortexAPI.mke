@@ -18,7 +18,7 @@ BUILD_NO_STACK_CHECK=1
 # Set and then include the CompileOptionsMki file.
 # It is needed and also %included by PreCompileHeader.mki
 #----------------------------------------------------------
-CompileOptionsMki               = $(SrcRoot)Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPIPolicy.mki
+CompileOptionsMki               = $(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPIPolicy.mki
 %include $(CompileOptionsMki)
 
 #--------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ always:
 #------------------------------------------------------
 # Header file locations in source tree
 #------------------------------------------------------
-PointoolsPublicAPISrc       = $(SrcRoot)Pointools/PointoolsVortexAPI/PublicAPI/
+PointoolsPublicAPISrc       = $(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/PublicAPI/
 PointoolsVortexPublicAPISrc = $(PointoolsPublicAPISrc)Vortex/
 
 #----------------------------------------------------------------------

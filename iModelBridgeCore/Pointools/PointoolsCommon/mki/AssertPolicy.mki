@@ -10,8 +10,8 @@
 #   These are required to be set before including mdl.mki.
 #----------------------------------------------------------------------------
 
-PointoolsCommonSrcDir=$(SrcRoot)Pointools/PointoolsCommon/
-PointoolsVortexAPISrcDir=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsCommonSrcDir=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsCommon/
+PointoolsVortexAPISrcDir=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/
 
 SystemPolicyMki=$(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
 FoundationPolicyMki=$(PointoolsCommonSrcDir)mki/PolicyCommon.mki

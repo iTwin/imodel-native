@@ -29,7 +29,7 @@ nameToDefine = __BENTLEYSTM_BUILD__
 # ------------------------------------
 # Source directories
 # ------------------------------------
-SrcScalableMesh     = $(SrcRoot)ScalableMesh/
+SrcScalableMesh     = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/
 STMPrivateAPISrc            = $(SrcScalableMesh)PrivateAPI/
 SCMPublicAPISrc             = $(SrcScalableMesh)PublicAPI/
 

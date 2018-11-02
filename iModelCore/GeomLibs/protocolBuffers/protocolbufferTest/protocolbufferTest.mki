@@ -8,9 +8,9 @@ appName             = protocolBufferTest
 # baseDir is the top of the test tree --- a level above the makefile for this particular test.
 baseDir             = $(_MakefilePath)/../
 
-srcGeomLibs=$(SrcRoot)Geomlibs/
+srcGeomLibs=$(SrcRoot)imodel02/iModelCore/GeomLibs/
 
-PUBLIC_API_HEADERS              = $(SrcRoot)geomlibs/PublicAPI/
+PUBLIC_API_HEADERS              = $(SrcRoot)imodel02/iModelCore/GeomLibs/PublicAPI/
 HEADER_ROOTS = $(PUBLIC_API_HEADERS)
 
 TEST_LOCATION = $(baseDir)
@@ -20,7 +20,7 @@ GOOGLE_PROTOBUF=$(GOOGLE_SRC)/google/protobuf/
 #----------------------------------------------------------------------------------------
 #  Includes
 #----------------------------------------------------------------------------------------
-%include    $(SrcRoot)geomlibs/common/inc/geomlibsdev.mki
+%include    $(SrcRoot)imodel02/iModelCore/GeomLibs/common/inc/geomlibsdev.mki
 %include    mdl.mki
 
 dirToSearch = $(PUBLIC_API_HEADERS)
@@ -35,7 +35,7 @@ dirToSearch = $(_MakefilePath)tests/
 #dirToSearch = $(SrcRoot)libsrc/protobuf/VendorAPI/
 #%include cincapnd.mki
 
-dirToSearch = $(SrcRoot)geomlibs/protocolBuffers/cpp/
+dirToSearch = $(SrcRoot)imodel02/iModelCore/GeomLibs/protocolBuffers/cpp/
 %include cincapnd.mki
 
 #----------------------------------------------------------------------------------------

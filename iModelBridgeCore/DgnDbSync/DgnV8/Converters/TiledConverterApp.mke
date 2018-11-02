@@ -17,7 +17,7 @@ o                   = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-DgnDbSyncSyncDir    = $(SrcRoot)DgnDbSync/
+DgnDbSyncSyncDir    = $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/
 DgnV8APISrc         = $(DgnDbSyncSyncDir)/PublicAPI/DgnDbSync/DgnV8/
 DgnV8Depends        = $(DgnV8APISrc)Converter.h  $(DgnV8APISrc)SyncInfo.h
 

@@ -10,7 +10,7 @@
 appName         = RealityAdmin
 baseDir         = $(_MakeFilePath)
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 PlatformPublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatform/
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityAdmin/

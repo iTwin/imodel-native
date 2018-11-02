@@ -4,9 +4,9 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------------------------
 
-%include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
+%include $(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsCommon/mki/PolicyCommon.mki
 
-baseDir=$(SrcRoot)Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/
+baseDir=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/extensions/VortexFeatureExtract/
 
 appName                         = VortexFeatureExtract
 o                               = $(OutputRootDir)Build/Pointools/PointoolsVortexAPI$(VSOutputSubfolder)VortexFeatureExtract/
@@ -26,7 +26,7 @@ nameToDefine = $(baseDir)
     %include cincapnd.mki
 %endif
 
-PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPI=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/
 dirToSearch=$(PointoolsVortexAPI)include/
 %include cincapnd.mki
 

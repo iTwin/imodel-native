@@ -14,7 +14,7 @@
 
     <Part Name="BentleyApi" >
         <!--This part provides Bentley PublicAPI-->
-        <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="Base" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02" />
     </Part>
 
     <Part Name="LoggingNativeLog4cxx" BentleyBuildMakeFile="src/native/log4cxx/log4cxx.mke" ApiNumber="M02">
@@ -62,7 +62,7 @@
     </Part>
 
     <Part Name="LoggingManagedInterop" BentleyBuildMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="M02" OnlyPlatforms="x64">
-        <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
+        <SubPart PartName="BentleyDll"              PartFile="iModelCore/Bentley/Bentley"    Repository="imodel02" />
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
           <Libs>Delivery\Bentley.Logging.interop$(libext)</Libs>

@@ -10,8 +10,8 @@ BUILD_NO_STACK_CHECK=1
 #HAVE_OPENGL= 1
 #IS_THIRD_PARTY_LIBRARY              = 1
 
-%include $(SrcRoot)/Pointools/PointoolsCommon/mki/PolicyCommon.mki
-%include $(SrcRoot)/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPI_Version.mki
+%include $(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsCommon/mki/PolicyCommon.mki
+%include $(SrcRoot)/imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/mki/PointoolsVortexAPI_Version.mki
 
 appName                         = PointoolsVortexAPI
 o                               = $(OutputRootDir)build/Pointools/$(appName)$(VSOutputSubfolder)/
@@ -19,11 +19,11 @@ CCompPDBName                    = $(appName)
 MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
 IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
 
-PointoolsVortexAPISrcDir=$(SrcRoot)Pointools/PointoolsVortexAPI/
-PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPISrcDir=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/
+PointoolsVortexAPI=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/
 PointoolsVortexAPIInclude = $(PointoolsVortexAPI)include/
 PointoolsVortexAPISrc = $(PointoolsVortexAPI)src/
-PointoolsVortexAPIShaderSrc=$(SrcRoot)Pointools/PointoolsVortexAPI/shaders/
+PointoolsVortexAPIShaderSrc=$(SrcRoot)imodel02/iModelBridgeCore/Pointools/PointoolsVortexAPI/shaders/
 PointoolsVortexAPIShaderSrcEnc=$(o)shaders/
 pointoolsVortexAPIVendorAPI     = $(OutBuildContexts)PointoolsVortexAPI/VendorAPI/
 

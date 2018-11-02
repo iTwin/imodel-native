@@ -15,7 +15,7 @@ baseDir          = $(_MakeFilePath)
 # This format was used instead of $(BaseDir)AssertBentleyGeometryNetPolicy.mki
 # because PreCompileHeader.mki writes the PolicyFile name to the
 # generated MKI file using the syntax PolicyFile=$[PolicyFile]
-PolicyFile= $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+PolicyFile= $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/AssertTerrainModelPolicy.mki
 
 nunitDir=$(BuildContext)SubParts/nunit_2.5.10/
 %include  mdl.mki

@@ -12,9 +12,9 @@
 appName         = CrawlerLib
 baseDir         = $(_MakeFilePath)
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
-CrawlerLibPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/CrawlerLib/
+CrawlerLibPublicAPISrc = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/PublicAPI/CrawlerLib/
 always:
     @CreateSymLinks.py -d"$(BuildContextPublicApiDir)CrawlerLib=$(CrawlerLibPublicAPISrc)"
 

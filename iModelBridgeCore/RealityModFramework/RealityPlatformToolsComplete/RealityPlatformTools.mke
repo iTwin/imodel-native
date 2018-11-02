@@ -8,10 +8,10 @@
 %include mdl.mki
 
 appName         = RealityPlatformTools
-baseDir         = $(SrcRoot)RealityModFramework/RealityPlatformTools/
+baseDir         = $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/RealityPlatformTools/
 childDir        = $(_MakeFilePath)
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatformTools/
 

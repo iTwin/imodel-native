@@ -13,7 +13,7 @@
 
 appName         = RealityCrawler
 
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 # Setup location of source files
     prodSrc = $(_MakeFilePath)

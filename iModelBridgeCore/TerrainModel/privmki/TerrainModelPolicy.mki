@@ -11,7 +11,7 @@
 
 __DTMPolicy_mki__  = 1
 
-SrcTerrainModel=$(SrcRoot)TerrainModel/
+SrcTerrainModel=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/
 
 %include $(SharedMki)bsioutputdirs.mki
 %include DefaultToolSet.mki

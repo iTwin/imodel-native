@@ -13,7 +13,7 @@ IS_THIRD_PARTY_LIBRARY              = 1
 
 
 %include mdl.mki
-%include $(SrcRoot)Imagepp/mki/imageppdirs.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/Imagepp/mki/imageppdirs.mki
 
 jpegSrcDir  = $(_MakeFilePath)
 

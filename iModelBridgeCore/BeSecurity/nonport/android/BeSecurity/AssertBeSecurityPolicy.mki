@@ -11,6 +11,6 @@
 #
 #----------------------------------------------------------------------------
 SystemPolicyMki=$(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
-FoundationPolicyMki=$(SrcRoot)Bentley/BentleyPolicy.mki
-DerivativePolicyMki=$(SrcRoot)Bentley/BentleyPolicy.mki
+FoundationPolicyMki=$(SrcRoot)imodel02/iModelCore/Bentley/BentleyPolicy.mki
+DerivativePolicyMki=$(SrcRoot)imodel02/iModelCore/Bentley/BentleyPolicy.mki
 

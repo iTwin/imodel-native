@@ -15,7 +15,7 @@ appName             = ImagePP
 CCompPDBName        = $(appName)
 DLM_NAME            = $(appName)
 
-SrcImagePP      = $(SrcRoot)Imagepp/
+SrcImagePP      = $(SrcRoot)imodel02/iModelBridgeCore/Imagepp/
 %include $(SrcImagepp)mki/imageppdirs.mki
 
 

@@ -12,7 +12,7 @@
 %include mdl.mki
 
 appName     = S3MXECPlugin.prewire
-%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 
 MicrosoftAzureKeyVaultCoreSrc 		= $(SrcRoot)nuget/Microsoft.Azure.KeyVault.Core.1.0.0/lib/portable-net45+wp8+wpa81+win/

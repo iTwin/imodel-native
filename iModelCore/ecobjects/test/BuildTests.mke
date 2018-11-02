@@ -9,7 +9,7 @@
 NO_DEFAULT_CLANG_WARNINGS   = 1
 
 %include mdl.mki
-%include $(SrcRoot)ecobjects/mki/ECObjects.mki
+%include $(SrcRoot)imodel02/iModelCore/ecobjects/mki/ECObjects.mki
 
 %ifndef TestDir
     %error must define TestDir

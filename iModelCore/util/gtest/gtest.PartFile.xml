@@ -5,8 +5,8 @@
     <!-- Use part TestRunner instead. -->
     <Part Name="TestRunnerBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="" ExcludePlatforms="AndroidARM*,AndroidX86">
         <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
-        <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
-        <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
+        <SubPart PartName="Base"              PartFile="iModelCore/Bentley/Bentley"                              Repository="imodel02" />
+        <SubPart PartName="BentleyDll"        PartFile="iModelCore/Bentley/Bentley"                              Repository="imodel02" />
         <SubPart PartName="bentley_gtest"/>
         <Bindings>
             <Files ProductDirectoryName="TestBin">
@@ -31,11 +31,11 @@
     <Part Name="TestRunnerPagallocBuild" BentleyBuildMakeFile="BentleyTest/TestRunner/testrunner.mke" BMakeOptions="+dTOOLSUBS_AVAILABLE_FROM_GTEST" 
                                          ExcludePlatforms="AndroidARM*,AndroidX86" >
         <SubPart PartName="dbghelp"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"      Repository="bin-dbghelp" />
-        <SubPart PartName="Base"              PartFile="Bentley"                              Repository="Bentley" />
-        <SubPart PartName="BentleyDll"        PartFile="Bentley"                              Repository="Bentley" />
+        <SubPart PartName="Base"              PartFile="iModelCore/Bentley/Bentley"                              Repository="imodel02" />
+        <SubPart PartName="BentleyDll"        PartFile="iModelCore/Bentley/Bentley"                              Repository="imodel02" />
         <SubPart PartName="bentley_gtest"/>
-        <SubPart PartName="PublicAPI"       PartFile="DgnPlatform"                Repository="DgnPlatform" />
-        <SubPart PartName="PublicAPI"       PartFile="GeomLibs"                   Repository="GeomLibs" />
+        <SubPart PartName="PublicAPI"       PartFile="iModelCore/DgnPlatform/DgnPlatform"                Repository="imodel02" />
+        <SubPart PartName="PublicAPI"       PartFile="iModelCore/GeomLibs/GeomLibs"                   Repository="imodel02" />
         <SubPart PartName="RmgrToolsDll"      PartFile="RmgrTools"                  Repository="RmgrTools" />
         <Bindings>
             <Files ProductDirectoryName="TestBin">

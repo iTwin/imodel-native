@@ -6,8 +6,8 @@
 #
 #--------------------------------------------------------------------------------------
 ##  Define source and output directories
-%include $(SrcRoot)TerrainModel/privmki/sourcedirsDgnDb.mki
-%include $(SrcRoot)TerrainModel/privmki/outputdirsDgnDb.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/sourcedirsDgnDb.mki
+%include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/outputdirsDgnDb.mki
 
 BuildContext    = $(OutBuildContexts)TerrainModelDgnDb/
 terrainModelBuildDir_ = $(OutputRootDir)build/TerrainModelDgnDb/

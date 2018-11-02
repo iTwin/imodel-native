@@ -14,7 +14,7 @@
     <!-- Also re-deliver some ECSchemas -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
         <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
-        <SubPart PartName="Core" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="Core" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
@@ -45,28 +45,28 @@
     <!-- NOTE: IModel02 uses "M02" as a library suffix to differentiate from DgnV8, Graphite, and Bim02 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="M02">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp" /><!-- For CesiumTileWriter... -->
-        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/> 
-        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="ECDbLibrary"         PartFile="ECDb"         Repository="ECDb" />
-        <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
-        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
-        <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
+        <SubPart PartName="BeHttp"              PartFile="iModelCore/BeHttp/BeHttp"       Repository="imodel02" /><!-- For CesiumTileWriter... -->
+        <SubPart PartName="folly" PartFile="iModelCore/libsrc/facebook/facebook" Repository="imodel02"/> 
+        <SubPart PartName="BentleyDll"          PartFile="iModelCore/Bentley/Bentley"      Repository="imodel02" />
+        <SubPart PartName="ECDbLibrary"         PartFile="iModelCore/ECDb/ECDb"         Repository="imodel02" />
+        <SubPart PartName="GeomDlls"            PartFile="iModelCore/GeomLibs/geomlibs"     Repository="imodel02" />
+        <SubPart PartName="BeXml" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+        <SubPart PartName="ECObjectsNative"     PartFile="iModelCore/ecobjects/ECObjects"    Repository="imodel02" />
         <SubPart PartName="Freetype2" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeJsonCpp"           PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp"    Repository="imodel02"/>
         <SubPart LibType="Static" PartName="Png" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="BeJpeg" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="BeJpeg" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
         <SubPart PartName="FlatBuffers" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
-        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
+        <SubPart PartName="GeoCoord"            PartFile="iModelCore/GeoCoord/GeoCoord"     Repository="imodel02"/>
         <SubPart PartName="PsolidShim"/>
-        <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
+        <SubPart PartName="PublicApi"           PartFile="iModelCore/libsrc/csmap/csmap"        Repository="imodel02"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
 
       <!--
             Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
             JM: We end up with the full geocoord set on Windows and iOS due to other platform-specific parts including it. These are missing on Android, and it is suspected to cause problems. Based on the description above, I am unifying DgnPlatformDLL to use the full set, so at least we're consistent across platforms.
         -->
-        <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
+        <SubPart PartName="GeoCoordData" PartFile="iModelCore/libsrc/csmap/csmap" Repository="imodel02"/>
 
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
@@ -91,7 +91,7 @@
     </Part>
 
     <!-- Check that code samples in docs/samplecode actually compile -->
-    <Part Name="DgnPlatformDoc-Build-SampleCode" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnPlatform/docs/samplecode">
+    <Part Name="DgnPlatformDoc-Build-SampleCode" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)imodel02/iModelCore/DgnPlatform/docs/samplecode">
         <SubPart PartName="PublishedApi"/>
     </Part>
 
@@ -112,7 +112,7 @@
 
     <!-- Allow dependent tests to #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h> -->
     <Part Name="DgnPlatformUnitTestHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
-        <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL"      PartFile="iModelCore/DgnPlatform/DgnPlatform"  Repository="imodel02" />
         <Bindings>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
@@ -257,14 +257,14 @@
     </Part>
 
     <Product Name="IModelEvolutionGTest">
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BuildIModelEvolutionGTest"/>
     </Product>
    
     <Part Name="BuildIModelEvolutionGTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=IModelEvolutionTests -dTEST_COLLECTION_PRODUCT=IModelEvolutionTests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubProduct ProductName="IModelEvolutionTests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/IModelEvolutionTests/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/IModelEvolutionTests/Assets" />
@@ -273,10 +273,10 @@
 
 
     <Product Name="IModelEvolutionTests">
-        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Base" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BuildIModelEvolutionTestsStatic" />
         <SubPart PartName="BuildIModelEvolutionTestsDynamic" />
-        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <FeatureExclude>GeoCoordAssets</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
     </Product>
 
@@ -299,7 +299,7 @@
 
     <Part Name="PrewireIModelEvolutionTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\prewire.mke">
         <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
-        <SubPart PartName="Core" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="Core" PartFile="BisSchemasIModelCore" Repository="BisSchemas"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/IModelEvolutionTests.*.ecschema.xml
@@ -309,7 +309,7 @@
     </Part>
 
     <NuGetProduct Name="IModelEvolutionTestRunnerNuget" Description="Create nuget that contains the current test runner">
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubPart PartName="BuildIModelEvolutionGTest"/>
     </NuGetProduct>
 
@@ -534,12 +534,12 @@
     </Part>
 
     <Product Name="DgnPlatform-Tests">
-        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <SubPart PartName="DgnPlatformSqlang" />
         <!-- DgnPlatform unit tests use some files that are stored in DgnClientSdkUnitTestData. They do NOT use bims that are published from those files. -->
         <SubPart PartName="RawDgnClientSdkUnitTestData"/>
-      <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+      <Directories DirectoryListName="CollectionProduct" Repository="imodel02"  PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
   <!-- ********************** -->
@@ -547,7 +547,7 @@
   <!-- ********************** -->
   <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnPlatformTest/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnPlatformTest/Assets" />
@@ -556,12 +556,12 @@
 
     <Product Name="DgnPlatform-Gtest" SaveProduct="true">
         <SubPart PartName="Gtest"/>
-        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="DgnPlatform-Gtest" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/DgnPlatformTest.log</Files>
         </Bindings>
@@ -578,7 +578,7 @@
     <!-- ********************** -->
     <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
-        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
         </Bindings>
@@ -586,7 +586,7 @@
 
     <Product Name="DgnPlatform-AndroidJUnit" >
         <SubPart PartName="AndroidJUnit" LibType="Static"/>
-        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
@@ -601,7 +601,7 @@
     <!-- ********************** -->
     <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
-        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/DgnPlatform/Project" />
         </Bindings>
@@ -609,7 +609,7 @@
 
     <Product Name="DgnPlatform-iOSXCTest" >
         <SubPart PartName="iOSXCTest" LibType="Static"/>
-        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
@@ -631,7 +631,7 @@
         ApiNumber="M02"
         >
         <SubProduct ProductName="DgnPlatform-Tests"/>
-        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="UwpTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
             <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/DgnPlatformUwpTest"/>
         </Bindings>
@@ -639,7 +639,7 @@
 
     <Product Name="DgnPlatform-UwpTest">
         <SubPart PartName="UwpTest"/>
-        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
     <Part
@@ -649,7 +649,7 @@
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=DgnPlatform-UwpTest"
         OnlyPlatforms="WinRT*"
         >
-        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="UwpTest-Tools" Repository="imodel02" PartFile="iModelCore/BeGTest/BeGTest"/>
         <SubProduct ProductName="DgnPlatform-UwpTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/DgnPlatform-UwpTest.log</Files>
@@ -664,20 +664,20 @@
       <RequiredRepository>DgnDbTestingScripts</RequiredRepository><!--To Automate Unit Testing on Linux-->
                 
       <!-- Cannot include because they depend on DgnView
-      <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubProduct ProductName="iModelBridgeFwk" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubProduct ProductName="ToyTileBridge" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       -->
       
-      <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridge" Repository="DgnDbSync"/>
+      <SubProduct ProductName="iModelBridgeAssign" PartFile="iModelBridgeCore/DgnDbSync/iModelBridge" Repository="imodel02"/>
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
-      <SubProduct ProductName="iModelConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
+      <SubProduct ProductName="iModelConsole" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02" />
       
       <!-- This can't be active because Sam doesn't want iModelJsNodeAddon merged between bim0200 and bim0200dev. -->
-      <!-- <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" Repository="iModelJsNodeAddon" /> -->
+      <!-- <SubProduct ProductName="iModelJsNodeAddon" PartFile="iModelJsNodeAddon/iModelJsNodeAddon" Repository="imodel02" /> -->
       
       <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
-      <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+      <SubProduct ProductName="TilePublisher" PartFile="iModelCore/DgnPlatform/DgnPlatform" Repository="imodel02"/>
       -->
       <SubPart PartName="NoView-Gtest-RunAggregator-Linux" LibType="Static" />
       <SubPart PartName="NoView-Gtest-RunAggregator-MacOS" LibType="Static" />
@@ -690,7 +690,7 @@
       -->
 
       <!-- Required by imodeljsnodeaddon, the primary consumer of this part. -->
-      <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation" LibType="Static"/>
+      <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02" LibType="Static"/>
     </Part>
 
     <Part Name="NoView-Gtest-RunAggregator-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" >
@@ -706,26 +706,26 @@
     </Part>
   
     <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs">
-        <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="RunGtest" />
-        <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RunGtest" />
-        <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunGtest" />
-        <SubPart Repository="Units"                 PartFile="Units"            PartName="RunGtest" />
+        <SubPart Repository="imodel02"              PartFile="iModelCore/GeomLibs/geomlibs"         PartName="RunGtest" />
+        <SubPart Repository="imodel02"                  PartFile="iModelCore/ECDb/ECDb"             PartName="RunGtest" />
+        <SubPart Repository="imodel02"             PartFile="iModelCore/ecobjects/ECObjects"        PartName="RunGtest" />
+        <SubPart Repository="imodel02"                 PartFile="iModelCore/Units/Units"            PartName="RunGtest" />
         <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest" /> -->
-        <!-- <SubPart Repository="WSClient"              PartFile="WSClient"         PartName="RunGtest" /> -->
-        <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunGtest" />
+        <!-- <SubPart Repository="imodel02"              PartFile="iModelBridgeCore/WSClient/WSClient"         PartName="RunGtest" /> -->
+        <SubPart Repository="imodel02"           PartFile="iModelCore/DgnPlatform/DgnPlatform"      PartName="RunGtest" />
         <!-- Cannot include because they depend on DgnView
-        <SubPart Repository="DgnDbSync"             PartFile="iModelBridge"     PartName="RunGtest" />
+        <SubPart Repository="imodel02"             PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     PartName="RunGtest" />
         <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest" />
         -->
         <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest" /> -->
-        <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RunGtest" />
-        <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest" />
-        <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest" />
-        <SubPart Repository="DgnDomains-RealityModeling" PartFile="RealityModeling" PartName="RunGtest" />
+        <SubPart Repository="imodel02"              PartFile="iModelCore/BeSQLite/BeSQLite"         PartName="RunGtest" />
+        <SubPart Repository="imodel02"               PartFile="iModelCore/Bentley/Bentley"          PartName="RunGtest" />
+        <SubPart Repository="imodel02"            PartFile="iModelBridgeCore/BeSecurity/BeSecurity"       PartName="RunGtest" />
+        <SubPart Repository="imodel02" PartFile="Domains/RealityModeling/RealityModeling" PartName="RunGtest" />
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
-        <!-- <SubPart Repository="DgnDbSync"             PartFile="DgnDbSync"        PartName="RunDgnV8ConverterTests" /> -->
+        <!-- <SubPart Repository="imodel02"             PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"        PartName="RunDgnV8ConverterTests" /> -->
         <!-- Test that are too time-consuming to run every time:
-        <SubPart Repository="GeoCoord"              PartFile="GeoCoord"         PartName="RunGtest"/>
+        <SubPart Repository="imodel02"              PartFile="iModelCore/GeoCoord/GeoCoord"         PartName="RunGtest"/>
       -->
     </Part>
 

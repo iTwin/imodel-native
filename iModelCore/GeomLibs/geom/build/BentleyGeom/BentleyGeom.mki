@@ -8,7 +8,7 @@
 appName         = BentleyGeom
 CCompPDBName    = $(appName)
 
-srcGeomLibs     =$(SrcRoot)GeomLibs/
+srcGeomLibs     =$(SrcRoot)imodel02/iModelCore/GeomLibs/
 %include $(srcGeomLibs)common/inc/geomlibsdev.mki
 
 nameToDefine    = jmdlgeom_internal
