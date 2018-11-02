@@ -102,3 +102,15 @@ Geometry.ConvexHullManyPoints
     # [2] rand (0x7ffb5ad60210)
     # [1] BaseThreadInitThunk (0x7ffb5e232770)
     # [0] RtlUserThreadStart (0x7ffb5e6b0c10)
+
+CurvePrimitive.ExerciseVirtuals
+
+    # VSTS#41694
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iosarm64, Device: testdevice, Date: 11/02/2018
+    # 2018-11-01 03:35:10.837438+0500 BeTestiOS[4362:1808366] TestRunner: CurvePrimitive.ExerciseVirtuals
+    # Nov  1 03:35:10  Be[4362] <Info>: TestRunner: CurvePrimitive.ExerciseVirtuals
+    # 2018-11-01 03:35:10.837633+0500 BeTestiOS[4362:1808366] TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:182(fail 3.8674388273982658 <= 3.8674388273982654)
+    # Nov  1 03:35:10  Be[4362] <Emergency>: TestRunner: TRUE **!!** false @ /Users/naveed.khan/bsi-src/bim0200dev/src/GeomLibs/geom/test/src/checkers.cpp:182(fail 3.8674388273982658 <= 3.8674388273982654)
+    # 2018-11-01 03:35:10.841372+0500 BeTestiOS[4362:1808366] TestRunner: CurvePrimitive.ExerciseVirtuals FAILED
+    # Nov  1 03:35:10  Be[4362] <Emergency>: TestRunner: CurvePrimitive.ExerciseVirtuals FAILED
+    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/geomlibs/XCodeProject/BeTestiOSTests/UnitTests.mm:383: error: -[GeomLibsCurvePrimitiveTest_CurvePrimitive testExerciseVirtuals] : ((0 == BETEST_TEST_RUNNER_FUNC(CurvePrimitive,ExerciseVirtuals) ()) is true) failed
