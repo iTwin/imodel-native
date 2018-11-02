@@ -21,10 +21,11 @@ protected:
     virtual ~ICenterLineProfile() = default;
 
 public:
-    //IGeometryPtr GetCenterLine() const { return (dynamic_cast<Dgn::DgnElement*> (this))->GetPropertyValue(PRF_PROP_ICenterLineProfile_CenterLine); }
-    //void SetCenterLine(IGeometryPtr val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICenterLineProfile_CenterLine, ECN::ECValue(val)); }
-    double GetWallThickness() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ICenterLineProfile_WallThickness); }
-    void SetWallThickness(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICenterLineProfile_WallThickness, ECN::ECValue(val)); }
+    PROFILES_EXPORT IGeometryPtr GetCenterLine() const;
+    PROFILES_EXPORT void SetCenterLine(IGeometryPtr val);
+
+    PROFILES_EXPORT double GetWallThickness() const;
+    PROFILES_EXPORT void SetWallThickness(double val);
 
     }; // ICenterLineProfile
 
@@ -38,10 +39,11 @@ protected:
     virtual ~ICShapeProfile() = default;
 
 public:
-    double GetWidth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ICShapeProfile_Width); }
-    void SetWidth(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICShapeProfile_Width, ECN::ECValue(val)); }
-    double GetDepth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ICShapeProfile_Depth); }
-    void SetDepth(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICShapeProfile_Depth, ECN::ECValue(val)); }
+    PROFILES_EXPORT double GetWidth() const;
+    PROFILES_EXPORT void SetWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
 
     }; // ICShapeProfile
 
@@ -66,10 +68,11 @@ protected:
     virtual ~IEllipseProfile() = default;
 
 public:
-    double GetXRadius() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_IEllipseProfile_XRadius); }
-    void SetXRadius(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_IEllipseProfile_XRadius, ECN::ECValue(val)); }
-    double GetYRadius() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_IEllipseProfile_YRadius); }
-    void SetYRadius(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_IEllipseProfile_YRadius, ECN::ECValue(val)); }
+    PROFILES_EXPORT double GetXRadius() const;
+    PROFILES_EXPORT void SetXRadius(double val);
+
+    PROFILES_EXPORT double GetYRadius() const;
+    PROFILES_EXPORT void SetYRadius(double val);
 
     }; // IEllipseProfile
 
@@ -83,10 +86,11 @@ protected:
     virtual ~ILShapeProfile() = default;
 
 public:
-    double GetWidth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ILShapeProfile_Width); }
-    void SetWidth(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ILShapeProfile_Width, ECN::ECValue(val)); }
-    double GetDepth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ILShapeProfile_Depth); }
-    void SetDepth(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ILShapeProfile_Depth, ECN::ECValue(val)); }
+    PROFILES_EXPORT double GetWidth() const;
+    PROFILES_EXPORT void SetWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
 
     }; // ILShapeProfile
 
@@ -100,10 +104,11 @@ protected:
     virtual ~IRectangleShapeProfile() = default;
 
 public:
-    double GetWidth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_IRectangleShapeProfile_Width); }
-    void SetWidth(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_IRectangleShapeProfile_Width, ECN::ECValue(val)); }
-    double GetDepth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_IRectangleShapeProfile_Depth); }
-    void SetDepth(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_IRectangleShapeProfile_Depth, ECN::ECValue(val)); }
+    PROFILES_EXPORT double GetWidth() const;
+    PROFILES_EXPORT void SetWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
 
     }; // IRectangleShapeProfile
 
