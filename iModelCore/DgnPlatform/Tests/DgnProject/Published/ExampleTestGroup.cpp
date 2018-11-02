@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/ExampleTestGroup.cpp $
-//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
@@ -56,7 +56,6 @@ void ExampleTestGroup::SetUpTestCase()
     // This custom setup is what makes our group seed different from the root seed file.
     ASSERT_TRUE(DgnDbTestUtils::InsertPhysicalModel(*db, EXAMPLE_MODEL_NAME).IsValid());
 
-    db->SaveSettings();
     db->SaveChanges();
     }
 
