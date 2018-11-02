@@ -9,22 +9,3 @@
 FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
 FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
 FormatParsingSetTest.CompositeFormats_IGNORED
-LocaleTests.BasicTest
-
-    # VSTS#41695
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iosarm64, Device: testdevice, Date: 11/02/2018
-    # 2018-11-01 04:02:08.592486+0500 BeTestiOS[4387:1815523] TestRunner: LocaleTests.BasicTest
-    # Nov  1 04:02:08  Be[4387] <Info>: TestRunner: LocaleTests.BasicTest
-    # 2018-11-01 04:02:08.592819+0500 BeTestiOS[4387:1815523] TestRunner: LocaleTests.BasicTest FAILED
-    # Nov  1 04:02:08  Be[4387] <Emergency>: TestRunner: LocaleTests.BasicTest FAILED
-    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/Units/XCodeProject/BeTestiOSTests/UnitTests.mm:407: error: -[UnitsPublished_LocaleTests testBasicTest] : ((0 == BETEST_TEST_RUNNER_FUNC(LocaleTests,BasicTest) ()) is true) failed
-
-FormattingTestFixture.Simple
-
-    # VSTS#41696
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: iosarm64, Device: testdevice, Date: 11/02/2018
-    # 2018-11-01 04:02:08.576170+0500 BeTestiOS[4387:1815523] TestRunner: FormattingTestFixture.Simple
-    # Nov  1 04:02:08  Be[4387] <Info>: TestRunner: FormattingTestFixture.Simple
-    # 2018-11-01 04:02:08.579389+0500 BeTestiOS[4387:1815523] TestRunner: FormattingTestFixture.Simple FAILED
-    # Nov  1 04:02:08  Be[4387] <Emergency>: TestRunner: FormattingTestFixture.Simple FAILED
-    # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/Units/XCodeProject/BeTestiOSTests/UnitTests.mm:120: error: -[UnitsPublished_FormattingTestFixture testSimple] : ((0 == BETEST_TEST_RUNNER_FUNC(FormattingTestFixture,Simple) ()) is true) failed
