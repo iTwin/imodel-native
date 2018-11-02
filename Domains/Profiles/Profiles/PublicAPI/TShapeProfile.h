@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(TShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(TShapeProfile)
 
-    PROFILES_EXPORT static TShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static TShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetWidth() const;

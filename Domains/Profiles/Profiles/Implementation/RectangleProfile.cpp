@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\RectangleProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(RectangleProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(RectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RectangleProfilePtr RectangleProfile::Create(/*TODO: args*/)
+RectangleProfilePtr RectangleProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new RectangleProfile(params);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

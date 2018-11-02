@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\IShapeProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(IShapeProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(IShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IShapeProfilePtr IShapeProfile::Create(Dgn::DgnDbR db, Dgn::DgnModelId const& modelId, Dgn::DgnClassId const& classId)
+IShapeProfilePtr IShapeProfile::Create(DgnModelCR model)
     {
-    return new IShapeProfile(CreateParams(db, modelId, classId));
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new IShapeProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

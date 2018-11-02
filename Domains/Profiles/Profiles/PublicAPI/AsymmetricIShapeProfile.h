@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(AsymmetricIShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(AsymmetricIShapeProfile)
 
-    PROFILES_EXPORT static AsymmetricIShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static AsymmetricIShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetTopWidth() const;

@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(HollowRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowRectangleProfile)
 
-    PROFILES_EXPORT static HollowRectangleProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static HollowRectangleProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetFilletRadius() const;

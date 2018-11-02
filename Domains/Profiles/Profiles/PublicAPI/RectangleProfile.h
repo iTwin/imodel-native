@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(RectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(RectangleProfile)
 
-    PROFILES_EXPORT static RectangleProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static RectangleProfilePtr Create(Dgn::DgnModelCR model);
 
     }; // RectangleProfile
 

@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(TrapeziumProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(TrapeziumProfile)
 
-    PROFILES_EXPORT static TrapeziumProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static TrapeziumProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetTopWidth() const;

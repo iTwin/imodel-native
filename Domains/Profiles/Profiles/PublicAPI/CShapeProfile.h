@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CShapeProfile)
 
-    PROFILES_EXPORT static CShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static CShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetFlangeThickness() const;

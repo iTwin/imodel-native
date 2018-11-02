@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(LShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(LShapeProfile)
 
-    PROFILES_EXPORT static LShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static LShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetThickness() const;

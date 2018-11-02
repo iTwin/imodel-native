@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(BentPlateProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(BentPlateProfile)
 
-    PROFILES_EXPORT static BentPlateProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static BentPlateProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetWidth() const;

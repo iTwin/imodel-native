@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\CenterLineCShapeProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(CenterLineCShapeProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(CenterLineCShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineCShapeProfilePtr CenterLineCShapeProfile::Create(/*TODO: args*/)
+CenterLineCShapeProfilePtr CenterLineCShapeProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new CenterLineCShapeProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CenterLineCShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CenterLineCShapeProfile)
 
-    PROFILES_EXPORT static CenterLineCShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static CenterLineCShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetFilletRadius() const;

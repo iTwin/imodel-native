@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CapsuleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CapsuleProfile)
 
-    PROFILES_EXPORT static CapsuleProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static CapsuleProfilePtr Create(Dgn::DgnModelCR model);
 
     }; // CapsuleProfile
 

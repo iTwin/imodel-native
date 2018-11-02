@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\LShapeProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(LShapeProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(LShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LShapeProfilePtr LShapeProfile::Create(/*TODO: args*/)
+LShapeProfilePtr LShapeProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new LShapeProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

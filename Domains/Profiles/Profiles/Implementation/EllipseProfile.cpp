@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\EllipseProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(EllipseProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(EllipseProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-EllipseProfilePtr EllipseProfile::Create(/*TODO: args*/)
+EllipseProfilePtr EllipseProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new EllipseProfile(params);
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

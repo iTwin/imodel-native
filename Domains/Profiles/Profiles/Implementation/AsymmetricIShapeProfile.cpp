@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\AsymmetricIShapeProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(AsymmetricIShapeProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(AsymmetricIShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsymmetricIShapeProfilePtr AsymmetricIShapeProfile::Create(/*TODO: args*/)
+AsymmetricIShapeProfilePtr AsymmetricIShapeProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new AsymmetricIShapeProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

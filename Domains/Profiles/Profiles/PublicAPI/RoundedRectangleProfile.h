@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(RoundedRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(RoundedRectangleProfile)
 
-    PROFILES_EXPORT static RoundedRectangleProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static RoundedRectangleProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetRoundingRadius() const;

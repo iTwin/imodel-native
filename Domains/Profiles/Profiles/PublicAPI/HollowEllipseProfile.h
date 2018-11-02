@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(HollowEllipseProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowEllipseProfile)
 
-    PROFILES_EXPORT static HollowEllipseProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static HollowEllipseProfilePtr Create(Dgn::DgnModelCR model);
 
     }; // HollowEllipseProfile
 

@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\ZShapeProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(ZShapeProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(ZShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZShapeProfilePtr ZShapeProfile::Create(/*TODO: args*/)
+ZShapeProfilePtr ZShapeProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new ZShapeProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

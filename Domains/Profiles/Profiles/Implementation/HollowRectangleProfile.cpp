@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\HollowRectangleProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(HollowRectangleProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(HollowRectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowRectangleProfilePtr HollowRectangleProfile::Create(/*TODO: args*/)
+HollowRectangleProfilePtr HollowRectangleProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new HollowRectangleProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\TTShapeProfile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(TTShapeProfileHandler)
@@ -15,9 +16,10 @@ HANDLER_DEFINE_MEMBERS(TTShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TTShapeProfilePtr TTShapeProfile::Create(/*TODO: args*/)
+TTShapeProfilePtr TTShapeProfile::Create(DgnModelCR model)
     {
-    return nullptr; // TODO: Not Implemented
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    return new TTShapeProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
