@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1387,6 +1387,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual bool _HasClip(uint64_t clip) const override;
 
         virtual bool _IsClippingUpToDate() const override;
+
+        virtual uint64_t _LastClippingStateUpdateTimestamp() const override;
 
         virtual bool _IsDataUpToDate() const override;
 

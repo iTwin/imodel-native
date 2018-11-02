@@ -3155,6 +3155,13 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     else return m_meshNode->IsClippingUpToDate();
     }
 
+template <class POINT> uint64_t ScalableMeshNode<POINT>::_LastClippingStateUpdateTimestamp() const
+    {
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
+    if (m_meshNode == nullptr) return 0;
+    return m_meshNode->LastClippingStateUpdateTimestamp();
+    }
+
 template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips(Transform tr) const
     {
        

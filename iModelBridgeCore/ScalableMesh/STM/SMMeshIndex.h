@@ -51,6 +51,8 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 extern ScalableMeshScheduler* s_clipScheduler;
 extern std::mutex s_schedulerLock;
 
+extern bool s_simplifyOverviewClips;
+
 template<> struct PoolItem<DifferenceSet>
     {
     typedef HPMIndirectCountLimitedPoolItem<DifferenceSet> Type;
@@ -284,7 +286,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                RefreshMergedClipsRecursive();
 
     //Checks whether clip should apply to node and update lists accordingly
-    void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
+   void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent,size_t& nOfNodesTouched, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
+   bool                SyncWithClipSets(const bvector<uint64_t>& clipId, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr = Transform::FromIdentity());
+   bool SyncWithClipSets(const bset<uint64_t>& clips, const IScalableMesh* meshP);
+   bool SyncWithClipSets(const bset<uint64_t>& clips, Transform tr = Transform::FromIdentity());
 
     ClipRegistry* GetClipRegistry() const
         {
@@ -293,17 +298,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void  BuildSkirts();
 
-#if 0
-    void CreateSkirtsForMatchingTerrain();
-
-    SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
-
-    void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
-#endif
-
     bool HasClip(uint64_t clipId);
 
     bool IsClippingUpToDate();
+
+    uint64_t LastClippingStateUpdateTimestamp() const;
 
     //If necessary, update clips so as to merge them with other clips on the node.
     void  ComputeMergedClips(Transform tr = Transform::FromIdentity());
@@ -323,6 +322,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     //Completes an async clip operation.
     void DoClip(uint64_t clipId, bool isVisible);
+
+    void CollectClipIds(bset<uint64_t>& clipIds) const;
 
     const DifferenceSet GetClipSet(size_t index) const
         {
@@ -839,6 +840,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
     atomic<size_t> m_nbClips;
+    mutable atomic<uint64_t> m_updateClipTimestamp;
 
     std::mutex m_dtmLock;
     std::mutex m_displayMeshLock;

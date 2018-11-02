@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:06:54 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -82,4 +82,8 @@ struct PtToPtConverter
 
     static void Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts);
     };
+
+double ComputeMinEdgeLength(const DPoint3d* points, size_t ptNum, const int32_t* idx, size_t idxNum);
+
+void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly);
 

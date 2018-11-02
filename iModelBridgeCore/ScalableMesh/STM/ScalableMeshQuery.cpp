@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2799,6 +2799,11 @@ bool IScalableMeshNode::IsClippingUpToDate() const
     {
     return _IsClippingUpToDate();
     }
+
+uint64_t IScalableMeshNode::LastClippingStateUpdateTimestamp() const
+{
+    return _LastClippingStateUpdateTimestamp();
+}
 
 void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
