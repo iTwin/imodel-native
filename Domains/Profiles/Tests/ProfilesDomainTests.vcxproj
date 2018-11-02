@@ -50,6 +50,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="CodeCoverage.mke" />
     <None Include="tests.mke" />
   </ItemGroup>
   <ItemGroup>

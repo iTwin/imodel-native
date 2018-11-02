@@ -5,7 +5,7 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
-programName = ProfilesDomainTests
+programName = ProfilesTests
 baseDir =   $(_MakeFilePath)
 
 BEGTEST_INPUT=$(baseDir)
@@ -23,7 +23,7 @@ BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
 
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
-o = $(OutputRootDir)build/ProfilesDomainTests/$(programName)/
+o = $(OutputRootDir)build/$(programName)/
 
 always:
     !~@mkdir $(o)
@@ -75,7 +75,7 @@ $(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
 # Create the sqlang database
-SQLANG_OutputDb     = $(o)ProfilesDomainTests_en-US.sqlang.db3
+SQLANG_OutputDb     = $(o)ProfilesTests_en-US.sqlang.db3
 SQLANG_DeliveryDir  = $(BuildContext)Delivery/
 SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
 %include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke

@@ -42,33 +42,39 @@
             </Assemblies>
         </Bindings>
     </Part>
-    
-    <Part Name="ProfilesTests" DeferType="ProfilesDomainTests" BentleyBuildMakeFile="Tests/Tests.mke">
+
+    <Part Name="ProfilesTests" BentleyBuildMakeFile="Tests/Tests.mke">
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="ProfilesDLL"/>
         <Bindings>
-            <Assemblies>Delivery/$(shlibprefix)ProfilesDomainTests.exe</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)ProfilesTests.exe</Assemblies>
             <Files ProductDirectoryName="ProfilesDomainRoot">
-                Delivery/ProfilesDomainTests.logging.config.xml
+                Delivery/ProfilesTests.logging.config.xml
                 Delivery/ignore_list.txt
             </Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">
-                Delivery/ProfilesDomainTests_en-US.sqlang.db3
+                Delivery/ProfilesTests_en-US.sqlang.db3
             </Files>
         </Bindings>
     </Part>
 
-    <Part Name="RunProfilesTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
-          BentleyBuildMakeOptions="-dGTEST_PRODUCT=ProfilesDomainTested\ -dGTEST_NAME=ProfilesDomainTests" ExcludeLibType="Static">
+    <Part Name="RunProfilesTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
+          BentleyBuildMakeOptions="-dGTEST_PRODUCT=ProfilesDomainTested\ -dGTEST_NAME=ProfilesTests" ExcludeLibType="Static">
         <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest" />
         <SubPart PartName="ProfilesTests"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">
-                Delivery/Gtest/Logs/ProfilesDomainTests.log
+                Delivery/Gtest/Logs/ProfilesTests.log
             </Files>
         </Bindings>
+    </Part>
+
+    <!-- Not included in main build, run from shell 'bb -p ProfilesCodeCoverage p && bb -p ProfilesCodeCoverage b' to generate code coverage report. -->
+    <Part Name="ProfilesCodeCoverage" BentleyBuildMakeFile="Tests/CodeCoverage.mke" >
+        <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
+        <SubPart PartName="RunProfilesTests" />
     </Part>
 
     <ProductDirectoryList ListName="ProfilesTestsDirs">

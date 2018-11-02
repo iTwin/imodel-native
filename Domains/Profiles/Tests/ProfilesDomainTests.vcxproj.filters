@@ -12,6 +12,9 @@
     <None Include="tests.mke">
       <Filter>Mke</Filter>
     </None>
+    <None Include="CodeCoverage.mke">
+      <Filter>Mke</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ProfilesDomainTestFixture.cpp">

@@ -1,0 +1,22 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/CodeCoverage.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+baseDir = $(_makeFilePath)
+
+Project_Name = Profiles
+GTEST_ProductDir = $(OutputRootDir)Product/ProfilesDomainTested/
+Build = $(OutputRootDir)build/Profiles/
+
+OPEN_CPP_TEST_EXE = $(GTEST_ProductDir)$(Project_Name)Tests.exe
+OPEN_CPP_DLL = $(Build)$(Project_Name)B02.dll
+OPEN_CPP_SOURCE = $(SrcRoot)DgnDomains/$(Project_Name)/
+OPEN_CPP_OUTPUT = $(OutputRootDir)Product/CodeCoverage/$(Project_Name)
+OPEN_CPP_OUTPUT_NAME = $(Project_Name)
+OPEN_CPP_FAIL_COVERAGE = 0
+
+%include $(SrcRoot)bsitools/opencppcoverage/OpenCppCoverage.mki
