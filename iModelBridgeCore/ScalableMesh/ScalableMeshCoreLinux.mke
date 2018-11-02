@@ -8,6 +8,8 @@
 
 baseDir         = $(_MakeFilePath)
 
+NO_DEFAULT_CLANG_WARNINGS = 1
+
 %include  mdl.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshCommonDefine.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
@@ -41,6 +43,9 @@ CCompOpts + -DNO_3D_MESH
 %if !defined (GarlandFilter)
 CCompOpts + -DNO_GARLAND_FILTER 
 %endif
+
+
+
 #----------------------------------------------------------------------
 #       Inform user of compile options
 #----------------------------------------------------------------------
@@ -61,18 +66,27 @@ CCompOpts + -wd4002
 CCompOpts + -wd4091
 
 #Linux options
-ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -fopenmp -D__CLANG__ -Wno-error=invalid-noreturn
-ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -fopenmp -D__CLANG__ -Wno-error=invalid-noreturn
-CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -fopenmp -D__CLANG__ -Wno-error=invalid-noreturn
-cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -fopenmp -D__CLANG__ -Wno-error=invalid-noreturn
+ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+
+%if $(BUILD_TOOLSET) != "APPLE_CLANG"
+    ClangCppCompOpts + -fopenmp
+    ClangCppPchOpts + -fopenmp
+    CCompOpts + -fopenmp
+    cuser + -fopenmp
+%endif
+
 
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
+
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
 PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
-CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCore.mki
+CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy_BimCoreLinux.mki
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
@@ -301,9 +315,13 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 
 $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshEdit.h ${MultiCompileDepends}
 
-$(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshAnalysis.h ${MultiCompileDepends}
+%if $(BUILD_TOOLSET) != "APPLE_CLANG"
 
-$(o)ScalableMeshAnalysis_Ecef$(oext) : $(stmDir)ScalableMeshAnalysis_Ecef.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
+    $(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshAnalysis.h ${MultiCompileDepends}
+
+    $(o)ScalableMeshAnalysis_Ecef$(oext) : $(stmDir)ScalableMeshAnalysis_Ecef.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
+
+%endif
 
 $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp  ${MultiCompileDepends}
 

@@ -1216,7 +1216,9 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr&  smSQLiteFile,
             if (isFromPWCS = !pwcsLink.empty())
                 newFilePath = WString(pwcsLink.c_str(), true);
             }
+#ifndef VANCOUVER_API
         ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
+#endif
         }
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -1405,8 +1407,9 @@ template <class POINT> int ScalableMesh<POINT>::Close
         if (!pwcsLink.empty())
             path = WString(pwcsLink.c_str(), true);
         }
-
+#ifndef VANCOUVER_API
     ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
+#endif
     m_viewedNodes.clear();
     ClearProgressiveQueriesInfo();
     if (m_scalableMeshDTM[DTMAnalysisType::Fast] != nullptr)
@@ -3782,6 +3785,9 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
                                  // Reproject data using this new GCS
             auto newGCS = m_sourceGCS;
             std::swap(m_sourceGCS, ecefGCS);
+
+            if (newGCS.GetGeoRef().GetBasePtr().get() == nullptr)
+                return BSIERROR;
             DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnProject));
             return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
             }

@@ -384,7 +384,7 @@ public:
         bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
         bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes,
         bool                                                            loadTexture,
-        typename ProcessingQuery<DPoint3d, Extent3dType>::Type                             type = typename ProcessingQuery<DPoint3d, Extent3dType>::Type::LoadMesh);
+        typename ProcessingQuery<DPoint3d, Extent3dType>::Type  type = ProcessingQuery<DPoint3d, Extent3dType>::Type::LoadMesh);
 
     StatusInt CancelAllQueries();
 

@@ -50,6 +50,14 @@
 typedef uint8_t byte;
 #endif
 
+#ifdef VANCOUVER_API
+#define IMAGEPP_NAMESPACE_NAME
+#else
+#define IMAGEPP_NAMESPACE_NAME Imagepp
+#endif
+
+
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 enum ScalableMeshCompressionType

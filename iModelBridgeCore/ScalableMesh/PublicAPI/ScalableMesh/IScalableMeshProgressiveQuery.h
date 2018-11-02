@@ -66,6 +66,8 @@ struct IScalableMeshDisplayCacheManager :  RefCountedBase
 
         virtual bool _IsUsingVideoMemory() = 0;        
 
+        virtual bool _HasCompatibleSettings(SmCachedDisplayMesh* cachedDisplayMesh) = 0;
+
 		//called when a resource was deleted but dependent resources (which may or may not be in use) need to be regenerated
 		//virtual void _SetCacheDirty(bool isDirty) = 0;
     };

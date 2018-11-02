@@ -422,9 +422,13 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::EraseClipFile() const
         return;
      
     const_cast<SMSQLiteStore<EXTENT>*>(this)->CloseSisterFile(SMStoreDataType::DiffSet);
-
-
+    
+#ifdef __APPLE__
+    Utf8String slqFileNameUtf8(sqlFileName.c_str());
+    remove(slqFileNameUtf8.c_str());
+#else
     _wremove(sqlFileName.c_str());
+#endif
 
     SMSQLiteFilePtr sqlFilePtr = const_cast<SMSQLiteStore<EXTENT>*>(this)->GetSisterSQLiteFile(SMStoreDataType::DiffSet, true);
 
