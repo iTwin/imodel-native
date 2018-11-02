@@ -623,9 +623,6 @@ SQLANG_Xliff        = $(o)xliffs/DgnCoreMessages_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki
 
-$(BuildContext)Delivery/icons : $(DgnCoreDir)/icons
-    $(LinkFirstDepToFirstTargetAsDirectory)
-
 #----------------------------------------------------------------------
 # Last resort fonts that are required to be available to DgnPlatform.
 #----------------------------------------------------------------------
