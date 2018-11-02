@@ -25,10 +25,6 @@ struct HollowEllipseProfile : CenteredProfile, ICenterLineProfile, IEllipseProfi
 protected:
     explicit HollowEllipseProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() override { return *this; }
-    virtual Dgn::DgnElementR _IEllipseProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(HollowEllipseProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowEllipseProfile)

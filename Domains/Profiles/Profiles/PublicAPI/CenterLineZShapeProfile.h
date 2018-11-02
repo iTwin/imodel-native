@@ -25,9 +25,6 @@ struct CenterLineZShapeProfile : CenteredProfile, ICenterLineProfile
 protected:
     explicit CenterLineZShapeProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CenterLineZShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CenterLineZShapeProfile)

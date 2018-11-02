@@ -25,10 +25,6 @@ struct CustomCenterLineProfile : SinglePerimeterProfile, ICustomProfile, ICenter
 protected:
     explicit CustomCenterLineProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ICustomProfileToDgnElement() override { return *this; }
-    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CustomCenterLineProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CustomCenterLineProfile)

@@ -25,10 +25,6 @@ struct CenterLineLShapeProfile : CenteredProfile, ILShapeProfile, ICenterLinePro
 protected:
     explicit CenterLineLShapeProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ILShapeProfileToDgnElement() override { return *this; }
-    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CenterLineLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CenterLineLShapeProfile)

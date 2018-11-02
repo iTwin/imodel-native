@@ -15,10 +15,10 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct ICenterLineProfile
+struct ICenterLineProfile : NonCopyableClass
     {
 protected:
-    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() = 0;
+    virtual ~ICenterLineProfile() = default;
 
 public:
     //IGeometryPtr GetCenterLine() const { return (dynamic_cast<Dgn::DgnElement*> (this))->GetPropertyValue(PRF_PROP_ICenterLineProfile_CenterLine); }
@@ -32,11 +32,12 @@ public:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct ICShapeProfile
+struct ICShapeProfile : NonCopyableClass
     {
-public:
-    virtual Dgn::DgnElementR _ICShapeProfileToDgnElement() = 0;
+protected:
+    virtual ~ICShapeProfile() = default;
 
+public:
     double GetWidth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ICShapeProfile_Width); }
     void SetWidth(double val) { (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICShapeProfile_Width, ECN::ECValue(val)); }
     double GetDepth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ICShapeProfile_Depth); }
@@ -48,11 +49,10 @@ public:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct ICustomProfile
+struct ICustomProfile : NonCopyableClass
     {
 protected:
-    virtual Dgn::DgnElementR _ICustomProfileToDgnElement() = 0;
-
+    virtual ~ICustomProfile() = default;
 
     }; // ICustomProfile
 
@@ -60,10 +60,10 @@ protected:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct IEllipseProfile
+struct IEllipseProfile : NonCopyableClass
     {
 protected:
-    virtual Dgn::DgnElementR _IEllipseProfileToDgnElement() = 0;
+    virtual ~IEllipseProfile() = default;
 
 public:
     double GetXRadius() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_IEllipseProfile_XRadius); }
@@ -77,10 +77,10 @@ public:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct ILShapeProfile
+struct ILShapeProfile : NonCopyableClass
     {
 protected:
-    virtual Dgn::DgnElementR _ILShapeProfileToDgnElement() = 0;
+    virtual ~ILShapeProfile() = default;
 
 public:
     double GetWidth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ILShapeProfile_Width); }
@@ -94,10 +94,10 @@ public:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct IRectangleShapeProfile
+struct IRectangleShapeProfile : NonCopyableClass
     {
 protected:
-    virtual Dgn::DgnElementR _IRectangleShapeProfileToDgnElement() = 0;
+    virtual ~IRectangleShapeProfile() = default;
 
 public:
     double GetWidth() const { return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_IRectangleShapeProfile_Width); }

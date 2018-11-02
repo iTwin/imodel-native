@@ -25,9 +25,6 @@ struct CShapeProfile : CenteredProfile, ICShapeProfile
 protected:
     explicit CShapeProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ICShapeProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CShapeProfile)

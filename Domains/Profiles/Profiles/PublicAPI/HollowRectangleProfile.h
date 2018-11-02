@@ -25,10 +25,6 @@ struct HollowRectangleProfile : CenteredProfile, IRectangleShapeProfile, ICenter
 protected:
     explicit HollowRectangleProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _IRectangleShapeProfileToDgnElement() override { return *this; }
-    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(HollowRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowRectangleProfile)

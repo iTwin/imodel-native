@@ -25,9 +25,6 @@ struct LShapeProfile : CenteredProfile, ILShapeProfile
 protected:
     explicit LShapeProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ILShapeProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(LShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(LShapeProfile)

@@ -25,9 +25,6 @@ struct EllipseProfile : CenteredProfile, IEllipseProfile
 protected:
     explicit EllipseProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _IEllipseProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(EllipseProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(EllipseProfile)

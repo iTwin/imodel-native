@@ -25,9 +25,6 @@ struct RoundedRectangleProfile : CenteredProfile, IRectangleShapeProfile
 protected:
     explicit RoundedRectangleProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _IRectangleShapeProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(RoundedRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(RoundedRectangleProfile)

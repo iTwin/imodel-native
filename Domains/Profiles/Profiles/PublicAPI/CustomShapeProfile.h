@@ -25,9 +25,6 @@ struct CustomShapeProfile : SinglePerimeterProfile, ICustomProfile
 protected:
     explicit CustomShapeProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ICustomProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(CustomShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(CustomShapeProfile)

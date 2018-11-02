@@ -25,9 +25,6 @@ struct BentPlateProfile : CenteredProfile, ICenterLineProfile
 protected:
     explicit BentPlateProfile(CreateParams const& params) : T_Super(params) {}
 
-protected:
-    virtual Dgn::DgnElementR _ICenterLineProfileToDgnElement() override { return *this; }
-
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS(BentPlateProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(BentPlateProfile)
