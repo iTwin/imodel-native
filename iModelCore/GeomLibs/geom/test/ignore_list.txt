@@ -105,7 +105,7 @@ Geometry.ConvexHullManyPoints
 
 CurvePrimitive.ExerciseVirtuals
 
-    # VSTS#41694
+    # VSTS#41533
     # Stream:bim0200dev, build configuration :NDEBUG, architecture: iosarm64, Device: testdevice, Date: 11/02/2018
     # 2018-11-01 03:35:10.837438+0500 BeTestiOS[4362:1808366] TestRunner: CurvePrimitive.ExerciseVirtuals
     # Nov  1 03:35:10  Be[4362] <Info>: TestRunner: CurvePrimitive.ExerciseVirtuals
