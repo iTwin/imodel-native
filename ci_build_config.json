@@ -1,0 +1,27 @@
+{
+    "pullAugment": "SkipPull_imodel02",
+    "strategies": [
+        {
+            "name": "iModelCore",
+            "archs": "x64+winrtx64+androidarm64+iosarm64+macosx64+linuxx64",
+            "augments": "",
+            "version_env": "VER_IMODELCORE",
+            "version_seed": "2.1.0"
+        },
+        {
+            "name": "iModelJsNodeAddon",
+            "archs": "x64+linuxx64",
+            "augments": "BuildAll",
+            "version_env": "VER_IMODELJSNODEADDON",
+            "version_file": "$SRCROOT/iModel02/iModelJsNodeAddon/package_version.txt"
+        },
+        {
+            "name": "iModelBridgeCore",
+            "skip": true,
+            "archs": "x64",
+            "augments": "BuildAll",
+            "version_env": "VER_IMODELBRIDGECORE",
+            "version_seed": "2.1.0"
+        }
+    ]
+}
