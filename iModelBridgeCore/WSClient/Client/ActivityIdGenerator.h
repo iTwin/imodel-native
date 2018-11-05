@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <Bentley/WString.h>
+
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 typedef std::shared_ptr<struct IActivityIdGenerator> IActivityIdGeneratorPtr;
