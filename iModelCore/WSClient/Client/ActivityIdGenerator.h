@@ -19,6 +19,7 @@ typedef const IActivityIdGenerator& IActivityIdGeneratorCR;
 struct IActivityIdGenerator
     {
     public:
+        virtual IActivityIdGenerator() {};
         virtual Utf8String GenerateNextId() const = 0;
     };
 
