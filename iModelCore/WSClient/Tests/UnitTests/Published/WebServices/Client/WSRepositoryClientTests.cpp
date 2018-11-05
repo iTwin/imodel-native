@@ -2822,7 +2822,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV27AndAzureRedirectA
                 {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
                 {HEADER_MasUploadConfirmationId, "TestUploadId"}});
         });
-    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
         {
         // TODO: It's Http Request to AzureBlobStorage. ActivityId should be set to header "x-ms-client-request-id"
         return StubHttpResponse(HttpStatus::Created);
