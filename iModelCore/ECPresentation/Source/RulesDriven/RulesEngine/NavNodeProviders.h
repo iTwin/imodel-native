@@ -362,10 +362,10 @@ struct MultiNavNodesProvider : NavNodesProvider
 {
 private:
     bvector<NavNodesProviderPtr> m_providers;
-    mutable size_t m_cachedNodesCount;
-    mutable bool m_hasCachedNodesCount;
+    // mutable size_t m_cachedNodesCount;
+    // mutable bool m_hasCachedNodesCount;
 protected:
-    MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context), m_cachedNodesCount(0), m_hasCachedNodesCount(false) {}
+    MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context) /*, m_cachedNodesCount(0), m_hasCachedNodesCount(false) */ {}
     void AddProvider(NavNodesProvider& provider) {m_providers.push_back(&provider);}
     void RemoveProvider(NavNodesProvider& provider) {m_providers.erase(std::find(m_providers.begin(), m_providers.end(), &provider));}
     void SetProviders(bvector<NavNodesProviderPtr> const& providers) {m_providers = providers;}
