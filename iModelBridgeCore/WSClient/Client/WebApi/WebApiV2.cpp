@@ -53,8 +53,11 @@ bool WebApiV2::IsSupported(WSInfoCR info)
     {
     if (info.GetWebApiVersion() < BeVersion(2, 0))
         return false;
-    
-    if (info.GetWebApiVersion() > s_maxTestedWebApi)
+
+    if (!info.GetServiceVersion().IsEmpty() && info.GetWebApiVersion() > s_maxTestedWebApi)
+        return false;
+
+    if (info.GetWebApiVersion() > BeVersion(3, 0))
         return false;
 
     if (info.GetType() != WSInfo::Type::BentleyWSG)
