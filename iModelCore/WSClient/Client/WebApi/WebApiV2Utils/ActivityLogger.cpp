@@ -110,7 +110,7 @@ bool ActivityLogger::isSeverityEnabled(NativeLogging::SEVERITY sev) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(NativeLogging::SEVERITY sev, WCharCP msg)
     {
-    messageva(nullptr, sev, msg, nullptr);
+    messageva(sev, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -118,7 +118,7 @@ void ActivityLogger::message(NativeLogging::SEVERITY sev, WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    messageva(nullptr, sev, msg, nullptr);
+    messageva(sev, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -128,7 +128,7 @@ void ActivityLogger::messagev(NativeLogging::SEVERITY sev, WCharCP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, sev, msg, args);
+    messageva(sev, msg, args);
     va_end(args);
     }
 
@@ -139,7 +139,7 @@ void ActivityLogger::messagev(NativeLogging::SEVERITY sev, Utf8CP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, sev, msg, args);
+    messageva(sev, msg, args);
     va_end(args);
     }
 
@@ -148,7 +148,11 @@ void ActivityLogger::messagev(NativeLogging::SEVERITY sev, Utf8CP msg, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::messageva(NativeLogging::SEVERITY sev, WCharCP msg, va_list args)
     {
-    messageva(nullptr, sev, msg, args);
+    if (!isSeverityEnabled(sev))
+        return;
+
+    WString logMessage = CreateLogMessage(msg, args);
+    m_logger.message(sev, logMessage.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -156,7 +160,11 @@ void ActivityLogger::messageva(NativeLogging::SEVERITY sev, WCharCP msg, va_list
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::messageva(NativeLogging::SEVERITY sev, Utf8CP msg, va_list args)
     {
-    messageva(nullptr, sev, msg, args);
+    if (!isSeverityEnabled(sev))
+        return;
+
+    Utf8String logMessage = CreateLogMessage(msg, args);
+    m_logger.message(sev, logMessage.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -164,7 +172,7 @@ void ActivityLogger::messageva(NativeLogging::SEVERITY sev, Utf8CP msg, va_list 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(WCharCP nameSpace, NativeLogging::SEVERITY sev, WCharCP msg)
     {
-    messageva(nameSpace, sev, msg, nullptr);
+    messageva(nameSpace, sev, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -172,7 +180,7 @@ void ActivityLogger::message(WCharCP nameSpace, NativeLogging::SEVERITY sev, WCh
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::message(Utf8CP nameSpace, NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    messageva(nameSpace, sev, msg, nullptr);
+    messageva(nameSpace, sev, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -226,7 +234,7 @@ void ActivityLogger::messageva(Utf8CP nameSpace, NativeLogging::SEVERITY sev, Ut
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::fatal(WCharCP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_FATAL, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_FATAL, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -234,7 +242,7 @@ void ActivityLogger::fatal(WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::fatal(Utf8CP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_FATAL, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_FATAL, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -244,7 +252,7 @@ void ActivityLogger::fatalv(WCharCP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_FATAL, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_FATAL, msg, args);
     va_end(args);
     }
 
@@ -255,7 +263,7 @@ void ActivityLogger::fatalv(Utf8CP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_FATAL, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_FATAL, msg, args);
     va_end(args);
     }
 
@@ -264,7 +272,7 @@ void ActivityLogger::fatalv(Utf8CP msg, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::error(WCharCP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_ERROR, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_ERROR, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -272,7 +280,7 @@ void ActivityLogger::error(WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::error(Utf8CP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_ERROR, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_ERROR, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -282,7 +290,7 @@ void ActivityLogger::errorv(WCharCP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_ERROR, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_ERROR, msg, args);
     va_end(args);
     }
 
@@ -293,7 +301,7 @@ void ActivityLogger::errorv(Utf8CP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_ERROR, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_ERROR, msg, args);
     va_end(args);
     }
 
@@ -302,7 +310,7 @@ void ActivityLogger::errorv(Utf8CP msg, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::warning(WCharCP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_WARNING, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_WARNING, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -310,7 +318,7 @@ void ActivityLogger::warning(WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::warning(Utf8CP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_WARNING, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_WARNING, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -320,7 +328,7 @@ void ActivityLogger::warningv(WCharCP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_WARNING, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_WARNING, msg, args);
     va_end(args);
     }
 
@@ -331,7 +339,7 @@ void ActivityLogger::warningv(Utf8CP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_WARNING, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_WARNING, msg, args);
     va_end(args);
     }
 
@@ -340,7 +348,7 @@ void ActivityLogger::warningv(Utf8CP msg, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::info(WCharCP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_INFO, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_INFO, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -348,7 +356,7 @@ void ActivityLogger::info(WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::info(Utf8CP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_INFO, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_INFO, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -358,7 +366,7 @@ void ActivityLogger::infov(WCharCP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_INFO, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_INFO, msg, args);
     va_end(args);
     }
 
@@ -369,7 +377,7 @@ void ActivityLogger::infov(Utf8CP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_INFO, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_INFO, msg, args);
     va_end(args);
     }
 
@@ -378,7 +386,7 @@ void ActivityLogger::infov(Utf8CP msg, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::debug(WCharCP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_DEBUG, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_DEBUG, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -386,7 +394,7 @@ void ActivityLogger::debug(WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::debug(Utf8CP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_DEBUG, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_DEBUG, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -396,7 +404,7 @@ void ActivityLogger::debugv(WCharCP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_DEBUG, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_DEBUG, msg, args);
     va_end(args);
     }
 
@@ -407,7 +415,7 @@ void ActivityLogger::debugv(Utf8CP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_DEBUG, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_DEBUG, msg, args);
     va_end(args);
     }
 
@@ -416,7 +424,7 @@ void ActivityLogger::debugv(Utf8CP msg, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::trace(WCharCP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_TRACE, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_TRACE, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -424,7 +432,7 @@ void ActivityLogger::trace(WCharCP msg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ActivityLogger::trace(Utf8CP msg)
     {
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_TRACE, msg, nullptr);
+    messageva(NativeLogging::SEVERITY::LOG_TRACE, msg, va_list());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -434,7 +442,7 @@ void ActivityLogger::tracev(WCharCP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_TRACE, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_TRACE, msg, args);
     va_end(args);
     }
 
@@ -445,6 +453,6 @@ void ActivityLogger::tracev(Utf8CP msg, ...)
     {
     va_list args;
     va_start(args, msg);
-    messageva(nullptr, NativeLogging::SEVERITY::LOG_TRACE, msg, args);
+    messageva(NativeLogging::SEVERITY::LOG_TRACE, msg, args);
     va_end(args);
     }
