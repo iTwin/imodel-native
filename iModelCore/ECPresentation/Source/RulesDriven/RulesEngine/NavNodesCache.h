@@ -79,6 +79,7 @@ protected:
 
     virtual HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const = 0;
     virtual DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const = 0;
+    virtual DataSourceInfo _FindDataSource(uint64_t nodeId) const = 0;
 
     virtual NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, bool, bool) const = 0;
     virtual NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, bool, bool) const = 0;
@@ -110,6 +111,7 @@ public:
 
     HierarchyLevelInfo FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const {return _FindHierarchyLevel(connectionId, rulesetId, locale, virtualParentNodeId);}
     DataSourceInfo FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const {return _FindDataSource(hierarchyLevelId, index);}
+    DataSourceInfo FindDataSource(uint64_t nodeId) const {return _FindDataSource(nodeId);}
 
     //! Get data source for the combined hierarchy level for specified physical parent node
     //  Cached datasource can be deleted if user settings used by cached datasource have changed.
@@ -175,7 +177,6 @@ struct NodesCache : IHierarchyCache, INavNodeLocater, IConnectionsListener
     struct Savepoint;
 
     using IHierarchyCache::FindHierarchyLevel;
-    using IHierarchyCache::FindDataSource;
 
 private:
     JsonNavNodesFactory const& m_nodesFactory;
@@ -227,6 +228,7 @@ protected:
     ECPRESENTATION_EXPORT NodeVisibility _GetNodeVisibility(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const override;
     ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const override;
+    ECPRESENTATION_EXPORT DataSourceInfo _FindDataSource(uint64_t nodeId) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const&, bool, bool) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const&, bool, bool) const override;
     ECPRESENTATION_EXPORT NavNodesProviderPtr _GetDataSource(DataSourceInfo const&, bool, bool) const override;
@@ -261,7 +263,6 @@ public:
     ECPRESENTATION_EXPORT bool IsHierarchyLevelCached(uint64_t parentNodeId) const;
 
     ECPRESENTATION_EXPORT HierarchyLevelInfo FindHierarchyLevel(uint64_t id) const;
-    ECPRESENTATION_EXPORT DataSourceInfo FindDataSource(uint64_t nodeId) const;
 
     ECPRESENTATION_EXPORT BeSQLite::BeGuid CreateRemovalId(CombinedHierarchyLevelInfo const&);
     ECPRESENTATION_EXPORT void RemoveHierarchyLevel(BeSQLite::BeGuidCR removalId);

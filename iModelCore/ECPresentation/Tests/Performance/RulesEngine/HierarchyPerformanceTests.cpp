@@ -199,7 +199,7 @@ struct HierarchyPerformanceTests : RulesEnginePerformanceTests
         return ruleset;
         }
 
-    DataContainer<NavNodeCPtr> GetNodes(PageOptions& pageOptions, Json::Value const& options, NavNodeCP parentNode);
+    DataContainer<NavNodeCPtr> GetNodes(PageOptions const& pageOptions, Json::Value const& options, NavNodeCP parentNode);
     void IncrementallyGetNodes(Utf8CP rulesetId, NavNodeCP parentNode, bool usePaging);
     bvector<ECClassInstanceKey> GetGeometricElementKeys();
     };
@@ -221,7 +221,7 @@ bvector<ECClassInstanceKey> HierarchyPerformanceTests::GetGeometricElementKeys()
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesContainer HierarchyPerformanceTests::GetNodes(PageOptions& pageOptions, Json::Value const& options, NavNodeCP parentNode)
+NavNodesContainer HierarchyPerformanceTests::GetNodes(PageOptions const& pageOptions, Json::Value const& options, NavNodeCP parentNode)
     {
     if (nullptr == parentNode)
         return m_manager->GetRootNodes(m_project, pageOptions, options).get();
@@ -292,7 +292,8 @@ TEST_F(HierarchyPerformanceTests, FilterNodesFromNotExpandedHierarchy)
     {
     Timer t_hierarchy;
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
-    m_manager->GetFilteredNodesPaths(m_project, "ist", options).wait();
+    bvector<NodesPathElement> paths = m_manager->GetFilteredNodesPaths(m_project, "ist", options).get();
+    EXPECT_EQ(1, paths.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +304,8 @@ TEST_F(HierarchyPerformanceTests, FilterNodesFromExpandedHierarchy)
     IncrementallyGetNodes("Items", nullptr, false);
     Timer t_hierarchy;
     Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Items", TargetTree_MainTree).GetJson();
-    m_manager->GetFilteredNodesPaths(m_project, "ist", options).wait();
+    bvector<NodesPathElement> paths = m_manager->GetFilteredNodesPaths(m_project, "ist", options).get();
+    EXPECT_EQ(1, paths.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,6 +324,47 @@ TEST_F(HierarchyPerformanceTests, UpdateGeometricElementInHierarchy)
     Timer _time;
     source->NotifyECInstanceUpdated(m_project, id, *ecClass);
     _time.Finish();
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                10/2018
++===============+===============+===============+===============+===============+======*/
+struct NavigatorClassificationHierarchyPerformanceTests : HierarchyPerformanceTests 
+    {
+    BeFileName _SupplyProjectPath() const override
+        {
+        BeFileName path;
+        BeTest::GetHost().GetDocumentsRoot(path);
+        path.AppendToPath(L"Performance");
+        path.AppendToPath(L"RedstoneLAO.bim");
+        return path;
+        }
+
+    PresentationRuleSetPtr _SupplyRuleset() const override
+        {
+        return PresentationRuleSet::ReadFromXmlString(R"ruleset(
+            <PresentationRuleSet RuleSetId="Classification" VersionMajor="1" VersionMinor="3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <RootNodeRule>
+                    <InstancesOfSpecificClasses ClassNames='BisCore:SpatialElement' InstanceFilter='this.ECClassId &lt;&gt; GetECClassId("PhysicalObject","Generic")' GroupByClass='true' GroupByLabel='true' ArePolymorphic='true' />
+                </RootNodeRule>
+            </PresentationRuleSet>
+            )ruleset");
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NavigatorClassificationHierarchyPerformanceTests, GetChildNodes_VSTS38248)
+    {
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions("Classification", TargetTree_MainTree).GetJson();
+    NavNodesContainer rootNodes = GetNodes(PageOptions(), options, nullptr);
+    ASSERT_EQ(2, rootNodes.GetSize());
+
+    Timer t_hierarchy;
+    NavNodesContainer childNodes = GetNodes(PageOptions(0, 20), options, rootNodes[0].get());
+    ASSERT_TRUE(childNodes.GetSize() > 0);
+    ASSERT_TRUE(childNodes.Get(0).IsValid());
     }
 
 /*=================================================================================**//**

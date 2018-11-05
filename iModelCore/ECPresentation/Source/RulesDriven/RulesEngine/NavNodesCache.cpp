@@ -1217,7 +1217,7 @@ DataSourceInfo NodesCache::_FindDataSource(uint64_t hierarchyLevelId, uint64_t i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DataSourceInfo NodesCache::FindDataSource(uint64_t nodeId) const
+DataSourceInfo NodesCache::_FindDataSource(uint64_t nodeId) const
     {
     Utf8CP query = "SELECT [ds].[Id], [ds].[HierarchyLevelId], [ds].[Index] "
                    "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "

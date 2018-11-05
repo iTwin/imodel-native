@@ -324,7 +324,19 @@ protected:
             }
         return DataSourceInfo();
         }
-    
+    DataSourceInfo _FindDataSource(uint64_t nodeId) const override
+        {
+        for (auto entry : m_partialHierarchies)
+            {
+            for (JsonNavNodeCPtr node : entry.second)
+                {
+                if (node->GetNodeId() == nodeId)
+                    return entry.first;
+                }
+            }
+        return DataSourceInfo();
+        }
+
     NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const& info, bool removeIfInvalid, bool) const override
         {
         if (nullptr == m_nodesProviderContextFactory)
