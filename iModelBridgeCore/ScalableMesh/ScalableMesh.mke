@@ -6,8 +6,7 @@
 #
 #----------------------------------------------------------------------------------------
 
-# Too many errors in VS 2017
-OVERRIDE_DEFAULT_VC_TOOLSET=VS2015
+ALLOW_MSVC_PERMISSIVE=1
      
 baseDir         = $(_MakeFilePath)
 

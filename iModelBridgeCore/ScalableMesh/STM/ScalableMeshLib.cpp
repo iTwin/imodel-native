@@ -167,7 +167,7 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
 
     headers = curl_slist_append(headers, curlConstructor.GetToken().c_str());
 
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     Utf8String pemFileName;
 
 #ifdef VANCOUVER_API //On Bim02 CURL seems not to use OpenSSL, so using certificate file will result in an error.
@@ -182,14 +182,14 @@ CURLcode RequestHttp(Utf8StringCR url, Utf8StringCP writeString, FILE* fp, Utf8S
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
     if (!proxyInfo.m_serverUrl.empty())
         {
-        curl_easy_setopt(curl, CURLOPT_PROXY, proxyInfo.m_serverUrl);
+        curl_easy_setopt(curl, CURLOPT_PROXY, proxyInfo.m_serverUrl.c_str());
         curl_easy_setopt(curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
         if (!proxyInfo.m_user.empty() && !proxyInfo.m_password.empty())
             {
             Utf8String proxyCreds = proxyInfo.m_user;
             proxyCreds.append(":");
             proxyCreds.append(proxyInfo.m_password);
-            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds);
+            curl_easy_setopt(curl, CURLOPT_PROXYUSERPWD, proxyCreds.c_str());
             }
         }
 

@@ -335,7 +335,7 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
     BeFileName sdkExe(sdkExePath);
     sdkExe.AppendUtf8("ScalableMeshSDKexe.exe");
 
-    Utf8PrintfString cmdStr("%s import -i=\"%s\" -o=test", sdkExe.GetNameUtf8(), inputFileName);
+    Utf8PrintfString cmdStr("%s import -i=\"%s\" -o=test", sdkExe.GetNameUtf8().c_str(), inputFileName);
 
     PROCESS_INFORMATION processInfo;
 
