@@ -123,14 +123,7 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
     if (aliases.empty())
         return false;
 
-    Utf8String regexStr = "\\s+AS\\s+\\[?(";
-    regexStr.append(aliases.empty() ? "\\w+" : BeStringUtilities::Join(aliases, "|").c_str()).append(")\\]?");
-    std::regex regex(regexStr.c_str(), std::regex_constants::icase);
-
     if (nullptr != query.AsStringQuery())
-        return true;
-
-    if (nullptr != query.AsComplexQuery() && std::regex_search(query.AsComplexQuery()->GetClause(CLAUSE_Select).c_str(), regex))
         return true;
     
     if (nullptr != query.AsUnionQuery())
@@ -146,6 +139,12 @@ bool QueryBuilderHelpers::NeedsNestingToUseAlias(T const& query, bvector<Utf8CP>
         if (NeedsNestingToUseAlias(*exceptQuery.GetBase(), aliases) || NeedsNestingToUseAlias(*exceptQuery.GetExcept(), aliases))
             return true;
         }
+
+    Utf8String regexStr = ".*?\\s+AS\\s+\\[?(";
+    regexStr.append(aliases.empty() ? "\\w+" : BeStringUtilities::Join(aliases, "|").c_str()).append(")\\]?.*");
+    std::regex regex(regexStr.c_str(), std::regex_constants::icase);
+    if (nullptr != query.AsComplexQuery() && std::regex_match(query.AsComplexQuery()->GetClause(CLAUSE_Select).c_str(), regex))
+        return true;
 
     return false;
     }
