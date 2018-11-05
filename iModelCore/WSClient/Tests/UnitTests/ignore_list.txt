@@ -18,14 +18,6 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
 #Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
 *ConnectWebServicesClientCTests*
 
-#----------------------------------------------------------------------------------------
-#   Test that fail becouse of issue with Web Api version 2.7
-#----------------------------------------------------------------------------------------
-WSRepositoryClientTests.SendQueryRequest_WebApiV26_CapsWebApiToV26
-WSRepositoryClientTests.SendQueryRequest_WebApiV28_CapsWebApiToV27
-WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2ResponseSendsJobsSequence_SendsJobDeleteRequest
-WSRepositoryClientTests.SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
-
 #--------------------------------------------------------------------------------
 # RANDOM reproduceable crashes/hangs that break DEV builds
 #--------------------------------------------------------------------------------

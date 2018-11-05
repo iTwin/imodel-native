@@ -1439,7 +1439,25 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV26)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV27)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV27_CapsWebApiToV27)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 7}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.7/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV28)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -1447,7 +1465,25 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV27)
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 8}));
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
-        EXPECT_EQ("https://srv.com/ws/v2.7/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        EXPECT_EQ("https://srv.com/ws/v2.8/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV29_CapsWebApiToV28)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 9}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.8/Repositories/foo/TestSchema/TestClass", request.GetUrl());
         return StubHttpResponse();
         });
 
@@ -3075,7 +3111,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                    02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success)
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success_KnownIssue)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
