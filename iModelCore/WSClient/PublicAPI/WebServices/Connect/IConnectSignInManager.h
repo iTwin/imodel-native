@@ -53,7 +53,9 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
                 WSCLIENT_EXPORT bool IsComplete() const;
                 WSCLIENT_EXPORT Utf8String ToString() const;
 
-                UserInfo() {};
+                UserInfo() {}
+                UserInfo(Utf8CP username_, Utf8CP firstName_, Utf8CP lastName_, Utf8CP userId_, Utf8CP organizationId_) :
+                    username(username_), firstName(firstName_), lastName(lastName_), userId(userId_), organizationId(organizationId_) {}
                 WSCLIENT_EXPORT UserInfo(Utf8StringCR serialized);
             };
 
