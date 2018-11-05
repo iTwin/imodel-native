@@ -16,11 +16,11 @@
 #include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct IConnectSignInManager> IConnectSignInManagerPtr;
+typedef AsyncResult<void, AsyncError> WSConnectVoidResult;
 struct IConnectSignInManager : IConnectAuthenticationProvider
     {
     public:
@@ -48,10 +48,13 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
             Utf8String lastName;
             Utf8String userId;
             Utf8String organizationId;
-            bool IsComplete() const
-                {
-                return !(username.Equals("") || firstName.Equals("") || lastName.Equals("") || userId.Equals("") || organizationId.Equals(""));
-                };
+
+            public:
+                WSCLIENT_EXPORT bool IsComplete() const;
+                WSCLIENT_EXPORT Utf8String ToString() const;
+
+                UserInfo() {};
+                WSCLIENT_EXPORT UserInfo(Utf8StringCR serialized);
             };
 
     protected:
@@ -65,20 +68,20 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
         std::function<void()> m_connectionClientSignInHandler;
 
     protected:
-        void OnUserTokenExpired() const;
-        void OnUserTokenRenew(bool success, int64_t expireTime) const;
-        void OnUserChanged() const;
-        void OnUserSignedIn() const;
-        void OnUserSignedOut() const;
-        void OnUserSignedInViaConnectionClient() const;
+        WSCLIENT_EXPORT void OnUserTokenExpired() const;
+        WSCLIENT_EXPORT void OnUserTokenRenew(bool success, int64_t expireTime) const;
+        WSCLIENT_EXPORT void OnUserChanged() const;
+        WSCLIENT_EXPORT void OnUserSignedIn() const;
+        WSCLIENT_EXPORT void OnUserSignedOut() const;
+        WSCLIENT_EXPORT void OnUserSignedInViaConnectionClient() const;
 
-        void CheckUserChange();
+        WSCLIENT_EXPORT void CheckUserChange();
 
     protected:
         //! Will be called thread safe by CheckAndUpdateToken
-        virtual void _CheckAndUpdateToken() = 0;
+        virtual AsyncTaskPtr<WSConnectVoidResult> _CheckAndUpdateToken() = 0;
         //! Will be called thread safe by SignOut
-        virtual void _SignOut() = 0;
+        virtual AsyncTaskPtr<WSConnectVoidResult> _SignOut() = 0;
         //! Will be called thread safe by IsSignedIn
         virtual bool _IsSignedIn() const = 0;
         //! Will be called thread safe by GetUserInfo
@@ -101,10 +104,10 @@ struct IConnectSignInManager : IConnectAuthenticationProvider
         virtual ~IConnectSignInManager() {}
 
         //! Check if token expired and renew/handle expiration
-        WSCLIENT_EXPORT void CheckAndUpdateToken();
+        WSCLIENT_EXPORT AsyncTaskPtr<void> CheckAndUpdateToken();
 
         //! Sign-out user and remove all user information from disk
-        WSCLIENT_EXPORT void SignOut();
+        WSCLIENT_EXPORT AsyncTaskPtr<void> SignOut();
 
         //! Check if user is signed-in
         //! Uses IsSignedInNoLock, GetLastUsername, StoreSignedInUser

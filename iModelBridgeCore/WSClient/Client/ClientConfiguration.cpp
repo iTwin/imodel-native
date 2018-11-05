@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConfiguration.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -23,7 +23,8 @@ m_repositoryId(repositoryId),
 m_headerProvider(std::make_shared<HeaderProvider>(defaultHeadersProvider)),
 m_httpClient(std::make_shared<HttpClient>(m_headerProvider, customHandler)),
 m_schemaProvider(schemaProvider),
-m_httpHandler(customHandler)
+m_httpHandler(customHandler),
+m_activityIdGenerator(std::make_shared<ActivityIdGenerator>())
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -68,6 +69,14 @@ BeFileName ClientConfiguration::GetDefaultSchemaPath(WSInfoCR info) const
         return BeFileName();
         }
     return m_schemaProvider->GetSchema(info);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IActivityIdGeneratorCR ClientConfiguration::GetActivityIdGenerator() const
+    {
+    return *m_activityIdGenerator;
     }
 
 /*--------------------------------------------------------------------------------------+

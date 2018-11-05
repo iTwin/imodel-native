@@ -24,8 +24,11 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
     <ClInclude Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.h" />
+    <ClInclude Include="Published\Utils\StubLogger.h" />
     <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\StubFileManager.h" />
+    <ClInclude Include="Published\WebServices\Client\ActivityIdGeneratorTests.h" />
+    <ClInclude Include="Published\WebServices\Client\ActivityLoggerTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockRepositoryInfoListener.h" />
     <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
@@ -179,7 +182,10 @@
     <ClCompile Include="BackDoor\TestEnvironment.cpp" />
     <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
     <ClCompile Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.cpp" />
+    <ClCompile Include="Published\Utils\StubLogger.cpp" />
     <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ActivityIdGeneratorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ActivityLoggerTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryTests.cpp" />
     <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />

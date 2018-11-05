@@ -18,31 +18,50 @@
 
 #include "Connect.xliff.h"
 
+#define USERINFO_Serialized_Username        "username"
+#define USERINFO_Serialized_FirstName       "firstName"
+#define USERINFO_Serialized_LastName        "lastName"
+#define USERINFO_Serialized_UserId          "userId"
+#define USERINFO_Serialized_OrganizationId  "organizationId"
+
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2016
+* @bsimethod                                             julius.cepukenas    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IConnectSignInManager::CheckAndUpdateToken()
+AsyncTaskPtr<void> IConnectSignInManager::CheckAndUpdateToken()
     {
     BeMutexHolder lock(m_mutex);
-    _CheckAndUpdateToken();
+    return _CheckAndUpdateToken()->Then<void>([=] (WSConnectVoidResult result)
+        {
+        if (!result.IsSuccess())
+            {
+            LOG.infov("Force UpdateteToken failed");
+            }
+
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    12/2015
+* @bsimethod                                             julius.cepukenas    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IConnectSignInManager::SignOut()
+AsyncTaskPtr<void> IConnectSignInManager::SignOut()
     {
     m_mutex.Enter();
-    _SignOut();
+    return _SignOut()->Then<void>([=] (WSConnectVoidResult result)
+        {
+        m_mutex.Leave();
+        if (!result.IsSuccess())
+            {
+            LOG.infov("ConnectSignOut failed");
+            return;
+            }
 
-    LOG.infov("ConnectSignOut");
-    m_mutex.Leave();
-
-    OnUserSignedOut();
+        LOG.infov("ConnectSignOut");
+        OnUserSignedOut();
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -260,4 +279,44 @@ void IConnectSignInManager::CheckUserChange()
 
     OnUserChanged();
     _StoreSignedInUser();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+IConnectSignInManager::UserInfo::UserInfo(Utf8StringCR serialized)
+    {
+    Json::Value json;
+    if (!Json::Reader::Parse(serialized, json))
+        return;
+
+    username = json[USERINFO_Serialized_Username].asString().c_str();
+    firstName = json[USERINFO_Serialized_FirstName].asString().c_str();
+    lastName = json[USERINFO_Serialized_LastName].asString().c_str();
+    userId = json[USERINFO_Serialized_UserId].asString().c_str();
+    organizationId = json[USERINFO_Serialized_OrganizationId].asString().c_str();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IConnectSignInManager::UserInfo::IsComplete() const
+    {
+    return !(username.Equals("") || firstName.Equals("") || lastName.Equals("") || userId.Equals("") || organizationId.Equals(""));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String IConnectSignInManager::UserInfo::ToString() const
+    {
+    Json::Value json;
+
+    json[USERINFO_Serialized_Username] = username;
+    json[USERINFO_Serialized_FirstName] = firstName;
+    json[USERINFO_Serialized_LastName] = lastName;
+    json[USERINFO_Serialized_UserId] = userId;
+    json[USERINFO_Serialized_OrganizationId] = organizationId;
+
+    return Json::FastWriter::ToString(json);
     }

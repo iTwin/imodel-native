@@ -27,6 +27,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define HEADER_MasFileETag                 "Mas-File-ETag"
 #define HEADER_MasConnectionInfo           "Mas-Connection-Info"
 #define HEADER_MasFileAccessUrlType        "Mas-File-Access-Url-Type"
+#define HEADER_MasRequestId                "Mas-Request-Id"
+#define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
 #define HEADER_Location                    "Location"
 
 #define INSTANCE_PersistenceFileBackable   "Persistence.FileBackable"
@@ -699,6 +701,74 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseContai
     EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), (*result.GetValue().GetInstances().begin()).GetObjectId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApi25_SendsRequestsWithoutMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_MasRequestId));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApi27_SendsRequestsWithMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_FALSE(Utf8String::IsNullOrEmpty(actualActivityId));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    set<Utf8CP> requestIds;
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+
+    auto uniqueRequestIds = requestIds.size();
+    EXPECT_EQ(2, uniqueRequestIds);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2692,6 +2762,86 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApi27_ChunkUploadSendsAllRequestsWithSameMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    set<Utf8CP> requestIds;
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::ResumeIncomplete);
+        });
+
+    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::ResumeIncomplete);
+        });
+
+    GetHandler().ForRequest(4, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendUpdateFileRequest(StubObjectId(), StubFile())->GetResult();
+
+    auto uniqueRequestIds = requestIds.size();
+    EXPECT_EQ(1, uniqueRequestIds);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV27AndAzureRedirectAndAzureUploadSuccessful_SendsAllRequestsWithSameActivityId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    set<Utf8CP> requestIds;
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {HEADER_Location, "https://foozure.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
+                {HEADER_MasUploadConfirmationId, "TestUploadId"}});
+        });
+    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
+        {
+        // TODO: It's Http Request to AzureBlobStorage. ActivityId should be set to header "x-ms-client-request-id"
+        return StubHttpResponse(HttpStatus::Created);
+        });
+    GetHandler().ForRequest(4, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    
+    auto uniqueRequestIds = requestIds.size();
+    EXPECT_EQ(1, uniqueRequestIds);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
@@ -2761,7 +2911,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
                 {HEADER_Location, "https://foozure.com/boo"},
                 {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
-                {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
+                {HEADER_MasUploadConfirmationId, "TestUploadId"}});
         });
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
@@ -2775,7 +2925,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
         EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
-        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
+        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue(HEADER_MasUploadConfirmationId));
         return StubHttpResponse(HttpStatus::OK);
         });
 
@@ -2797,7 +2947,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
                 {HEADER_Location, "https://foozure.com/boo"},
                 {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
-                {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
+                {HEADER_MasUploadConfirmationId, "TestUploadId"}});
         });
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
@@ -2853,7 +3003,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
             {HEADER_Location, "https://foozure.com/boo"},
             {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
-            {"Mas-Upload-Confirmation-Id", "TestUploadId"}}));
+            {HEADER_MasUploadConfirmationId, "TestUploadId"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::Created, "", {{"ETag", "NewTag"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "WSGTag"}, {HEADER_MasFileETag, "WSGTag"}}));
 
