@@ -1,0 +1,17 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: SpatialCompositionApi.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/SpatialComposition/CompositeVolume.h : $(_MakeFilePath)Elements/PublicApi/CompositeVolume.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/SpatialComposition/CompositeElement.h : $(_MakeFilePath)Elements/PublicApi/CompositeElement.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/SpatialComposition/CompositeBoundary.h : $(_MakeFilePath)Elements/PublicApi/CompositeBoundary.h
+    $(LinkFirstDepToFirstTarget)

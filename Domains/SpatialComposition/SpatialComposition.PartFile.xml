@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <Part Name="SpatialComposition">
+        <SubPart PartName="SpatialCompositionSchema"/>
+        <SubPart PartName="SpatialCompositionApi"/>
+    </Part>
+
+    <Part Name="SpatialCompositionSchema" BentleyBuildMakeFile="SpatialCompositionSchema.prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/SpatialComposition*.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SpatialCompositionApi" BentleyBuildMakeFile="SpatialCompositionApi.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="SpatialComposition"/>
+        </Bindings>
+    </Part>
+    
+</BuildContext>

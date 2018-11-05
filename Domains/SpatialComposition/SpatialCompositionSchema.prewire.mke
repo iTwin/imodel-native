@@ -1,0 +1,11 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: SpatialCompositionSchema.prewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)ECSchemas/Domain/SpatialComposition.ecschema.xml : $(_MakeFilePath)SpatialComposition.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
