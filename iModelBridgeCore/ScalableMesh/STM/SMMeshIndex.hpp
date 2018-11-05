@@ -3769,9 +3769,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreMe
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> SMMeshIndexNode<POINT, EXTENT>::GetDiffSetPtr() const
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
-
-    if (!GetClipRegistry()->IsClipDefinitionFileExist())
-        return false;
+    
+    if (GetClipRegistry() == nullptr || !GetClipRegistry()->IsClipDefinitionFileExist())
+        return poolMemItemPtr;
 
    //if (m_SMIndex->IsTerrain() == false) 
     //   return poolMemItemPtr;
