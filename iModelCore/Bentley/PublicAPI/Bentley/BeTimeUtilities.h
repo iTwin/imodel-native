@@ -137,8 +137,12 @@ struct BeDuration : std::chrono::steady_clock::duration
     typedef std::chrono::nanoseconds Nanoseconds;
     typedef std::chrono::milliseconds Milliseconds;
     typedef std::chrono::seconds Seconds;
+    typedef std::chrono::minutes Minutes;
+    typedef std::chrono::hours Hours;
 
     constexpr BeDuration() : T_Super(0) {}    //!< construct a BeDuration with 0 seconds
+    constexpr BeDuration(Hours val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(Minutes val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Seconds val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Milliseconds val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Nanoseconds val) : T_Super(val) {} // allow implicit conversion
@@ -151,7 +155,7 @@ struct BeDuration : std::chrono::steady_clock::duration
 
     //! construct a BeDuration from int milliseconds
     constexpr static BeDuration FromMilliseconds(int64_t val) {return BeDuration(Milliseconds(val));}
-    
+
     //! cast this BeDuration to a double number of *seconds* (not nanoseconds!)
     constexpr operator double() const {return std::chrono::duration_cast<std::chrono::duration<double>>(*this).count();}
 
@@ -204,7 +208,7 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
 
     //! Determine whether this BeTimePoint is valid (non-zero)
     bool IsValid() const {return 0 != GetTicks();}
-                                              
+
     //! return true if this BeTimePoint is a valid time in the future from the time this method is called (it calls Now()!)
     //! @note always returns false and does not call Now() if this is not a valid BeTimePoint
     bool IsInFuture() const {return IsValid() && (Now() < *this);}
