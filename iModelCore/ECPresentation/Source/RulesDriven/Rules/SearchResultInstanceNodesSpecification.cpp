@@ -26,18 +26,19 @@ SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification (
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification
-(
-int priority,
-bool alwaysReturnsChildren,
-bool hideNodesInHierarchy,
-bool hideIfNoChildren,
-bool groupByClass,
-bool groupByLabel
-) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-    m_groupByClass (groupByClass), m_groupByLabel (groupByLabel)
-    {
-    }
+SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel) 
+    : SearchResultInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, 
+        hideIfNoChildren, groupByClass, groupByLabel)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+SearchResultInstanceNodesSpecification::SearchResultInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, 
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel) 
+    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), m_groupByLabel(groupByLabel)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                06/2017

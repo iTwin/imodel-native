@@ -132,6 +132,7 @@
 
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN                  "AlwaysReturnsChildren"
+#define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HASCHILDREN                            "HasChildren"
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY                   "HideNodesInHierarchy"
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDEIFNOCHILDREN                       "HideIfNoChildren"
 #define CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_EXTENDEDDATA                           "ExtendedData"

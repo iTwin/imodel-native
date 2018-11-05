@@ -345,7 +345,11 @@ struct NavigatorClassificationHierarchyPerformanceTests : HierarchyPerformanceTe
         return PresentationRuleSet::ReadFromXmlString(R"ruleset(
             <PresentationRuleSet RuleSetId="Classification" VersionMajor="1" VersionMinor="3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <RootNodeRule>
-                    <InstancesOfSpecificClasses ClassNames='BisCore:SpatialElement' InstanceFilter='this.ECClassId &lt;&gt; GetECClassId("PhysicalObject","Generic")' GroupByClass='true' GroupByLabel='true' ArePolymorphic='true' />
+                    <InstancesOfSpecificClasses ClassNames='BisCore:SpatialElement' 
+                        InstanceFilter='this.ECClassId &lt;&gt; GetECClassId("PhysicalObject","Generic")' 
+                        GroupByClass='true' GroupByLabel='true' ArePolymorphic='true' 
+                        HasChildren='Never'
+                    />
                 </RootNodeRule>
             </PresentationRuleSet>
             )ruleset");

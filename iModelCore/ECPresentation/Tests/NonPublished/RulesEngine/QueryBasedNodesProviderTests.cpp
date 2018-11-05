@@ -140,7 +140,7 @@ TEST_F(QueryBasedNodesProviderTests, HasNodesDoesntQueryChildrenIfAlwaysReturnsC
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetAlwaysReturnsChildren(true);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     EXPECT_TRUE(provider->HasNodes());

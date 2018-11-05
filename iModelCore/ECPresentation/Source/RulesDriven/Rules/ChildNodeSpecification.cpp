@@ -42,14 +42,14 @@ ChildNodeSpecificationP ChildNodeSpecification::Create(JsonValueCR json)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecification::ChildNodeSpecification()
-    : m_priority(1000), m_alwaysReturnsChildren(false), m_hideNodesInHierarchy(false), m_hideIfNoChildren(false), m_doNotSort(false)
+    : m_priority(1000), m_hasChildren(ChildrenHint::Unknown), m_hideNodesInHierarchy(false), m_hideIfNoChildren(false), m_doNotSort(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeSpecification::ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren)
-: m_priority (priority), m_alwaysReturnsChildren (alwaysReturnsChildren), m_hideNodesInHierarchy (hideNodesInHierarchy), m_hideIfNoChildren (hideIfNoChildren), m_doNotSort (false)
+ChildNodeSpecification::ChildNodeSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren)
+: m_priority (priority), m_hasChildren(hasChildren), m_hideNodesInHierarchy (hideNodesInHierarchy), m_hideIfNoChildren (hideIfNoChildren), m_doNotSort (false)
     {
     }
 
@@ -57,7 +57,7 @@ ChildNodeSpecification::ChildNodeSpecification (int priority, bool alwaysReturns
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChildNodeSpecification::ChildNodeSpecification(ChildNodeSpecificationCR other)
-    : m_priority(other.m_priority), m_alwaysReturnsChildren(other.m_alwaysReturnsChildren),
+    : m_priority(other.m_priority), m_hasChildren(other.m_hasChildren),
     m_hideNodesInHierarchy(other.m_hideNodesInHierarchy), m_hideIfNoChildren(other.m_hideIfNoChildren),
     m_doNotSort(other.m_doNotSort), m_extendedData(other.m_extendedData)
     {
@@ -75,6 +75,31 @@ ChildNodeSpecification::~ChildNodeSpecification ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ChildrenHint ParseChildrenHint(Utf8CP str)
+    {
+    if (0 == strcmp("Always", str))
+        return ChildrenHint::Always;
+    if (0 == strcmp("Never", str))
+        return ChildrenHint::Never;
+    return ChildrenHint::Unknown;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8CP ChildrenHintToString(ChildrenHint hint)
+    {
+    switch (hint)
+        {
+        case ChildrenHint::Always: return "Always";
+        case ChildrenHint::Never: return "Never";
+        default: return "Unknown";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChildNodeSpecification::_ReadXml(BeXmlNodeP xmlNode)
@@ -86,8 +111,14 @@ bool ChildNodeSpecification::_ReadXml(BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetAttributeInt32Value (m_priority, COMMON_XML_ATTRIBUTE_PRIORITY))
         m_priority = 1000;
 
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_alwaysReturnsChildren, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN))
-        m_alwaysReturnsChildren = false;
+    bool alwaysReturnsChildrenValue;
+    Utf8String childrenHintValue;
+    if (BEXML_Success == xmlNode->GetAttributeStringValue(childrenHintValue, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HASCHILDREN))
+        m_hasChildren = ParseChildrenHint(childrenHintValue.c_str());
+    else if (BEXML_Success == xmlNode->GetAttributeBooleanValue(alwaysReturnsChildrenValue, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN) && alwaysReturnsChildrenValue)
+        m_hasChildren = ChildrenHint::Always;
+    else
+        m_hasChildren = ChildrenHint::Unknown;
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_hideNodesInHierarchy, CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY))
         m_hideNodesInHierarchy = false;
@@ -113,7 +144,7 @@ void ChildNodeSpecification::_WriteXml(BeXmlNodeP specificationNode) const
     {
     PresentationRuleSpecification::_WriteXml(specificationNode);
     specificationNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
-    specificationNode->AddAttributeBooleanValue (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_ALWAYSRETURNSCHILDREN, m_alwaysReturnsChildren);
+    specificationNode->AddAttributeStringValue(CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HASCHILDREN, ChildrenHintToString(m_hasChildren));
     specificationNode->AddAttributeBooleanValue (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDENODESINHIERARCHY, m_hideNodesInHierarchy);
     specificationNode->AddAttributeBooleanValue (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_HIDEIFNOCHILDREN, m_hideIfNoChildren);
     specificationNode->AddAttributeStringValue  (CHILD_NODE_SPECIFICATION_XML_ATTRIBUTE_EXTENDEDDATA, m_extendedData.c_str ());
@@ -131,7 +162,10 @@ bool ChildNodeSpecification::_ReadJson(JsonValueCR json)
         return false;
     
     m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
-    m_alwaysReturnsChildren = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_ALWAYSRETURNSCHILDREN].asBool(false);
+    if (json.isMember(CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN))
+        m_hasChildren = ParseChildrenHint(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN].asCString(""));
+    else if (json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_ALWAYSRETURNSCHILDREN].asBool(false))
+        m_hasChildren = ChildrenHint::Always;
     m_hideNodesInHierarchy = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDENODESINHIERARCHY].asBool(false);
     m_hideIfNoChildren = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEIFNOCHILDREN].asBool(false);
     m_doNotSort = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_DONOTSORT].asBool(false);
@@ -148,8 +182,8 @@ void ChildNodeSpecification::_WriteJson(JsonValueR json) const
     PresentationRuleSpecification::_WriteJson(json);
     if (1000 != m_priority)
         json[COMMON_JSON_ATTRIBUTE_PRIORITY] = m_priority;
-    if (m_alwaysReturnsChildren)
-        json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_ALWAYSRETURNSCHILDREN] = m_alwaysReturnsChildren;
+    if (ChildrenHint::Unknown != m_hasChildren)
+        json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN] = ChildrenHintToString(m_hasChildren);
     if (m_hideNodesInHierarchy)
         json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDENODESINHIERARCHY] = m_hideNodesInHierarchy;
     if (m_hideIfNoChildren)
@@ -178,15 +212,15 @@ void ChildNodeSpecification::SetPriority (int value) { m_priority = value; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const
+/*bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const
     {
     return m_alwaysReturnsChildren;
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeSpecification::SetAlwaysReturnsChildren (bool value) { m_alwaysReturnsChildren = value; }
+// void ChildNodeSpecification::SetAlwaysReturnsChildren (bool value) { m_alwaysReturnsChildren = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -282,7 +316,7 @@ MD5 ChildNodeSpecification::_ComputeHash(Utf8CP parentHash) const
     {
     MD5 md5 = PresentationRuleSpecification::_ComputeHash(parentHash);
     md5.Add(&m_priority, sizeof(m_priority));
-    md5.Add(&m_alwaysReturnsChildren, sizeof(m_alwaysReturnsChildren));
+    md5.Add(&m_hasChildren, sizeof(m_hasChildren));
     md5.Add(&m_hideNodesInHierarchy, sizeof(m_hideNodesInHierarchy));
     md5.Add(&m_hideIfNoChildren, sizeof(m_hideIfNoChildren));
     md5.Add(&m_doNotSort, sizeof(m_doNotSort));

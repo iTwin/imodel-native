@@ -178,8 +178,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodes_AlwaysR
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
     NavNodeCPtr node = nodes[0];
-    ASSERT_TRUE(NavNodeExtendedData(*node).GetAlwaysReturnsChildren());
-    ASSERT_TRUE(node->HasChildren());
+    EXPECT_EQ(ChildrenHint::Always, NavNodeExtendedData(*node).GetChildrenHint());
+    EXPECT_TRUE(node->HasChildren());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,8 +487,8 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, AlwaysReturnsResultsFla
 
     // make sure the parent node has the "always returns results" flag
     ASSERT_EQ(2, nodes.GetSize());
-    ASSERT_TRUE(NavNodeExtendedData(*nodes[0]).GetAlwaysReturnsChildren());
-    ASSERT_FALSE(NavNodeExtendedData(*nodes[1]).GetAlwaysReturnsChildren());
+    EXPECT_EQ(ChildrenHint::Always, NavNodeExtendedData(*nodes[0]).GetChildrenHint());
+    EXPECT_EQ(ChildrenHint::Unknown, NavNodeExtendedData(*nodes[1]).GetChildrenHint());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -899,7 +899,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 
     RootNodeRule* rule = new RootNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, true, "type", "label", "description", "imageid");
-    customNodeSpecification->SetAlwaysReturnsChildren(false);
+    customNodeSpecification->SetHasChildren(ChildrenHint::Unknown);
 
     rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
@@ -928,7 +928,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideIfNoChil
 
     RootNodeRule* rule = new RootNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, true, "type", "label", "description", "imageid");
-    customNodeSpecification->SetAlwaysReturnsChildren(false);
+    customNodeSpecification->SetHasChildren(ChildrenHint::Unknown);
 
     rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
@@ -979,7 +979,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_HideNodesInH
 
     RootNodeRule* rootRule = new RootNodeRule();
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     spec->SetHideNodesInHierarchy(true);
     rootRule->AddSpecification(*spec);
     rules->AddPresentationRule(*rootRule);
@@ -1006,7 +1006,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_AlwaysReturn
 
     RootNodeRule* rule = new RootNodeRule();
     CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "label", "description", "imageid");
-    customNodeSpecification->SetAlwaysReturnsChildren(true);
+    customNodeSpecification->SetHasChildren(ChildrenHint::Always);
     rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
@@ -1042,13 +1042,13 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, CustomNodes_ReturnsCorre
 
     RootNodeRule* rootRule = new RootNodeRule();
     CustomNodeSpecificationP rootSpec = new CustomNodeSpecification(1, false, "root", "label", "description", "imageid");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
     ChildNodeRule* childRule = new ChildNodeRule("ParentNode.Type = \"root\"", 1, false, TargetTree_Both);
     CustomNodeSpecificationP childSpec1 = new CustomNodeSpecification(1, false, "child1", "label", "description", "imageid");
-    childSpec1->SetAlwaysReturnsChildren(false);
+    childSpec1->SetHasChildren(ChildrenHint::Unknown);
     childSpec1->SetHideNodesInHierarchy(true);
     childRule->AddSpecification(*childSpec1);
     childRule->AddSpecification(*new CustomNodeSpecification(1, false, "child2", "label", "description", "imageid"));
@@ -1093,8 +1093,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     // make sure we have 1 node
     ASSERT_EQ(1, nodes.GetSize());
     NavNodeCPtr node = nodes[0];
-    ASSERT_TRUE(NavNodeExtendedData(*node).GetAlwaysReturnsChildren());
-    ASSERT_TRUE(node->HasChildren());
+    EXPECT_EQ(ChildrenHint::Always, NavNodeExtendedData(*node).GetChildrenHint());
+    EXPECT_TRUE(node->HasChildren());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1567,7 +1567,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     RootNodeRule* rootRule = new RootNodeRule();
     CustomNodeSpecificationP rootSpec = new CustomNodeSpecification(1, false, "root", "label", "description", "imageid");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -1610,7 +1610,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
 
     RootNodeRule* rootRule = new RootNodeRule();
     CustomNodeSpecificationP rootSpec = new CustomNodeSpecification(1, false, "root", "label", "description", "imageid");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -1677,8 +1677,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, RelatedInstancesNodes_Al
     // make sure we have 1 gadget node
     ASSERT_EQ(1, gadgetNodes.GetSize());
     NavNodeCPtr node = gadgetNodes[0];
-    ASSERT_TRUE(NavNodeExtendedData(*node).GetAlwaysReturnsChildren());
-    ASSERT_TRUE(node->HasChildren());
+    EXPECT_EQ(ChildrenHint::Always, NavNodeExtendedData(*node).GetChildrenHint());
+    EXPECT_TRUE(node->HasChildren());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4676,7 +4676,7 @@ TEST_F (RulesDrivenECPresentationManagerNavigationTests, ReturnsChildrenUsingAll
 
     RootNodeRule* rootRule = new RootNodeRule();
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "a", "a", "a", "a");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*spec);
     rules->AddPresentationRule(*rootRule);
 

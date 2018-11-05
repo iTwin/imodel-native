@@ -2148,7 +2148,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
@@ -2189,7 +2189,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
@@ -2241,7 +2241,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
@@ -3901,7 +3901,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -4026,7 +4026,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -4078,7 +4078,7 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -4123,7 +4123,7 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 

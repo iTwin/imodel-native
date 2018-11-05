@@ -66,7 +66,7 @@ TEST_F(AllInstanceNodesSpecificationTests, WriteToJson)
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "AllInstanceNodes",
-        "alwaysReturnsChildren": true,
+        "hasChildren": "Always",
         "hideNodesInHierarchy": true,
         "hideIfNoChildren": true,
         "supportedSchemas": {"schemaNames": ["SupportedSchema"]}
@@ -127,7 +127,7 @@ TEST_F(AllInstanceNodesSpecificationTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<AllInstances Priority="1000" AlwaysReturnsChildren="true" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="extendedData" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
+            R"(<AllInstances Priority="1000" HasChildren="Always" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="extendedData" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }

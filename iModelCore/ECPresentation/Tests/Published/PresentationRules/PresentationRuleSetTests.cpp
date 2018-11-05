@@ -772,7 +772,7 @@ TEST_F(PresentationRuleSetTests, TestNestedCustomizationRulesWriteToXml)
                 "<ImageIdOverride Priority=\"4\" OnlyIfNotHandled=\"false\" Condition=\"TestCondition3\" ImageId=\"ImageIdOverrideTestValue\"/>"
             "</RootNodeRule>"
             "<ChildNodeRule Priority=\"2\" Condition=\"TestCondition2\" OnlyIfNotHandled=\"true\" TargetTree=\"Both\" StopFurtherProcessing=\"false\">"
-                "<AllInstances Priority=\"1\" AlwaysReturnsChildren=\"false\" HideNodesInHierarchy=\"false\" HideIfNoChildren=\"false\" ExtendedData=\"\" DoNotSort=\"false\" GroupByClass=\"false\" GroupByLabel=\"false\" SupportedSchemas=\"one\">"
+                "<AllInstances Priority=\"1\" HasChildren=\"Unknown\" HideNodesInHierarchy=\"false\" HideIfNoChildren=\"false\" ExtendedData=\"\" DoNotSort=\"false\" GroupByClass=\"false\" GroupByLabel=\"false\" SupportedSchemas=\"one\">"
                     "<ChildNodeRule Priority=\"1\" Condition=\"\" OnlyIfNotHandled=\"false\" TargetTree=\"MainTree\" StopFurtherProcessing=\"false\">"
                         "<GroupingRule Priority=\"2\" OnlyIfNotHandled=\"false\" Condition=\"\" SchemaName=\"TestSchemaName2\" ClassName=\"\" ContextMenuCondition=\"\" ContextMenuLabel=\"\" SettingsId=\"\"/>"
                     "</ChildNodeRule>"

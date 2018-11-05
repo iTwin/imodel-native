@@ -50,10 +50,15 @@ struct EXPORT_VTABLE_ATTRIBUTE AllRelatedInstanceNodesSpecification : public Chi
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification ();
+        
+        //! Constructor.
+        //! @deprecated Use AllRelatedInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool, int, Utf8StringCR)
+        ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
+            bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas);
 
         //! Constructor.
-        ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-                                                               bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas);
+        ECPRESENTATION_EXPORT AllRelatedInstanceNodesSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
+            bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas);
 
         //! Returns true if grouping by class should be applied.
         ECPRESENTATION_EXPORT bool                         GetGroupByClass (void) const;
@@ -62,9 +67,11 @@ struct EXPORT_VTABLE_ATTRIBUTE AllRelatedInstanceNodesSpecification : public Chi
         ECPRESENTATION_EXPORT void                         SetGroupByClass (bool value);
 
         //! Returns true if grouping by relationship should be applied.
+        //! @deprecated
         ECPRESENTATION_EXPORT bool                         GetGroupByRelationship (void) const;
 
         //! Sets the GroupByRelationship value. Can be boolean.
+        //! @deprecated
         ECPRESENTATION_EXPORT void                         SetGroupByRelationship (bool value);
 
         //! Returns true if grouping by label should be applied.

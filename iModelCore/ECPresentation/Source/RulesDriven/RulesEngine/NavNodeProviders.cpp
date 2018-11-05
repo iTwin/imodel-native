@@ -511,6 +511,27 @@ void NavNodesProvider::NotifyNodeChanged(JsonNavNodeCR node) const
     GetContext().GetNodesCache().Update(node.GetNodeId(), node);
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2018
++===============+===============+===============+===============+===============+======*/
+struct NodeHasChildrenFlagUpdater
+    {
+    IHierarchyCacheR m_cache;
+    JsonNavNodePtr m_node;
+    HasChildrenFlag const& m_flag;
+
+    NodeHasChildrenFlagUpdater(IHierarchyCacheR cache, JsonNavNodePtr node, HasChildrenFlag const& flag)
+        : m_cache(cache), m_node(node), m_flag(flag)
+        {}
+    ~NodeHasChildrenFlagUpdater()
+        {
+        if (HASCHILDREN_Unknown == m_flag)
+            return;
+        m_node->SetHasChildren(HASCHILDREN_True == m_flag);
+        m_cache.Update(m_node->GetNodeId(), *m_node);
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -529,7 +550,7 @@ void NavNodesProvider::DetermineChildren(JsonNavNodeR node) const
         return;
 
     NavNodeExtendedData extendedData(node);
-    if (extendedData.GetAlwaysReturnsChildren())
+    if (ChildrenHint::Unknown != extendedData.GetChildrenHint())
         return;
     
     node.SetHasChildren(HASCHILDREN_True == AnyChildSpecificationReturnsNodes(node));
@@ -666,8 +687,8 @@ bool CustomNodesProvider::_InitializeNodes()
     NavNodeExtendedData extendedData(*m_node);
     extendedData.SetRulesetId(GetContext().GetRuleset().GetRuleSetId().c_str());
     extendedData.SetSpecificationHash(m_specification.GetHash());
-    if (m_specification.GetAlwaysReturnsChildren())
-        extendedData.SetAlwaysReturnsChildren(true);
+    if (ChildrenHint::Unknown != m_specification.GetHasChildren())
+        extendedData.SetChildrenHint(m_specification.GetHasChildren());
 
     if (nullptr != GetContext().GetPhysicalParentNodeId())
         m_node->SetParentNodeId(*GetContext().GetPhysicalParentNodeId());
@@ -686,24 +707,25 @@ bool CustomNodesProvider::_InitializeNodes()
         }
     
     HasChildrenFlag hasChildren = HASCHILDREN_Unknown;
-    if (m_specification.GetAlwaysReturnsChildren())
-        {
-        hasChildren = HASCHILDREN_True;
-        }
-    else if (m_specification.GetHideIfNoChildren() && (HASCHILDREN_False == (hasChildren = AnyChildSpecificationReturnsNodes(*m_node))))
-        {
-        // if the node has "hide if no children" flag and none of the child specs return nodes, return false
-        m_node = nullptr;
-        GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
-        return true;
-        }
+    NodeHasChildrenFlagUpdater hasChildrenUpdater(GetContext().GetNodesCache(), m_node, hasChildren);
 
-    // we may already know whether the node has any children
-    if (HASCHILDREN_Unknown != hasChildren)
+    if (ChildrenHint::Always == m_specification.GetHasChildren())
+        hasChildren = HASCHILDREN_True;
+    else if (ChildrenHint::Never == m_specification.GetHasChildren())
+        hasChildren = HASCHILDREN_False;
+    else if (m_specification.GetHideIfNoChildren())
         {
-        m_node->SetHasChildren(HASCHILDREN_True == hasChildren);
-        NotifyNodeChanged(*m_node);
-        }
+        if (HASCHILDREN_Unknown == hasChildren)
+            hasChildren = AnyChildSpecificationReturnsNodes(*m_node);
+
+        if (HASCHILDREN_False == hasChildren)
+            {
+            // if the node has "hide if no children" flag and none of the child specs return nodes, return false
+            m_node = nullptr;
+            GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
+            return true;
+            }
+         }
 
     GetContext().GetNodesCache().MakePhysical(*m_node);
     GetContext().GetNodesCache().FinalizeInitialization(GetContext().GetDataSourceInfo());
@@ -829,8 +851,10 @@ bool QueryBasedNodesProvider::HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodesProviderPtr QueryBasedNodesProvider::CreateProvider(JsonNavNodeR node) const
     {
-    // the specification may want to return nodes children instead of the node itself
     HasChildrenFlag hasChildren = HASCHILDREN_Unknown;
+    NodeHasChildrenFlagUpdater hasChildrenUpdater(GetContext().GetNodesCache(), &node, hasChildren);
+
+    // the specification may want to return nodes children instead of the node itself
     if (ShouldReturnChildNodes(node, hasChildren))
         return GetContext().CreateHierarchyLevelProvider(*CreateContextForChildHierarchyLevel(*this, node), &node);
     
@@ -840,21 +864,21 @@ NavNodesProviderPtr QueryBasedNodesProvider::CreateProvider(JsonNavNodeR node) c
 
     // there's some additional work if we don't know if the node has children
     NavNodeExtendedData extendedData(node);
-    if (extendedData.GetAlwaysReturnsChildren())
-        {
+    if (ChildrenHint::Always == extendedData.GetChildrenHint())
         hasChildren = HASCHILDREN_True;
-        }
-    else if (extendedData.HideIfNoChildren() && (HASCHILDREN_False == hasChildren || HASCHILDREN_False == (hasChildren = AnyChildSpecificationReturnsNodes(node))))
-        {
-        // if the node has "hide if no children" flag and none of the child specs return nodes, skip this node
-        return EmptyNavNodesProvider::Create(*nestedContext);
-        }
+    else if (ChildrenHint::Never == extendedData.GetChildrenHint() && !extendedData.HasGroupingType())
+        hasChildren = HASCHILDREN_False;
 
-    // we may already know whether the node has any children
-    if (HASCHILDREN_Unknown != hasChildren)
+    if (extendedData.HideIfNoChildren())
         {
-        node.SetHasChildren(HASCHILDREN_True == hasChildren);
-        NotifyNodeChanged(node);
+        if (HASCHILDREN_Unknown == hasChildren)
+            hasChildren = AnyChildSpecificationReturnsNodes(node);
+
+        if (HASCHILDREN_False == hasChildren)
+            {
+            // if the node has "hide if no children" flag and none of the child specs return nodes, skip this node
+            return EmptyNavNodesProvider::Create(*nestedContext);
+            }
         }
 
     GetContext().GetNodesCache().MakePhysical(node);
@@ -1101,9 +1125,11 @@ bool QueryBasedNodesProvider::_GetNode(JsonNavNodePtr& node, size_t index) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryBasedNodesProvider::_HasNodes() const
     {
-    if (m_query->GetResultParameters().GetNavNodeExtendedData().GetAlwaysReturnsChildren())
+    ChildrenHint hint = m_query->GetResultParameters().GetNavNodeExtendedData().GetChildrenHint();
+    if (ChildrenHint::Always == hint)
         return true;
-    
+    if (ChildrenHint::Never == hint && !m_query->GetResultParameters().GetNavNodeExtendedData().HasGroupingType())
+        return false;
     return GetNodesCount() > 0;
     }
 
@@ -1196,9 +1222,8 @@ bvector<NavigationQueryPtr> QueryBasedSpecificationNodesProvider::CreateQueries(
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool QueryBasedSpecificationNodesProvider::_HasNodes() const
     {
-    if (m_specification.GetAlwaysReturnsChildren())
+    if (ChildrenHint::Always == m_specification.GetHasChildren())
         return true;
-
     return MultiNavNodesProvider::_HasNodes();
     }
 
