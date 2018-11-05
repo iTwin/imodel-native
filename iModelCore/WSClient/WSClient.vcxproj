@@ -147,6 +147,7 @@
     <ClCompile Include="Client\ClientConnection.cpp" />
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV2Utils\ActivityLogger.cpp" />
     <ClCompile Include="Client\RepositoryInfoProvider.cpp" />
     <ClCompile Include="Client\WSJob.cpp" />
     <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp" />
@@ -154,6 +155,7 @@
     <ClCompile Include="Client\WSChangeset.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
+    <ClCompile Include="Client\ActivityIdGenerator.cpp" />
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
     <ClCompile Include="ConnectC\CWSCC.cpp" />
@@ -264,6 +266,8 @@
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV21ToV23.h" />
+    <ClInclude Include="Client\WebApi\WebApiV2Utils\ActivityLogger.h" />
+    <ClInclude Include="Client\ActivityIdGenerator.h" />
     <ClInclude Include="Client\RepositoryInfoProvider.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />

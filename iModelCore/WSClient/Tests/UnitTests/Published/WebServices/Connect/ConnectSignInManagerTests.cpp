@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectSignInManagerTests.h"
+#include <WebServices/Connect/IConnectSignInManager.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 #include "MockImsClient.h"
@@ -408,7 +409,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_SignedInWithTokenAndSignedOut_Retu
 
     GetHandler().ForFirstRequest(StubImsTokenHttpResponse(*StubSamlToken()));
     ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
-    manager->SignOut();
+    manager->SignOut()->Wait();
 
     auto info = manager->GetUserInfo();
 
@@ -441,7 +442,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, UserInfo_NoOrganizationId_IsNotComplete)
     {
-    ConnectSignInManager::UserInfo info;
+    IConnectSignInManager::UserInfo info;
     info.firstName = "FirstName";
     info.lastName = "LastName";
     info.userId = "userId";
@@ -456,7 +457,7 @@ TEST_F(ConnectSignInManagerTests, UserInfo_NoOrganizationId_IsNotComplete)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, UserInfo_NoUserId_IsNotComplete)
     {
-    ConnectSignInManager::UserInfo info;
+    IConnectSignInManager::UserInfo info;
     info.firstName = "FirstName";
     info.lastName = "LastName";
     info.userId = "";
@@ -471,7 +472,7 @@ TEST_F(ConnectSignInManagerTests, UserInfo_NoUserId_IsNotComplete)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, UserInfo_AllDataSet_IsComplete)
     {
-    ConnectSignInManager::UserInfo info;
+    IConnectSignInManager::UserInfo info;
     info.firstName = "FirstName";
     info.lastName = "LastName";
     info.userId = "userId";
@@ -486,7 +487,7 @@ TEST_F(ConnectSignInManagerTests, UserInfo_AllDataSet_IsComplete)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectSignInManagerTests, UserInfo_NoDataSet_IsNotComplete)
     {
-    ConnectSignInManager::UserInfo info;
+    IConnectSignInManager::UserInfo info;
     info.firstName = "";
     info.lastName = "";
     info.userId = "";
@@ -494,6 +495,47 @@ TEST_F(ConnectSignInManagerTests, UserInfo_NoDataSet_IsNotComplete)
     info.organizationId = "";
 
     EXPECT_FALSE(info.IsComplete());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, UserInfo_AllDataSetFromSerialized_SameValues)
+    {
+    IConnectSignInManager::UserInfo info;
+    info.firstName = "FirstName";
+    info.lastName = "LastName";
+    info.userId = "userId";
+    info.username = "username";
+    info.organizationId = "OrganizationId";
+
+    auto serialized = info.ToString();
+    IConnectSignInManager::UserInfo serializedInfo(serialized);
+    EXPECT_STREQ("FirstName", serializedInfo.firstName.c_str());
+    EXPECT_STREQ("LastName", serializedInfo.lastName.c_str());
+    EXPECT_STREQ("userId", serializedInfo.userId.c_str());
+    EXPECT_STREQ("username", serializedInfo.username.c_str());
+    EXPECT_STREQ("OrganizationId", serializedInfo.organizationId.c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, UserInfo_SomeDataMissingSerialized_SameValues)
+    {
+    IConnectSignInManager::UserInfo info;
+    info.firstName = "FirstName";
+    info.userId = "userId";
+    info.username = "username";
+    info.organizationId = "OrganizationId";
+
+    auto serialized = info.ToString();
+    IConnectSignInManager::UserInfo serializedInfo(serialized);
+    EXPECT_STREQ("FirstName", serializedInfo.firstName.c_str());
+    EXPECT_STREQ("", serializedInfo.lastName.c_str());
+    EXPECT_STREQ("userId", serializedInfo.userId.c_str());
+    EXPECT_STREQ("username", serializedInfo.username.c_str());
+    EXPECT_STREQ("OrganizationId", serializedInfo.organizationId.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -583,7 +625,7 @@ TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedInSecondTime_ReturnsCurr
     EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
     ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
 
-    manager->SignOut();
+    manager->SignOut()->Wait();
 
     token = StubSamlTokenWithUser("TestUserB");
     EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
@@ -604,7 +646,7 @@ TEST_F(ConnectSignInManagerTests, GetLastUsername_SignedOut_ReturnsPreviousUser)
     EXPECT_CALL(*imsClient, RequestToken(*token, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(token))));
     ASSERT_TRUE(manager->SignInWithToken(token)->GetResult().IsSuccess());
 
-    manager->SignOut();
+    manager->SignOut()->Wait();
 
     EXPECT_EQ("TestUser", manager->GetLastUsername());
     }
@@ -705,7 +747,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedOutAndTokensRequested_R
     EXPECT_EQ(delegationToken, provider->GetToken());
 
     // Signed-out
-    manager->SignOut();
+    manager->SignOut()->Wait();
     EXPECT_EQ(nullptr, provider->GetToken());
     EXPECT_EQ(nullptr, provider->UpdateToken()->GetResult());
     EXPECT_EQ(nullptr, provider->GetToken());
@@ -736,7 +778,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedOutAndSignedInAndTokens
     EXPECT_EQ(delegationToken1, provider->GetToken());
 
     // Sign-in again
-    manager->SignOut();
+    manager->SignOut()->Wait();
     EXPECT_CALL(*imsClient, RequestToken(*identityToken2, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken2))));
     ASSERT_TRUE(manager->SignInWithToken(identityToken2)->GetResult().IsSuccess());
 
@@ -771,7 +813,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedOutAndSignedInAndSigned
     EXPECT_EQ(delegationToken, provider->GetToken());
 
     // Sign-in again
-    manager->SignOut();
+    manager->SignOut()->Wait();
     EXPECT_CALL(*imsClient, RequestToken(*identityToken2, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken2))));
     ASSERT_TRUE(manager->SignInWithToken(identityToken2)->GetResult().IsSuccess());
 
@@ -781,7 +823,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedOutAndSignedInAndSigned
     EXPECT_EQ(delegationToken, provider->GetToken());
     
     // Sign-in again
-    manager->SignOut();
+    manager->SignOut()->Wait();
     EXPECT_CALL(*imsClient, RequestToken(*identityToken3, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken3))));
     ASSERT_TRUE(manager->SignInWithToken(identityToken3)->GetResult().IsSuccess());
 
@@ -817,7 +859,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedOutAndSignedInWithFinal
     EXPECT_EQ(delegationToken1, provider->GetToken());
 
     // Sign-in again
-    manager->SignOut();
+    manager->SignOut()->Wait();
     EXPECT_CALL(*imsClient, RequestToken(*identityToken2, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken2))));
     ASSERT_TRUE(manager->SignInWithToken(identityToken2)->GetResult().IsSuccess());
     manager->FinalizeSignIn();
@@ -1040,7 +1082,7 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithSame
         .WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUser"}})))));
 
     ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
-    manager->SignOut();
+    manager->SignOut()->Wait();
     ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
 
     EXPECT_EQ(0, count);
@@ -1068,7 +1110,7 @@ TEST_F(ConnectSignInManagerTests, SignInWithToken_SecondTimeAfterSignOutWithDiff
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUserB"}})))));
 
     ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
-    manager->SignOut();
+    manager->SignOut()->Wait();
     ASSERT_TRUE(manager->SignInWithToken(StubSamlToken())->GetResult().IsSuccess());
 
     EXPECT_EQ(1, count);
@@ -1096,7 +1138,7 @@ TEST_F(ConnectSignInManagerTests, SignInWithCredentials_SecondTimeAfterSignOutWi
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken({{"name", "TestUserB"}})))));
 
     ASSERT_TRUE(manager->SignInWithCredentials({"Foo", "Boo"})->GetResult().IsSuccess());
-    manager->SignOut();
+    manager->SignOut()->Wait();
     ASSERT_TRUE(manager->SignInWithCredentials({"Foo", "Boo"})->GetResult().IsSuccess());
 
     EXPECT_EQ(1, count);
@@ -1347,7 +1389,7 @@ TEST_F(ConnectSignInManagerTests, SignOut_SignInHandlerSet_CallsHandler)
     manager->FinalizeSignIn();
 
     EXPECT_EQ(0, count);
-    manager->SignOut();
+    manager->SignOut()->Wait();
     EXPECT_EQ(1, count);
     }
 
