@@ -162,11 +162,15 @@ Http::Response StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, 
 WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
     {
     BeVersion serverVersion;
-    if (webApiVersion >= BeVersion(2, 8))
+    if (webApiVersion >= BeVersion(2, 9))
+        {
+        serverVersion = BeVersion(2, 9);
+        }
+    else if (webApiVersion >= BeVersion(2, 8))
         {
         serverVersion = BeVersion(2, 8);
         }
-    if (webApiVersion >= BeVersion(2, 7))
+    else if (webApiVersion >= BeVersion(2, 7))
         {
         serverVersion = BeVersion(2, 7);
         }
