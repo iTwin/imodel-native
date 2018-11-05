@@ -965,6 +965,24 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequestForStream_WebApiV24_SendsCorre
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetFileRequestForStream_WebApiV24AndNullptrResponseBody_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, nullptr)->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectStatusReceived_Error)
