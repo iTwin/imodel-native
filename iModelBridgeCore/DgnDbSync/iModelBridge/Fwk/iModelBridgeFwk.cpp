@@ -1627,10 +1627,25 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
-        if (!m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb))
-            DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
-        if (!m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb))
-            DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
+        //Get the schema lock if needed.
+
+        bool needFileProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
+        bool needModelProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
+
+        if (needFileProvenance || needModelProvenance)
+            {
+            if (RepositoryStatus::Success != m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result())
+                {
+                LOG.fatalv("Unable to obtain the schema lock");
+                return BentleyStatus::ERROR;
+                }
+
+            if (needFileProvenance)
+                DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
+            if (needModelProvenance)
+                DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
+            }
+        
 
         //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
         iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
@@ -1646,7 +1661,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
-        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb) || needFileProvenance || needModelProvenance) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
             {
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))
                 return RETURN_STATUS_SERVER_ERROR;

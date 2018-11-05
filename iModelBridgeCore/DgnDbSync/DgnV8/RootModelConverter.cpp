@@ -753,13 +753,11 @@ RootModelConverter::~RootModelConverter()
 
     m_v8Files.clear();
     m_filesKeepAlive.clear();
-
+    m_viewGroup = nullptr;
     m_rootFile = nullptr;
+    m_drawingModelsKeepAlive.clear();
     if (!m_params.m_keepHostAliveForUnitTests)
         {
-        if (ScalableMesh::ScalableMeshLib::IsInitialized())
-            ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
-
         ClearV8ProgressMeter();
 
         if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
