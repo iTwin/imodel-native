@@ -7,7 +7,7 @@
 using namespace BeSQLite;
 using namespace Dgn;
 
-ProfilesDomainTestsHost ProfilesDomainTestsFixture::m_host;
+ProfilesDomainTestsHost ProfilesDomainTestsFixture::s_host;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Arturas.Mizaras          11/17
@@ -93,10 +93,60 @@ DgnViewLib::Host::IKnownLocationsAdmin& ProfilesDomainTestsHost::_SupplyIKnownLo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ProfilesDomainTestsFixture::ProfilesDomainTestsFixture()
+    : m_dbPtr (nullptr), m_modelPtr (nullptr)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbR ProfilesDomainTestsFixture::GetDb()
+    {
+    BeAssert(m_dbPtr.IsValid());
+    return *m_dbPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelR ProfilesDomainTestsFixture::GetModel()
+    {
+    BeAssert(m_modelPtr.IsValid());
+    return *m_modelPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeFileName getOutputDirectory()
+    {
+    BeFileName outputDirectory;
+    BeTest::GetHost().GetTempDir(outputDirectory);
+    outputDirectory.AppendToPath(L"ProfilesTests");
+
+    if (!BeFileName::DoesPathExist(outputDirectory.c_str()))
+        BeFileName::CreateNewDirectory(outputDirectory.c_str());
+
+    return outputDirectory;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProfilesDomainTestsFixture::SetUp_CreateNewDgnDb()
+static DgnDbPtr createDgnDb(BeFileName const& bimFilename)
     {
+    CreateDgnDbParams createProjectParams;
+    createProjectParams.SetOverwriteExisting(true);
+    createProjectParams.SetRootSubjectName("ProfilesTest");
+    createProjectParams.SetRootSubjectDescription("Tests for Profiles domain handlers");
+
+    DbResult status = BeSQLite::DbResult::BE_SQLITE_ERROR;
+    DgnDbPtr db = DgnDb::CreateDgnDb(&status, bimFilename, createProjectParams);
+    BeAssert(status == BE_SQLITE_OK);
+
+    return db;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,6 +155,23 @@ void ProfilesDomainTestsFixture::SetUp_CreateNewDgnDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUp()
     {
+    // TODO Karolis: Would be nice not to create a new bim everytime, but instead to rollback
+    // all changes and have a fresh db for unit tests that way.
+    BeFileName bimFilename = getOutputDirectory().AppendToPath(L"ProfilesTests");
+    m_dbPtr = createDgnDb (bimFilename);
+    BeAssert(m_dbPtr.IsValid());
+
+    SubjectCPtr rootSubjectPtr = m_dbPtr->Elements().GetRootSubject();
+    DefinitionPartitionPtr partitionPtr = DefinitionPartition::Create(*rootSubjectPtr, "TestPartition");
+    m_dbPtr->BriefcaseManager().AcquireForElementInsert(*partitionPtr);
+
+    DgnDbStatus status;
+    m_dbPtr->Elements().Insert<DefinitionPartition>(*partitionPtr, &status);
+    BeAssert(status == DgnDbStatus::Success);
+
+    m_modelPtr = DefinitionModel::Create(*partitionPtr);
+    status = m_modelPtr->Insert();
+    BeAssert(status == DgnDbStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,6 +180,7 @@ void ProfilesDomainTestsFixture::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::TearDown()
     {
+    m_dbPtr->CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -121,10 +189,10 @@ void ProfilesDomainTestsFixture::TearDown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUpTestCase()
     {
-    DgnViewLib::Initialize(m_host, true); // this initializes the DgnDb libraries
+    DgnViewLib::Initialize(s_host, true); // this initializes the DgnDb libraries
 
-    BentleyStatus status = DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    BeAssert(BentleyStatus::SUCCESS == status);
+    BentleyStatus registrationStatus = DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,56 +201,5 @@ void ProfilesDomainTestsFixture::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::TearDownTestCase()
     {
-    m_host.Terminate(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr ProfilesDomainTestsFixture::CreateDgnDb()
-    {
-    BentleyStatus registrationStatus = Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::No, Dgn::DgnDomain::Readonly::No);
-    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
-
-    BeFileName tmpDir;
-    BeTest::GetHost().GetTempDir(tmpDir);
-
-    tmpDir.CreateNewDirectory(tmpDir.c_str());
-
-    m_workingBimFile = tmpDir;
-    m_workingBimFile.AppendToPath(L"ProfilesDomain.bim");
-
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetOverwriteExisting(true);
-    createProjectParams.SetRootSubjectName("ProfilesTest");
-    createProjectParams.SetRootSubjectDescription("Tests for Profiles domain handlers");
-
-    BeSQLite::DbResult status = BeSQLite::DbResult::BE_SQLITE_ERROR;
-    Dgn::DgnDbPtr db = DgnDb::CreateDgnDb(&status, m_workingBimFile, createProjectParams);
-
-    return db;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr ProfilesDomainTestsFixture::OpenDgnDb()
-    {
-    BentleyStatus registrationStatus = Dgn::DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::No, Dgn::DgnDomain::Readonly::No);
-    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
-
-    BeFileName tmpDir;
-    BeTest::GetHost().GetTempDir(tmpDir);
-
-    m_workingBimFile = tmpDir;
-    m_workingBimFile.AppendToPath(L"ProfilesDomain.bim");
-
-    // Initialize parameters needed to create a DgnDb
-    Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes,
-        SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
-    // Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
-    BeSQLite::DbResult openStatus;
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&openStatus, m_workingBimFile, openParams);
-
-    return db;
+    s_host.Terminate(false);
     }

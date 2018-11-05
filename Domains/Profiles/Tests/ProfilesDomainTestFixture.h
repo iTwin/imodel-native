@@ -25,16 +25,15 @@ struct ProfilesDomainTestsHost : Dgn::DgnViewLib::Host
 class ProfilesDomainTestsFixture : public testing::Test
     {
     private:
-        static ProfilesDomainTestsHost m_host;
-
-    protected:
-        BeFileName m_workingBimFile;
+        static ProfilesDomainTestsHost s_host;
+        Dgn::DgnDbPtr m_dbPtr;
+        Dgn::DgnModelPtr m_modelPtr;
 
     public:
-        /// <summary>
-        /// Sets up create new DGN database. This function deletes the old seed and recreates them
-        /// </summary>
-        void SetUp_CreateNewDgnDb();
+        ProfilesDomainTestsFixture();
+
+        Dgn::DgnDbR GetDb();
+        Dgn::DgnModelR GetModel();
 
         /// <summary>
         /// Sets up the test fixture
@@ -55,7 +54,4 @@ class ProfilesDomainTestsFixture : public testing::Test
         /// Tears down DgnDb host.
         /// </summary>
         static void TearDownTestCase();
-
-        Dgn::DgnDbPtr CreateDgnDb();
-        Dgn::DgnDbPtr OpenDgnDb();
     };
