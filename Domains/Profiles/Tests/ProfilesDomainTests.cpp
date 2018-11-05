@@ -38,3 +38,23 @@ TEST_F(ProfilesDomainTestsFixture, ValidateSchema)
 
     ASSERT_TRUE(refSchema->Validate());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ProfilesDomainTestsFixture, InsertAndUpdateIShapeProfile)
+    {
+    IShapeProfilePtr profilePtr = IShapeProfile::Create(GetModel());
+    ASSERT_TRUE(profilePtr.IsValid());
+
+    DgnDbStatus status;
+    profilePtr->Insert(&status);
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+
+    profilePtr->SetDepth(1.0);
+    double depth = profilePtr->GetDepth();
+    ASSERT_TRUE(depth == 1.0);
+
+    profilePtr->Update(&status);
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+    }
