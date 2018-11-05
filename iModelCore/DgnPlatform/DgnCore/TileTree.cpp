@@ -925,6 +925,10 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     DgnDb::VerifyClientThread();
 
     _ValidateChildren();
+
+    if (IsNotFound())
+        return SelectParent::Yes;
+
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
@@ -949,14 +953,21 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
         {
         m_childrenLastUsed = args.m_now;
         bool drawParent = false;
+        bool loadParent = false;
         size_t initialSize = selected.size();
 
         for (auto const& child : *children)
             {
             if (SelectParent::Yes == child->_SelectTiles(selected, args))
                 {
-                drawParent = true;
                 // NB: We must continue iterating children so that they can be requested if missing...
+                drawParent = true;
+
+                // This occurs with e.g. map tiles when we get back 'missing tile data' from the imagery provider.
+                // Want to load the parent to draw in its place.
+                // Note it's possible some children are not found and others are fine - load parent if any children are not found.
+                if (child->IsNotFound())
+                    loadParent = true;
                 }
             }
 
@@ -967,6 +978,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
             }
 
         selected.resize(initialSize);
+
+        if (loadParent && !ready)
+            args.InsertMissing(*this);
         }
 
     if (!tooCoarse)
@@ -1618,7 +1632,8 @@ void OctTree::Tile::_ValidateChildren() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MissingNodes::Insert(TileCR tile, bool prioritize)
     {
-    m_set.insert(Node(tile, prioritize));
+    if (tile.IsNotLoaded())
+        m_set.insert(Node(tile, prioritize));
     }
 
 /*---------------------------------------------------------------------------------**//**
