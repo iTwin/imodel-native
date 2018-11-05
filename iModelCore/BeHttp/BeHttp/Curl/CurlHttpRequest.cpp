@@ -619,15 +619,22 @@ BentleyStatus CurlHttpRequest::SetupCurl ()
         curl_easy_setopt(m_curl, CURLOPT_CAINFO, NULL);
         }
 
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         static bool versionLogged = false;
         if (!versionLogged)
             {
-            LOG.debugv("HTTP API implementation: %s", curl_version());
+            Utf8String trustDescription;
+            if (TrustManager::CanUseSystemTrustedCertificates())
+                trustDescription = ". " + TrustManager::GetImplementationDescription();
+
+            LOG.infov("HTTP API implementation: %s%s", curl_version(), trustDescription.c_str());
             versionLogged = true;
             }
+        }
 
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        {
         curl_easy_setopt(m_curl, CURLOPT_DEBUGFUNCTION, CurlDebugCallback);
         curl_easy_setopt(m_curl, CURLOPT_DEBUGDATA, this);
         curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L);
