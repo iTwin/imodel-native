@@ -903,3 +903,17 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     db.BriefcaseManager().StartBulkOperation();
     return BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::WantModelProvenanceInBim(DgnDbR db)
+    {
+    if (!db.TableExists(DGN_TABLE_ProvenanceModel))
+        return true;
+
+    if (db.ColumnExists(DGN_TABLE_ProvenanceModel, "Transform"))
+        return true;
+
+    return false;
+    }

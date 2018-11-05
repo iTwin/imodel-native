@@ -269,6 +269,7 @@ struct SyncInfo
         {
         private:
         friend struct ModelIterator;
+        friend struct Converter;
         mutable V8ModelSyncInfoId m_syncInfoId; //!< The id assigned to this attachment by syncinfo
         Utf8String  m_v8Name;           //!< The name of the V8 model.
         V8ModelSource m_source;         //!< The V8 ModelId of the model in the source V8 file

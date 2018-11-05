@@ -872,6 +872,7 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
 
     //  Initialize the ConverterLibrary helper object. Do all this initialization once, before converting any elements.
     RootModelConverter::RootModelSpatialParams params;
+    params.m_keepHostAliveForUnitTests = true;
     // Call params.AddDrawingOrSheetFile to add files to be processed by ConvertAllDrawingsAndSheets
     ConverterLibrary cvt(outputBim, params);
 
@@ -1044,6 +1045,7 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
 
     outputBim->SaveChanges();
     wprintf(L"%ls\n", outputBim->GetFileName().c_str());
+    v8editor.Save();
     }
 
 struct TestXDomain : XDomain

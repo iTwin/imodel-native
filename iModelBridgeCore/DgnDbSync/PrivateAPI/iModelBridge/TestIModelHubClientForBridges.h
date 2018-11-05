@@ -51,12 +51,13 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
     iModel::Hub::Error m_lastServerError;
     BeFileName m_serverRepo;
     BeFileName m_testWorkDir;
+    bvector<DgnRevisionPtr> m_revisions;
     DgnDbP m_briefcase;
     BeSQLite::BeBriefcaseId m_currentBriefcaseId;
     TestRepositoryAdmin m_admin;
     TestIModelHubClientForBridges(BeFileNameCR testWorkDir) : m_testWorkDir(testWorkDir), m_currentBriefcaseId(BeSQLite::BeBriefcaseId::Standalone())
         {}
-
+    
     static BeFileName MakeFakeRepoPath(BeFileNameCR testWorkDir, Utf8CP repoName)
         {
         BeFileName repoPath = testWorkDir;
@@ -86,9 +87,23 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
             }
         EXPECT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(m_serverRepo, bcFileName, false));
 
-        auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        bvector<DgnRevisionCP> revisions;
+        for (DgnRevisionPtr rev : m_revisions)
+            revisions.push_back(rev.get());
+
+        auto db = DgnDb::OpenDgnDb(nullptr, bcFileName, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite));
         m_currentBriefcaseId = m_currentBriefcaseId.GetNextBriefcaseId();
         db->SetAsBriefcase(m_currentBriefcaseId);
+        db->SaveChanges();
+        db = nullptr;
+        if (revisions.empty())
+            return BSISUCCESS;
+
+        SchemaUpgradeOptions option(revisions);
+        option.SetUpgradeFromDomains(SchemaUpgradeOptions::DomainUpgradeOptions::SkipCheck);// We only want to merge schema revisions. We don't also want to import or upgrade required revisions.
+        DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, option);
+
+        db = DgnDb::OpenDgnDb(nullptr, bcFileName, params);
         db->SaveChanges();
 
         return BSISUCCESS;
@@ -107,11 +122,14 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
     StatusInt PullMergeAndPush(Utf8CP) override
         {
-        CaptureChangeSet(m_briefcase);
+        DgnRevisionPtr revision = CaptureChangeSet(m_briefcase);
+        if (revision.IsNull())
+            return BSISUCCESS;
+        m_revisions.push_back(revision);
         return BSISUCCESS;
         }
 
-    virtual void CaptureChangeSet(DgnDbP db)
+    virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db)
         {
         BeAssert(db != nullptr);
 
@@ -120,7 +138,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
 
         if (!changeSet.IsValid())
-            return;
+            return changeSet;
 
         Dgn::RevisionStatus status = db->Revisions().FinishCreateRevision();
         BeAssert(Dgn::RevisionStatus::Success == status);
@@ -129,6 +147,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
 
         // *** TBD: test for expected changes
         changeSet->Dump(*db);
+        return changeSet;
         }
 
     StatusInt PullAndMerge() override

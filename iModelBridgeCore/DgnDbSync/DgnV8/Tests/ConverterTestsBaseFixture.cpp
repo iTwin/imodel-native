@@ -323,7 +323,7 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
 
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-
+    params.m_keepHostAliveForUnitTests = true;
     params.SetInputFileName(input);
 
     auto db = OpenExistingDgnDb(output);
@@ -379,7 +379,7 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
     {
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-
+    params.m_keepHostAliveForUnitTests = true;
     params.SetInputFileName(input);
     auto db = OpenExistingDgnDb(output);
     ASSERT_TRUE(db.IsValid());

@@ -1099,6 +1099,7 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
     if (nullptr == m_bridge)
         return BentleyStatus::SUCCESS;
 
+    StopWatch releaseBridge;
     auto releaseFunc = m_jobEnvArgs.ReleaseBridge();
     if (nullptr == releaseFunc)
         {
@@ -1107,7 +1108,7 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
 
     BentleyStatus status = releaseFunc(m_bridge);
     m_bridge = NULL;
-
+    LogPerformance(releaseBridge, "Release Bridge");
     return status;
     }
 
@@ -1117,7 +1118,7 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
 BentleyStatus iModelBridgeFwk::InitBridge()
     {
     GetLogger().infov("bridge:%s iModel:%s - Initializing bridge.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
-
+    StopWatch initBridge(true);
     SetBridgeParams(m_bridge->_GetParams(), m_repoAdmin);
 
     if (BentleyStatus::SUCCESS != m_bridge->_ParseCommandLine((int)m_bargptrs.size(), m_bargptrs.data()))
@@ -1134,6 +1135,7 @@ BentleyStatus iModelBridgeFwk::InitBridge()
 
     BeAssert((m_bridge->_GetParams().GetRepositoryAdmin() == m_repoAdmin) && "Bridge must use the RepositoryAdmin that the fwk supplies");
 
+    LogPerformance(initBridge, "Inititalize the bridge.");
     return BentleyStatus::SUCCESS;
     }
 
@@ -1353,7 +1355,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BSISUCCESS != Briefcase_Initialize(argc, argv))
         return RETURN_STATUS_SERVER_ERROR;
 
-    LogPerformance(setUpTimer, "Logging into iModelHub");
+    LogPerformance(iModelHubSignIn, "Logging into iModelHub");
     }
     LOG.tracev(L"Logging into iModel Hub : Done");
 
@@ -1381,7 +1383,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (createdNewRepo)
         return RETURN_STATUS_SUCCESS;
 
-    LogPerformance(setUpTimer, "Getting iModel Briefcase from iModelHub");
+    LogPerformance(briefcaseTime, "Getting iModel Briefcase from iModelHub");
     LOG.tracev(L"Setting up iModel Briefcase for processing  : Done");
     }
     
@@ -1389,7 +1391,9 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     int status;
     try
         {
+        StopWatch updateExistingBim(true);
         status = UpdateExistingBim();
+        LogPerformance(updateExistingBim, "Updating Existing Bim file.");
         }
     catch (...)
         {
@@ -1493,6 +1497,7 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
 BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     {
     GetLogger().trace("Entering TryOpenBimWithBisSchemaUpgrade");
+    StopWatch openBimWithSchemaUpgrade;
     bool madeSchemaChanges = false;
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
@@ -1524,6 +1529,8 @@ BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
         if (0 != ProcessSchemaChange())  // pullmergepush + re-open
             return BSIERROR;
         }
+
+    LogPerformance(openBimWithSchemaUpgrade, "TryOpenBimWithBisSchemaUpgrade");
     return SUCCESS;
     }
 
@@ -1620,6 +1627,26 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
+        //Get the schema lock if needed.
+
+        bool needFileProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
+        bool needModelProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
+
+        if (needFileProvenance || needModelProvenance)
+            {
+            if (RepositoryStatus::Success != m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result())
+                {
+                LOG.fatalv("Unable to obtain the schema lock");
+                return BentleyStatus::ERROR;
+                }
+
+            if (needFileProvenance)
+                DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
+            if (needModelProvenance)
+                DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
+            }
+        
+
         //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
         iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
         if (!callCloseOnReturn.IsReady())
@@ -1634,7 +1661,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
-        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb)) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb) || needFileProvenance || needModelProvenance) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
             {
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))
                 return RETURN_STATUS_SERVER_ERROR;
@@ -1973,28 +2000,4 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         }
 
     return *m_registry;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeFwk::LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
-    {
-    stopWatch.Stop();
-    const NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO;
-    NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger("iModelBridge.Performance");
-    if (NULL == logger)
-        return;
-
-    if (logger->isSeverityEnabled(severity))
-        {
-        va_list args;
-        va_start(args, description);
-        Utf8String formattedDescription;
-        formattedDescription.VSprintf(description, args);
-        va_end(args);
-
-        logger->messagev(severity, "%s|%.0f millisecs", formattedDescription.c_str(), stopWatch.GetElapsedSeconds() * 1000.0);
-        }
     }

@@ -59,11 +59,15 @@ always:
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+$(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                             $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)MstnBridgeTests.obj     : $(BEGTEST_INPUT)MstnBridgeTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+$(o)MstnBridgeTests.obj         : $(BEGTEST_INPUT)MstnBridgeTests.cpp                        $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)V8FileEditor.obj        : $(BEGTEST_INPUT)V8FileEditor.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+$(o)MstnBridgeTestsFixture.obj  : $(BEGTEST_INPUT)MstnBridgeTestsFixture.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)V8FileEditor.obj            : $(BEGTEST_INPUT)V8FileEditor.cpp                           $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)FakeRegistry.obj            : $(SrcRoot)DgnDbSync/iModelBridge/Tests/NonPublished/FakeRegistry.cpp   $(TestsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
