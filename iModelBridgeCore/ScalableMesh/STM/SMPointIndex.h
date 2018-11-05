@@ -1562,7 +1562,7 @@ public:
 
     @return Returns the extent of spatial index.
     -----------------------------------------------------------------------------*/
-    EXTENT              GetIndexExtent() const;
+    BENTLEY_SM_EXPORT EXTENT GetIndexExtent() const;
     /**----------------------------------------------------------------------------
     Gets the effective limiting outter extent of the content.
 

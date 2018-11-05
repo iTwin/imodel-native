@@ -919,6 +919,8 @@ class SMGroupingStrategy
             m_sourceGCS = source;
             m_destinationGCS = destination;
             }
+        void             SetRootTransform(const Transform& transform) { m_rootTransform = transform; }
+        void             SetTransform(const Transform& transform) { m_transform = transform; }
         void             Clear()
             {
             m_GroupID = 0;
@@ -942,6 +944,8 @@ class SMGroupingStrategy
         SMNodeGroupMasterHeader m_GroupMasterHeader;
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
+        Transform m_rootTransform;
+        Transform m_transform;
         bool m_isClipBoundary = false;
         uint64_t m_clipID = -1;
     };
@@ -1208,9 +1212,7 @@ template<class EXTENT>
 size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group)
     {
     Json::Value nodeTile;
-    if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
-        {
-        auto reprojectExtentHelper = [this](DRange3d& range, Json::Value& tile)
+    auto reprojectExtentHelper = [this](DRange3d& range, Json::Value& tile)
             {
             auto reprojectPointHelper = [this](DPoint3d& point)
                 {
@@ -1246,11 +1248,20 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
             //range.low = DPoint3d::From(lx.x, ly.y, lz.z);
             //range.high = DPoint3d::From(center.x + delta.x, center.y + delta.y, center.z + delta.z);
             };
+    if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
+        {
         reprojectExtentHelper(pi_NodeHeader.m_nodeExtent, nodeTile);
-        if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+        }
+    m_transform.Multiply(pi_NodeHeader.m_nodeExtent, pi_NodeHeader.m_nodeExtent);
+    TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_nodeExtent);
+    if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+        {
+        if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
             {
             reprojectExtentHelper(pi_NodeHeader.m_contentExtent, nodeTile["content"]);
             }
+        m_transform.Multiply(pi_NodeHeader.m_contentExtent, pi_NodeHeader.m_contentExtent);
+        TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_contentExtent);
         }
 
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
@@ -1323,10 +1334,19 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     {
     Json::Value tileSet;
     tileSet["asset"]["version"] = "1.0";
+    tileSet["asset"]["gltfUpAxis"] = "Z";
     tileSet["root"] = pi_Group->m_tilesetRootNode;
     tileSet["geometricError"] = tileSet["root"]["geometricError"].asFloat();
     if (pi_Group->IsRoot())
         {
+        tileSet["root"]["transform"] = Json::Value(Json::arrayValue);
+        auto& arrayValue = tileSet["root"]["transform"];
+
+        auto matrix = DMatrix4d::From(m_rootTransform);
+        for (size_t i = 0; i<4; i++)
+            for (size_t j = 0; j<4; j++)
+                arrayValue.append(matrix.coff[j][i]);
+
         // Save master header info in Cesium tileset
         auto& SMMasterHeader = tileSet["root"]["SMMasterHeader"];
         SMMasterHeader["Balanced"] = m_GroupMasterHeader.IsBalanced();
@@ -1344,6 +1364,14 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
 #else
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
 #endif
+
+        SMMasterHeader["tileToDb"] = Json::Value(Json::arrayValue);
+        Transform tileToDb;
+        tileToDb.InverseOf(m_transform);
+        matrix = DMatrix4d::From(tileToDb);
+        for (size_t i = 0; i<4; i++)
+            for (size_t j = 0; j<4; j++)
+                SMMasterHeader["tileToDb"].append(matrix.coff[j][i]);
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;

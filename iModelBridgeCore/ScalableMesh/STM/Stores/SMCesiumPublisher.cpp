@@ -28,12 +28,12 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, const Transform& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture)
+void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const Transform& transform, bvector<Byte>& outData, bool outputTexture)
     {
     size_t siblingIndex = 0;
     TileNodeP parent = nullptr;
-    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent, clips, coverageID, isClipBoundary, outputTexture);
-    TilePublisher publisher(*tileNode, sourceGCS, destinationGCS);
+    TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), transform, siblingIndex, parent, clips, coverageID, isClipBoundary, outputTexture);
+    TilePublisher publisher(*tileNode, nullptr/*sourceGCS*/, nullptr/*destinationGCS*/);
     publisher.Publish(outData);
     }
 

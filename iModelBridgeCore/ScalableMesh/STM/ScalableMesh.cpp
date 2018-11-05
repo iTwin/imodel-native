@@ -1270,7 +1270,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 0);
 
                 {
-                if (!LoadGCSFrom(WString(L"ll84")))
+                if ((m_streamingSettings->GetGCSString().empty() && !LoadGCSFrom(WString(L"ll84"))) ||
+                    (!m_streamingSettings->GetGCSString().empty() && !LoadGCSFrom(m_streamingSettings->GetGCSString())))
                     return BSIERROR; // Error loading layer gcs
                 }
 
@@ -1407,6 +1408,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
             path = WString(pwcsLink.c_str(), true);
         }
 #ifndef VANCOUVER_API
+    BeAssert(ScalableMeshLib::IsInitialized()); // Must initialize lib first!
     ScalableMeshLib::GetHost().RemoveRegisteredScalableMesh(path);
 #endif
     m_viewedNodes.clear();
@@ -3708,88 +3710,85 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 #else
 template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
     {
-    Transform computedTransform = Transform::FromIdentity();
+    if (this->IsCesium3DTiles() && targetCS == nullptr && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
+        {
+        // Fall back on the GCS saved in the SM metadata for Cesium tilesets
+        auto ecefGCS = m_sourceGCS;
+        if (!LoadGCSFrom(m_streamingSettings->GetGCSString()))
+            return BSIERROR; // Error loading layer gcs
+
+                             // Reproject data using this new GCS
+        auto newGCS = m_sourceGCS;
+        std::swap(m_sourceGCS, ecefGCS);
+
+        if (newGCS.GetGeoRef().GetBasePtr().get() == nullptr)
+            return BSIERROR;
+        DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnProject));
+        return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
+        }
 
     // Greate a GCS from the ScalableMesh
     GeoCoords::GCS gcs(this->GetGCS());
 
-    DPoint3d scale;
-    scale.x = 1;
-    scale.y = 1;
-    scale.z = 1;
-
     DPoint3d globalOrigin = dgnProject.GeoLocation().GetGlobalOrigin();
+
+    Transform computedTransform = Transform::FromIdentity();
+    auto coordInterp = Dgn::GeoCoordInterpretation::Cartesian;
+    if (this->IsCesium3DTiles())
+        {
+        auto tileToDb = m_streamingSettings->GetTileToDbTransform();
+        if (!tileToDb.IsIdentity())
+            {
+            computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            }
+        else
+            { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
+            coordInterp = Dgn::GeoCoordInterpretation::XYZ;
+            }
+        auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+        if (!tileToECEF.IsIdentity())
+            {
+            Transform ecefToTile;
+            ecefToTile.InverseOf(tileToECEF);
+            computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+            }
+        }
 
     if (gcs.HasGeoRef())
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
-        dgnGcsPtr->UorsFromCartesian(scale, scale);
-        scale.DifferenceOf(scale, globalOrigin);
-
         if (targetCS != nullptr && !targetCS->IsEquivalent(*dgnGcsPtr))
             {
             dgnGcsPtr->SetReprojectElevation(true);
 
-            Transform trans = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
-                                                       0, scale.y, 0, globalOrigin.y,
-                                                       0, 0, scale.z, globalOrigin.z);
+            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
-            trans.Multiply(smExtentUors, smExtent);
+            computedTransform.Multiply(smExtentUors, smExtent);
 
             DPoint3d extent;
             extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
             Transform       approxTransform;
 
-            auto coordInterp = this->IsCesium3DTiles() ? Dgn::GeoCoordInterpretation::XYZ : Dgn::GeoCoordInterpretation::Cartesian;
-
             StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *targetCS);
             if (0 == status || 1 == status || 25 == status)
                 {
-                DRange3d smExtentInDestGCS1;
-                approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);
-                computedTransform = Transform::FromProduct(approxTransform, trans);
-
-                DRange3d smExtentInDestGCS;
-                computedTransform.Multiply(smExtentInDestGCS, smExtent);
+                computedTransform = Transform::FromProduct(approxTransform, computedTransform);
+                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
-            else
-                {
-                computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
-                                                             0, scale.y, 0, globalOrigin.y,
-                                                             0, 0, scale.y, globalOrigin.z);
-                }
-            }
-        else if (targetCS == nullptr && this->IsCesium3DTiles() && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
-            {
-            // Fall back on the GCS saved in the SM metadata for Cesium tilesets
-            auto ecefGCS = m_sourceGCS;
-            if (!LoadGCSFrom(m_streamingSettings->GetGCSString()))
-                return BSIERROR; // Error loading layer gcs
-
-                                 // Reproject data using this new GCS
-            auto newGCS = m_sourceGCS;
-            std::swap(m_sourceGCS, ecefGCS);
-
-            if (newGCS.GetGeoRef().GetBasePtr().get() == nullptr)
-                return BSIERROR;
-            DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnProject));
-            return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
-            }
-        else
-            {
-            computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
-                                                         0, scale.y, 0, globalOrigin.y,
-                                                         0, 0, scale.y, globalOrigin.z);
             }
         }
     else
         {
+        DPoint3d scale = DPoint3d::From(1.0, 1.0, 1.0);
         if (targetCS != nullptr)
+            {
             dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
+            scale.DifferenceOf(scale, globalOrigin);
+            }
 
-        computedTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
+        computedTransform = Transform::FromProduct(Transform::FromScaleFactors(scale.x, scale.y, scale.z), computedTransform);
         }
 
     return _SetReprojection(*targetCS, computedTransform);

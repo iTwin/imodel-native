@@ -116,6 +116,26 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                 m_gcs = gcs;
                 }
 
+            Transform GetTileToDbTransform()
+                {
+                return m_tileToDbTransform;
+                }
+
+            void SetTileToDbTransform(const Transform& transform)
+                {
+                m_tileToDbTransform = transform;
+                }
+
+            Transform GetTileToECEFTransform()
+                {
+                return m_tileToECEFTransform;
+                }
+
+            void SetTileToECEFTransform(const Transform& transform)
+                {
+                m_tileToECEFTransform = transform;
+                }
+
             uint64_t GetSMID() const
                 {
                 return m_smID;
@@ -136,6 +156,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             bool m_isStubFile = false;
             bool m_isGCSSet = false;
             bool m_isValid = true;
+            Transform m_tileToDbTransform = Transform::FromIdentity();
+            Transform m_tileToECEFTransform = Transform::FromIdentity();
             uint64_t   m_smID;
             Utf8String m_guid;
             Utf8String m_projectID;

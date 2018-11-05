@@ -605,7 +605,7 @@ IScalableMeshPtr ScalableMeshLib::Host::GetRegisteredScalableMesh(const WString&
 
 void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WString& path)
     {
-    m_smPaths->erase(path);
+    if (m_smPaths && m_smPaths->count(path) > 0) m_smPaths->erase(path);
     }
 
 void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
@@ -631,7 +631,7 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
         t_ippLibHost = new SMImagePPHost();
         ImageppLib::Initialize(*t_ippLibHost);
         }
-    BeAssert(NULL == t_scalableTerrainModelHost);  // cannot be called twice on the same thread
+    //BeAssert(NULL == t_scalableTerrainModelHost);  // It is ok to be called twice on the same thread
     if (NULL != t_scalableTerrainModelHost)
         return;
 
