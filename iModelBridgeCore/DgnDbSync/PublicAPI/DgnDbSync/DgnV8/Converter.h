@@ -24,6 +24,7 @@
 #include <DgnPlatform/image.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform/DgnProvenance.h>
 #include <iModelBridge/iModelBridge.h>
 
 namespace DgnDbApi = BentleyApi::Dgn;
@@ -1624,6 +1625,7 @@ public:
     void CaptureModelDiscard(DgnV8ModelR);
 
     ResolvedModelMapping GetModelFromSyncInfo(DgnV8ModelRefCR, TransformCR);
+    BentleyStatus FindModelProvenanceEntry(DgnV8ModelProvenance::ModelProvenanceEntry& entryFound, DgnV8ModelR v8Model, TransformCR trans);
     virtual ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR, TransformCR) = 0;
     ResolvedModelMapping GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR toBim) {return _GetModelForDgnV8Model(v8ModelRef, toBim);}
     virtual ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) = 0;
