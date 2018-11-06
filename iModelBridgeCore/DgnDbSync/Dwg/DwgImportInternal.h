@@ -425,9 +425,9 @@ private:
 
     void            SetDefaultCreation ();
     Utf8String      BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
-    void            TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans) const;
+    void            TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans, double* partScale = nullptr) const;
     void            Validate2dTransform (TransformR transform) const;
-    void            ApplyBasePartScale (TransformR transform, bool invert) const;
+    void            ApplyPartScale (TransformR transform, double scale, bool invert) const;
     bool            NeedsSeparateElement (DgnCategoryId id) const;
     BentleyStatus   GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
     BentleyStatus   CreateEmptyElement ();

@@ -2153,8 +2153,15 @@ void    ElementFactory::SetBaseTransform (TransformCR blockTrans)
     elements instead of shared parts.  We will directly transform individual geometry 
     in-place as needed via TransformGeometry.
 
+    A local part scale, m_basePartScale, is saved here only for the purpose of caching share
+    parts in block-parts map for this block.  The cached parts are only used during the same 
+    import session. If this block is instanced multiple times at the same scale in the model,
+    the cached parts can be directly re-used, bypassing the whole step of CreateSharedParts().
+    In essense, m_basePartScale serves for the sake of performance.  it does not participate 
+    in the calculation of the share parts.
+
     The input transform is the block transform before model transform. Model transform is
-    applied to translation.
+    applied to the translation.
     -----------------------------------------------------------------------------------*/
     auto blockToModel = Transform::FromProduct (m_modelTransform, blockTrans);
 
@@ -2174,25 +2181,48 @@ void    ElementFactory::SetBaseTransform (TransformCR blockTrans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ElementFactory::TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans) const
+void    ElementFactory::TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans, double* partScale) const
     {
     /*-----------------------------------------------------------------------------------
     Factor out "valid" matrix parts of the input DWG geometry transform, build a return 
     transform from a pure rotaton and a translation, and then apply scales & skews to the
     input geometry in-place.
+
+    When the geometry is used to build a share part, i.e. partScale != nullptr, a part scale
+    is calculated based on the input geometry transform.  The caller will save the scale
+    into the part entry, which will be inverse applied to the geometry element at next step.
+
+    When the geometry is used to create an individual geometry, i.e. nullptr == partScale, 
+    there is no part scale applied.
     -----------------------------------------------------------------------------------*/
     auto inplaceTrans = Transform::FromProduct (m_modelTransform, geomTrans);
     auto matrix = inplaceTrans.Matrix ();
     auto translation = inplaceTrans.Translation ();
+
+    if (nullptr != partScale)
+        *partScale = 0.0;
 
     RotMatrix   rotation, skew;
     if (matrix.RotateAndSkewFactors(rotation, skew, 0, 1))
         {
         // apply skew transform in place
         if (skew.IsIdentity())
+            {
+            // no scales
             inplaceTrans.InitIdentity ();
+            }
         else
+            {
+            if (nullptr != partScale)
+                {
+                // scales exist and we are creating a shared part - only if it is uniformaly scaled, we will apply the scale on the part:
+                RotMatrix   rigid;
+                double      scale = 1.0;
+                if (skew.IsRigidSignedScale(rigid, scale))
+                    *partScale = scale;
+                }
             inplaceTrans.InitFrom (skew);
+            }
 
         // return a transform of pure ration + translation for GeometryBuilder
         geomTrans.InitFrom (rotation, translation);
@@ -2203,8 +2233,9 @@ void    ElementFactory::TransformGeometry (GeometricPrimitiveR geometry, Transfo
         geomTrans.InitIdentity ();
         }
 
-    // remove/invert the base part scale, if building parts
-    this->ApplyBasePartScale (inplaceTrans, true);
+    // remove/invert the part scale, if building parts
+    double scale = nullptr == partScale ? 0.0 : *partScale;
+    this->ApplyPartScale (inplaceTrans, scale, true);
 
     if (!inplaceTrans.IsIdentity())
         geometry.TransformInPlace (inplaceTrans);
@@ -2213,10 +2244,10 @@ void    ElementFactory::TransformGeometry (GeometricPrimitiveR geometry, Transfo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ElementFactory::ApplyBasePartScale (TransformR transform, bool invert) const
+void    ElementFactory::ApplyPartScale (TransformR transform, double scale, bool invert) const
     {
-    // valid only for building parts - m_basePartScale should have been set to 0 for individual elements.
-    auto scale = fabs (m_basePartScale);
+    // valid only for building parts - input scale should have been set to 0 for individual elements.
+    scale = fabs (scale);
     if (scale > 1.0e-10 && fabs(scale - 1.0) > 0.001)
         {
         if (invert)
@@ -2295,6 +2326,7 @@ BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPart
     auto codeValue = this->BuildPartCodeValue (geomEntry, partNo);
     auto partCode = m_importer.CreateCode (codeValue.c_str());
     auto geomToLocal = geomEntry.GetTransform ();
+    double partScale = 0.0;
 
     auto partId = DgnGeometryPart::QueryGeometryPartId (*m_partModel, partCode.GetValueUtf8());
     if (!partId.IsValid())
@@ -2313,7 +2345,7 @@ BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPart
 
         // build a valid part transform, and transform geometry in-place as necessary
         auto geometry = geomEntry.GetGeometry ();
-        this->TransformGeometry (geometry, geomToLocal);
+        this->TransformGeometry (geometry, geomToLocal, &partScale);
 
         partBuilder->Append (geometry);
         
@@ -2333,7 +2365,7 @@ BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPart
 
         // build a valid part transform from DWG transform
         geomToLocal.InitProduct (m_modelTransform, geomToLocal);
-        DwgHelper::GetTransformForSharedParts (&geomToLocal, nullptr, geomToLocal);
+        DwgHelper::GetTransformForSharedParts (&geomToLocal, &partScale, geomToLocal);
 
         part.SetPartId (partId);
         part.SetPartRange (range);
@@ -2341,6 +2373,7 @@ BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPart
 
     part.SetTransform (Transform::FromProduct(m_invBaseTransform, geomToLocal));
     part.SetGeometryParams (geomEntry.GetGeometryParams());
+    part.SetPartScale (partScale);
 
     return  BSISUCCESS;
     }
@@ -2419,7 +2452,7 @@ BentleyStatus   ElementFactory::CreatePartElements (DwgImporter::T_SharedPartLis
 
         // apply base part scale
         auto geomToLocal = part.GetTransform ();
-        this->ApplyBasePartScale (geomToLocal, false);
+        this->ApplyPartScale (geomToLocal, part.GetPartScale(), false);
 
         m_geometryBuilder->Append (part.GetGeometryParams());
         m_geometryBuilder->Append (part.GetPartId(), geomToLocal, part.GetPartRange());
@@ -3253,9 +3286,8 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DwgImporter::SharedPartKey::operator < (SharedPartKey const& rho) const
     {
-    // a mirrored block (scale < 0) needs a separate set of shared parts:
     if (m_blockId == rho.GetBlockId())
-        return this->IsMirrored() < rho.IsMirrored();
+        return m_basePartScale < rho.GetBasePartScale() && fabs(m_basePartScale - rho.GetBasePartScale()) > 1.0e-5;
     return m_blockId < rho.GetBlockId();
     }
 
@@ -3287,7 +3319,10 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
     double  partScale = 0.0;
     bool    canShareParts = this->GetOptions().IsBlockAsSharedParts ();
     if (canShareParts)
-        canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockTrans);
+        {
+        auto blockToModel = Transform::FromProduct (inputs.GetTransform(), blockTrans);
+        canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockToModel);
+        }
 
     if (canShareParts)
         {
