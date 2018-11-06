@@ -209,7 +209,7 @@ $(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(PCHHeaderDepen
 
 $(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stmDir)SMMeshIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)SMMemoryPool$(oext) : $(stmDir)SMMemoryPool.cpp $(stmDir)SMMemoryPool.hpp $(stmDir)SMMemoryPool.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMMemoryPool$(oext) : $(stmDir)SMMemoryPool.cpp $(stmDir)SMMemoryPool.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
