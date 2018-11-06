@@ -43,6 +43,9 @@ struct IStorage : public Import::Sink
 
     };
 
+// typedef DPoint3d                          PointType;
+// typedef DRange3d PointIndexExtentType;
+// typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
 template <typename PtType>
 class ScalableMeshStorage;
@@ -117,9 +120,10 @@ class ScalableMeshPointNonDestructiveStorageEditor : public ScalableMeshPointSto
     {
 
     friend class                            ScalableMeshNonDestructiveEditStorage<PtType>;
+    typedef ScalableMeshPointStorageEditor<PtType> super_class;
 
-    explicit                                ScalableMeshPointNonDestructiveStorageEditor(MeshIndexType&                 pi_rIndex)
-        : ScalableMeshPointStorageEditor(pi_rIndex, 0)
+    explicit                                ScalableMeshPointNonDestructiveStorageEditor(typename super_class::MeshIndexType&                 pi_rIndex)
+        : super_class(pi_rIndex, 0)
         {}
 
     virtual void                            _Write                     () override
@@ -221,6 +225,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      {
      friend class                            ScalableMeshStorage < PtType > ;
+
      protected:
      Memory::ConstPacketProxy<PtType>      m_pointPacket;
      Memory::ConstPacketProxy < ISMStore::FeatureHeader >
@@ -382,23 +387,24 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      {
      friend class                            ScalableMeshNonDestructiveEditStorage < PtType > ;
+     typedef ScalableMeshLinearStorageEditor<PtType> super_class;
 
      explicit                                ScalableMeshNonDestructiveLinearStorageEditor
-         (MeshIndexType&                  pi_rFeatureIndex)
-         : ScalableMeshLinearStorageEditor(pi_rFeatureIndex,0)
+         (typename super_class::MeshIndexType&                  pi_rFeatureIndex)
+         : super_class(pi_rFeatureIndex,0)
          {}
 
 
      virtual void                            _Write() override
          {
-         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
-         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
+         this->m_Features.EditHeaders().Wrap((const headerType *) this->m_headerPacket.Get(), this->m_headerPacket.GetSize());
+         this->m_Features.EditPoints().Wrap(this->m_pointPacket.Get(), this->m_pointPacket.GetSize());
 
-         for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
+         for (super_class::ArrayType::const_iterator myFeature = this->m_Features.Begin(); myFeature != this->m_Features.End(); myFeature++)
              {
              bvector<DPoint3d> newFeature;
              DRange3d featureExtent;
-             for (ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End(); myPoint++)
+             for (super_class::ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End(); myPoint++)
                  {
                  newFeature.push_back(DPoint3d::From(PointOp<PtType>::GetX(*myPoint),
                      PointOp<PtType>::GetY(*myPoint),
@@ -408,7 +414,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
                  }
 
              // Append to index
-             m_rIndex.AddClipDefinition(newFeature, featureExtent);
+             this->m_rIndex.AddClipDefinition(newFeature, featureExtent);
              }
 
          // TDORAY: Throw on failures?
@@ -416,7 +422,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      virtual void                            _NotifySourceImported() override
          {
-         m_rIndex.RefreshMergedClips();
+         this->m_rIndex.RefreshMergedClips();
          }
      };
 
@@ -429,6 +435,8 @@ class GenericLinearStorageEditor : public Import::BackInserter
 template<typename PtType>
 class ScalableMeshStorage : public IStorage
     {
+    friend class ScalableMeshNonDestructiveEditStorage<PtType>;
+
     protected:
     typedef typename PointTypeCreatorTrait<PtType>::type 
                                             PointTypeFactory;
@@ -497,7 +505,7 @@ public:
         {
         
         }
-    };
+};
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -508,6 +516,7 @@ public:
 template<typename PtType>
 class ScalableMeshNonDestructiveEditStorage : public ScalableMeshStorage<PtType>
     {
+    typedef ScalableMeshStorage<PtType> super_class;
 
     virtual Import::BackInserter*          _CreateBackInserterFor      (uint32_t                        layerID,
                                                                         const Import::DataType&     type,
@@ -517,19 +526,19 @@ class ScalableMeshNonDestructiveEditStorage : public ScalableMeshStorage<PtType>
 
         //TDORAY: Ensure that type can be found in layer before returning
 
-        if (PointTypeFactory().Create() == type)
-            return (0 != m_pPointIndex) ? new ScalableMeshPointNonDestructiveStorageEditor<PtType>(*m_pPointIndex) : 0;
-        if (LinearTypeFactory().Create() == type)
-            return (0 != m_pPointIndex) ? new ScalableMeshNonDestructiveLinearStorageEditor<PtType>(*m_pPointIndex) : 0;
+        if (super_class::PointTypeFactory().Create() == type)
+            return (0 != this->m_pPointIndex) ? new ScalableMeshPointNonDestructiveStorageEditor<PtType>(*this->m_pPointIndex) : 0;
+        if (super_class::LinearTypeFactory().Create() == type)
+            return (0 != this->m_pPointIndex) ? new ScalableMeshNonDestructiveLinearStorageEditor<PtType>(*this->m_pPointIndex) : 0;
 
         return 0;
         }
 
 public:
 
-    explicit                                ScalableMeshNonDestructiveEditStorage(MeshIndexType&                 pi_rIndex,
+    explicit                                ScalableMeshNonDestructiveEditStorage(typename super_class::MeshIndexType&                 pi_rIndex,
                                                                         const GeoCoords::GCS&           pi_rGeoCoordSys)
-                                                                        : ScalableMeshStorage(pi_rIndex, pi_rGeoCoordSys)
+                                                                        : super_class(pi_rIndex, pi_rGeoCoordSys)
         {
         
         }
@@ -663,6 +672,7 @@ class ClipShapeLinearFeatureStorageEditor : public Import::BackInserter
         for(ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End() ; ++myFeature)
             {
             double* dimP = ptsP.get();
+            // WIP_NEEDS_WORK_2017
             for (ArrayType::value_type::const_iterator myPoint = myFeature->Begin(); myPoint != myFeature->End() ; ++myPoint)
                 {               
                 *dimP++ = (*myPoint).x;

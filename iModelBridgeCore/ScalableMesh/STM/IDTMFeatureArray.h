@@ -32,59 +32,59 @@ class IDTMFeatureFacade : public HPU::CompositeFacadeBaseWExtCopy<IDTMFeatureFac
     HeaderType,
     IDTMFeatureArray<PointType, HeaderType>>
     {
-public:
-    typedef HeaderType                          header_type;
-    typedef typename header_type::feature_type  feature_type;
-    typedef typename header_type::group_id_type group_id_type;
+    public:
+        typedef HeaderType                          header_type;
+        typedef typename header_type::feature_type  feature_type;
+        typedef typename header_type::group_id_type group_id_type;
 
-    typedef PointType                       value_type;
-    typedef value_type*                     iterator;
-    typedef const value_type*               const_iterator;
-    typedef typename HPU::CompositeFacadeBaseWExtCopy<IDTMFeatureFacade<PointType, HeaderType>,HeaderType,IDTMFeatureArray<PointType, HeaderType> >::facade_type facade_type;
-
-
-    feature_type                            GetType                            () const;
-
-    group_id_type                           GetGroupID                         () const;
-
-    size_t                                  GetSize                            () const;
-
-    const_iterator                          Begin                              () const;
-    const_iterator                          End                                () const;
-
-    bool                                    operator==                         (const IDTMFeatureFacade&    pi_rRight) const;
-
-    template <typename InputIter>
-    void                                    Insert                             (const_iterator          pi_Position,
-                                                                                InputIter               pi_Begin,
-                                                                                InputIter               pi_End);
-    template <typename InputIter>
-    void                                    Append                             (InputIter               pi_Begin,
-                                                                                InputIter               pi_End);
-
-    iterator                                Erase                              (const_iterator          pi_Begin,
-                                                                                const_iterator          pi_End);
-
-    iterator                                BeginEdit                          ();
-    iterator                                EndEdit                            ();
-
-    typedef HPU::Array<value_type>      PointArray;
-
-    explicit                                IDTMFeatureFacade                  () {}
-
-    void                                    OnArrayDataChanged                 ();
-
-    static void                             InitHeader                         (header_type&                pio_rHeader,
-                                                                                feature_type                pi_Type,
-                                                                                size_t                      pi_Offset,
-                                                                                size_t                      pi_Size = 0,
-                                                                                group_id_type               pi_GroupID = header_type::GetNullID());
+        typedef PointType                       value_type;
+        typedef value_type*                     iterator;
+        typedef const value_type*               const_iterator;
+        typedef typename HPU::CompositeFacadeBaseWExtCopy<IDTMFeatureFacade<PointType, HeaderType>, HeaderType, IDTMFeatureArray<PointType, HeaderType> >::facade_type facade_type;
 
 
-    const PointArray&                       GetPoints                          () const;
-    PointArray&                             EditPoints                         ();
+        feature_type                            GetType() const;
 
-    bool  IsPartOfSameList (const typename HPU::CompositeFacadeBaseWExtCopy<IDTMFeatureFacade<PointType, HeaderType>,HeaderType,IDTMFeatureArray<PointType, HeaderType> >::facade_type&          pi_rRight) const;
+        group_id_type                           GetGroupID() const;
+
+        size_t                                  GetSize() const;
+
+        const_iterator                          Begin() const;
+        const_iterator                          End() const;
+
+        bool                                    operator==                         (const IDTMFeatureFacade&    pi_rRight) const;
+
+        template <typename InputIter>
+        void                                    Insert(const_iterator          pi_Position,
+                                                       InputIter               pi_Begin,
+                                                       InputIter               pi_End);
+        template <typename InputIter>
+        void                                    Append(InputIter               pi_Begin,
+                                                       InputIter               pi_End);
+
+        iterator                                Erase(const_iterator          pi_Begin,
+                                                      const_iterator          pi_End);
+
+        iterator                                BeginEdit();
+        iterator                                EndEdit();
+
+        typedef HPU::Array<value_type>      PointArray;
+
+        explicit                                IDTMFeatureFacade() {}
+
+        void                                    OnArrayDataChanged();
+
+        static void                             InitHeader(header_type&                pio_rHeader,
+                                                           feature_type                pi_Type,
+                                                           size_t                      pi_Offset,
+                                                           size_t                      pi_Size = 0,
+                                                           group_id_type               pi_GroupID = header_type::GetNullID());
+
+
+        const PointArray&                       GetPoints() const;
+        PointArray&                             EditPoints();
+
+        bool  IsPartOfSameList(const typename HPU::CompositeFacadeBaseWExtCopy<IDTMFeatureFacade<PointType, HeaderType>, HeaderType, IDTMFeatureArray<PointType, HeaderType> >::facade_type&          pi_rRight) const;
 
     };
 
@@ -175,154 +175,162 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename PointType, typename HeaderType = ISMStore::FeatureHeader>
 class IDTMFeatureArray : public HPU::CompositeArrayBase<IDTMFeatureFacade<PointType, HeaderType>,
-                                                        HeaderType,
-                                                        IDTMFeatureArray<PointType, HeaderType>>
+    HeaderType,
+    IDTMFeatureArray<PointType, HeaderType>>
     {
-public:
-    typedef HeaderType                          header_type;
-    typedef typename header_type::feature_type  feature_type;
-    typedef typename header_type::group_id_type group_id_type;
+    public:
+        typedef HeaderType                          header_type;
+//        typedef PointType                           value_type;
+        typedef typename header_type::feature_type  feature_type;
+        typedef typename header_type::group_id_type group_id_type;
+//        typedef IDTMFeatureFacade<PointType, HeaderType> facade_type;
 
-    typedef HPU::Array<HeaderType>      HeaderArray;
-    typedef HPU::Array<PointType>       PointArray;
+        typedef HPU::Array<HeaderType>      HeaderArray;
+        typedef HPU::Array<PointType>       PointArray;
 
-    typedef HPU::CompositeArrayBase<IDTMFeatureFacade<PointType, HeaderType>,HeaderType,IDTMFeatureArray<PointType, HeaderType> >
-              IDTMFeatureArray_Type1;  
-    typedef IDTMFeatureArray_Type1 super_class;
+        typedef HPU::CompositeArrayBase<IDTMFeatureFacade<PointType, HeaderType>, HeaderType, IDTMFeatureArray<PointType, HeaderType> >
+            IDTMFeatureArray_Type1;
+        typedef IDTMFeatureArray_Type1 super_class;
 
-    typedef IDTMFeatureArray_Type1::const_reference const_reference;
+        typedef IDTMFeatureArray_Type1::const_reference const_reference;
+        typedef IDTMFeatureArray_Type1::const_iterator const_iterator;
 
-    explicit                                IDTMFeatureArray                   (size_t                      pi_Capacity = 0,
-                                                                                size_t                      pi_TotalPointCapacity = 0);
+        explicit                                IDTMFeatureArray(size_t                      pi_Capacity = 0,
+                                                                 size_t                      pi_TotalPointCapacity = 0);
 
-    size_t                                  GetTotalPointQty                   () const;
-    size_t                                  GetTotalPointCapacity              () const;
+        size_t                                  GetTotalPointQty() const;
+        size_t                                  GetTotalPointCapacity() const;
 
-    void                                    Reserve                            (size_t                      pi_Capacity,
-                                                                                size_t                      pi_TotalPointCapacity = 0);
-
-
-    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert                             (const_iterator   pi_Position,
-                                                                                IDTMFeatureArray_Type1::const_reference  pi_rFeature);
-
-    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert                             (const_iterator              pi_Position,
-                                                                                feature_type                pi_FeatureType,
-                                                                                group_id_type               pi_GroupId = header_type::GetNullID());
-
-    void                                    Insert                             (const_iterator              pi_Position,
-                                                                                const_iterator              pi_Begin,
-                                                                                const_iterator              pi_End);
-
-    void                                    Append                             (const_reference             pi_rFeature);
-
-    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Append                             (feature_type                pi_FeatureType,
-                                                                                group_id_type               pi_GroupId = header_type::GetNullID());
-
-    template <typename InputIter>
-    void                                    Append                             (feature_type                pi_FeatureType,
-                                                                                InputIter                   pi_PtBegin,
-                                                                                InputIter                   pi_PtEnd,
-                                                                                group_id_type               pi_GroupId = header_type::GetNullID());
-
-    void                                    Append                             (const_iterator              pi_Begin,
-                                                                                const_iterator              pi_End);
-
-    void                                    Clear                              ();
-
-    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Erase                              (const_iterator              pi_Position);
-
-    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Erase                              (const_iterator              pi_Begin,
-                                                                                const_iterator              pi_End);
-
-    /*---------------------------------------------------------------------------------**//**
-    * This is an alias for Append. Was created in order to be able to reuse stl vector
-    * existing tools such as back_inserter & inserter.
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void                                    push_back                          (const_reference             pi_rFeature);
-    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                insert                             (const_iterator              pi_Position,
-                                                                                const_reference             pi_rFeature);
-    /*---------------------------------------------------------------------------------**//**
-    * If the user decided to manually sort or rearrange directly the underlying header array,
-    * he must use this method before doing anything else so that points are aligned again
-    * with their respective headers.
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void                                    AlignPointsWithHeaders             ();
+        void                                    Reserve(size_t                      pi_Capacity,
+                                                        size_t                      pi_TotalPointCapacity = 0);
 
 
-    // Internal methods
-    const HeaderArray&                      GetHeaders                         () const {
-        return super_class::GetHeaders();
-        }
-    HeaderArray&                            EditHeaders                        () {
-        return super_class::EditHeaders();
-        }
+        typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert(const_iterator   pi_Position,
+                                                                                                         IDTMFeatureArray_Type1::const_reference  pi_rFeature);
 
-    const PointArray&                       GetPoints                          () const {
-        return m_Points;
-        }
-    PointArray&                             EditPoints                         () {
-        return m_Points;
-        }
+        typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert(const_iterator              pi_Position,
+                                                                                                         feature_type                pi_FeatureType,
+                                                                                                         group_id_type               pi_GroupId = header_type::GetNullID());
+
+        void                                    Insert(const_iterator              pi_Position,
+                                                       const_iterator              pi_Begin,
+                                                       const_iterator              pi_End);
+
+        void                                    Append(const_reference             pi_rFeature);
+
+        typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Append(feature_type                pi_FeatureType,
+                                                                                                         group_id_type               pi_GroupId = header_type::GetNullID());
+
+        template <typename InputIter>
+        void                                    Append(feature_type                pi_FeatureType,
+                                                       InputIter                   pi_PtBegin,
+                                                       InputIter                   pi_PtEnd,
+                                                       group_id_type               pi_GroupId = header_type::GetNullID());
+
+        void                                    Append(const_iterator              pi_Begin,
+                                                       const_iterator              pi_End);
+
+        void                                    Clear();
+
+        typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Erase(const_iterator              pi_Position);
+
+        typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Erase(const_iterator              pi_Begin,
+                                                                                                        const_iterator              pi_End);
+
+        /*---------------------------------------------------------------------------------**//**
+        * This is an alias for Append. Was created in order to be able to reuse stl vector
+        * existing tools such as back_inserter & inserter.
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void                                    push_back(const_reference             pi_rFeature);
+        typename IDTMFeatureArray<PointType, HeaderType>::iterator                                insert(const_iterator              pi_Position,
+                                                                                                         const_reference             pi_rFeature);
+        /*---------------------------------------------------------------------------------**//**
+        * If the user decided to manually sort or rearrange directly the underlying header array,
+        * he must use this method before doing anything else so that points are aligned again
+        * with their respective headers.
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void                                    AlignPointsWithHeaders();
 
 
-    struct IncrementHeaderOffset : binary_function<header_type, size_t, void>
-        {
-        void        operator()         (header_type& pi_rHeader, size_t pi_OffsetIncrement) const
+        // Internal methods
+        const HeaderArray&                      GetHeaders() const
             {
-            pi_rHeader.offset += static_cast<typename header_type::index_type>(pi_OffsetIncrement);
+            return super_class::GetHeaders();
             }
-        };
-
-    struct DecrementHeaderOffset : binary_function<header_type, size_t, void>
-        {
-        void        operator()         (header_type& pi_rHeader, size_t pi_OffsetDecrement) const
+        HeaderArray&                            EditHeaders()
             {
-            pi_rHeader.offset -= static_cast<typename header_type::index_type>(pi_OffsetDecrement);
-            }
-        };
-
-    struct RealignHeaderOffsets : public unary_function<header_type, void>
-        {
-        explicit    RealignHeaderOffsets   () : m_CurrentOffset(0) {}
-
-        void        operator()             (header_type&     pi_rHeader)
-            {
-            pi_rHeader.offset = static_cast<typename header_type::index_type>(m_CurrentOffset);
-            m_CurrentOffset += pi_rHeader.size;
+            return super_class::EditHeaders();
             }
 
-    private:
-        size_t      m_CurrentOffset;
-        };
-
-    struct CopyFeaturePoints : public unary_function<value_type, void>
-        {
-        explicit    CopyFeaturePoints      (typename PointArray::iterator po_OutputPointIt) : m_OutputPointIt(po_OutputPointIt) {}
-
-        void        operator()             (const facade_type&       pi_rFeature)
+        const PointArray&                       GetPoints() const
             {
-            m_OutputPointIt = copy(pi_rFeature.Begin(), pi_rFeature.End(), m_OutputPointIt);
+            return m_Points;
             }
-    private:
-        typename PointArray::iterator m_OutputPointIt;
-        };
-
-    void                                    IncrementPointOffsets              (typename HeaderArray::iterator  pi_From,
-                                                                                size_t                          pi_OffsetIncrement);
-
-    void                                    DecrementPointOffsets              (typename HeaderArray::iterator  pi_From,
-                                                                                size_t                          pi_OffsetDecrement);
-
-    void                                    RecomputePointOffsets              ();
+        PointArray&                             EditPoints()
+            {
+            return m_Points;
+            }
 
 
-    PointArray                              m_Points;
-    bool                                    m_PointsAlignedWithHeader;
+        struct IncrementHeaderOffset : binary_function<header_type, size_t, void>
+            {
+            void        operator()         (header_type& pi_rHeader, size_t pi_OffsetIncrement) const
+                {
+                pi_rHeader.offset += static_cast<typename header_type::index_type>(pi_OffsetIncrement);
+                }
+            };
+
+        struct DecrementHeaderOffset : binary_function<header_type, size_t, void>
+            {
+            void        operator()         (header_type& pi_rHeader, size_t pi_OffsetDecrement) const
+                {
+                pi_rHeader.offset -= static_cast<typename header_type::index_type>(pi_OffsetDecrement);
+                }
+            };
+
+        struct RealignHeaderOffsets : public unary_function<header_type, void>
+            {
+            explicit    RealignHeaderOffsets() : m_CurrentOffset(0) {}
+
+            void        operator()             (header_type&     pi_rHeader)
+                {
+                pi_rHeader.offset = static_cast<typename header_type::index_type>(m_CurrentOffset);
+                m_CurrentOffset += pi_rHeader.size;
+                }
+
+            private:
+                size_t      m_CurrentOffset;
+            };
+
+        struct CopyFeaturePoints : public unary_function<typename super_class::value_type, void>
+            {
+            explicit    CopyFeaturePoints(typename PointArray::iterator po_OutputPointIt) : m_OutputPointIt(po_OutputPointIt) {}
+            typedef typename HPU::CompositeFacadeBaseWExtCopy<IDTMFeatureFacade<PointType, HeaderType>, HeaderType, IDTMFeatureArray<PointType, HeaderType> >::facade_type facade_type;
+
+            void        operator()             (const facade_type&       pi_rFeature)
+                {
+                m_OutputPointIt = copy(pi_rFeature.Begin(), pi_rFeature.End(), m_OutputPointIt);
+                }
+            private:
+                typename PointArray::iterator m_OutputPointIt;
+            };
+
+        void                                    IncrementPointOffsets(typename HeaderArray::iterator  pi_From,
+                                                                      size_t                          pi_OffsetIncrement);
+
+        void                                    DecrementPointOffsets(typename HeaderArray::iterator  pi_From,
+                                                                      size_t                          pi_OffsetDecrement);
+
+        void                                    RecomputePointOffsets();
+
+
+        PointArray                              m_Points;
+        bool                                    m_PointsAlignedWithHeader;
     };
 
 template <typename PointType, typename HeaderType>
-inline void                                 swap                               (IDTMFeatureFacade<PointType, HeaderType>& pi_rLeft,
-                                                                                IDTMFeatureFacade<PointType, HeaderType>& pi_rRight)
+inline void                                 swap(IDTMFeatureFacade<PointType, HeaderType>& pi_rLeft,
+                                                 IDTMFeatureFacade<PointType, HeaderType>& pi_rRight)
     {
     pi_rLeft.Swap(pi_rRight);
     }

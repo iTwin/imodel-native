@@ -15,9 +15,9 @@ template<class EXTENT> SMIndexMasterHeader<EXTENT>& SMIndexMasterHeader<EXTENT>:
     m_HasMaxExtent = indexHeader.m_HasMaxExtent;
     m_MaxExtent = ExtentOp<EXTENT>::Create(indexHeader.m_MaxExtent.low.x, indexHeader.m_MaxExtent.low.y, indexHeader.m_MaxExtent.low.z,
                                            indexHeader.m_MaxExtent.high.x, indexHeader.m_MaxExtent.high.y, indexHeader.m_MaxExtent.high.z);
-    m_numberOfSubNodesOnSplit = indexHeader.m_numberOfSubNodesOnSplit;
+    this->m_numberOfSubNodesOnSplit = indexHeader.m_numberOfSubNodesOnSplit;
     m_singleFile = indexHeader.m_singleFile;
-    m_SplitTreshold = indexHeader.m_SplitTreshold;
+    this->m_SplitTreshold = indexHeader.m_SplitTreshold;
     m_textured = indexHeader.m_textured;
     m_isTerrain = indexHeader.m_isTerrain;
     m_resolution = indexHeader.m_resolution;
@@ -34,9 +34,9 @@ template<class EXTENT> SMIndexMasterHeader<EXTENT>::operator SQLiteIndexHeader()
     header.m_HasMaxExtent = m_HasMaxExtent;
     header.m_MaxExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_MaxExtent), ExtentOp<EXTENT>::GetYMin(m_MaxExtent), ExtentOp<EXTENT>::GetZMin(m_MaxExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_MaxExtent), ExtentOp<EXTENT>::GetYMax(m_MaxExtent), ExtentOp<EXTENT>::GetZMax(m_MaxExtent));
-    header.m_numberOfSubNodesOnSplit = m_numberOfSubNodesOnSplit;
+    header.m_numberOfSubNodesOnSplit = this->m_numberOfSubNodesOnSplit;
     header.m_singleFile = m_singleFile;
-    header.m_SplitTreshold = m_SplitTreshold;
+    header.m_SplitTreshold = this->m_SplitTreshold;
     header.m_textured = m_textured;
     header.m_isTerrain = m_isTerrain;
     header.m_resolution = m_resolution;
@@ -50,33 +50,33 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::SMIndexNodeHeader()
 template <class EXTENT> SMIndexNodeHeader<EXTENT>::SMIndexNodeHeader(const SMIndexNodeHeader<EXTENT>& smNodeHeader)
     {
     m_id = smNodeHeader.m_id;
-    m_arePoints3d = smNodeHeader.m_arePoints3d;
-    m_isTextured = smNodeHeader.m_isTextured;
-    m_contentExtentDefined = smNodeHeader.m_contentExtentDefined;
-    m_contentExtent = ExtentOp<EXTENT>::Create(smNodeHeader.m_contentExtent.low.x, smNodeHeader.m_contentExtent.low.y, smNodeHeader.m_contentExtent.low.z,
+    this->m_arePoints3d = smNodeHeader.m_arePoints3d;
+    this->m_isTextured = smNodeHeader.m_isTextured;
+    this->m_contentExtentDefined = smNodeHeader.m_contentExtentDefined;
+    this->m_contentExtent = ExtentOp<EXTENT>::Create(smNodeHeader.m_contentExtent.low.x, smNodeHeader.m_contentExtent.low.y, smNodeHeader.m_contentExtent.low.z,
         smNodeHeader.m_contentExtent.high.x, smNodeHeader.m_contentExtent.high.y, smNodeHeader.m_contentExtent.high.z);
-    m_nodeExtent = ExtentOp<EXTENT>::Create(smNodeHeader.m_nodeExtent.low.x, smNodeHeader.m_nodeExtent.low.y, smNodeHeader.m_nodeExtent.low.z,
+    this->m_nodeExtent = ExtentOp<EXTENT>::Create(smNodeHeader.m_nodeExtent.low.x, smNodeHeader.m_nodeExtent.low.y, smNodeHeader.m_nodeExtent.low.z,
         smNodeHeader.m_nodeExtent.high.x, smNodeHeader.m_nodeExtent.high.y, smNodeHeader.m_nodeExtent.high.z);
     m_graphID = smNodeHeader.m_graphID;
     m_filtered = smNodeHeader.m_filtered;
-    m_level = smNodeHeader.m_level;
-    m_IsLeaf = smNodeHeader.m_IsLeaf;
-    m_IsBranched = smNodeHeader.m_IsBranched;
+    this->m_level = smNodeHeader.m_level;
+    this->m_IsLeaf = smNodeHeader.m_IsLeaf;
+    this->m_IsBranched = smNodeHeader.m_IsBranched;
     m_nbFaceIndexes = smNodeHeader.m_nbFaceIndexes;
     m_nbTextures = smNodeHeader.m_nbTextures;
     m_nbUvIndexes = smNodeHeader.m_nbUvIndexes;
-    m_numberOfMeshComponents = smNodeHeader.m_numberOfMeshComponents;
+    this->m_numberOfMeshComponents = smNodeHeader.m_numberOfMeshComponents;
 
     m_meshComponents = new int[m_numberOfMeshComponents];
-    memcpy(m_meshComponents, smNodeHeader.m_meshComponents, m_numberOfMeshComponents * sizeof(int));
-    m_numberOfSubNodesOnSplit = smNodeHeader.m_numberOfSubNodesOnSplit;
+    memcpy(m_meshComponents, smNodeHeader.m_meshComponents, this->m_numberOfMeshComponents * sizeof(int));
+    this->m_numberOfSubNodesOnSplit = smNodeHeader.m_numberOfSubNodesOnSplit;
     m_parentNodeID = smNodeHeader.m_parentNodeID;
     m_SubNodeNoSplitID = smNodeHeader.m_SubNodeNoSplitID;
     m_uvID = smNodeHeader.m_uvID;
-    m_totalCountDefined = smNodeHeader.m_totalCountDefined;
-    m_totalCount = smNodeHeader.m_totalCount;
+    this->m_totalCountDefined = smNodeHeader.m_totalCountDefined;
+    this->m_totalCount = smNodeHeader.m_totalCount;
     m_nodeCount = smNodeHeader.m_nodeCount;
-    m_SplitTreshold = smNodeHeader.m_SplitTreshold;
+    this->m_SplitTreshold = smNodeHeader.m_SplitTreshold;
     m_clipSetsID.resize(smNodeHeader.m_clipSetsID.size());
     for (auto& id : m_clipSetsID) id = smNodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()];
     m_textureID = smNodeHeader.m_textureID;
@@ -105,30 +105,30 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::~SMIndexNodeHeader()
 template <class EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::operator=(const SQLiteNodeHeader& nodeHeader)
     {
     m_id = nodeHeader.m_nodeID;
-    m_arePoints3d = nodeHeader.m_arePoints3d;
-    m_isTextured = nodeHeader.m_isTextured;
-    m_contentExtentDefined = nodeHeader.m_contentExtentDefined;
-    m_contentExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_contentExtent.low.x, nodeHeader.m_contentExtent.low.y, nodeHeader.m_contentExtent.low.z,
+    this->m_arePoints3d = nodeHeader.m_arePoints3d;
+    this->m_isTextured = nodeHeader.m_isTextured;
+    this->m_contentExtentDefined = nodeHeader.m_contentExtentDefined;
+    this->m_contentExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_contentExtent.low.x, nodeHeader.m_contentExtent.low.y, nodeHeader.m_contentExtent.low.z,
                                                nodeHeader.m_contentExtent.high.x, nodeHeader.m_contentExtent.high.y, nodeHeader.m_contentExtent.high.z);
-    m_nodeExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_nodeExtent.low.x, nodeHeader.m_nodeExtent.low.y, nodeHeader.m_nodeExtent.low.z,
+    this->m_nodeExtent = ExtentOp<EXTENT>::Create(nodeHeader.m_nodeExtent.low.x, nodeHeader.m_nodeExtent.low.y, nodeHeader.m_nodeExtent.low.z,
                                             nodeHeader.m_nodeExtent.high.x, nodeHeader.m_nodeExtent.high.y, nodeHeader.m_nodeExtent.high.z);
     if (nodeHeader.m_graphID != SQLiteNodeHeader::NO_NODEID) m_graphID = HPMBlockID(nodeHeader.m_graphID);
     m_filtered = nodeHeader.m_filtered;
-    m_level = nodeHeader.m_level;
+    this->m_level = nodeHeader.m_level;
     m_nbFaceIndexes = nodeHeader.m_nbFaceIndexes;
     m_nbTextures = nodeHeader.m_nbTextures;
     m_nbUvIndexes = nodeHeader.m_nbUvIndexes;
-    m_numberOfMeshComponents = nodeHeader.m_numberOfMeshComponents;
+    this->m_numberOfMeshComponents = nodeHeader.m_numberOfMeshComponents;
     m_meshComponents = nodeHeader.m_meshComponents;
-    m_numberOfSubNodesOnSplit = nodeHeader.m_numberOfSubNodesOnSplit;
+    this->m_numberOfSubNodesOnSplit = nodeHeader.m_numberOfSubNodesOnSplit;
     if (nodeHeader.m_parentNodeID != SQLiteNodeHeader::NO_NODEID) m_parentNodeID = HPMBlockID(nodeHeader.m_parentNodeID);
     else m_parentNodeID = ISMStore::GetNullNodeID();
     if (nodeHeader.m_SubNodeNoSplitID != SQLiteNodeHeader::NO_NODEID) m_SubNodeNoSplitID = HPMBlockID(nodeHeader.m_SubNodeNoSplitID);
     if (nodeHeader.m_uvID != SQLiteNodeHeader::NO_NODEID) m_uvID = HPMBlockID(nodeHeader.m_uvID);
-    m_totalCountDefined = nodeHeader.m_totalCountDefined;
-    m_totalCount = nodeHeader.m_totalCount;
+    this->m_totalCountDefined = nodeHeader.m_totalCountDefined;
+    this->m_totalCount = nodeHeader.m_totalCount;
     m_nodeCount = nodeHeader.m_nodeCount;
-    m_SplitTreshold = nodeHeader.m_SplitTreshold;
+    this->m_SplitTreshold = nodeHeader.m_SplitTreshold;
     m_clipSetsID.resize(nodeHeader.m_clipSetsID.size());
     for (auto& id : m_clipSetsID) if (nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()] != SQLiteNodeHeader::NO_NODEID) id = HPMBlockID(nodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()]);
     if (nodeHeader.m_textureID != SQLiteNodeHeader::NO_NODEID) m_textureID = HPMBlockID(nodeHeader.m_textureID);
@@ -155,28 +155,28 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>& SMIndexNodeHeader<EXTENT>::op
 template <class EXTENT> SMIndexNodeHeader<EXTENT>::operator SQLiteNodeHeader()
     {
     SQLiteNodeHeader header;
-    header.m_arePoints3d = m_arePoints3d;
-    header.m_isTextured = m_isTextured;
-    header.m_contentExtentDefined = m_contentExtentDefined;
-    header.m_contentExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_contentExtent), ExtentOp<EXTENT>::GetYMin(m_contentExtent), ExtentOp<EXTENT>::GetZMin(m_contentExtent),
-                                            ExtentOp<EXTENT>::GetXMax(m_contentExtent), ExtentOp<EXTENT>::GetYMax(m_contentExtent), ExtentOp<EXTENT>::GetZMax(m_contentExtent));
-    header.m_nodeExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeExtent),
-                                         ExtentOp<EXTENT>::GetXMax(m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeExtent));
+    header.m_arePoints3d = this->m_arePoints3d;
+    header.m_isTextured = this->m_isTextured;
+    header.m_contentExtentDefined = this->m_contentExtentDefined;
+    header.m_contentExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_contentExtent), ExtentOp<EXTENT>::GetYMin(this->m_contentExtent), ExtentOp<EXTENT>::GetZMin(this->m_contentExtent),
+                                            ExtentOp<EXTENT>::GetXMax(this->m_contentExtent), ExtentOp<EXTENT>::GetYMax(this->m_contentExtent), ExtentOp<EXTENT>::GetZMax(this->m_contentExtent));
+    header.m_nodeExtent = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeExtent),
+                                         ExtentOp<EXTENT>::GetXMax(this->m_nodeExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeExtent));
     header.m_graphID = m_graphID.IsValid() ? m_graphID.m_integerID : -1;
     header.m_filtered = m_filtered;
-    header.m_level = m_level;
+    header.m_level = this->m_level;
     header.m_nbFaceIndexes = m_nbFaceIndexes;
     header.m_nbTextures = m_nbTextures;
     header.m_nbUvIndexes = m_nbUvIndexes;
-    header.m_numberOfMeshComponents = m_numberOfMeshComponents;
+    header.m_numberOfMeshComponents = this->m_numberOfMeshComponents;
     header.m_meshComponents = m_meshComponents;
-    header.m_numberOfSubNodesOnSplit = m_numberOfSubNodesOnSplit;
+    header.m_numberOfSubNodesOnSplit = this->m_numberOfSubNodesOnSplit;
     header.m_parentNodeID = m_parentNodeID.IsValid() && m_parentNodeID != ISMStore::GetNullNodeID() ? m_parentNodeID.m_integerID : -1;
     header.m_SubNodeNoSplitID = m_SubNodeNoSplitID.IsValid() && m_SubNodeNoSplitID != ISMStore::GetNullNodeID() ? m_SubNodeNoSplitID.m_integerID : -1;
     header.m_uvID = m_uvID.IsValid() ? m_uvID.m_integerID : -1;
-    header.m_totalCountDefined = m_totalCountDefined;
-    header.m_totalCount = m_totalCount;
-    header.m_SplitTreshold = m_SplitTreshold;
+    header.m_totalCountDefined = this->m_totalCountDefined;
+    header.m_totalCount = this->m_totalCount;
+    header.m_SplitTreshold = this->m_SplitTreshold;
     header.m_clipSetsID.resize(m_clipSetsID.size());
     header.m_nodeCount = m_nodeCount;
     for (auto& id : m_clipSetsID) header.m_clipSetsID[&id - &m_clipSetsID.front()] = id.IsValid() && id != ISMStore::GetNullNodeID() ? id.m_integerID : -1;
