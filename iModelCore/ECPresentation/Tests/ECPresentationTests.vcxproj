@@ -76,6 +76,7 @@
     <ClCompile Include="Published\DefaultECPresentationSerializerTests.cpp" />
     <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp" />
     <ClCompile Include="Published\IECPresentationManagerTests.cpp" />
+    <ClCompile Include="Published\KeySetTests.cpp" />
     <ClCompile Include="Published\PresentationRules\AllInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\AllRelatedInstanceNodesSpecificationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\CheckBoxRuleTests.cpp" />

@@ -96,7 +96,7 @@ public:
     //! Remove supplied keys from this key set. Return number of keys removed.
     ECPRESENTATION_EXPORT uint64_t Remove(KeySetCR toRemove);
     //! Remove supplied nav node key from this key set.
-    bool Remove(NavNodeKeyCR nodeKey) {return 0 != m_nodes.erase(&nodeKey);}
+    ECPRESENTATION_EXPORT bool Remove(NavNodeKeyCR nodeKey);
     //! Remove supplied instance key from this key set.
     ECPRESENTATION_EXPORT bool Remove(ECClassCP, ECInstanceId);
     //! Remove supplied instance ky from this key set.

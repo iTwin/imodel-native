@@ -97,6 +97,7 @@
     <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentCacheTests.cpp" />
     <ClCompile Include="Published\DefaultECPresentationSerializerTests.cpp" />
+    <ClCompile Include="Published\KeySetTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\BackDoor.h" />
