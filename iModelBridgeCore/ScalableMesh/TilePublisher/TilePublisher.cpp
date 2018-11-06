@@ -1108,7 +1108,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     attr["attributes"]["POSITION"] = accPositionId;
 
     unsigned short qmin[3], qmax[3];
-    AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x, &qmin[0], &qmax[0]);
+    AddMeshVertexAttribute (rootNode, &mesh.Points().front().x, bvPositionId, accPositionId, 3, mesh.Points().size(), (char*)"VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x, &qmin[0], &qmax[0]);
 
     if (!mesh.Params().empty())
         {
@@ -1120,7 +1120,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
             flippedUvs[i++] = DPoint2d::From (uv.x, 1.0 - uv.y);      // Needs work - flip textures rather than params.
 
         DRange3d        paramRange = DRange3d::From(flippedUvs, 0.0);
-        AddMeshVertexAttribute (rootNode, &flippedUvs.front().x, bvParamId, accParamId, 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
+        AddMeshVertexAttribute (rootNode, &flippedUvs.front().x, bvParamId, accParamId, 2, mesh.Params().size(), (char*)"VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
         }
 
 
@@ -1130,7 +1130,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         DRange3d        normalRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0); 
     
         attr["attributes"]["NORMAL"] = accNormalId;
-        AddMeshVertexAttribute (rootNode, &mesh.Normals().front().x, bvNormalId, accNormalId, 3, mesh.Normals().size(), "VEC3", quantizeNormals, &normalRange.low.x, &normalRange.high.x);
+        AddMeshVertexAttribute (rootNode, &mesh.Normals().front().x, bvNormalId, accNormalId, 3, mesh.Normals().size(), (char*)"VEC3", quantizeNormals, &normalRange.low.x, &normalRange.high.x);
         }
 
     rootNode["meshes"]["mesh_0"]["primitives"].append(attr);

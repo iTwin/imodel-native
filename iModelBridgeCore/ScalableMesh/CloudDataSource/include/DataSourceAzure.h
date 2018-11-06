@@ -5,8 +5,10 @@
 #include "DataSourceStatus.h"
 #include "DataSourceBuffer.h"
 
+#ifdef USE_WASTORAGE
 #include <was/storage_account.h>
 #include <was/blob.h>
+#endif
 class DataSourceAccountAzure;
 
 
@@ -18,9 +20,11 @@ protected:
 
     typedef DataSourceCloud                             Super;
 
+#ifdef USE_WASTORAGE
     typedef azure::storage::cloud_blob                  Blob;
     typedef azure::storage::cloud_block_blob            BlockBlob;
     typedef azure::storage::cloud_page_blob             PageBlob;
+#endif
 
 protected:
 

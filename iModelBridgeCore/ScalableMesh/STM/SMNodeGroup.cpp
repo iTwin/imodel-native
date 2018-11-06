@@ -426,7 +426,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
             assert(m_isLoading == false);
             m_isLoading = true;
 
-            DataSourceURL url = this->m_dataSourcePrefix.c_str();
+            DataSourceURL url(this->m_dataSourcePrefix.c_str());
             url.append(this->GetURL());
 
             Json::Value tileset;

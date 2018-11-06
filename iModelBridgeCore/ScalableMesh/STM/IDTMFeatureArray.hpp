@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/IDTMFeatureArray.hpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -10,72 +10,72 @@ template <typename PointType, typename HeaderType>
 void IDTMFeatureFacade<PointType, HeaderType>::OnArrayDataChanged ()
     {
     if(GetArrayP()->m_PointsAlignedWithHeader)
-        EditArrayP()->m_PointsAlignedWithHeader = false;
+        this->EditArrayP()->m_PointsAlignedWithHeader = false;
     }
 
 
 template <typename PointType, typename HeaderType>
 typename IDTMFeatureFacade<PointType, HeaderType>::feature_type IDTMFeatureFacade<PointType, HeaderType>::GetType () const
     {
-    HPRECONDITION(0 != GetArrayP());
-    return GetHeader().type;
+    HPRECONDITION(0 != this->GetArrayP());
+    return this->GetHeader().type;
     }
 
 
 template <typename PointType, typename HeaderType>
 typename IDTMFeatureFacade<PointType, HeaderType>::group_id_type IDTMFeatureFacade<PointType, HeaderType>::GetGroupID () const
     {
-    HPRECONDITION(0 != GetArrayP());
-    return GetHeader().groupId;
+    HPRECONDITION(0 != this->GetArrayP());
+    return this->GetHeader().groupId;
     }
 
 
 template <typename PointType, typename HeaderType>
 size_t IDTMFeatureFacade<PointType, HeaderType>::GetSize () const
     {
-    HPRECONDITION(0 != GetArrayP());
-    return GetHeader().size;
+    HPRECONDITION(0 != this->GetArrayP());
+    return this->GetHeader().size;
     }
 
 
 template <typename PointType, typename HeaderType>
 typename IDTMFeatureFacade<PointType, HeaderType>::const_iterator IDTMFeatureFacade<PointType, HeaderType>::Begin () const
     {
-    HPRECONDITION(0 != GetArrayP());
-    HPRECONDITION(IsOutOfArray() ? true : (GetHeaderIter() < GetArrayP()->GetHeaders().End()));
-    HPRECONDITION((GetHeader().offset + GetHeader().size) <= GetArrayP()->GetPoints().GetSize());
-    return GetArrayP()->GetPoints().Begin() + GetHeader().offset;
+    HPRECONDITION(0 != this->GetArrayP());
+    HPRECONDITION(this->IsOutOfArray() ? true : (this->GetHeaderIter() < this->GetArrayP()->GetHeaders().End()));
+    HPRECONDITION((this->GetHeader().offset + this->GetHeader().size) <= this->GetArrayP()->GetPoints().GetSize());
+    return this->GetArrayP()->GetPoints().Begin() + this->GetHeader().offset;
     }
 
 
 template <typename PointType, typename HeaderType>
 typename IDTMFeatureFacade<PointType, HeaderType>::const_iterator IDTMFeatureFacade<PointType, HeaderType>::End () const
     {
-    return Begin() + GetHeader().size;
+    return Begin() + this->GetHeader().size;
     }
 
 
 template <typename PointType, typename HeaderType>
 typename IDTMFeatureFacade<PointType, HeaderType>::iterator IDTMFeatureFacade<PointType, HeaderType>::BeginEdit ()
     {
-    HPRECONDITION(0 != GetArrayP());
-    HPRECONDITION(IsOutOfArray() ? true : (GetHeaderIter() < GetArrayP()->GetHeaders().End()));
-    HPRECONDITION((GetHeader().offset + GetHeader().size) <= GetArrayP()->GetPoints().GetSize());
-    return EditArrayP()->EditPoints().BeginEdit() + GetHeader().offset;
+    HPRECONDITION(0 != this->GetArrayP());
+    HPRECONDITION(this->IsOutOfArray() ? true : (this->GetHeaderIter() < this->GetArrayP()->GetHeaders().End()));
+    HPRECONDITION((this->GetHeader().offset + this->GetHeader().size) <= this->GetArrayP()->GetPoints().GetSize());
+    return this->EditArrayP()->EditPoints().BeginEdit() + this->GetHeader().offset;
     }
 
 
 template <typename PointType, typename HeaderType>
 typename IDTMFeatureFacade<PointType, HeaderType>::iterator IDTMFeatureFacade<PointType, HeaderType>::EndEdit ()
     {
-    return BeginEdit() + GetHeader().size;
+    return BeginEdit() + this->GetHeader().size;
     }
 
 template <typename PointType, typename HeaderType>
 bool IDTMFeatureFacade<PointType, HeaderType>::IsPartOfSameList (const facade_type& pi_rRight) const
     {
     HPRECONDITION(GetArrayP()->GetPoints().IsValidIterator(pi_rRight.Begin()));
-    return GetArrayP() == pi_rRight.GetArrayP();
+    return this->GetArrayP() == pi_rRight.GetArrayP();
     }
 
 
@@ -89,7 +89,7 @@ bool IDTMFeatureFacade<PointType, HeaderType>::operator== (const IDTMFeatureFaca
     if (GetSize() != pi_rRight.GetSize())
         return false;
 
-    return equal(Begin(), End(), pi_rRight.Begin());
+    return equal(this->Begin(), this->End(), pi_rRight.Begin());
     }
 
 
@@ -102,10 +102,10 @@ void IDTMFeatureFacade<PointType, HeaderType>::Insert  (const_iterator  pi_Posit
     HPRECONDITION(pi_Begin <= pi_End);
     const size_t AddedPointQty = distance(pi_Begin, pi_End);
 
-    EditArrayP()->IncrementPointOffsets(EditHeaderIter() + 1, AddedPointQty);
+    this->EditArrayP()->IncrementPointOffsets(EditHeaderIter() + 1, AddedPointQty);
 
     EditHeader().size += static_cast<typename header_type::size_type>(AddedPointQty);
-    EditArrayP()->EditPoints().Insert(pi_Position, pi_Begin, pi_End);
+    this->EditArrayP()->EditPoints().Insert(pi_Position, pi_Begin, pi_End);
     }
 
 
@@ -126,12 +126,12 @@ IDTMFeatureFacade<PointType, HeaderType>::Erase(const_iterator  pi_Begin,
     HPRECONDITION(pi_Begin <= pi_End);
     const size_t RemovedPointQty = distance(pi_Begin, pi_End);
 
-    EditArrayP()->DecrementPointOffsets(EditHeaderIter() + 1, RemovedPointQty);
+    this->EditArrayP()->DecrementPointOffsets(EditHeaderIter() + 1, RemovedPointQty);
 
-    HASSERT(GetHeader().size >= RemovedPointQty);
+    HASSERT(this->GetHeader().size >= RemovedPointQty);
     EditHeader().size -= RemovedPointQty;
 
-    return EditArrayP()->EditPoints().Erase(pi_Begin, pi_End);
+    return this->EditArrayP()->EditPoints().Erase(pi_Begin, pi_End);
     }
 
 template <typename PointType, typename HeaderType>
@@ -263,7 +263,7 @@ template <typename PointType, typename HeaderType>
 void IDTMFeatureArray<PointType, HeaderType>::Append    (const_reference pi_rFeature)
     {
     HeaderArray::iterator AddedHeaderIt = EditHeaders().Append();
-    facade_type::InitHeader(*AddedHeaderIt, pi_rFeature.GetType(), m_Points.GetSize(), pi_rFeature.GetSize(), pi_rFeature.GetGroupID());
+    super_class::facade_type::InitHeader(*AddedHeaderIt, pi_rFeature.GetType(), m_Points.GetSize(), pi_rFeature.GetSize(), pi_rFeature.GetGroupID());
 
     copy(pi_rFeature.Begin(), pi_rFeature.End(), m_Points.Append(AddedHeaderIt->size));
     }
@@ -274,7 +274,7 @@ typename IDTMFeatureArray<PointType, HeaderType>::iterator IDTMFeatureArray<Poin
         group_id_type   pi_GroupId)
     {
     HeaderArray::iterator AddedHeaderIt = EditHeaders().Append();
-    facade_type::InitHeader(*AddedHeaderIt, pi_FeatureType, m_Points.GetSize(), 0, pi_GroupId);
+    super_class::facade_type::InitHeader(*AddedHeaderIt, pi_FeatureType, m_Points.GetSize(), 0, pi_GroupId);
 
     return CreateIterator(AddedHeaderIt);
     }
@@ -288,7 +288,7 @@ void IDTMFeatureArray<PointType, HeaderType>::Append   (feature_type    pi_Featu
     HPRECONDITION(pi_PtBegin <= pi_PtEnd);
 
     HeaderArray::iterator AddedHeaderIt = EditHeaders().Append();
-    facade_type::InitHeader(*AddedHeaderIt, pi_FeatureType, m_Points.GetSize(), distance(pi_PtBegin, pi_PtEnd), pi_GroupId);
+    IDTMFeatureArray_Type1::facade_type::InitHeader(*AddedHeaderIt, pi_FeatureType, m_Points.GetSize(), distance(pi_PtBegin, pi_PtEnd), pi_GroupId);
 
     copy(pi_PtBegin, pi_PtEnd, m_Points.Append(AddedHeaderIt->size));
     }
@@ -368,7 +368,7 @@ void IDTMFeatureArray<PointType, HeaderType>::AlignPointsWithHeaders ()
 
     // Allocate required space at the end of the point array and copy feature points in order (so that
     // points are sequentially aligned with their respective headers)
-    for_each(Begin(), End(), CopyFeaturePoints(PointsArray.Append(m_Points.GetSize())));
+    for_each(this->Begin(), this->End(), CopyFeaturePoints(PointsArray.Append(m_Points.GetSize())));
 
     // Ensure that headers refers to its points
     RecomputePointOffsets();
@@ -384,7 +384,7 @@ void IDTMFeatureArray<PointType, HeaderType>::IncrementPointOffsets(typename Hea
     HPRECONDITION(m_PointsAlignedWithHeader);
 
     HDEBUGCODE(EditHeaders().BeginEdit()); // Trigger a reallocation if needed
-    HASSERT(GetHeaders().IsValidIterator(pi_From));
+    HASSERT(this->GetHeaders().IsValidIterator(pi_From));
 
     for_each<HeaderArray::iterator>(pi_From, EditHeaders().EndEdit(), bind2nd(IncrementHeaderOffset(), pi_OffsetIncrement));
     }
@@ -397,7 +397,7 @@ void IDTMFeatureArray<PointType, HeaderType>::DecrementPointOffsets(typename Hea
     HPRECONDITION(m_PointsAlignedWithHeader);
 
     HDEBUGCODE(EditHeaders().BeginEdit()); // Trigger a reallocation if needed
-    HASSERT(GetHeaders().IsValidIterator(pi_From));
+    HASSERT(this->GetHeaders().IsValidIterator(pi_From));
 
     for_each<HeaderArray::iterator>(pi_From, EditHeaders().EndEdit(), bind2nd(DecrementHeaderOffset(), pi_OffsetDecrement));
     }
