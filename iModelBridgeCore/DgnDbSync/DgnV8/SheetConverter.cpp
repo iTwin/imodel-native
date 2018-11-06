@@ -50,7 +50,7 @@ void RootModelConverter::_ConvertSheets()
         
         BeAssert(!v8mm.GetDgnModel().Is3d() && "sheets are NEVER converted to 3D models!");
 
-        SheetsConvertModelAndViews(v8mm, nvvf);
+        SheetsConvertModelAndViewsWithExceptionHandling(v8mm, nvvf);
         }
     }
 
@@ -151,6 +151,17 @@ void Converter::DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/1
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::SheetsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const& v8mm, ViewFactory& nvvf)
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        SheetsConvertModelAndViews(v8mm, nvvf);
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16

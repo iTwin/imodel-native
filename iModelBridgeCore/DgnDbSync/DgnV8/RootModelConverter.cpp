@@ -816,6 +816,18 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Keith.Bentley                   02 / 15
+//---------------------------------------------------------------------------------------
+void RootModelConverter::ConvertElementsInModelWithExceptionHandling(ResolvedModelMapping const& v8mm)
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        ConvertElementsInModel(v8mm);
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -845,7 +857,7 @@ void RootModelConverter::DoConvertSpatialElements()
         StopWatch timer(true);
         uint32_t start = GetElementsConverted();
 
-        ConvertElementsInModel(modelMapping);
+        ConvertElementsInModelWithExceptionHandling(modelMapping);
 
         uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
         ConverterLogging::LogPerformance(timer, "Convert Spatial Elements> Model '%s' (%" PRIu32 " element(s))",

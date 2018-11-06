@@ -1632,7 +1632,7 @@ void Converter::OnCreateComplete()
     //  ensureAUserView
 
     StopWatch timer(true);
-    GenerateThumbnails();
+    GenerateThumbnailsWithExceptionHandling();
     ConverterLogging::LogPerformance(timer, "Creating thumbnails");
 
     timer.Start();
@@ -1649,7 +1649,7 @@ void Converter::OnUpdateComplete()
     {
     // *** WIP_UPDATER - update thumbnails for views with modified models
     if (m_elementsConverted != 0)
-        GenerateThumbnails();
+        GenerateThumbnailsWithExceptionHandling();
     if (m_modelsRequiringRealityTiles.size() != 0)
         GenerateRealityModelTilesets();
 

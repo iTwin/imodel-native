@@ -289,7 +289,7 @@ protected:
 
     BentleyStatus ParseDocProps();
 
-    WString GetMutexName();
+    void GetMutexName(wchar_t* buf, size_t bufLen);
     int RunExclusive(int argc, WCharCP argv[]);
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Issues.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -551,6 +551,24 @@ void Converter::ClearV8ProgressMeter()
     DgnV8Api::DgnPlatformLib::QueryHost()->SetProgressMeter (NULL);
     delete (BridgeFromV8ProgressMeter*)m_v8meter;
     m_v8meter = NULL;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/1
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::ReportFailedModelConversion(ResolvedModelMapping const& v8mm)
+    {
+    ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToConvertSheet(), IssueReporter::FmtModel(v8mm.GetV8Model()).c_str());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/1
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::ReportFailedThumbnails()
+    {
+    ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToConvertThumbnails(), nullptr);
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

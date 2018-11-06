@@ -834,7 +834,9 @@ struct Converter
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
-
+        L10N_STRING(FailedToConvertSheet)       // =="Failed to convert sheet %s"==
+        L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
+            
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
@@ -1193,6 +1195,7 @@ public:
     //! @name DgnDb properties
     //! @{
     BentleyStatus GenerateThumbnails();
+    void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
     void  StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb);
     BentleyStatus GenerateWebMercatorModel();
@@ -1442,6 +1445,8 @@ public:
     //!         ModelSelector --> PhysicalModel
     //!</pre>
     void SheetsConvertModelAndViews(ResolvedModelMapping const& v8mm, ViewFactory&);
+
+    void SheetsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const& v8mm, ViewFactory& nvvf);
     
     void AddAllSpatialCategories(DgnCategoryIdSet&);
 
@@ -1528,6 +1533,8 @@ public:
 
     //! Convert the contents of a drawing model, populating a BIM drawing model, and convert views of this model. The conversion also pulls in proxy graphics from attachments.
     void DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm);
+
+    void DrawingsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const&);
 
     //! Convert the elements in a sheet model. This includes only the elements actually in the V8 drawing model.
     DGNDBSYNC_EXPORT void DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&);
@@ -1982,6 +1989,9 @@ public:
 
     //! Report an issue, where the problem has mostly to do with provenance.
     DGNDBSYNC_EXPORT void ReportSyncInfoIssue(IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
+
+    DGNDBSYNC_EXPORT void ReportFailedModelConversion(ResolvedModelMapping const& v8mm);
+    DGNDBSYNC_EXPORT void ReportFailedThumbnails();
 
     //! Signal a fatal error
     DGNDBSYNC_EXPORT BentleyStatus OnFatalError(IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::FatalError(), ...) const;
@@ -2589,6 +2599,7 @@ protected:
 
     //! @private
     void ConvertElementsInModel(ResolvedModelMapping const& v8Model);
+    void ConvertElementsInModelWithExceptionHandling(ResolvedModelMapping const&);
     //! @private
     void DoConvertSpatialElements();
     //! @private
