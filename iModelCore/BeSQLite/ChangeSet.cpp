@@ -686,14 +686,6 @@ DbResult ChangeSet::_FromChangeGroup(ChangeGroupCR changegroup)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This method is called whenever an update to a row in the property table is reversed (that is, undo or abandon changes).
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Changes::Change::OnPropertyUpdateReversed(Db& db) const
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ChangeStream::OutputCallback(void *pOut, const void *pData, int nData)

@@ -256,8 +256,6 @@ public:
 
             //! Format the primary key columns of this change for debugging purposes.
             BE_SQLITE_EXPORT Utf8String FormatPrimarykeyColumns(bool isInsert, int detailLevel) const;
-
-            BE_SQLITE_EXPORT void OnPropertyUpdateReversed(Db&) const; //!< @private
         };
 
     typedef Change const_iterator;
