@@ -37,6 +37,11 @@
 #include "StreamTextureProvider.h"
 
 #include "ScalableMeshQuadTreeQueries.h"
+#if !defined(HVERIFYCONTRACT)
+#   define THIS_HINVARIANTS
+#else
+#   define THIS_HINVARIANTS  this->ValidateInvariants()
+#endif
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #define SM_OUTPUT_MESHES_GRAPH 0
@@ -301,8 +306,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
 
         RemoveMultiTextureData();
         }
-                
-    this->HINVARIANTS;
+
+    THIS_HINVARIANTS;
 
     return true;
     }
@@ -365,7 +370,7 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
 //=======================================================================================
 template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard()
     {
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
     bool returnValue = true;
     if (!m_remainingUnappliedEdits.empty())
         {
@@ -412,7 +417,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
 
     __super::Discard();
 
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
 
     return returnValue;
     }
@@ -1367,7 +1372,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh(bv
         Load();
 
 
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
 
     //deal with cancelling generation while it is still in progress
     if (this->m_SMIndex->m_progress->IsCanceled()) return;
@@ -1491,7 +1496,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
     if (!this->IsLoaded())
         Load();
 
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
 
     if (this->m_SMIndex->m_progress->IsCanceled()) return;
 //    size_t nodeInd;
@@ -5846,7 +5851,7 @@ Mesh the data.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh(bvector<uint64_t>* pNodesToMesh)
     {
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
 
     if (pNodesToMesh == nullptr)
         {
@@ -5865,7 +5870,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh(bvecto
             node->Mesh(pNodesToMesh);
         }
 
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
     }
 
 /**----------------------------------------------------------------------------
@@ -6097,7 +6102,7 @@ Stitch the data.
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int pi_levelToStitch, bool do2_5dStitchFirst, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitchInfo)
     {
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
 
     // Check if root node is present
     if (this->m_pRootNode != NULL)
@@ -6239,7 +6244,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
             }
         }
 
-    this->HINVARIANTS;
+    THIS_HINVARIANTS;
     }
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRegistry(ClipRegistry* clipRegistry)
