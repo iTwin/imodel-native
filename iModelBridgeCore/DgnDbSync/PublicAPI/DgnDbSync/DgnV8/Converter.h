@@ -1080,8 +1080,8 @@ public:
 
     DGNDBSYNC_EXPORT bool InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context);
 
-    DGNDBSYNC_EXPORT DgnGeometryPartId QueryGeometryPartId(DefinitionModelR model, Utf8StringCR name);
-    DGNDBSYNC_EXPORT Utf8String QueryGeometryPartTag(DefinitionModelR model, DgnGeometryPartId);
+    DGNDBSYNC_EXPORT DgnGeometryPartId QueryGeometryPartId(Utf8StringCR name);
+    DGNDBSYNC_EXPORT Utf8String QueryGeometryPartTag(DgnGeometryPartId);
     DGNDBSYNC_EXPORT BentleyStatus RecordGeometryPartId(DgnGeometryPartId, Utf8StringCR name);
 
     //! @}

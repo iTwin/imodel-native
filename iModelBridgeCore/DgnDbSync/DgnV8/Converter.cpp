@@ -3398,7 +3398,7 @@ void Converter::PopulateRangePartIdMap()
 
         Utf8String codeValue = geomPart->GetCode().GetValueUtf8CP();
         if (codeValue.empty())
-            codeValue = QueryGeometryPartTag(*GetJobDefinitionModel(), geomPart->GetId());
+            codeValue = QueryGeometryPartTag(geomPart->GetId());
 
         if (codeValue.empty())
             continue; //Null codes are valid.

@@ -926,7 +926,7 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeometryPartId Converter::QueryGeometryPartId(DefinitionModelR model, Utf8StringCR name)
+DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
     {
     SyncInfo::GeomPart sigp;
     return (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
@@ -935,7 +935,7 @@ DgnGeometryPartId Converter::QueryGeometryPartId(DefinitionModelR model, Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Converter::QueryGeometryPartTag(DefinitionModelR model, DgnGeometryPartId partId)
+Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
     {
     SyncInfo::GeomPart sigp;
     return (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
@@ -967,7 +967,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         Utf8String nameStr;
         nameStr.Assign(patternV8.cellName);
         Utf8PrintfString partTag("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
-        DgnGeometryPartId partId = QueryGeometryPartId(*GetJobDefinitionModel(), partTag.c_str());
+        DgnGeometryPartId partId = QueryGeometryPartId(partTag.c_str());
 
         if (!partId.IsValid())
             {
@@ -2626,7 +2626,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
             Utf8String        partTag = GetPartTag(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-            DgnGeometryPartId partId = m_converter.QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partTag);
+            DgnGeometryPartId partId = m_converter.QueryGeometryPartId(partTag);
             DRange3d          localRange = DRange3d::NullRange();
 
             if (!partId.IsValid())
