@@ -736,7 +736,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         isLocal = BeFileName::DoesPathExist(directory.c_str());
         if (!isLocal && newBaseEditsFilePath.empty())
             {
-            wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
+            const wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
             if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
             newBaseEditsFilePath.Assign(temp);
             }
@@ -746,7 +746,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         isLocal = false;
         if (newBaseEditsFilePath.empty())
             {
-            wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
+            const wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
             if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
             newBaseEditsFilePath.Assign(temp);
             }
@@ -1319,7 +1319,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         if (s_dropNodes)
             {
             //  m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\nodeAfterOpen.xml", false); 
-            m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\RM - SM - Sprint 13\\New Store\\Dump\\nodeDump.xml", false);
+            m_scmIndexPtr->DumpOctTree((char *)"D:\\MyDoc\\RM - SM - Sprint 13\\New Store\\Dump\\nodeDump.xml", false);
             //m_scmIndexPtr->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterOpen.xml", false);      
        //     m_scmMPointIndexPtr->ValidateNeighbors();
             }

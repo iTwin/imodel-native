@@ -6,7 +6,7 @@
 |       $Date: 2011/06/01 14:02:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,6 +36,8 @@ public:
     // Typedef a void type that match in constness with T
     typedef typename ImagePP::SameConstAsTrait<byte, T>::type
                                         ByteType;
+
+    typedef DimensionIterator<T, IncrementToNext> super_class;
 
     explicit                            DimensionIterator                  ()                                       
                                             :   m_pCurrent(0)                                                   {}
@@ -74,7 +76,7 @@ public:
         reinterpret_cast<ByteType*&>(m_pCurrent) += pi_Offset;
         }
 
-    difference_type                     GetMemoryDistanceFrom              (iterator_t                  pi_Iter)
+    typename super_class::difference_type  GetMemoryDistanceFrom              (typename super_class::iterator_t                  pi_Iter)
         {
         return (ByteType*)m_pCurrent - (ByteType*)pi_Iter.m_pCurrent;
         }
@@ -84,7 +86,7 @@ public:
 
 private:
 //    friend                              super_class;
-    friend                              rconst_iterator_t;
+//    friend                              rconst_iterator_t;
 
     enum OptimizationLevel
         {
@@ -101,33 +103,33 @@ private:
     static const size_t                 TypedIncrementToNext = IncrementToNext/sizeof(T);
 
 
-    const_iterator_t                    ConvertToConst                     () const                                     {return const_iterator_t(m_pCurrent);}
+    typename super_class::const_iterator_t ConvertToConst                     () const                                     {return const_iterator_t(m_pCurrent);}
 
-    const_reference                     Dereference                        () const                                     {return *m_pCurrent;}
-    reference                           Dereference                        ()                                           {return *m_pCurrent;}
+    typename super_class::const_reference  Dereference                        () const                                     {return *m_pCurrent;}
+    typename super_class::reference        Dereference                        ()                                           {return *m_pCurrent;}
 
     void                                Increment                          ()                                           {Increment<OPT_LEVEL>(m_pCurrent);}
     void                                Decrement                          ()                                           {Decrement<OPT_LEVEL>(m_pCurrent);}
 
-    void                                AdvanceOf                          (difference_type             pi_Offset)      {Advance<OPT_LEVEL>(m_pCurrent, pi_Offset);}
+    void                                AdvanceOf                          (typename super_class::difference_type             pi_Offset)      {Advance<OPT_LEVEL>(m_pCurrent, pi_Offset);}
 
 
-    difference_type                     DistanceFrom                       (const iterator_t&           pi_rRight) const {return ComputeDistance<OPT_LEVEL>(m_pCurrent, pi_rRight.m_pCurrent);}
-    difference_type                     DistanceFrom                       (const rconst_iterator_t&    pi_rRight) const {return ComputeDistance<OPT_LEVEL>(m_pCurrent, pi_rRight.m_pCurrent);}
+    typename super_class::difference_type DistanceFrom                       (const typename super_class::iterator_t&           pi_rRight) const {return ComputeDistance<OPT_LEVEL>(m_pCurrent, pi_rRight.m_pCurrent);}
+    typename super_class::difference_type DistanceFrom                       (const typename super_class::rconst_iterator_t&    pi_rRight) const {return ComputeDistance<OPT_LEVEL>(m_pCurrent, pi_rRight.m_pCurrent);}
 
-    bool                                EqualTo                            (const iterator_t&           pi_rRight) const {return m_pCurrent == pi_rRight.m_pCurrent;}
-    bool                                LessThan                           (const iterator_t&           pi_rRight) const {return m_pCurrent < pi_rRight.m_pCurrent;}
-    bool                                EqualTo                            (const rconst_iterator_t&    pi_rRight) const {return m_pCurrent == pi_rRight.m_pCurrent;}
-    bool                                LessThan                           (const rconst_iterator_t&    pi_rRight) const {return m_pCurrent < pi_rRight.m_pCurrent;}
+    bool                                EqualTo                            (const typename super_class::iterator_t&           pi_rRight) const {return m_pCurrent == pi_rRight.m_pCurrent;}
+    bool                                LessThan                           (const typename super_class::iterator_t&           pi_rRight) const {return m_pCurrent < pi_rRight.m_pCurrent;}
+    bool                                EqualTo                            (const typename super_class::rconst_iterator_t&    pi_rRight) const {return m_pCurrent == pi_rRight.m_pCurrent;}
+    bool                                LessThan                           (const typename super_class::rconst_iterator_t&    pi_rRight) const {return m_pCurrent < pi_rRight.m_pCurrent;}
 
 
     template <OptimizationLevel OptLevel>
-    static difference_type              ComputeDistance                    (T*                          pi_pTo, 
+    static typename super_class::difference_type              ComputeDistance                    (T*                          pi_pTo,
                                                                             T*                          pi_pFrom)
         {
         return (reinterpret_cast<ByteType*>(pi_pTo) - reinterpret_cast<ByteType*>(pi_pFrom))/IncrementToNext;
         }
-    template <> static difference_type  ComputeDistance<OPTL_T_SZ_EQ_INCR> (T*                          pi_pTo, 
+    template <> static typename super_class::difference_type  ComputeDistance<OPTL_T_SZ_EQ_INCR> (T*                          pi_pTo,
                                                                             T*                          pi_pFrom)
         {
         return pi_pTo - pi_pFrom;
@@ -165,12 +167,12 @@ private:
 
     template <OptimizationLevel OptLevel>
     static void                         Advance                            (T*&                         pi_rpCurrent,
-                                                                            difference_type             pi_Offset)
+                                                                            typename super_class::difference_type             pi_Offset)
         {
         reinterpret_cast<ByteType*&>(m_pCurrent) += (IncrementToNext*pi_Offset);
         }
     template <> static void             Advance<OPTL_T_SZ_EQ_INCR>         (T*&                         pi_rpCurrent,
-                                                                            difference_type             pi_Offset)
+                                                                            typename super_class::difference_type             pi_Offset)
         {
         m_pCurrent += pi_Offset;
         }
