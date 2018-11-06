@@ -9,7 +9,7 @@
     </Part> -->
 
     <Product Name="ProfilesDomainSDK">
-        <SubPart PartName="ProfilesDLL"/>
+        <SubPart PartName="ProfilesDomainDLL"/>
         <Directories DirectoryListName="ProfilesSDKDirs"/>
     </Product>
 
@@ -30,7 +30,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ProfilesDLL" BentleyBuildMakeFile="Profiles/Profiles.mke" ApiNumber="B02">
+    <Part Name="ProfilesDomainDLL" BentleyBuildMakeFile="Profiles/Profiles.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="ProfilesPublicAPI"/>
         <Bindings>
@@ -47,7 +47,7 @@
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
-        <SubPart PartName="ProfilesDLL"/>
+        <SubPart PartName="ProfilesDomainDLL"/>
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)ProfilesTests.exe</Assemblies>
             <Files ProductDirectoryName="ProfilesDomainRoot">
