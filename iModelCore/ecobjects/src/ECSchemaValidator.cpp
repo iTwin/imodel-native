@@ -288,6 +288,12 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
 
+    // RULE: No class may have the same name as a Bis Schema
+    if (ecClass.GetSchema().GetName().Equals(ecClass.GetName()))
+        {
+        LOG.warningv("Class '%s' should not have the same name as the schema which contains it.", ecClass.GetFullName());
+        }
+
     // RULE: All classes should have a description
     if (ecClass.GetDescription().empty())
         {
