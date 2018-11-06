@@ -2077,7 +2077,7 @@ void SyncInfo::GetCurrentImageryInfo(Utf8StringCR fileName, uint64_t& currentLas
         if (BeFileName::GetFileSize(tempFileSize, beFile) != BeFileNameStatus::Success
             || BeFileName::GetFileTime(nullptr, nullptr, &mtime, beFile) != BeFileNameStatus::Success)
             {
-            Utf8PrintfString msg("Unable to get file info for '%s'", fileName);
+            Utf8PrintfString msg("Unable to get file info for '%s'", fileName.c_str());
             //ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
             }
         currentLastModifiedTime = mtime;
