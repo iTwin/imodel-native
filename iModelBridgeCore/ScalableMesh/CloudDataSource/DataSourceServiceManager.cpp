@@ -3,9 +3,7 @@
 #include "DataSourceStatus.h"
 
 #include "DataSourceServiceFile.h"
-#ifdef USE_WASTORAGE
 #include "DataSourceServiceAzure.h"
-#endif
 #include "DataSourceServiceCURL.h"
 #include "DataSourceServiceWSG.h"
 
@@ -40,13 +38,13 @@ DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager
 
     if ((status = addService(service)).isFailed())
         return status;
+#endif
 
     if ((service = new DataSourceServiceAzureCURL(manager, DataSourceService::ServiceName(L"DataSourceServiceAzureCURL"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
     
     if ((status = addService(service)).isFailed())
         return status;
-#endif
 
     if ((service = new DataSourceServiceCURL(manager, DataSourceService::ServiceName(L"DataSourceServiceCURL"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);

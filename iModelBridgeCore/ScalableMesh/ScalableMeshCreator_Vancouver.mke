@@ -463,13 +463,14 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
-    $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
 	$(ContextSubpartsLibs)acute3dio.lib \
 	$(ContextSubpartsLibs)freeimage.lib \
 	$(ContextSubpartsLibs)PointCloud.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)CCApi.lib
+
+#	    $(ContextSubpartsLibs)wastorage.lib \
 
 LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(IppGraLibsLib) \
