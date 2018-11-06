@@ -128,6 +128,10 @@
     <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
+
+    <!-- This calls the same MKE file, so cannot run at the same time, lest they fight over common output files. -->
+    <SubPart PartName="iModelJsNodeAddonLib-Linux"/>
+    
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_2">
         Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
