@@ -3396,11 +3396,14 @@ void Converter::PopulateRangePartIdMap()
         if (!geomPart.IsValid())
             continue;
 
-        Utf8CP codeValue = geomPart->GetCode().GetValueUtf8CP();
-        if (nullptr == codeValue)
+        Utf8String codeValue = geomPart->GetCode().GetValueUtf8CP();
+        if (codeValue.empty())
+            codeValue = QueryGeometryPartTag(*GetJobDefinitionModel(), geomPart->GetId());
+
+        if (codeValue.empty())
             continue; //Null codes are valid.
 
-        if (nullptr == strstr(codeValue, "CvtV8"))
+        if (nullptr == strstr(codeValue.c_str(), "CvtV8"))
             continue;
 
         GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), geomPart->GetId()));
