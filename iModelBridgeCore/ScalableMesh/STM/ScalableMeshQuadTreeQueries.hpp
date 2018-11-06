@@ -238,6 +238,55 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQ
     return IsCorrect;    
     }
 
+    template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
+        const EXTENT&  pi_rExtentInMeters,
+        const DPoint3d pi_pViewBox[]);
+
+#ifndef LINUX_SCALABLEMESH_BUILD
+    template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
+        const EXTENT&  pi_rExtent,
+        const DPoint3d pi_pViewBox[])
+    {
+        bool isVisible = false;
+
+        //::DPoint3d** fencePt
+        int  nbPts;
+
+        DRange3d dtmIntersectionRange;
+        DRange3d extentRange;
+
+        extentRange.low.x = ExtentOp<EXTENT>::GetXMin(pi_rExtent);
+        extentRange.low.y = ExtentOp<EXTENT>::GetYMin(pi_rExtent);
+        extentRange.low.z = ExtentOp<EXTENT>::GetZMin(pi_rExtent);
+
+        extentRange.high.x = ExtentOp<EXTENT>::GetXMax(pi_rExtent);
+        extentRange.high.y = ExtentOp<EXTENT>::GetYMax(pi_rExtent);
+        extentRange.high.z = ExtentOp<EXTENT>::GetZMax(pi_rExtent);
+
+        isVisible = GetVisibleAreaForView(0,
+            nbPts,
+            pi_pViewBox,
+            extentRange,
+            dtmIntersectionRange);
+
+        if (isVisible == true)
+        {
+            DPoint3d lowPt(dtmIntersectionRange.low);
+            DPoint3d highPt(dtmIntersectionRange.high);
+
+            ExtentOp<EXTENT>::SetXMin(po_rVisibleExtent, lowPt.x);
+            ExtentOp<EXTENT>::SetYMin(po_rVisibleExtent, lowPt.y);
+            ExtentOp<EXTENT>::SetZMin(po_rVisibleExtent, lowPt.z);
+
+            ExtentOp<EXTENT>::SetXMax(po_rVisibleExtent, highPt.x);
+            ExtentOp<EXTENT>::SetYMax(po_rVisibleExtent, highPt.y);
+            ExtentOp<EXTENT>::SetZMax(po_rVisibleExtent, highPt.z);
+        }
+
+        return isVisible;
+    }
+#endif
+
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                    HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
                                                                                                    size_t                                   numSubNodes,

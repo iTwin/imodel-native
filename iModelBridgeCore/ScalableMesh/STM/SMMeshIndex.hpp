@@ -11,11 +11,9 @@
 #ifndef VANCOUVER_API
 #include "TilePublisher/TilePublisher.h"
 #endif
-//#include <eigen\Eigen\Dense>
-//#include <PCLWrapper\IDefines.h>
-//#include <PCLWrapper\INormalCalculator.h>
+
 #include "ScalableMeshQuery.h"
-//#include "MeshingFunctions.h"
+
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <Mtg/MtgStructs.h>
 //#include <Geom/bsp/bspbound.fdf>
@@ -4888,90 +4886,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
                 }
             }   
     }
-
-#if 0
-template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>* SMMeshIndexNode<POINT, EXTENT>::FindMatchingTerrainNode()
-    {
-    auto firstNode = dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(this->m_SMIndex)->GetSMTerrain()->FindNode(this->m_nodeHeader.m_nodeExtent, this->m_nodeHeader.m_level, true);
-    return firstNode;
-    }
-
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes)
-    {
-    bvector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> nodes;
-    dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->GetSMTerrain()->FindNodes(nodes,m_nodeHeader.m_nodeExtent, this->m_nodeHeader.m_level, true);
-    for (auto& node : nodes)
-        {
-        IScalableMeshNodePtr nodeP(
-#ifndef VANCOUVER_API
-            new ScalableMeshNode<POINT>(node)
-#else
-            ScalableMeshNode<POINT>::CreateItem(node)
-#endif
-            );
-        terrainNodes.push_back(nodeP);
-        }
-    }
-
-template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CreateSkirtsForMatchingTerrain()
-    {
-    if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->m_isInsertingClips) return;
-    RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
-    if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
-    int nCoverages = 0;
-    int nSkirts = 0;
-    for (const auto& diffSet : *diffsetPtr)
-        {
-        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && GetClipRegistry()->HasCoverage(diffSet.clientID)) 
-            {
-            if (!diffSet.toggledForID && diffSet.addedFaces.size() > 0) nSkirts++;
-            else nCoverages++;
-            }
-        }
-    if (nCoverages == 0 || nSkirts == nCoverages) return;
-
-    auto node = FindMatchingTerrainNode();
-
-    auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
-    IScalableMeshNodePtr nodeP(
-#ifndef VANCOUVER_API
-        new ScalableMeshNode<POINT>(nodePtr)
-#else
-        ScalableMeshNode<POINT>::CreateItem(nodePtr)
-#endif
-        );
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-    DTMPtr dtm1 = nodeP->GetBcDTM();
-    if (dtm1.get() == nullptr) return;
-
-    bvector<IScalableMeshNodePtr> terrainNodes;
-    FindMatchingTerrainNodes(terrainNodes);
-
-    SkirtBuilder builder(dtm1,terrainNodes);
-    map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
-    for (size_t i = 0; i < pointsPtr->size(); ++i)
-        mapOfPoints[pointsPtr->operator[](i)] = (int)i;
-
-    for (const auto& diffSet : *diffsetPtr)
-        {
-        if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && !diffSet.toggledForID && GetClipRegistry()->HasCoverage(diffSet.clientID))
-            {
-            bvector<bvector<DPoint3d>> skirts;
-            bvector<DPoint3d> coverage;
-            GetClipRegistry()->GetCoverage(diffSet.clientID, coverage);
-            skirts.push_back(coverage);
-            bvector<PolyfaceHeaderPtr> polyfaces;
-            builder.BuildSkirtMesh(polyfaces, skirts);
-            DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyfaces, mapOfPoints, pointsPtr->size() + 1);
-            current.clientID = diffSet.clientID;
-            current.toggledForID = false;
-            diffsetPtr->Replace(&diffSet - &(*diffsetPtr->begin()), current);
-            }
-        }
-
-    }
-#endif
 
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr, bool skirtIntersects)
     {
