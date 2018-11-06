@@ -21,4 +21,14 @@
         </Bindings>
     </Part>
     
+    <Part Name="SpatialCompositionElements" BentleyBuildMakeFile="Elements/SpatialCompositionElements.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="SpatialCompositionApi"/>
+        <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)SpatialCompositionElements$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)SpatialCompositionElements$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
 </BuildContext>

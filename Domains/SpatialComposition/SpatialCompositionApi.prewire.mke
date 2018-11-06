@@ -7,11 +7,8 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-$(BuildContext)PublicAPI/SpatialComposition/CompositeVolume.h : $(_MakeFilePath)Elements/PublicApi/CompositeVolume.h
-    $(LinkFirstDepToFirstTarget)
+$(BuildContext)PublicAPI/SpatialComposition/Elements : $(_MakeFilePath)Elements/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(BuildContext)PublicAPI/SpatialComposition/CompositeElement.h : $(_MakeFilePath)Elements/PublicApi/CompositeElement.h
-    $(LinkFirstDepToFirstTarget)
-
-$(BuildContext)PublicAPI/SpatialComposition/CompositeBoundary.h : $(_MakeFilePath)Elements/PublicApi/CompositeBoundary.h
-    $(LinkFirstDepToFirstTarget)
+$(BuildContext)PublicAPI/SpatialComposition/Domain : $(_MakeFilePath)Domain/PublicApi
+    $(LinkFirstDepToFirstTargetAsDirectory)

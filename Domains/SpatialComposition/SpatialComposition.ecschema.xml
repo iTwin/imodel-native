@@ -9,16 +9,37 @@
 <ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
 
-    <ECEntityClass typeName="CompositeElement" modifier="Abstract">
+    <ECRelationshipClass typeName="CompositeComposesSubComposites" strength="embedding" modifier="None" description="relates the Composer with its' composees">
+      <!-- Relationship that indicates a decomposition of child CompositeElement -->
+      <Source multiplicity="(0..1)" roleLabel="is composed by" polymorphic="true">
+        <Class class="CompositeElement"/>
+      </Source>
+      <Target multiplicity="(0..*)" roleLabel="composes" polymorphic="true">
+        <Class class="CompositeElement"/>
+      </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="CompositeElement" modifier="Abstract" description="a spatial element that may be Composite of other CompositeElements" >
         <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <ECNavigationProperty propertyName="ComposingElement" relationshipName="CompositeComposesSubComposites" direction="Backward" description="The Composite Element" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="CompositeBoundary" modifier="Abstract">
+    <ECEntityClass typeName="CompositeBoundary" modifier="Abstract" description="a CompositeElement that is delimited by a curve">
         <BaseClass>CompositeElement</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="CompositeVolume" modifier="Abstract">
+    <ECEntityClass typeName="CompositeVolume" modifier="Abstract" description="a CompositeElement that is delimited by a volume">
         <BaseClass>CompositeElement</BaseClass>
     </ECEntityClass>
+
+    <ECRelationshipClass typeName="CompositeOverlapsSpatialElements" modifier="None" strength="referencing" description="a relationship to mark that an element is at least partially contained within the CompositeElement">
+      <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="overlaps" polymorphic="true">
+            <Class class="CompositeElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is overlaped by" polymorphic="true">
+            <Class class="bis:SpatialElement"/>
+        </Target>
+    </ECRelationshipClass>
 
 </ECSchema>
