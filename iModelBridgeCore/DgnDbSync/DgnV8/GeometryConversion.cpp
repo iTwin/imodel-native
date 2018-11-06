@@ -550,7 +550,7 @@ void Converter::InitLineStyle(Render::GeometryParams& params, DgnModelRefR style
     if (nullptr == styleFile)
         {
         ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::MissingLsDefinitionFile(), NULL, 
-                     IssueReporter::FmtModelRef(styleModelRef));
+                     IssueReporter::FmtModelRef(styleModelRef).c_str());
         return;
         }
 

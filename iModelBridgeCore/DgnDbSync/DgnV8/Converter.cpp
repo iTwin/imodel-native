@@ -1860,7 +1860,7 @@ DefinitionModelPtr Converter::GetJobDefinitionModel()
         return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
 
     SubjectCR job = GetJobSubject();
-    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel());
+    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel().c_str());
     DgnCode partitionCode = DefinitionPartition::CreateCode(job, partitionName);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());

@@ -138,8 +138,7 @@ int RunBridge(const char* jsonString)
             return status;
         }
 
-        // Temporarily commented out until verify app.ParseCommandLine(), above.
-        // status = app.Run(_argc, _argv);
+        status = app.Run(argc, argv);
 
         printf("BridgeAddon.cpp: RunBridge() Run completed with status = %d\n", status);
     } catch (...) {
