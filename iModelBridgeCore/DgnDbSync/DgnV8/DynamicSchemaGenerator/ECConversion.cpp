@@ -3140,7 +3140,8 @@ bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR sche
     return BeStringUtilities::Strnicmp(schemaName.c_str(), "PFLModule", 9) == 0 ||
         schemaName.EqualsI("CivilSchema_iModel") ||
         schemaName.EqualsI("BuildingDataGroup") ||
-        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0;
+        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0 ||
+        schemaName.StartsWith("DgnCustomItemTypes_");
     }
 
 //---------------------------------------------------------------------------------------
