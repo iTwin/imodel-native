@@ -408,6 +408,7 @@ bool EvaluateInterior(SnapMode snapMode) const
             {
             PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*m_hitGeom->GetAsPolyfaceHeader());
             bool found = false;
+            double tolerance = 1e37 /*fc_hugeVal*/;
 
             visitor->SetNumWrap(1);
 
@@ -415,7 +416,7 @@ bool EvaluateInterior(SnapMode snapMode) const
                 {
                 DPoint3d thisPoint;
 
-                if (!visitor->TryFindCloseFacetPoint(localPoint, 1.0e-5, thisPoint))
+                if (!visitor->TryFindCloseFacetPoint(localPoint, tolerance, thisPoint))
                     continue;
 
                 FacetLocationDetail thisDetail;
@@ -430,8 +431,9 @@ bool EvaluateInterior(SnapMode snapMode) const
 
                 if (thisDetail.TryGetNormal(thisNormal))
                     m_snapNormalLocal.Normalize(thisNormal);
+
+                tolerance = thisPoint.Distance(localPoint); // Refine tolerance...
                 found = true;
-                break;
                 }
 
             if (!found)
@@ -1528,7 +1530,8 @@ bool ProcessSingleFacePolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
 bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
     {
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
-    double              tolerance = 1.0e-5;
+    double              tolerance = 1e37 /*fc_hugeVal*/;
+    bool                found = false;
 
     visitor->SetNumWrap(1);
 
@@ -1556,12 +1559,13 @@ bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
 
         meshData.CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
 
-        if (0 != perFacePolyfaces.size())
-            return ProcessSingleFacePolyface(*perFacePolyfaces.front(), localPoint);
-        break;
+        if (0 != perFacePolyfaces.size() && ProcessSingleFacePolyface(*perFacePolyfaces.front(), localPoint))
+            found = true;
+
+        tolerance = thisFacePoint.Distance(localPoint); // Refine tolerance...
         }
 
-    return false;
+    return found;
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID)
