@@ -358,7 +358,6 @@ public:
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
     DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
-    DGNPLATFORM_EXPORT ~TxnManager(); //!< @private
     BeSQLite::DbResult InitializeTableHandlers(); //!< @private
     TxnRelationshipLinkTables& RelationshipLinkTables(); //!< @private
     void EnableNotifyTxnMontiors(bool enabled) { m_enableNotifyTxnMonitors = enabled; }
@@ -768,14 +767,6 @@ namespace dgn_TxnTable
         void _UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType) override;
     };
 
-    struct BeProperties : TxnTable
-    {
-        static Utf8CP MyTableName() {return BEDB_TABLE_Property;}
-        Utf8CP _GetTableName() const override {return MyTableName();}
-        BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
-        void _Initialize() override {}
-        void _OnAppliedUpdate(BeSQLite::Changes::Change const&) override;
-    };
 };
 
 //=======================================================================================
@@ -807,12 +798,6 @@ namespace dgn_TableHandler
         TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
     };
 
-    //! TableHandler for BeProperties
-    struct BeProperties : DgnDomain::TableHandler
-    {
-        TABLEHANDLER_DECLARE_MEMBERS(BeProperties, DGNPLATFORM_EXPORT)
-        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::BeProperties(mgr);}
-    };
 };
 
 END_BENTLEY_DGN_NAMESPACE

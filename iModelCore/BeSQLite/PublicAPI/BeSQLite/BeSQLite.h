@@ -2399,9 +2399,6 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     virtual DbResult _OnDbCreated(CreateParams const& params) {return BE_SQLITE_OK;}
 
-    //! @deprecated
-    virtual void _OnSaveSettings() {}
-
     //! override to perform additional processing when Db is opened
     //! @note implementers should always forward this call to their superclass.
     //! @note this function is invoked before _CheckProfileVersion() and _UpgradeProfile() and therefore should not attempt to access data which depends on the schema version
@@ -2770,10 +2767,6 @@ public:
     //! @param[in] majorId A pointer to the majorId of the properties to delete. If nullptr, all properties of spec are deleted. If non-nullptr, all properties of spec with the supplied majorid are deleted.
     //! @return BE_SQLITE_DONE if the property was either deleted or did not exist, error code otherwise.
     DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId) {return m_dbFile->DeleteProperties(spec, majorId);}
-
-    //! @deprecated
-    void SaveSettings() {}
-    //! @}
 
     //! @name BriefcaseLocalValue
     //! @{

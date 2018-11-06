@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-DPILOG_DEFINE(Txns)
-
 BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -111,7 +109,7 @@ DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, boo
         if (1 == m_snappyTo.GetCurrChunk())
             stmt->BindBlob(Column::Change, m_snappyTo.GetChunkData(0), zipSize, Statement::MakeCopy::No);
         else
-            stmt->BindZeroBlob(Column::Change, zipSize); // more than one chunk in geom stream
+            stmt->BindZeroBlob(Column::Change, zipSize); // more than one chunk
         }
 
     auto rc = stmt->Step();
@@ -266,13 +264,6 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
 
     m_enableRebasers = m_dgndb.TableExists(DGN_TABLE_Rebase);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::~TxnManager()
-    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1222,7 +1213,7 @@ Byte* TxnManager::ReadChanges(uint32_t& sizeRead, TxnId rowId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Read a changeset from the dgn_Txn table, potentially inverting it (depending on whether we'performing undo or redo),
+* Read a changeset from the dgn_Txn table, potentially inverting it (depending on whether we're performing undo or redo),
 * and then apply the changeset to the DgnDb.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1790,20 +1781,6 @@ void dgn_TxnTable::Model::_OnAppliedAdd(BeSQLite::Changes::Change const& change)
     {
     if (!m_txnMgr.IsInAbandon())
         AddChange(change, ChangeType::Insert);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::BeProperties::_OnAppliedUpdate(BeSQLite::Changes::Change const& change)
-    {
-    switch (m_txnMgr.GetCurrentAction())
-        {
-        case TxnAction::Abandon: // only these two actions need to preserve the changed state.
-        case TxnAction::Reverse:
-            change.OnPropertyUpdateReversed(m_txnMgr.GetDgnDb());
-            break;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

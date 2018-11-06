@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired /*= Required::No*/, DgnDomain::Readonly isReadonly /*= Readonly::No*/, BeFileNameCP schemaRootDir /* = nullptr*/)
+BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired, DgnDomain::Readonly isReadonly, BeFileNameCP schemaRootDir)
     {
     auto& domains = T_HOST.RegisteredDomains();
     for (DgnDomainCP it : domains)
@@ -159,7 +159,6 @@ ECSchemaPtr DgnDomain::ReadSchema(ECSchemaReadContextR schemaContext) const
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), schemaContext);
 
-    // CreateSearchPathSchemaFileLocater
     if (SchemaReadStatus::Success != status)
         {
         LOG.errorv("Error reading schema %ls", GetSchemaPathname().GetName());
@@ -262,7 +261,7 @@ void DgnDomains::DeleteHandlers()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Before you can register a Handler, of its superclass Handler must be registered.
+* Before you can register a Handler, its superclass Handler must be registered.
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler) 
@@ -628,14 +627,13 @@ SchemaStatus DgnDomains::DoValidateSchemas(bvector<ECSchemaPtr>* schemasToImport
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                  02 / 2017
 //---------------------------------------------------------------------------------------
-// static
 SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaReadonly, DgnDbCR db)
     {
     SchemaKeyCR appSchemaKey = appSchema.GetSchemaKey();
     ECSchemaCP bimSchema = db.Schemas().GetSchema(appSchemaKey.GetName().c_str(), false);
     if (!bimSchema)
         {
-        LOG.tracev("Application schema %s was not found in the BIM.", appSchemaKey.GetFullSchemaName().c_str());
+        LOG.tracev("Application schema %s was not found in the iModel.", appSchemaKey.GetFullSchemaName().c_str());
         return SchemaStatus::SchemaNotFound;
         }
     SchemaKeyCR bimSchemaKey = bimSchema->GetSchemaKey();
@@ -691,13 +689,10 @@ SchemaStatus DgnDomains::DoValidateSchema(ECSchemaCR appSchema, bool isSchemaRea
 SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchemas, SchemaManager::SchemaImportOptions importOptions)
     {
     if (importSchemas.empty())
-        {
-        // BeAssert(false);
         return SchemaStatus::Success;
-        }
 
-    //always disallow major schema upgrades for domain schema imports. Major schema upgrades are only allowed across software generations
-    //which will most likely not be an automatic process anyways.
+    // always disallow major schema upgrades for domain schema imports. Major schema upgrades are only allowed across software generations
+    // which will most likely not be an automatic process anyways.
     importOptions |= SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade;
 
     DgnDbR dgndb = GetDgnDb();
@@ -827,9 +822,7 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
     // Get superclass of type baseClass
     ECN::ECClassCP superClass = FindBaseOfType(handlerId, baseClassId);
     if (nullptr == superClass)
-        {
         return nullptr;
-        }
 
     // see if baseclass has a handler, recursively.
     handler = FindHandler(DgnClassId(superClass->GetId()), baseClassId);
@@ -849,12 +842,10 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
             ECN::ECClassCP ecClass = m_dgndb.Schemas().GetClass(handlerId);
             BeAssert(nullptr != ecClass && "It is impossible to end up here with a null ECClass unless the preceding code was later modified");
             // *** TODO: If two levels of handlers where missing, then my superclass's handler might also be an instance of MissingHandler.
-            //              In that case, restrictions should be the AND of mine and his.
+            //           In that case, restrictions should be the AND of mine and his.
             handler = handler->_CreateMissingHandler(restrictions, ecClass->GetSchema().GetName(), ecClass->GetName());
 
-            auto eclass = GetDgnDb().Schemas().GetClass((ECN::ECClassId)handlerId.GetValue());
-            if (eclass)
-                AutoHandledPropertiesCollection::DetectOrphanCustomHandledProperty(GetDgnDb(), *eclass);
+            AutoHandledPropertiesCollection::DetectOrphanCustomHandledProperty(GetDgnDb(), *ecClass);
 
             BeAssert(nullptr != handler);
             }
@@ -896,7 +887,8 @@ bool DgnDomains::GetHandlerInfo(uint64_t* restrictionMask, DgnClassId handlerId,
     ECN::IECInstancePtr attr = nullptr != ecClass ? ecClass->GetCustomAttributeLocal("ClassHasHandler") : nullptr;
     if (attr.IsNull())
         return false; // ECClass is not supposed to have a handler
-    else if (nullptr == restrictionMask)
+    
+     if (nullptr == restrictionMask)
         return true; // ECClass is supposed to have a handler and caller doesn't care about restrictions
 
     // Look up restrictions inherited from base classes. NEEDSWORK cache on handler rather than query? We will never use it after all handlers are registered.
@@ -1329,13 +1321,12 @@ uint64_t DgnDomain::Handler::RestrictedAction::Parse(Utf8CP name)
     {
     if (0 == BeStringUtilities::Stricmp("delete", name))
         return Delete;
-    else if (0 == BeStringUtilities::Stricmp("insert", name))
+    if (0 == BeStringUtilities::Stricmp("insert", name))
         return Insert;
-    else if (0 == BeStringUtilities::Stricmp("update", name))
+    if (0 == BeStringUtilities::Stricmp("update", name))
         return Update;
-    else if (0 == BeStringUtilities::Stricmp("all", name))
+    if (0 == BeStringUtilities::Stricmp("all", name))
         return All;
-    else
-        return None;
+    return None;
     }
 

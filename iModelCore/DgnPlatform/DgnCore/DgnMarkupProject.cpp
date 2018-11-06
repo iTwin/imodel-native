@@ -506,7 +506,6 @@ DbResult DgnMarkupProject::InitializeNewMarkupProject(BeFileNameCR fileName, Cre
     if (SchemaStatus::Success != MarkupDomain::GetDomain().ImportSchema(*this))
         return BE_SQLITE_ERROR;
 
-    SaveSettings();
     SaveChanges();
 
     // POST CONDITIONS

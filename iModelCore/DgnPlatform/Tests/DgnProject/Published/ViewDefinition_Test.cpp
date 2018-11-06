@@ -226,12 +226,10 @@ TEST_F(ViewDefinitionTests, QueryDefaultViewId)
 
     DgnViewId defaultViewId(m_db->Elements().GetRootSubjectId().GetValue()); // not a valid view
     m_db->SaveProperty(DgnViewProperty::DefaultView(), &defaultViewId, sizeof(defaultViewId));
-    m_db->SaveSettings();
     ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), publicSpatialView->GetViewId()); // invalid default view property should be ignored
 
     defaultViewId = privateSpatialView->GetViewId();
     m_db->SaveProperty(DgnViewProperty::DefaultView(), &defaultViewId, sizeof(defaultViewId));
-    m_db->SaveSettings();
     ASSERT_EQ(ViewDefinition::QueryDefaultViewId(*m_db), privateSpatialView->GetViewId()); // valid default view property should take precedence
     }
 
