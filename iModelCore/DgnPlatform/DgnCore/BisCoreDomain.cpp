@@ -21,7 +21,6 @@ namespace dgn_TableHandler
 TABLEHANDLER_DEFINE_MEMBERS(Element)
 TABLEHANDLER_DEFINE_MEMBERS(Model)
 TABLEHANDLER_DEFINE_MEMBERS(ElementDep)
-TABLEHANDLER_DEFINE_MEMBERS(BeProperties)
 };
 
 namespace dgn_ModelHandler
@@ -218,7 +217,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
-    RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
