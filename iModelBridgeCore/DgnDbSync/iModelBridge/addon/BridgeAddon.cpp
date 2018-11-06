@@ -33,27 +33,24 @@ static Napi::Object RegisterModule(Napi::Env env, Napi::Object exports)
     return exports;
     }
 
-    // printf("BridgeAddon.cpp: _setArgV() argc = %d member %s command %s\n", argc, MEMBER, COMMAND);      \
-    // printf("BridgeAddon.cpp: _setArgV() isMember = %s\n", (json.isMember(MEMBER)?"TRUE":"FALSE"));      \
-    // printf("BridgeAddon.cpp: _setArgV() value-0  = %s\n", json.get(MEMBER, "" ).asString().c_str());    \
-    // printf("BridgeAddon.cpp: _setArgV() value-1  = %s\n", json[MEMBER].asString().c_str());             \
-    // printf("BridgeAddon.cpp: _setArgV() empty    = %s\n", (json.get(MEMBER, "" ).asString().empty()?"TRUE":"FALSE"));    \    
+#define MAKE_ARGC_ARGV(argptrs, args)\
+for (auto& arg: args)\
+   argptrs.push_back(arg.c_str());\
+int argc = (int)argptrs.size();\
+wchar_t const** argv = argptrs.data();\
 
-#define _setArgV(json, argc, argv, MEMBER, COMMAND) \
-{ \
-    if(json.isMember(MEMBER) && (!json.get(MEMBER, "" ).asString().empty())) {                          \
-        Utf8String strUtf8 = Utf8PrintfString("--%s=%s", COMMAND, json.get(MEMBER, "" ).asString());    \
-        if (!Utf8String::IsNullOrEmpty(strUtf8.c_str())) {                                              \
-            WString tempWString;                                                                        \
-            BeStringUtilities::Utf8ToWChar(tempWString, strUtf8.c_str());                               \
-            argv[argc] = tempWString.c_str();                                                           \
-            ++argc;                                                                                     \
-        }                                                                                               \
-    }                                                                                                   \
+#define SET_ARG(MEMBER, COMMAND) \
+{\
+    if(json.isMember(MEMBER)) { \
+        Utf8String tempsUtf8String = json.get(MEMBER, "").asString();\
+        WString tempWString; \
+        BeStringUtilities::Utf8ToWChar(tempWString, tempsUtf8String.c_str());\
+        args.push_back(WPrintfString(L"--%s=%s", COMMAND, tempWString));\
+    }\
 }
 
 /*---------------------------------------------------------------------------------**/ /**
-* @bsimethod                                    John.Majerle                      06/18
+* @bsimethod                                    John.Majerle                      10/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 int RunBridge(const char* jsonString)
     {
@@ -73,36 +70,56 @@ int RunBridge(const char* jsonString)
     }
 
     // Convert json to argv/argc
-    int argc = 0;
-    WCharCP argv[14];
+    // Hardcoded values work.
+    // int _argc = 10;
+    // WCharCP _argv[10] = {
+    //     L"BridgeAddon",
+    //     L"--server-user=imv-test@be-mailinator.cloudapp.net",
+    //     L"--server-password=X$c9Fy3u!TRBVxFz",
+    //     L"--server-project=AT-JOHN-TEST",
+    //     L"--server-repository=Foo2",        
+    //     L"--server-environment=DEV",
+    //     L"--fwk-assetsDir=C:\\Program Files\\Bentley\\iModelBridgeMstn\\Assets",
+    //     L"--fwk-bridge-library=C:\\Program Files\\Bentley\\iModelBridgeMstn\\Dgnv8BridgeB02.dll",
+    //     L"--fwk-staging-dir=D:\\junk\\stagingDir",
+    //     L"--fwk-input=D:\\junk\\input\\Foo.i.dgn"
+    // };
 
-    try {
-        _setArgV(json, argc, argv, "server_user", "server-user");
-        _setArgV(json, argc, argv, "server_password", "server-password");
-        _setArgV(json, argc, argv, "server_repository", "server-repository");
-        _setArgV(json, argc, argv, "server_project", "server-project");
-        _setArgV(json, argc, argv, "server_environment", "server-environment");
- 
-        _setArgV(json, argc, argv, "fwk_bridge_library", "fwk-bridge-library");
-        _setArgV(json, argc, argv, "fwk_bridge_regsubkey", "fwk-bridge-regsubkey");
-        _setArgV(json, argc, argv, "fwk_staging_dir", "fwk-staging-dir");
-        _setArgV(json, argc, argv, "fwk_input", "fwk-input");
-        _setArgV(json, argc, argv, "fwk_input_sheet", "fwk-input-sheet");
-        _setArgV(json, argc, argv, "fwk_revision_comment", "fwk-revision-comment");
-        _setArgV(json, argc, argv, "fwk_logging_config_file", "fwk-logging-config-file");
-        _setArgV(json, argc, argv, "fwk_argsJson", "fwk-argsJson");
-        _setArgV(json, argc, argv, "fwk_max_wait", "fwk_max-wait");
-        _setArgV(json, argc, argv, "fwk_jobrun_guid", "fwk-jobrun-guid");
-        _setArgV(json, argc, argv, "fwk_assetsDir", "fwk-assetsDir");
-        _setArgV(json, argc, argv, "fwk_bridgeAssetsDir", "fwk-bridgeAssetsDir");        
-        _setArgV(json, argc, argv, "fwk_imodelbank_url", "fwk-imodelbank-url");    
-        _setArgV(json, argc, argv, "fwk_jobrequest_guid", "fwk-jobrequest-guid");           
-    } catch (...) {
-        printf("BridgeAddon.cpp: RunBridge() exception occurred processing json. argc = %d\n", argc);
-        return status;
-    }
+    bvector<WString> args;
 
-    if(0 == argc) {
+    args.push_back(L"BridgeAddon");    
+
+    // Required
+    SET_ARG("server_user", L"server-user")                  
+    SET_ARG("server_password", L"server-password") 
+    SET_ARG("server_project", L"server-project") 
+    SET_ARG("server_repository", L"server-repository") 
+    SET_ARG("server_environment", L"server-environment") 
+
+    // These may need to be quoted?
+    SET_ARG("fwk_assetsDir", L"fwk-assetsDir") 
+    SET_ARG("fwk_bridgeAssetsDir", L"fwk-bridgeAssetsDir") 
+    SET_ARG("fwk_bridge_library", L"fwk-bridge-library") 
+    SET_ARG("fwk_staging_dir", L"fwk-staging-dir") 
+    SET_ARG("fwk_input", L"fwk-input") 
+
+    // Optional 
+    SET_ARG("server_project_guid", "server-project-guid"); 
+    SET_ARG("fwk_bridge_regsubkey", "fwk-bridge-regsubkey");
+    SET_ARG("fwk_input_sheet", "fwk-input-sheet");
+    SET_ARG("fwk_revision_comment", "fwk-revision-comment");
+    SET_ARG("fwk_logging_config_file", "fwk-logging-config-file");
+    SET_ARG("fwk_argsJson", "fwk-argsJson");
+    SET_ARG("fwk_max_wait", "fwk_max-wait");
+    SET_ARG("fwk_jobrun_guid", "fwk-jobrun-guid");
+    SET_ARG("fwk_imodelbank_url", "fwk-imodelbank-url");    
+    SET_ARG("fwk_jobrequest_guid", "fwk-jobrequest-guid");  
+    SET_ARG("fwk_create_repository_if_necessary", "fwk-create-repository-if-necessary");  
+    
+    bvector<WCharCP> argptrs;
+    MAKE_ARGC_ARGV(argptrs, args);
+
+    if(1 == argc) {
         printf("BridgeAddon.cpp: RunBridge() No valid members passed in json\n");
         return status;    
     }
@@ -111,7 +128,7 @@ int RunBridge(const char* jsonString)
     for(int ii = 0; ii < argc; ++ii) {
        printf("BridgeAddon.cpp: argv[%d] = %S\n", ii, argv[ii]); 
     }
-    
+   
     try {
         Dgn::iModelBridgeFwk app;
 
@@ -120,10 +137,13 @@ int RunBridge(const char* jsonString)
             printf("BridgeAddon.cpp: RunBridge() ParseCommandLine failure\n");
             return status;
         }
-            
-        status = app.Run(argc, argv);
+
+        // Temporarily commented out until verify app.ParseCommandLine(), above.
+        // status = app.Run(_argc, _argv);
+
+        printf("BridgeAddon.cpp: RunBridge() Run completed with status = %d\n", status);
     } catch (...) {
-        printf("BridgeAddon.cpp: RunBridge() exception occurred processing argv[]\n");
+        printf("BridgeAddon.cpp: RunBridge() exception occurred bridging the file\n");
         return status;
     }
 
