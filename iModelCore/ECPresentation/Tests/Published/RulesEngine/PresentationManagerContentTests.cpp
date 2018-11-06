@@ -7789,9 +7789,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
-        instance.AddArrayElements("ArrayProperty", 2);
+        ECValue nullECValue; nullECValue.SetIsNull(true);
+        instance.AddArrayElements("ArrayProperty", 3);
         instance.SetValue("ArrayProperty", ECValue(2), 0);
         instance.SetValue("ArrayProperty", ECValue(1), 1);
+        instance.SetValue("ArrayProperty", nullECValue, 2);
         });
     
     // create the rule set
@@ -7828,7 +7830,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(R"(
         {
-        "MyClass_ArrayProperty": ["_2_", "_1_"]
+        "MyClass_ArrayProperty": ["_2_", "_1_", ""]
         })");
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
@@ -7840,6 +7842,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsPrimitiveArrayProper
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(FormatsStructPropertyValues, R"*(
     <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="DoubleProperty" typeName="double" />
         <ECProperty propertyName="IntProperty" typeName="int" />
         <ECProperty propertyName="StringProperty" typeName="string" />
     </ECStructClass>
@@ -7856,6 +7859,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
+        ECValue nullECValue; nullECValue.SetIsNull(true);
+        instance.SetValue("StructProperty.DoubleProperty", nullECValue);
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
@@ -7894,6 +7899,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(R"({
         "MyClass_StructProperty": {
+           "DoubleProperty": "",
            "IntProperty": "_123_",
            "StringProperty": "_abc_"
            }
@@ -7908,6 +7914,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsStructPropertyValues
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(FormatsNestedStructPropertyValues, R"*(
     <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="DoubleProperty" typeName="double" />
         <ECProperty propertyName="IntProperty" typeName="int" />
         <ECProperty propertyName="StringProperty" typeName="string" />
     </ECStructClass>
@@ -7938,6 +7945,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsNestedStructProperty
     IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass);
     IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance)
         {
+        ECValue nullECValue; nullECValue.SetIsNull(true);
+        instance.SetValue("StructProperty.DoubleProperty", nullECValue);
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
@@ -7983,12 +7992,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FormatsNestedStructProperty
             "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
             "Values": {
                 "ElementUniqueAspect_StructProperty": {
+                    "DoubleProperty": null,
                     "IntProperty": 123,
                     "StringProperty": "abc"
                     }
                 },
             "DisplayValues": {
                 "ElementUniqueAspect_StructProperty": {
+                    "DoubleProperty": "",
                     "IntProperty": "_123_",
                     "StringProperty": "_abc_"
                     }
