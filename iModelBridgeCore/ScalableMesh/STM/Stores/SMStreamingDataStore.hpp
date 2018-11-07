@@ -541,7 +541,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         m_CesiumGroup->DeclareRoot();
         m_CesiumGroup->SetURL(DataSourceURL(tilesetName.c_str()));
         m_CesiumGroup->SetDataSourcePrefix(tilesetDir);
-        if (nullptr == m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID))
+        Json::Value* rootJsonHeader = nullptr;
+        if (nullptr == (rootJsonHeader = m_CesiumGroup->DownloadNodeHeader(indexHeader->m_rootNodeBlockID.m_integerID)))
             return 0;
         Json::Value* masterJSONPtr = nullptr;
         if ((masterJSONPtr = m_CesiumGroup->GetSMMasterHeaderInfo()) != nullptr)
@@ -556,6 +557,26 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_terrainDepth = masterJSON["MeshDataDepth"].asUInt();
             indexHeader->m_resolution = masterJSON["DataResolution"].asDouble();
             indexHeader->m_rootNodeBlockID = HPMBlockID(m_CesiumGroup->GetRootTileID());
+
+            if (rootJsonHeader->isMember("transform"))
+                {
+                Transform tileToECEF;
+                auto const& transform = (*rootJsonHeader)["transform"];
+                tileToECEF = Transform::FromRowValues(transform[0].asDouble(), transform[4].asDouble(), transform[8].asDouble(), transform[12].asDouble(),
+                                                      transform[1].asDouble(), transform[5].asDouble(), transform[9].asDouble(), transform[13].asDouble(),
+                                                      transform[2].asDouble(), transform[6].asDouble(), transform[10].asDouble(), transform[14].asDouble());
+                m_settings->SetTileToECEFTransform(tileToECEF);
+                }
+
+            if (masterJSON.isMember("tileToDb"))
+                {
+                Transform tileToDb;
+                auto const& transform = masterJSON["tileToDb"];
+                tileToDb = Transform::FromRowValues(transform[0].asDouble(), transform[4].asDouble(), transform[8].asDouble(), transform[12].asDouble(),
+                                                    transform[1].asDouble(), transform[5].asDouble(), transform[9].asDouble(), transform[13].asDouble(),
+                                                    transform[2].asDouble(), transform[6].asDouble(), transform[10].asDouble(), transform[14].asDouble());
+                m_settings->SetTileToDbTransform(tileToDb);
+                }
 
             if (masterJSON.isMember("GCS"))
                 {

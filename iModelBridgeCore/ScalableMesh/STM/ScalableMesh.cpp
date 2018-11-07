@@ -1269,10 +1269,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                 0,
                 0);
 
-                {
-                if (!LoadGCSFrom(WString(L"ll84")))
-                    return BSIERROR; // Error loading layer gcs
-                }
+            {
+            if ((m_streamingSettings->GetGCSString().empty() && !LoadGCSFrom(WString(L"ll84"))) ||
+                (!m_streamingSettings->GetGCSString().empty() && !LoadGCSFrom(m_streamingSettings->GetGCSString())))
+                return BSIERROR; // Error loading layer gcs
+            }
 
             }
         else
@@ -3608,23 +3609,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
 
 #ifdef VANCOUVER_API
 template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel)
-    {
-    Transform computedTransform = Transform::FromIdentity();
-
-    // Greate a GCS from the ScalableMesh
-    GeoCoords::GCS gcs(this->GetGCS());
-    GeoCoords::Unit unit(gcs.GetHorizontalUnit());
-
-	//TFS#721455 - dgnModel may be an attachment
-	DgnModelCP targetModel = dgnModel->AsDgnModelCP();
-	if (targetModel == nullptr && dgnModel->AsDgnAttachmentCP() != nullptr)
-		targetModel = dgnModel->AsDgnAttachmentCP()->GetDgnModelP();
-
-	assert(targetModel != nullptr);
-
-	if (targetModel == nullptr) return ERROR; //something is wrong with the reference;
-    auto& modelInfo = targetModel->GetModelInfo();
-    
+    {   
     if (targetCS == nullptr && this->IsCesium3DTiles() && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
         {
         // Fall back on the GCS saved in the SM metadata for Cesium tilesets
@@ -3641,38 +3626,78 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnModel));
         return this->_Reproject(newDgnGcsPtr.get(), dgnModel);
         }
-    else if (targetCS == nullptr || !gcs.HasGeoRef())
+
+    // Greate a GCS from the ScalableMesh
+    GeoCoords::GCS gcs(this->GetGCS());
+    GeoCoords::Unit unit(gcs.GetHorizontalUnit());
+
+    //TFS#721455 - dgnModel may be an attachment
+    DgnModelCP targetModel = dgnModel->AsDgnModelCP();
+    if (targetModel == nullptr && dgnModel->AsDgnAttachmentCP() != nullptr)
+        targetModel = dgnModel->AsDgnAttachmentCP()->GetDgnModelP();
+
+    assert(targetModel != nullptr);
+
+    if (targetModel == nullptr) return ERROR; //something is wrong with the reference;
+    auto& modelInfo = targetModel->GetModelInfo();
+
+    double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * (this->IsCesium3DTiles() ? 1.0 : unit.GetRatioToBase());
+
+    DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
+
+    Transform computedTransform = Transform::FromRowValues(scaleUorPerMeters, 0, 0, 0.0,
+                                                           0, scaleUorPerMeters, 0, 0.0,
+                                                           0, 0, scaleUorPerMeters, 0.0);
+
+    auto coordInterp = GeoCoordinates::GeoCoordInterpretation::Cartesian;
+    if (this->IsCesium3DTiles())
+        {
+        auto tileToDb = m_streamingSettings->GetTileToDbTransform();
+        if (!tileToDb.IsIdentity())
+            {
+            computedTransform = Transform::FromProduct(computedTransform, tileToDb);
+            }
+        else
+            { // tile coordinates are not transformed, therefore they must be interpreted as XYZ coordinates
+            coordInterp = GeoCoordinates::GeoCoordInterpretation::XYZ;
+            }
+        auto tileToECEF = m_streamingSettings->GetTileToECEFTransform();
+        if (!tileToECEF.IsIdentity())
+            {
+            Transform ecefToTile;
+            ecefToTile.InverseOf(tileToECEF);
+            computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
+            }
+        }
+
+    if (targetCS == nullptr || !gcs.HasGeoRef())
         {
         BaseGCSPtr targetGcs(BaseGCS::CreateGCS());
-                
-        double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * (this->IsCesium3DTiles() ? 1.0 : unit.GetRatioToBase());
-
-        DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
-
-        computedTransform = Transform::FromRowValues(scaleUorPerMeters, 0, 0, globalOrigin.x,
-                                                     0, scaleUorPerMeters, 0, globalOrigin.y,
-                                                     0, 0, scaleUorPerMeters, globalOrigin.z);
-        
                         
         return _SetReprojection(*targetGcs, computedTransform);
         }
     else
         {
-        GeoCoordinates::DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
+        GeoCoordinates::DgnGCSPtr  smGCS = nullptr;
+        if (coordInterp == GeoCoordinates::GeoCoordInterpretation::XYZ)
+            {
+            smGCS = GeoCoordinates::DgnGCS::CreateGCS(L"ll84", dgnModel);
+            }
+        else
+            smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
+
         assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
         
-        DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
-        if (smGCS != nullptr && !targetCS->IsEquivalent(*smGCS))
+        if (!targetCS->IsEquivalent(*smGCS))
             {
             smGCS->SetReprojectElevation(true);
 
-            DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-            smGCS->UorsFromCartesian(scale, scale);
-            scale.DifferenceOf(scale, globalOrigin);            
+            //DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
+            //smGCS->UorsFromCartesian(scale, scale);
+            //scale.DifferenceOf(scale, globalOrigin);            
             
-            computedTransform = Transform::FromRowValues(scale.x,       0,       0, globalOrigin.x,
-                                                               0, scale.y,       0, globalOrigin.y,
-                                                               0,       0, scale.z, globalOrigin.z);
+            computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
+            //computedTransform = Transform::FromProduct(Transform::From(scale.x, scale.y, scale.z), computedTransform);
 
             DRange3d smExtent, smExtentUors;
             this->GetRange(smExtent);
@@ -3682,24 +3707,13 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
             Transform       approxTransform;
 
-            auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
-
             auto status = smGCS->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, static_cast<DgnGCSCR>(*targetCS));
 
             if (0 == status || 1 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
+                computedTransform = Transform::FromProduct(Transform::From(-globalOrigin.x, -globalOrigin.y, -globalOrigin.z), computedTransform);
                 }
-            }
-        else
-            {             
-            double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * unit.GetRatioToBase();
-
-            DPoint3d globalOrigin2 = modelInfo.GetGlobalOrigin();
-
-            computedTransform = Transform::FromRowValues(scaleUorPerMeters, 0, 0, globalOrigin2.x,
-                                                         0, scaleUorPerMeters, 0, globalOrigin2.y,
-                                                         0, 0, scaleUorPerMeters, globalOrigin2.z);
             }
         }
 
