@@ -87,11 +87,11 @@ struct WSChangeset
 
         //! Request options allows to change default behaviour of WSG request.
         //! Current WSChangeset implementation allows these options: Failure Strategy, Response Content, Refresh Instances, Custom Options.
-		//! If request options are not initialised, this method initialise them.
+        //! If request options are not initialized, this method initialise them.
         //! @return request options
         WSCLIENT_EXPORT Options& GetRequestOptions();
 
-        //! If request options are initialised (by calling GetRequestOptions)
+        //! If request options are initialized (by calling GetRequestOptions)
         //! but are not needed for this WSChangeset, request options can be removed from request.
         WSCLIENT_EXPORT void RemoveRequestOptions();
 
