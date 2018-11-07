@@ -61,7 +61,7 @@
  </Part>
   <Part Name="UstationDummy" BentleyBuildMakeFile="iModelDmsSupport/UstationDummy.mke" OnlyPlatforms="x64">
     <Bindings>
-      <Assemblies ProductDirectoryName="DgnV8DummyUstation">Delivery/$(shlibprefix)ustation$(shlibext)</Assemblies>
+      <Assemblies ProductDirectoryName="DgnV8DummyUstation" Required="false">Delivery/$(shlibprefix)ustation$(shlibext)</Assemblies>
     </Bindings>
   </Part>
   <Part Name="iModelDmsPublicApi" BentleyBuildMakeFile="iModelDmsApiprewire.mke"> 
