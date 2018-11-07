@@ -6313,8 +6313,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_ProgressCa
     auto cachedFilePath = txn.GetCache().ReadFilePath(instance);
     txn.Commit();
 
-    //ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
-    //    .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     TestProgressMock testOnProgress;
     auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
@@ -6377,8 +6377,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithout_ProgressCal
 
     txn.Commit();
 
-    ////ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
-    ////    .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     TestProgressMock testOnProgress;
     auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
@@ -6788,8 +6788,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}))));
 
-    ////ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
-    ////    .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}))));
@@ -7814,9 +7814,10 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
     ON_CALL(*cache, FindInstance(instanceKey)).WillByDefault(Return(ObjectId("TestSchema.TestClass", "TestId")));
     ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     ON_CALL(*cache, UpdateInstances(_, _, Not(nullptr), _)).WillByDefault(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
-    ON_CALL(*provider, GetQueries(_, instanceKey, _)).WillByDefault(Return(bvector<IQueryProvider::Query>()));
-    ON_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillByDefault(Return(nullptr));
     ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillOnce(Return(nullptr));
 
     int progressCalled = 0;
     double expectedSyncedValues[2] = {0, 1};
@@ -7920,7 +7921,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
 
     EXPECT_CALL(*provider, GetQueries(_, instanceA, _)).WillOnce(Return(StubBVector({queryA})));
     EXPECT_CALL(*provider, GetQueries(_, instanceB, _)).WillOnce(Return(StubBVector({queryB})));
-    ON_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillByDefault(Return(nullptr));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     int progressCalled = 0;
     ICachingDataSource::Progress expectedProgress[] = {
@@ -7959,8 +7960,9 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
     ON_CALL(*cache, FindInstance(objectId)).WillByDefault(Return(instanceKey));
     ON_CALL(*cache, UpdateInstances(_, _, _, _)).WillByDefault(DoAll(SetArgPointee<2>(StubBSet({instanceKey})), Return(SUCCESS)));
     ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    ON_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillByDefault(Return(SimpleCancellationToken::Create()));
-    ON_CALL(*provider, GetQueries(_, instanceKey, _)).WillByDefault(Return(bvector<IQueryProvider::Query>()));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(bvector<IQueryProvider::Query>()));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, instanceKey, _)).WillOnce(Return(SimpleCancellationToken::Create()));
 
     // Download & cache file
     EXPECT_CALL(*cache, ReadFileCacheTag(objectId)).WillOnce(Return(nullptr));
@@ -8219,6 +8221,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithNoQuery_Progres
     EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
 
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
     int progressCalled = 0;
     CachingDataSource::Progress expectedProgress[] = {
