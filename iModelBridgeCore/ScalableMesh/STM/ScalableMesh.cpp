@@ -3756,10 +3756,19 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
 
     if (gcs.HasGeoRef())
         {
-        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
-        if (targetCS != nullptr && !targetCS->IsEquivalent(*dgnGcsPtr))
+        DgnGCSPtr  smGCS = nullptr;
+        if (coordInterp == Dgn::GeoCoordInterpretation::XYZ)
             {
-            dgnGcsPtr->SetReprojectElevation(true);
+            smGCS = DgnGCS::CreateGCS(L"ll84", dgnProject);
+            }
+        else
+            smGCS = DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject);
+
+        assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
+
+        if (targetCS != nullptr && !targetCS->IsEquivalent(*smGCS))
+            {
+            smGCS->SetReprojectElevation(true);
 
             computedTransform = Transform::FromProduct(Transform::From(globalOrigin.x, globalOrigin.y, globalOrigin.z), computedTransform);
 
@@ -3771,7 +3780,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
             extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
             Transform       approxTransform;
 
-            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *targetCS);
+            StatusInt status = smGCS->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *targetCS);
             if (0 == status || 1 == status || 25 == status)
                 {
                 computedTransform = Transform::FromProduct(approxTransform, computedTransform);
