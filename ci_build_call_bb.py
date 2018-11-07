@@ -18,9 +18,6 @@ def main():
         config = json.load(configFile)
 
     for stratConfig in config['strategies']:
-        if 'skip' in stratConfig and stratConfig['skip']:
-            continue
-
         if args.arch and not args.arch.lower() in stratConfig['archs'].lower().split('+'):
             continue
 
@@ -47,8 +44,8 @@ def main():
             if args.bdfdir:
                 # BDF names must be lower-case because BentleyBootstrap.py always lower-cases its input, which affects case-sensitive file systems.
                 action += ' -r ' + os.path.join(args.bdfdir, stratConfig['name'].lower() + '.xml')
-            if config['pullAugment']:
-                bbStrats += ';' + config['pullAugment']
+            if config['pull_augment']:
+                bbStrats += ';' + config['pull_augment']
         elif 'build' == args.action:
             action = 'build'
         elif 'checkunused' == args.action:

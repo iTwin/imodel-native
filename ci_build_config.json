@@ -1,5 +1,6 @@
 {
-    "pullAugment": "SkipPull_imodel02",
+    "pull_augment": "SkipPull_imodel02",
+
     "strategies": [
         {
             "name": "iModelCore",
@@ -14,13 +15,26 @@
             "augments": "BuildAll",
             "version_env": "VER_IMODELJSNODEADDON",
             "version_file": "$SRCROOT/iModel02/iModelJsNodeAddon/package_version.txt"
-        },
+        }
+    ],
+
+    "archived_strategies": [
         {
+            "comments": "Does not yet build with VS 2017",
+
             "name": "iModelBridgeCore",
-            "skip": true,
             "archs": "x64",
             "augments": "BuildAll",
             "version_env": "VER_IMODELBRIDGECORE",
+            "version_seed": "2.1.0"
+        },
+        {
+            "comments": "Integration tests that take too long for PR turnaround",
+
+            "name": "IModelEvolutionTests",
+            "archs": "x64",
+            "augments": "BuildAll",
+            "version_env": "VER_IMODELEVOLUTIONTESTS",
             "version_seed": "2.1.0"
         }
     ]
