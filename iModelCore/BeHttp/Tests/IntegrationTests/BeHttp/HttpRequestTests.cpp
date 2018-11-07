@@ -1231,7 +1231,7 @@ TEST_F(HttpRequestTestsProxy, Perform_SwitchingBetweenTwoServers_SamePerformance
         {
         TESTLOG.infov("Switching method #%d average wait time:", i + 1);
         for (size_t j = 0; j < urlList.size(); ++j)
-            TESTLOG.infov("\t%31s - %5dms", urlList[j], pickerDurations[i][j] / requestsPerUrl);
+            TESTLOG.infov("\t%31s - %5dms", urlList[j].c_str(), pickerDurations[i][j] / requestsPerUrl);
         }
     }
 
