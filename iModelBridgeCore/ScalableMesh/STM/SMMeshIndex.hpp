@@ -4737,7 +4737,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             for (auto&clip : clips)
             {
                 for (size_t i =0; i < clip->size(); ++i)
-                    isMaskPrimitive.push_back(isMask[&clip - clips.data()]);
+                    isMaskPrimitive.push_back(true/*isMask[&clip - clips.data()]*/);
                 clipComplete->Append(*clip);
             }
             bvector<size_t> polyfaceIndices;
