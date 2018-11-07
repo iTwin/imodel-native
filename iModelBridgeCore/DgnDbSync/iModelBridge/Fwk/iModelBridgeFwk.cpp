@@ -59,6 +59,16 @@ static IModelBridgeRegistry* s_registryForTesting;
 
 static int s_maxWaitForMutex = 60000;
 
+struct IBriefcaseManagerForBridges : RefCounted<iModelBridge::IBriefcaseManager>
+{
+    iModelBridgeFwk& m_fwk;
+
+    IBriefcaseManagerForBridges(iModelBridgeFwk& f) : m_fwk(f) {}
+
+    BentleyStatus _PullAndMerge() override { return m_fwk.Briefcase_PullMergePush(nullptr, true, false); }
+    PushStatus _Push(Utf8CP comment) override { m_fwk.Briefcase_PullMergePush(comment, false, true); return m_fwk.m_lastBridgePushStatus; }
+};
+
 void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     {
     s_bridgeForTesting = &b;
@@ -1060,6 +1070,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         }
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
+    if (m_bcMgrForBridges.IsValid())
+        params.SetBriefcaseManager(*m_bcMgrForBridges);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     params.ParseJsonArgs(m_jobEnvArgs.m_argsJson, true);
     params.m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
@@ -1821,6 +1833,8 @@ iModelBridgeFwk::iModelBridgeFwk()
 :m_logProvider(NULL), m_dmsSupport(NULL)
     {
     m_client = nullptr;
+    m_bcMgrForBridges = new IBriefcaseManagerForBridges(*this);
+    m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

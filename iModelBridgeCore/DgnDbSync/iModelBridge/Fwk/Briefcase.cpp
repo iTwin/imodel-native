@@ -431,17 +431,24 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
+BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc, bool doPullAndMerge, bool doPush)
     {
+    BeAssert(doPullAndMerge || doPush);
+    bool doPullMergeAndPush = doPullAndMerge && doPush;
+    Utf8CP opName = doPullMergeAndPush? "PullMergePush": doPullAndMerge? "PullAndMerge": "Push";
+
     StopWatch pullpushTimer(true);
     m_lastServerError = EffectiveServerError::Unknown;
 
-    GetProgressMeter().SetCurrentStepName("PullMergePush");
-    GetLogger().infov("PullMergePush %s", m_briefcaseBasename.c_str());
+    if (doPush)
+        m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::Success;
+
+    GetProgressMeter().SetCurrentStepName(opName);
+    GetLogger().infov("%s %s", opName, m_briefcaseBasename.c_str());
 
     if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
         {
-        GetLogger().error("Briefcase_PullMergePush failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()");
+        GetLogger().errorv("%s failed in m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected()", opName);
         BeAssert(false);
         return BSIERROR;
         }
@@ -453,13 +460,28 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
         return BSIERROR;
         }
 
-    auto status = m_client->PullMergeAndPush(desc);
+    auto status = doPullMergeAndPush? m_client->PullMergeAndPush(desc): 
+                  doPullAndMerge?     m_client->PullAndMerge():
+                                      m_client->Push(desc);
     bool needsSchemaMerge = false;
     if (SUCCESS != status)
         {
         iModel::Hub::Error const& errorVal = m_client->GetLastError();
         if (iModel::Hub::Error::Id::MergeSchemaChangesOnOpen == errorVal.GetId())
             needsSchemaMerge = true;
+
+        if (doPush)
+            {
+            switch (errorVal.GetId())
+                {
+                case iModel::Hub::Error::Id::PullIsRequired:
+                case iModel::Hub::Error::Id::AnotherUserPushing:
+                    m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::PullIsRequired;
+                    break;
+                default:
+                    m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
+                }
+            }
         }
 
     if (needsSchemaMerge)
@@ -480,8 +502,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc)
         }
 
     SetSyncState(SyncState::Pushed);
-    LogPerformance(pullpushTimer, "Briefcase_PullMergePush to iModelHub");
-    GetLogger().infov("PullMergePush %s : Done", m_briefcaseBasename.c_str());
+    LogPerformance(pullpushTimer, "Briefcase_PullMergePush(%d,%d) to iModelHub", doPullAndMerge, doPush);
+    GetLogger().infov("%s %s : Done", opName, m_briefcaseBasename.c_str());
 
     return BSISUCCESS;
     }

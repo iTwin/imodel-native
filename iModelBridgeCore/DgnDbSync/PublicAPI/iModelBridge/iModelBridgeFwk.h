@@ -23,6 +23,8 @@ namespace Provider //Forward declaration for logging provider;
     }
 END_BENTLEY_LOGGING_NAMESPACE
 
+DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManagerForBridges)
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct IModelClientForBridges;
@@ -42,6 +44,8 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 {
+    friend struct IBriefcaseManagerForBridges;
+
     enum class EffectiveServerError
         {
         Unknown = 1,
@@ -239,6 +243,7 @@ protected:
     BeFileName m_stderrFileName;
     IModelClientForBridges* m_client;
     EffectiveServerError m_lastServerError;
+    iModelBridge::IBriefcaseManager::PushStatus m_lastBridgePushStatus;
     bvector<DgnModelId> m_modelsInserted;
     iModelBridge* m_bridge;
     bvector<WCharCP> m_bargptrs;        // bridge command-line arguments
@@ -256,6 +261,8 @@ protected:
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
     NativeLogging::Provider::Log4cxxProvider* m_logProvider;
+    IBriefcaseManagerForBridgesPtr m_bcMgrForBridges;
+
     BeSQLite::DbResult OpenOrCreateStateDb();
     void PrintUsage(WCharCP programName);
     void RedirectStderr();
@@ -283,7 +290,8 @@ protected:
     void Briefcase_MakeBriefcaseName(); // Sets m_outputName
     BentleyStatus Briefcase_AcquireBriefcase();
     BentleyStatus Briefcase_AcquireExclusiveLocks();
-    BentleyStatus Briefcase_PullMergePush(Utf8CP);
+    BentleyStatus Briefcase_Push(Utf8CP);
+    BentleyStatus Briefcase_PullMergePush(Utf8CP, bool doPullAndMerge = true, bool doPush = true);
     BentleyStatus Briefcase_ReleaseAllPublicLocks();
     //! @}
 

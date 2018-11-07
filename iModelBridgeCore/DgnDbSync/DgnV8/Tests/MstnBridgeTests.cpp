@@ -411,3 +411,98 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 
 //Sandwich test ?
 //Test for locks and codes ?
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, PushAfterEachModel)
+    {
+    auto bridgeRegSubKey = L"iModelBridgeForMstn";
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"PushAfterEachModel");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args);
+    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir));
+    args.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+    
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+    AddLine(inputFile);
+
+    BentleyApi::BeFileName refFile1;
+    MakeCopyOfFile(refFile1, L"Test3d.dgn", L"-Ref-1");
+    AddLine(refFile1);
+
+    BentleyApi::BeFileName refFile2;
+    MakeCopyOfFile(refFile2, L"Test3d.dgn", L"-Ref-2");
+    AddLine(refFile2);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+    testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
+    
+    
+    BentleyApi::BeFileName dbFile(testDir);
+    dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
+
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    testRegistry.AddBridge(bridgeRegSubKey, iModelBridge_getAffinity);
+
+    BentleyApi::BeSQLite::BeGuid guid, ref1Guid, ref2Guid;
+    guid.Create();
+    ref1Guid.Create();
+    ref2Guid.Create();
+
+    iModelBridgeDocumentProperties docProps(guid.ToString().c_str(), "wurn1", "durn1", "other1", "");
+    iModelBridgeDocumentProperties ref1DocProps(ref1Guid.ToString().c_str(), "wurn21", "durn21", "other21", "");
+    iModelBridgeDocumentProperties ref2DocProps(ref2Guid.ToString().c_str(), "wurn22", "durn22", "other22", "");
+    testRegistry.SetDocumentProperties(docProps, inputFile);
+    testRegistry.SetDocumentProperties(ref1DocProps, refFile1);
+    testRegistry.SetDocumentProperties(ref2DocProps, refFile2);
+    BentleyApi::WString bridgeName;
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, inputFile, L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile1, L"");
+    testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile2, L"");
+    testRegistry.Save();
+    TerminateHost();
+
+    int modelCount = 0;
+    if (true)
+        {
+        // Ask the framework to run our test bridge to do the initial conversion and create the repo
+        RunTheBridge(args);
+        
+        modelCount = DbFileInfo(dbFile).GetModelCount();
+        ASSERT_EQ(8, modelCount);
+        }
+
+   
+    // Add two attachments => two new models should be discovered.
+    AddAttachment(inputFile, refFile1, 1, true);
+    AddAttachment(inputFile, refFile2, 1, true);
+    if (true)
+        {
+        auto csCountBefore = testIModelHubClientForBridges.GetChangesetCount();
+        RunTheBridge(args);
+        DbFileInfo fileInfo(dbFile);
+        EXPECT_EQ(modelCount + 2, fileInfo.GetModelCount());
+        // Not sure why this also creates additional initialization changes?!
+        EXPECT_EQ(csCountBefore + 3, testIModelHubClientForBridges.GetChangesetCount()) << "each model should have been pushed in its own changeset, plus misc. initialization changes";
+
+        auto revstats = testIModelHubClientForBridges.ComputeRevisionStats(*fileInfo.m_db, csCountBefore);
+        EXPECT_EQ(revstats.nSchemaRevs, 0);
+        EXPECT_EQ(revstats.nDataRevs, 3) << "each model should have been pushed in its own changeset, plus misc. initialization changes";
+        EXPECT_TRUE(revstats.descriptions.find("Test3d-Ref-1") != revstats.descriptions.end()) << "first ref should have been pushed in its own revision";
+        EXPECT_TRUE(revstats.descriptions.find("Test3d-Ref-2") != revstats.descriptions.end()) << "second ref should have been pushed in its own revision";
+        }
+
+    }

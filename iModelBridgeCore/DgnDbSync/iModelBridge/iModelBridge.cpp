@@ -905,6 +905,32 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db, Utf8CP commitComment)
+    {
+    auto bcMgr = _GetParams().m_briefcaseManager;
+    if (nullptr == bcMgr)
+        return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
+
+    if (db.BriefcaseManager().IsBulkOperation())
+        {
+        SaveChanges(db, commitComment);
+        auto response = db.BriefcaseManager().EndBulkOperation();
+        if (RepositoryStatus::Success != response.Result())
+            {
+            LOG.infov("Failed to acquire locks and/or codes with error %x", response.Result());
+            return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
+            }
+        auto status = bcMgr->_Push(commitComment);
+        db.BriefcaseManager().StartBulkOperation();
+        return status;
+        }
+
+    db.SaveChanges(commitComment);
+    return bcMgr->_Push(commitComment);
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool iModelBridge::WantModelProvenanceInBim(DgnDbR db)

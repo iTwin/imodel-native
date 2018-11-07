@@ -458,6 +458,20 @@ struct iModelBridge
         virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
         };
 
+    //! Interface to enable bridges to perform briefcase operations, such as push while they run.
+    struct IBriefcaseManager
+        {
+        enum PushStatus {Success = 0, PullIsRequired, UnknownError};
+
+        //! Pull and merge recent changesets from the iModel server.
+        virtual BentleyStatus _PullAndMerge() = 0;
+
+        //! Push all changes. 
+        //! @param revisionComment the summary comment for the revision.
+        //! @return non-zero status if the push failed.
+        virtual PushStatus _Push(Utf8CP revisionComment) = 0;
+        };
+
     //! Parameters that are common to all bridges.
     //! These parameters are set up by the iModelBridgeFwk based on job definition parameters and other sources.
     //! In a standalone converter, they are set from the command line.
@@ -488,6 +502,7 @@ struct iModelBridge
         WebServices::ClientInfoPtr m_clientInfo;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
         IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
+        IBriefcaseManager* m_briefcaseManager = nullptr;
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
@@ -584,6 +599,7 @@ struct iModelBridge
         void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
         void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
+        void SetBriefcaseManager(IBriefcaseManager& c) {m_briefcaseManager = &c;}
         void SetSpatialDataTransform(Transform const& t) {m_spatialDataTransform = t;} //!< Optional. The transform that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data.
         TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
         void SetJobSubjectId(DgnElementId eid) {m_jobSubjectId = eid;}  //!< @private called by framework
@@ -888,6 +904,9 @@ public:
     //! @param db The DgnDb that is being updated.
     //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
     IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChanges(DgnDbR db, Utf8CP commitComment = nullptr);
+
+    //! Push all local changes to the iModel server
+    IMODEL_BRIDGE_EXPORT IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Utf8CP commitComment);
 
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);
