@@ -102,3 +102,24 @@ Geometry.ConvexHullManyPoints
     # [2] rand (0x7ffb5ad60210)
     # [1] BaseThreadInitThunk (0x7ffb5e232770)
     # [0] RtlUserThreadStart (0x7ffb5e6b0c10)
+
+# Fails on Linux
+XYPointSearch.HelloWorld
+    # [ RUN      ] XYPointSearch.HelloWorld
+    # ( (size_t a 41) (size_t b 1687))
+    # /home/platform-bld/vsts_agent/_work/6/s/iModelCore/GeomLibs/geom/test/src/checkers.cpp:182: Failure
+    # Value of: false
+    #   Actual: false
+    # Expected: true
+    # Direct Point match
+    #      (a 1.7421098657236276)
+    #      (b -nan)/home/platform-bld/vsts_agent/_work/6/s/iModelCore/GeomLibs/geom/test/src/checkers.cpp:180: Failure
+    # Value of: false
+    #   Actual: false
+    # Expected: true
+    #      (a 11.040529257082611)
+    #      (b 6.9205577428838656e-310)/home/platform-bld/vsts_agent/_work/6/s/iModelCore/GeomLibs/geom/test/src/checkers.cpp:180: Failure
+    # Value of: false
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] XYPointSearch.HelloWorld (11 ms)

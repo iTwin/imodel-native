@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-baseDir             = $(_MakeFilePath)
+baseDir = $(_MakeFilePath)
 
 %if $(TARGET_PLATFORM)!="Android"
     %error This makefile should be used only when TARGET_PLATFORM is Android
@@ -17,13 +17,6 @@ baseDir             = $(_MakeFilePath)
     %error Define LogFilesDir as the directory that contaings the logfiles to analyze
 %endif
 
-breakOnFailure = 1
-
-#Allowed to ignore failures
-%if defined(AllowIgnore)
-    breakOnFailure = 0
-%endif
-
 always:
     python $(baseDIr)CheckLogFilesForFailures.py $(LogFilesDir) 1
-    
+
