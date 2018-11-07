@@ -100,7 +100,6 @@ def checkLogFileForFailures(logfilename):
                     continue
        
     if not anyFailures and foundSummary:
-        printLogFile(logfilename)
         return '',summarystr,failedTestsList
         
 
