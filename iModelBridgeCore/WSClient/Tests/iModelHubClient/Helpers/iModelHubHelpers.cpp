@@ -29,7 +29,7 @@ using namespace OidcInterop;
 Utf8String GenerateErrorMessage(Error const& e)
     {
     Utf8String errorMessage;
-    errorMessage.Sprintf("\nError id: %d\nMessage: %s\nDescription: %s\n", (int) e.GetId(), e.GetMessage(), e.GetDescription());
+    errorMessage.Sprintf("\nError id: %d\nMessage: %s\nDescription: %s\n", (int) e.GetId(), e.GetMessage().c_str(), e.GetDescription().c_str());
     return errorMessage;
     }
 
