@@ -27,7 +27,7 @@
         } THREADNAME_INFO;
     #pragma pack(pop)
 
-    void SetThreadName(DWORD dwThreadID, char* threadName);
+void SetThreadName(DWORD dwThreadID, char const* threadName);
 #endif
 
 #endif

@@ -1,7 +1,9 @@
 #pragma once
 #include "DataSourceDefs.h"
+#ifdef USE_WASTORAGE
 #include <was/storage_account.h>
 #include <was/blob.h>
+#endif
 #include <string>
 
 #include "DataSource.h"
@@ -24,14 +26,18 @@ class DataSourceAccountAzure : public DataSourceAccountCached
 protected:
 
     typedef std::wstring                                AzureConnectionString;
+#ifdef USE_WASTORAGE
     typedef azure::storage::cloud_storage_account       AzureStorageAccount;
     typedef azure::storage::cloud_blob_client           AzureBlobClient;
     typedef azure::storage::cloud_blob_container        AzureContainer;
+#endif
 
 protected:
 
+#ifdef USE_WASTORAGE
     AzureStorageAccount                     storageAccount;
     AzureBlobClient                         blobClient;
+#endif
     AzureConnectionString                   connectionString;
     DataSourceBuffer::BufferSize            defaultSegmentSize;
     DataSourceBuffer::Timeout               defaultTimeout;
@@ -43,12 +49,13 @@ protected:
     DataSourceStatus                        setConnectionString                 (const AzureConnectionString string);
     const AzureConnectionString        &    getConnectionString                 (void);
 
+#ifdef USE_WASTORAGE
     void                                    setStorageAccount                   (const AzureStorageAccount &account);
     const AzureStorageAccount        &      getStorageAccount                   (void);
 
     void                                    setBlobClient                       (const AzureBlobClient &client);
     AzureBlobClient                    &    getBlobClient                       (void);
-
+#endif
 
 public:
                                             DataSourceAccountAzure              (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
@@ -65,12 +72,14 @@ public:
         DataSource                   *      createDataSource                    (const SessionName &session);
       //DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
 
+#ifdef USE_WASTORAGE
         AzureContainer                      initializeContainer                 (const DataSourceURL &containerName, DataSourceMode mode);
 
         DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
         DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
         DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
+#endif
 };
 
 class DataSourceAccountAzureCURL : public DataSourceAccountCURL

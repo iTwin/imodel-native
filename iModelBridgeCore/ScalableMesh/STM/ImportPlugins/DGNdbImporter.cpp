@@ -6,7 +6,7 @@
 |       $Date: 2016/06/29 12:15:00 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,7 +23,7 @@
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 #include "..\ScalableMesh\ScalableMeshGraph.h"
-#include "..\CGALEdgeCollapse.h"
+//#include "..\CGALEdgeCollapse.h"
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
 #ifdef VANCOUVER_API
@@ -547,7 +547,7 @@ private:
                                 CreateGraphFromIndexBuffer(&g, (const long*)&indices[0], (int)indices.size(), (int)pts.size(), componentPointsId, &pts[0]);
                                 std::vector<DPoint3d> newPts;
                                 newPts.insert(newPts.end(), pts.begin(), pts.end());
-                                CGALEdgeCollapse(&g, newPts, elem->GetElementId().GetValue());
+                                //CGALEdgeCollapse(&g, newPts, elem->GetElementId().GetValue());
                                 MTGGraph* graph = &g;
                                 std::vector<int> faceIndices;
                                 MTGMask visitedMask = graph->GrabMask();

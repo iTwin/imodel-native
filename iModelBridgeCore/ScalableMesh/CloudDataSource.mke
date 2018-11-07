@@ -8,6 +8,8 @@
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors in cpprest's header files
+
 VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 
@@ -25,11 +27,11 @@ includeDir=$(SrcRoot)ScalableMesh/CloudDataSource/include/
 dirToSearch=$(includeDir)
 %include cincapnd.mki
 
-dirToSearch=$(BuildContext)VendorAPI/wastorage/
-%include cincapnd.mki
-
-dirToSearch=$(BuildContext)VendorAPI/cpprestsdk/
-%include cincapnd.mki
+#dirToSearch=$(BuildContext)VendorAPI/wastorage/
+#%include cincapnd.mki
+#
+#dirToSearch=$(BuildContext)VendorAPI/cpprestsdk/
+#%include cincapnd.mki
 
 #----------------------------------------------------------------------
 #   Build precompiled header
@@ -124,8 +126,9 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
-    $(ContextSubpartsLibs)BeOpenSSL.lib \
-    $(ContextSubpartsLibs)wastorage.lib 
+    $(ContextSubpartsLibs)BeOpenSSL.lib
+
+#LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)wastorage.lib 
 
 #--------------------------------------------------------------------------------------
 #   Create the library

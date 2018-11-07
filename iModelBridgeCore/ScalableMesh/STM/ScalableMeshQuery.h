@@ -1530,7 +1530,7 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
             ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture)
             : ScalableMeshNode<POINT>(nodePtr)
                 {           
-                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(this->m_node);
 
                 m_loadTexture = loadTexture;
                 }
@@ -1764,7 +1764,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {
-            return m_node;
+            return this->m_node;
             }
 
     };

@@ -916,13 +916,15 @@ class SMGroupingStrategy
         void             SaveNodeGroup              (SMNodeGroupPtr pi_Group) const;
         void             SetSourceAndDestinationGCS(const GeoCoordinates::BaseGCSCPtr source, const GeoCoordinates::BaseGCSCPtr destination)
             {
-            m_sourceGCS = source;
-            m_destinationGCS = destination;
+            this->m_sourceGCS = source;
+            this->m_destinationGCS = destination;
             }
+        void             SetRootTransform(const Transform& transform) { m_rootTransform = transform; }
+        void             SetTransform(const Transform& transform) { m_transform = transform; }
         void             Clear()
             {
             m_GroupID = 0;
-            m_OpenGroups.clear();
+             this->m_OpenGroups.clear();
             }
 
     protected:
@@ -938,10 +940,12 @@ class SMGroupingStrategy
 
     protected:
         uint32_t m_GroupID = 0;
-        std::map<uint32_t, SMNodeGroupPtr> m_OpenGroups;
+        std::map<uint32_t, SMNodeGroupPtr>  m_OpenGroups;
         SMNodeGroupMasterHeader m_GroupMasterHeader;
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
+        Transform m_rootTransform;
+        Transform m_transform;
         bool m_isClipBoundary = false;
         uint64_t m_clipID = -1;
     };
@@ -954,7 +958,7 @@ template<class EXTENT> void SMGroupingStrategy<EXTENT>::SetClipInfo(const uint64
 
 template<class EXTENT> void SMGroupingStrategy<EXTENT>::SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader)
     {
-    m_GroupMasterHeader.SetOldMasterHeaderData(oldMasterHeader);
+    this->m_GroupMasterHeader.SetOldMasterHeaderData(oldMasterHeader);
     }
 
 /**----------------------------------------------------------------------------
@@ -964,7 +968,7 @@ This method saves all open groups in the Open Group map.
 -----------------------------------------------------------------------------*/
 template<class EXTENT> void SMGroupingStrategy<EXTENT>::SaveAllOpenGroups(bool saveRoot) const
     {
-    for (auto& openGroup : m_OpenGroups)
+    for (auto& openGroup :  this->m_OpenGroups)
         {
         auto& group = openGroup.second;
         if (!saveRoot && group->IsRoot()) continue;
@@ -1057,15 +1061,15 @@ void SMBentleyGroupingStrategy<EXTENT>::_Apply(const SMIndexNodeHeader<EXTENT>& 
     if (pi_Group->IsFull() || pi_Group->IsCommonAncestorTooFar((uint32_t)pi_NodeHeader.m_level))
         {
         pi_Group->Close<EXTENT>();
-        pi_Group->Open(++m_GroupID);
-        m_GroupMasterHeader.AddGroup(m_GroupID);
+        pi_Group->Open(++this->m_GroupID);
+        this->m_GroupMasterHeader.AddGroup(this->m_GroupID);
         }
     }
 
 template<class EXTENT>
 void SMBentleyGroupingStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
     {
-    m_OpenGroups[pi_pNodeGroup->GetLevel()] = pi_pNodeGroup;
+     this->m_OpenGroups[pi_pNodeGroup->GetLevel()] = pi_pNodeGroup;
     }
 
 template<class EXTENT>
@@ -1076,7 +1080,7 @@ size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTE
     std::unique_ptr<Byte> headerData = nullptr;
     SMStreamingStore<EXTENT>::SerializeHeaderToBinary(&pi_NodeHeader, headerData, headerSize);
 
-    m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, headerSize);
+    this->m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, headerSize);
 
     pi_Group->AppendHeader((uint64_t)pi_NodeHeader.m_id.m_integerID, headerData.get(), headerSize);
 
@@ -1092,16 +1096,16 @@ SMNodeGroupPtr SMBentleyGroupingStrategy<EXTENT>::_GetNextGroup(const SMIndexNod
     if (!nextGroup.IsValid())
         {
         const uint32_t nextLevel = (uint32_t)pi_NodeHeader.m_level + 1;
-        nextGroup = m_OpenGroups.count(nextLevel) > 0 ? m_OpenGroups[nextLevel] : nullptr;
+        nextGroup =  this->m_OpenGroups.count(nextLevel) > 0 ?  this->m_OpenGroups[nextLevel] : nullptr;
         if (!nextGroup.IsValid())
             {
             nextGroup = new SMNodeGroup(pi_CurrentGroup->GetParameters(),
                                         pi_CurrentGroup->GetCache(),
                                         pi_CurrentGroup->GetFilePath(),
-                                        ++m_GroupID);
+                                        ++this->m_GroupID);
             nextGroup->SetLevel(nextLevel);
             this->AddGroup(nextGroup.get());
-            m_GroupMasterHeader.AddGroup(m_GroupID);
+            this->m_GroupMasterHeader.AddGroup(this->m_GroupID);
             }
         }
     assert((nextGroup == pi_CurrentGroup) || (nextGroup.IsValid()));
@@ -1113,7 +1117,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostProcess(const SMIndexNodeHeade
     {
     // Set eldest parent visited (reverse order of traversal) to maintain proximity of nodes in a group
     const uint32_t newAncestor = (uint32_t)pi_NodeHeader.m_level;
-    for (auto rGroupIt = m_OpenGroups.rbegin(); rGroupIt != m_OpenGroups.rend(); ++rGroupIt)
+    for (auto rGroupIt =  this->m_OpenGroups.rbegin(); rGroupIt !=  this->m_OpenGroups.rend(); ++rGroupIt)
         {
         auto& group = rGroupIt->second;
         auto& groupID = rGroupIt->first;
@@ -1131,7 +1135,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostChildNodeProcess(SMIndexNodeHe
 template<class EXTENT>
 void SMBentleyGroupingStrategy<EXTENT>::_SaveMasterHeader(const WString pi_pOutputDirPath) const
     {
-    m_GroupMasterHeader.SaveToFile(pi_pOutputDirPath);
+    this->m_GroupMasterHeader.SaveToFile(pi_pOutputDirPath);
     }
 
 template<class EXTENT>
@@ -1201,23 +1205,21 @@ void SMCesium3DTileStrategy<EXTENT>::_Apply(const SMIndexNodeHeader<EXTENT>& pi_
 template<class EXTENT>
 void SMCesium3DTileStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
     {
-    m_OpenGroups[pi_pNodeGroup->GetID()] = pi_pNodeGroup;
+     this->m_OpenGroups[pi_pNodeGroup->GetID()] = pi_pNodeGroup;
     }
 
 template<class EXTENT>
 size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group)
     {
     Json::Value nodeTile;
-    if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
-        {
-        auto reprojectExtentHelper = [this](DRange3d& range, Json::Value& tile)
+    auto reprojectExtentHelper = [this](DRange3d& range, Json::Value& tile)
             {
             auto reprojectPointHelper = [this](DPoint3d& point)
                 {
                 GeoPoint inLatLong, outLatLong;
-                if (m_sourceGCS->LatLongFromCartesian(inLatLong, point) != SUCCESS)
+                if (this->m_sourceGCS->LatLongFromCartesian(inLatLong, point) != SUCCESS)
                     assert(false); // Error in reprojection
-                if (m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_destinationGCS) != SUCCESS)
+                if (this->m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_destinationGCS) != SUCCESS)
                     assert(false); // Error in reprojection
                 if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
                     assert(false); // Error in reprojection
@@ -1246,16 +1248,25 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
             //range.low = DPoint3d::From(lx.x, ly.y, lz.z);
             //range.high = DPoint3d::From(center.x + delta.x, center.y + delta.y, center.z + delta.z);
             };
+    if (this->m_sourceGCS != nullptr && this->m_sourceGCS != this->m_destinationGCS)
+        {
         reprojectExtentHelper(pi_NodeHeader.m_nodeExtent, nodeTile);
-        if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+        }
+    this->m_transform.Multiply(pi_NodeHeader.m_nodeExtent, pi_NodeHeader.m_nodeExtent);
+    TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_nodeExtent);
+    if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+        {
+        if (this->m_sourceGCS != nullptr && this->m_sourceGCS != this->m_destinationGCS)
             {
             reprojectExtentHelper(pi_NodeHeader.m_contentExtent, nodeTile["content"]);
             }
+        this->m_transform.Multiply(pi_NodeHeader.m_contentExtent, pi_NodeHeader.m_contentExtent);
+        TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_contentExtent);
         }
 
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
-    m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);
+    this->m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);
     return 0;
     }
 
@@ -1268,7 +1279,7 @@ SMNodeGroupPtr SMCesium3DTileStrategy<EXTENT>::_GetNextGroup(const SMIndexNodeHe
         nextGroup = new SMNodeGroup(pi_CurrentGroup->GetParameters(),
                                     pi_CurrentGroup->GetCache(),
                                     pi_CurrentGroup->GetFilePath(),
-                                    ++m_GroupID,
+                                    ++this->m_GroupID,
                                     pi_CurrentGroup);
         this->AddGroup(nextGroup.get());
         }
@@ -1313,7 +1324,7 @@ template<class EXTENT>
 void SMCesium3DTileStrategy<EXTENT>::_SaveMasterHeader(const WString pi_pOutputDirPath) const
     {
     // Save SM master header
-    m_GroupMasterHeader.SaveToFile(pi_pOutputDirPath/*, SMNodeGroup::StrategyType::CESIUM*/);
+    this->m_GroupMasterHeader.SaveToFile(pi_pOutputDirPath/*, SMNodeGroup::StrategyType::CESIUM*/);
 
     // NEEDS_WORK_SM_STREAMING: Save Cesium master header 
     }
@@ -1323,19 +1334,28 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     {
     Json::Value tileSet;
     tileSet["asset"]["version"] = "1.0";
+    tileSet["asset"]["gltfUpAxis"] = "Z";
     tileSet["root"] = pi_Group->m_tilesetRootNode;
     tileSet["geometricError"] = tileSet["root"]["geometricError"].asFloat();
     if (pi_Group->IsRoot())
         {
+        tileSet["root"]["transform"] = Json::Value(Json::arrayValue);
+        auto& arrayValue = tileSet["root"]["transform"];
+
+        auto matrix = DMatrix4d::From(this->m_rootTransform);
+        for (size_t i = 0; i<4; i++)
+            for (size_t j = 0; j<4; j++)
+                arrayValue.append(matrix.coff[j][i]);
+
         // Save master header info in Cesium tileset
         auto& SMMasterHeader = tileSet["root"]["SMMasterHeader"];
-        SMMasterHeader["Balanced"] = m_GroupMasterHeader.IsBalanced();
-        SMMasterHeader["SplitTreshold"] = Json::Value(m_GroupMasterHeader.GetSplitThreshold());
-        SMMasterHeader["Depth"] = Json::Value(m_GroupMasterHeader.GetDepth());
-        SMMasterHeader["MeshDataDepth"] = Json::Value(m_GroupMasterHeader.GetTerrainDepth());
-        SMMasterHeader["IsTerrain"] = m_GroupMasterHeader.IsTerrain();
-        SMMasterHeader["DataResolution"] = m_GroupMasterHeader.GetResolution();
-        SMMasterHeader["IsTextured"] = (uint32_t)m_GroupMasterHeader.IsTextured();
+        SMMasterHeader["Balanced"] = this->m_GroupMasterHeader.IsBalanced();
+        SMMasterHeader["SplitTreshold"] = Json::Value(this->m_GroupMasterHeader.GetSplitThreshold());
+        SMMasterHeader["Depth"] = Json::Value(this->m_GroupMasterHeader.GetDepth());
+        SMMasterHeader["MeshDataDepth"] = Json::Value(this->m_GroupMasterHeader.GetTerrainDepth());
+        SMMasterHeader["IsTerrain"] = this->m_GroupMasterHeader.IsTerrain();
+        SMMasterHeader["DataResolution"] = this->m_GroupMasterHeader.GetResolution();
+        SMMasterHeader["IsTextured"] = (uint32_t)this->m_GroupMasterHeader.IsTextured();
         auto wktString = pi_Group->GetParameters()->GetWellKnownText();
         if (!wktString.empty())
             SMMasterHeader["GCS"] = Utf8String(wktString.c_str());
@@ -1344,6 +1364,14 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
 #else
         SMMasterHeader["LastModifiedDateTime"] = DateTime::GetCurrentTimeUtc().ToUtf8String();
 #endif
+
+        SMMasterHeader["tileToDb"] = Json::Value(Json::arrayValue);
+        Transform tileToDb;
+        tileToDb.InverseOf(this->m_transform);
+        matrix = DMatrix4d::From(tileToDb);
+        for (size_t i = 0; i<4; i++)
+            for (size_t j = 0; j<4; j++)
+                SMMasterHeader["tileToDb"].append(matrix.coff[j][i]);
         }
 
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;

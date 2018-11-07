@@ -156,7 +156,7 @@ public:
     void                                SetSize                            (size_t                  size);
     void                                SetEnd                             (typename NonConstPacketProxyBase<T>::iterator                newEndIt);
 
-    typename ConstPacketProxyBase<T>::value_type*                         Edit                               () { return begin(); }
+    typename ConstPacketProxyBase<T>::value_type*                         Edit                               () { return this->begin(); }
     };
 
 /*---------------------------------------------------------------------------------**//**
