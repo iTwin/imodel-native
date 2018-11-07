@@ -1337,19 +1337,23 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 uint64_t clipId = 0;
                 if (m_meshNode->HasClip(clipId))
                     {
-                    for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                    assert(m_meshNode->GetDiffSetPtr() != nullptr);
+
+                    if (m_meshNode->GetDiffSetPtr() != nullptr)
                         {
-                        if (diffSet.clientID == clipId)
+                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
                             {
-                            diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
-                                                           toLoadUv, toLoadUvIndex, toLoadUvCount, 
-                                                           dataPoints.data(), dataPoints.size(),
-                                                           dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                                           dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
-                            clipsLoaded = true;
+                            if (diffSet.clientID == clipId)
+                                {
+                                diffSet.ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
+                                                               toLoadUv, toLoadUvIndex, toLoadUvCount, 
+                                                               dataPoints.data(), dataPoints.size(),
+                                                               dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                                               dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
+                                clipsLoaded = true;
+                                }
                             }
                         }
-
                     }
                 }
 
@@ -1540,12 +1544,17 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                     m_meshNode->ComputeMergedClips();
                     if (coverageID == 0 || m_meshNode->HasClip(coverageID))
                         {
-                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                        assert(m_meshNode->GetDiffSetPtr() != nullptr);
+
+                        if (m_meshNode->GetDiffSetPtr() != nullptr)
                             {
-                            if (diffSet.clientID == coverageID)
+                            for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
                                 {
-                                anythingToApply = true;
-                                clipDiffSet = &diffSet;
+                                if (diffSet.clientID == coverageID)
+                                    {
+                                    anythingToApply = true;
+                                    clipDiffSet = &diffSet;
+                                    }
                                 }
                             }
                         }

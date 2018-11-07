@@ -328,6 +328,14 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     const DifferenceSet GetClipSet(size_t index) const
         {
         RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffset = GetDiffSetPtr();
+
+        assert(diffset != nullptr);
+
+        if (diffset == nullptr)
+            {
+            return DifferenceSet(); 
+            }
+
         return (*diffset.get())[index];
         }
 
@@ -997,6 +1005,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         SharedTextureManager m_texMgr;
 
         
+        uint64_t                       m_nodeInstanciationClipTimestamp = std::chrono::system_clock::now().time_since_epoch().count();
         std::vector<std::future<bool>> m_textureWorkerTasks;
         WorkerThreadPoolPtr            m_texturingThreadPoolPtr;
 

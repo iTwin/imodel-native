@@ -68,6 +68,8 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
 
     m_nodeHeader.m_textureID = ISMStore::GetNullNodeID();
     m_nodeHeader.m_ptsIndiceID[0] = GetBlockID();
+
+    m_updateClipTimestamp = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_nodeInstanciationClipTimestamp;
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(uint64_t nodeID,
@@ -456,9 +458,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     std::lock_guard<std::mutex> lock(m_headerMutex);
     if (IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
-    m_updateClipTimestamp = std::chrono::system_clock::now().time_since_epoch().count();
-    //GetDiffSetPtr();
-    
+        
     //assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     //assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     //assert(m_triUvIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
@@ -2540,6 +2540,12 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
 template<class POINT, class EXTENT>  void  SMMeshIndexNode<POINT, EXTENT>::CollectClipIds(bset<uint64_t>& clipIds) const
 {
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffset = GetDiffSetPtr();
+
+    if (diffset == nullptr)
+        {
+        return;
+        }
+
     for (const auto& diff : *diffset)
         if (diff.clientID != -1 && diff.clientID != 0)
             clipIds.insert(diff.clientID);
@@ -4271,6 +4277,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasCli
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::IsClippingUpToDate()
     {
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
+
+    if (!diffsetPtr.IsValid()) return false;
+
     for (const auto& diffSet : *diffsetPtr)
         {
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return true;
@@ -4802,9 +4811,10 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 09/15
 //=======================================================================================
-    template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn, Transform tr)
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn, Transform tr)
     {
-        m_updateClipTimestamp = std::chrono::system_clock::now().time_since_epoch().count();
+    m_updateClipTimestamp = std::chrono::system_clock::now().time_since_epoch().count();
+
     if (m_nodeHeader.m_nodeCount == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
 
         {
@@ -4819,8 +4829,12 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         if (ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent, tr, !setToggledWhenIdIsOn)) //m_nodeExtent
 
             {
-                    bool clipFound = false;
+            bool clipFound = false;
+
         RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+        if (!diffSetPtr.IsValid()) return false;
+
         for (const auto& diffSet : *diffSetPtr) if (diffSet.clientID == clipId && diffSet.toggledForID == setToggledWhenIdIsOn) clipFound = true;
         if (clipFound) return true; //clip already added
            // RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
@@ -4872,6 +4886,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
     bool found = false;
     bvector<size_t> indices;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+    if (!diffSetPtr.IsValid()) return false;
+
     for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
         {
         if (it->clientID == clipId && it->toggledForID == setToggledWhenIdIsOn)
@@ -4909,6 +4926,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
 
     bool found = false;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+    if (!diffSetPtr.IsValid()) return false;
+
     for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
         {
         if (it->clientID == clipId && it->toggledForID == setToggledWhenIdIsOn)
@@ -5549,6 +5569,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::SaveGro
         this->ComputeMergedClips();
         if (clipId == 0 || this->HasClip(clipId))
             {
+            if (!this->GetDiffSetPtr().IsValid()) return false;
+
             for (const auto& diffSet : *this->GetDiffSetPtr())
                 {
                 if (diffSet.clientID == clipId && diffSet.IsEmpty())
@@ -5585,6 +5607,8 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     bool isClipBoundary = false;
     if (coverageID != -2 && coverageID != -1)
         {
+        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->GetDiffSetPtr().IsValid()) return ERROR;
+
         for (const auto& diffSet : *static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->GetDiffSetPtr())
             {
             if (diffSet.clientID == coverageID)
