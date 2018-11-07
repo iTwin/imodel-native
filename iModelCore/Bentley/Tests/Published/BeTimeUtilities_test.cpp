@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeTimeUtilities_test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -47,12 +47,12 @@ TEST(BeTimeUtilitiesTests, BeTimePoint)
 
     double two = twoSeconds;
     ASSERT_TRUE(two == 2.0);
-    
+
     BeDuration twoandhalf(BeDuration::FromSeconds(2.5));
     ASSERT_TRUE(twoandhalf == 2.5);
     ASSERT_TRUE(twoandhalf == BeDuration::FromMilliseconds(2500));
     ASSERT_TRUE(twoandhalf.ToSeconds() == 2.5);
- 
+
     BeDuration::Milliseconds twoInMillis = twoSeconds;
     ASSERT_TRUE(twoInMillis == BeDuration::FromMilliseconds(2000));
 
@@ -119,7 +119,7 @@ TEST(BeTimeUtilitiesTests, strftime)
     bmap<uint64_t, Utf8String>::iterator data = testData.begin();
     while (data != testData.end())
         {
-        //find out how differs utc time from local time 
+        //find out how differs utc time from local time
         uint64_t time = data->first;
         Utf8String fullDate = unixMillisToString(time);
         //Compare returned strings with string expected
