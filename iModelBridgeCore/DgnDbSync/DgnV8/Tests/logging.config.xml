@@ -78,6 +78,7 @@
         <priority value="fatal"/>
     </category>
 
+    <!--
     <category name="iModelBridge">
         <priority value="all"/>
     </category>
@@ -87,6 +88,7 @@
     <category name="iModelHub">
         <priority value="info"/>
     </category>
+    -->
     
     <!-- 
     <category name="DgnDbSync">

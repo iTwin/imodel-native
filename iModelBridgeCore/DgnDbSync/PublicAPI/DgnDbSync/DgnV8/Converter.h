@@ -878,10 +878,13 @@ struct Converter
 
     //! Other arbitrary strings required by the conversion process
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ConverterDataStrings,dgnv8_converterDataStrings)
-        L10N_STRING(V8StyleNone) // =="V8 Default Style"==
-        L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
-        L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
-        L10N_STRING(RDS_Description) // =="Reality Model Tileset for %s"==
+        L10N_STRING(V8StyleNone)                        // =="V8 Default Style"==
+        L10N_STRING(V8StyleNoneDescription)             // =="Created from V8 active settings to handle Style (none)"==
+        L10N_STRING(LinkModelDefaultName)               // =="Default Link Model"==
+        L10N_STRING(RDS_Description)                    // =="Reality Model Tileset for %s"==
+        L10N_STRING(ResourcesViewsAndModels)            // =="Categories, Resources, Views, and Models"==
+        L10N_STRING(Sheets)                             // =="Sheets and drawings"==
+        L10N_STRING(ThumbnailsEtc)                      // =="Thumbnails, Project Extents, etc."==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues

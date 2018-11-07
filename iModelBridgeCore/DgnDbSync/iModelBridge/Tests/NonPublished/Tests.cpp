@@ -511,7 +511,7 @@ struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
 
         TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) : TestIModelHubClientForBridges(testWorkDir) {}
 
-        virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db) override;
+        virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment) override;
     };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -650,7 +650,7 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
+DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db, Utf8CP comment)
     {
     BeAssert(db != nullptr);
 
@@ -665,6 +665,9 @@ DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
         BeAssert(!m_expect.haveTxns);
         return changeSet;
         }
+
+    if (comment)
+        changeSet->SetSummary(comment);
 
     BeAssert(m_expect.haveTxns);
 

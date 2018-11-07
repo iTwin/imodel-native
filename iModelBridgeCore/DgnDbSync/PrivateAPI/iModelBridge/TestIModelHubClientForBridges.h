@@ -155,7 +155,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         m_briefcase = nullptr;
         }
 
-    StatusInt PullMergeAndPush(Utf8CP comment) override
+    StatusInt JustCaptureRevision(Utf8CP comment)
         {
         DgnRevisionPtr revision = CaptureChangeSet(m_briefcase, comment);
         if (revision.IsNull())
@@ -163,6 +163,9 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         m_revisions.push_back(revision);
         return BSISUCCESS;
         }
+
+    StatusInt Push(Utf8CP comment) override {return JustCaptureRevision(comment);}
+    StatusInt PullMergeAndPush(Utf8CP comment) override {return JustCaptureRevision(comment);}
 
     virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db, Utf8CP comment)
         {
@@ -184,9 +187,7 @@ struct TestIModelHubClientForBridges : IModelHubClientForBridges
         BeAssert(BeSQLite::BE_SQLITE_OK == result);
 
         // *** TBD: test for expected changes
-        printf("\n------------------------------------------------------------------\n");
-        printf("Revision - schema? %d user:[%s] desc:[%s]\n", changeSet->ContainsSchemaChanges(*db), changeSet->GetUserName().c_str(), changeSet->GetSummary().c_str());
-        printf("\n------------------------------------------------------------------\n");
+        printf("CaptureChangeset contains_schema_changes? %d user:[%s] desc:[%s]\n", changeSet->ContainsSchemaChanges(*db), changeSet->GetUserName().c_str(), changeSet->GetSummary().c_str());
         changeSet->Dump(*db);
         return changeSet;
         }

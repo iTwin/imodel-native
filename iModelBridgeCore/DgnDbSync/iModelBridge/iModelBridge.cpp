@@ -907,9 +907,9 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db, Utf8CP commitComment)
+iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db, Params const& params, Utf8CP commitComment)
     {
-    auto bcMgr = _GetParams().m_briefcaseManager;
+    auto bcMgr = params.m_briefcaseManager;
     if (nullptr == bcMgr)
         return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
 

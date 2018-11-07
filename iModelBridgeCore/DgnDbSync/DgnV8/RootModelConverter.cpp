@@ -814,6 +814,11 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
 
     if (preElementsConverted == m_elementsConverted)
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
+    else
+        {
+        if (_GetParams().ShouldCreateRevisionPerModel())
+            iModelBridge::PushChanges(*m_dgndb, _GetParams(), v8mm.GetDgnModel().GetName().c_str());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1581,6 +1586,9 @@ BentleyStatus  RootModelConverter::Process()
         if (WasAborted())
             return ERROR;
 
+        if (_GetParams().ShouldCreateRevisionPerModel())
+            iModelBridge::PushChanges(*m_dgndb, _GetParams(), ConverterDataStrings::GetString(ConverterDataStrings::ResourcesViewsAndModels()).c_str());
+
         ConverterLogging::LogPerformance(timer, "Convert Spatial Views");
 
         timer.Start();
@@ -1589,6 +1597,11 @@ BentleyStatus  RootModelConverter::Process()
             return ERROR;
 
         ConverterLogging::LogPerformance(timer, "Convert Spatial Elements (total)");
+        }
+    else
+        {
+        if (_GetParams().ShouldCreateRevisionPerModel())
+            iModelBridge::PushChanges(*m_dgndb, _GetParams(), ConverterDataStrings::GetString(ConverterDataStrings::ResourcesViewsAndModels()).c_str());
         }
 
     timer.Start();
@@ -1603,6 +1616,9 @@ BentleyStatus  RootModelConverter::Process()
     if (WasAborted())
         return ERROR;
 
+    if (_GetParams().ShouldCreateRevisionPerModel())
+        iModelBridge::PushChanges(*m_dgndb, _GetParams(), ConverterDataStrings::GetString(ConverterDataStrings::Sheets()).c_str());
+
     ConverterLogging::LogPerformance(timer, "Convert Sheets (total)");
 
     timer.Start();
@@ -1612,6 +1628,9 @@ BentleyStatus  RootModelConverter::Process()
 
     _OnConversionComplete();
     ConverterLogging::LogPerformance(timer, "Finish conversion");
+
+    if (_GetParams().ShouldCreateRevisionPerModel())
+        iModelBridge::PushChanges(*m_dgndb, _GetParams(), ConverterDataStrings::GetString(ConverterDataStrings::ThumbnailsEtc()).c_str());
 
     ConverterLogging::LogPerformance(totalTimer, "Total conversion time (%" PRIu32 " element(s))", (uint32_t) GetElementsConverted());
     return WasAborted() ? ERROR : SUCCESS;
