@@ -8381,4 +8381,60 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstancesThatRetur
     ASSERT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Daumantas.Kojelis                10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, SyncCachedData_AsyncTaskInCacheThread_AsyncTaskTerminatesWhilePreparingCachingQueries)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto txn = ds->StartCacheTransaction();
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    auto responseKey = StubCachedResponseKey(txn.GetCache(), "Q");
+    IQueryProvider::Query query(responseKey, std::make_shared<WSQuery>(ObjectId{ "TestSchema", "TestClass", "Q" }));
+    StubInstances instances;
+
+    instances.Add({ "TestSchema.TestClass" , "A" });
+    ObjectId instanceAId{ "TestSchema.TestClass", "A" };
+    ECInstanceKey instanceAKey = StubInstanceInCache(txn.GetCache(), instanceAId);
+
+    AsyncTestCheckpoint cp;
+    EXPECT_CALL(*provider, GetQueries(_, instanceAKey, _)).WillOnce(InvokeWithoutArgs([&]()
+        {
+        cp.CheckinAndWait();
+        return bvector<IQueryProvider::Query>();
+        }));
+
+    instances.Add({ "TestSchema.TestClass" , "B" });
+    ObjectId instanceBId{ "TestSchema.TestClass", "B" };
+    ECInstanceKey instanceBKey = StubInstanceInCache(txn.GetCache(), instanceBId);
+
+    bool preparedQueries = false;
+    EXPECT_CALL(*provider, GetQueries(_, instanceBKey, _)).WillOnce(InvokeWithoutArgs([&]()
+        {
+        preparedQueries = true;
+        return bvector<IQueryProvider::Query>();
+        }));
+
+    txn.Commit();
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+    EXPECT_CALL(*provider, IsFileRetrievalNeeded(_, _, _)).WillRepeatedly(Return(nullptr));
+
+    auto syncCachedDataTask = ds->SyncCachedData(bvector<ECInstanceKey>(), StubBVector(query), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr);
+
+    cp.WaitUntilReached();
+    auto middleTask = ds->GetCacheAccessThread()->ExecuteAsync([&]
+        {
+        EXPECT_FALSE(preparedQueries);
+        });
+
+    cp.Continue();
+
+    auto syncCachedDataResult = syncCachedDataTask->GetResult();
+    ASSERT_TRUE(syncCachedDataResult.IsSuccess());
+
+    middleTask->Wait();
+    }
+
 #endif // USE_GTEST
