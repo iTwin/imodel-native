@@ -376,8 +376,10 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
         {
         transferThreads.push_back(std::thread(transferDataSourceBufferSegments));
 #ifndef NDEBUG
-        DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(transferThreads.back().native_handle()));
-        SetThreadName(ThreadId, "DataSourceTransferThread");
+    #ifdef _WIN32
+            DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(transferThreads.back().native_handle()));
+            SetThreadName(ThreadId, "DataSourceTransferThread");
+    #endif
 #endif
         }
 

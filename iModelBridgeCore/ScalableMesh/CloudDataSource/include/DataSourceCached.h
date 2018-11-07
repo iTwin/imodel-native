@@ -5,6 +5,8 @@
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeFile.h>
 #include <queue>
+#include <thread>
+
 #ifdef VANCOUVER_API
 #define OPEN_FILE_WITH_SHARING(beFile, pathStr, accessMode, sharing)  beFile.Open(pathStr, accessMode, sharing)
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
@@ -95,8 +97,10 @@ struct CacheWriter : public RefCountedBase, std::mutex, std::condition_variable
                 }
             });
 #ifndef NDEBUG
+    #ifdef _WIN32
         DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(m_thread.native_handle()));
         SetThreadName(ThreadId, "DataSourceCacheWriterThread");
+    #endif
 #endif
         }
 
@@ -205,6 +209,6 @@ public:
 
     DataSourceStatus                read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size);
     DataSourceStatus                read                    (std::vector<Buffer>& dest);
-    DataSourceStatus                write                   (Buffer * source, DataSize size);
+    DataSourceStatus                write                   (const Buffer * source, DataSize size);
 
 };

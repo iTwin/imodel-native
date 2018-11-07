@@ -117,6 +117,7 @@
         <SubPart PartName="CoreStatic"       PartFile="TerrainModelDgnDb"                    Repository="TerrainModel" LibType="Static" />
         <SubPart PartName="BeSQLite"         PartFile="BeSQLite"                             Repository="BeSQLite" LibType="Static" />
         <SubPart PartName="CloudDataSource"  PartFile="CloudDataSource"                      Repository="ScalableMesh" LibType="Static" />
+        <SubPart PartName="Cgal"             PartFile="Libsrc-Nugets"                        Repository="bsicommon" LibType="Static"/>
         
     
         <Bindings>
