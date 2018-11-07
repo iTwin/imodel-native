@@ -7,7 +7,7 @@
 #include <cpprest/producerconsumerstream.h>
 #endif
 #include "include/DataSourceAccountAzure.h"
-#include <Bentley\BeStringUtilities.h>
+#include <Bentley/BeStringUtilities.h>
 #include <Bentley/WString.h>
 
 #ifdef SM_STREAMING_PERF

@@ -112,12 +112,14 @@
 
     <Part Name="ScalableMeshCoreStaticLinux" BentleyBuildMakeFile="ScalableMeshCoreLinux.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1" >
         <SubPart PartName="DgnPlatformDll"   PartFile="DgnPlatform"                          Repository="DgnPlatform" LibType="Static" />
-        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"  LibType="Static" />
-        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP"  LibType="Static" />
-        <SubPart PartName="CoreStatic"            PartFile="TerrainModelDgnDb"                         Repository="TerrainModel" LibType="Static" />      
-        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" LibType="Static" />
-       
-
+        <SubPart PartName="GeomDlls"         PartFile="geomlibs"                             Repository="GeomLibs"  LibType="Static" />
+        <SubPart PartName="ImagePP"          PartFile="ImagePP"                              Repository="ImagePP"  LibType="Static" />
+        <SubPart PartName="CoreStatic"       PartFile="TerrainModelDgnDb"                    Repository="TerrainModel" LibType="Static" />
+        <SubPart PartName="BeSQLite"         PartFile="BeSQLite"                             Repository="BeSQLite" LibType="Static" />
+        <SubPart PartName="CloudDataSource"  PartFile="CloudDataSource"                      Repository="ScalableMesh" LibType="Static" />
+        <SubPart PartName="Cgal"             PartFile="Libsrc-Nugets"                        Repository="bsicommon" LibType="Static"/>
+        
+    
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMeshCore$(stlibext)</Libs>
             <PublicAPI Domain="ScalableMesh" />

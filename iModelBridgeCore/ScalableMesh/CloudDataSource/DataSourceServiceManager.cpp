@@ -91,7 +91,7 @@ DataSourceAccount * DataSourceServiceManager::getAccount(const DataSourceAccount
 {
     DataSourceAccount   * account;
 
-    ApplyFunction getAccount = [this, accountName, &account]( ItemMap::iterator it) -> bool
+    ApplyFunction getAccount = [accountName, &account]( ItemMap::iterator it) -> bool
     {
         DataSourceService *service = it->second;        
         if (service)

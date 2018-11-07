@@ -107,7 +107,9 @@ $(o)DataSourceTransferScheduler$(oext) : $(SrcDir)DataSourceTransferScheduler.cp
 
 $(o)DataSourceURL$(oext) : $(SrcDir)DataSourceURL.cpp ${MultiCompileDepends}
 
-$(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepends}
+%if $(BUILD_TOOLSET) == "VS2015" || $(BUILD_TOOLSET) == "VS2017"
+    $(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepends}
+%endif
 
 %include MultiCppCompileGo.mki
 

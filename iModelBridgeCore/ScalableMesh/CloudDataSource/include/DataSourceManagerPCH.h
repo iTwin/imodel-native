@@ -37,5 +37,8 @@
 #include "DataSourceTransferScheduler.h"
 #include "DataSourceURL.h"
 #include "Manager.h"
-#include "PerformanceTimer.h"
+
+#ifdef _WIN32
+    #include "PerformanceTimer.h"
+#endif
 
