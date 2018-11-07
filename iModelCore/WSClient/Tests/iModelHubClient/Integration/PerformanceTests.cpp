@@ -141,7 +141,7 @@ struct PerformanceTests : public IntegrationTestsBase
     void LogTiming(StopWatch& timer, int numberOfInstances, bool isPassed, int counter, Utf8String method)
         {
         Utf8String description;
-        description.Sprintf("Test part used [%d] number of instances for the time no. %d with %s method", numberOfInstances, counter, method);
+        description.Sprintf("Test part used [%d] number of instances for the time no. %d with %s method", numberOfInstances, counter, method.c_str());
         LogTiming(timer, description, isPassed);
         }
 
@@ -155,7 +155,7 @@ struct PerformanceTests : public IntegrationTestsBase
         if (isPassed)
             status = "passed";
 
-        totalDescription.Sprintf("Test %s. %s", status, description);
+        totalDescription.Sprintf("Test %s. %s", status.c_str(), description.c_str());
         LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), -1, totalDescription.c_str());
         printf("%.8f %s\n", timer.GetElapsedSeconds(), totalDescription.c_str());
         }
