@@ -148,7 +148,15 @@ void WSRepositoryClient::UnregisterRepositoryInfoListener(std::weak_ptr<IReposit
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSRepositoryResult> WSRepositoryClient::GetInfo(ICancellationTokenPtr ct) const
     {
-    return m_infoProvider->GetInfo(ct);
+    return GetInfoWithOptions(nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Mantas.Smicius   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSRepositoryResult> WSRepositoryClient::GetInfoWithOptions(RequestOptionsPtr options, ICancellationTokenPtr ct) const
+    {
+    return m_infoProvider->GetInfo(options, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -156,12 +164,20 @@ AsyncTaskPtr<WSRepositoryResult> WSRepositoryClient::GetInfo(ICancellationTokenP
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSVoidResult> WSRepositoryClient::VerifyAccess(ICancellationTokenPtr ct) const
     {
+    return VerifyAccessWithOptions(nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Mantas.Smicius   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSVoidResult> WSRepositoryClient::VerifyAccessWithOptions(RequestOptionsPtr options, ICancellationTokenPtr ct) const
+    {
     return m_connection->GetWebApiAndReturnResponse<WSVoidResult>([=] (WebApiPtr webApi)
         {
         ObjectId fakeObject("NonExistingSchema.NonExistingClassForCredentialChecking", "nonId");
 
         return
-            webApi->SendGetObjectRequest(fakeObject, "", ct)
+            webApi->SendGetObjectRequest(fakeObject, "", options, ct)
             ->Then<WSVoidResult>([=] (WSObjectsResult& result)
             {
             if (WSError::Id::ClassNotFound == result.GetError().GetId() ||
@@ -184,9 +200,23 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    return SendGetObjectRequestWithOptions(objectId, eTag, nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Mantas.Smicius   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetObjectRequestWithOptions
+(
+ObjectIdCR objectId,
+Utf8StringCR eTag,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetObjectRequest(objectId, eTag, ct);
+        return webApi->SendGetObjectRequest(objectId, eTag, options, ct);
         }, ct);
     }
 
@@ -200,8 +230,22 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    return SendGetChildrenRequestWithOptions(parentObjectId, eTag, nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Mantas.Smicius   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetChildrenRequestWithOptions
+(
+ObjectIdCR parentObjectId,
+Utf8StringCR eTag,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
     bset<Utf8String> properties;
-    return SendGetChildrenRequest(parentObjectId, properties, eTag, ct);
+    return SendGetChildrenRequestWithOptions(parentObjectId, properties, eTag, options, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -215,9 +259,24 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    return SendGetChildrenRequestWithOptions(parentObjectId, propertiesToSelect, eTag, nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Mantas.Smicius   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetChildrenRequestWithOptions
+(
+ObjectIdCR parentObjectId,
+const bset<Utf8String>& propertiesToSelect,
+Utf8StringCR eTag,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetChildrenRequest(parentObjectId, propertiesToSelect, eTag, ct);
+        return webApi->SendGetChildrenRequest(parentObjectId, propertiesToSelect, eTag, options, ct);
         }, ct);
     }
 
@@ -240,7 +299,7 @@ ICancellationTokenPtr ct
         {
         return m_connection->GetWebApiAndReturnResponse<WSResult>([=] (WebApiPtr webApi)
             {
-            return webApi->SendGetFileRequest(objectId, HttpFileBody::Create(filePath), eTag, downloadProgressCallback, ct);
+            return webApi->SendGetFileRequest(objectId, HttpFileBody::Create(filePath), eTag, downloadProgressCallback, nullptr, ct);
             }, ct);
         }, ct)
 	->Then<WSFileResult>([=] (WSResult response)
@@ -265,11 +324,27 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    return SendGetFileRequestWithOptions(objectId, responseBodyOut, eTag, downloadProgressCallback, nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Mantas.Smicius   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSResult> WSRepositoryClient::SendGetFileRequestWithOptions
+(
+ObjectIdCR objectId,
+Http::HttpBodyPtr responseBodyOut,
+Utf8StringCR eTag,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
     return m_fileDownloadQueue.Push([=]
         {
         return m_connection->GetWebApiAndReturnResponse<WSResult>([=] (WebApiPtr webApi)
             {
-            return webApi->SendGetFileRequest(objectId, responseBodyOut, eTag, downloadProgressCallback, ct);
+            return webApi->SendGetFileRequest(objectId, responseBodyOut, eTag, downloadProgressCallback, options, ct);
             }, ct);
         }, ct);
     }
@@ -283,9 +358,22 @@ Utf8StringCR eTag,
 ICancellationTokenPtr ct
 ) const
     {
+    return SendGetSchemasRequestWithOptions(eTag, nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                     Mantas.Smicius   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendGetSchemasRequestWithOptions
+(
+Utf8StringCR eTag,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetSchemasRequest(eTag, ct);
+        return webApi->SendGetSchemasRequest(eTag, options, ct);
         }, ct);
     }
 
@@ -300,9 +388,24 @@ Utf8StringCR skipToken,
 ICancellationTokenPtr ct
 ) const
     {
+    return SendQueryRequestWithOptions(query, eTag, skipToken, nullptr, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSObjectsResult> WSRepositoryClient::SendQueryRequestWithOptions
+(
+WSQueryCR query,
+Utf8StringCR eTag,
+Utf8StringCR skipToken,
+RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
+    {
     return m_connection->GetWebApiAndReturnResponse<WSObjectsResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendQueryRequest(query, eTag, skipToken, ct);
+        return webApi->SendQueryRequest(query, eTag, skipToken, options, ct);
         }, ct);
     }
 
@@ -316,10 +419,7 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSChangesetResult>([=] (WebApiPtr webApi)
-        {
-        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, nullptr, ct);
-        }, ct);
+    return SendChangesetRequestWithOptions(changeset, uploadProgressCallback, nullptr, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -350,10 +450,7 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult>([=] (WebApiPtr webApi)
-        {
-        return webApi->SendCreateObjectRequest(objectCreationJson, filePath, uploadProgressCallback, nullptr, ct);
-        }, ct);
+    return SendCreateObjectRequestWithOptions(objectCreationJson, filePath, uploadProgressCallback, nullptr, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -386,10 +483,7 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSCreateObjectResult> ([=] (WebApiPtr webApi)
-        {
-        return webApi->SendCreateObjectRequest(objectId, objectCreationJson, filePath, uploadProgressCallback, nullptr, ct);
-        }, ct);
+    return SendCreateObjectRequestWithOptions(objectId, objectCreationJson, filePath, uploadProgressCallback, nullptr, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -424,10 +518,7 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSUpdateObjectResult>([=] (WebApiPtr webApi)
-        {
-        return webApi->SendUpdateObjectRequest(objectId, propertiesJson, eTag, filePath, uploadProgressCallback, nullptr, ct);
-        }, ct);
+    return SendUpdateObjectRequestWithOptions(objectId, propertiesJson, eTag, filePath, uploadProgressCallback, nullptr, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -459,10 +550,7 @@ ObjectIdCR objectId,
 ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSDeleteObjectResult>([=] (WebApiPtr webApi)
-        {
-        return webApi->SendDeleteObjectRequest(objectId, nullptr, ct);
-        }, ct);
+    return SendDeleteObjectRequestWithOptions(objectId, nullptr, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -492,10 +580,7 @@ Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSUpdateFileResult>([=] (WebApiPtr webApi)
-        {
-        return webApi->SendUpdateFileRequest(objectId, filePath, uploadProgressCallback, nullptr, ct);
-        }, ct);
+    return SendUpdateFileRequestWithOptions(objectId, filePath, uploadProgressCallback, nullptr, ct);
     }
 
 /*--------------------------------------------------------------------------------------+

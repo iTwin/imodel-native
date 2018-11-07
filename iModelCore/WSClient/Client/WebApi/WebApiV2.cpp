@@ -463,9 +463,13 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
+AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest
+(
+IWSRepositoryClient::RequestOptionsPtr options,
+ICancellationTokenPtr ct
+) const
     {
-    auto activityLogger = CreateActivityLogger("Get Repository Info");
+    auto activityLogger = CreateActivityLogger("Get Repository Info", options);
     activityLogger.debug("Started");
 
     auto repository = WSRepositoryClient::ParseRepositoryUrl(GetUrl("/"));
@@ -528,10 +532,11 @@ AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetObjectRequest
 (
 ObjectIdCR objectId,
 Utf8StringCR eTag,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
-    auto activityLogger = CreateActivityLogger("Get Object");
+    auto activityLogger = CreateActivityLogger("Get Object", options);
     activityLogger.debug("Started");
 
     if (!objectId.IsValid())
@@ -563,10 +568,11 @@ AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetChildrenRequest
 ObjectIdCR parentObjectId,
 const bset<Utf8String>& propertiesToSelect,
 Utf8StringCR eTag,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
-    auto activityLogger = CreateActivityLogger("Get Children");
+    auto activityLogger = CreateActivityLogger("Get Children", options);
     activityLogger.debug("Started");
 
     Utf8String url = GetUrl(CreateNavigationSubPath(parentObjectId), CreateSelectPropertiesQuery(propertiesToSelect));
@@ -590,10 +596,11 @@ ObjectIdCR objectId,
 HttpBodyPtr bodyResponseOut,
 Utf8StringCR eTag,
 Http::Request::ProgressCallbackCR downloadProgressCallback,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
-    auto activityLogger = CreateActivityLogger("Get File");
+    auto activityLogger = CreateActivityLogger("Get File", options);
     activityLogger.debug("Started");
 
     if (!objectId.IsValid())
@@ -679,10 +686,11 @@ WSResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response) const
 AsyncTaskPtr<WSObjectsResult> WebApiV2::SendGetSchemasRequest
 (
 Utf8StringCR eTag,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
-    auto activityLogger = CreateActivityLogger("Get Schemas");
+    auto activityLogger = CreateActivityLogger("Get Schemas", options);
     activityLogger.debug("Started");
 
     Utf8String url = GetUrl(CreateClassSubPath("MetaSchema", "ECSchemaDef"));
@@ -708,10 +716,11 @@ AsyncTaskPtr<WSObjectsResult> WebApiV2::SendQueryRequest
 WSQueryCR query,
 Utf8StringCR eTag,
 Utf8StringCR skipToken,
+IWSRepositoryClient::RequestOptionsPtr options,
 ICancellationTokenPtr ct
 ) const
     {
-    auto activityLogger = CreateActivityLogger("Send Query");
+    auto activityLogger = CreateActivityLogger("Send Query", options);
     activityLogger.debug("Started");
 
     Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
