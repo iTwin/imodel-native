@@ -297,6 +297,50 @@ uint64_t BeTimeUtilities::ConvertTmToUnixMillis(tm const& timeStructIn)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime BeTimeUtilities::ConvertBeTimePointToDateTime(BeTimePoint timePoint, BeClock const* clock)
+    {
+    if (!timePoint.IsValid())
+        return DateTime();
+
+    if (nullptr == clock)
+        clock = &BeClock::Get();
+
+    int64_t systemTime;
+    if (SUCCESS != clock->GetSystemTime().ToUnixMilliseconds(systemTime))
+        return DateTime();
+
+    using namespace std::chrono;
+    int64_t dateTimeUnixMilliseconds = systemTime + duration_cast<milliseconds>(timePoint - clock->GetSteadyTime()).count();
+    DateTime result;
+    if (SUCCESS != DateTime::FromUnixMilliseconds(result, dateTimeUnixMilliseconds))
+        return DateTime();
+
+    return result;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BeTimePoint BeTimeUtilities::ConvertDateTimeToBeTimePoint(DateTimeCR dateTime, BeClock const* clock)
+    {
+    if (nullptr == clock)
+        clock = &BeClock::Get();
+
+    int64_t dateTimeUnixMilliseconds;
+    if (SUCCESS != dateTime.ToUnixMilliseconds(dateTimeUnixMilliseconds))
+        return BeTimePoint();
+
+    int64_t currentUnixMilliseconds;
+    if (SUCCESS != clock->GetSystemTime().ToUnixMilliseconds(currentUnixMilliseconds))
+        return BeTimePoint();
+
+    using namespace std::chrono;
+    return clock->GetSteadyTime() + milliseconds(dateTimeUnixMilliseconds - currentUnixMilliseconds);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeClock& BeClock::Get()

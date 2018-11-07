@@ -30,6 +30,7 @@
     <ClCompile Include="Performance\DateTime_performanceTest.cpp" />
     <ClCompile Include="Performance\WString_performanceTest.cpp" />
     <ClCompile Include="Published\Base64UtilitiesTests.cpp" />
+    <ClCompile Include="Published\BeClockTests.cpp" />
     <ClCompile Include="Published\BeFileIterator_Tests.cpp" />
     <ClCompile Include="Published\BeFileName_test.cpp" />
     <ClCompile Include="Published\BeFile_Test.cpp" />

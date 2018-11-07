@@ -9,6 +9,8 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/bmap.h>
 #include <Bentley/DateTime.h>
+#include <Bentley/BeThread.h>
+
 USING_NAMESPACE_BENTLEY
 
 //---------------------------------------------------------------------------------------
@@ -208,4 +210,87 @@ TEST(BeTimeUtilitiesTests, ConvertTmToUnixMillis)
     ASSERT_EQ(BentleyStatus::SUCCESS, BeTimeUtilities::ConvertUnixMillisToTm(expectedTm, unixMillisExpected));
     uint64_t unixMillisReceived = BeTimeUtilities::ConvertTmToUnixMillis(expectedTm);
     EXPECT_EQ(unixMillisExpected, unixMillisReceived);
+    }
+
+struct BeTimeUtilitiesClockConversionTests : ::testing::Test
+    {
+    struct TestClock : BeClock
+        {
+        BeTimePoint nowTimePoint = BeTimePoint(BeDuration::Hours(2));
+        DateTime nowDateTime = DateTime(DateTime::Kind::Utc, 1, 1, 1, 2, 0);
+
+        BeTimePoint GetSteadyTime() const override { return nowTimePoint; }
+        DateTime GetSystemTime() const override { return nowDateTime; }
+        };
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Lukasonok                   11/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeTimeUtilitiesClockConversionTests, ConvertBeTimePointToDateTime_ValidBeTimePoint_AccurateResult)
+    {
+    BeTimePoint timePoint(BeDuration::Hours(5));
+    TestClock clock;
+    DateTime result = BeTimeUtilities::ConvertBeTimePointToDateTime(timePoint, &clock);
+    EXPECT_EQ(DateTime(DateTime::Kind::Utc, 1, 1, 1, 5, 0, 0), result);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Lukasonok                   11/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeTimeUtilitiesClockConversionTests, ConvertBeTimePointToDateTime_InvalidBeTimePoint_InvalidDateTime)
+    {
+    TestClock clock;
+    DateTime result = BeTimeUtilities::ConvertBeTimePointToDateTime(BeTimePoint(), &clock);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Lukasonok                   11/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeTimeUtilitiesClockConversionTests, ConvertBeTimePointToDateTime_CurrentBeTimePointAndNullClock_RecentDateTime)
+    {
+    DateTime before = DateTime::GetCurrentTimeUtc();
+    BeThreadUtilities::BeSleep(1);
+    DateTime result = BeTimeUtilities::ConvertBeTimePointToDateTime(BeTimePoint::Now(), nullptr);
+    BeThreadUtilities::BeSleep(1);
+    DateTime after = DateTime::GetCurrentTimeUtc();
+
+    EXPECT_EQ(DateTime::CompareResult::EarlierThan, DateTime::Compare(before, result));
+    EXPECT_EQ(DateTime::CompareResult::EarlierThan, DateTime::Compare(result, after));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Lukasonok                   11/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeTimeUtilitiesClockConversionTests, ConvertDateTimeToBeTimePoint_ValidDateTime_AccurateConversion)
+    {
+    DateTime dateTime(DateTime::Kind::Utc, 1, 1, 1, 5, 0, 0);
+    TestClock clock;
+    BeTimePoint result = BeTimeUtilities::ConvertDateTimeToBeTimePoint(dateTime, &clock);
+    EXPECT_EQ(BeTimePoint(BeDuration::Hours(5)), result);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Lukasonok                   11/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeTimeUtilitiesClockConversionTests, ConvertDateTimeToBeTimePoint_InvalidDateTime_InvalidBeTimePoint)
+    {
+    TestClock clock;
+    BeTimePoint result = BeTimeUtilities::ConvertDateTimeToBeTimePoint(DateTime(), &clock);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Lukasonok                   11/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeTimeUtilitiesClockConversionTests, ConvertDateTimeToBeTimePoint_CurrentDateTimeAndNullClock_RecentBeTimePoint)
+    {
+    BeTimePoint before = BeTimePoint::Now();
+    BeThreadUtilities::BeSleep(1);
+    BeTimePoint result = BeTimeUtilities::ConvertDateTimeToBeTimePoint(DateTime::GetCurrentTimeUtc(), nullptr);
+    BeThreadUtilities::BeSleep(1);
+    BeTimePoint after = BeTimePoint::Now();
+
+    EXPECT_BETWEEN(before, result, after);
     }
