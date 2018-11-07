@@ -445,7 +445,7 @@ Utf8String RealityDataBase::FootprintToGCSString(bvector<GeoPoint2d> footprint, 
         }
     filter.append(Utf8PrintfString("[%f,%f]]", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
     if(coordSys.length() > 0)
-        filter.append(Utf8PrintfString(", \\\"coordinate_system\\\":\\\"%s\\\"", coordSys));
+        filter.append(Utf8PrintfString(", \\\"coordinate_system\\\":\\\"%s\\\"", coordSys.c_str()));
     filter.append("}");
 
     return filter;

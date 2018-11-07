@@ -175,7 +175,7 @@ void GCSRequestManager::SimplePackageDownload(bvector<GeoPoint2d> footprint, bve
 
         DateTime now = DateTime::GetCurrentTimeUtc();
 
-        Utf8String distinctReportName = Utf8PrintfString("report-%s.xml", now.ToString());
+        Utf8String distinctReportName = Utf8PrintfString("report-%s.xml", now.ToString().c_str());
         distinctReportName.ReplaceAll(":", ".");
 
         DownloadReportUploadRequest upReq = DownloadReportUploadRequest(prep, distinctReportName, reportPath);
