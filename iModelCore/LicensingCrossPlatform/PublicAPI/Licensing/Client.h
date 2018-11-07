@@ -16,6 +16,8 @@
 #include <WebServices/Client/ClientInfo.h>
 #include <WebServices/Connect/ConnectSignInManager.h> // Would be nice to remove this dependency
 
+#include <Licensing/Utils/FeatureUserDataMap.h>
+
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -78,13 +80,9 @@ public:
 	*/
     LICENSING_EXPORT BentleyStatus StopApplication();
 	/*!
-	* Start Feature Comment
+	* Mark Feature Comment
 	*/
-    LICENSING_EXPORT BentleyStatus StartFeature();
-	/*!
-	* Stop Feature Comment
-	*/
-    LICENSING_EXPORT BentleyStatus StopFeature();
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

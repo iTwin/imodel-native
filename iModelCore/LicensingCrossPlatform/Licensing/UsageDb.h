@@ -39,7 +39,8 @@ private:
     BentleyStatus UpdateDb();
     BentleyStatus UpdateDbTables();
 
-    int64_t GetLastRowId();
+    int64_t GetLastUsageRecordRowId();
+    int64_t GetLastFeatureRowId();
 
 public:
 	LICENSING_EXPORT BentleyStatus OpenOrCreate(BeFileNameCR filePath);
@@ -64,10 +65,12 @@ public:
 	LICENSING_EXPORT Utf8String GetOfflineGracePeriodStart();
 	LICENSING_EXPORT BentleyStatus ResetOfflineGracePeriod();
 
-    LICENSING_EXPORT Utf8String GetLastRecordedTime();
-    LICENSING_EXPORT int64_t GetRecordCount();
+    LICENSING_EXPORT Utf8String GetLastUsageRecordedTime();
+    LICENSING_EXPORT int64_t GetUsageRecordCount();
+    LICENSING_EXPORT int64_t GetFeatureRecordCount();
 
     LICENSING_EXPORT BentleyStatus CleanUpUsages();
+    LICENSING_EXPORT BentleyStatus CleanUpFeatures();
 
     LICENSING_EXPORT BentleyStatus RecordUsage(int64_t ultimateSAPId, Utf8StringCR principalId, Utf8StringCR imsId, Utf8String machineName,
                                                Utf8StringCR machineSID, Utf8StringCR userName, Utf8StringCR userSID, Utf8StringCR policyId,

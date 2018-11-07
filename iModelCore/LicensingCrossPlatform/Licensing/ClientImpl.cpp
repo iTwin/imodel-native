@@ -57,17 +57,43 @@ m_httpHandler(httpHandler)
         // that is treated as error on clang compilers for iOS.
         }
     }
-   
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 LicenseStatus ClientImpl::StartApplication()
     {
-    if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
+    if (Utf8String::IsNullOrEmpty(m_userInfo.username.c_str()))
         return LicenseStatus::Error;
-    
-    // Get policy token
+
+    if (m_clientInfo == nullptr)
+        return LicenseStatus::Error;
+
+    if (m_authProvider == nullptr)
+        return LicenseStatus::Error;
+
+    if (BeFileName::IsNullOrEmpty(m_dbPath))
+        return LicenseStatus::Error;
+
+    if (Utf8String::IsNullOrEmpty(m_correlationId.c_str()))
+        return LicenseStatus::Error;
+
+    if (m_timeRetriever == nullptr)
+        return LicenseStatus::Error;
+
+    if (m_delayedExecutor == nullptr)
+        return LicenseStatus::Error;
+
+    if (m_usageDb == nullptr)
+        return LicenseStatus::Error;
+
+    if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
+        return LicenseStatus::Error;    
+
     m_policy = GetPolicyToken();
+
+    if (m_policy == nullptr)
+        return LicenseStatus::Error;
 
     // Get product status
     LicenseStatus licStatus = GetProductStatus();
@@ -90,18 +116,6 @@ LicenseStatus ClientImpl::StartApplication()
     LOG.trace("StartApplication");
 
     return licStatus;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::StartFeature()
-    {
-
-    // This is only a logging example
-    LOG.trace("StartFeature");
-
-    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -197,7 +211,11 @@ BentleyStatus ClientImpl::StopApplication()
     m_lastRunningUsageheartbeatStartTime = 0;       // This will stop Usage heartbeat
     m_lastRunningLogPostingheartbeatStartTime = 0;  // This will stop log posting heartbeat
 
-    PostUsageLogs();
+    if (m_usageDb->GetUsageRecordCount() > 0)
+        PostUsageLogs();
+
+    if (m_usageDb->GetFeatureRecordCount() > 0)
+        PostFeatureLogs();
 
     m_usageDb->Close();
 
@@ -207,9 +225,115 @@ BentleyStatus ClientImpl::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClientImpl::StopFeature()
+BentleyStatus ClientImpl::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
     {
-    LOG.trace("StopFeature");
+    LOG.trace("MarkFeature");
+
+    if (!m_usageDb->IsDbOpen())
+        {
+        LOG.error("MarkFeature: Usage DB not open.");
+        return ERROR;
+        }
+
+    if (m_policy == nullptr)
+        {
+        LOG.error("MarkFeature: StartApplication function not called.");
+        return ERROR;
+        }
+
+    LicenseStatus licStatus = GetProductStatus();
+
+    if ((LicenseStatus::Ok != licStatus) &&
+        (LicenseStatus::Offline != licStatus) &&
+        (LicenseStatus::Trial != licStatus))
+        {
+        LOG.errorv("MarkFeature: Licenses status of product %s is %d. Feature %s cannot be tracked",
+                   m_clientInfo->GetApplicationProductId().c_str(),
+                   licStatus,
+                   featureId.c_str());
+        return ERROR;
+        }
+
+    Utf8String versionString;
+    GenerateSID gsid;
+
+    // Create feature record
+    Utf8String eventTimeZ = DateTime::GetCurrentTimeUtc().ToString();
+
+    Utf8StringVector featureUserDataKeys;
+    Utf8String userDataString;
+
+    if (featureUserData->GetKeys(featureUserDataKeys) > 0)
+        {
+        Utf8String featureUserDataValue;
+        Utf8String userData;
+        for (Utf8String featureUserDataKey : featureUserDataKeys)
+            {
+            featureUserData->GetValue(featureUserDataKey.c_str(), featureUserDataValue);
+            featureUserDataValue.ReplaceAll(",", "");
+            userData.Sprintf("%s^%s#", featureUserDataKey.c_str(), featureUserDataValue.c_str());
+            userDataString.append(userData.c_str());
+            }
+        }
+
+    versionString.Sprintf("%d%.4d%.4d%.4d", m_clientInfo->GetApplicationVersion().GetMajor(), m_clientInfo->GetApplicationVersion().GetMinor(),
+                          m_clientInfo->GetApplicationVersion().GetSub1(), m_clientInfo->GetApplicationVersion().GetSub2());
+
+    LOG.debugv("RecordFeature - UsageLogEntry data: {ultimateId:%ld,principalId:%s,userId:%s,machineName:%s,"
+               "machineSID:%s,userName:%s,userSID:%s,policyId:%s,securableId:%s,productId:%s,featureString:%s,"
+               "version:%s,projectId:%s,correlationId:%s,eventTimeZ:%s,schemaVer:%f,source:%s,country:%s,usageType:%s,"
+               "featureId:%s, startTime:%s, endTime:%s, featureUserData:%s}",
+               m_policy->GetUltimateSAPId(),
+               m_policy->GetPrincipalId().c_str(),
+               m_policy->GetAppliesToUserId().c_str(),
+               m_clientInfo->GetDeviceId().c_str(),
+               gsid.GetMachineSID(m_clientInfo->GetDeviceId()).c_str(),
+               m_userInfo.username.c_str(),
+               gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()).c_str(),
+               m_policy->GetPolicyId().c_str(),
+               m_policy->GetSecurableId().c_str(),
+               atoi(m_clientInfo->GetApplicationProductId().c_str()),
+               m_featureString.c_str(),
+               atoll(versionString.c_str()),
+               m_projectId.c_str(),
+               m_correlationId.c_str(),
+               eventTimeZ.c_str(),
+               LICENSE_CLIENT_SCHEMA_VERSION,
+               GetLoggingPostSource(LogPostingSource::RealTime).c_str(),
+               m_policy->GetCountry().c_str(),
+               m_policy->GetUsageType().c_str(),
+               featureId,
+               eventTimeZ.c_str(),
+               eventTimeZ.c_str(),
+               userDataString.c_str());
+
+    if (SUCCESS != m_usageDb->RecordFeature(m_policy->GetUltimateSAPId(),
+                                            m_policy->GetPrincipalId(),
+                                            m_policy->GetAppliesToUserId(),
+                                            m_clientInfo->GetDeviceId(),
+                                            gsid.GetMachineSID(m_clientInfo->GetDeviceId()),
+                                            m_userInfo.username,
+                                            gsid.GetUserSID(m_userInfo.username, m_clientInfo->GetDeviceId()),
+                                            m_policy->GetPolicyId(),
+                                            m_policy->GetSecurableId(),
+                                            atoi(m_clientInfo->GetApplicationProductId().c_str()),
+                                            m_featureString,
+                                            atoll(versionString.c_str()),
+                                            m_projectId,
+                                            m_correlationId,
+                                            eventTimeZ,
+                                            LICENSE_CLIENT_SCHEMA_VERSION,
+                                            GetLoggingPostSource(LogPostingSource::RealTime),
+                                            m_policy->GetCountry(),
+                                            m_policy->GetUsageType(),
+                                            featureId,
+                                            eventTimeZ,
+                                            eventTimeZ,
+                                            userDataString))
+        {
+        LOG.error("RecordFeature - ERROR: Feature usage failed to be recorded.");
+        return ERROR;
+        }
 
     return SUCCESS;
     }
@@ -233,7 +357,9 @@ BentleyStatus ClientImpl::RecordUsage()
     versionString.Sprintf("%d%.4d%.4d%.4d", m_clientInfo->GetApplicationVersion().GetMajor(), m_clientInfo->GetApplicationVersion().GetMinor(),
                           m_clientInfo->GetApplicationVersion().GetSub1(), m_clientInfo->GetApplicationVersion().GetSub2());
 
-    LOG.debugv("RecordUsage - UsageLogEntry data: {ultimateId:%ld,principalId:%s,userId:%s,machineName:%s,machineSID:%s,userName:%s,userSID:%s,policyId:%s,securableId:%s,productId:%s,featureString:%s,version:%s,projectId:%s,correlationId:%s,eventTimeZ:%s,schemaVer:%f,source:%s,country:%s,usageType:%s}",
+    LOG.debugv("RecordUsage - UsageLogEntry data: {ultimateId:%ld,principalId:%s,userId:%s,machineName:%s,machineSID:%s,userName:%s,userSID:%s,"
+               "policyId:%s,securableId:%s,productId:%s,featureString:%s,version:%s,projectId:%s,correlationId:%s,eventTimeZ:%s,schemaVer:%f,"
+               "source:%s,country:%s,usageType:%s}",
                m_policy->GetUltimateSAPId(),
                m_policy->GetPrincipalId().c_str(),
                m_policy->GetAppliesToUserId().c_str(),
@@ -277,7 +403,7 @@ BentleyStatus ClientImpl::RecordUsage()
         LOG.error("RecordUsage - ERROR: Usage failed to be recorded.");
         return ERROR;
         }
-
+    
     return SUCCESS;
     }
 
@@ -339,6 +465,46 @@ BentleyStatus ClientImpl::PostUsageLogs()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ClientImpl::PostFeatureLogs()
+    {
+    LOG.trace("PostFeatureLogs");
+
+    Utf8String fileName;
+    bvector<WString> logFiles;
+    BeFileName featureLogPath(m_dbPath.GetDirectoryName());
+
+    fileName.Sprintf("FeatureLog.%s.csv", BeGuid(true).ToString().c_str());
+
+    featureLogPath.AppendToPath(BeFileName(fileName));
+
+    if (SUCCESS != m_usageDb->WriteFeatureToCSVFile(featureLogPath))
+        {
+        LOG.error("PostFeatureLogs - ERROR: Unable to write feature usage records to features log.");
+        return ERROR;
+        }
+
+    m_usageDb->CleanUpFeatures();
+
+    Utf8String ultimateId;
+    ultimateId.Sprintf("%ld", m_policy->GetUltimateSAPId());
+
+    LogFileHelper lfh;
+    logFiles = lfh.GetLogFiles(Utf8String(featureLogPath.GetDirectoryName()));
+
+    if (!logFiles.empty())
+        {
+        for (auto const& logFile : logFiles)
+            {
+            SendFeatures(BeFileName(logFile), ultimateId);
+            }
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageCSV, Utf8StringCR ultId)
     {
     LOG.trace("SendUsage");
@@ -374,12 +540,53 @@ folly::Future<folly::Unit> ClientImpl::SendUsage(BeFileNameCR usageCSV, Utf8Stri
                 throw HttpError(response);
                 }
 
-#if defined (BENTLEY_WIN32)
-            std::tr2::sys::path pval(usageCSV.c_str());
-            remove(pval);
-#else
             BeFileName(usageCSV).BeDeleteFile();
-#endif
+
+            return folly::makeFuture();
+            });
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<folly::Unit> ClientImpl::SendFeatures(BeFileNameCR featureCSV, Utf8StringCR ultId)
+    {
+    LOG.trace("SendFeatures");
+
+    auto url = UrlProvider::Urls::UsageLoggingServicesLocation.Get();
+    url += Utf8PrintfString("/featureLog?ultId=%s&prdId=%s&lng=%s", ultId.c_str(), m_clientInfo->GetApplicationProductId().c_str(),
+                            m_clientInfo->GetLanguage().c_str());
+
+    LOG.debugv("SendFeatures - UsageLoggingServiceLocation: %s", url.c_str());
+
+    HttpClient client(nullptr, m_httpHandler);
+
+    return client.CreateGetRequest(url).Perform().then(
+        [=] (Response response)
+        {
+        if (!response.IsSuccess())
+            throw HttpError(response);
+
+        Json::Value jsonBody = Json::Value::From(response.GetBody().AsString());
+        auto status = jsonBody["status"].asString();
+        auto epUri = jsonBody["epUri"].asString();
+        auto sharedAccessSignature = jsonBody["epInfo"]["SharedAccessSignature"].asString();
+
+        HttpClient client(nullptr, m_httpHandler);
+        auto uploadRequest = client.CreateRequest(epUri + sharedAccessSignature, "PUT");
+        uploadRequest.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
+        uploadRequest.SetRequestBody(HttpFileBody::Create(featureCSV));
+        return uploadRequest.Perform().then([=] (Response response)
+            {
+            if (!response.IsSuccess())
+                {
+                LOG.errorv("Unable to post %s - %s", featureCSV.c_str(), HttpError(response).GetMessage().c_str());
+                throw HttpError(response);
+                }
+
+            BeFileName(featureCSV).BeDeleteFile();
+
             return folly::makeFuture();
             });
         });

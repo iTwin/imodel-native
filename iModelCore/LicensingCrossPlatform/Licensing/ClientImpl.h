@@ -16,6 +16,7 @@
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
+#include <Licensing/Utils/FeatureUserDataMap.h>
 
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
@@ -42,6 +43,12 @@ struct ClientImpl
 {
 private:
     enum LogPostingSource { RealTime, Offline, Checkout };
+
+    struct Feature
+        {
+        Utf8String featureId;
+        Utf8String featureUserData;
+        };
 
     ClientInfoPtr m_clientInfo;
 	ConnectSignInManager::UserInfo m_userInfo;
@@ -75,6 +82,7 @@ private:
     BentleyStatus RecordUsage();
     std::shared_ptr<Policy> GetPolicyToken();
     BentleyStatus PostUsageLogs();
+    BentleyStatus PostFeatureLogs();
     folly::Future<Utf8String> PerformGetPolicyRequest();
     Utf8String GetLoggingPostSource(LogPostingSource lps) const;
 
@@ -91,23 +99,24 @@ public:
         IHttpHandlerPtr httpHandler
         );
 
+    // Usages
     LICENSING_EXPORT LicenseStatus StartApplication(); 
     LICENSING_EXPORT BentleyStatus StopApplication();
-    LICENSING_EXPORT BentleyStatus StartFeature();
-    LICENSING_EXPORT BentleyStatus StopFeature();
-    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
+    LICENSING_EXPORT folly::Future<folly::Unit> SendUsage(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
-    // usageSCV usage file to send
-    // The company ID in SAP. // TODO: figure out where to get this one from.
-    LICENSING_EXPORT folly::Future<folly::Unit> SendUsage(BeFileNameCR usageSCV, Utf8StringCR ultId);
+    //Features
+    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
+    LICENSING_EXPORT folly::Future<folly::Unit> SendFeatures(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
+    // Policy
     LICENSING_EXPORT folly::Future<Utf8String> GetCertificate();
-
     LICENSING_EXPORT folly::Future<std::shared_ptr<Policy>> GetPolicy();
+    
+    // Product status
+    LICENSING_EXPORT LicenseStatus GetProductStatus(int requestedProductId = -1);
 
     // Used in tests
     LICENSING_EXPORT UsageDb& GetUsageDb();
-	//LICENSING_EXPORT void AddPolicyTokenToDb(std::shared_ptr<PolicyToken> policyToken) { auto policy = Policy::Create(policyToken->GetPolicyFile()); StorePolicyTokenInUsageDb(policy); };
 	LICENSING_EXPORT void AddPolicyToDb(std::shared_ptr<Policy> policy) { StorePolicyInUsageDb(policy); };
 	LICENSING_EXPORT std::shared_ptr<Policy> GetPolicyWithId(Utf8StringCR policyId);
 

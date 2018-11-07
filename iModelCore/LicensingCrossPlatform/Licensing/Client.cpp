@@ -65,15 +65,7 @@ BentleyStatus Client::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Client::StartFeature()
+BentleyStatus Client::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
     {
-    return m_impl->StartFeature();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Client::StopFeature()
-    {
-    return m_impl->StopFeature();
+    return m_impl->MarkFeature(featureId, featureUserData);
     }

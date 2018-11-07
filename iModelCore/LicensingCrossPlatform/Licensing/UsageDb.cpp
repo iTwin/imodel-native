@@ -170,9 +170,10 @@ BentleyStatus UsageDb::SetUpOfflineGraceTable()
 	if (m_db.CreateTable("OfflineGrace",
 		"GraceId NVARCHAR(20) PRIMARY KEY, "
 		"OfflineGracePeriodStart NVARCHAR(20)") != DbResult::BE_SQLITE_OK)
-	{
+	    {
 		return ERROR;
-	}
+	    }
+
 	return ResetOfflineGracePeriod();
 	}
 
@@ -187,7 +188,7 @@ void UsageDb::Close()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t UsageDb::GetLastRowId()
+int64_t UsageDb::GetLastUsageRecordRowId()
     {
     Statement stmt;
     stmt.Prepare(m_db, "SELECT MAX(rowid) FROM Usage");
@@ -202,7 +203,7 @@ int64_t UsageDb::GetLastRowId()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageDb::GetLastRecordedTime()
+Utf8String UsageDb::GetLastUsageRecordedTime()
     {
     Statement stmt;
 
@@ -218,7 +219,7 @@ Utf8String UsageDb::GetLastRecordedTime()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t UsageDb::GetRecordCount()
+int64_t UsageDb::GetUsageRecordCount()
     {
     Statement stmt;
     stmt.Prepare(m_db, "SELECT COUNT(*) FROM Usage");
@@ -233,17 +234,47 @@ int64_t UsageDb::GetRecordCount()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+int64_t UsageDb::GetLastFeatureRowId()
+    {
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT MAX(rowid) FROM Feature");
+
+    DbResult result = stmt.Step();
+    if (result != DbResult::BE_SQLITE_ROW)
+        return 0;
+
+    return stmt.GetValueInt64(0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t UsageDb::GetFeatureRecordCount()
+    {
+    Statement stmt;
+    stmt.Prepare(m_db, "SELECT COUNT(*) FROM Feature");
+
+    DbResult result = stmt.Step();
+    if (result != DbResult::BE_SQLITE_ROW)
+        return -1;
+
+    return stmt.GetValueInt(0);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
     {
     SCVWritter writter;
-
     Statement stmt;
+
     stmt.Prepare(m_db, "SELECT * FROM Usage");
 
     DbResult result = stmt.Step();
 
     while (result == DbResult::BE_SQLITE_ROW)
-        {        
+        {
         writter.AddRow(stmt.GetValueInt64(0),
                        stmt.GetValueText(1),
                        stmt.GetValueText(2),
@@ -279,8 +310,11 @@ BentleyStatus UsageDb::WriteUsageToCSVFile(BeFileNameCR path)
 BentleyStatus UsageDb::WriteFeatureToCSVFile(BeFileNameCR path)
     {
     SCVWritter writter;
-
     Statement stmt;
+
+    if (GetFeatureRecordCount() == 0)
+        return SUCCESS;
+
     stmt.Prepare(m_db, "SELECT * FROM Feature");
 
     DbResult result = stmt.Step();
@@ -543,12 +577,37 @@ BentleyStatus UsageDb::CleanUpUsages()
     if (!m_db.IsDbOpen())
         return ERROR;
 
-    auto maxRowId = GetLastRowId();
+    auto maxRowId = GetLastUsageRecordRowId();
 
     Statement stmt;
     Utf8String sqlDeleteStatement;
 
     sqlDeleteStatement.Sprintf("DELETE FROM Usage WHERE rowid <= %lld", maxRowId);
+
+    stmt.Prepare(m_db, sqlDeleteStatement.c_str());
+
+    DbResult result = stmt.Step();
+
+    if (result != DbResult::BE_SQLITE_DONE)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus UsageDb::CleanUpFeatures()
+    {
+    if (!m_db.IsDbOpen())
+        return ERROR;
+
+    auto maxRowId = GetLastFeatureRowId();
+
+    Statement stmt;
+    Utf8String sqlDeleteStatement;
+
+    sqlDeleteStatement.Sprintf("DELETE FROM Feature WHERE rowid <= %lld", maxRowId);
 
     stmt.Prepare(m_db, sqlDeleteStatement.c_str());
 
