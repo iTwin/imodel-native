@@ -49,7 +49,7 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
     IMAGEHLP_MODULE64 * module = (IMAGEHLP_MODULE64 *) calloc(sizeof(IMAGEHLP_MODULE64), 1);
     module->SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
 
-    for (USHORT i = nIgnoreFrames; i < frames; i++)
+    for (size_t i = nIgnoreFrames; i < frames; i++)
         {
         auto symbolAddress = (DWORD64) (stack.get()[i]);
 

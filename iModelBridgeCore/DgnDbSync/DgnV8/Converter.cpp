@@ -1638,7 +1638,6 @@ void Converter::OnCreateComplete()
     GenerateRealityModelTilesets();
     ConverterLogging::LogPerformance(timer, "Creating reality model tilesets");
 
-    GetDgnDb().SaveSettings();
     }   
 
 /*---------------------------------------------------------------------------------**//**

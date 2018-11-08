@@ -698,12 +698,12 @@ void Converter::ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewI
 
     DgnV8ViewInfoP info = const_cast<DgnV8ViewInfoP>(viewInfo);
     info->GetBackgroundMapSettings(&name, &type, &offset, &transparency);
-    DisplayStyle::MapType mapType = (DisplayStyle::MapType) type;
+    WebMercator::MapType mapType = (WebMercator::MapType) type;
     Utf8String providerName;
     if (0 == wcsicmp(L"Bing",name.c_str()))
         providerName = WebMercator::BingImageryProvider::prop_BingProvider();
 
-    view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
+    //view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
 
     }
 
