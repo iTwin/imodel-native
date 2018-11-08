@@ -149,8 +149,8 @@ public:
 	/* Perpendicular projection to plane	 							*/ 
 	bool projectToPlane( PointType &p ) const
 	{
-		PointType o(v);
-		return ( intersectRay(o, m_normal, v) );
+		PointType o(p);
+		return ( intersectRay(o, m_normal, p) );
 	}
 	/* Perpendicular projection to plane returned in 2d plane coords	*/ 
 	bool projectToPlane(const PointType &v, PointType &v2) const
@@ -230,8 +230,8 @@ public:
 	template <class To> void
 		convert(Plane<To> &p)
 	{
-		p.normal(vec3<To>(normal()));
-		p.base(vec3<To>(base()));
+		p.normal(Vector3<To>(normal()));
+		p.base(Vector3<To>(base()));
 	}
 private:
 
