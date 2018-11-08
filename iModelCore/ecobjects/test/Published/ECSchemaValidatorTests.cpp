@@ -2314,6 +2314,56 @@ TEST_F(SchemaValidatorTests, PropertyExtendedTypesMustBeOnApprovedList)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                             Aurora.Lane                         11/2018
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaValidatorTests, PropertyMayNotHaveCustomHandledAttributeWithoutClassHasHandler)
+    {
+    { //
+    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ClassHasHandlerSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECCustomAttributeClass typeName='ClassHasHandler' appliesTo='Any'>"
+        "    </ECCustomAttributeClass>"
+        "    <ECCustomAttributeClass typeName = 'CustomHandledProperty' appliesTo = 'AnyProperty'>"
+        "    </ECCustomAttributeClass>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassHasHandler xmlns='ClassHasHandlerSchema.1.0.0'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='TestProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <CustomHandledProperty xmlns='ClassHasHandlerSchema.1.0.0'/>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "Classes with both ClassHasHandler attribute(s) and properties with CustomHandledProperty attribute(s) are valid";
+    }
+    {
+    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='ClassWithoutHandlerSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECCustomAttributeClass typeName = 'CustomHandledProperty' appliesTo = 'AnyProperty'>"
+        "    </ECCustomAttributeClass>"
+        "    <ECEntityClass typeName='TestClass'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "        <ECProperty propertyName='TestProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <CustomHandledProperty xmlns='ClassWithoutHandlerSchema.1.0.0'/>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    InitBisContextWithSchemaXml(badSchemaXml.c_str());
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema)) << "Classes wtih properties with CustomHandledProperty attribute(s) and without ClassHasHandler attribute(s) are not valid";
+    }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Joseph.Urbano                        05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
