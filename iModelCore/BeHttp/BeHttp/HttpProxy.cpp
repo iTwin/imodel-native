@@ -169,15 +169,87 @@ bool HttpProxy::ShouldBypassUrl(Utf8StringCR url) const
     {
     if (!m_pacUrl.empty() && url == m_pacUrl)
         return true; // We're in the process of fetching the PAC script; don't use a proxy for that.
+
     if (m_proxyBypassHosts.empty())
         return false;
-    Utf8String authority = BeUri(url).GetAuthority(); // Using authority to include port
-    for (auto const& proxyBypassHost : m_proxyBypassHosts)
+
+    for (auto const& hostPattern : m_proxyBypassHosts)
         {
-        if (authority == proxyBypassHost)
+        if (MatchPatternWithUrl(hostPattern, url))
             return true;
         }
+
     return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HttpProxy::MatchPatternWithUrl(Utf8StringCR pattern, BeUriCR url)
+    {
+    if (!url.IsValid())
+        return false;
+
+    size_t userInfoStart = 0;
+    size_t schemeEnd = pattern.find("://");
+    if (Utf8String::npos != schemeEnd)
+        {
+        userInfoStart = schemeEnd + 3;
+        if (pattern.substr(0, schemeEnd) != url.GetScheme())
+            return false;
+        }
+
+    size_t hostStart = userInfoStart;
+    size_t userInfoEnd = pattern.find('@', userInfoStart);
+    if (Utf8String::npos != userInfoEnd)
+        {
+        hostStart = userInfoEnd + 1;
+        Utf8String userInfoPattern = pattern.substr(userInfoStart, userInfoEnd - userInfoStart);
+        if (!MatchPatternWithString(userInfoPattern.c_str(), url.GetUserInfo().c_str()))
+            return false;
+        }
+
+    size_t hostEnd = pattern.find(':', hostStart);
+    if (Utf8String::npos != hostEnd)
+        {
+        if (std::atoi(pattern.substr(hostEnd+1).c_str()) != url.GetPort())
+            return false;
+        }
+
+    Utf8String hostPattern = pattern.substr(hostStart, hostEnd - hostStart);
+    return MatchPatternWithString(hostPattern.c_str(), url.GetHost().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool HttpProxy::MatchPatternWithString(const char* pattern, const char* string)
+    {
+    while ('\0' != *pattern)
+        {
+        if ('*' == *pattern)
+            {
+            do ++pattern; while ('*' == *pattern);
+
+            while ('\0' != *string)
+                {
+                if (MatchPatternWithString(pattern, string))
+                    return true;
+
+                ++string;
+                }
+
+            return MatchPatternWithString(pattern, string);
+            }
+
+        if (*pattern != *string)
+            return false;
+
+        ++pattern;
+        ++string;
+        }
+
+    return '\0' == *string;
     }
 
 #if defined(BENTLEY_WIN32)
@@ -324,7 +396,11 @@ BentleyStatus HttpProxy::GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvec
                 SplitHosts(proxyServerSetting, hosts);
                 for (Utf8StringCR host : hosts)
                     {
-                    if (host.StartsWith("http://") || host.StartsWith("https://"))
+                    static const Utf8String httpScheme("http://");
+                    static const Utf8String httpsScheme("https://");
+
+                    if (host.compare(0, httpScheme.length(), httpScheme) == 0 ||
+                        host.compare(0, httpsScheme.length(), httpsScheme) == 0)
                         proxyUrlsOut.push_back(host);
                     else if (Utf8String::npos == host.find("://"))
                         proxyUrlsOut.push_back("http://" + host);
