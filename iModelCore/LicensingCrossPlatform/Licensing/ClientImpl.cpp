@@ -302,7 +302,7 @@ BentleyStatus ClientImpl::MarkFeature(Utf8String featureId, FeatureUserDataMap* 
                GetLoggingPostSource(LogPostingSource::RealTime).c_str(),
                m_policy->GetCountry().c_str(),
                m_policy->GetUsageType().c_str(),
-               featureId,
+               featureId.c_str(),
                eventTimeZ.c_str(),
                eventTimeZ.c_str(),
                userDataString.c_str());
