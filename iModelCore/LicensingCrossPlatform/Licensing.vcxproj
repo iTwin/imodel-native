@@ -14,6 +14,7 @@
     <ClCompile Include="Licensing\UsageDb.cpp" />
     <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\GenerateSID.cpp" />
+    <ClCompile Include="Licensing\Utils\FeatureUserDataMap.cpp" />
     <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
     <ClCompile Include="Licensing\Utils\JWToken.cpp" />
     <ClCompile Include="Licensing\Utils\LogFileHelper.cpp" />
@@ -33,6 +34,7 @@
     <ClInclude Include="PublicAPI\Licensing\Licensing.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\DelayedExecutor.h" />
     <ClInclude Include="Licensing\GenerateSID.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\FeatureUserDataMap.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\InMemoryJsonLocalState.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\JWToken.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\LogFileHelper.h" />

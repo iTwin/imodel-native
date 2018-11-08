@@ -172,7 +172,7 @@ TEST_F(UsageDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
 
     BeFileName tmpFile;
     Utf8String csvFile;
-    csvFile.Sprintf("Usage-%s.csv", BeGuid(true).ToString().c_str());
+    csvFile.Sprintf("Usages-%s.csv", BeGuid(true).ToString().c_str());
     BeTest::GetHost().GetTempDir(tmpFile);
     tmpFile.AppendToPath(BeFileName(csvFile));
     EXPECT_SUCCESS(db.WriteUsageToCSVFile(tmpFile));
@@ -184,7 +184,7 @@ TEST_F(UsageDbTests, WriteUsageToCSVFile_MultipleRecords_CreatesCorrectFile)
     EXPECT_TRUE(fileContent.Contains(eventTime3));
     }
 
-TEST_F(UsageDbTests, DISABLED_WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile)
+TEST_F(UsageDbTests, WriteFeatureToCSVFile_MultipleRecords_CreatesCorrectFile)
     {
     UsageDb db;
     Utf8String fileName;
@@ -193,56 +193,45 @@ TEST_F(UsageDbTests, DISABLED_WriteFeatureToCSVFile_MultipleRecords_CreatesCorre
     fileName.Sprintf("Licensing-%s.db", BeGuid(true).ToString().c_str());
     EXPECT_SUCCESS(OpenOrCreateTestDb(db, BeFileName(fileName)));
 
-    Json::Value featureLogEntryAttributeJson(Json::objectValue);
-    featureLogEntryAttributeJson["Name"] = "Parasolid";
-    featureLogEntryAttributeJson["Description"] = "Comprehensive capabilities extend to over 750 functions that include a wealth of model creation and editing utilities.";
-    featureLogEntryAttributeJson["Version"] = "21.0.244";
-    featureLogEntryAttributeJson["Vendor"] = "Siemens, Inc.";
-
-    Utf8String userData = Json::FastWriter::ToString(featureLogEntryAttributeJson);
+    Utf8String userData = "Name^Parasolid#Description^Comprehensive capabilities extend to over 750 functions that include a wealth of model creation and editing utilities.#"
+                          "Version^21.0.244#Vendor^Siemens, Inc.#";
 
     Utf8String eventTime1 = DateTime::GetCurrentTimeUtc().ToString();
-    std::this_thread::sleep_for(10s);
-    Utf8String endTime1 = DateTime::GetCurrentTimeUtc().ToString();
 
     EXPECT_SUCCESS(db.RecordFeature(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
                                     "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
                                     "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
                                     "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime1,
-                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime1, endTime1, userData));
+                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime1, eventTime1, userData));
 
     Utf8String eventTime2 = DateTime::GetCurrentTimeUtc().ToString();
-    std::this_thread::sleep_for(10s);
-    Utf8String endTime2 = DateTime::GetCurrentTimeUtc().ToString();
 
     EXPECT_SUCCESS(db.RecordFeature(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
                                     "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
                                     "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
                                     "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime2,
-                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime2, endTime2, userData));
+                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime2, eventTime2, userData));
 
     Utf8String eventTime3 = DateTime::GetCurrentTimeUtc().ToString();
-    std::this_thread::sleep_for(10s);
-    Utf8String endTime3 = DateTime::GetCurrentTimeUtc().ToString();
 
     EXPECT_SUCCESS(db.RecordFeature(99, "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "dfdc08b5-2077-4b73-8fc1-c60cb47abc63", "TestDeviceId",
                                     "IXravQ3f71wUupkp+tLBK+vGmCc=", "qa2_devuser2@mailinator.com", "3Q746c3/YJfSzlDyMbrq6oMUbMQ=",
                                     "7a265495-71a8-4557-bbaf-de57f31b26b8", "4d701223-37ca-4ffb-b91c-f650a937d6fd", 2545, "", 1000000000000,
                                     "00000000-0000-0000-0000-000000000000", "c0d1ed44-3b6c-4316-9f3e-e856c85b4995", eventTime3,
-                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime3, endTime3, userData));
+                                    1.0, "RealTime", "US", "Production", "be0761b2-896f-4ad6-a7c1-a08169340f54", eventTime3, eventTime3, userData));
 
     BeFileName tmpFile;
     Utf8String csvFile;
-    csvFile.Sprintf("Feature-%s.csv", BeGuid(true).ToString().c_str());
+    csvFile.Sprintf("Features-%s.csv", BeGuid(true).ToString().c_str());
     BeTest::GetHost().GetTempDir(tmpFile);
     tmpFile.AppendToPath(BeFileName(csvFile));
     EXPECT_SUCCESS(db.WriteFeatureToCSVFile(tmpFile));
 
     auto fileContent = ReadAllFile(tmpFile);
 
-    EXPECT_TRUE(fileContent.Contains(endTime1));
-    EXPECT_TRUE(fileContent.Contains(endTime2));
-    EXPECT_TRUE(fileContent.Contains(endTime3));
+    EXPECT_TRUE(fileContent.Contains(eventTime1));
+    EXPECT_TRUE(fileContent.Contains(eventTime2));
+    EXPECT_TRUE(fileContent.Contains(eventTime3));
     }
 
 TEST_F(UsageDbTests, CleanUpUsages_Success)

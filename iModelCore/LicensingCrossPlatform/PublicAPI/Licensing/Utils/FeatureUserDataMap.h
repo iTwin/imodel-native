@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Licensing/Licensing.h>
+#include <map>
 
-#include <Bentley/bstdmap.h>
+#include <Licensing/Licensing.h>
 #include <Bentley/WString.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_LICENSING_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-typedef bstdmap<Utf8String, Utf8String> Utf8StringMap;
+typedef std::map<Utf8String, Utf8String> Utf8StringMap;
 typedef bvector<Utf8String> Utf8StringVector;
 
 struct FeatureUserDataMap
