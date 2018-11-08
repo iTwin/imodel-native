@@ -1186,7 +1186,7 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatInroads_exportBclibDtmToInroads
     {
     DTMStatusInt ret = DTM_SUCCESS;
     int status = 0, dbg = 0;
-    wchar_t *w_tinFileNameP = L"xxxx";
+    wchar_t const*w_tinFileNameP = L"xxxx";
     /*
     **  Write Entry Message
     */

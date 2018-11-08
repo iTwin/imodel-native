@@ -14,7 +14,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="Core" BentleyBuildMakeFile="core\coreDgnDb.mke" ApiNumber="M02">
+    <Part Name="Core" BentleyBuildMakeFile="core\coreDgnDb.mke" ApiNumber="M02" OnlyPlatforms="x86,x64">
         <SubPart PartName="HeaderFiles"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>

@@ -39,15 +39,19 @@ namespace Bentley.TerrainModel.ElementTemplate
             property = structVal.ContainedValues["Type"];
             if (property != null && !property.IsNull)
                 paletteName = property.StringValue;
-            string[] paletteSplit = paletteName.Split('|');
-            trianglesElement.SetMaterialInfo (paletteSplit[paletteSplit.Length - 1], materialName);         
+
+            if (!String.IsNullOrWhiteSpace(paletteName))
+                {
+                string[] paletteSplit = paletteName.Split('|');
+                if (paletteSplit != null && paletteSplit.Length > 0)
+                    paletteName = paletteSplit[paletteSplit.Length - 1];
+                }
+            trianglesElement.SetMaterialInfo (paletteName, materialName);         
 
             property = structValue.ContainedValues["Value"];
-
             if (property != null)
                 elem.ThematicDisplayStyle = property.StringValue;
             trianglesElement.Commit (elem);
-
             }
       
         public override void IsActivated(BECO.Instance.IECInstance instance, List<BECO.Instance.IECPropertyValue> properties)
