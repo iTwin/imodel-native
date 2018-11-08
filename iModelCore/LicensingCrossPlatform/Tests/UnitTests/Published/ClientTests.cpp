@@ -153,6 +153,13 @@ TEST_F(ClientTests, StartApplication_Success)
     client->StopApplication();
     }
 
+TEST_F(ClientTests, StartFreeApplication_Success)
+	{
+	auto client = CreateTestClient(true);
+	EXPECT_NE((int)client->StartFreeApplication(), (int)LicenseStatus::Error);
+	client->StopApplication();
+	}
+
 TEST_F(ClientTests, GetCertificate_Success)
     {
     Utf8String cert;

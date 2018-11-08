@@ -70,7 +70,10 @@ public:
 	* A policy is requested to check license status; if license status does not allow for proper runtime, it is returned and no further action takes place.
 	* Otherwise, threads are created for policy requests and usage posting and then the license status is returned.
 	*/
-    LICENSING_EXPORT LicenseStatus StartApplication(); 
+    LICENSING_EXPORT LicenseStatus StartApplication();
+
+    LICENSING_EXPORT LicenseStatus StartFreeApplication();
+
 	//! StopApplication signals background threads to stop and cleans up resources.
 	/*!
 	* Threads are signalled to stop, any remaining usage logs are saved, and the database is closed.

@@ -10,6 +10,7 @@
 
 Headers =
 Headers + $(SourceDir)DateHelper.h
+Headers + $(SourceDir)FreeApplicationPolicyHelper.h
 Headers + $(SourceDir)ClientImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h

@@ -101,6 +101,7 @@ public:
 
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication(); 
+    LICENSING_EXPORT LicenseStatus StartFreeApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsage(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
