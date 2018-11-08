@@ -8116,7 +8116,7 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLate
     CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "Test");
 
     ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
-    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("B", CacheRootPersistence::Temporary));
 
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
