@@ -270,14 +270,49 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name, DateTime
     statement->BindText(1, name.c_str(), IECSqlBinder::MakeCopy::No);
     statement->BindDateTime(2, accessedBeforeDateUtc);
 
+    return DeleteResponses(statement, nodesToLeave);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::DeleteResponsesByPrefix(Utf8StringCR responsePrefix, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& nodesToLeave)
+    {
+    if (accessedBeforeDateUtc.GetInfo().GetKind() != DateTime::Kind::Utc)
+        return ERROR;
+
+    if (responsePrefix.empty())
+        return ERROR;
+
+    auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteResponsesByDateAndPrefix", [=]
+        {
+        return
+            "SELECT ECInstanceId "
+            "FROM ONLY " ECSql_CachedResponseInfo " "
+            "WHERE instr([" CLASS_CachedResponseInfo_PROPERTY_Name "], ?) = 1 AND "
+            "     ([" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] IS NULL OR "
+            "      [" CLASS_CachedResponseInfo_PROPERTY_AccessDate "] < ?) ";
+        });
+
+    statement->BindText(1, responsePrefix.c_str(), IECSqlBinder::MakeCopy::No);
+    statement->BindDateTime(2, accessedBeforeDateUtc);
+
+    return DeleteResponses(statement, nodesToLeave);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Robert.Lukasonok    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus CachedResponseManager::DeleteResponses(ECSqlStatementPtr statement, const ECInstanceKeyMultiMap& nodesToLeave)
+    {
+    // TODO: This filtering could be performed inside the SQL statement
     bset<ECInstanceKey> responsesToDelete;
     while (BE_SQLITE_ROW == statement->Step())
         {
         ECInstanceKey responseKey(m_responseClass->GetId(), statement->GetValueId<ECInstanceId>(0));
         if (ECDbHelper::IsInstanceInMultiMap(responseKey, nodesToLeave))
-            {
             continue;
-            }
+
         responsesToDelete.insert(responseKey);
         }
 

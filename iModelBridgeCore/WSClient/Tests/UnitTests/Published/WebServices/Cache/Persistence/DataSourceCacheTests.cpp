@@ -445,7 +445,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema2}));
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
 
-    //Update object with new property 
+    //Update object with new property
     instances.Add({"DynamicSchema.TestSubClass", "Foo"}, {{ "A", "ValueA" }, { "B", "ValueB" }, { "C", "ValueC" }, { "D", "ValueD" }});
     ASSERT_EQ(CacheStatus::OK, cache->UpdateInstance({"DynamicSchema.TestSubClass", "Foo"}, instances.ToWSObjectsResponse()));
     EXPECT_TRUE(cache->GetCachedObjectInfo({"DynamicSchema.TestSubClass", "Foo"}).IsFullyCached());
@@ -668,10 +668,10 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithOneToOneRelationship_Change
     // Such schema is not supported by ECDb when caching data with WSCache. UpdateSchemas will adjust it.
     auto schema = ParseSchema(
         R"xml(<ECSchema schemaName="UpdateSchema" nameSpacePrefix="US" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="A" >  
+            <ECClass typeName="A" >
                 <ECProperty propertyName="Name" typeName="string" />
-            </ECClass>            
-            <ECClass typeName="B" >  
+            </ECClass>
+            <ECClass typeName="B" >
                 <ECProperty propertyName="Name" typeName="string" />
             </ECClass>
             <ECRelationshipClass typeName="AB" isDomainClass="True" strength="referencing" strengthDirection="forward">
@@ -8127,6 +8127,122 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_ResponseWithAccessDateLate
     EXPECT_THAT(cache->RemoveTemporaryResponses("Test", DateTime(DateTime::Kind::Utc, 2000, 01, 01, 0, 0, 0)), SUCCESS);
     EXPECT_THAT(cache->IsResponseCached(responseKey1), false);
     EXPECT_THAT(cache->IsResponseCached(responseKey2), true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_EmptyPrefix_ReturnsError)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey(cache->FindOrCreateRoot("Foo"), "foo_Test");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("Foo", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(ERROR, cache->RemoveTemporaryResponsesByPrefix("", DateTime::GetCurrentTimeUtc()));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_NoResponsesWithPrefix_ReturnsSuccess)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("Foo"), "foo_Test");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("Foo"), "bar");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("Foo"), "barTest");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("Foo", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("bar_", DateTime::GetCurrentTimeUtc()));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey1));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey2));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey3));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_PrefixStartsWithPercent_LeavesResponses)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "%foo_Test1");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("A"), "foo_Test2");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("A"), "bar_foo_Test3");
+    CachedResponseKey responseKey4(cache->FindOrCreateRoot("A"), "bar_%foo_Test4");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey4, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("%foo_", DateTime::GetCurrentTimeUtc()));
+
+    EXPECT_FALSE(cache->IsResponseCached(responseKey1));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey2));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey3));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey4));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_ResponsesWithSamePrefixButPersistent_LeavesResponses)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "foo_Test");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "foo_Test");
+    CachedResponseKey responseKey3(cache->FindOrCreateRoot("C"), "foo_Test");
+    CachedResponseKey responseKey4(cache->FindOrCreateRoot("D"), "foo_Test");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("B", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("C", CacheRootPersistence::Full));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("D", CacheRootPersistence::Full));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey3, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey4, StubInstances().ToWSObjectsResponse()));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("foo_", DateTime::GetCurrentTimeUtc()));
+
+    EXPECT_FALSE(cache->IsResponseCached(responseKey1));
+    EXPECT_FALSE(cache->IsResponseCached(responseKey2));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey3));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey4));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Robert.Lukasonok                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_ResponseWithAccessDateLaterThanUsed_LeavesResponse)
+    {
+    auto cache = GetTestCache();
+    CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "foo_Test1");
+    CachedResponseKey responseKey2(cache->FindOrCreateRoot("B"), "foo_Test2");
+
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("A", CacheRootPersistence::Temporary));
+    ASSERT_EQ(SUCCESS, cache->SetupRoot("B", CacheRootPersistence::Temporary));
+
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey1, StubInstances().ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey2, StubInstances().ToWSObjectsResponse()));
+
+    ASSERT_EQ(SUCCESS, cache->SetResponseAccessDate(responseKey1, DateTime(DateTime::Kind::Utc, 1989, 02, 14, 0, 0, 0)));
+    ASSERT_EQ(SUCCESS, cache->SetResponseAccessDate(responseKey2, DateTime(DateTime::Kind::Utc, 2010, 01, 01, 0, 0, 0)));
+
+    EXPECT_EQ(SUCCESS, cache->RemoveTemporaryResponsesByPrefix("foo_", DateTime(DateTime::Kind::Utc, 2000, 01, 01, 0, 0, 0)));
+    EXPECT_FALSE(cache->IsResponseCached(responseKey1));
+    EXPECT_TRUE(cache->IsResponseCached(responseKey2));
     }
 
 /*--------------------------------------------------------------------------------------+
