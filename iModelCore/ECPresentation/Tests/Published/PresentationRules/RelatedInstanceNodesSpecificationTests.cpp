@@ -84,7 +84,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, WriteToJson)
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "RelatedInstanceNodes",
-        "alwaysReturnsChildren": true,
+        "hasChildren": "Always",
         "hideNodesInHierarchy": true,
         "hideIfNoChildren": true,
         "supportedSchemas": {"schemaNames": ["s1", "s2"]},
@@ -172,7 +172,7 @@ TEST_F(RelatedInstanceNodesSpecificationTests, WritesToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<RelatedInstances Priority="1000" AlwaysReturnsChildren="false" HideNodesInHierarchy="false"
+            R"(<RelatedInstances Priority="1000" HasChildren="Unknown" HideNodesInHierarchy="false"
                 HideIfNoChildren="false" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByRelationship="true" )"
             R"(GroupByLabel="true" ShowEmptyGroups="true" SkipRelatedLevel="3" InstanceFilter="filter" SupportedSchemas="TestSchema" )"
             R"(RelationshipClassNames="ClassAHasClassB" RelatedClassNames="ClassB" RequiredDirection="Forward"/>)"

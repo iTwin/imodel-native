@@ -75,7 +75,7 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToJson)
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "AllRelatedInstanceNodes",
         "priority": 123,
-        "alwaysReturnsChildren": true,
+        "hasChildren": "Always",
         "hideNodesInHierarchy": true,
         "hideIfNoChildren": true,
         "groupByLabel": false,
@@ -139,6 +139,7 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToXml)
     xml->AddNewElement("Root", nullptr, nullptr);
 
     AllRelatedInstanceNodesSpecification spec;
+    spec.SetHasChildren(ChildrenHint::Never);
     spec.SetGroupByClass(false);
     spec.SetGroupByLabel(true);
     spec.SetGroupByRelationship(false);
@@ -149,7 +150,7 @@ TEST_F(AllRelatedInstanceNodesSpecificationTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<AllRelatedInstances Priority="1000" AlwaysReturnsChildren="false" HideNodesInHierarchy="false" 
+            R"(<AllRelatedInstances Priority="1000" HasChildren="Never" HideNodesInHierarchy="false" 
                 HideIfNoChildren="false" ExtendedData="" DoNotSort="false" GroupByClass="false" 
                 GroupByRelationship="false" GroupByLabel="true" SkipRelatedLevel="3" 
                 SupportedSchemas="TestSchema" RequiredDirection="Forward"/>)"

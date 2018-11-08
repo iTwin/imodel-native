@@ -21,7 +21,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct NodesProviderTests : ECPresentationTest
+struct NodesProviderTests : ECPresentationTest, IProviderIndexAllocator
     {
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;
@@ -36,9 +36,12 @@ struct NodesProviderTests : ECPresentationTest
     TestUserSettings m_settings;
     TestNodesCache m_nodesCache;
     TestECDbUsedClassesListener m_usedClassesListener;
+
+    uint64_t m_providerIndex;
     
     NodesProviderTests() 
-        : m_statementCache(10), m_providerContextFactory(m_connections), m_nodesCache(m_connections, &m_providerContextFactory)
+        : m_statementCache(10), m_providerContextFactory(m_connections), m_nodesCache(m_connections, &m_providerContextFactory),
+        m_providerIndex(0)
         {}
 
     static void SetUpTestCase();
@@ -46,4 +49,6 @@ struct NodesProviderTests : ECPresentationTest
     
     virtual void SetUp() override;
     virtual void TearDown() override;
+    
+    virtual uint64_t _AllocateIndex() override {return m_providerIndex++;}
     };

@@ -190,7 +190,7 @@ TEST_F(CheckboxRuleTests, CustomizationHelper_NotifyCheckedStateChanged)
     
     JsonNavNodePtr node;
     ASSERT_TRUE(provider->GetNode(node, 0));
-    m_nodesCache.Cache(*node, false);
+    //m_nodesCache.Cache(*node, false);
 
     EXPECT_TRUE(node->IsCheckboxVisible());
     EXPECT_TRUE(node->IsCheckboxEnabled());

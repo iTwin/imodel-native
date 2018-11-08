@@ -83,22 +83,13 @@ TEST_F (QueryBasedNodesProviderTests, DoesntCustomizeNodesIfNotNecessary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     {
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-
-    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
-    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
-    RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
-
+    HierarchyLevelInfo const* cachedHierarchyLevel = nullptr;
     DataSourceInfo const* cachedDataSource = nullptr;
     int nodesCached = 0;
-    ICancelationTokenPtr cancelationToken = new TestCancelationToken([&nodesCached]()
+    m_nodesCache.SetCacheHierarchyLevelHandler([&](HierarchyLevelInfo& hl)
         {
-        // cancel when at least one node is created
-        return nodesCached > 0;
+        cachedHierarchyLevel = &hl;
         });
-    m_context->SetCancelationToken(cancelationToken.get());
-
     m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool)
         {
         cachedDataSource = &ds;
@@ -107,13 +98,28 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
         {
         nodesCached++;
         });
+
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+
+    NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
+    ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
+    RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
+
+    ICancelationTokenPtr cancelationToken = new TestCancelationToken([&nodesCached]()
+        {
+        // cancel when at least one node is created
+        return nodesCached > 0;
+        });
+    m_context->SetCancelationToken(cancelationToken.get());
+    
+    // verify the data source is still invalid
+    ASSERT_TRUE(nullptr != cachedHierarchyLevel);
+    ASSERT_TRUE(nullptr != cachedDataSource);
+    EXPECT_FALSE(m_nodesCache.IsInitialized(*cachedDataSource));
     
     // force initialization
     provider->GetNodesCount();
-
-    // verify the data source is still invalid
-    ASSERT_TRUE(nullptr != cachedDataSource);
-    EXPECT_FALSE(cachedDataSource->IsValid());
 
     // verify the initialization was aborted after creating the first node
     EXPECT_EQ(1, nodesCached);
@@ -123,14 +129,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
     EXPECT_EQ(0, provider->GetNodesCount());
 
     // verify the nodes cache is empty
-    EXPECT_TRUE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), "", nullptr)).IsNull());
-
-    // remove the cancelation token and verify provider gets initialized successfully
-    m_context->SetCancelationToken(nullptr);
-
-    EXPECT_TRUE(provider->HasNodes());
-    EXPECT_EQ(2, provider->GetNodesCount());
-    EXPECT_FALSE(m_nodesCache.GetDataSource(HierarchyLevelInfo(m_connection->GetId(), m_ruleset->GetRuleSetId(), "", nullptr)).IsNull());
+    EXPECT_TRUE(m_nodesCache.GetHierarchyLevel(*cachedHierarchyLevel).IsNull());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2015
@@ -141,7 +140,7 @@ TEST_F(QueryBasedNodesProviderTests, HasNodesDoesntQueryChildrenIfAlwaysReturnsC
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = &ComplexNavigationQuery::Create()->SelectContract(*contract).From(*m_widgetClass, false);
-    query->GetResultParametersR().GetNavNodeExtendedDataR().SetAlwaysReturnsChildren(true);
+    query->GetResultParametersR().GetNavNodeExtendedDataR().SetChildrenHint(ChildrenHint::Always);
 
     RefCountedPtr<QueryBasedNodesProvider> provider = QueryBasedNodesProvider::Create(*m_context, *query);
     EXPECT_TRUE(provider->HasNodes());

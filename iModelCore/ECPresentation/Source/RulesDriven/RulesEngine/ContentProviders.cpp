@@ -152,16 +152,11 @@ static int GetSerializationFlags(bool isRelated, bool isMerged, bool isNested, C
             default: BeAssert(false); return ContentSetItem::SERIALIZE_All;
             }
         }
-
-    if (isMerged || !isNested)
-        return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames;
-    if (ContentRequest::Values == req)
-        return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values;
+    
     if (ContentRequest::DisplayValues == req)
         return ContentSetItem::SERIALIZE_DisplayValues;
-    
-    BeAssert(false);
-    return ContentSetItem::SERIALIZE_All;
+
+    return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames;
     }
 
 /*---------------------------------------------------------------------------------**//**

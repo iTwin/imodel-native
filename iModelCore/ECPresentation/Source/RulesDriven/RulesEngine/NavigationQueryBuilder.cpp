@@ -1852,9 +1852,9 @@ private:
         if (!m_specification.GetHideNodesInHierarchy() && m_specification.GetHideIfNoChildren())
             query->GetResultParametersR().GetNavNodeExtendedDataR().SetHideIfNoChildren(true);
     
-        // handle AlwaysReturnsChildren
-        if (m_specification.GetAlwaysReturnsChildren())
-            query->GetResultParametersR().GetNavNodeExtendedDataR().SetAlwaysReturnsChildren(true);
+        // handle HasChildren hint
+        if (ChildrenHint::Unknown != m_specification.GetHasChildren())
+            query->GetResultParametersR().GetNavNodeExtendedDataR().SetChildrenHint(m_specification.GetHasChildren());
 
         // preserve ruleset ID in resulting nodes for later use
         query->GetResultParametersR().GetNavNodeExtendedDataR().SetRulesetId(GetRuleset().GetRuleSetId().c_str());
@@ -2391,9 +2391,11 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(AllInstanceNodesS
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(AllRelatedInstanceNodesSpecification const& specification, RootNodeRuleCR rule) const
     {
-    RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetAlwaysReturnsChildren(),
-        specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(), specification.GetGroupByRelationship(),
-        specification.GetGroupByLabel(), true, specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
+    RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetHasChildren(),
+        specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(),
+        specification.GetGroupByLabel(), specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
+    if (specification.GetGroupByRelationship())
+        relatedInstanceNodesSpecification.SetGroupByRelationship(true);
 
     bvector<NavigationQueryPtr> queries = GetQueries(nullptr, relatedInstanceNodesSpecification, specification.GetHash(), rule);
     for (NavigationQueryPtr query : queries)
@@ -2441,9 +2443,11 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR par
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR parentNode, AllRelatedInstanceNodesSpecification const& specification, ChildNodeRuleCR rule) const
     {
-    RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetAlwaysReturnsChildren(),
-        specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(), specification.GetGroupByRelationship(),
-        specification.GetGroupByLabel(), true, specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
+    RelatedInstanceNodesSpecification relatedInstanceNodesSpecification(specification.GetPriority(), specification.GetHasChildren(),
+        specification.GetHideNodesInHierarchy(), specification.GetHideIfNoChildren(), specification.GetGroupByClass(),
+        specification.GetGroupByLabel(), specification.GetSkipRelatedLevel(), "", specification.GetRequiredRelationDirection(), GetSupportedSchemas(specification), "", "");
+    if (specification.GetGroupByRelationship())
+        relatedInstanceNodesSpecification.SetGroupByRelationship(true);
 
     bvector<NavigationQueryPtr> queries = GetQueries(&parentNode, relatedInstanceNodesSpecification, specification.GetHash(), rule);
     for (NavigationQueryPtr query : queries)

@@ -1424,6 +1424,9 @@ private:
             return;
             }
         Append(Utf8PrintfString("'%s'", value));
+
+        if (m_nodesStack.size() > 1 && std::string::npos != (m_nodesStack.end() - 2)->find("LIKE"))
+            Append("ESCAPE \'\\\'");
         }
 
 public:
