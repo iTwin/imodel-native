@@ -158,7 +158,7 @@ int XYBucketSearch::SplitRow (int rowIndex, double x)
     if (x <= points[i0].xyz.x)
         k0 = i0;
     else if (x >= points[i1 - 1].xyz.x)
-        k0 = i1;
+        k0 = i1 - 1;
     else
         {
         while (i1 > i0 + 1)
