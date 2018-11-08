@@ -28,8 +28,8 @@ struct OidcSignInManager : IConnectSignInManager
     private:
         IConnectTokenProviderPtr m_tokenProvider;
 
-        void _CheckAndUpdateToken() override;
-        void _SignOut() override;
+        AsyncTaskPtr<WSConnectVoidResult> _CheckAndUpdateToken() override;
+        AsyncTaskPtr<WSConnectVoidResult> _SignOut() override;
         bool _IsSignedIn() const override;
         UserInfo _GetUserInfo() const override;
         Utf8String _GetLastUsername() const override;

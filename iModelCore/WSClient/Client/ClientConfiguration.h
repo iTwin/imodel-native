@@ -12,6 +12,8 @@
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
+#include "ActivityIdGenerator.h"
+
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
@@ -40,6 +42,7 @@ struct ClientConfiguration
         const IWSSchemaProviderPtr m_schemaProvider;
         const std::shared_ptr<HttpClient> m_httpClient;
         const IHttpHandlerPtr m_httpHandler;
+        const IActivityIdGeneratorPtr m_activityIdGenerator;
         Utf8String m_persistenceProviderId;
         size_t m_maxUrlLength = 2048;
 
@@ -58,6 +61,7 @@ struct ClientConfiguration
         HttpClientR GetHttpClient() const;
         IHttpHandlerPtr GetHttpHandler() const;
         BeFileName GetDefaultSchemaPath(WSInfoCR info) const;
+        IActivityIdGeneratorCR GetActivityIdGenerator() const;
 
         void SetServiceVersion(BeVersion version) { m_serviceVersion  = version; }
         BeVersionCR GetServiceVersion() const { return m_serviceVersion; }

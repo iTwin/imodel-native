@@ -87,6 +87,14 @@ struct AzureBlobStorageClient : public IAzureBlobStorageClient
             Http::Request::ProgressCallbackCR progressCallback,
             ICancellationTokenPtr ct
             ) const;
+        AsyncTaskPtr<AzureResult> SendAsOneChunk
+            (
+            Utf8StringCR url,
+            HttpBodyPtr httpBody,
+            uint64_t fileSize,
+            Http::Request::ProgressCallbackCR progressCallback,
+            ICancellationTokenPtr ct
+            ) const;
 
     public:
         struct Timeout

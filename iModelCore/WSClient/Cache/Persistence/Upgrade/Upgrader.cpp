@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/Upgrader.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -23,6 +23,7 @@
 #include "UpgraderFromV11ToV12.h"
 #include "UpgraderFromV12ToV13.h"
 #include "UpgraderFromV20ToV21.h"
+#include "UpgraderFromV21ToV23.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -67,7 +68,9 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
         // DgnDb0601/BimXXXX generation
         case 20:
             if (SUCCESS != UpgraderFromV20ToV21(adapter).Upgrade()) return ERROR;
-
+        case 21:
+        case 22:
+            if (SUCCESS != UpgraderFromV21ToV23(adapter).Upgrade()) return ERROR;
             // Current version, return
             return SUCCESS;
         default:

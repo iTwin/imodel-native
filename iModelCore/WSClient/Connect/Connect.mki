@@ -19,10 +19,12 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h     
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                     \
                     $(ConnectMkiPublicApiDir)EulaClient.h                               \
                     $(ConnectMkiPublicApiDir)ISecurityToken.h                           \
+                    $(ConnectMkiPublicApiDir)SecurityToken.h                            \
                     $(ConnectMkiPublicApiDir)IConnectSignInManager.h                    \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h        \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h           \
                     $(ConnectMkiPublicApiDir)IConnectTokenProvider.h                    \
+                    $(ConnectMkiPublicApiDir)SimpleConnectTokenProvider.h              \
                     $(ConnectMkiPublicApiDir)ITokenStore.h                              \
                     $(ConnectMkiPublicApiDir)ImsClient.h                                \
                     $(ConnectMkiPublicApiDir)Passport.h                                 \

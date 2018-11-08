@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/ConnectC/ConnectWebServicesClientCTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -152,7 +152,7 @@ TEST_F(ConnectWebServicesClientCTests, Ctor_ValidParameters_SuccessfulInitializa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ConnectWebServicesClientCTests, Ctor_InvalidCredentialsAndValidProductId_ApiIsNull)
     {
-    WCharP password = L"password";
+    auto password = L"password";
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
         (m_pmUsername.c_str(),
         password,
@@ -242,7 +242,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetre
         );
     ASSERT_TRUE(api != nullptr);
 
-    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    auto instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -281,7 +281,7 @@ TEST_F(ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCod
         );
     ASSERT_TRUE(api != nullptr);
 
-    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    auto instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, nullptr);
     ASSERT_TRUE(status == INVALID_PARAMETER);
 
@@ -311,7 +311,7 @@ TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned
         );
     ASSERT_TRUE(api != nullptr);
 
-    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    auto instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -347,7 +347,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
         );
     ASSERT_TRUE(api != nullptr);
 
-    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    auto instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -446,7 +446,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeB
         );
     ASSERT_TRUE(api != nullptr);
 
-    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    auto instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -486,7 +486,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
         );
     ASSERT_TRUE(api != nullptr);
 
-    WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
+    auto instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
     CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
@@ -1262,7 +1262,7 @@ TEST_F(ConnectWebServicesClientCTests, CWSCC_ProjectShare_CRUDsSuccessful_Succes
 
     //test folder ops
     WString folderName = L"FolderA";
-    WPrintfString folderDescription(L"Description for %s", folderName);
+    WPrintfString folderDescription(L"Description for %s", folderName.c_str());
     WString contentType = L"Folder";
     bool isRootFolder = false;
     bool issAutomatedPublishingFolder = false;

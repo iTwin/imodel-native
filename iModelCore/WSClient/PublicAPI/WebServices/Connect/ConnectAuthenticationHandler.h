@@ -19,6 +19,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 #define TOKENPREFIX_Token               "token"
 #define TOKENPREFIX_SAML                "SAML"
+#define TOKENPREFIX_BEARER              "Bearer"
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/

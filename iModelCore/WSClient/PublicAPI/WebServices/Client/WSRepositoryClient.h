@@ -97,19 +97,31 @@ struct IWSRepositoryClient
 
         virtual void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) = 0;
 
+        //! DEPRECATED- Use VerifyAccessWithOptions instead
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] ct
         //! @return success if credentials are valid for given repository, else error that occurred
         virtual AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const = 0;
+
+        //! Checks if supplied credentials are valid for this repository.
+        //! @param[in] options optional request options
+        //! @param[in] ct
+        //! @return success if credentials are valid for given repository, else error that occurred
+        virtual AsyncTaskPtr<WSVoidResult> VerifyAccessWithOptions(RequestOptionsPtr options = nullptr, ICancellationTokenPtr ct = nullptr) const = 0;
 
         //! Register for ServerInfo received events
         virtual void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) = 0;
         //! Unregister from ServerInfo received events
         virtual void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) = 0;
 
+        //! DEPRECATED- Use GetInfoWithOptions instead
         //! Returns repository or queries server if needs updating
         virtual AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct = nullptr) const = 0;
 
+        //! Returns repository or queries server if needs updating
+        virtual AsyncTaskPtr<WSRepositoryResult> GetInfoWithOptions(RequestOptionsPtr options = nullptr, ICancellationTokenPtr ct = nullptr) const = 0;
+
+        //! DEPRECATED- Use SendGetObjectRequestWithOptions instead
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
@@ -117,6 +129,15 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        //! DEPRECATED- Use SendGetChildrenRequestWithOptions instead
         //! Send Navigation request. SendQueryRequest has backward support for WSG 1.x Navigation queries
         virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
@@ -125,6 +146,16 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! Send Navigation request. SendQueryRequest has backward support for WSG 1.x Navigation queries
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequestWithOptions
+            (
+            ObjectIdCR parentObjectId,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        //! DEPRECATED- Use SendGetChildrenRequestWithOptions instead
         virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
@@ -133,7 +164,16 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
-        //! DEPRECATED- Use SendGetFileRequest with http response body instead
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequestWithOptions
+            (
+            ObjectIdCR parentObjectId,
+            const bset<Utf8String>& propertiesToSelect,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        //! DEPRECATED- Use SendGetFileRequestWithOptions instead
         virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
@@ -143,6 +183,7 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! DEPRECATED- Use SendGetFileRequestWithOptions instead
         virtual AsyncTaskPtr<WSResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
@@ -152,12 +193,31 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            Http::HttpBodyPtr responseBodyOut,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        //! DEPRECATED- Use SendGetSchemasRequestWithOptions instead
         virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequestWithOptions
+            (
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        //! DEPRECATED- Use SendQueryRequestWithOptions instead
         //! Send query request to retrieve ECInstances.
         //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters.
         //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query.
@@ -177,6 +237,30 @@ struct IWSRepositoryClient
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
             Utf8StringCR skipToken = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        //! Send query request to retrieve ECInstances.
+        //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters.
+        //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query.
+        //!         Select will be used as property list to select
+        //! The query is sent as a GET request with query information formated to the url.
+        //! From WSG 2.4 information stored in the WSQuery can be send as a POST request via json content.
+        //!          This is done if the URL constructed from query information exceeds the maximum Url Lenght
+        //!          By default the maximum Url Lenght is 2048
+        //! @param query
+        //! @param eTag send previous eTag to check if data was modified and avoid sending if not.
+        //! @param skipToken allows using paged mechanism if supported by server and repository. Used to "skip" previous response data.
+        //! Supply IWSRepositoryClient::InitialSkipToken to start paged requests. 
+        //! For sequental page requests supply previous response skipToken if response was not final.
+        //! @param options optional request options
+        //! @param ct
+        virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequestWithOptions
+            (
+            WSQueryCR query,
+            Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -464,6 +548,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         
         // Taken from WebServices team .NET implementation
         static Utf8String UrlDecode(Utf8String url);
+        static Utf8String ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId);
 
     public:
         //! @param[in] serverUrl - address to supported server/site
@@ -504,8 +589,6 @@ struct WSRepositoryClient : public IWSRepositoryClient
         //! @return parsed WSRepository or invalid if there was an error
         WSCLIENT_EXPORT static WSRepository ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut = nullptr);
 
-        WSCLIENT_EXPORT static Utf8String ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId);
-
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.
         WSCLIENT_EXPORT void SetFileDownloadLimit(size_t limit);
@@ -516,14 +599,22 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) override;
         WSCLIENT_EXPORT Configuration& Config();
 
+        //! DEPRECATED- Use VerifyAccessWithOptions instead
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
+
+        //! Check if user can access repository
+        WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccessWithOptions(RequestOptionsPtr options = nullptr, ICancellationTokenPtr ct = nullptr) const override;
 
         WSCLIENT_EXPORT void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override;
         WSCLIENT_EXPORT void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override;
 
+        //! DEPRECATED- Use GetInfoWithOptions instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct = nullptr) const override;
 
+        WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoryResult> GetInfoWithOptions(RequestOptionsPtr options = nullptr, ICancellationTokenPtr ct = nullptr) const override;
+
+        //! DEPRECATED- Use SendGetObjectRequestWithOptions instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
@@ -531,6 +622,15 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetObjectRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        //! DEPRECATED- Use SendGetChildrenRequestWithOptions instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
@@ -538,11 +638,29 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequestWithOptions
+            (
+            ObjectIdCR parentObjectId,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        //! DEPRECATED- Use SendGetChildrenRequestWithOptions instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequestWithOptions
+            (
+            ObjectIdCR parentObjectId,
+            const bset<Utf8String>& propertiesToSelect,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -556,6 +674,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        //! DEPRECATED- Use SendGetFileRequestWithOptions instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
@@ -565,17 +684,45 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        WSCLIENT_EXPORT AsyncTaskPtr<WSResult> SendGetFileRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            Http::HttpBodyPtr responseBodyOut,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        //! DEPRECATED- Use SendGetSchemasRequestWithOptions instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequestWithOptions
+            (
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        //! DEPRECATED- Use SendQueryRequestWithOptions instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
             Utf8StringCR skipToken = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendQueryRequestWithOptions
+            (
+            WSQueryCR query,
+            Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
