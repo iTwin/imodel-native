@@ -20,9 +20,10 @@ struct ITaskScheduler;
 
 template <class T> struct PackagedAsyncTask;
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                              Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
+
+//=======================================================================================
+// @bsiclass                                              Benediktas.Lipnickas   10/2013
+//=======================================================================================
 struct OnAsyncTaskCompletedListener
 {
 friend struct AsyncTask;
@@ -30,9 +31,138 @@ protected:
     virtual void _OnAsyncTaskCompleted (std::shared_ptr<struct AsyncTask> task) = 0;
 };
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                              Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+//! Base class for all AsyncTask variations depending on return and receive values.
+//! Shorthand type to use in most cases - AsyncTaskPtr<void>
+// @bsiclass                                              Benediktas.Lipnickas   10/2013
+//=======================================================================================
+/**
+@section SECTION_BentleyTasks_GettingStarted Getting started
+
+Async programming is useful when you need to execute long running tasks and continue your main thread code running without blocking and waiting for
+them to finish. Mostly used when network operations are involved.
+Always use Then() to async tasks, this way any long running code will not block executing thread and it can continue work. Result handling code in
+Then() will be executed asynchronously when work is done. Blocking Wait() and GetResult() can also be used, but
+should be treated with care as they could stale your program or cause deadlocks.
+
+@section SECTION_BentleyTasks_Samples Code samples
+
+Then() hander execution is done in undefined thread, but you can your code execution thread by passing specific thread as first parameter:
+\code{.cpp}
+auto myThread = WorkerThread::Create("My Thread");
+Foo()->Then(myThread, [=]
+    {
+    // Code executed in "My Thread" thread
+    });
+\endcode
+
+Simple async function:
+\code{.cpp}
+AsyncTaskPtr<int> GetCount()
+    {
+    return WorkerThread::Create("My Thread")->ExecuteAsync<int>([=]
+        {
+        // ...
+        return count;
+        });
+    }
+\endcode
+
+Define result type to be able to return both success and error data from async functions
+\code{.cpp}
+typedef AsyncResult<Utf8String, AsyncError> NameResult;
+AsyncTaskPtr<NameResult> GetName()
+    {
+    return m_thread->ExecuteAsync<NameResult>([=]
+        {
+        // ...
+        if (!success)
+            return NameResult::Error("Could not connect to server to get name");
+        return NameResulr::Success(name);
+        });
+    }
+\endcode
+
+Getting value from async call (using AsyncResult template):
+\code{.cpp}
+void Foo()
+    {
+    GetName()->Then([=] (NameResult result)
+        {
+        if (!result.IsSuccess())
+            {
+            // handle error
+            return;
+            }
+        ShowNameInUI(result.GetValue());
+        });
+    }
+\endcode
+
+Handling chain of async calls and returning result value afer all are done:
+\code{.cpp}
+
+AsyncTaskPtr<Result> Foo()
+    {
+    return Boo()->Then([=]
+        {
+        // Task 1
+        })
+    ->Then([=]
+        {
+        // Task 2 - task 1 then-task
+        })
+     ->Then<Result>([=]
+        {
+        // Task 3 - task 2 then-task
+        return Result::Success(42);
+        });
+    }
+\endcode
+
+Handling multiple async calls within async calls and still returning result value:
+\code{.cpp}
+AsyncTaskPtr<Result> Foo()
+    {
+    // Additional result variable is needed to carry result from sub-tasks.
+    auto finalResult = std::make_shared<Result>();
+    return Boo()->Then([=]
+        {
+        // Task 1
+        Blah()->Then([=]
+            {
+            // Task 2 - task 1 sub-task
+            finalResult->SetSuccess(42);
+            });
+        })
+    ->Then<Result>([=]
+        {
+        // Task 3 - task 1 then-task
+        // Will be executed after previous task and sub-tasks are done (Task 1 and Task 2)
+        return *finalResult;
+        });
+ }
+\endcode
+
+Looping list of data and operating on it asynchronously pseudocode:
+\code{.cpp}
+void Sum(int* result, list<int>* list)
+    {
+    if (list->empty()) 
+    return;
+    return m_thread->Execute([=]
+        {
+        *result += list->at(0)
+        })
+    ->Then([=]
+        {
+        list->pop();
+        Sum(result, list);
+        });
+ }
+\endcode
+*/
+//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<AsyncTask>
     {
     public:
@@ -148,10 +278,10 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
         //! Internal. Used to set caller stack information for task.
         BENTLEYDLL_EXPORT void SetStackInfo(size_t frameIndex);
     };
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                              Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
+    
+//=======================================================================================
+// @bsiclass                                              Benediktas.Lipnickas   10/2013
+//=======================================================================================
 template <class T, class P> struct PackagedThenAsyncTask;
 
 template <class T>
@@ -218,9 +348,9 @@ struct PackagedAsyncTask : AsyncTask
             }
     };
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                              Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass                                              Benediktas.Lipnickas   10/2013
+//=======================================================================================
 template <>
 struct PackagedAsyncTask<void> : AsyncTask
     {
@@ -279,9 +409,9 @@ struct PackagedAsyncTask<void> : AsyncTask
 template <class T>
 using AsyncTaskPtr = std::shared_ptr<PackagedAsyncTask<T>>;
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                              Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass                                              Benediktas.Lipnickas   10/2013
+//=======================================================================================
 template <class T, class P>
 struct PackagedThenAsyncTask : PackagedAsyncTask<T>
     {
@@ -304,9 +434,9 @@ struct PackagedThenAsyncTask : PackagedAsyncTask<T>
             }
     };
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                              Benediktas.Lipnickas   10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass                                              Benediktas.Lipnickas   10/2013
+//=======================================================================================
 template <class P>
 struct PackagedThenAsyncTask<void, P> : PackagedAsyncTask<void>
     {
@@ -329,9 +459,9 @@ struct PackagedThenAsyncTask<void, P> : PackagedAsyncTask<void>
             }
     };
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 template <typename T>
 //! Create task with return value that is flagged as completed without executing it.
 AsyncTaskPtr<T> CreateCompletedAsyncTask (const T& result)
@@ -344,9 +474,9 @@ AsyncTaskPtr<T> CreateCompletedAsyncTask (const T& result)
     return task;
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsiclass
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 //! Create task that is flagged as completed without executing it.
 BENTLEYDLL_EXPORT AsyncTaskPtr<void> CreateCompletedAsyncTask ();
 
