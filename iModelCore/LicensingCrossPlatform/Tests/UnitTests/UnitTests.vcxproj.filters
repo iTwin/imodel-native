@@ -51,9 +51,6 @@
     <ClCompile Include="Published\DummyPolicyHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Utils\FeatureUserDataMapTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\TestsHelper.h">
@@ -90,9 +87,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Published\DummyPolicyHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -15,7 +15,6 @@
     <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\UsageDbTests.cpp" />
     <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp" />
-    <ClCompile Include="Published\Utils\FeatureUserDataMapTests.cpp" />
     <ClCompile Include="Published\Utils\JWTokenTests.cpp" />
     <ClCompile Include="Published\Utils\LogFileHelperTests.cpp" />
     <ClCompile Include="Published\Utils\SCVWritterTests.cpp" />
@@ -30,7 +29,6 @@
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\UsageDbTests.h" />
     <ClInclude Include="Published\Utils\DelayedExecutorTests.h" />
-    <ClInclude Include="Published\Utils\FeatureUserDataMapTests.h" />
     <ClInclude Include="Published\Utils\JWTokenTests.h" />
     <ClInclude Include="Published\Utils\LogFileHelperTests.h" />
     <ClInclude Include="Published\Utils\SCVWritterTests.h" />

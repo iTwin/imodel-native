@@ -18,7 +18,7 @@ Headers + $(PublicApiDir)Client.h
 Headers + $(PublicApiDir)LicenseStatus.h
 Headers + $(PublicApiDir)Licensing.h
 Headers + $(PublicApiDir)Utils/DelayedExecutor.h
-Headers + $(PublicApiDir)Utils/FeatureUserDataMap.h
+# Headers + $(PublicApiDir)Utils/FeatureUserDataMap.h
 Headers + $(PublicApiDir)Utils/InMemoryJsonLocalState.h
 Headers + $(PublicApiDir)Utils/JWToken.h
 Headers + $(PublicApiDir)Utils/LogFileHelper.h
@@ -52,6 +52,6 @@ $(o)DelayedExecutor$(oext)           : $(SourceDir)Utils/DelayedExecutor.cpp $(H
 
 $(o)LogFileHelper$(oext)             : $(SourceDir)Utils/LogFileHelper.cpp $(Headers) ${MultiCompileDepends}
 
-$(o)FeatureUserDataMap$(oext)         : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
+# $(o)FeatureUserDataMap$(oext)         : $(SourceDir)Utils/FeatureUserDataMap.cpp $(Headers) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki

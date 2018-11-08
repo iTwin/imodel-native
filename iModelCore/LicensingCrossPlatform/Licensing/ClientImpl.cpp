@@ -225,6 +225,7 @@ BentleyStatus ClientImpl::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+    /*
 BentleyStatus ClientImpl::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
     {
     LOG.trace("MarkFeature");
@@ -337,7 +338,8 @@ BentleyStatus ClientImpl::MarkFeature(Utf8String featureId, FeatureUserDataMap* 
 
     return SUCCESS;
     }
-
+*/
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

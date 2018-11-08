@@ -16,7 +16,7 @@
 
 #include <Licensing/Utils/TimeRetriever.h>
 #include <Licensing/Utils/DelayedExecutor.h>
-#include <Licensing/Utils/FeatureUserDataMap.h>
+// #include <Licensing/Utils/FeatureUserDataMap.h>
 
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
@@ -105,7 +105,7 @@ public:
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsage(BeFileNameCR usageCSV, Utf8StringCR ultId);
 
     //Features
-    LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
+    // LICENSING_EXPORT BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData);
     LICENSING_EXPORT folly::Future<folly::Unit> SendFeatures(BeFileNameCR featureCSV, Utf8StringCR ultId);
 
     // Policy
