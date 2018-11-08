@@ -132,7 +132,7 @@ public:
     static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
     static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
 
-    static Napi::Env& Env() { BeAssert(s_env != nullptr); return *s_env; }
+    static Napi::Env& Env() { return *s_env; }
     static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId; }
 
     static Tile::TreePtr FindTileTree(GeometricModelR, Tile::Tree::Id const&);

@@ -1338,9 +1338,6 @@ DgnDbStatus TxnManager::ReverseActions(TxnRange& txnRange, bool showMsg)
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reverse);
 
-    if (showMsg)
-        NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, undoStr.c_str()));
-
     return DgnDbStatus::Success;
     }
 
@@ -1448,7 +1445,6 @@ DgnDbStatus TxnManager::ReinstateActions(TxnRange& revTxn)
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reinstate);
 
-    NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, redoStr.c_str()));
     return DgnDbStatus::Success;
     }
 

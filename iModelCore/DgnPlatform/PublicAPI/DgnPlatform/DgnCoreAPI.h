@@ -26,7 +26,6 @@
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
 #include "CodeSpec.h"
-#include "NotificationManager.h"
 #include "ScanCriteria.h"
 #include "TextString.h"
 #include "ValueFormat.h"

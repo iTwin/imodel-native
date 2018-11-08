@@ -10,6 +10,8 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <DgnPlatform/DgnECSymbolProvider.h>
+#include <DgnPlatform/DgnECTypes.h>
 
 BeThreadLocalStorage g_threadId;
 
@@ -185,35 +187,6 @@ void DgnHost::SetHostVariable(Key& key, void* val)
     GetVarEntry(key).m_val = val;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt NotificationManager::OutputMessage(NotifyMessageDetails const& details) {return T_HOST.GetNotificationAdmin()._OutputMessage(details);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dan.East                        10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt NotificationManager::SetupActivityMessage(ActivityMessageDetails* details)
-    {
-    return T_HOST.GetNotificationAdmin()._SetupActivityMessage(details);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dan.East                        10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt NotificationManager::OutputActivityMessage(Utf8CP messageText, int32_t percentComplete)
-    {
-    return T_HOST.GetNotificationAdmin()._OutputActivityMessage(messageText, percentComplete);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Dan.East                        10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt NotificationManager::EndActivityMessage(ActivityMessageEndReason reason) 
-    {
-    return T_HOST.GetNotificationAdmin()._EndActivityMessage(reason);
-    }
-
 static DgnPlatformLib::Host* s_host = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
@@ -240,7 +213,7 @@ void DgnPlatformLib::StaticInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Initialize(Host& host, bool loadResources)
+void DgnPlatformLib::Initialize(Host& host)
     {
     StaticInitialize();
 
@@ -251,24 +224,20 @@ void DgnPlatformLib::Initialize(Host& host, bool loadResources)
         }
 
     s_host = &host;
+
     DgnDb::SetThreadId(DgnDb::ThreadId::Client);
 
-    host.InitializeDgnHandlers(); 
-
-    if (loadResources)
-        host.LoadResources();
+    host.Initialize(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
 * *Private* method called by Dgn::Host::Initialize.
 * @bsimethod                                    Keith.Bentley                   09/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::InitializeDgnCore()
+void DgnPlatformLib::Host::Initialize()
     {
     BeAssert(NULL == m_knownLocationsAdmin); m_knownLocationsAdmin = &_SupplyIKnownLocationsAdmin();
     BeAssert(NULL == m_exceptionHandler); m_exceptionHandler = &_SupplyExceptionHandler();
-    // establish the NotificationAdmin first, in case other _Supply methods generate errors
-    BeAssert(NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
     BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
     auto assetDir = m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory();
@@ -276,7 +245,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     BeStringUtilities::Initialize(assetDir);
     ECDb::Initialize(m_knownLocationsAdmin->GetLocalTempDirectoryBaseName(),
                       &assetDir,
-                      m_notificationAdmin->_GetLogSQLiteErrors() ? BeSQLiteLib::LogErrors::Yes : BeSQLiteLib::LogErrors::No);
+                       BeSQLiteLib::LogErrors::No);
     L10N::Initialize(_SupplySqlangFiles());
 
     GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
@@ -290,6 +259,16 @@ void DgnPlatformLib::Host::InitializeDgnCore()
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
     ECN::ECSchemaReadContext::Initialize(assetDir);
+
+    // Register Symbol Provider for ECExpressions
+    IECSymbolProvider::RegisterExternalSymbolPublisher(&DgnECSymbolProvider::ExternalSymbolPublisher);
+
+    BeAssert(NULL == m_fontAdmin);             m_fontAdmin             = &_SupplyFontAdmin();
+    BeAssert(NULL == m_lineStyleAdmin);        m_lineStyleAdmin        = &_SupplyLineStyleAdmin();
+    BeAssert(NULL == m_pointCloudAdmin);       m_pointCloudAdmin       = &_SupplyPointCloudAdmin();
+    BeAssert(NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin();
+
+    m_fontAdmin->Initialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,9 +297,7 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
 
     BeAssert(NULL == m_fontAdmin);
     BeAssert(NULL == m_lineStyleAdmin);
-    BeAssert(NULL == m_rasterAttachmentAdmin);
     BeAssert(NULL == m_pointCloudAdmin);
-    BeAssert(NULL == m_notificationAdmin);
     BeAssert(NULL == m_geoCoordAdmin);
     BeAssert(NULL == m_txnAdmin);
     BeAssert(NULL == m_exceptionHandler);
@@ -364,7 +341,6 @@ bool DgnPlatformLib::Host::LineStyleAdmin::_GetLocalLineStylePaths(WStringR path
 * @bsimethod                                                    Brien.Bastings  07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnPlatformLib::Host::FontAdmin&            DgnPlatformLib::Host::_SupplyFontAdmin()            {return *new FontAdmin();}
-DgnPlatformLib::Host::NotificationAdmin&    DgnPlatformLib::Host::_SupplyNotificationAdmin()    {return *new NotificationAdmin();}
 DgnPlatformLib::Host::LineStyleAdmin&       DgnPlatformLib::Host::_SupplyLineStyleAdmin()       {return *new LineStyleAdmin();}
 DgnPlatformLib::Host::TxnAdmin&             DgnPlatformLib::Host::_SupplyTxnAdmin()             {return *new TxnAdmin();}
 DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyRepositoryAdmin()      {return *new RepositoryAdmin();}

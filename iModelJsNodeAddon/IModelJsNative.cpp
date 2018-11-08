@@ -721,27 +721,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
     };
 
-    struct NativeAppData : Db::AppData
-        {
-        NativeDgnDb& m_addonDb;
-
-        static Key const& GetKey()
-            {
-            static Key s_key;
-            return s_key;
-            }
-
-        NativeAppData(NativeDgnDb& adb) : m_addonDb(adb) {}
-        static NativeAppData* Find(DgnDbR db) {return (NativeAppData*) db.FindAppData(GetKey()).get();}
-        static void Add(NativeDgnDb& adb)
-            {
-            BeAssert(nullptr == Find(adb.GetDgnDb()));
-            adb.GetDgnDb().AddAppData(GetKey(), new NativeAppData(adb));
-            }
-
-        static void Remove(DgnDbR db) {db.DropAppData(GetKey());}
-        };
-
     static Napi::FunctionReference s_constructor;
 
     Dgn::DgnDbPtr m_dgndb;
@@ -765,7 +744,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
         JsInterop::CloseDgnDb(*m_dgndb);
-        NativeAppData::Remove(GetDgnDb());
         m_dgndb = nullptr;
         }
 
@@ -776,17 +754,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb = &dgndb;
 
         SetupPresentationManager();
-        NativeAppData::Add(*this);
+        // NativeAppData::Add(*this);
         m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
 
         m_cancellationToken = std::make_shared<CancellationToken>();
-        }
-
-    static NativeDgnDb* From(DgnDbR db)
-        {
-        auto appdata = NativeAppData::Find(db);
-        return appdata? &appdata->m_addonDb: nullptr;
         }
 
     //  Check if val is really a NativeDgnDb peer object
@@ -836,6 +808,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Object CreateBentleyReturnObject(STATUSTYPE errCode) {return CreateBentleyReturnObject(errCode, Env().Undefined());}
 
     bool IsOpen() const {return m_dgndb.IsValid();}
+
+    void SetIModelDb(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, obj, );
+        if (m_dgndb.IsValid())
+            m_dgndb->m_jsIModelDb = &obj;
+    }
 
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
         {
@@ -1811,7 +1789,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
-	    InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
+	        InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
@@ -1833,6 +1811,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
             InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
+            InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("txnManagerGetCurrentTxnId", &NativeDgnDb::TxnManagerGetCurrentTxnId),
             InstanceMethod("txnManagerGetTxnDescription", &NativeDgnDb::TxnManagerGetTxnDescription),
