@@ -351,7 +351,9 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithoutMajorVersionChangeWithDe
 
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    BeTest::SetFailOnAssert(false);
     EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    BeTest::SetFailOnAssert(true);
     }
 
 ECSchemaPtr CreateSchema(Utf8StringR schemaXml, ECSchemaReadContextR context)
@@ -476,9 +478,12 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaWithMajorVersionChangeButNoShar
             </ECClass>
         </ECSchema>)xml");
 
+
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema1}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("UpdateSchema"));
+    BeTest::SetFailOnAssert(false);
     EXPECT_EQ(ERROR, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema2}));
+    BeTest::SetFailOnAssert(true);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1204,6 +1209,33 @@ TEST_F(DataSourceCacheTests, RemoveInstance_ChildQueryResultInstanceIsInWeaklyLi
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, RemoveInstance_WithLockedFile_SuccessAndLeavesStaleFile)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+
+    auto fileId = StubFileInCache(*cache);
+    BeFileName filePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveInstance(fileId));
+    EXPECT_FALSE(cache->GetCachedObjectInfo(fileId).IsFullyCached());
+    EXPECT_FALSE(cache->FindInstance(fileId).IsValid());
+
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    bset<BeFileName> staleFiles = cache->GetStaleFiles();
+    EXPECT_EQ(1, staleFiles.size());
+    EXPECT_TRUE(staleFiles.end() != staleFiles.find(filePath));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, FindInstance_NotCachedInstance_Null)
     {
     auto cache = GetTestCache();
@@ -1912,7 +1944,7 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_ModifiedFileExist
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_FileIsLocked_Error)
+TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_FileIsLocked_SuccessAndMovesFileToStaleList)
     {
     auto fileManager = std::make_shared<StubFileManager>();
     auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
@@ -1928,18 +1960,16 @@ TEST_F(DataSourceCacheTests, RemoveFilesInTemporaryPersistence_FileIsLocked_Erro
 
     BeTest::SetFailOnAssert(false);
     AsyncError error;
-    EXPECT_EQ(CacheStatus::Error, cache->RemoveFilesInTemporaryPersistence(nullptr, &error));
-    EXPECT_FALSE(error.GetMessage().empty());
-    EXPECT_EQ(CacheStatus::Error, cache->RemoveFilesInTemporaryPersistence());
+    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence(nullptr, &error));
+    EXPECT_TRUE(error.GetMessage().empty());
     BeTest::SetFailOnAssert(true);
 
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
     EXPECT_TRUE(filePath.DoesPathExist());
 
-    fileManager->overrideDeleteFileRet = BeFileNameStatus::Success;
-
-    EXPECT_EQ(CacheStatus::OK, cache->RemoveFilesInTemporaryPersistence());
-
-    EXPECT_FALSE(filePath.DoesPathExist());
+    bset<BeFileName> staleFiles = cache->GetStaleFiles();
+    EXPECT_EQ(1, staleFiles.size());
+    EXPECT_TRUE(staleFiles.end() != staleFiles.find(filePath));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -2748,13 +2778,14 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedLockedFileRemovedIn
     auto fileManager = std::make_shared<StubFileManager>();
     auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
     auto responseKey = StubCachedResponseKey(*cache);
+    ObjectId fileId("TestSchema.TestClass", "Foo");
 
     StubInstances instances;
-    instances.Add({"TestSchema.TestClass", "Foo"});
+    instances.Add(fileId);
     ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-    ASSERT_EQ(SUCCESS, cache->CacheFile({"TestSchema.TestClass", "Foo"}, StubWSFileResponse(), FileCache::Persistent));
-    BeFileName filePath = cache->ReadFilePath({"TestSchema.TestClass", "Foo"});
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(), FileCache::Persistent));
 
+    BeFileName filePath = cache->ReadFilePath(fileId);
     EXPECT_TRUE(filePath.DoesPathExist());
 
     instances.Clear();
@@ -2762,11 +2793,15 @@ TEST_F(DataSourceCacheTests, CacheResponse_InstanceWithCachedLockedFileRemovedIn
     fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
     fileManager->overrideDeleteFileArg = filePath;
 
-    BeTest::SetFailOnAssert(false);
-    ASSERT_EQ(CacheStatus::Error, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
-    BeTest::SetFailOnAssert(true);
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
 
+    ASSERT_FALSE(cache->FindInstance(fileId).IsValid());
+    EXPECT_EQ(L"", cache->ReadFilePath(fileId));
     EXPECT_TRUE(filePath.DoesPathExist());
+
+    bset<BeFileName> staleFiles = cache->GetStaleFiles();
+    EXPECT_EQ(1, staleFiles.size());
+    EXPECT_TRUE(staleFiles.end() != staleFiles.find(filePath));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -6347,6 +6382,29 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviously_Replaces
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheFile_LockedFileWithSameNameCachedPreviously_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "Foo.txt")), FileCache::Persistent));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    fileManager->overrideDeleteDirectoryFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideMoveFileRet = BeFileNameStatus::AccessViolation;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "Foo.txt")), FileCache::Persistent));
+    BeTest::SetFailOnAssert(true);
+    EXPECT_TRUE(path1.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviously_RemovesOldFileAndAddsNewToSameCacheFolder)
     {
     auto cache = GetTestCache();
@@ -6362,6 +6420,29 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviously_Rem
     EXPECT_TRUE(path2.DoesPathExist());
     EXPECT_FALSE(path1.DoesPathExist());
     EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheFile_LockedFileWithDifferentNameCachedPreviously_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "A.txt")), FileCache::Persistent));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    fileManager->overrideDeleteDirectoryFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideMoveFileRet = BeFileNameStatus::AccessViolation;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "B.txt")), FileCache::Persistent));
+    BeTest::SetFailOnAssert(true);
+    EXPECT_TRUE(path1.DoesPathExist());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -6387,6 +6468,29 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithSameNameCachedPreviouslyAndExtern
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheFile_LockedFileWithSameNameCachedPreviouslyAndExternalLocation_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "Foo.txt")), FileCache::External));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    fileManager->overrideDeleteDirectoryFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideMoveFileRet = BeFileNameStatus::AccessViolation;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "Foo.txt")), FileCache::External));
+    BeTest::SetFailOnAssert(true);
+    EXPECT_TRUE(path1.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndExternalLocation_RemovesOldFileAndAddsNewToSameFolder)
     {
     auto cache = GetTestCache();
@@ -6402,6 +6506,29 @@ TEST_F(DataSourceCacheTests, CacheFile_FileWithDifferentNameCachedPreviouslyAndE
     EXPECT_TRUE(path2.DoesPathExist());
     EXPECT_FALSE(path1.DoesPathExist());
     EXPECT_EQ(path1.GetDirectoryName(), path2.GetDirectoryName());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheFile_LockedFileWithDifferentNameCachedPreviouslyAndExternalLocation_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentA", "A.txt")), FileCache::External));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    fileManager->overrideDeleteDirectoryFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideMoveFileRet = BeFileNameStatus::AccessViolation;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheFile(fileId, StubWSFileResponse(StubFile("ContentB", "B.txt")), FileCache::External));
+    BeTest::SetFailOnAssert(true);
+    EXPECT_TRUE(path1.DoesPathExist());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -6443,6 +6570,29 @@ TEST_F(DataSourceCacheTests, CacheFile_FileCachedPreviouslyAndCachingToDifferent
 
     EXPECT_FALSE(path1.DoesPathExist());
     EXPECT_FALSE(path1.GetDirectoryName().DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheFile_LockedFileCachedPreviouslyAndCachingToDifferentLocation_Error)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+    ObjectId fileId = cache->FindInstance(StubInstanceInCache(*cache));
+
+    ASSERT_EQ(SUCCESS, cache->CacheFile(fileId, StubWSFileResponse(), FileCache::Temporary));
+    BeFileName path1 = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(path1.DoesPathExist());
+
+    fileManager->overrideDeleteDirectoryFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideMoveFileRet = BeFileNameStatus::AccessViolation;
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, cache->CacheFile(fileId, StubWSFileResponse(), FileCache::Persistent));
+    BeTest::SetFailOnAssert(true);
+    EXPECT_TRUE(path1.DoesPathExist());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -8475,6 +8625,127 @@ TEST_F(DataSourceCacheTests, CacheResponse_PartialResultsContainsInstanceThatWas
     ASSERT_EQ(CacheStatus::OK, cache->ReadInstance({"TestSchema.TestClass", "Foo"}, instanceJson));
 
     EXPECT_EQ("NewValueA", instanceJson["TestProperty"].asString());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CleanupStaleFiles_NoStaleFiles_SuccessAndLeavesExistingFiles)
+    {
+    auto cache = GetTestCache();
+    auto fileId = StubFileInCache(*cache);
+
+    BeFileName filePath = cache->ReadFilePath(fileId);
+    EXPECT_TRUE(filePath.DoesPathExist());
+
+    EXPECT_EQ(0, cache->GetStaleFiles().size());
+    EXPECT_EQ(SUCCESS, cache->CleanupStaleFiles());
+
+    EXPECT_TRUE(filePath.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CleanupStaleFiles_StaleFileIsStillLocked_SuccessAndLeavesFile)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+
+    auto fileId = StubFileInCache(*cache);
+    BeFileName filePath = cache->ReadFilePath(fileId);
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance(fileId));
+    ASSERT_EQ(1, cache->GetStaleFiles().size());
+
+    EXPECT_EQ(SUCCESS, cache->CleanupStaleFiles());
+    EXPECT_EQ(1, cache->GetStaleFiles().size());
+    EXPECT_TRUE(filePath.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CleanupStaleFiles_StaleFileNoLongerLocked_SuccessAndRemovesFile)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+
+    auto fileId = StubFileInCache(*cache);
+    BeFileName filePath = cache->ReadFilePath(fileId);
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance(fileId));
+    ASSERT_EQ(1, cache->GetStaleFiles().size());
+    ASSERT_TRUE(filePath.DoesPathExist());
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::Success;
+
+    EXPECT_EQ(SUCCESS, cache->CleanupStaleFiles());
+    EXPECT_EQ(0, cache->GetStaleFiles().size());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CleanupStaleFiles_StaleFileIsStillLockedAfterReOpening_SuccessAndLeavesFile)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+
+    auto fileId = StubFileInCache(*cache);
+    BeFileName filePath = cache->ReadFilePath(fileId);
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance(fileId));
+
+    auto cachePath = cache->GetCacheDatabasePath();
+    cache->Close();
+    cache = nullptr;
+
+    cache = std::make_shared<DataSourceCache>(fileManager);
+    ASSERT_EQ(SUCCESS, cache->Open(cachePath, GetTestCacheEnvironment()));
+
+    EXPECT_EQ(1, cache->GetStaleFiles().size());
+    EXPECT_EQ(SUCCESS, cache->CleanupStaleFiles());
+    EXPECT_EQ(1, cache->GetStaleFiles().size());
+    EXPECT_TRUE(filePath.DoesPathExist());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CleanupStaleFiles_StaleFileIsNoLongerLockedAfterReOpening_SuccessAndRemovesFileWhenOpening)
+    {
+    auto fileManager = std::make_shared<StubFileManager>();
+    auto cache = GetTestCache(GetTestCacheEnvironment(), fileManager);
+
+    auto fileId = StubFileInCache(*cache);
+    BeFileName filePath = cache->ReadFilePath(fileId);
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::AccessViolation;
+    fileManager->overrideDeleteFileArg = filePath;
+
+    ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance(fileId));
+
+    auto cachePath = cache->GetCacheDatabasePath();
+    cache->Close();
+    cache = nullptr;
+
+    fileManager->overrideDeleteFileRet = BeFileNameStatus::Success;
+
+    cache = std::make_shared<DataSourceCache>(fileManager);
+    ASSERT_EQ(SUCCESS, cache->Open(cachePath, GetTestCacheEnvironment()));
+
+    EXPECT_EQ(0, cache->GetStaleFiles().size());
+    EXPECT_FALSE(filePath.DoesPathExist());
     }
 
 #endif

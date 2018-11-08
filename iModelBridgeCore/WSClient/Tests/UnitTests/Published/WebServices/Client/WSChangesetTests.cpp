@@ -15,6 +15,22 @@ using namespace ::testing;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+void TestChangesetToRequestStringWithDefaultRequestOptions(WSChangeset& changeset)
+    {
+    auto expectedJson = ToJson(R"({
+        "instances":[]
+        })");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+
+    EXPECT_EQ(WSChangeset::Options::FailureStrategy::ServerDefault, changeset.GetRequestOptions().GetFailureStrategy());
+    EXPECT_EQ(WSChangeset::Options::ResponseContent::ServerDefault, changeset.GetRequestOptions().GetResponseContent());
+    EXPECT_EQ(WSChangeset::Options::RefreshInstances::ServerDefault, changeset.GetRequestOptions().GetRefreshInstances());
+    EXPECT_TRUE(changeset.GetRequestOptions().GetCustomOptions().empty());
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -353,71 +369,6 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneDeletedIns
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetWithRequestOptions_ReturnsChangesetWithRequestOptionsAndCalculateSizeMatches)
-    {
-    auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
-
-    WSChangeset changeset(WSChangeset::SingeInstance);
-    changeset.AddInstance({"TestSchema.TestClass", "Foo"}, WSChangeset::Created, properties);
-    changeset.SetRequestOptions(RequestOptions());
-
-    auto expectedJson = ToJson(R"({
-        "instance":
-            {
-            "changeState":"new",
-            "schemaName":"TestSchema",
-            "className":"TestClass",
-            "properties":{"TestProperty":"TestValue"}
-            },
-        "requestOptions":{
-            "FailureStrategy" : "Stop",
-            "ResponseContent" : "FullInstance",
-            "RefreshInstances" : false
-        }})");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
-    EXPECT_EQ(1, changeset.GetInstanceCount());
-    EXPECT_EQ(0, changeset.GetRelationshipCount());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSChangesetTests, ToRequestString_OneCreatedInstanceWithRequestOptions_ReturnsChangesetWithRequestOptionsAndCalculateSizeMatches)
-    {
-    auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
-
-    WSChangeset changeset;
-    changeset.AddInstance({"TestSchema.TestClass", "Foo"}, WSChangeset::Created, properties);
-    changeset.SetRequestOptions(RequestOptions());
-
-    auto expectedJson = ToJson(R"({
-        "instances":[
-            {
-            "changeState":"new",
-            "schemaName":"TestSchema",
-            "className":"TestClass",
-            "properties":{"TestProperty":"TestValue"}
-            }
-        ],
-        "requestOptions":{
-            "FailureStrategy" : "Stop",
-            "ResponseContent" : "FullInstance",
-            "RefreshInstances" : false
-        }})");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
-    EXPECT_EQ(1, changeset.GetInstanceCount());
-    EXPECT_EQ(0, changeset.GetRelationshipCount());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSChangesetTests, AddInstance_SingleInstanceChangesetAndSecondInstance_ReturnsInvalidInstanceAndDoesNotAddIt)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -706,37 +657,67 @@ TEST_F(WSChangesetTests, ToRequestString_ThreeInstances_ReturnsChangesetAndCalcu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSChangesetTests, ToRequestString_GetRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToRequestString_NotModifiedRequestOptions_ReturnsChangesetWithDefaultRequestOptionsAndCalculateSizeMatches)
     {
     WSChangeset changeset;
-    changeset.GetRequestOptions();
-
-    auto expectedJson = ToJson(R"({
-        "instances":[],
-        "requestOptions":{}
-        })");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2015
+* @bsimethod                                                    Mantas.Smicius    09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSChangesetTests, ToRequestString_RemoveRequestOptions_ReturnsChangesetAndCalculateSizeMatches)
+TEST_F(WSChangesetTests, ToRequestString_GetRequestOptionsInvoked_ReturnsChangesetWithDefaultRequestOptionsAndCalculateSizeMatches)
     {
     WSChangeset changeset;
     changeset.GetRequestOptions();
+
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSChangesetTests, ToRequestString_RemovedRequestOptions_ReturnsChangesetWithDefaultRequestOptionsAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Continue);
     changeset.RemoveRequestOptions();
 
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSChangesetTests, ToRequestString_OptionsFailureStrategySet_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Continue);
+
     auto expectedJson = ToJson(R"({
-        "instances":[]
+        "instances":[],
+        "requestOptions":
+            {
+            "FailureStrategy":"Continue"
+            }
         })");
 
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::FailureStrategy::Continue, changeset.GetRequestOptions().GetFailureStrategy());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSChangesetTests, ToRequestString_OptionsFailureStrategyRemoved_ReturnsChangesetAndCalculateSizeMatches)
+    {
+    WSChangeset changeset;
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::Stop);
+    changeset.GetRequestOptions().SetFailureStrategy(WSChangeset::Options::FailureStrategy::ServerDefault);
+
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -758,6 +739,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsResponseContentSet_ReturnsChange
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::ResponseContent::InstanceId, changeset.GetRequestOptions().GetResponseContent());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -779,6 +761,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsRefreshInstanceSet_ReturnsChange
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(WSChangeset::Options::RefreshInstances::Refresh, changeset.GetRequestOptions().GetRefreshInstances());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -801,6 +784,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsTwoCustomOptionsSet_ReturnsChang
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(ToJson(R"({"A":"1","B":"2"})"), changeset.GetRequestOptions().GetCustomOptions());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -823,6 +807,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsOwerwriten_ReturnsC
     Utf8String changesetStr = changeset.ToRequestString();
     EXPECT_EQ(expectedJson, ToJson(changesetStr));
     EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(ToJson(R"({"A":"2"})"), changeset.GetRequestOptions().GetCustomOptions());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -834,12 +819,7 @@ TEST_F(WSChangesetTests, ToRequestString_OptionsCustomOptionsRemoved_ReturnsChan
     changeset.GetRequestOptions().SetCustomOption("A", "1");
     changeset.GetRequestOptions().RemoveCustomOption("A");
 
-    auto expectedJson = ToJson(R"({
-        "instances":[],"requestOptions":{}})");
-
-    Utf8String changesetStr = changeset.ToRequestString();
-    EXPECT_EQ(expectedJson, ToJson(changesetStr));
-    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    TestChangesetToRequestStringWithDefaultRequestOptions(changeset);
     }
 
 /*--------------------------------------------------------------------------------------+

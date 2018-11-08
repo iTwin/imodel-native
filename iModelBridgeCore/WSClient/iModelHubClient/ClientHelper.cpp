@@ -6,12 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/ClientHelper.h>
+#include <WebServices/Connect/ConnectAuthenticationHandler.h>
 #include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-
 
 ClientHelper* ClientHelper::s_instance = nullptr;
 BeMutex ClientHelper::s_mutex{};
@@ -168,6 +168,25 @@ ClientPtr ClientHelper::SignInWithManager(IConnectSignInManagerPtr managerPtr, W
     {
     UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, m_localState);
     return SignInWithManager(managerPtr);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr ClientHelper::CreateClient(IConnectTokenProviderPtr tokenProviderPtr, IConnectAuthenticationProvider::HeaderPrefix prefix)
+    {
+    auto clientHelper = ClientHelper::GetInstance();
+    auto configurationHandler = UrlProvider::GetSecurityConfigurator(clientHelper->m_customHandler);
+    auto url = clientHelper->GetUrl();
+    auto connectHandler = ConnectAuthenticationHandler::Create
+        (
+        url,
+        tokenProviderPtr,
+        configurationHandler,
+        IConnectAuthenticationProvider::HeaderPrefix::Bearer == prefix ? TOKENPREFIX_BEARER : TOKENPREFIX_Token
+        );
+    connectHandler->EnableExpiredTokenRefresh();
+    return Client::Create(clientHelper->m_clientInfo, connectHandler, url.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

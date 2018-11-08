@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/UnitTests/BuildTests.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -33,6 +33,12 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 %ifdef UsePublishedApi
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/WSClient/
 %endif
+
+# When compiling under VS2017
+# src\WSClient\Tests\UnitTests\Published\WebServices\Client\ActivityLoggerTests.cpp(64): warning C4840: non-portable use of class 'std::function<void (va_list)>' as an argument to a variadic function
+# src\WSClient\Tests\UnitTests\Published\WebServices\Client\ActivityLoggerTests.cpp(64): note: to simplify migration, consider the temporary use of /Wv:18 flag with the version of the compiler with which you used to build without warnings
+
+CCCompOpts + -Wv:17
 
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 

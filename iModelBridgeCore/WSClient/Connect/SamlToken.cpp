@@ -230,6 +230,7 @@ BentleyStatus SamlToken::GetAttributteDateTimeUtc(BeXmlNodeP node, Utf8CP name, 
 
     if (SUCCESS != DateTime::FromString(dateTimeOut, dateStr.c_str()))
         {
+        LOG.errorv("Failed to parse token attribute '%s' date value '%s'", name, dateStr.c_str());
         BeAssert(false);
         return ERROR;
         }

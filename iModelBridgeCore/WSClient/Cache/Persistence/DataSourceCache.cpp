@@ -167,6 +167,7 @@ const ECDb::OpenParams& params
     return ExecuteWithinTransaction([&]
         {
         SetupOpenState(baseEnvironment);
+        CleanupStaleFiles();
         return SUCCESS;
         });
     }
@@ -1497,12 +1498,36 @@ CacheStatus DataSourceCache::RemoveFilesInTemporaryPersistence(DateTimeCP maxLas
 
     ECInstanceKeyMultiMap fullyPersistedNodes;
     if (SUCCESS != GetState().GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-        CacheStatus::OK != GetState().GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate, errorOut))
+        CacheStatus::OK != GetState().GetFileInfoManager().DeleteFilesNotHeldByNodes(fullyPersistedNodes, maxLastAccessDate))
         {
         return CacheStatus::Error;
         }
 
     return CacheStatus::OK;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<BeFileName> DataSourceCache::GetStaleFiles()
+    {
+    bset<BeFileName> paths;
+    if (SUCCESS != GetState().GetFileInfoManager().ReadStaleFilePaths(paths))
+        BeAssert(false);
+    return paths;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DataSourceCache::CleanupStaleFiles()
+    {
+    if (SUCCESS != GetState().GetFileInfoManager().CleanupStaleFiles())
+        {
+        LOG.errorv("Failed to cleanup stale files");
+        return ERROR;
+        }
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
