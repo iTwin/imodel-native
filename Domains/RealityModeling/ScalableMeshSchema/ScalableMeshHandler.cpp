@@ -2084,9 +2084,9 @@ void SMClipProvider::ListTerrainRegionIDs(bvector<uint64_t>& ids)
     }
 
 // This moved from ScalableMeshHandler.h because it produces compilation errors if that header is included in a C++/CLI build.
-folly::Future<BentleyStatus> SMNode::SMLoader::_GetFromSource()
-    {
-    //ScalableMesh has his own loader
-    return SUCCESS;
-    }
+//folly::Future<BentleyStatus> SMNode::SMLoader::_GetFromSource()
+//    {
+//    //ScalableMesh has his own loader
+//    return SUCCESS;
+//    }
 
