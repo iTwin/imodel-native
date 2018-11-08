@@ -1532,6 +1532,7 @@ bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
     double              tolerance = 1e37 /*fc_hugeVal*/;
     bool                found = false;
+    bool                updateClosePoint = m_closePtLocalCorrected.IsDisconnect();
 
     visitor->SetNumWrap(1);
 
@@ -1541,10 +1542,6 @@ bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
 
         if (!visitor->TryFindCloseFacetPoint(localPoint, tolerance, thisFacePoint))
             continue;
-
-        // Save point on surface to correct "close point" from readPixels...
-        if (m_closePtLocalCorrected.IsDisconnect())
-            m_closePtLocalCorrected = thisFacePoint;
 
         // Get a "face" containing this facet, a single facet when there are hidden edges isn't what someone would consider a face...
         bvector<ptrdiff_t> seedReadIndices;
@@ -1560,7 +1557,12 @@ bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
         meshData.CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
 
         if (0 != perFacePolyfaces.size() && ProcessSingleFacePolyface(*perFacePolyfaces.front(), localPoint))
+            {
+            // Save point on surface to correct "close point" from readPixels...
+            if (updateClosePoint)
+                m_closePtLocalCorrected = thisFacePoint;
             found = true;
+            }
 
         tolerance = thisFacePoint.Distance(localPoint); // Refine tolerance...
         }
