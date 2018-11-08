@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_DGN
 struct MstnBridgeTests : public MstnBridgeTestsFixture
     {
     void SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, 
-                      BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, WCharCP bridgeRegSubKey);
+                      BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, FakeRegistry& testRegistry);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -417,7 +417,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTests::SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, WCharCP bridgeRegSubKey)
+void MstnBridgeTests::SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileName& masterFile, BentleyApi::BeFileName& refFile1, BentleyApi::BeFileName& refFile2, BentleyApi::BeFileName const& testDir, FakeRegistry& testRegistry)
     {
     MakeCopyOfFile(masterFile, L"Test3d.dgn", NULL);
     AddLine(masterFile);
@@ -430,12 +430,6 @@ void MstnBridgeTests::SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileNam
 
     args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", masterFile.c_str()));
     
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
-    FakeRegistry testRegistry(testDir, assignDbName);
-    testRegistry.WriteAssignments();
-    testRegistry.AddBridge(bridgeRegSubKey, iModelBridge_getAffinity);
-
     BentleyApi::BeSQLite::BeGuid guid, ref1Guid, ref2Guid;
     guid.Create();
     ref1Guid.Create();
@@ -447,12 +441,11 @@ void MstnBridgeTests::SetupTwoRefs(bvector<WString>& args, BentleyApi::BeFileNam
     testRegistry.SetDocumentProperties(docProps, masterFile);
     testRegistry.SetDocumentProperties(ref1DocProps, refFile1);
     testRegistry.SetDocumentProperties(ref2DocProps, refFile2);
+
     BentleyApi::WString bridgeName;
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, masterFile, L"");
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile1, L"");
     testRegistry.SearchForBridgeToAssignToDocument(bridgeName, refFile2, L"");
-    testRegistry.Save();
-    TerminateHost();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -474,8 +467,22 @@ TEST_F(MstnBridgeTests, DISABLED_PushAfterEachModel)
     SetUpBridgeProcessingArgs(args);
     SetUpBridgeProcessingArgs(args, testDir, MSTN_BRIDGE_REG_SUB_KEY);
 
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath, BentleyApi::WCharCP sourceFileName)
+        {
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        };
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+
     BentleyApi::BeFileName masterFile, refFile1, refFile2;
-    SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, MSTN_BRIDGE_REG_SUB_KEY);
+    SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, testRegistry);
+
+    testRegistry.Save();
 
     BentleyApi::BeFileName dbFile(testDir);
     dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
@@ -531,7 +538,7 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
     auto testDir = getiModelBridgeTestsOutputDir(L"PushAfterEachFile");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
-
+     
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
     TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
@@ -541,8 +548,22 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args, testDir, MSTN_BRIDGE_REG_SUB_KEY);
 
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel,
+                                                           BentleyApi::WCharCP affinityLibraryPath, BentleyApi::WCharCP sourceFileName)
+        {
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        wcscpy(buffer, MSTN_BRIDGE_REG_SUB_KEY);
+        };
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, lambda);
+
     BentleyApi::BeFileName masterFile, refFile1, refFile2;
-    SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, MSTN_BRIDGE_REG_SUB_KEY);
+    SetupTwoRefs(args, masterFile, refFile1, refFile2, testDir, testRegistry);
+
+    testRegistry.Save();
 
     BentleyApi::BeFileName dbFile(testDir);
     dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
