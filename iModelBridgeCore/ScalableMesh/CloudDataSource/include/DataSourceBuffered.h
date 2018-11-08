@@ -17,6 +17,7 @@ protected:
 protected:
 
     DataSourceStatus                            initializeBuffer        (DataSourceBuffer::BufferSize size = 0, DataSource::Buffer * existingBuffer = nullptr, bool segmented = false);
+    DataSourceStatus                            initializeBuffer        (std::vector<DataSourceBuffer::BufferData>& existingBuffer);
 
 public:
                                                 DataSourceBuffered      (DataSourceAccount *sourceAccount, const SessionName &session);
@@ -29,6 +30,7 @@ public:
     DataSourceStatus                            close                   (void);
 
     DataSourceStatus                            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
+    DataSourceStatus                            read                    (std::vector<Buffer>& dest);
     DataSourceStatus                            write                   (const Buffer * source, DataSize size);
 
     DataSourceStatus                            flush                   (void);

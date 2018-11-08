@@ -233,7 +233,7 @@ public:
 
     @return reference to the parent node
     -----------------------------------------------------------------------------*/
-    const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& GetParentNode() const;
+    BENTLEY_SM_EXPORT const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& GetParentNode() const;
 
     //NEEDS_WORK_SM : In the original STM code sometime SMPointIndexNode access directly to the pointer without loading 
     //the parent node. 
@@ -396,7 +396,7 @@ public:
 
     @return Total number of objects in node and sub-nodes
     -----------------------------------------------------------------------------*/
-    uint64_t GetCount() const;
+    BENTLEY_SM_EXPORT uint64_t GetCount() const;
 
     /**----------------------------------------------------------------------------
     Returns the number of levels for which there is splits leafward. This number
@@ -1562,7 +1562,7 @@ public:
 
     @return Returns the extent of spatial index.
     -----------------------------------------------------------------------------*/
-    EXTENT              GetIndexExtent() const;
+    BENTLEY_SM_EXPORT EXTENT GetIndexExtent() const;
     /**----------------------------------------------------------------------------
     Gets the effective limiting outter extent of the content.
 

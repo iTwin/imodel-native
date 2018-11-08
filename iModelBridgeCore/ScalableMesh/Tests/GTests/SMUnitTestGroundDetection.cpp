@@ -97,7 +97,11 @@ GroundDetectionTester::~GroundDetectionTester()
 void GroundDetectionTester::DoDetection()
     {    
     BeFileName outputDir;
+#ifdef VANCOUVER_API
     BeFileNameStatus fileNameStatus = BeFileName::BeGetTempPath(outputDir);
+#else
+        BeFileNameStatus fileNameStatus = Desktop::FileSystem::BeGetTempPath(outputDir);
+#endif
 
     ASSERT_TRUE(BeFileNameStatus::Success == fileNameStatus);
 
@@ -112,8 +116,11 @@ void GroundDetectionTester::DoDetection()
 
     if (BeFileName::DoesPathExist(groundOutputName.c_str()))
         {
+#ifdef VANCOUVER_API
         fileNameStatus = BeFileName::BeDeleteFile(groundOutputName.c_str(), true);
-
+#else
+        fileNameStatus = BeFileName::BeDeleteFile(groundOutputName.c_str());
+#endif
         ASSERT_TRUE(BeFileNameStatus::Success == fileNameStatus);
         }
     
@@ -135,7 +142,7 @@ void GroundDetectionTester::DoDetection()
     CreateBreaklines(featureFilePath, m_groundArea, m_smPtr, computedTransform);
 
     IScalableMeshGroundPreviewerPtr pSmQuickGroundPreviewer;
-    BaseGCSCPtr destinationGcs;
+    GeoCoordinates::BaseGCSCPtr destinationGcs;
     BeFileName groundOutputFileName(BeFileName::GetFileNameWithoutExtension(groundOutputName.c_str()).c_str());
     BeFileName outputDirName(outputDir.c_str());
     

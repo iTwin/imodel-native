@@ -31,6 +31,7 @@ public:
         DataSource::DataSize        getSize                 (void);
 
         DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
+        DataSourceStatus            read                    (std::vector<Buffer>& dest);
         DataSourceStatus            write                   (const Buffer *source, DataSize size);
 
         DataSourceStatus            move                    (DataPtr position);

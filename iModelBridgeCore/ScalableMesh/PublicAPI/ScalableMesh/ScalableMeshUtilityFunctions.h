@@ -46,53 +46,6 @@ static HFCPtr<HVE2DPolygonOfSegments> ComputeConvexHull    (const DPoint3d*     
 */
 
 
-template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent, 
-                                             const EXTENT&  pi_rExtentInMeters, 
-                                             const DPoint3d pi_pViewBox[]);
-
-template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent, 
-                                             const EXTENT&  pi_rExtent,
-                                             const DPoint3d pi_pViewBox[])
-    {   
-    bool isVisible = false;
-
-    //::DPoint3d** fencePt
-    int  nbPts;
-                
-    DRange3d dtmIntersectionRange;
-    DRange3d extentRange;
-        
-    extentRange.low.x = ExtentOp<EXTENT>::GetXMin(pi_rExtent);
-    extentRange.low.y = ExtentOp<EXTENT>::GetYMin(pi_rExtent);
-    extentRange.low.z = ExtentOp<EXTENT>::GetZMin(pi_rExtent);
-
-    extentRange.high.x = ExtentOp<EXTENT>::GetXMax(pi_rExtent);
-    extentRange.high.y = ExtentOp<EXTENT>::GetYMax(pi_rExtent);
-    extentRange.high.z = ExtentOp<EXTENT>::GetZMax(pi_rExtent);
-
-    isVisible = GetVisibleAreaForView(0, 
-                                      nbPts, 
-                                      pi_pViewBox,                                       
-                                      extentRange, 
-                                      dtmIntersectionRange);
-    
-    if (isVisible == true)
-        {
-        DPoint3d lowPt(dtmIntersectionRange.low);
-        DPoint3d highPt(dtmIntersectionRange.high);  
-                          
-        ExtentOp<EXTENT>::SetXMin(po_rVisibleExtent, lowPt.x);
-        ExtentOp<EXTENT>::SetYMin(po_rVisibleExtent, lowPt.y);
-        ExtentOp<EXTENT>::SetZMin(po_rVisibleExtent, lowPt.z);
-
-        ExtentOp<EXTENT>::SetXMax(po_rVisibleExtent, highPt.x);
-        ExtentOp<EXTENT>::SetYMax(po_rVisibleExtent, highPt.y);
-        ExtentOp<EXTENT>::SetZMax(po_rVisibleExtent, highPt.z);        
-        }        
-    
-    return isVisible;  
-    }
-
 BENTLEY_SM_EXPORT int CreateBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr);
 
 BENTLEY_SM_EXPORT int SetClipsToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
@@ -135,7 +88,7 @@ BENTLEY_SM_EXPORT bool SetLinearsForPresentationModeCallback(addLinearsForPresen
 
 BENTLEY_SM_EXPORT void GetCoverageTerrainAbsFileName(BeFileName& coverageFileName, const WString& baseExtraFilesPath, const Utf8String& coverageName);
 
-void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvector<DSegment3d>& segments);
+BENTLEY_SM_EXPORT void StitchSegmentsAtJunctions(bvector<bvector<DPoint3d>>& polylines, const bvector<DSegment3d>& segments);
 
 #ifdef SCALABLE_MESH_ATP
 

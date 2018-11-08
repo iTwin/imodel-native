@@ -4,7 +4,7 @@
 #include "DataSource.h"
 #include "DataSourceAccount.h"
 #include "DataSourceBuffer.h"
-#include "include\DataSourceTransferScheduler.h"
+#include "include/DataSourceTransferScheduler.h"
 #include <mutex>
 extern std::mutex s_consoleMutex;
 
@@ -134,6 +134,18 @@ DataSourceBuffer *DataSourceTransferScheduler::getNextSegmentJob(DataSourceBuffe
                                                             // For each scheduled DataBuffer to transfer
     for (auto dataBuffer : dataSourceBuffers)
     {
+        if (!dataBuffer->isSegmented())
+            {
+            if (!dataBuffer->getIsProcessing())
+                {
+                dataBuffer->setIsProcessing(true);
+                return dataBuffer;
+                }
+            else
+                {
+                return nullptr;
+                }
+            }
                                                             // Try each buffer until a segment is found that needs processing
                                                             // Usually this will be in one of the first, but in some cases the first may be pending completion
         segmentIndex = dataBuffer->getAndAdvanceCurrentSegment(&segmentBuffer, &segmentSize);
@@ -250,43 +262,49 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 #ifdef SM_STREAMING_PERF
                     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 #endif
-
-                    // Attempt to download a single segment
-                    if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize, locator.getSessionName())).isFailed())
+                    if (buffer->isSegmented())
                         {
-                        buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Download);
-                        }
-                    else
-                        {
+                        // Attempt to download a single segment
+                        if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize, locator.getSessionName())).isFailed())
+                            {
+                            buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+                            }
+                        else
+                            {
 
 #ifdef SM_STREAMING_PERF
-                        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
-                        s_nDownloadTime += std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-                        s_nTotalSize += readSize;
-                        if (true/*std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500*/)
-                            {
-                            std::lock_guard<std::mutex> clk(s_consoleMutex);
-                            //std::cout << s_nWorkThreads << "    " << dataSourceBuffers.size() << "    " << s_nTotalTransfers << std::endl;
+                            std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+                            s_nDownloadTime += std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+                            s_nTotalSize += readSize;
+                            if (true/*std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500*/)
+                                {
+                                std::lock_guard<std::mutex> clk(s_consoleMutex);
+                                //std::cout << s_nWorkThreads << "    " << dataSourceBuffers.size() << "    " << s_nTotalTransfers << std::endl;
 #ifndef NDEBUG
-                            FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_debug.txt", "a+");
+                                FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_debug.txt", "a+");
 #else
-                            FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_release.txt", "a+");
+                                FILE* pOutputFileStream = fopen("c:\\tmp\\scalablemesh\\transferscheduler_performance_release.txt", "a+");
 #endif
-                            char TempBuffer[500];
-                            int  NbChars;
+                                char TempBuffer[500];
+                                int  NbChars;
 
-                            NbChars = sprintf(TempBuffer, "Segment name: %ls   Number of threads doing work: %i   Queue size: %lli   Ideal queue size: %i   Total work done: %i   size: %lli   total size: %i   download speed: %fMB/s\n", segmentName.c_str(), (int)s_nWorkThreads, dataSourceBuffers.size(), (int)s_nIdealQueueSize, (int)s_nTotalTransfers, readSize, (int)s_nTotalSize, (double)((double)(readSize) / (double)s_nDownloadTime) / 8000);
+                                NbChars = sprintf(TempBuffer, "Segment name: %ls   Number of threads doing work: %i   Queue size: %lli   Ideal queue size: %i   Total work done: %i   size: %lli   total size: %i   download speed: %fMB/s\n", segmentName.c_str(), (int)s_nWorkThreads, dataSourceBuffers.size(), (int)s_nIdealQueueSize, (int)s_nTotalTransfers, readSize, (int)s_nTotalSize, (double)((double)(readSize) / (double)s_nDownloadTime) / 8000);
 
-                            size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
-                            assert(NbWrittenChars == NbChars);
-                            fclose(pOutputFileStream);
+                                size_t NbWrittenChars = fwrite(TempBuffer, 1, NbChars, pOutputFileStream);
+                                assert(NbWrittenChars == NbChars);
+                                fclose(pOutputFileStream);
 
-                            // restart timer
-                            start_time = std::chrono::steady_clock::now();
-                    }
+                                // restart timer
+                                start_time = std::chrono::steady_clock::now();
+                                }
 #endif
 
-                        buffer->updateReadSize(readSize);
+                            buffer->updateReadSize(readSize);
+                            }
+                        }
+                    else if ((status = account->downloadBlobSync(segmentName, buffer, locator.getSessionName())).isFailed())
+                        {
+                        buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Download);
                         }
                     }
                 else
@@ -308,13 +326,21 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                         if (buffer->isSegmented())
                             {
                             filename += L"-" + std::to_wstring(segmentIndex);
+                            if ((status = account->uploadBlobSync(segmentName, filename, segmentBuffer, segmentSize)).isFailed())
+                                {
+                                if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
+                                    {
+                                    buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
+                                    }
+                                }
                             }
-                        if ((status = account->uploadBlobSync(segmentName, filename, segmentBuffer, segmentSize)).isFailed())
+                        else
                             {
-                            if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
+                            if ((status = account->uploadBlobSync(segmentName, buffer)).isFailed())
                                 {
                                 buffer->setTransferStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
                                 }
+
                             }
                         }
                 }
@@ -350,8 +376,10 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
         {
         transferThreads.push_back(std::thread(transferDataSourceBufferSegments));
 #ifndef NDEBUG
-        DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(transferThreads.back().native_handle()));
-        SetThreadName(ThreadId, "DataSourceTransferThread");
+    #ifdef _WIN32
+            DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(transferThreads.back().native_handle()));
+            SetThreadName(ThreadId, "DataSourceTransferThread");
+    #endif
 #endif
         }
 

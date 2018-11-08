@@ -2,7 +2,7 @@
 #
 #     $Source: CloudDataSource_Vancouver.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -30,11 +30,11 @@ includeDir=$(SrcRoot)ScalableMesh/CloudDataSource/include/
 dirToSearch=$(includeDir)
 %include cincapnd.mki
 
-dirToSearch=$(BuildContext)VendorAPI/wastorage/
-%include cincapnd.mki
-
-dirToSearch=$(BuildContext)VendorAPI/cpprestsdk/
-%include cincapnd.mki
+#dirToSearch=$(BuildContext)VendorAPI/wastorage/
+#%include cincapnd.mki
+#
+#dirToSearch=$(BuildContext)VendorAPI/cpprestsdk/
+#%include cincapnd.mki
 
 #----------------------------------------------------------------------
 #   Build precompiled header
@@ -130,7 +130,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)BeOpenSSL.lib \
-    $(ContextSubpartsLibs)wastorage.lib 
+#    $(ContextSubpartsLibs)wastorage.lib 
 
 #--------------------------------------------------------------------------------------
 #   Create the library

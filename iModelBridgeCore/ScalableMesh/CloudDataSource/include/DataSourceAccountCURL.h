@@ -73,15 +73,18 @@ protected:
 				}
 
             struct CURLDataMemoryBuffer {
-                DataSourceBuffer::BufferData* data;
+                union DataType { public: DataSourceBuffer::BufferData* raw_data; DataSourceBuffer* vector; };
+                DataType                      data;
                 size_t                        size;
+                size_t                        max_size;
                 };
             struct CURLDataResponseHeader {
                 std::map<std::string, std::string> data;
                 };
 
             static size_t CURLWriteHeaderCallback(void *contents, size_t size, size_t nmemb, void *userp);
-            static size_t CURLWriteDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
+            static size_t CURLWriteDataCallbackRaw(void *contents, size_t size, size_t nmemb, void *userp);
+            static size_t CURLWriteDataCallbackVector(void *contents, size_t size, size_t nmemb, void *userp);
             static size_t CURLDummyWriteDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
             static size_t CURLReadDataCallback(char *bufptr, size_t size, size_t nitems, void *userp);
             static void   OpenSSLLockingFunction(int mode, int n, const char * file, int line);
@@ -109,8 +112,6 @@ protected:
     DataSourceBuffer::BufferSize            defaultSegmentSize;
     DataSourceBuffer::Timeout               defaultTimeout;
 
-    bool                                    isLocalOrNetworkAccount = false;
-
     Utf8String proxyUser;
     Utf8String proxyPassword;
     Utf8String proxyServerUrl;
@@ -130,17 +131,19 @@ public:
         void                                setDefaultTimeout                   (DataSourceBuffer::Timeout time);
         DataSourceBuffer::Timeout           getDefaultTimeout                   (void);
 
-        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key);
+        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key) override;
 
         virtual void                        setPrefixPath                       (const DataSourceURL &prefix) override;
 
-        DataSource                   *      createDataSource                    (const SessionName &session);
-        DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
+        DataSource                   *      createDataSource                    (const SessionName &session) override;
+        DataSourceStatus                    destroyDataSource                   (DataSource *dataSource) override;
 
-        DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
-        DataSourceStatus                    uploadBlobSync                      (DataSourceURL & url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
-        DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize) override;
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session) override;
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &url, DataSourceBuffer* buffer, const DataSource::SessionName &session) override;
+        DataSourceStatus                    uploadBlobSync                      (DataSourceURL & url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size) override;
+        DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size) override;
+        DataSourceStatus                    uploadBlobSync                      (const DataSourceURL & dataSource, DataSourceBuffer* source) override;
 
         CLOUD_EXPORT void                   setProxy                            (const Utf8String& proxyUserIn, const Utf8String& proxyPasswordIn, const Utf8String& proxyServerUrlIn);
         CLOUD_EXPORT void                   setCertificateAuthoritiesUrl        (const Utf8String& certificateAuthoritiesUrlIn);

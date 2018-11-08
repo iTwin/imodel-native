@@ -19,8 +19,8 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-
 struct GenerationTask;
+typedef RefCountedPtr<GenerationTask> GenerationTaskPtr;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -43,8 +43,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         HFCPtr<MeshIndexType> GetDataIndex();
 
-        void GetGenerationTasks(GenerationTask& generationTaks);
-
+        
+        void GetGenerationTasks(bvector<GenerationTaskPtr>& toExecuteTasks);
+        
         void GetTaskPlanFileName(BeFileName& taskPlanFileName) const;
 
         void GetSisterMainLockFileName(BeFileName& lockFileName) const;
@@ -72,7 +73,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         virtual                             ~Impl();
 
-
+        
         StatusInt                    CreateGenerationTasks();
         
         StatusInt                    CreateMeshTasks();        

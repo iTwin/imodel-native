@@ -57,7 +57,6 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
     private:
 
         void CreateGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node, const DPoint3d* points, int nbPoints, const long* ptsIndice, int nbPtsIndice) const;
-        void LoadAdjacencyData(MTGGraph* graph, POINT* pPoints, size_t size) const;
         void SelectPointsToStitch(std::vector<DPoint3d>& stitchedPoints, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, MTGGraph* meshGraph, EXTENT neighborExt, vector<int>* pointsToDestPointsMap) const;
         void SelectPointsBasedOnBox(std::vector<DPoint3d>& stitchedPoints, HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, EXTENT neighborExt) const;
         size_t UpdateMeshNodeFromGraph(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node, POINT** newMesh, MTGGraph * meshGraphStitched, std::vector<DPoint3d>& stitchedPoints, int& nFaces, DPoint3d& minPt, DPoint3d& maxPt) const;

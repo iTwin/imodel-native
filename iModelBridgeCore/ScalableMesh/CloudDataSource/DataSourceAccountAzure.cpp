@@ -2,10 +2,12 @@
 #include <assert.h>
 #include "DataSourceAccountAzure.h"
 #include "DataSourceAzure.h"
+#ifdef USE_WASTORAGE
 #include <cpprest/rawptrstream.h>
 #include <cpprest/producerconsumerstream.h>
-#include "include\DataSourceAccountAzure.h"
-#include <Bentley\BeStringUtilities.h>
+#endif
+#include "include/DataSourceAccountAzure.h"
+#include <Bentley/BeStringUtilities.h>
 #include <Bentley/WString.h>
 
 #ifdef SM_STREAMING_PERF
@@ -51,6 +53,7 @@ const DataSourceAccountAzure::AzureConnectionString & DataSourceAccountAzure::ge
     return connectionString;
 }
 
+#ifdef USE_WASTORAGE
 void DataSourceAccountAzure::setStorageAccount(const AzureStorageAccount & account)
 {
     storageAccount = account;
@@ -70,6 +73,7 @@ DataSourceAccountAzure::AzureBlobClient &DataSourceAccountAzure::getBlobClient(v
 {
     return blobClient;
 }
+#endif
 
 DataSource * DataSourceAccountAzure::createDataSource(const SessionName &session)
 {
@@ -134,16 +138,19 @@ DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account,
     if (getConnectionString().length() == 0)
         return DataSourceStatus(DataSourceStatus::Status_Error);
                                                             // Create storage account reference
+#ifdef USE_WASTORAGE
     setStorageAccount(AzureStorageAccount::parse(getConnectionString()));
     if (getStorageAccount().is_initialized() == false)
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Initialize_Subsystem);
 
     setBlobClient(storageAccount.create_cloud_blob_client());
+#endif
 
     return DataSourceStatus();
 }
 
 
+#ifdef USE_WASTORAGE
 DataSourceAccountAzure::AzureContainer DataSourceAccountAzure::initializeContainer(const DataSourceURL & containerName, DataSourceMode mode)
 {
     AzureContainer container = getBlobClient().get_container_reference(containerName);
@@ -155,8 +162,9 @@ DataSourceAccountAzure::AzureContainer DataSourceAccountAzure::initializeContain
 
     return container;
 }
+#endif
 
-
+#ifdef USE_WASTORAGE
 DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)
 {
     DataSourceURL    url;
@@ -276,6 +284,7 @@ DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url
 
     return DataSourceStatus();
 }
+#endif
 
 DataSourceAccountAzureCURL::DataSourceAccountAzureCURL(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
     {
@@ -333,6 +342,20 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
     //CURL* curl = curl_handle->get();
 
     return SuperCURL::downloadBlobSync(url, source, readSize, size, session);
+    }
+
+DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer * source, const DataSource::SessionName &session)
+    {
+    auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
+
+    auto azureToken = session.getKeyRemapFunction()();
+
+    if (!azureToken.empty())
+        uriEncodedBlobUrl += ("?" + azureToken).c_str();
+
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
+
+    return SuperCURL::downloadBlobSync(url, source, session);
     }
 
 DataSourceStatus DataSourceAccountAzureCURL::uploadBlobSync(DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)

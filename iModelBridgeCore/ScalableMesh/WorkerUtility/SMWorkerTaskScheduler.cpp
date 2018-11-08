@@ -316,10 +316,11 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
 /*---------------------------------------------------NEEDS_WORK_MST : Duplicate from ATP Code - END-----------------------------------------------------------*/
 
 
-TaskScheduler::TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers)
+TaskScheduler::TaskScheduler(BeFileName& taskFolderName, uint32_t nbWorkers, bool useGroupingStrategy)
     {
     m_taskFolderName = taskFolderName;
     m_nbWorkers = nbWorkers;
+    m_useGroupingStrategy = useGroupingStrategy;
     }
 
 TaskScheduler::~TaskScheduler()
@@ -747,13 +748,12 @@ void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
             
 
             IScalableMeshSourceCreatorWorkerPtr creatorWorkerPtr(GetSourceCreatorWorker());
-/*
+
             if (m_useGroupingStrategy)
                 {
                 status = creatorWorkerPtr->CreateGenerationTasks();
                 }
             else
-            */
                 {
                 status = creatorWorkerPtr->CreateMeshTasks();
 

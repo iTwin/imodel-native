@@ -13,7 +13,7 @@
 #include <ImagePP/all/h/HFCException.h>
 
 #include "ScalableMesh\ScalableMeshGraph.h"
-#include "CGALEdgeCollapse.h"
+//#include "CGALEdgeCollapse.h"
 #include "ScalableMeshMesher.h"
 #include "LogUtils.h"
 
@@ -502,7 +502,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         size_t totalNumberOfFeaturePoints = 0;
         for (const auto& line : polylines)
             totalNumberOfFeaturePoints += line.size();
-        bool shouldSimplifyFeatures = totalNumberOfPoints * 0.2 <= totalNumberOfFeaturePoints;
+        //bool shouldSimplifyFeatures = totalNumberOfPoints * 0.2 <= totalNumberOfFeaturePoints;
 		bvector<DTMFeatureType> newTypes;
 		bvector<DTMFeatureType> otherNewTypes;
 		bvector<bvector<DPoint3d>> newLines;
@@ -613,8 +613,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		        }
 
 		    newLines = polylines;
-            if(shouldSimplifyFeatures)
-		        SimplifyPolylines(polylines);
+// WIP_NEEDS_WORK_2017
+          //  if(shouldSimplifyFeatures)
+		        //SimplifyPolylines(polylines);
 		    std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
 			    [&types, &polylines](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
 		        {
@@ -763,7 +764,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
     if (meshInput == nullptr) return false;
     ResolveUnmergedBoundaries(meshInput);
 
-    bool ret = CGALEdgeCollapse(meshInput, inputPts, pParentMeshNode->GetBlockID().m_integerID);
+// WIP_NEEDS_WORK_2017
+//    bool ret = CGALEdgeCollapse(meshInput, inputPts, pParentMeshNode->GetBlockID().m_integerID);
     bvector<DPoint3d> vecPts;
     vecPts.assign(inputPts.begin(), inputPts.end());    
     if (polylines.size() > 0)
@@ -789,30 +791,30 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
             otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
             polylines.insert(polylines.end(), newLines.begin(), newLines.end());
                 types = otherNewTypes;
-            SimplifyPolylines(polylines);
+            //SimplifyPolylines(polylines);
         }
 
 
-    if (ret)
-        {
-        volatile size_t n2 = 0;
-        MTGARRAY_SET_LOOP(edgeID, meshInput)
-            {
-            int tag = -1;
-            meshInput->TryGetLabel(edgeID, 2, tag);
-            if (tag != -1) n2++;
-            }
-        MTGARRAY_END_SET_LOOP(edgeID, meshInput)
-                
-        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode)->UpdateFromGraph(meshInput, vecPts);
-        for (auto& polyline : polylines)
-            {
-            DRange3d extent = DRange3d::From(polyline);
-            pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
-            }
-        }
-    else
-        {
+    //if (ret)
+    //    {
+    //    volatile size_t n2 = 0;
+    //    MTGARRAY_SET_LOOP(edgeID, meshInput)
+    //        {
+    //        int tag = -1;
+    //        meshInput->TryGetLabel(edgeID, 2, tag);
+    //        if (tag != -1) n2++;
+    //        }
+    //    MTGARRAY_END_SET_LOOP(edgeID, meshInput)
+    //            
+    //    dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode)->UpdateFromGraph(meshInput, vecPts);
+    //    for (auto& polyline : polylines)
+    //        {
+    //        DRange3d extent = DRange3d::From(polyline);
+    //        pParentMeshNode->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &polylines.front()], polyline, extent);
+    //        }
+    //    }
+    //else
+    //    {
         std::random_shuffle(vecPts.begin(), vecPts.end());
         vecPts.resize(vecPts.size() / pParentMeshNode->GetNumberOfSubNodesOnSplit());
         //pParentMeshNode->clear();
@@ -834,7 +836,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
             {
             pParentMeshNode->GetMesher2_5d()->Mesh(pParentMeshNode);
             }
-        }
+        //}
     delete meshInput;
     if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
         {

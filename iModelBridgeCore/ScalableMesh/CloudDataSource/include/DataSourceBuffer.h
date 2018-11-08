@@ -13,6 +13,7 @@ public:
 
     typedef unsigned char               BufferData;
     typedef unsigned long long          BufferSize;
+    typedef std::vector<BufferData>     BufferVectorData;
     typedef unsigned int                SegmentIndex;
     typedef ActivitySemaphore::Timeout  Timeout;
     typedef ActivitySemaphore::Status   TimeoutStatus;
@@ -21,9 +22,7 @@ private:
     friend class DataSourceTransferScheduler;
     bool m_isSegmented = false;
     BufferSize m_totalReadSize = 0;
-
-protected:
-    typedef std::vector<BufferData>     Buffer;
+    bool m_isProcessing = false;
 
 protected:
 
@@ -32,11 +31,13 @@ protected:
     std::mutex                          segmentMutex;
     ActivitySemaphore                   activitySemaphore;
 
-    Buffer                              buffer;
+    BufferVectorData                    buffer;
     std::mutex                          mutex;
 
     BufferData                        * externalBuffer;
     BufferSize                          externalBufferSize;
+
+    BufferVectorData                  * externalVector = nullptr;
 
     BufferSize                          m_segmentSize;
     SegmentIndex                        m_currentSegmentIndex;
@@ -56,6 +57,8 @@ protected:
 
     void                                setExternalBufferSize               (BufferSize size);
 
+    void                                setExternalVector                   (BufferVectorData *extVector);
+
     ActivitySemaphore                &  getActivitySemaphore                (void);
 
     DataSourceStatus                    getDataSourceStatus                 (TimeoutStatus status);
@@ -64,6 +67,7 @@ public:
 
                                         DataSourceBuffer                    (void);
                                         DataSourceBuffer                    (BufferSize size, BufferData *extBuffer = nullptr);
+                                        DataSourceBuffer                    (BufferVectorData& extBuffer);
 
                                         ~DataSourceBuffer                   ();
 
@@ -85,13 +89,19 @@ public:
     void                                setSegmented                        (const bool& value);
     BufferData                        * getSegment                          (SegmentIndex index);
 
+    BufferVectorData                  * getBuffer                           ();
+
     SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
     bool                                signalSegmentProcessed              (void);
     void                                signalCancelled                     (void);
     DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds, int numRetries = 1);
 
+    void                                setIsProcessing                     (const bool& isProcessing) { m_isProcessing = isProcessing;}
+    bool                                getIsProcessing                     () { return m_isProcessing;}
+
     BufferData                        * getExternalBuffer                   (void);
     BufferSize                          getExternalBufferSize               (void);
+    BufferVectorData                  * getExternalVector                   (void);
 
     void                                updateReadSize                      (DataSourceBuffer::BufferSize readSize);
     DataSourceBuffer::BufferSize        getReadSize                         (void);

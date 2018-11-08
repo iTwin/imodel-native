@@ -31,9 +31,12 @@ class SMSQLiteSisterFile
         std::mutex m_featureOpen;
         std::mutex m_clipOpen;
 
-        bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType, bool useTempPath = true) const;
-
         SMSQLiteSisterFile() = default;
+
+    protected:
+
+        bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType, bool useTempPath = true) const;
+        void CloseSisterFile(SMStoreDataType dataType);
 
     public:
         SMSQLiteSisterFile(SMSQLiteFilePtr sqliteFile);

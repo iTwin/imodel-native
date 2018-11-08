@@ -36,30 +36,30 @@ template <class POINT, class EXTENT> void ContourProcessingQuery<POINT,EXTENT>::
 {
     HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
     size_t idx = 0;
-    m_toLoadNodeMutexes[threadInd].lock();
-    while (m_toLoadNodes[threadInd].size() > 0)
+    this->m_toLoadNodeMutexes[threadInd].lock();
+    while (this->m_toLoadNodes[threadInd].size() > 0)
     {
         IScalableMeshCachedDisplayNodePtr meshNodePtr;
-            nodePtr = m_toLoadNodes[threadInd].front();
-            m_toLoadNodeMutexes[threadInd].unlock();
-            idx = m_nbOfFoundNodes[threadInd]++;
-         m_foundMeshNodeMutexes[threadInd].lock();
-            IScalableMeshCachedDisplayNodePtr displayNodePtr = m_foundMeshNodes[threadInd][idx];
-            meshNodePtr = ScalableMeshContourCachedDisplayNode<POINT>::Create(displayNodePtr.get());
-            m_foundMeshNodes[threadInd][idx] = meshNodePtr;
-            //assert(dynamic_cast<ScalableMeshContourCachedDisplayNode<POINT>*>(m_foundMeshNodes[threadInd].front().get()) != 0);
-            m_foundMeshNodeMutexes[threadInd].unlock();
+        nodePtr = this->m_toLoadNodes[threadInd].front();
+        this->m_toLoadNodeMutexes[threadInd].unlock();
+        idx = this->m_nbOfFoundNodes[threadInd]++;
+        this->m_foundMeshNodeMutexes[threadInd].lock();
+        IScalableMeshCachedDisplayNodePtr displayNodePtr = this->m_foundMeshNodes[threadInd][idx];
+        meshNodePtr = ScalableMeshContourCachedDisplayNode<POINT>::Create(displayNodePtr.get());
+        this->m_foundMeshNodes[threadInd][idx] = meshNodePtr;
+        //assert(dynamic_cast<ScalableMeshContourCachedDisplayNode<POINT>*>(m_foundMeshNodes[threadInd].front().get()) != 0);
+        this->m_foundMeshNodeMutexes[threadInd].unlock();
 
-            dynamic_cast<ScalableMeshContourCachedDisplayNode<POINT>*>(meshNodePtr.get())->ComputeContours(m_params);
+        dynamic_cast<ScalableMeshContourCachedDisplayNode<POINT>*>(meshNodePtr.get())->ComputeContours(m_params);
         
-            m_toLoadNodeMutexes[threadInd].lock();
-            HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> tmpNode = m_toLoadNodes[threadInd].back();
-            m_toLoadNodes[threadInd][m_toLoadNodes[threadInd].size() - 1] = m_toLoadNodes[threadInd][0];
-            m_toLoadNodes[threadInd][0] = tmpNode;
-            m_toLoadNodes[threadInd].pop_back();
+        this->m_toLoadNodeMutexes[threadInd].lock();
+        HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> tmpNode = this->m_toLoadNodes[threadInd].back();
+        this->m_toLoadNodes[threadInd][this->m_toLoadNodes[threadInd].size() - 1] = this->m_toLoadNodes[threadInd][0];
+        this->m_toLoadNodes[threadInd][0] = tmpNode;
+        this->m_toLoadNodes[threadInd].pop_back();
         //assert(dynamic_cast<ScalableMeshContourCachedDisplayNode<POINT>*>(m_foundMeshNodes[threadInd].front().get()) != 0);
     }
-    m_toLoadNodeMutexes[threadInd].unlock();
+    this->m_toLoadNodeMutexes[threadInd].unlock();
 }
 
 template class ContourProcessingQuery<DPoint3d, Extent3dType>;

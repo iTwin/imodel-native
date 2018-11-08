@@ -19,7 +19,7 @@
 
   <Product Name="ScalableMesh-Gtest" >
         <SubPart PartName="Gtest"/>
-        <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh"/>
+        <SubPart PartName="ScalableMeshCreator" PartFile="ScalableMesh" Repository="ScalableMesh"/>
         <SubPart PartName="ScalableMesh-Data" PartFile="ScalableMesh-Data" Repository="ScalableMesh-Data"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <Directories DirectoryListName="ScalableMeshUnitTestsDir"/>
@@ -45,7 +45,7 @@
 
   <Part Name="ScalableMeshUnitTests" BentleyBuildMakeFile="Tests/GTests/BuildTests.mke">
     <SubPart PartName="PrewireForUnitTests"/>
-    <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh"/>
+    <SubPart PartName="ScalableMeshCreator" PartFile="ScalableMesh" Repository="ScalableMesh"/>
     <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay"/>
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="ScalableMesh" SourceName="Delivery/UnitTests/Objects/ScalableMesh"/>

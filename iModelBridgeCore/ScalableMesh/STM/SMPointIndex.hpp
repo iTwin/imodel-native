@@ -8449,7 +8449,7 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
 
         if (s_dropNodes)
             {                           
-            DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\NodeAferCreationR.xml", false);                
+            DumpOctTree((char *)"D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\NodeAferCreationR.xml", false);                
             //DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterCreation.xml", false);
             //  ValidateNeighbors();
             }        
