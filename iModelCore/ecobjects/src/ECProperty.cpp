@@ -2335,7 +2335,7 @@ SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVers
 
     bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
     additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
-    additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToString(m_direction)));
+    additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToXmlString(m_direction)));
 
     return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);
     }
@@ -2351,7 +2351,7 @@ bool NavigationECProperty::_ToJson(Json::Value& outValue, bool isInherited) cons
 
     ECRelatedInstanceDirection direction = GetDirection();
     Utf8String directionString;
-    attributes.push_back(bpair<Utf8String, Json::Value>(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToString(direction)));
+    attributes.push_back(bpair<Utf8String, Json::Value>(DIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToJsonString(direction)));
     
     return T_Super::_ToJson(outValue, isInherited, attributes);
     }

@@ -4,10 +4,10 @@
   "schemaVersion": "03.01.00",
   "schemaItemType": "RelationshipClass",
   "name": "ExampleRelationshipClass",
-  "modifier": "none",
+  "modifier": "None",
   "baseClass": "ExampleSchema.RelationshipClassBase",
-  "strength": "referencing",
-  "strengthDirection": "forward",
+  "strength": "Referencing",
+  "strengthDirection": "Forward",
   "source": {
     "multiplicity": "(0..1)",
     "roleLabel": "SourceRoleLabel",

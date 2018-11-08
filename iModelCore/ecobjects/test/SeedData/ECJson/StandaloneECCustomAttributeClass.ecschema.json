@@ -4,6 +4,6 @@
   "schemaVersion": "03.01.00",
   "schemaItemType": "CustomAttributeClass",
   "name": "ExampleCustomAttribute",
-  "modifier": "sealed",
+  "modifier": "Sealed",
   "appliesTo": "Schema, AnyProperty"
 }

@@ -170,21 +170,23 @@
 #define EC_V3CONVERSION_DIRECTORY           L"V3Conversion"
 
 // Class modifiers
-#define ECXML_MODIFIER_NONE                 "None"
-#define ECXML_MODIFIER_ABSTRACT             "Abstract"
-#define ECXML_MODIFIER_SEALED               "Sealed"
-#define ECJSON_MODIFIER_NONE                "none"
-#define ECJSON_MODIFIER_ABSTRACT            "abstract"
-#define ECJSON_MODIFIER_SEALED              "sealed"
+#define MODIFIER_NONE                       "None"
+#define MODIFIER_ABSTRACT                   "Abstract"
+#define MODIFIER_SEALED                     "Sealed"
 
 // Relationship Class strength
-#define STRENGTH_REFERENCING                "referencing"
-#define STRENGTH_HOLDING                    "holding"
-#define STRENGTH_EMBEDDING                  "embedding"
+#define ECXML_STRENGTH_REFERENCING          "referencing"
+#define ECXML_STRENGTH_HOLDING              "holding"
+#define ECXML_STRENGTH_EMBEDDING            "embedding"
+#define ECJSON_STRENGTH_REFERENCING         "Referencing"
+#define ECJSON_STRENGTH_HOLDING             "Holding"
+#define ECJSON_STRENGTH_EMBEDDING           "Embedding"
 
 // Relationship Class strength direction
-#define DIRECTION_FORWARD                   "forward"
-#define DIRECTION_BACKWARD                  "backward"
+#define ECXML_DIRECTION_FORWARD             "forward"
+#define ECXML_DIRECTION_BACKWARD            "backward"
+#define ECJSON_DIRECTION_FORWARD            "Forward"
+#define ECJSON_DIRECTION_BACKWARD           "Backward"
 
 // ECProperty Types
 #define ECJSON_ECPROPERTY_PRIMITIVE         "PrimitiveProperty"
@@ -277,11 +279,12 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString);
     ECOBJECTS_EXPORT static bool IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullName, uint32_t xmlMajorVersion, uint32_t xmlMinorVersion);
-    ECOBJECTS_EXPORT static Utf8CP DirectionToString(ECRelatedInstanceDirection direction);
-    ECOBJECTS_EXPORT static Utf8CP ModifierToXmlString(ECClassModifier modifier);
-    ECOBJECTS_EXPORT static Utf8CP ModifierToJsonString(ECClassModifier modifier);
+    ECOBJECTS_EXPORT static Utf8CP DirectionToXmlString(ECRelatedInstanceDirection direction);
+    ECOBJECTS_EXPORT static Utf8CP DirectionToJsonString(ECRelatedInstanceDirection direction);
+    ECOBJECTS_EXPORT static Utf8CP ModifierToString(ECClassModifier modifier);
     ECOBJECTS_EXPORT static Utf8CP PrimitiveTypeToString(PrimitiveType primitiveType);
-    ECOBJECTS_EXPORT static Utf8CP StrengthToString(StrengthType strength);
+    ECOBJECTS_EXPORT static Utf8CP StrengthToXmlString(StrengthType strength);
+    ECOBJECTS_EXPORT static Utf8CP StrengthToJsonString(StrengthType strength);
     ECOBJECTS_EXPORT static Utf8CP SchemaElementTypeToString(ECSchemaElementType elementType);
     ECOBJECTS_EXPORT static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     ECOBJECTS_EXPORT static Utf8String MultiplicityToLegacyString(RelationshipMultiplicity multiplicity);

@@ -4,7 +4,7 @@
   "schemaVersion": "03.01.00",
   "schemaItemType": "EntityClass",
   "name": "ExampleEntity",
-  "modifier": "sealed",
+  "modifier": "Sealed",
   "label": "ExampleEntity",
   "description": "An example entity class.",
   "baseClass": "ExampleSchema.ExampleBaseEntity",
