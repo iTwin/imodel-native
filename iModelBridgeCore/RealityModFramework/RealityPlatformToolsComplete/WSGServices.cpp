@@ -107,7 +107,7 @@ void* RequestConstructor::PrepareRequestBase(const WSGURL& wsgRequest, RawServer
     if(response.toolCode != ServerType::Azure)
         headers = curl_slist_append(headers, GetToken().c_str());
 
-    curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString());
+    curl_easy_setopt(curl, CURLOPT_URL, wsgRequest.GetHttpRequestString().c_str());
 
     //curl_easy_setopt(curl, CURLOPT_CERTINFO, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, (verifyPeer ? 1L : 0));

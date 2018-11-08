@@ -247,7 +247,7 @@ NavNode::NavNode(Utf8StringCR schema, Utf8String id, Utf8StringCR typeSystem, Ut
     : m_typeSystem(typeSystem), m_schemaName(schema), m_rootId(id), m_instanceId(id), m_className(className)
     {
     id.ReplaceAll("-","--");
-    m_rootNode = m_navString = Utf8PrintfString("%s--%s-RealityData-%s", m_typeSystem, m_schemaName, id);
+    m_rootNode = m_navString = Utf8PrintfString("%s--%s-RealityData-%s", m_typeSystem.c_str(), m_schemaName.c_str(), id.c_str());
     }
 
 //-------------------------------------------------------------------------------------

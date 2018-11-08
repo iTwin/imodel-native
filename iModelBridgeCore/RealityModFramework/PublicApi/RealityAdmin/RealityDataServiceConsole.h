@@ -90,6 +90,7 @@ private:
     void ConfigureServer();
     void SetProjectId();
     void PrintResults(bvector<Utf8String> results);
+    void PrintResults(bvector<std::pair<Utf8String, Utf8String>> results);
     void PrintResults(bmap<Utf8String, bvector<Utf8String>> results);
     void Usage();
     void Choice(bvector<Utf8String> options, Utf8StringR input);

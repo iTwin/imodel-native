@@ -210,7 +210,7 @@ private:
 struct RealityDataFileDownload : public RealityDataFileTransfer
 {
 public:
-    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize) :
+    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize, RealityDataServiceDownload* download = nullptr) :
         iAppend(0)
         {
         m_azureServer = azureServer;
@@ -223,14 +223,22 @@ public:
         m_fileUrl = fileUrl;
 
         m_requestType = HttpRequestType::GET_Request;
+
+        m_downloader = download;
         }
 
     REALITYDATAPLATFORM_EXPORT void Retry() override;
 
     size_t                  iAppend;
 
+    int ProcessProgress(uint64_t currentProgress);
+    void SetRDSDownload(RealityDataServiceDownload* downloader) { m_downloader = downloader; }
+
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataServiceDownload* m_downloader;
     };
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -260,7 +268,7 @@ void RealityDataUrl::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = RealityDataService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s", RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), RealityDataService::GetSchemaName()));
+    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s", RealityDataService::GetWSGProtocol().c_str(), RealityDataService::GetRepoName().c_str(), RealityDataService::GetSchemaName().c_str()));
     }
 
 //=====================================================================================
@@ -292,7 +300,7 @@ void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() con
     if(!m_encodedId.empty())
         {
         Utf8String date = Utf8PrintfString("%d-%d-%d",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
-        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date, m_encodedId));
+        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date.c_str(), m_encodedId.c_str()));
         }
     }
 
@@ -317,7 +325,7 @@ void RealityDataServiceStatRequest::_PrepareHttpRequestStringAndPayload() const
     if(!m_encodedId.empty())
         {
         Utf8String date = Utf8PrintfString("%4d-%.2d-%.2d",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
-        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date, m_encodedId));
+        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date.c_str(), m_encodedId.c_str()));
         }
     }
 
@@ -341,7 +349,7 @@ void RealityDataUserStatRequest::_PrepareHttpRequestStringAndPayload() const
     if(!m_encodedId.empty())
         {
         Utf8String date = Utf8PrintfString("%4d-%.2d-%.2d",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
-        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date, m_encodedId));
+        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date.c_str(), m_encodedId.c_str()));
         }
     }
 
@@ -392,7 +400,7 @@ void RealityDataDelete::_PrepareHttpRequestStringAndPayload() const
 void RealityDataRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelatedId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelatedId+eq+'%s'", m_encodedId.c_str()));
     }
 
 //=====================================================================================
@@ -401,7 +409,7 @@ void RealityDataRelationshipByProjectIdRequest::_PrepareHttpRequestStringAndPayl
 void RealityDataRelationshipByRealityDataIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RealityDataId+eq+'%s'", m_encodedId.c_str()));
     }
 
 //=====================================================================================
@@ -516,7 +524,7 @@ void RealityDataDocumentContentByIdRequest::EncodeId() const
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByName(Utf8String name)
     {   
-    return RDSFilter(Utf8PrintfString("Name+eq+'%s'", BeStringUtilities::UriEncode(name.c_str())));
+    return RDSFilter(Utf8PrintfString("Name+eq+'%s'", BeStringUtilities::UriEncode(name.c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -524,7 +532,7 @@ RDSFilter RealityDataFilterCreator::FilterByName(Utf8String name)
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByClassification(RealityDataBase::Classification classification)
     {
-    return RDSFilter(Utf8PrintfString("Classification+eq+'%s'", BeStringUtilities::UriEncode(RealityDataBase::GetTagFromClassification(classification).c_str())));
+    return RDSFilter(Utf8PrintfString("Classification+eq+'%s'", BeStringUtilities::UriEncode(RealityDataBase::GetTagFromClassification(classification).c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -540,7 +548,7 @@ RDSFilter RealityDataFilterCreator::FilterBySize(uint64_t minSize, uint64_t maxS
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint64_t coordSys)
     {   
-    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToRDSString(area, Utf8PrintfString("%lu", coordSys))));
+    return RDSFilter(Utf8PrintfString("polygon=%s", RealityDataBase::FootprintToRDSString(area, Utf8PrintfString("%lu", coordSys)).c_str()));
     }
 
 //=====================================================================================
@@ -548,7 +556,7 @@ RDSFilter RealityDataFilterCreator::FilterSpatial(bvector<GeoPoint2d> area, uint
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByOwner(Utf8String owner)
     {
-    return RDSFilter(Utf8PrintfString("OwnedBy+eq+'%s'", BeStringUtilities::UriEncode(owner.c_str())));
+    return RDSFilter(Utf8PrintfString("OwnedBy+eq+'%s'", BeStringUtilities::UriEncode(owner.c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -556,7 +564,7 @@ RDSFilter RealityDataFilterCreator::FilterByOwner(Utf8String owner)
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateTime maxDate)
     {
-    return RDSFilter(Utf8PrintfString("CreatedTimestamp+ge+'%s'+and+CreatedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString()));
+    return RDSFilter(Utf8PrintfString("CreatedTimestamp+ge+'%s'+and+CreatedTimestamp+le+'%s'", minDate.ToString().c_str(), maxDate.ToString().c_str()));
     }
 
 //=====================================================================================
@@ -564,7 +572,7 @@ RDSFilter RealityDataFilterCreator::FilterByCreationDate(DateTime minDate, DateT
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, DateTime maxDate)
     {
-    return RDSFilter(Utf8PrintfString("ModifiedTimestamp+ge+'%s'+and+ModifiedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString()));
+    return RDSFilter(Utf8PrintfString("ModifiedTimestamp+ge+'%s'+and+ModifiedTimestamp+le+'%s'", minDate.ToString().c_str(), maxDate.ToString().c_str()));
     }
 
 //=====================================================================================
@@ -572,7 +580,7 @@ RDSFilter RealityDataFilterCreator::FilterByModificationDate(DateTime minDate, D
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByAccessDate(DateTime minDate, DateTime maxDate)
     {
-    return RDSFilter(Utf8PrintfString("LastAccessedTimestamp+ge+'%s'+and+LastAccessedTimestamp+le+'%s'", minDate.ToString(), maxDate.ToString()));
+    return RDSFilter(Utf8PrintfString("LastAccessedTimestamp+ge+'%s'+and+LastAccessedTimestamp+le+'%s'", minDate.ToString().c_str(), maxDate.ToString().c_str()));
     }
 
 //=====================================================================================
@@ -580,7 +588,7 @@ RDSFilter RealityDataFilterCreator::FilterByAccessDate(DateTime minDate, DateTim
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterVisibility(RealityDataBase::Visibility visibility)
     {
-    return RDSFilter(Utf8PrintfString("Visibility+eq+'%s'", RealityDataBase::GetTagFromVisibility(visibility)));
+    return RDSFilter(Utf8PrintfString("Visibility+eq+'%s'", RealityDataBase::GetTagFromVisibility(visibility).c_str()));
     }
 
 //=====================================================================================
@@ -604,7 +612,7 @@ RDSFilter RealityDataFilterCreator::FilterByAccuracy(double accuracyMin, double 
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByType(Utf8String types)
     {
-    return RDSFilter(Utf8PrintfString("Type+eq+'%s'", BeStringUtilities::UriEncode(types.c_str())));
+    return RDSFilter(Utf8PrintfString("Type+eq+'%s'", BeStringUtilities::UriEncode(types.c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -612,7 +620,7 @@ RDSFilter RealityDataFilterCreator::FilterByType(Utf8String types)
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
     {
-    return RDSFilter(Utf8PrintfString("Dataset+eq+'%s'", BeStringUtilities::UriEncode(dataset.c_str())));
+    return RDSFilter(Utf8PrintfString("Dataset+eq+'%s'", BeStringUtilities::UriEncode(dataset.c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -620,7 +628,7 @@ RDSFilter RealityDataFilterCreator::FilterByDataset(Utf8String dataset)
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterByGroup(Utf8String group)
     {   
-    return RDSFilter(Utf8PrintfString("Group+eq+'%s'", BeStringUtilities::UriEncode(group.c_str())));
+    return RDSFilter(Utf8PrintfString("Group+eq+'%s'", BeStringUtilities::UriEncode(group.c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -628,7 +636,7 @@ RDSFilter RealityDataFilterCreator::FilterByGroup(Utf8String group)
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8String realityDataId)
     {
-    return RDSFilter(Utf8PrintfString("RealityDataId+eq+'%s'", BeStringUtilities::UriEncode(realityDataId.c_str())));
+    return RDSFilter(Utf8PrintfString("RealityDataId+eq+'%s'", BeStringUtilities::UriEncode(realityDataId.c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -636,7 +644,7 @@ RDSFilter RealityDataFilterCreator::FilterRelationshipByRealityDataId(Utf8String
 //=====================================================================================
 RDSFilter RealityDataFilterCreator::FilterRelationshipByProjectId(Utf8String projectId)
     {
-    return RDSFilter(Utf8PrintfString("RelatedId+eq+'%s'", BeStringUtilities::UriEncode(projectId.c_str())));
+    return RDSFilter(Utf8PrintfString("RelatedId+eq+'%s'", BeStringUtilities::UriEncode(projectId.c_str()).c_str()));
     }
 
 //=====================================================================================
@@ -705,17 +713,17 @@ void RealityDataPagedRequest::_PrepareHttpRequestStringAndPayload() const
     m_httpRequestString.append("/RealityData?");
 
     if (m_filter.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("$filter=%s&", m_filter));
+        m_httpRequestString.append(Utf8PrintfString("$filter=%s&", m_filter.c_str()));
     if (m_order.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("%s&", m_order));
+        m_httpRequestString.append(Utf8PrintfString("%s&", m_order.c_str()));
 
     m_httpRequestString.append(Utf8PrintfString("$skip=%u&$top=%u", m_startIndex, m_pageSize));
     
     if (m_query.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query.c_str()));
 
     if (m_project.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project.c_str()));
     }
 
 static bmap<RealityDataField, Utf8String> CreatePropertyMap()
@@ -858,19 +866,19 @@ void RealityDataListByUltimateIdPagedRequest::_PrepareHttpRequestStringAndPayloa
         EncodeId();
         }
 
-    m_httpRequestString.append(Utf8PrintfString("%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("%s'", m_encodedId.c_str()));
     if (m_filter.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
+        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter.c_str())); // TODO: and/or?
     if (m_order.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
+        m_httpRequestString.append(Utf8PrintfString("&%s", m_order.c_str()));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
 
     if (m_query.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query.c_str()));
 
     if (m_project.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project.c_str()));
     }
 
 //=====================================================================================
@@ -879,20 +887,20 @@ void RealityDataListByUltimateIdPagedRequest::_PrepareHttpRequestStringAndPayloa
 void RealityDataRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RelatedId+eq+'%s'", m_encodedId));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RelatedId+eq+'%s'", m_encodedId.c_str()));
 
     if (m_filter.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
+        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter.c_str())); // TODO: and/or?
     if (m_order.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
+        m_httpRequestString.append(Utf8PrintfString("&%s", m_order.c_str()));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
 
     if (m_query.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query.c_str()));
 
     if (m_project.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project.c_str()));
     }
 
 //=====================================================================================
@@ -901,20 +909,20 @@ void RealityDataRelationshipByProjectIdPagedRequest::_PrepareHttpRequestStringAn
 void RealityDataRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataPagedRequest::_PrepareBaseRequestString();
-    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RealityDataId+eq+'%s'", m_id));
+    m_httpRequestString.append(Utf8PrintfString("/RealityDataRelationship?$filter=RelationType+eq+'CONNECT-Project'+and+RealityDataId+eq+'%s'", m_id.c_str()));
 
     if (m_filter.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter)); // TODO: and/or?
+        m_httpRequestString.append(Utf8PrintfString("+and+%s", m_filter.c_str())); // TODO: and/or?
     if (m_order.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&%s", m_order));
+        m_httpRequestString.append(Utf8PrintfString("&%s", m_order.c_str()));
 
     m_httpRequestString.append(Utf8PrintfString("&$skip=%u&$top=%u", m_startIndex, m_pageSize));
 
     if (m_query.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query));
+        m_httpRequestString.append(Utf8PrintfString("&query=%s", m_query.c_str()));
 
     if (m_project.length() > 0)
-        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project));
+        m_httpRequestString.append(Utf8PrintfString("&project=%s", m_project.c_str()));
     }
 
 //=====================================================================================
@@ -1244,6 +1252,24 @@ void RealityDataFileDownload::Retry()
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              08/2018
+//=====================================================================================
+int RealityDataFileDownload::ProcessProgress(uint64_t currentProgress)
+    { 
+    if ((m_downloader != nullptr) && (m_downloader->m_pProgressFunc != NULL) 
+        && (currentProgress > m_transferProgress))
+        {
+        if (NULL != m_downloader->m_pHeartbeatFunc && m_downloader->m_pHeartbeatFunc() != 0)
+            return 1;
+
+        m_downloader->UpdateTransferAmount(currentProgress - m_transferProgress);
+        m_downloader->m_pProgressFunc(m_filename, ((double)currentProgress) / 100.0 , m_downloader->m_progress);
+        m_transferProgress = currentProgress;
+        }
+    return 0;
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
@@ -1349,7 +1375,7 @@ void TransferReport::ToXml(Utf8StringR report) const
                     {
                     writer->WriteElementStart("Response");
                     writer->WriteAttribute("ResponseCode", Utf8PrintfString("%u", tr->response.responseCode).c_str());
-                    writer->WriteAttribute("Header", Utf8PrintfString("%s", tr->response.header).c_str());
+                    writer->WriteAttribute("Header", Utf8PrintfString("%s", tr->response.header.c_str()).c_str());
                     writer->WriteElementEnd();
                     }
                 }
@@ -1373,9 +1399,9 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
         if(propertyString.length() > 0)
             propertyString.append(",");
         if(field == RealityDataField::Streamed || field == RealityDataField::Listable || field == RealityDataField::Hidden || field == RealityDataField::DelegatePermissions || field == RealityDataField::Footprint)
-            propertyString.append(Utf8PrintfString("\"%s\" : %s", s_propertyMap[field], properties[field]));
+            propertyString.append(Utf8PrintfString("\"%s\" : %s", s_propertyMap[field].c_str(), properties[field].c_str()));
         else
-            propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", s_propertyMap[field], properties[field]));
+            propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", s_propertyMap[field].c_str(), properties[field].c_str()));
         }
     
     return propertyString;
@@ -1398,12 +1424,12 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
         if (!instance["changedInstance"].isNull() && !instance["changedInstance"]["instanceAfterChange"].isNull() && !instance["changedInstance"]["instanceAfterChange"]["instanceId"].isNull())
             {
             m_id = instance["changedInstance"]["instanceAfterChange"]["instanceId"].asString();
-            ReportStatus(0, nullptr, -1, Utf8PrintfString("New RealityData created with GUID %s\n", m_id).c_str());
+            ReportStatus(0, nullptr, -1, Utf8PrintfString("New RealityData created with GUID %s\n", m_id.c_str()).c_str());
             }
         else
             {
             ReportStatus(0, nullptr, -1, "RealityData creation failed\n");
-            ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", createResponse.body).c_str());
+            ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", createResponse.body.c_str()).c_str());
             ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
 
             m_creationError.m_errorOrigin = TransferError::TransferErrorOrigin::RDS_SERVICE;
@@ -1435,7 +1461,7 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
             WSGRequest::GetInstance().PerformRequest(createRequest, createResponse, RealityDataService::GetVerifyPeer());
             if(createResponse.body.ContainsI("error"))
                 {
-                ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", createResponse.body).c_str());
+                ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", createResponse.body.c_str()).c_str());
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
 
                 Json::Value jsonError(Json::objectValue);
@@ -1663,7 +1689,7 @@ Utf8String RealityDataServiceUpload::GetGuidFromId(Utf8String id)
                 break;
             }
 
-        id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4], guidParts[3], guidParts[2], guidParts[1], guidParts[0]);
+        id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4].c_str(), guidParts[3].c_str(), guidParts[2].c_str(), guidParts[1].c_str(), guidParts[0].c_str());
         }
     return id;
     }
@@ -1732,7 +1758,7 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
                 break;
             }
 
-        m_id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4], guidParts[3], guidParts[2], guidParts[1], guidParts[0]);
+        m_id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4].c_str(), guidParts[3].c_str(), guidParts[2].c_str(), guidParts[1].c_str(), guidParts[0].c_str());
         }
 
     m_handshakeRequest = new AzureHandshake(m_id, true);
@@ -1819,7 +1845,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
 
     m_filesToTransfer = downloadList;
 
-    m_fullTransferSize = m_filesToTransfer.size();
+    m_fullTransferSize = (uint64_t) (m_filesToTransfer.size() * (1.0 / m_progressStep));
 
     InitTool();
     }
@@ -1887,7 +1913,7 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
         downloadLocation = targetLocation;
         downloadLocation.AppendToPath(folders[folders.size() - 1].c_str());
 
-        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, 0, filesInRepo[0].second));
+        m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, 0, filesInRepo[0].second, this));
         }
     else
         {
@@ -1915,11 +1941,11 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
             downloadLocation = targetLocation;
             downloadLocation.AppendToPath(path.c_str());
 
-            m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second));
+            m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second, this));
             }
         }
 
-    m_fullTransferSize = m_filesToTransfer.size();
+    m_fullTransferSize = (uint64_t)(m_filesToTransfer.size() * (1.0 / m_progressStep));
 
     InitTool();
     }
@@ -2008,7 +2034,7 @@ void RealityDataService::SetErrorCallback(RealityDataService_ErrorCallBack error
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataPtr> RealityDataService::Request(RealityDataPagedRequest const& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if(!RealityDataService::AreParametersSet())
@@ -2034,7 +2060,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
 //=====================================================================================
 //! @bsimethod                                   Alain.Robert              05/2018
 //=====================================================================================
-void RealityDataService::Request(const RealityDataLocationRequest& request, RealityDataLocation& locationObject, RawServerResponse& rawResponse)
+void RealityDataService::Request(RealityDataLocationRequest const& request, RealityDataLocation& locationObject, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2053,7 +2079,7 @@ void RealityDataService::Request(const RealityDataLocationRequest& request, Real
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataLocation>  RealityDataService::Request(const AllRealityDataLocationsRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataLocation>  RealityDataService::Request(AllRealityDataLocationsRequest const& request, RawServerResponse& rawResponse)
     {
 
     bvector<RealityDataLocation> entities;
@@ -2079,7 +2105,7 @@ bvector<RealityDataLocation>  RealityDataService::Request(const AllRealityDataLo
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse)
+void RealityDataService::Request(RealityDataEnterpriseStatRequest const& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2098,7 +2124,7 @@ void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataServiceStat> RealityDataService::Request(const RealityDataServiceStatRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataServiceStat> RealityDataService::Request(RealityDataServiceStatRequest const& request, RawServerResponse& rawResponse)
     {
 
     bvector<RealityDataServiceStat> entities;
@@ -2123,7 +2149,7 @@ bvector<RealityDataServiceStat> RealityDataService::Request(const RealityDataSer
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataUserStat> RealityDataService::Request(const RealityDataUserStatRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataUserStat> RealityDataService::Request(RealityDataUserStatRequest const& request, RawServerResponse& rawResponse)
     {
 
     bvector<RealityDataUserStat> entities;
@@ -2148,7 +2174,7 @@ bvector<RealityDataUserStat> RealityDataService::Request(const RealityDataUserSt
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataEnterpriseStat>  RealityDataService::Request(const RealityDataAllEnterpriseStatsRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataEnterpriseStat>  RealityDataService::Request(RealityDataAllEnterpriseStatsRequest const& request, RawServerResponse& rawResponse)
     {
 
     bvector<RealityDataEnterpriseStat> entities;
@@ -2173,7 +2199,7 @@ bvector<RealityDataEnterpriseStat>  RealityDataService::Request(const RealityDat
 //=====================================================================================
 //! @bsimethod                                   Alain.Robert              04/2018
 //=====================================================================================
-bvector<RealityDataServiceStat>  RealityDataService::Request(const RealityDataAllServiceStatsRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataServiceStat>  RealityDataService::Request(RealityDataAllServiceStatsRequest const& request, RawServerResponse& rawResponse)
     {
 
     bvector<RealityDataServiceStat> entities;
@@ -2198,7 +2224,7 @@ bvector<RealityDataServiceStat>  RealityDataService::Request(const RealityDataAl
 //=====================================================================================
 //! @bsimethod                                   Alain.Robert              04/2018
 //=====================================================================================
-bvector<RealityDataUserStat>  RealityDataService::Request(const RealityDataAllUserStatsRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataUserStat>  RealityDataService::Request(RealityDataAllUserStatsRequest const& request, RawServerResponse& rawResponse)
     {
 
     bvector<RealityDataUserStat> entities;
@@ -2223,7 +2249,7 @@ bvector<RealityDataUserStat>  RealityDataService::Request(const RealityDataAllUs
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDataByRootId& request, RawServerResponse& rawResponse)
+bvector<bpair<WString, uint64_t>> RealityDataService::Request(AllRealityDataByRootId const& request, RawServerResponse& rawResponse)
     {
     bvector<bpair<WString, uint64_t>> documents = bvector<bpair<WString, uint64_t>>();
     
@@ -2298,7 +2324,7 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request, RawServerResponse& rawResponse)
+RealityDataPtr RealityDataService::Request(RealityDataByIdRequest const& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
 
@@ -2323,7 +2349,7 @@ RealityDataPtr RealityDataService::Request(const RealityDataByIdRequest& request
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataExtendedPtr RealityDataService::Request(const RealityDataExtendedByIdRequest& request, RawServerResponse& rawResponse)
+RealityDataExtendedPtr RealityDataService::Request(RealityDataExtendedByIdRequest const& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataExtendedPtr> entities = bvector<RealityDataExtendedPtr>();
 
@@ -2348,7 +2374,7 @@ RealityDataExtendedPtr RealityDataService::Request(const RealityDataExtendedById
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(const RealityDataDelete& request, RawServerResponse& rawResponse)
+void RealityDataService::Request(RealityDataDelete const& request, RawServerResponse& rawResponse)
     {
 
     if (!RealityDataService::AreParametersSet())
@@ -2368,7 +2394,7 @@ void RealityDataService::Request(const RealityDataDelete& request, RawServerResp
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataDocumentPtr RealityDataService::Request(const RealityDataDocumentByIdRequest& request, RawServerResponse& rawResponse)
+RealityDataDocumentPtr RealityDataService::Request(RealityDataDocumentByIdRequest const& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2419,7 +2445,7 @@ void RealityDataService::Request(RealityDataDocumentContentByIdRequest& request,
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequest& request, RawServerResponse& rawResponse)
+RealityDataFolderPtr RealityDataService::Request(RealityDataFolderByIdRequest const& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2445,7 +2471,7 @@ RealityDataFolderPtr RealityDataService::Request(const RealityDataFolderByIdRequ
 //! @bsimethod                                   Spencer.Mason              02/2017
 //! DEPRECATED
 //=====================================================================================
-bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByOrganizationPagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataPtr> RealityDataService::Request(RealityDataListByOrganizationPagedRequest const& request, RawServerResponse& rawResponse)
     {
     assert(0 && "This function is deprecated, please use RealityDataListByUltimateIdPagedRequest");
     return bvector<RealityDataPtr>();
@@ -2455,7 +2481,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByOrgan
 //! @bsimethod                                   Spencer.Mason              02/2017
 //! DEPRECATED
 //=====================================================================================
-bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByUltimateIdPagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataPtr> RealityDataService::Request(RealityDataListByUltimateIdPagedRequest const& request, RawServerResponse& rawResponse)
     {
     bvector<RealityDataPtr> entities = bvector<RealityDataPtr>();
     if (!RealityDataService::AreParametersSet())
@@ -2481,7 +2507,7 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataListByUltim
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByProjectIdRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(RealityDataRelationshipByProjectIdRequest const& request, RawServerResponse& rawResponse)
     {
     return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), rawResponse);
     }
@@ -2489,7 +2515,7 @@ bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDat
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByRealityDataIdRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(RealityDataRelationshipByRealityDataIdRequest const& request, RawServerResponse& rawResponse)
     {
     return _RequestRelationship(static_cast<const RealityDataUrl*>(&request), rawResponse);
     }
@@ -2525,7 +2551,7 @@ bvector<RealityDataRelationshipPtr> RealityDataService::_RequestRelationship(con
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByProjectIdPagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(RealityDataRelationshipByProjectIdPagedRequest const& request, RawServerResponse& rawResponse)
     {
     return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), rawResponse);
     }
@@ -2533,7 +2559,7 @@ bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDat
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bvector<RealityDataRelationshipPtr> RealityDataService::Request(const RealityDataRelationshipByRealityDataIdPagedRequest& request, RawServerResponse& rawResponse)
+bvector<RealityDataRelationshipPtr> RealityDataService::Request(RealityDataRelationshipByRealityDataIdPagedRequest const& request, RawServerResponse& rawResponse)
     {
     return _RequestPagedRelationships(static_cast<const RealityDataPagedRequest*>(&request), rawResponse);
     }
@@ -2572,7 +2598,7 @@ bvector<RealityDataRelationshipPtr> RealityDataService::_RequestPagedRelationshi
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataService::Request(const RealityDataChangeRequest& request, RawServerResponse& rawResponse)
+Utf8String RealityDataService::Request(RealityDataChangeRequest const& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2594,7 +2620,7 @@ Utf8String RealityDataService::Request(const RealityDataChangeRequest& request, 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataService::Request(const RealityDataCreateRequest& request, RawServerResponse& rawResponse)
+Utf8String RealityDataService::Request(RealityDataCreateRequest const& request, RawServerResponse& rawResponse)
 {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2616,7 +2642,7 @@ Utf8String RealityDataService::Request(const RealityDataCreateRequest& request, 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataService::Request(const RealityDataRelationshipCreateRequest& request, RawServerResponse& rawResponse)
+Utf8String RealityDataService::Request(RealityDataRelationshipCreateRequest const& request, RawServerResponse& rawResponse)
     {
     if (!RealityDataService::AreParametersSet())
         {
@@ -2635,7 +2661,7 @@ Utf8String RealityDataService::Request(const RealityDataRelationshipCreateReques
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-Utf8String RealityDataService::Request(const RealityDataRelationshipDelete& request, RawServerResponse& rawResponse)
+Utf8String RealityDataService::Request(RealityDataRelationshipDelete const& request, RawServerResponse& rawResponse)
     {
     rawResponse.clear();
 

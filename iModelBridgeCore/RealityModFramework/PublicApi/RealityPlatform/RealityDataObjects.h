@@ -220,7 +220,7 @@ public:
     enum Visibility
         {
         UNDEFINED_VISIBILITY = 0x00,
-        //PUBLIC = 0x01,
+        PUBLIC_VISIBILITY = 0x01,
         ENTERPRISE = 0x02,
         PERMISSION = 0x04,
         PRIVATE = 0x08
@@ -277,7 +277,7 @@ public:
 
 
     //! Code indicating the visibility of the data. The recognised keywords are:
-    //! PUBLIC - Usualy indicates data is public thus useable by anyone
+    //! PUBLIC_VISIBILITY - Usualy indicates data is public thus useable by anyone
     //! ENTERPRISE - Usually indicates data can be used by any member of the owning enterprise regardless of access rights
     //! PERMISSION - Usually indicates that data can be used by someone having the appropriate access rigths. This is the default value.
     //! PRIVATE - Usually indicates only the owner of the data can use it.
@@ -357,7 +357,6 @@ protected:
     mutable Utf8String m_coordSys;
 
     Visibility m_visibility;
-    Utf8String m_visibilityString;
     }; 
 
 

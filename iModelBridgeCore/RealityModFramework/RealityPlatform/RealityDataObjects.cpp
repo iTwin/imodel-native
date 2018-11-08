@@ -445,7 +445,7 @@ Utf8String RealityDataBase::FootprintToGCSString(bvector<GeoPoint2d> footprint, 
         }
     filter.append(Utf8PrintfString("[%f,%f]]", footprint[footprint.size() - 1].longitude, footprint[footprint.size() - 1].latitude));
     if(coordSys.length() > 0)
-        filter.append(Utf8PrintfString(", \\\"coordinate_system\\\":\\\"%s\\\"", coordSys));
+        filter.append(Utf8PrintfString(", \\\"coordinate_system\\\":\\\"%s\\\"", coordSys.c_str()));
     filter.append("}");
 
     return filter;
@@ -572,8 +572,6 @@ void RealityDataBase::SetVisibility(RealityDataBase::Visibility visibility) { m_
 //-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::GetVisibilityTag() const
     {
-    if(m_visibilityString == "PUBLIC")
-        return m_visibilityString;
     return GetTagFromVisibility(m_visibility);
     }
 
@@ -584,9 +582,9 @@ Utf8String RealityDataBase::GetVisibilityTag() const
 StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& returnedVisibility, Utf8CP visibilityTag)
     {
     Utf8String tag(visibilityTag);
-    /*if (tag == "PUBLIC")
-        returnedVisibility = Visibility::PUBLIC;
-    else*/ if (tag == "ENTERPRISE")
+    if (tag == "PUBLIC")
+        returnedVisibility = Visibility::PUBLIC_VISIBILITY;
+    else if (tag == "ENTERPRISE")
         returnedVisibility = Visibility::ENTERPRISE;
     else if (tag == "PERMISSION")
         returnedVisibility = Visibility::PERMISSION;
@@ -606,9 +604,9 @@ StatusInt RealityDataBase::GetVisibilityFromTag(RealityDataBase::Visibility& ret
 //-------------------------------------------------------------------------------------
 Utf8String RealityDataBase::GetTagFromVisibility(RealityDataBase::Visibility visibility)
     {
-    /*if (Visibility::PUBLIC == visibility)
+    if (Visibility::PUBLIC_VISIBILITY == visibility)
         return "PUBLIC";
-    else*/ if (Visibility::ENTERPRISE == visibility)
+    else if (Visibility::ENTERPRISE == visibility)
         return "ENTERPRISE";
     else if (Visibility::PERMISSION == visibility)
         return "PERMISSION";
@@ -624,7 +622,6 @@ Utf8String RealityDataBase::GetTagFromVisibility(RealityDataBase::Visibility vis
 //-------------------------------------------------------------------------------------
 StatusInt RealityDataBase::SetVisibilityByTag(Utf8CP visibilityTag)
     {
-    m_visibilityString = visibilityTag;
     return GetVisibilityFromTag(m_visibility, visibilityTag);
     }
 

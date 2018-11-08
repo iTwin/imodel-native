@@ -202,7 +202,7 @@ public:
         bvector<Utf8String> const & headers = GetRequestHeader();
         Utf8String headerString = "";
         for(Utf8String header : headers)
-            headerString.append(Utf8PrintfString("%s\t", header));
+            headerString.append(Utf8PrintfString("%s\t", header.c_str()));
         return headerString;
         }
 
