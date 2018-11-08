@@ -293,7 +293,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             {
             LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max multiplicity is greater than 1.",
                         navProp->GetClass().GetSchema().GetName().c_str(), navProp->GetClass().GetName().c_str(), navProp->GetName().c_str(),
-                        navProp->GetRelationshipClass()->GetName().c_str(), SchemaParseUtils::DirectionToString(navProp->GetDirection()));
+                        navProp->GetRelationshipClass()->GetName().c_str(), SchemaParseUtils::DirectionToXmlString(navProp->GetDirection()));
                 
             return SchemaReadStatus::InvalidECSchemaXml;
             }

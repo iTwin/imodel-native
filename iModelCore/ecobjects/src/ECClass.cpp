@@ -2147,7 +2147,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
         xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
     else if (m_modifier != ECClassModifier::None || IsRelationshipClass())
-        xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, SchemaParseUtils::ModifierToXmlString(m_modifier));
+        xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, SchemaParseUtils::ModifierToString(m_modifier));
 
     if (nullptr != additionalAttributes)
         {
@@ -2249,7 +2249,7 @@ bool ECClass::_ToJson(Json::Value& outValue, bool standalone, bool includeSchema
     // Common ECClass properties
     ECClassModifier const modifier = GetClassModifier();
     if (!isMixin && (ECClassModifier::None != modifier || IsRelationshipClass()))
-        outValue[MODIFIER_ATTRIBUTE] = SchemaParseUtils::ModifierToJsonString(modifier);
+        outValue[MODIFIER_ATTRIBUTE] = SchemaParseUtils::ModifierToString(modifier);
 
     if (HasBaseClasses() && !IsEntityClass()) // Entity class assigns base class in its _ToJson method
         {
@@ -4107,10 +4107,10 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, ECVers
     {
     SchemaWriteStatus   status;
     bmap<Utf8CP, Utf8CP> additionalAttributes;
-    additionalAttributes[STRENGTH_ATTRIBUTE] = SchemaParseUtils::StrengthToString(m_strength);
+    additionalAttributes[STRENGTH_ATTRIBUTE] = SchemaParseUtils::StrengthToXmlString(m_strength);
     if (m_strengthDirection != ECRelatedInstanceDirection::Forward)
         { //skip the attribute for "forward" as it is the default value.
-        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToString(m_strengthDirection);
+        additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = SchemaParseUtils::DirectionToJsonString(m_strengthDirection);
         }
 
     if (SchemaWriteStatus::Success != (status = ECClass::_WriteXml (xmlWriter, ecXmlVersion, ECXML_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
@@ -4137,8 +4137,8 @@ bool ECRelationshipClass::_ToJson(Json::Value& outValue, bool standalone, bool i
     {
     bvector<bpair<Utf8String, Json::Value>> attributes;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTH_ATTRIBUTE, SchemaParseUtils::StrengthToString(GetStrength())));
-    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTHDIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToString(GetStrengthDirection())));
+    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTH_ATTRIBUTE, SchemaParseUtils::StrengthToJsonString(GetStrength())));
+    attributes.push_back(bpair<Utf8String, Json::Value>(STRENGTHDIRECTION_ATTRIBUTE, SchemaParseUtils::DirectionToJsonString(GetStrengthDirection())));
 
     Json::Value sourceJson;
     if (!GetSource().ToJson(sourceJson))
@@ -4309,7 +4309,7 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
                 {
                 LOG.errorv("Strength Constraint Violation: ECRelationshipClass '%s' has different Strength, %s, than its base class '%s', %s.",
-                            GetFullName(), SchemaParseUtils::StrengthToString(value), relationshipBaseClass->GetFullName(), SchemaParseUtils::StrengthToString(relationshipBaseClass->GetStrength()));
+                            GetFullName(), SchemaParseUtils::StrengthToXmlString(value), relationshipBaseClass->GetFullName(), SchemaParseUtils::StrengthToXmlString(relationshipBaseClass->GetStrength()));
                 return false;
                 }
             }
@@ -4331,7 +4331,7 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
                 {
                 LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction, %s, than it's base class '%s', %s.",
-                            GetFullName(), SchemaParseUtils::DirectionToString(value), relationshipBaseClass->GetFullName(), SchemaParseUtils::DirectionToString(relationshipBaseClass->GetStrengthDirection()));
+                            GetFullName(), SchemaParseUtils::DirectionToXmlString(value), relationshipBaseClass->GetFullName(), SchemaParseUtils::DirectionToXmlString(relationshipBaseClass->GetStrengthDirection()));
                 return false;
                 }
             }
