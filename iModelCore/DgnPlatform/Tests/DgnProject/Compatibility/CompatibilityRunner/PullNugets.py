@@ -10,15 +10,16 @@ import os
 import zipfile
 import imp
 from shutil import rmtree, copyfile
+from distutils.version import LooseVersion
+sys.path.append(os.path.join(os.getenv("SrcRoot"),"bentleybuild"))
+from bentleybuild import nugetpkg, symlinks
 
 #-------------------------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
 #-------------------------------------------------------------------------------------------
 def DownloadPackage(pkgAddress, pkgName, version, localDir):
-    import nugetpkg
     pkgBaseName = '{0}.{1}'.format(pkgName, version)
     pkgDirName = localDir
-    import symlinks
     if not os.path.exists(pkgDirName):
         symlinks.makeSureDirectoryExists(pkgDirName)
 
@@ -40,8 +41,6 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
 # bsimethod                         Kyle.Abramowitz             05/2018
 #------------------------------------------------------------------------
 def pullAllNugets(path, pathToNugetPuller, name, minimumVersion=None, ignoreVersionsSet=None):
-    import nugetpkg
-    from distutils.version import LooseVersion
 
     address = "http://nuget.bentley.com/nuget/default/"
     versions = nugetpkg.SearchVersionsFromServer(address, name)
@@ -113,9 +112,9 @@ def main():
     sys.path.insert(0, nugetScript)
 
     bim02devMinimumNugetVersion = "2018.9.14.1"
-    bim02devIgnoreNugetVersions = {"2018.9.19.1","2018.9.20.1"}
+    bim02devIgnoreNugetVersions = {"2018.9.19.1","2018.9.20.1", "2018.9.25.1", "2018.10.18.3", "2018.10.19.1"}
 
-    imodel02MinimumNugetVersion = "2018.9.25.1"
+    imodel02MinimumNugetVersion = "2018.11.8.1"
     imodel02IgnoreNugetVersions = {}
 
     # Test runners are downloaded into src as pulling them in with every TMR might take too long
