@@ -39,6 +39,7 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
 #define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
 #define SYNC_TABLE_Imagery      SYNCINFO_TABLE("Imagery")
+#define SYNC_TABLE_GeomPart     SYNCINFO_TABLE("GeomPart")
 
 struct Converter;
 struct SyncInfo;
@@ -508,7 +509,7 @@ struct SyncInfo
 
         BeSQLite::DbResult Insert (BeSQLite::Db&) const;
         BeSQLite::DbResult Update (BeSQLite::Db&) const;
-        static BentleyStatus FindById(ImportJob&, DgnDbCR&, SyncInfo::V8ModelSyncInfoId);
+        static BentleyStatus FindById(ImportJob&, DgnDbCR, SyncInfo::V8ModelSyncInfoId);
         static void CreateTable(BeSQLite::Db&);
 
         SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_v8RootModel; }
@@ -535,6 +536,45 @@ struct SyncInfo
 
             public:
             DGNDBSYNC_EXPORT ImportJob GetimportJob();
+            Entry const& operator* () const {return *this;}
+            };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNDBSYNC_EXPORT const_iterator begin() const;
+        const_iterator end() const {return Entry (NULL, false);}
+        };
+
+    //! GeomPart with a converter-generated tag
+    struct GeomPart
+        {
+        DgnGeometryPartId m_id;
+        Utf8String m_tag;
+
+        GeomPart() {}
+        GeomPart(DgnGeometryPartId i, Utf8StringCR t) : m_id(i), m_tag(t) {}
+
+        static Utf8String GetSelectSql();
+        void FromSelect(BeSQLite::Statement&);
+
+        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        static BentleyStatus FindByTag(GeomPart&, DgnDbCR, Utf8CP tag);
+        static BentleyStatus FindById(GeomPart&, DgnDbCR db, DgnGeometryPartId);
+        static void CreateTable(BeSQLite::Db&);
+        };
+
+    struct GeomPartIterator : BeSQLite::DbTableIterator
+        {
+        DGNDBSYNC_EXPORT GeomPartIterator(DgnDbCR db, Utf8CP where);
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+            friend struct GeomPartIterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
+
+            public:
+            DGNDBSYNC_EXPORT GeomPart GetGeomPart();
             Entry const& operator* () const {return *this;}
             };
 

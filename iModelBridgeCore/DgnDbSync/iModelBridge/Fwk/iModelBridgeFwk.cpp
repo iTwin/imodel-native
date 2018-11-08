@@ -18,6 +18,7 @@
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <iModelBridge/iModelBridgeRegistry.h>
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include "../iModelBridgeHelpers.h"
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
@@ -1869,13 +1870,13 @@ void iModelBridgeFwk::ReportIssue(WStringCR msg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString iModelBridgeFwk::GetMutexName()
+void iModelBridgeFwk::GetMutexName(wchar_t* buf, size_t bufLen)
     {
     WString mname(m_jobEnvArgs.m_stagingDir);
     mname.ReplaceAll(L"\\", L"_");
-    if (mname.length() > MAX_PATH)
-        mname = mname.substr(mname.length() - (MAX_PATH-1));
-    return mname;
+    wcsncpy(buf, mname.c_str(), bufLen-1);
+    if (mname.length() > (bufLen-1))
+        buf[bufLen-1] = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1884,35 +1885,39 @@ WString iModelBridgeFwk::GetMutexName()
 int iModelBridgeFwk::Run(int argc, WCharCP argv[])
     {
 #ifdef _WIN32
-    auto mutex = ::CreateMutexW(nullptr, false, GetMutexName().c_str());
+    wchar_t mutexName[256];
+    GetMutexName(mutexName, sizeof(mutexName)/sizeof(mutexName[0]));
+    auto mutex = ::CreateMutexW(nullptr, false, mutexName);
     if (nullptr == mutex)
         {
-        fprintf(stderr, "%ls - cannot create mutex", GetMutexName().c_str());
+        fprintf(stderr, "%ls - cannot create mutex", mutexName);
         return -1;
         }
     HRESULT hr = ::WaitForSingleObject(mutex, s_maxWaitForMutex);
     if (WAIT_OBJECT_0 != hr)
         {
         if (WAIT_TIMEOUT == hr)
-            fprintf(stderr, "%ls - Another job is taking a long time. Try again later", GetMutexName().c_str());
+            fprintf(stderr, "%ls - Another job is taking a long time. Try again later", mutexName);
         else
-            fprintf(stderr, "%ls - Error getting named mutex. Try again later", GetMutexName().c_str());
+            fprintf(stderr, "%ls - Error getting named mutex. Try again later", mutexName);
         return -1;
         }
 #endif
 
     int res = -2;
-    try
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         res = RunExclusive(argc, argv);
         }
-    catch(...)
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS
         {
-#ifdef _WIN32
-        ::ReleaseMutex(mutex);
-        ::CloseHandle(mutex);
-#endif
+        fprintf(stderr, "Unhandled exception terminated bridge.\n");
         }
+
+#ifdef _WIN32
+    ::ReleaseMutex(mutex);
+    ::CloseHandle(mutex);
+#endif
 
     return res;
     }

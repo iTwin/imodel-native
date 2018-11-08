@@ -691,7 +691,7 @@ DefinitionModelPtr ConverterTestBaseFixture::GetJobDefinitionModel(DgnDbR db)
     if (!jobsubj.IsValid())
         return nullptr;
 
-    Utf8PrintfString partitionName("Definition Model For %s", jobsubj->GetDisplayLabel());
+    Utf8PrintfString partitionName("Definition Model For %s", jobsubj->GetDisplayLabel().c_str());
     DgnCode partitionCode = DefinitionPartition::CreateCode(*jobsubj, partitionName.c_str());
     DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
     DgnModelId defModelId = DgnModelId(partitionId.GetValueUnchecked());

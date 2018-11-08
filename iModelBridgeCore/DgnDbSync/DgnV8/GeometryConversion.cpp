@@ -550,7 +550,7 @@ void Converter::InitLineStyle(Render::GeometryParams& params, DgnModelRefR style
     if (nullptr == styleFile)
         {
         ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::MissingLsDefinitionFile(), NULL, 
-                     IssueReporter::FmtModelRef(styleModelRef));
+                     IssueReporter::FmtModelRef(styleModelRef).c_str());
         return;
         }
 
@@ -924,6 +924,38 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 }; // V8SymbolGraphicsCollector
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnGeometryPartId Converter::QueryGeometryPartId(Utf8StringCR name)
+    {
+    SyncInfo::GeomPart sigp;
+    return (BSISUCCESS == SyncInfo::GeomPart::FindByTag(sigp, *m_dgndb, name.c_str()))? sigp.m_id: DgnGeometryPartId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::QueryGeometryPartTag(DgnGeometryPartId partId)
+    {
+    SyncInfo::GeomPart sigp;
+    return (BSISUCCESS == SyncInfo::GeomPart::FindById(sigp, *m_dgndb, partId))? sigp.m_tag: "";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::RecordGeometryPartId(DgnGeometryPartId partId, Utf8StringCR partTag)
+    {
+    SyncInfo::GeomPart siTag(partId, partTag);
+    auto rc = siTag.Insert(*m_dgndb);
+    if (BeSQLite::BE_SQLITE_DONE == rc)
+        return BSISUCCESS;
+    LOG.errorv("Insert geompart in sync info (%lld, %s) failed with error %x", partId.GetValue(), partTag.c_str(), rc);
+    BeAssert(false && "Caller must check that geompart tag is unique and not empty");
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context)
@@ -934,9 +966,8 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         {
         Utf8String nameStr;
         nameStr.Assign(patternV8.cellName);
-        Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
-        DgnCode partCode = CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*GetJobDefinitionModel(), partCode.GetValueUtf8());
+        Utf8PrintfString partTag("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
+        DgnGeometryPartId partId = QueryGeometryPartId(partTag.c_str());
 
         if (!partId.IsValid())
             {
@@ -971,12 +1002,13 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel(), partCodeValue);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel());
 
             if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
 
             partId = geomPart->GetId();
+            RecordGeometryPartId(partId, partTag);
             }
 
         pattern.SetSymbolId(partId);
@@ -2479,19 +2511,16 @@ Bentley::ElementRefP GetOutermostSCDef(DgnV8Api::DisplayPath const& path)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GetPartCode(Bentley::ElementRefP instanceElRef, Utf8CP prefix, uint32_t sequenceNo, double partScale)
+Utf8String GetPartTag(Bentley::ElementRefP instanceElRef, Utf8CP prefix, uint32_t sequenceNo, double partScale)
     {
     BeAssert(sequenceNo > 0); // First entry starts at 1...
 
-
     if (sequenceNo > 1)
         { // Note: partScale < 0.0 implies "mirrored" which means a different codeValue must be generated
-        Utf8PrintfString partCodeValue(partScale < 0.0 ? "%s-%ld-M%lld-%d" : "%s-%ld-%lld-%d", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId(), sequenceNo-1);
-        return m_converter.CreateCode(partCodeValue);
+        return Utf8PrintfString(partScale < 0.0 ? "%s-%ld-M%lld-%d" : "%s-%ld-%lld-%d", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId(), sequenceNo-1);
         }
 
-    Utf8PrintfString partCodeValue(partScale < 0.0 ? "%s-%ld-M%lld" : "%s-%ld-%lld", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId());
-    return m_converter.CreateCode(partCodeValue);
+    return Utf8PrintfString(partScale < 0.0 ? "%s-%ld-M%lld" : "%s-%ld-%lld", prefix, Converter::GetV8FileSyncInfoIdFromAppData(*instanceElRef->GetDgnModelP()->GetDgnFileP()), instanceElRef->GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2596,8 +2625,8 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
                 m_converter.ReportProgress();
 
             Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
-            DgnCode           partCode = GetPartCode(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-            DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
+            Utf8String        partTag = GetPartTag(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
+            DgnGeometryPartId partId = m_converter.QueryGeometryPartId(partTag);
             DRange3d          localRange = DRange3d::NullRange();
 
             if (!partId.IsValid())
@@ -2611,11 +2640,12 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
                 partBuilder->Append(*geometry);
 
-                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
+                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
 
                 if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                     {
                     partId = geomPart->GetId();
+                    m_converter.RecordGeometryPartId(partId, partTag);
                     localRange = geomPart->GetBoundingBox();
                     }
                 }
@@ -2729,8 +2759,8 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
 
     if (!partId.IsValid())
         {
-        DgnCode partCode = GetPartCode(instanceElRef, "CvtV8", sequenceNo, 1.0);
-        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
+        Utf8String         partTag = GetPartTag(instanceElRef, "CvtV8", sequenceNo, 1.0);
+        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
         GeometryBuilderPtr partBuilder = GeometryBuilder::CreateGeometryPart(m_model.GetDgnDb(), true);
 
         partBuilder->Append(geometry);
@@ -2755,7 +2785,10 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
                 }
 
             if (isValidInstance && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+                {
                 m_converter.GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), partId = geomPart->GetId()));
+                m_converter.RecordGeometryPartId(geomPart->GetId(), partTag);
+                }
             }
         }
 

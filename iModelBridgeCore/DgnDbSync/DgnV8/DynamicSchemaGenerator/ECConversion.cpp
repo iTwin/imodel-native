@@ -1711,7 +1711,7 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
         if (!flatCustomAttributeSchema.IsValid())
             {
             Utf8String error;
-            error.Sprintf("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            error.Sprintf("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", instance->GetClass().GetFullName());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
@@ -1719,7 +1719,7 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
         if (!copiedCA.IsValid())
             {
             Utf8String error;
-            error.Sprintf("Failed to copy custom attribute '%s'. Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            error.Sprintf("Failed to copy custom attribute '%s'. Skipping custom attribute.", instance->GetClass().GetFullName());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
@@ -3140,7 +3140,8 @@ bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR sche
     return BeStringUtilities::Strnicmp(schemaName.c_str(), "PFLModule", 9) == 0 ||
         schemaName.EqualsI("CivilSchema_iModel") ||
         schemaName.EqualsI("BuildingDataGroup") ||
-        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0;
+        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0 ||
+        schemaName.StartsWith("DgnCustomItemTypes_");
     }
 
 //---------------------------------------------------------------------------------------

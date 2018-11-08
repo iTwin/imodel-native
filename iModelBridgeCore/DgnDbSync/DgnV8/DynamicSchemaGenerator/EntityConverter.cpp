@@ -1306,7 +1306,7 @@ BentleyStatus BisClassConverter::CreateMixinContext(SchemaConversionContext::Mix
     auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, DynamicSchemaGenerator& converter)
         {
         Utf8String error;
-        error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName());
+        error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName().c_str());
         converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
         return BSIERROR;
         };
@@ -1402,7 +1402,7 @@ BisClassConverter::SchemaConversionContext::SchemaConversionContext(DynamicSchem
     auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, DynamicSchemaGenerator& converter)
         {
         Utf8String error;
-        error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName());
+        error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName().c_str());
         converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
         };
 
