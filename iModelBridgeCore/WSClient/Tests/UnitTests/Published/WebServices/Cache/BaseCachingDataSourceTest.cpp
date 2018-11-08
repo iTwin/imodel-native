@@ -205,10 +205,7 @@ WSInfoCR info
 
 void BaseCachingDataSourceTest::TearDown()
     {
-    if (s_mockClient)
-        {
-        Mock::VerifyAndClearExpectations(s_mockClient.get());
-        }
+    s_mockClient = nullptr;
 
     BaseCacheTest::TearDown();
 
