@@ -1,4 +1,4 @@
-echo off
+rem echo off
 SETLOCAL
 
 if not defined OutRoot goto :badOutRoot

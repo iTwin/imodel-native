@@ -770,7 +770,7 @@ DrawingPtr Drawing::Create(DocumentListModelCR model, Utf8StringCR name)
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
+    if (!model.GetModelId().IsValid() || !classId.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -787,7 +787,7 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8StringCR
     DgnDbR db = model.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::SectionDrawing::GetHandler());
 
-    if (!model.GetModelId().IsValid() || !classId.IsValid()) // || (name.empty() && !subModel->IsPrivate()))    A model element can have no name if the model is private. No way of checking the model-is-private condition here.
+    if (!model.GetModelId().IsValid() || !classId.IsValid())
         {
         BeAssert(false);
         return nullptr;
@@ -899,7 +899,7 @@ static bool parentCycleExists(DgnElementId parentId, DgnElementId elemId, DgnDbR
 DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
-        return DgnDbStatus::WrongClass;
+        return DgnDbStatus::WrongClass; // cannot change class of element
 
     ElementHandlerR elementHandler = GetElementHandler();
     if (elementHandler._IsRestrictedAction(RestrictedAction::Update))
@@ -1240,9 +1240,8 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
 //---------------------------------------------------------------------------------------
 static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem)
     {
-    auto eclass = elem.GetElementClass();
-    
-    auto autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*eclass);
+    auto elClass = elem.GetElementClass();
+    auto autoHandledProps = elem.GetDgnDb().Elements().GetAutoHandledPropertiesSelectECSql(*elClass);
     if (autoHandledProps.empty())
         return;
 
@@ -1254,7 +1253,6 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         }
 
     stmt->BindId(1, elem.GetElementId());
-
     if (BE_SQLITE_ROW != stmt->Step())
         {
         BeAssert(false);
@@ -1262,9 +1260,9 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
         }
         
 
-    JsonECSqlSelectAdapter const* adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(eclass->GetId());
+    JsonECSqlSelectAdapter const* adapter = elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId());
     if (adapter == nullptr)
-        adapter = &elem.GetDgnDb().Elements().GetJsonSelectAdapter(eclass->GetId(), *stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
+        adapter = &elem.GetDgnDb().Elements().GetJsonSelectAdapter(elClass->GetId(), *stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
     else
         adapter->SetStatement(*stmt);
         

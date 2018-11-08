@@ -194,7 +194,6 @@ bool DgnElementDependencyGraph::Nodes::AllInputsProcessed(DgnElementId nodeId)
     BeAssert(nodeId.IsValid());
 
     m_allInputsProcessed->Reset();
-    m_allInputsProcessed->ClearBindings();
     m_allInputsProcessed->BindId(1, nodeId);
 
     auto stat = m_allInputsProcessed->Step();
@@ -212,7 +211,6 @@ bool DgnElementDependencyGraph::Nodes::AnyOutputsProcessed(DgnElementId nodeId)
     BeAssert(nodeId.IsValid());
 
     m_anyOutputsProcessed->Reset();
-    m_anyOutputsProcessed->ClearBindings();
     m_anyOutputsProcessed->BindId(1, nodeId);
 
     auto stat = m_anyOutputsProcessed->Step();
@@ -230,7 +228,6 @@ DbResult DgnElementDependencyGraph::Nodes::InsertNode(DgnElementId nodeId)
     BeAssert(nodeId.IsValid());
 
     m_insert->Reset();
-    m_insert->ClearBindings();
     m_insert->BindId(1, nodeId);
     return m_insert->Step();
     }
@@ -243,7 +240,6 @@ DbResult DgnElementDependencyGraph::Nodes::SetInDegree(DgnElementId nodeId, size
     BeAssert(nodeId.IsValid());
 
     m_setInDegree->Reset();
-    m_setInDegree->ClearBindings();
     m_setInDegree->BindInt(1, static_cast<int>(inDegree));
     m_setInDegree->BindId(2, nodeId);
     return m_setInDegree->Step();
@@ -257,7 +253,6 @@ int DgnElementDependencyGraph::Nodes::GetInDegree(DgnElementId nodeId)
     BeAssert(nodeId.IsValid());
 
     m_selectInDegree->Reset();
-    m_selectInDegree->ClearBindings();
     m_selectInDegree->BindId(1, nodeId);
     
     auto stat = m_selectInDegree->Step();
@@ -279,7 +274,6 @@ DbResult DgnElementDependencyGraph::Nodes::IncrementInputsProcessed(DgnElementId
     BeAssert(nodeId.IsValid());
 
     m_incrementInputsProcessed->Reset();
-    m_incrementInputsProcessed->ClearBindings();
     m_incrementInputsProcessed->BindId(1, nodeId);
     return m_incrementInputsProcessed->Step();
     }
@@ -292,7 +286,6 @@ DbResult DgnElementDependencyGraph::Nodes::IncrementOutputsProcessed(DgnElementI
     BeAssert(nodeId.IsValid());
 
     m_incrementOutputsProcessed->Reset();
-    m_incrementOutputsProcessed->ClearBindings();
     m_incrementOutputsProcessed->BindId(1, nodeId);
     return m_incrementOutputsProcessed->Step();
     }
@@ -373,7 +366,7 @@ Utf8String DgnElementDependencyGraph::FmtCyclePath(Edge const& edge, bvector<Edg
 Utf8String DgnElementDependencyGraph::GetElementCode(DgnElementId eid)
     {
     ECSqlStatement s;
-    s.Prepare(GetDgnDb(), "SELECT [CodeValue] FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
+    s.Prepare(GetDgnDb(), "SELECT CodeValue FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
     s.BindId(1, eid);
     s.Step();
     return s.GetValueText(0);
@@ -457,7 +450,7 @@ void DgnElementDependencyGraph::WriteDot(BeFileNameCR dotFilename, bvector<bvect
     fwprintf(fp, L"digraph G {\n");
 
     Statement edges;
-    edges.Prepare(GetDgnDb(), "SELECT SourceId, TargetId, Id, Status FROM " BIS_TABLE(BIS_REL_ElementDrivesElement));
+    edges.Prepare(GetDgnDb(), "SELECT SourceId,TargetId,Id,Status FROM " BIS_TABLE(BIS_REL_ElementDrivesElement));
 
     while (edges.Step() == BE_SQLITE_ROW)
         {

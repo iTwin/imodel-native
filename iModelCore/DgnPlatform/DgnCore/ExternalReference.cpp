@@ -49,22 +49,6 @@ BentleyStatus resolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         9/2016
 //-----------------------------------------------------------------------------------------
-BentleyStatus DgnPlatformLib::Host::RasterAttachmentAdmin::_CreateFileUri(Utf8StringR fileUri, Utf8StringCR fileName) const
-    {
-    return createFileUri(fileUri, fileName);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Eric.Paquet         9/2016
-//-----------------------------------------------------------------------------------------
-BentleyStatus DgnPlatformLib::Host::RasterAttachmentAdmin::_ResolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR db) const
-    {
-    return resolveFileUri(fileName, fileUri, db);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                   Eric.Paquet         9/2016
-//-----------------------------------------------------------------------------------------
 BentleyStatus DgnPlatformLib::Host::PointCloudAdmin::_CreateFileUri(Utf8StringR fileUri, Utf8StringCR fileName) const
     {
     return createFileUri(fileUri, fileName);

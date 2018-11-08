@@ -29,23 +29,6 @@ struct UnitTestLineStyleAdmin : public DgnPlatformLib::Host::LineStyleAdmin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LoggingNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
-{
-    StatusInt _OutputMessage(NotifyMessageDetails const& msg) override
-        {
-        NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGE: %s %s\n", msg.GetBriefMsg().c_str(), msg.GetDetailedMsg().c_str());
-        return SUCCESS;
-        }
-
-    bool _GetLogSQLiteErrors() override 
-        {
-        return NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(NativeLogging::LOG_INFO);
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      01/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
 struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     {
     BeFileName  m_tmp;
@@ -95,7 +78,6 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     ScopedDgnHostImpl();
     ~ScopedDgnHostImpl();
     LineStyleAdmin& _SupplyLineStyleAdmin() override;
-    NotificationAdmin& _SupplyNotificationAdmin() override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *new ProxyRepositoryAdmin();}
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
@@ -147,7 +129,7 @@ ScopedDgnHostImpl::ScopedDgnHostImpl()  : m_isInitialized(false)
     
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
-    DgnPlatformLib::Initialize(*this,true);
+    DgnPlatformLib::Initialize(*this);
     m_isInitialized = true;
     }
 
@@ -164,7 +146,6 @@ ScopedDgnHostImpl::~ScopedDgnHostImpl()
 // @bsimethod                                                   MattGooding     02/13
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::LineStyleAdmin&       ScopedDgnHostImpl::_SupplyLineStyleAdmin() {return *new UnitTestLineStyleAdmin();}
-DgnPlatformLib::Host::NotificationAdmin&    ScopedDgnHostImpl::_SupplyNotificationAdmin() {return *new LoggingNotificationAdmin();}
 DgnPlatformLib::Host::IKnownLocationsAdmin& ScopedDgnHostImpl::_SupplyIKnownLocationsAdmin() {return *new TestingConfigurationAdmin();}
 
 /*---------------------------------------------------------------------------------**//**

@@ -16,6 +16,9 @@
 #include <Bentley/BeFileName.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include <unordered_map>
+
+namespace Napi { class Object; }    
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
@@ -239,7 +242,10 @@ protected:
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
+
 public:
+    Napi::Object* m_jsIModelDb = nullptr;
+
     DgnDb();
     virtual ~DgnDb();
 
