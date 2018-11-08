@@ -431,7 +431,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_IModelHub_CreateRepository()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc, bool doPullAndMerge, bool doPush)
+BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPullAndMerge, bool doPush)
     {
     BeAssert(doPullAndMerge || doPush);
     bool doPullMergeAndPush = doPullAndMerge && doPush;
@@ -443,8 +443,12 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc, bool doPullA
     if (doPush)
         m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::Success;
 
+    Utf8String comment(descIn);
+    if (m_bridge)
+        comment = m_bridge->_FormatPushComment(*m_briefcaseDgnDb, descIn);
+
     GetProgressMeter().SetCurrentStepName(opName);
-    GetLogger().infov("%s %s", opName, m_briefcaseBasename.c_str());
+    GetLogger().infov("%s %s %s", opName, m_briefcaseBasename.c_str(), comment.c_str());
 
     if (!m_briefcaseDgnDb.IsValid() || !m_briefcaseDgnDb->IsDbOpen() || nullptr == m_client || !m_client->IsConnected())
         {
@@ -460,9 +464,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc, bool doPullA
         return BSIERROR;
         }
 
-    auto status = doPullMergeAndPush? m_client->PullMergeAndPush(desc): 
+    auto status = doPullMergeAndPush? m_client->PullMergeAndPush(comment.c_str()): 
                   doPullAndMerge?     m_client->PullAndMerge():
-                                      m_client->Push(desc);
+                                      m_client->Push(comment.c_str());
     bool needsSchemaMerge = false;
     if (SUCCESS != status)
         {
@@ -489,7 +493,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP desc, bool doPullA
         GetLogger().infov("PullAndMergeSchemaRevisions %s", m_briefcaseBasename.c_str());
         status = m_client->PullAndMergeSchemaRevisions(m_briefcaseDgnDb); // *** TRICKY: PullAndMergeSchemaRevisions closes and re-opens the briefcase, so m_briefcaseDgnDb is re-assigned!
         if (SUCCESS == status)
-            status = m_client->PullMergeAndPush(desc);
+            status = m_client->PullMergeAndPush(comment.c_str());
         }
 
     m_client->CloseBriefcase();

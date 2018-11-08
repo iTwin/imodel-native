@@ -62,9 +62,7 @@ static int s_maxWaitForMutex = 60000;
 struct IBriefcaseManagerForBridges : RefCounted<iModelBridge::IBriefcaseManager>
 {
     iModelBridgeFwk& m_fwk;
-
     IBriefcaseManagerForBridges(iModelBridgeFwk& f) : m_fwk(f) {}
-
     BentleyStatus _PullAndMerge() override { return m_fwk.Briefcase_PullMergePush(nullptr, true, false); }
     PushStatus _Push(Utf8CP comment) override { m_fwk.Briefcase_PullMergePush(comment, false, true); return m_fwk.m_lastBridgePushStatus; }
 };
@@ -1077,6 +1075,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     params.m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
     //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
     params.m_dmsSupport = m_dmsSupport;
+    params.SetPushIntermediateRevisions(iModelBridge::Params::PushIntermediateRevisions::ByFile);
     }
 
 /*---------------------------------------------------------------------------------**//**

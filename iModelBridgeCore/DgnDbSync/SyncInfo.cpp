@@ -783,6 +783,33 @@ bool SyncInfo::V8FileProvenance::FindByName(bool fillLastMod)
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::FileIterator::Entry::GetV8FileSyncInfoId(SyncInfo& si)
+    {
+    V8FileProvenance fp(si);
+    fp.m_syncId = GetV8FileSyncInfoId();
+    fp.m_uniqueName = GetUniqueName();
+    fp.m_v8Name = GetV8Name();
+    fp.m_idPolicy = GetCannotUseElementIds()? StableIdPolicy::ByHash : StableIdPolicy::ById;
+    fp.m_lastSaveTime = GetLastSaveTime();
+    fp.m_lastModifiedTime = GetLastModifiedTime();
+    fp.m_fileSize = GetFileSize();
+    return fp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::V8FileProvenance::GetById(V8FileSyncInfoId sid, SyncInfo& syncInfo)
+    {
+    FileIterator files(syncInfo.GetConverter().GetDgnDb(), "Id=?");
+    files.GetStatement()->BindInt(1, sid.GetValue());
+    SyncInfo::FileIterator::Entry entry = files.begin();
+    return (entry != files.end())? entry.GetV8FileSyncInfoId(syncInfo): V8FileProvenance(syncInfo);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/

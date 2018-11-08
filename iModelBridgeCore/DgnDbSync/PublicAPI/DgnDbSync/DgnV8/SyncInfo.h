@@ -159,6 +159,7 @@ struct SyncInfo
         SyncInfo&   m_syncInfo;
         V8FileSyncInfoId    m_syncId;
 
+        V8FileProvenance(SyncInfo& s) : m_syncInfo(s) {} 
         V8FileProvenance(DgnV8FileCR, SyncInfo&, StableIdPolicy);
         DGNDBSYNC_EXPORT V8FileProvenance(BentleyApi::BeFileNameCR, SyncInfo&, StableIdPolicy);
 
@@ -187,6 +188,7 @@ struct SyncInfo
             DGNDBSYNC_EXPORT uint64_t GetFileSize();
             DGNDBSYNC_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
             Entry const& operator* () const {return *this;}
+            V8FileProvenance GetV8FileSyncInfoId(SyncInfo& si);
         };
 
         typedef Entry const_iterator;

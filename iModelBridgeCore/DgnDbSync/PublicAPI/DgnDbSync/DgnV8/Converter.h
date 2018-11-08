@@ -882,9 +882,11 @@ struct Converter
         L10N_STRING(V8StyleNoneDescription)             // =="Created from V8 active settings to handle Style (none)"==
         L10N_STRING(LinkModelDefaultName)               // =="Default Link Model"==
         L10N_STRING(RDS_Description)                    // =="Reality Model Tileset for %s"==
-        L10N_STRING(ResourcesViewsAndModels)            // =="Categories, Resources, Views, and Models"==
+        L10N_STRING(ResourcesViewsAndModels)            // =="Categories, Styles, Views, and Models"==
         L10N_STRING(Sheets)                             // =="Sheets and drawings"==
-        L10N_STRING(ThumbnailsEtc)                      // =="Thumbnails, Project Extents, etc."==
+        L10N_STRING(Drawings)                           // =="Drawings"==
+        L10N_STRING(GlobalProperties)                   // =="Global properties"==
+        L10N_STRING(SpatialData)                        // =="Spatial data"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues
@@ -1016,6 +1018,8 @@ protected:
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
+
+    bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
 
     bool SkipECContent() const {return m_skipECContent;}
     void SetSkipEContent(bool val) {m_skipECContent = val;}
@@ -2313,6 +2317,10 @@ protected:
 
 public:
     virtual SpatialParams const& _GetSpatialParams() const = 0;
+
+    void PushChangesForFile(DgnV8FileR, BentleyApi::Utf8StringCR whatData);
+    void PushChangesForFile(DgnV8FileR, ConverterDataStrings::StringId);
+    void PushChangesForModel(DgnV8ModelRefCR);
 
     //! Sets the Params BridgeJobName property
     DGNDBSYNC_EXPORT void ComputeDefaultImportJobName();

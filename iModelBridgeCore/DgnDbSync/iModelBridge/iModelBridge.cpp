@@ -905,9 +905,31 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelBridge::_FormatPushComment(DgnDbR db, Utf8CP commitComment)
+    {
+    Params const& params = _GetParams();
+
+    auto key = params.GetBridgeRegSubKeyUtf8();
+    
+    auto localFileName = params.GetInputFileName();
+    iModelBridgeDocumentProperties docProps;
+    if (nullptr != params.GetDocumentPropertiesAccessor())
+        params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
+
+    Utf8PrintfString comment("%s - %s (%s)", key.c_str(), Utf8String(localFileName.GetBaseName()).c_str(), docProps.m_docGuid.c_str());
+    
+    if (commitComment)
+        comment.append(" - ").append(commitComment);
+
+    return comment;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db, Params const& params, Utf8CP commitComment)
+iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment)
     {
     auto bcMgr = params.m_briefcaseManager;
     if (nullptr == bcMgr)
@@ -915,20 +937,20 @@ iModelBridge::IBriefcaseManager::PushStatus iModelBridge::PushChanges(DgnDbR db,
 
     if (db.BriefcaseManager().IsBulkOperation())
         {
-        SaveChanges(db, commitComment);
+        SaveChanges(db, commitComment.c_str());
         auto response = db.BriefcaseManager().EndBulkOperation();
         if (RepositoryStatus::Success != response.Result())
             {
             LOG.infov("Failed to acquire locks and/or codes with error %x", response.Result());
             return iModelBridge::IBriefcaseManager::PushStatus::UnknownError;
             }
-        auto status = bcMgr->_Push(commitComment);
+        auto status = bcMgr->_Push(commitComment.c_str());
         db.BriefcaseManager().StartBulkOperation();
         return status;
         }
 
-    db.SaveChanges(commitComment);
-    return bcMgr->_Push(commitComment);
+    db.SaveChanges(commitComment.c_str());
+    return bcMgr->_Push(commitComment.c_str());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018

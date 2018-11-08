@@ -477,6 +477,8 @@ struct iModelBridge
     //! In a standalone converter, they are set from the command line.
     struct Params
         {
+        enum PushIntermediateRevisions {None=0, ByModel=1, ByFile=2};
+
       protected:
         friend struct iModelBridge;
         friend struct iModelBridgeFwk;
@@ -486,7 +488,7 @@ struct iModelBridge
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
-        bool m_revisionPerModel = false;
+        PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
         bvector<BeFileName> m_drawingAndSheetFiles;
@@ -600,8 +602,8 @@ struct iModelBridge
         void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
         void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
-        void SetShouldCreateRevisionPerModel(bool b) {m_revisionPerModel = b;}
-        bool ShouldCreateRevisionPerModel() const {return m_revisionPerModel;}
+        void SetPushIntermediateRevisions(PushIntermediateRevisions v) {m_pushIntermediateRevisions = v;}
+        PushIntermediateRevisions GetPushIntermediateRevisions() const {return m_pushIntermediateRevisions;}
         void SetBriefcaseManager(IBriefcaseManager& c) {m_briefcaseManager = &c;}
         void SetSpatialDataTransform(Transform const& t) {m_spatialDataTransform = t;} //!< Optional. The transform that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data.
         TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
@@ -913,7 +915,9 @@ public:
     //! @param params The bridge just params
     //! @param commitComment The summary description of the ChangeSet
     //! @return the outcome of the attempt to push
-    IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8CP commitComment);
+    IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment);
+
+    IMODEL_BRIDGE_EXPORT virtual Utf8String _FormatPushComment(DgnDbR db, Utf8CP commitComment);
 
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);

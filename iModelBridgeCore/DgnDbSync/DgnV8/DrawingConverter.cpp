@@ -191,38 +191,47 @@ void RootModelConverter::_ConvertDrawings()
     {
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_DRAWINGS());
 
-    bmultiset<ResolvedModelMapping> drawings;
+    bmap<DgnV8FileP, bmultiset<ResolvedModelMapping>> drawings;
+    int32_t count = 0;
     for (auto v8mm : m_v8ModelMappings)
         {
         if (!IsFileAssignedToBridge(*v8mm.GetV8Model().GetDgnFileP()))
             continue;
         if (v8mm.GetDgnModel().IsDrawingModel())
-            drawings.insert(v8mm);
+            {
+            ++count;
+            drawings[v8mm.GetV8Model().GetDgnFileP()].insert(v8mm);
+            }
         }
 
-    AddTasks((uint32_t)drawings.size());
+    AddTasks(count);
 
     // Just in case the session hasn't started
     if (!DgnV8Api::PSolidKernelManager::IsSessionStarted())
         DgnV8Api::PSolidKernelManager::StartSession();
 
-    for (auto v8mm : drawings)
+    for (auto& v8FileGroup: drawings)
         {
-        SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
-        uint32_t start = GetElementsConverted();
-        StopWatch timer(true);
-        DrawingsConvertModelAndViewsWithExceptionHandling(v8mm);
-        // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
-        DgnV8Api::PSolidKernelManager::StopSession();
-        DgnV8Api::PSolidKernelManager::StartSession();
+        for (auto v8mm : v8FileGroup.second)
+            {
+            SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
+            uint32_t start = GetElementsConverted();
+            StopWatch timer(true);
+            DrawingsConvertModelAndViewsWithExceptionHandling(v8mm);
+            // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
+            DgnV8Api::PSolidKernelManager::StopSession();
+            DgnV8Api::PSolidKernelManager::StartSession();
 
-        uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
-        ConverterLogging::LogPerformance(timer, "Convert Drawing Elements> Model '%s' (%" PRIu32 " element(s))",
-                                         v8mm.GetDgnModel().GetName().c_str(),
-                                         convertedElementCount);
+            uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
+            ConverterLogging::LogPerformance(timer, "Convert Drawing Elements> Model '%s' (%" PRIu32 " element(s))",
+                                             v8mm.GetDgnModel().GetName().c_str(),
+                                             convertedElementCount);
 
+            }
+
+        if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)
+            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::Drawings());
         }
-
     }
 
 /*---------------------------------------------------------------------------------**//**
