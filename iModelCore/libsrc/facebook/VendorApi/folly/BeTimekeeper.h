@@ -64,7 +64,9 @@ struct BeTimekeeper : folly::Timekeeper
         //! Use signeton to ensure that only one thread is wasted for delays.
         BE_FOLLY_EXPORT static BeTimekeeper& Get();
 
-        //! Implements Timekeeper. Consider using seperate via executor to avoid delaying timer thread and making it inacurate.
+        //! Implements Timekeeper.
+        //! Consider using seperate via executor to avoid delaying timer thread and making it inacurate.
+        //! This is mostly important if delaying code that takes time to complete, so using seperate executor like BeFolly::ThreadPool::GetIoPool() is recommended.
         BE_FOLLY_EXPORT folly::Future<folly::Unit> after(folly::Duration duration) override;
     };
 
