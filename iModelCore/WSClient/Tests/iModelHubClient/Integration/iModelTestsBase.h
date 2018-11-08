@@ -31,6 +31,6 @@ public:
     static BriefcasePtr AcquireAndOpenBriefcase(bool pull = true);
     void CreateNonAdminConnection(iModelConnectionPtr& connection, iModelInfoPtr info);
     iModelConnectionPtr CreateNonAdminConnection();
-    void iModelTestsBase::CreateTestiModel();
+    void CreateTestiModel();
 };
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

@@ -21,10 +21,26 @@ struct SimpleConnectTokenProvider : IConnectTokenProvider
     {
 public:
     typedef std::function<AsyncTaskPtr<ISecurityTokenPtr>()> UpdateTokenCallback;
+    typedef std::function<AsyncTaskPtr<Utf8String>()> UpdateStringTokenCallback;
 
 private:
     ISecurityTokenPtr m_token;
     UpdateTokenCallback m_onUpdate;
+
+private:
+    static UpdateTokenCallback ToUpdateTokenCallback(UpdateStringTokenCallback onUpdateStringToken)
+        {
+        return [=]
+            {
+            return onUpdateStringToken()->Then<ISecurityTokenPtr>([] (Utf8String token)
+                {
+                if (token.empty())
+                    return SecurityTokenPtr();
+
+                return std::make_shared<SecurityToken>(token);
+                });
+            };
+        }
 
 public:
     //! Create token provider 
@@ -37,13 +53,13 @@ public:
         ) : m_token(token), m_onUpdate(onUpdate) {};
 
     //! Create token provider 
-    //! @param token initial token to use.
-    //! @param onUpdate optional callback that is called when existing token is expired. Should return new token or null token if it cannot be updated (default).
+    //! @param token initial token to use
+    //! @param onUpdate optional callback that is called when existing token is expired. Should return new serialized token or empty string if it cannot be updated (default)
     SimpleConnectTokenProvider
         (
         Utf8String token,
-        UpdateTokenCallback onUpdate = [] { return CreateCompletedAsyncTask(ISecurityTokenPtr()); }
-        ) : SimpleConnectTokenProvider(std::make_shared<SecurityToken>(token), onUpdate) {};
+        UpdateStringTokenCallback onUpdate = [] { return CreateCompletedAsyncTask(Utf8String()); }
+        ) : SimpleConnectTokenProvider(std::make_shared<SecurityToken>(token), ToUpdateTokenCallback(onUpdate)) {};
 
     //! Call onUpdate callback and cache received token
     AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override
