@@ -41,7 +41,9 @@ class Executor {
 
   /// Enqueue a function with a given priority, where 0 is the medium priority
   /// This is up to the implementation to enforce
-  virtual void addWithPriority(Func, int8_t priority) = 0;
+  virtual void addWithPriority(Func, int8_t priority) {
+    throw std::runtime_error("addWithPriority() is not implemented for this Executor");
+  }
 
   virtual uint8_t getNumPriorities() const {
     return 1;
