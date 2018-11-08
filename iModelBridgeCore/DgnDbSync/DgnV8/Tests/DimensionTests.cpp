@@ -279,9 +279,7 @@ TEST_F(DimensionTests, NotetoSheet)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-        countModels(*db, 2, numModelsExpected);
+        countModels(*db, 2, 2);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);

@@ -12,6 +12,7 @@
 #include <VersionedDgnV8Api/DgnPlatform/LxoEnvironment.h>
 
 #include <PointCloud/PointCloudSettings.h>
+#include <DgnPlatform/WebMercator.h>
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -83,10 +84,15 @@ void Converter::AddAttachmentsToSelection(DgnModelIdSet& selector, DgnV8ModelRef
         Transform thisTrans = ComputeAttachmentTransform(trans, *attachment);
 
         ResolvedModelMapping modelMapping = FindModelForDgnV8Model(*attachedModel, thisTrans);
-        if (!modelMapping.IsValid())
-            continue;
+        if (modelMapping.IsValid())
+            selector.insert(modelMapping.GetDgnModel().GetModelId());
+        else
+            {
+            DgnV8ModelProvenance::ModelProvenanceEntry entryFound;
+            if (BSISUCCESS == FindModelProvenanceEntry(entryFound, *attachedModel, trans))
+                selector.insert(entryFound.m_modelId);
+            }
 
-        selector.insert(modelMapping.GetDgnModel().GetModelId());
         AddAttachmentsToSelection(selector, *attachment, thisTrans);
         }
     }
@@ -574,6 +580,9 @@ void Converter::ConvertViewClips(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInf
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ConvertViewGrids(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters)
     {
+    if (nullptr == v8Model.GetDgnFileP()->GetPersistentTcb())
+        return;
+
     // Set grid settings from V8 model info (orientation is stored in tcb, yuck!)...
     GridOrientationType gridOrientation = (GridOrientationType) v8Model.GetDgnFileP()->GetPersistentTcb()->gridOrientation;
     DgnV8Api::ModelInfo const& v8ModelInfo = v8Model.GetModelInfo();
@@ -675,6 +684,27 @@ bool convertBackgroundMap(DisplayStyle& displayStyle, DgnV8ViewInfoCR viewInfo, 
         }
 
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void Converter::ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewInfo, DgnV8ModelR v8Model)
+    {
+    Bentley::WString name;
+    DgnV8Api::BackgroundMapType type;
+    double offset;
+    double transparency;
+
+    DgnV8ViewInfoP info = const_cast<DgnV8ViewInfoP>(viewInfo);
+    info->GetBackgroundMapSettings(&name, &type, &offset, &transparency);
+    DisplayStyle::MapType mapType = (DisplayStyle::MapType) type;
+    Utf8String providerName;
+    if (0 == wcsicmp(L"Bing",name.c_str()))
+        providerName = WebMercator::BingImageryProvider::prop_BingProvider();
+
+    view->GetDisplayStyle().SetBackgroundMapSettings(mapType, providerName, offset);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -828,6 +858,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
     ConvertViewClips(view, viewInfo, *v8Model, trans);
     ConvertViewGrids(view, viewInfo, *v8Model, ComputeUnitsScaleFactor(*v8Model));
     ConvertViewACS(view, viewInfo, *v8Model, trans, name);
+    if (nullptr != m_dgndb->GeoLocation().GetDgnGCS())
+        ConvertMapSettings(view, &viewInfo, *v8Model);
 
     if (existingViewId.IsValid())
         {

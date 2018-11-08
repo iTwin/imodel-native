@@ -64,6 +64,8 @@ struct iModelBridgeTests : ::testing::Test
         DgnDbTestUtils::InsertPhysicalModel(*db, "PhysicalModel");
         DgnDbTestUtils::InsertSpatialCategory(*db, "SpatialCategory");
 
+        DgnV8FileProvenance::CreateTable(*db);
+        DgnV8ModelProvenance::CreateTable(*db);
         // Force the seed db to have non-zero briefcaseid, so that changes made to it will be in a txn
         db->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
         db->SaveChanges();
@@ -509,7 +511,7 @@ struct TestIModelHubFwkClientForBridges : TestIModelHubClientForBridges
 
         TestIModelHubFwkClientForBridges(BeFileNameCR testWorkDir) : TestIModelHubClientForBridges(testWorkDir) {}
 
-        virtual void CaptureChangeSet(DgnDbP db) override;
+        virtual DgnRevisionPtr CaptureChangeSet(DgnDbP db) override;
     };
 END_BENTLEY_DGN_NAMESPACE
 
@@ -591,6 +593,10 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
 
         auto subjectObj = Subject::Create(*GetDgnDbR().Elements().GetRootSubject(), ComputeJobSubjectCodeValue().c_str());
         JobSubjectUtils::InitializeProperties(*subjectObj, _GetParams().GetBridgeRegSubKeyUtf8());
+        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceFile))
+            DgnV8FileProvenance::CreateTable(GetDgnDbR());
+        if (!GetDgnDbR().TableExists(DGN_TABLE_ProvenanceModel))
+            DgnV8ModelProvenance::CreateTable(GetDgnDbR());
         return subjectObj->InsertT<Subject>();
         }
 
@@ -644,30 +650,31 @@ static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
+DgnRevisionPtr TestIModelHubFwkClientForBridges::CaptureChangeSet(DgnDbP db)
     {
-    ASSERT_TRUE(db != nullptr);
+    BeAssert(db != nullptr);
 
-    ASSERT_TRUE(db->IsBriefcase());
+    BeAssert(db->IsBriefcase());
 
-    ASSERT_EQ(m_expect.haveTxns, anyTxnsInFile(*db));
+    BeAssert(m_expect.haveTxns == anyTxnsInFile(*db));
 
     DgnRevisionPtr changeSet = db->Revisions().StartCreateRevision();
 
     if (!changeSet.IsValid())
         {
-        ASSERT_TRUE(!m_expect.haveTxns);
-        return;
+        BeAssert(!m_expect.haveTxns);
+        return changeSet;
         }
 
-    ASSERT_TRUE(m_expect.haveTxns);
+    BeAssert(m_expect.haveTxns);
 
-    ASSERT_TRUE(changeSet.IsValid());
-    ASSERT_EQ(Dgn::RevisionStatus::Success, db->Revisions().FinishCreateRevision());
-    ASSERT_EQ(BE_SQLITE_OK, db->SaveChanges());
+    BeAssert(changeSet.IsValid());
+    BeAssert(Dgn::RevisionStatus::Success ==  db->Revisions().FinishCreateRevision());
+    BeAssert(BE_SQLITE_OK == db->SaveChanges());
 
     // *** TBD: test for expected changes
     changeSet->Dump(*db);
+    return changeSet;
     }
 
 /*---------------------------------------------------------------------------------**//**

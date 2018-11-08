@@ -24,6 +24,7 @@
 #include <DgnPlatform/image.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform/DgnProvenance.h>
 #include <iModelBridge/iModelBridge.h>
 
 namespace DgnDbApi = BentleyApi::Dgn;
@@ -833,7 +834,9 @@ struct Converter
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
-
+        L10N_STRING(FailedToConvertSheet)       // =="Failed to convert sheet %s"==
+        L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
+            
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
@@ -1047,6 +1050,8 @@ public:
 
     virtual bool _WantProvenanceInBim() {return _GetParams().GetWantProvenanceInBim();}
 
+    DGNDBSYNC_EXPORT virtual bool _WantModelProvenanceInBim();
+
     //! Get the DMS document properties for a specified file, if available.
     void GetDocumentProperties(iModelBridgeDocumentProperties& docProps, BeFileNameCR localFilename)
         {
@@ -1076,6 +1081,10 @@ public:
     void InitLineStyle(Render::GeometryParams& params, DgnModelRefR styleModelRef, int32_t srcLineStyleNum, DgnV8Api::LineStyleParams const* v8lsParams);
 
     DGNDBSYNC_EXPORT bool InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context);
+
+    DGNDBSYNC_EXPORT DgnGeometryPartId QueryGeometryPartId(Utf8StringCR name);
+    DGNDBSYNC_EXPORT Utf8String QueryGeometryPartTag(DgnGeometryPartId);
+    DGNDBSYNC_EXPORT BentleyStatus RecordGeometryPartId(DgnGeometryPartId, Utf8StringCR name);
 
     //! @}
 
@@ -1186,6 +1195,7 @@ public:
     //! @name DgnDb properties
     //! @{
     BentleyStatus GenerateThumbnails();
+    void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
     void  StoreRealityTilesetTransform(DgnModelR model, TransformCR tilesetToDb);
     BentleyStatus GenerateWebMercatorModel();
@@ -1252,6 +1262,9 @@ public:
     void ConvertViewGrids(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, double toMeters);
     //! convert the auxiliary coordinate system for a view
     void ConvertViewACS(ViewDefinitionPtr view, DgnV8ViewInfoCR viewInfo, DgnV8ModelR v8Model, TransformCR, Utf8StringCR);
+
+    // Convert the map settings, if available
+    void ConvertMapSettings(ViewDefinitionPtr view, DgnV8ViewInfoCP viewInfo, DgnV8ModelR v8Model);
 
     //! Convert a View
     BentleyStatus ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo, Utf8StringCR defaultName, Utf8StringCR defaultDescription, BentleyApi::TransformCR, ViewFactory&);
@@ -1432,6 +1445,8 @@ public:
     //!         ModelSelector --> PhysicalModel
     //!</pre>
     void SheetsConvertModelAndViews(ResolvedModelMapping const& v8mm, ViewFactory&);
+
+    void SheetsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const& v8mm, ViewFactory& nvvf);
     
     void AddAllSpatialCategories(DgnCategoryIdSet&);
 
@@ -1518,6 +1533,8 @@ public:
 
     //! Convert the contents of a drawing model, populating a BIM drawing model, and convert views of this model. The conversion also pulls in proxy graphics from attachments.
     void DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm);
+
+    void DrawingsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const&);
 
     //! Convert the elements in a sheet model. This includes only the elements actually in the V8 drawing model.
     DGNDBSYNC_EXPORT void DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&);
@@ -1619,6 +1636,7 @@ public:
     void CaptureModelDiscard(DgnV8ModelR);
 
     ResolvedModelMapping GetModelFromSyncInfo(DgnV8ModelRefCR, TransformCR);
+    BentleyStatus FindModelProvenanceEntry(DgnV8ModelProvenance::ModelProvenanceEntry& entryFound, DgnV8ModelR v8Model, TransformCR trans);
     virtual ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR, TransformCR) = 0;
     ResolvedModelMapping GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR toBim) {return _GetModelForDgnV8Model(v8ModelRef, toBim);}
     virtual ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR) = 0;
@@ -1971,6 +1989,9 @@ public:
 
     //! Report an issue, where the problem has mostly to do with provenance.
     DGNDBSYNC_EXPORT void ReportSyncInfoIssue(IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
+
+    DGNDBSYNC_EXPORT void ReportFailedModelConversion(ResolvedModelMapping const& v8mm);
+    DGNDBSYNC_EXPORT void ReportFailedThumbnails();
 
     //! Signal a fatal error
     DGNDBSYNC_EXPORT BentleyStatus OnFatalError(IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::FatalError(), ...) const;
@@ -2483,6 +2504,8 @@ struct RootModelConverter : SpatialConverterBase
         RootModelChoice const& GetRootModelChoice() const {return m_rootModelChoice;}
         void AddDrawingOrSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
 
+        //!private
+        bool m_keepHostAliveForUnitTests {};
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };
@@ -2576,6 +2599,7 @@ protected:
 
     //! @private
     void ConvertElementsInModel(ResolvedModelMapping const& v8Model);
+    void ConvertElementsInModelWithExceptionHandling(ResolvedModelMapping const&);
     //! @private
     void DoConvertSpatialElements();
     //! @private

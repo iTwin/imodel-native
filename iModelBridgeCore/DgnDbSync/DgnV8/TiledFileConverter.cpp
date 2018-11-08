@@ -127,8 +127,21 @@ ResolvedModelMapping TiledFileConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
         return ResolvedModelMapping();
         }
 
-    if (_WantProvenanceInBim())
-        DgnV8ModelProvenance::Insert(modelId, mapping.GetV8FileSyncInfoId().GetValue(), mapping.GetV8ModelId().GetValue(), mapping.GetV8Name(), GetDgnDb());
+    if (_WantModelProvenanceInBim())
+        {
+        DgnV8FileP file = v8Model.GetDgnFileP();
+        SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
+        BeSQLite::BeGuid guid;
+        if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+            {
+            DgnV8ModelProvenance::ModelProvenanceEntry entry;
+            entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
+            entry.m_modelId = modelId;
+            entry.m_modelName = mapping.GetV8Name();
+            entry.m_trans = m_rootTrans;
+            DgnV8ModelProvenance::Insert(guid, entry, GetDgnDb());
+            }
+        }
 
     DgnModelPtr model = m_dgndb->Models().GetModel(mapping.GetModelId());
     if (!model.IsValid())

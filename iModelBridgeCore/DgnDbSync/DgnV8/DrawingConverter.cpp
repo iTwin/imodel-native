@@ -209,10 +209,18 @@ void RootModelConverter::_ConvertDrawings()
     for (auto v8mm : drawings)
         {
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
-        DrawingsConvertModelAndViews(v8mm);
+        uint32_t start = GetElementsConverted();
+        StopWatch timer(true);
+        DrawingsConvertModelAndViewsWithExceptionHandling(v8mm);
         // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
         DgnV8Api::PSolidKernelManager::StopSession();
         DgnV8Api::PSolidKernelManager::StartSession();
+
+        uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
+        ConverterLogging::LogPerformance(timer, "Convert Drawing Elements> Model '%s' (%" PRIu32 " element(s))",
+                                         v8mm.GetDgnModel().GetName().c_str(),
+                                         convertedElementCount);
+
         }
 
     }
@@ -1622,6 +1630,18 @@ struct FakeViewport : DgnV8Api::NonVisibleViewport
     {
     FakeViewport(DgnV8Api::ViewInfo& viewInfo) :  DgnV8Api::NonVisibleViewport(viewInfo) { m_viewNumber = 0; m_backgroundColor.m_int = 0xffffff; }
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/1
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::DrawingsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const& v8mm)
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        DrawingsConvertModelAndViews(v8mm);
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018

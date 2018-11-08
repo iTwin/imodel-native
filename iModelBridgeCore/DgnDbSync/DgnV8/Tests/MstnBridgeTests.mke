@@ -41,9 +41,6 @@ dirToSearch  = $(iModelBridgePrivateAPISrc)
 # We don't want to run the test from the build location because the dependencies are not there.
 GUNITTEST_NOEXEC = 1
 
-# This macro is used by gtestobj.mki
-GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
-
 BEGTEST_NAME=$(programName)
 BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/BeTestSelectHarness.mki
@@ -59,11 +56,15 @@ always:
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+$(o)gtestmain.obj               : $(BEGTEST_INPUT)gtestmain.cpp                             $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)MstnBridgeTests.obj     : $(BEGTEST_INPUT)MstnBridgeTests.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+$(o)MstnBridgeTests.obj         : $(BEGTEST_INPUT)MstnBridgeTests.cpp                        $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)V8FileEditor.obj        : $(BEGTEST_INPUT)V8FileEditor.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+$(o)MstnBridgeTestsFixture.obj  : $(BEGTEST_INPUT)MstnBridgeTestsFixture.cpp                 $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)V8FileEditor.obj            : $(BEGTEST_INPUT)V8FileEditor.cpp                           $(TestsHeaders) ${MultiCompileDepends}
+
+$(o)FakeRegistry.obj            : $(SrcRoot)DgnDbSync/iModelBridge/Tests/NonPublished/FakeRegistry.cpp   $(TestsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -78,7 +79,10 @@ GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
 
-%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
+# This macro is used by gtestobj.mki
+#GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
+
+#%include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
 LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
