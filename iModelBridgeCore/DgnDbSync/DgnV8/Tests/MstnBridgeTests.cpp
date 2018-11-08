@@ -37,7 +37,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir));
+    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
     args.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
 
     BentleyApi::BeFileName inputFile;
@@ -106,7 +106,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir));
+    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
     args.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
     
     BentleyApi::BeFileName inputFile;
@@ -182,7 +182,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
 
     bvector<WString> args;
     SetUpBridgeProcessingArgs(args);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir));
+    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
     TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
@@ -321,7 +321,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         bvector<WString> margs(args);
         margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile1.c_str()));
         margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
-        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir1));
+        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir1.c_str()));
         RunTheBridge(margs);
 
         BentleyApi::BeFileName dbFile(testDir1);
@@ -344,7 +344,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         bvector<WString> rargs(args);
         rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile1.c_str()));
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
-        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir2));
+        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir2.c_str()));
 
         RunTheBridge(rargs);
         BentleyApi::BeFileName dbFile(testDir2);
@@ -370,7 +370,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         bvector<WString> margs(args);
         margs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
         margs.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
-        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir3));
+        margs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir3.c_str()));
         RunTheBridge(margs);
         BentleyApi::BeFileName dbFile(testDir3);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
@@ -395,7 +395,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridgeSharedReference)
         bvector<WString> rargs(args);
         rargs.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile2.c_str()));
         rargs.push_back(L"--fwk-bridge-regsubkey=ABD");
-        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir4));
+        rargs.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir4.c_str()));
         BentleyApi::BeFileName dbFile(testDir4);
         dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
         RunTheBridge(rargs);

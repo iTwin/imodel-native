@@ -155,6 +155,8 @@
       <ProductDirectory Name="Assets"                    Path="assets" LibType="static"/>
       <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="dynamic"/>
       <ProductDirectory Name="VendorNotices"             Path="notices" LibType="static" />
+      <ProductDirectory Name="DgnV8Dlls"                 Deliver="false" LibType="dynamic" />
+      <ProductDirectory Name="DgnV8Dlls"                 Deliver="false" LibType="static" />
     </ProductDirectoryList>
 
     <Part Name="iModelBridgeAssignExeShim_Dynamic" OnlyPlatforms="x64">

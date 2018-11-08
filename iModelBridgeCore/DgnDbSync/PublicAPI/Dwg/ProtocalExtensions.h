@@ -215,6 +215,7 @@ private:
     mutable ProtocalExtensionContext*   m_toBimContext;
     mutable DwgImporter*                m_importer;
     mutable DwgDbEntityCP               m_entity;
+    mutable DPoint3d                    m_placementPoint;
 
     BentleyStatus   CreateElement (GeometricPrimitiveR geometry, DwgImporter::ElementCreateParams& params);
     ColorDef    GetEffectiveColor () const;
@@ -224,6 +225,7 @@ private:
     void        FreeBrep (PK_BODY_create_topology_2_r_t& brep) const;
 #endif
     GeometricPrimitivePtr CreateGeometry (DwgDbPlaneSurfaceP planeSurface);
+    BentleyStatus   SetPlacementPoint (TransformR transform) const;
     };  // DwgBrep
 
 
