@@ -449,28 +449,21 @@ TEST_F(SchemaParseUtilsTest, ParseStrengthType)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaParseUtilsTest, DirectionToString)
     {
-    EXPECT_STREQ("forward", SchemaParseUtils::DirectionToString(ECRelatedInstanceDirection::Forward));
-    EXPECT_STREQ("backward", SchemaParseUtils::DirectionToString(ECRelatedInstanceDirection::Backward));
+    EXPECT_STREQ("forward", SchemaParseUtils::DirectionToXmlString(ECRelatedInstanceDirection::Forward));
+    EXPECT_STREQ("backward", SchemaParseUtils::DirectionToXmlString(ECRelatedInstanceDirection::Backward));
+
+    EXPECT_STREQ("Forward", SchemaParseUtils::DirectionToJsonString(ECRelatedInstanceDirection::Forward));
+    EXPECT_STREQ("Backward", SchemaParseUtils::DirectionToJsonString(ECRelatedInstanceDirection::Backward));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ModifierToXmlString)
+TEST_F(SchemaParseUtilsTest, ModifierToString)
     {
-    EXPECT_STREQ("Abstract", SchemaParseUtils::ModifierToXmlString(ECClassModifier::Abstract));
-    EXPECT_STREQ("Sealed", SchemaParseUtils::ModifierToXmlString(ECClassModifier::Sealed));
-    EXPECT_STREQ("None", SchemaParseUtils::ModifierToXmlString(ECClassModifier::None));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                           Victor.Cushman                          11/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaParseUtilsTest, ModifierToJsonString)
-    {
-    EXPECT_STREQ("abstract", SchemaParseUtils::ModifierToJsonString(ECClassModifier::Abstract));
-    EXPECT_STREQ("sealed", SchemaParseUtils::ModifierToJsonString(ECClassModifier::Sealed));
-    EXPECT_STREQ("none", SchemaParseUtils::ModifierToJsonString(ECClassModifier::None));
+    EXPECT_STREQ("Abstract", SchemaParseUtils::ModifierToString(ECClassModifier::Abstract));
+    EXPECT_STREQ("Sealed", SchemaParseUtils::ModifierToString(ECClassModifier::Sealed));
+    EXPECT_STREQ("None", SchemaParseUtils::ModifierToString(ECClassModifier::None));
     }
 
 //---------------------------------------------------------------------------------------
@@ -495,9 +488,13 @@ TEST_F(SchemaParseUtilsTest, PrimitiveTypeToString)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaParseUtilsTest, StrengthToString)
     {
-    EXPECT_STREQ("referencing", SchemaParseUtils::StrengthToString(StrengthType::Referencing));
-    EXPECT_STREQ("embedding", SchemaParseUtils::StrengthToString(StrengthType::Embedding));
-    EXPECT_STREQ("holding", SchemaParseUtils::StrengthToString(StrengthType::Holding));
+    EXPECT_STREQ("referencing", SchemaParseUtils::StrengthToXmlString(StrengthType::Referencing));
+    EXPECT_STREQ("embedding", SchemaParseUtils::StrengthToXmlString(StrengthType::Embedding));
+    EXPECT_STREQ("holding", SchemaParseUtils::StrengthToXmlString(StrengthType::Holding));
+
+    EXPECT_STREQ("Referencing", SchemaParseUtils::StrengthToJsonString(StrengthType::Referencing));
+    EXPECT_STREQ("Embedding", SchemaParseUtils::StrengthToJsonString(StrengthType::Embedding));
+    EXPECT_STREQ("Holding", SchemaParseUtils::StrengthToJsonString(StrengthType::Holding));
     }
 
 //---------------------------------------------------------------------------------------
@@ -505,22 +502,22 @@ TEST_F(SchemaParseUtilsTest, StrengthToString)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaParseUtilsTest, ContainerTypeToString)
     {
-    EXPECT_STRCASEEQ("Schema", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::Schema).c_str());
-    EXPECT_STRCASEEQ("EntityClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::EntityClass).c_str());
-    EXPECT_STRCASEEQ("CustomAttributeClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::CustomAttributeClass).c_str());
-    EXPECT_STRCASEEQ("StructClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::StructClass).c_str());
-    EXPECT_STRCASEEQ("RelationshipClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::RelationshipClass).c_str());
-    EXPECT_STRCASEEQ("AnyClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::AnyClass).c_str());
-    EXPECT_STRCASEEQ("PrimitiveProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::PrimitiveProperty).c_str());
-    EXPECT_STRCASEEQ("StructProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::StructProperty).c_str());
-    EXPECT_STRCASEEQ("ArrayProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::PrimitiveArrayProperty).c_str());
-    EXPECT_STRCASEEQ("StructArrayProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::StructArrayProperty).c_str());
-    EXPECT_STRCASEEQ("NavigationProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::NavigationProperty).c_str());
-    EXPECT_STRCASEEQ("AnyProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::AnyProperty).c_str());
-    EXPECT_STRCASEEQ("SourceRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::SourceRelationshipConstraint).c_str());
-    EXPECT_STRCASEEQ("TargetRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::TargetRelationshipConstraint).c_str());
-    EXPECT_STRCASEEQ("AnyRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::AnyRelationshipConstraint).c_str());
-    EXPECT_STRCASEEQ("Any", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::Any).c_str());
+    EXPECT_STREQ("Schema", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::Schema).c_str());
+    EXPECT_STREQ("EntityClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::EntityClass).c_str());
+    EXPECT_STREQ("CustomAttributeClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::CustomAttributeClass).c_str());
+    EXPECT_STREQ("StructClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::StructClass).c_str());
+    EXPECT_STREQ("RelationshipClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::RelationshipClass).c_str());
+    EXPECT_STREQ("AnyClass", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::AnyClass).c_str());
+    EXPECT_STREQ("PrimitiveProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::PrimitiveProperty).c_str());
+    EXPECT_STREQ("StructProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::StructProperty).c_str());
+    EXPECT_STREQ("ArrayProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::PrimitiveArrayProperty).c_str());
+    EXPECT_STREQ("StructArrayProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::StructArrayProperty).c_str());
+    EXPECT_STREQ("NavigationProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::NavigationProperty).c_str());
+    EXPECT_STREQ("AnyProperty", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::AnyProperty).c_str());
+    EXPECT_STREQ("SourceRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::SourceRelationshipConstraint).c_str());
+    EXPECT_STREQ("TargetRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::TargetRelationshipConstraint).c_str());
+    EXPECT_STREQ("AnyRelationshipConstraint", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::AnyRelationshipConstraint).c_str());
+    EXPECT_STREQ("Any", SchemaParseUtils::ContainerTypeToString(CustomAttributeContainerType::Any).c_str());
     }
 
 //---------------------------------------------------------------------------------------

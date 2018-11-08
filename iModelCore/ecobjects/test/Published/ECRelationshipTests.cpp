@@ -1001,7 +1001,7 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstract
     EXPECT_TRUE(relationshipClass->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
-    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StadaloneECRelationshipClassWithAbstractConstraint.ecschema.json"));
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECRelationshipClassWithAbstractConstraint.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
