@@ -17,9 +17,9 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Delivery\BeSQLiteECB02.dll"          target="lib\native\BeSQLiteECB02.dll" />
+        <file src="Delivery\BeSQLiteECM02.dll"          target="lib\native\BeSQLiteECM02.dll" />
         <file src="Delivery\BeSQLiteEC.lib"             target="lib\native\BeSQLiteEC.lib" />
-        <file src="SubParts\Assemblies\BeSQLiteB02.dll" target="lib\native\BeSQLiteB02.dll" />
+        <file src="SubParts\Assemblies\BeSQLiteM02.dll" target="lib\native\BeSQLiteM02.dll" />
         <file src="SubParts\libs\BeSQLite.lib"          target="lib\native\BeSQLite.lib" />
         
         <file src="ECSchemas\ECDb\*.*"                  target="Assets\ECSchemas\ECDb" />

@@ -86,7 +86,7 @@ GUNITTEST_NOEXEC = 1
 #---------------------------------------------------------------------------------------+
 #   Deliver
 #---------------------------------------------------------------------------------------+
-ApiNumber = B02
+ApiNumber = M02
 
 $(BuildContext)Delivery/$(BEGTEST_NAME)$(exeext) : $(o)$(BEGTEST_NAME)$(exeext)
     $(LinkFirstDepToFirstTarget)
