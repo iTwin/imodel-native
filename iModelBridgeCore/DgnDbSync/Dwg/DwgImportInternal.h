@@ -177,6 +177,7 @@ private:
     double                  m_thickness;
     bool                    m_isClosed;
     Transform               m_ecs;
+    CurveVector::BoundaryType   m_boundaryType;
 
 public:
     PolylineFactory ();
@@ -191,6 +192,8 @@ public:
     void                    HashAndAppendTo (BentleyApi::MD5& hashOut) const;
     // Transform polyline data
     void                    TransformData (TransformCR transform);
+    // Set desired boundary type - default is BOUNDARY_TYPE_Outer if closed or BOUNDARY_TYPE_Open otherwise.
+    void                    SetBoundaryType (CurveVector::BoundaryType type);
 
     static bool     IsValidBulgeFactor (double bulge);
     };  // PolylineFactory
