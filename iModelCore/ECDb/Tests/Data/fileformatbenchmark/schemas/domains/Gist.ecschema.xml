@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- =====================================================================================
+|
+|     $Source: Tests/Data/fileformatbenchmark/schemas/domains/Gist.ecschema.xml $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
+======================================================================================= -->
+<ECSchema schemaName="Gist" alias="gst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+
+    <ECEntityClass typeName="GistPhysicalElement" modifier="Abstract">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="ToyPart">
+        <BaseClass>GistPhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Hub" modifier="Sealed">
+        <BaseClass>ToyPart</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEnumeration typeName="ColorId" backingTypeName="int" isStrict="True" description="Set of available ColorIds for Rods." displayLabel="Color">
+        <ECEnumerator value="1" displayLabel="Red" />
+        <ECEnumerator value="2" displayLabel="Yellow" />
+        <ECEnumerator value="3" displayLabel="Blue" />
+    </ECEnumeration>
+
+    <ECEnumeration typeName="LengthChoice" backingTypeName="int" isStrict="True" description="Set of available Rod lengths." displayLabel="Length">
+        <ECEnumerator value="1" displayLabel="Short (2cm)" />
+        <ECEnumerator value="2" displayLabel="Medium (4cm)" />
+        <ECEnumerator value="3" displayLabel="Long (6cm)" />
+    </ECEnumeration>
+
+    <ECEntityClass typeName="Rod" modifier="Sealed">
+        <BaseClass>ToyPart</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Length" typeName="LengthChoice">
+          <ECCustomAttributes>
+            <CustomHandledProperty xmlns="BisCore.01.00" />
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Color" typeName="ColorId">
+          <ECCustomAttributes>
+            <CustomHandledProperty xmlns="BisCore.01.00" />
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Diameter" typeName="double">
+          <ECCustomAttributes>
+            <CustomHandledProperty xmlns="BisCore.01.00" />
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECEntityClass>
+
+    <!-- NOT READY TO DEFINE RELATTIONSHIPS   
+    <ECEnumeration typeName="HubSlotIds" backingTypeName="int" isStrict="True" description="Discrete set of ids for slots in a hub." displayLabel="Hub Slot Id">
+        <ECEnumerator value="1" displayLabel="Slot 1" />
+        <ECEnumerator value="2" displayLabel="Slot 2" />
+        <ECEnumerator value="3" displayLabel="Slot 3" />
+        <ECEnumerator value="4" displayLabel="Slot 4" />
+        <ECEnumerator value="5" displayLabel="Slot 5" />
+        <ECEnumerator value="6" displayLabel="Slot 6" />
+        <ECEnumerator value="7" displayLabel="Slot 7" />
+        <ECEnumerator value="8" displayLabel="Slot 8" />
+    </ECEnumeration>
+
+    <ECEnumeration typeName="RodEndIds" backingTypeName="int" isStrict="True" description="Ids that specifies which end of the rod." displayLabel="Rod End Id">
+        <ECEnumerator value="0" displayLabel="End 0" />
+        <ECEnumerator value="1" displayLabel="End 1" />
+    </ECEnumeration>
+    
+    <ECRelationshipClass typeName="RodConnectToHub" strength="referencing">
+        <Source cardinality="(0,1)" polymorphic="True">
+            <Class class="Rod"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="False">
+            <Class class="Hub" />
+        </Target>
+        <ECProperty propertyName="HubSlot" typeName="HubSlotIds"/>
+        <ECProperty propertyName="RodEnd" typeName="RodEndIds"/>
+    </ECRelationshipClass>
+-->
+</ECSchema>
