@@ -1,0 +1,84 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: nonport/android/BeSecurity/BeSecurityMavenArchive.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+#--------------------------------------------------------------------------------------
+#   Check for environment dependencies
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)!="Android"
+    %error This makefile should be used only when TARGET_PLATFORM is Android
+%endif
+
+%if !defined (GRADLE_HOME)
+    %error Must set GRADLE_HOME
+%endif
+
+%if !defined (ANDROID_SDK_ROOT) || !defined (ANDROID_NDK_ROOT)
+    %error Must set ANDROID_SDK_ROOT and ANDROID_NDK_ROOT
+%endif
+
+#--------------------------------------------------------------------------------------
+#   Set variables to match default Gradle project structure
+#--------------------------------------------------------------------------------------
+buildOut    = $(OutputRootDir)build/$(_MakeFileName)/
+projectDir  = $(_MakeFilePath)BeSecurityProject/
+
+always:
+    !~@mkdir $(buildOut)
+
+#--------------------------------------------------------------------------------------
+#   Prepare for building jar files with gradle
+#--------------------------------------------------------------------------------------
+%if defined (winNT)
+    sdkroot = $[@subst / \\\\ $(ANDROID_SDK_ROOT)]
+    ndkroot = $[@subst / \\\\ $(ANDROID_NDK_ROOT)]
+%else
+    sdkroot = $(ANDROID_SDK_ROOT)
+    ndkroot = $(ANDROID_NDK_ROOT)
+%endif
+
+always:
+    >$(_MakeFilePath)local.properties
+    sdk.dir=$(sdkroot)
+    ndk.dir=$(ndkroot)
+    <
+
+#--------------------------------------------------------------------------------------
+#   Use Gradle to build the DgnClientFx archive
+#--------------------------------------------------------------------------------------
+always:
+    >$(_MakeFilePath)gradle.properties
+    buildDirectory=$[@subst \, \/, $(buildOut)]
+    <
+    python $(bsiScripts)RegexReplaceInFile.py "\s+" "\n" $(_MakeFilePath)gradle.properties
+
+# Gradle command line options
+_gradleCmd = ${GRADLE_HOME}/bin/gradle
+_gradleOptions = --project-dir ${projectDir}
+
+%if defined (ANDROID_SIGNING_KEYSTORE)
+    _gradleOptions + --project-prop ANDROID_SIGNING_KEYSTORE=$(ANDROID_SIGNING_KEYSTORE)              \
+                     --project-prop ANDROID_SIGNING_ALIAS=$(ANDROID_SIGNING_ALIAS)                    \
+                     --project-prop ANDROID_SIGNING_STORE_PASSWORD=$(ANDROID_SIGNING_STORE_PASSWORD)  \
+                     --project-prop ANDROID_SIGNING_KEY_PASSWORD=$(ANDROID_SIGNING_KEY_PASSWORD)
+%endif
+
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+    _gradleTasks = clean
+%else
+    _gradleTasks = assemble uploadArchives
+%endif
+
+always:
+    $(_gradleCmd) $(_gradleOptions) $(_gradleTasks)
+    
+#--------------------------------------------------------------------------------------
+#   Deliver the library's archive
+#--------------------------------------------------------------------------------------
+$(BuildContext)Delivery/MavenArchive : $(buildOut)MavenArchive
+    $(LinkFirstDepToFirstTargetAsDirectory)
