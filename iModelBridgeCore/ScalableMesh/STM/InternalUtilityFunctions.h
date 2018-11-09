@@ -1,0 +1,83 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: STM/InternalUtilityFunctions.h $
+|    $RCSfile: InternalUtilityFunctions.h,v $
+|   $Revision: 1.7 $
+|       $Date: 2012/06/27 14:06:54 $
+|     $Author: Chantal.Poulin $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+#pragma once
+
+#include <ScalableMesh/IScalableMeshClipContainer.h>
+#include <ScalableMesh/IScalableMeshQuery.h>
+#include "ImagePPHeaders.h" 
+
+
+
+void CalcNormals (DVec3d**      calculatedNormals,                  
+                  const DVec3d& viewNormalParam, 
+                  size_t        nbPoints, 
+                  DPoint3d*     pPoints, 
+                  size_t        nbFaceIndexes, 
+                  int32_t*        pFaceIndexes);
+
+BENTLEY_SM_EXPORT HFCPTR<HVE2DSHAPE> CreateShapeFromPoints (const DPoint3d* points, size_t numberOfPoints, HFCPTR<HGF2DCOORDSYS> coordSys);
+
+HFCPTR<HVESHAPE> CreateShapeFromClips (const DRange3d&               spatialIndexRange,
+                                       const IScalableMeshClipContainerPtr& clips);
+
+HFCPTR<HVESHAPE> CreateShapeFromClips (HFCPTR<HVESHAPE>        areaShape,
+                                       const IScalableMeshClipContainerPtr& clips);
+
+HFCPTR<HVE2DSHAPE> GetGCSDomainsIntersection (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& firstGCSPtr,
+                                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& secondGCSPtr, 
+	HFCPTR<HGF2DCOORDSYS> latitudeLongitudeCoordSys);
+
+void GetReprojectedBox (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
+                        DPoint3d                             boxPoints[],
+                        DPoint3d                             reprojectedBoxPoints[]);
+
+StatusInt GetReprojectedBoxDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
+                                          BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                          DPoint3d    boxPoints[],
+                                          DPoint3d    reprojectedBoxPoints[],
+                                          DRange3d    additionalSourceExtent,
+	                                      HFCPTR<HVE2DSHAPE>    queryShape);
+
+StatusInt ReprojectPoint (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                          BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
+                          const DPoint3d& inPoint,
+                          DPoint3d& outPoint);
+
+StatusInt ReprojectRangeDomainLimited (DRange3d& reprojectedRange,
+                                       const DRange3d& initialRange,
+                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS,
+                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS);
+
+HFCPTR<HVE2DSHAPE> ReprojectShapeDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,  
+                                                const DPoint3d*   pi_pSourcePt,
+                                                size_t  pi_SourcePtQty);
+
+BENTLEY_SM_EXPORT int SetClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
+                  const DRange3d&                spatialIndexRange,
+                  const HVE2DSHAPE&              shape);
+
+int AddClipToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&           dtmPtr,
+                 const HVE2DSHAPE& shape);
+
+struct BENTLEY_SM_EXPORT PtToPtConverter
+    {        
+    DPoint3d operator () (const DPoint3d& inputPt) const;
+
+    DPoint3d operator () (const HGF3DCOORD<double>& inputPt) const;
+
+    static void Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts);
+    };
+
+BENTLEY_SM_EXPORT bool IsUrl(WCharCP filename);
