@@ -1,0 +1,17 @@
+{
+  "name": "@bentley/imodeljs-native-platform-api",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "version": "${PACKAGE_VERSION}",
+  "keywords": [
+    "Bentley",
+    "iModel"
+  ],
+  "description": "iModel.js native module",
+  "author": {
+    "name": "Bentley Systems, Inc.",
+    "url": "www.bentley.com"
+  },
+   "scripts": {
+    "postinstall": "node ./installImodelJsNative.js"
+   }
+}
