@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////   ScalableMesh       /////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->            
+    <Part Name="ScalableMeshSchemaPublicAPI" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.prewire.mke">
+        <SubPart PartName="ScalableMesh" PartFile="BisSchemas" Repository="BisSchemas" />
+        <Bindings>
+            <PublicAPI Domain="ScalableMeshSchema"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="ScalableMeshSchemaIos" OnlyPlatforms="iOSARM64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchemaIos.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
+        <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
+        <SubPart PartName="ScalableMeshCoreStaticLinux" PartFile="ScalableMesh" Repository="ScalableMesh" LibType="Static"/>
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" LibType="Static"/>
+        <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"      Repository="TerrainModel" LibType="Static"/>
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"         Repository="DgnPlatform" LibType="Static"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"          Repository="DgnDisplay" LibType="Static"/>
+        
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
+        </Bindings>
+    </Part>
+    
+    <Part Name="ScalableMeshSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.mke" ApiNumber="B02">
+        <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
+        <SubPart PartName="Core"         PartFile="TerrainModelDgnDb"      Repository="TerrainModel" />
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"         Repository="DgnPlatform" />
+        <SubPart PartName="ScalableMesh"    PartFile="ScalableMesh"        Repository="ScalableMesh" />
+        
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////   PointCloud   ///////////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="PointCloudPublicAPI" BentleyBuildMakeFile="PointCloudSchema/PointCloud.prewire.mke">
+        <SubPart PartName="PointCloud" PartFile="BisSchemas" Repository="BisSchemas" />
+        <Bindings>
+            <PublicAPI Domain="PointCloud"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="PointCloud" BentleyBuildMakeFile="PointCloudSchema/PointCloud.mke" ApiNumber="B02">
+        <SubPart PartName="PointCloudPublicAPI"/>
+        <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
+        <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
+        <!-- Need full data to decode EPSG code -->
+        <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)PointCloud$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)PointCloud$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////     Raster     ///////////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="RasterPublicAPI" BentleyBuildMakeFile="RasterSchema/Raster.prewire.mke">
+        <SubPart PartName="Raster" PartFile="BisSchemas" Repository="BisSchemas" />
+        <Bindings>
+            <PublicAPI Domain="Raster"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Raster" BentleyBuildMakeFile="RasterSchema/Raster.mke" ApiNumber="B02" >
+        <SubPart PartName="RasterPublicAPI"/>
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <!-- Need full data to decode EPSG code -->
+        <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
+        <Bindings>
+            <Assemblies>Delivery/$(shlibprefix)Raster$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)Raster$(libext)</Libs>
+        </Bindings>
+    </Part>    
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////   ThreeMx       /////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="ThreeMxPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.prewire.mke">
+        <SubPart PartName="ThreeMx" PartFile="BisSchemas" Repository="BisSchemas" />
+        <Bindings>
+            <PublicAPI Domain="ThreeMx"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="ThreeMx" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="ThreeMxPublicAPI"/>
+        <Bindings>
+            <Assemblies Required="false">Delivery/$(shlibprefix)ThreeMx$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)ThreeMx$(libext)</Libs> 
+        </Bindings>
+    </Part>
+
+    <!-- ////////////////////////////   Use to convert 3MX to 3SM /////////////////////////////////// -->
+    <Part Name="ThreeMxReaderLegacy" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxReaderLegacy.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <Bindings>
+        <PublicAPI Domain="ThreeMxReader"/>
+          <Assemblies>Delivery/$(shlibprefix)ThreeMxReaderLegacy$(ApiNumber)$(shlibext)</Assemblies>
+          <Libs>delivery/$(libprefix)ThreeMxReaderLegacy$(libext)</Libs>
+        </Bindings>
+      </Part>
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////   DataCapture        /////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="DataCaptureSchemasPublicAPI" BentleyBuildMakeFile="DataCaptureSchema/DataCaptureSchema.prewire.mke" WipPartEnable="PhotoPlanner">
+        <SubPart PartName="DataCapture" PartFile="BisSchemas" Repository="BisSchemas" />
+        <Bindings>
+            <PublicAPI Domain="DataCaptureSchema"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DataCaptureSchema" BentleyBuildMakeFile="DataCaptureSchema/DataCaptureSchema.mke" WipPartEnable="PhotoPlanner">
+        <SubPart PartName="DataCaptureSchemasPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>Delivery/$(shlibprefix)DataCaptureSchema$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DataCaptureSchema$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- ********************************************************************************************** -->
+    <!--  DataCapture Unit tests -->
+    <!-- ********************************************************************************************** -->
+    <Part Name="DataCapturePrewireForUnitTests" BentleyBuildMakeFile="DataCaptureSchema/Tests/prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="DataCapture" SubPartDirectory="UnitTests/DataCapture"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets"  ProductSubDirectory="TestFiles" SourceName="Delivery/UnitTests/TestFiles"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DataCaptureBackdoorForUnitTests" BentleyBuildMakeFile="DataCaptureSchema/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+        <SubPart PartName="DataCaptureSchema"/>
+        <SubPart PartName="DataCapturePrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCaptureSchema/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DataCaptureUnitTests-NonPublished" BentleyBuildMakeFile="DataCaptureSchema/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="DataCaptureBackdoorForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCaptureSchema/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="DataCaptureUnitTests-Published" BentleyBuildMakeFile="DataCaptureSchema/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+        <SubPart PartName="DataCaptureBackdoorForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DataCaptureSchema/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- Define the collection of all unit tests. -->
+    <Part Name="DataCaptureTests">
+        <!-- Specify the unit tests to include in the test suite: -->
+        <SubPart PartName="DataCaptureUnitTests-NonPublished"/>
+        <SubPart PartName="DataCaptureUnitTests-Published"/>
+    </Part>
+
+    <Part Name="RunGtestDatacapture" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-DataCapture-Tests -dGTEST_NAME=DataCaptureTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DataCaptureTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Gtest-DataCapture-Tests" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!-- This part runs DataCaptureTests on platforms that support it. -->
+    <Part Name="DataCapture-Tested">
+        <SubPart PartName="RunGtestDatacapture" />
+    </Part>
+
+
+    <!-- ********************************************************************************************** -->
+    <!--  RealityModeling Unit tests -->
+    <!-- ********************************************************************************************** -->
+    <Product Name="RealityModeling-Tests">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="DataCaptureTests"/>
+        <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <!--<ProductDirectory Name="BeIcu4cData"     Path="ApplicationRoot" LibType="static" /> -->
+        <ProductDirectory Name="BeIcu4cData"                        Deliver="true" Path="assets"/>
+        <ProductDirectory Name="BeIcu4cData"                        Deliver="true" Path="assets" LibType="Static"/>
+
+    </ProductDirectoryList>
+
+    <!-- Build a gtest exe to run the tests -->
+    <Product Name="Gtest-DataCapture-Tests">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest"/>
+    </Product>
+
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModelingTests -dTEST_COLLECTION_PRODUCT=RealityModeling-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*" WipPartEnable="PhotoPlanner">
+        <SubProduct ProductName="RealityModeling-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RealityModelingTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RealityModelingTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="RealityModeling-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealityModeling-Gtest -dGTEST_NAME=RealityModelingTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModelingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*" WipPartEnable="PhotoPlanner">
+        <SubProduct ProductName="RealityModeling-Gtest" />
+        <!-- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> -->
+    </Part>
+
+
+</BuildContext>
