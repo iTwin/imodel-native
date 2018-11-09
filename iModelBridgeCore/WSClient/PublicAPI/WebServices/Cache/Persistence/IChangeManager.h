@@ -138,10 +138,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         virtual BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) = 0;
 
         //! Add created instance to response to act as placeholder until it is synced to server and pulled back.
-        //! Instnace placeholder will be removed from response automatically after sync (upload) is done - when CommitInstanceRevision() is called. 
+        //! Instance placeholder will be removed from response automatically after sync (upload) is done - when CommitInstanceRevision() is called.
+        //! Removing instance from cache would also cleanup placeholder as well.
         virtual BentleyStatus AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) = 0;
 
-        //! Remove created instance from response manually.
+        //! Remove created instance placeholder from response manually if needed.
         virtual BentleyStatus RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) = 0;
 
         // -- Getting changes --
