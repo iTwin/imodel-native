@@ -409,6 +409,31 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::DoesClipFileExist() const
 	return DoesSisterSQLiteFileExist(SMStoreDataType::DiffSet);
    }
 
+template <class EXTENT> void SMSQLiteStore<EXTENT>::EraseClipFile() const
+{
+    if (!IsProjectFilesPathSet())
+        return;
+
+    WString sqlFileName;
+    if (!GetSisterSQLiteFileName(sqlFileName, SMStoreDataType::DiffSet))
+        return;
+
+    if (!DoesClipFileExist())
+        return;
+     
+    const_cast<SMSQLiteStore<EXTENT>*>(this)->CloseSisterFile(SMStoreDataType::DiffSet);
+    
+#ifdef __APPLE__
+    Utf8String slqFileNameUtf8(sqlFileName.c_str());
+    remove(slqFileNameUtf8.c_str());
+#else
+    _wremove(sqlFileName.c_str());
+#endif
+
+    SMSQLiteFilePtr sqlFilePtr = const_cast<SMSQLiteStore<EXTENT>*>(this)->GetSisterSQLiteFile(SMStoreDataType::DiffSet, true);
+
+}
+
 template <class EXTENT> void SMSQLiteStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
 {
 	m_clipProvider = provider;
@@ -467,6 +492,31 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::WriteClipDataToProjectFilePa
 		CopyClipSisterFile(SMStoreDataType::ClipDefinition);
 	}
 }
+
+template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSQLiteFilePtr(SMStoreDataType dataType)
+{
+    
+    SMSQLiteFilePtr sqlFilePtr;
+
+    if (this->IsSisterFileType(dataType))
+    {
+        if (!IsProjectFilesPathSet())
+            return nullptr;
+
+        SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(dataType, true, IsUsingTempPath());
+
+        if (!sqliteFilePtr.IsValid())
+            return nullptr;
+        return sqliteFilePtr;
+    }
+
+    sqlFilePtr = m_smSQLiteFile;
+
+    assert(sqlFilePtr.IsValid());
+    return sqlFilePtr;
+}
+
+
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                   
@@ -719,6 +769,9 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
     assert(m_dataType != SMStoreDataType::PointAndTriPtIndices && m_dataType != SMStoreDataType::Cesium3DTiles);
+
+    if (m_smSQLiteFile.get() != m_dataStorePtr->GetSQLiteFilePtr(m_dataType).get())
+        m_smSQLiteFile = m_dataStorePtr->GetSQLiteFilePtr(m_dataType);
 
     //Special case
     if (m_dataType == SMStoreDataType::Texture)

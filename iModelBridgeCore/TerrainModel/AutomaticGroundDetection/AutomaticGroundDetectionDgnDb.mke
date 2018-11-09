@@ -31,7 +31,7 @@ always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/AutomaticGroundDetection=$(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/AutomaticGroundDetection/PublicAPI"
   
 
-CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__
+CCompOpts + -openmp -bigobj -GR -D__BENTLEY_GROUND_DETECT_BUILD__ -Zc:twoPhase-
 
 #Uncomment this to allow generating design meshes
 #CCompOpts + -DWIP_MESH_IMPORT

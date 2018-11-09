@@ -190,10 +190,11 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct TestNodesCache : IHierarchyCache, INavNodeLocater
 {
-    typedef std::function<JsonNavNodePtr(uint64_t, NodeVisibility)> GetNodeHandler;
+    typedef std::function<JsonNavNodePtr(uint64_t)> GetNodeHandler;
     typedef std::function<NavNodesProviderPtr(HierarchyLevelInfo const&)> GetHierarchyDataSourceHandler;
     typedef std::function<NavNodesProviderPtr(DataSourceInfo const&)> GetVirtualDataSourceHandler;
     typedef std::function<NavNodesProviderPtr(uint64_t)> GetParentNodeDataSourceHandler;
+    typedef std::function<void(HierarchyLevelInfo&)> CacheHierarchyLevelHandler;
     typedef std::function<void(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool)> CacheDataSourceHandler;
     typedef std::function<void(JsonNavNodeR, bool)> CacheNodeHandler;
     typedef std::function<void(JsonNavNodeCR)> MakePhysicalHandler;
@@ -208,30 +209,40 @@ struct TestNodesCache : IHierarchyCache, INavNodeLocater
     struct Savepoint : IHierarchyCache::Savepoint
         {
         TestNodesCache& m_cache;
-        bmap<uint64_t, JsonNavNodePtr> m_nodes;
-        bmap<HierarchyLevelInfo, bvector<JsonNavNode*>> m_physicalHierarchy;
-        bmap<DataSourceInfo, bvector<JsonNavNode*>> m_virtualHierarchy;
+        bmap<uint64_t, JsonNavNodePtr> m_nodes; 
+        bmap<CombinedHierarchyLevelInfo, bvector<DataSourceInfo>> m_physicalHierarchy;
+        bmap<HierarchyLevelInfo, bvector<DataSourceInfo>> m_virtualHierarchy;
+        bmap<DataSourceInfo, bvector<JsonNavNode*>> m_partialHierarchies;
+        bset<uint64_t> m_finalizedDataSources;
         Savepoint(TestNodesCache& cache)
             : m_cache(cache)
             {
             m_nodes = cache.m_nodes;
+            m_partialHierarchies = cache.m_partialHierarchies;
             m_physicalHierarchy = cache.m_physicalHierarchy;
             m_virtualHierarchy = cache.m_virtualHierarchy;
+            m_finalizedDataSources = cache.m_finalizedDataSources;
             }
         void _Cancel() override
             {
             m_cache.m_nodes = m_nodes;
+            m_cache.m_partialHierarchies = m_partialHierarchies;
             m_cache.m_physicalHierarchy = m_physicalHierarchy;
             m_cache.m_virtualHierarchy = m_virtualHierarchy;
+            m_cache.m_finalizedDataSources = m_finalizedDataSources;
             }
         };
 
 private:
     uint64_t m_nodeIds;
     uint64_t m_datasourceIds;
-    bmap<uint64_t, JsonNavNodePtr> m_nodes;
-    bmap<HierarchyLevelInfo, bvector<JsonNavNode*>> m_physicalHierarchy;
-    bmap<DataSourceInfo, bvector<JsonNavNode*>> m_virtualHierarchy;
+    uint64_t m_hierarchyLevelIds;
+
+    bmap<uint64_t, JsonNavNodePtr> m_nodes;    
+    bmap<CombinedHierarchyLevelInfo, bvector<DataSourceInfo>> m_physicalHierarchy;
+    bmap<HierarchyLevelInfo, bvector<DataSourceInfo>> m_virtualHierarchy;
+    bmap<DataSourceInfo, bvector<JsonNavNode*>> m_partialHierarchies;
+    bset<uint64_t> m_finalizedDataSources;
 
     INodesProviderContextFactory* m_nodesProviderContextFactory;
     IConnectionCacheCR m_connections;
@@ -240,6 +251,7 @@ private:
     GetHierarchyDataSourceHandler m_getHierarchyDataSourceHandler;
     GetVirtualDataSourceHandler m_getVirtualDataSourceHandler;
     GetParentNodeDataSourceHandler m_getParentNodeDataSourceHandler;
+    CacheHierarchyLevelHandler m_cacheHierarchyLevelHandler;
     CacheDataSourceHandler m_cacheDataSourceHandler;
     CacheNodeHandler m_cacheNodeHandler;
     MakePhysicalHandler m_makePhysicalHandler;
@@ -252,31 +264,85 @@ private:
     HierarchyLevelInfo GetHierarchyLevelInfo(JsonNavNodeCR node) const
         {
         NavNodeExtendedData ex(node);
-        return HierarchyLevelInfo(ex.GetConnectionId(), ex.GetRulesetId(), ex.GetLocale(), node.GetParentNodeId());
+        return HierarchyLevelInfo(ex.GetConnectionId(), ex.GetRulesetId(), ex.GetLocale(), node.GetParentNodeId(), node.GetParentNodeId());
         }
-    DataSourceInfo GetDataSourceInfo(JsonNavNodeCR node) const
+    HierarchyLevelInfo GetHierarchyLevelInfo(DataSourceInfo const& dsInfo) const
         {
-        NavNodeExtendedData ex(node);
-        uint64_t physicalParentId = node.GetParentNodeId();
-        uint64_t virtualParentId = ex.GetVirtualParentId();
-        return DataSourceInfo(ex.GetConnectionId(), ex.GetRulesetId(), ex.GetLocale(), &physicalParentId, &virtualParentId);
+        for (auto entry : m_virtualHierarchy)
+            {
+            if (entry.first.GetId() == dsInfo.GetHierarchyLevelId())
+                return entry.first;
+            }
+        return HierarchyLevelInfo();
+        }
+    bvector<JsonNavNode*> GetFullHierarchyLevel(bvector<DataSourceInfo> const& partialInfos) const
+        {
+        bvector<JsonNavNode*> vec;
+        for (auto partialInfo : partialInfos)
+            {
+            auto iter = m_partialHierarchies.find(partialInfo);
+            if (iter == m_partialHierarchies.end())
+                continue;
+            std::copy(iter->second.begin(), iter->second.end(), std::back_inserter(vec));
+            }
+        return vec;
         }
 
 protected:
-    JsonNavNodePtr _GetNode(uint64_t nodeId, NodeVisibility visibility) const override
+    JsonNavNodePtr _GetNode(uint64_t nodeId) const override
         {
         if (m_getNodeHandler)
-            return m_getNodeHandler(nodeId, visibility);
+            return m_getNodeHandler(nodeId);
 
         auto iter = m_nodes.find(nodeId);
         return (m_nodes.end() != iter) ? iter->second : nullptr;
         }
-    NavNodesProviderPtr _GetDataSource(HierarchyLevelInfo const& info, bool removeIfInvalid) const override
+    NodeVisibility _GetNodeVisibility(uint64_t nodeId) const override
         {
-        if (m_getHierarchyDataSourceHandler)
-            return m_getHierarchyDataSourceHandler(info);
+        return NodeVisibility::Physical;
+        }
+    
+    HierarchyLevelInfo _FindHierarchyLevel(Utf8CP connectionId, Utf8CP rulesetId, Utf8CP locale, uint64_t const* virtualParentNodeId) const override
+        {
+        for (auto entry : m_virtualHierarchy)
+            {
+            if ((!connectionId || entry.first.GetConnectionId().Equals(connectionId))
+                && (!rulesetId || entry.first.GetRulesetId().Equals(rulesetId))
+                && (!locale || entry.first.GetLocale().Equals(locale))
+                && (!entry.first.GetVirtualParentNodeId() && !virtualParentNodeId 
+                    || entry.first.GetVirtualParentNodeId() && virtualParentNodeId && *entry.first.GetVirtualParentNodeId() == *virtualParentNodeId))
+                return entry.first;
+            }
+        return HierarchyLevelInfo();
+        }
+    DataSourceInfo _FindDataSource(uint64_t hierarchyLevelId, uint64_t index) const override
+        {
+        for (auto entry : m_partialHierarchies)
+            {
+            if (entry.first.GetHierarchyLevelId() == hierarchyLevelId && entry.first.GetIndex() == index)
+                return entry.first;
+            }
+        return DataSourceInfo();
+        }
+    DataSourceInfo _FindDataSource(uint64_t nodeId) const override
+        {
+        for (auto entry : m_partialHierarchies)
+            {
+            for (JsonNavNodeCPtr node : entry.second)
+                {
+                if (node->GetNodeId() == nodeId)
+                    return entry.first;
+                }
+            }
+        return DataSourceInfo();
+        }
 
+    NavNodesProviderPtr _GetCombinedHierarchyLevel(CombinedHierarchyLevelInfo const& info, bool removeIfInvalid, bool) const override
+        {
         if (nullptr == m_nodesProviderContextFactory)
+            return nullptr;
+
+        if (!IsInitialized(info))
             return nullptr;
 
         IConnectionPtr connection = m_connections.GetConnection(info.GetConnectionId().c_str());
@@ -289,16 +355,19 @@ protected:
         NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(),
             info.GetLocale().c_str(), info.GetPhysicalParentNodeId());
         auto iter = m_physicalHierarchy.find(info);
-        return (m_physicalHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
+        return (m_physicalHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, GetFullHierarchyLevel(iter->second)) : nullptr;
         }
-    NavNodesProviderPtr _GetDataSource(DataSourceInfo const& info, bool removeIfInvalid) const override
+    NavNodesProviderPtr _GetHierarchyLevel(HierarchyLevelInfo const& info, bool removeIfInvalid, bool) const override
         {
-        if (m_getVirtualDataSourceHandler)
-            return m_getVirtualDataSourceHandler(info);
+        if (m_getHierarchyDataSourceHandler)
+            return m_getHierarchyDataSourceHandler(info);
 
         if (nullptr == m_nodesProviderContextFactory)
             return nullptr;
-        
+
+        if (!IsInitialized(info))
+            return nullptr;
+
         IConnectionPtr connection = m_connections.GetConnection(info.GetConnectionId().c_str());
         if (connection.IsNull())
             {
@@ -307,43 +376,83 @@ protected:
             }
 
         NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, info.GetRulesetId().c_str(),
-            info.GetLocale().c_str(), info.GetVirtualParentNodeId());
+            info.GetLocale().c_str(), info.GetPhysicalParentNodeId());
         auto iter = m_virtualHierarchy.find(info);
-        return (m_virtualHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
+        return (m_virtualHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, GetFullHierarchyLevel(iter->second)) : nullptr;
         }
-    NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool removeIfInvalid) const override
+    NavNodesProviderPtr _GetDataSource(DataSourceInfo const& dsInfo, bool removeIfInvalid, bool) const override
+        {
+        if (m_getVirtualDataSourceHandler)
+            return m_getVirtualDataSourceHandler(dsInfo);
+
+        if (nullptr == m_nodesProviderContextFactory)
+            return nullptr;
+        
+        HierarchyLevelInfo hlInfo = GetHierarchyLevelInfo(dsInfo);
+        IConnectionPtr connection = m_connections.GetConnection(hlInfo.GetConnectionId().c_str());
+        if (connection.IsNull())
+            {
+            BeAssert(false);
+            return nullptr;
+            }
+
+        NavNodesProviderContextPtr context = m_nodesProviderContextFactory->Create(*connection, hlInfo.GetRulesetId().c_str(),
+            hlInfo.GetLocale().c_str(), hlInfo.GetVirtualParentNodeId());
+        auto iter = m_partialHierarchies.find(dsInfo);
+        return (m_partialHierarchies.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
+        }
+    NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool removeIfInvalid, bool) const override
         {
         if (m_getParentNodeDataSourceHandler)
             return m_getParentNodeDataSourceHandler(nodeId);
 
         JsonNavNodePtr node = GetNode(nodeId);
-        DataSourceInfo info = GetDataSourceInfo(*node);
-        return GetDataSource(info, removeIfInvalid);
+        for (auto entry : m_partialHierarchies)
+            {
+            for (JsonNavNodePtr const& entryNode : entry.second)
+                {
+                if (entryNode == node)
+                    return GetDataSource(entry.first, removeIfInvalid);
+                }
+            }
+        return nullptr;
         }
     
+    void _Cache(HierarchyLevelInfo& info) override
+        {
+        info.SetId(++m_hierarchyLevelIds);
+        m_physicalHierarchy[info] = bvector<DataSourceInfo>();
+        m_virtualHierarchy[info] = bvector<DataSourceInfo>();
+
+        if (m_cacheHierarchyLevelHandler)
+            m_cacheHierarchyLevelHandler(info);
+        }
     void _Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings, bool updatesDisabled) override
         {
-        info.SetDataSourceId(++m_datasourceIds);
-        m_physicalHierarchy[info] = bvector<JsonNavNode*>();
-        m_virtualHierarchy[info] = bvector<JsonNavNode*>();
+        info.SetId(++m_datasourceIds);
+        m_partialHierarchies[info] = bvector<JsonNavNode*>();
+        bvector<DataSourceInfo>& physicalHierarchy = m_physicalHierarchy[GetHierarchyLevelInfo(info)];
+        physicalHierarchy.insert(physicalHierarchy.begin() + info.GetIndex(), info);
+        bvector<DataSourceInfo>& virtualHierarchy = m_virtualHierarchy[GetHierarchyLevelInfo(info)];
+        virtualHierarchy.insert(virtualHierarchy.begin() + info.GetIndex(), info);
 
         if (m_cacheDataSourceHandler)
             m_cacheDataSourceHandler(info, filter, relatedClassIds, relatedSettings, updatesDisabled);
         }
-    void _Cache(JsonNavNodeR node, bool isVirtual) override
+    void _Cache(JsonNavNodeR node, DataSourceInfo const& dsInfo, uint64_t index, bool isVirtual) override
         {
         uint64_t nodeId = ++m_nodeIds;
         node.SetNodeId(nodeId);
-        m_nodes[nodeId] = &node;
-
-        DataSourceInfo dsInfo = GetDataSourceInfo(node);
-        uint64_t const* parentId = dsInfo.GetVirtualParentNodeId();
+        
+        HierarchyLevelInfo hlInfo = GetHierarchyLevelInfo(dsInfo);
+        uint64_t const* parentId = hlInfo.GetVirtualParentNodeId();
         bvector<Utf8String> pathFromRoot = (nullptr == parentId || 0 == *parentId) ? bvector<Utf8String>() : m_nodes[*parentId]->GetKey()->GetPathFromRoot();
         pathFromRoot.push_back(std::to_string(nodeId).c_str());
-        IConnectionPtr connection = m_connections.GetConnection(dsInfo.GetConnectionId().c_str());
+        IConnectionPtr connection = m_connections.GetConnection(hlInfo.GetConnectionId().c_str());
         node.SetNodeKey(*NavNodesHelper::CreateNodeKey(*connection, node, pathFromRoot));
-        m_physicalHierarchy[GetHierarchyLevelInfo(node)].push_back(&node);
-        m_virtualHierarchy[dsInfo].push_back(&node);
+
+        m_nodes[nodeId] = &node;
+        m_partialHierarchies[dsInfo].push_back(&node);
 
         if (m_cacheNodeHandler)
             m_cacheNodeHandler(node, isVirtual);
@@ -359,6 +468,34 @@ protected:
         if (m_makeVirtualHandler)
             return m_makeVirtualHandler(node);
         }
+    
+    bool _IsInitialized(CombinedHierarchyLevelInfo const& info) const override
+        {
+        auto iter = m_physicalHierarchy.find(info);
+        if (m_physicalHierarchy.end() == iter)
+            return false;
+        for (auto dsInfo : iter->second)
+            {
+            if (!IsInitialized(dsInfo))
+                return false;
+            }
+        return true;
+        }
+    bool _IsInitialized(HierarchyLevelInfo const& info) const override
+        {
+        auto iter = m_virtualHierarchy.find(info);
+        if (m_virtualHierarchy.end() == iter)
+            return false;
+        for (auto dsInfo : iter->second)
+            {
+            if (!IsInitialized(dsInfo))
+                return false;
+            }
+        return true;
+        }
+    bool _IsInitialized(DataSourceInfo const& info) const override {return m_finalizedDataSources.end() != m_finalizedDataSources.find(info.GetId());}
+    void _FinalizeInitialization(DataSourceInfo const& info) override {m_finalizedDataSources.insert(info.GetId());}
+
     void _Update(uint64_t id, JsonNavNodeCR node) override
         {
         if (m_updateNodeHandler)
@@ -380,12 +517,13 @@ protected:
 
 public:
     TestNodesCache(IConnectionCacheCR connections, INodesProviderContextFactory* nodesProviderContextFactory = nullptr) 
-        : m_nodesProviderContextFactory(nodesProviderContextFactory), m_connections(connections), m_nodeIds(1), m_datasourceIds(1)
+        : m_nodesProviderContextFactory(nodesProviderContextFactory), m_connections(connections), m_nodeIds(1), m_datasourceIds(1), m_hierarchyLevelIds(1)
         {}
     void SetGetNodeHandler(GetNodeHandler handler) {m_getNodeHandler = handler;}
     void SetGetHierarchyDataSourceHandler(GetHierarchyDataSourceHandler handler) {m_getHierarchyDataSourceHandler = handler;}
     void SetGetVirtualDataSourceHandler(GetVirtualDataSourceHandler handler) {m_getVirtualDataSourceHandler = handler;}
     void SetGetParentNodeDataSourceHandler(GetParentNodeDataSourceHandler handler) {m_getParentNodeDataSourceHandler = handler;}
+    void SetCacheHierarchyLevelHandler(CacheHierarchyLevelHandler handler) {m_cacheHierarchyLevelHandler = handler;}
     void SetCacheDataSourceHandler(CacheDataSourceHandler handler) {m_cacheDataSourceHandler = handler;}
     void SetCacheNodeHandler(CacheNodeHandler handler) {m_cacheNodeHandler = handler;}
     void SetMakePhysicalHandler(MakePhysicalHandler handler) {m_makePhysicalHandler = handler;}
@@ -532,14 +670,9 @@ private:
         }
 
 protected:
-    NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
+    NavNodesProviderPtr _Create(NavNodesProviderContextR context, JsonNavNodeCP parent, ProviderCacheType) const override
         {
         return CreateProvider(context, parent);
-        }
-    NavNodesProviderPtr _CreateForVirtualParent(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
-        {
-        return CreateProvider(context, parent);
-
         }
 public:
     TestNodesProviderFactory() {}

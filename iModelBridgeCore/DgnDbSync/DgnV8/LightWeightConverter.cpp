@@ -9,7 +9,7 @@
 #include <GeoCoord\BaseGeoCoord.h>
 
 // Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
-#include "../../V8IModelExtraFiles/V8IModelExtraFiles.h"
+#include "../../../../V8IModelExtraFiles/V8IModelExtraFiles.h"
 
 #include <VersionedDgnV8Api/PSolid/PSolidCore.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -1076,7 +1076,7 @@ DefinitionModelPtr LightWeightConverter::GetJobDefinitionModel()
         return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
 
     SubjectCPtr job = m_dgndb->Elements().GetRootSubject();
-    Utf8PrintfString partitionName("Definition Model For %s", job->GetDisplayLabel());
+    Utf8PrintfString partitionName("Definition Model For %s", job->GetDisplayLabel().c_str());
     DgnCode partitionCode = DefinitionPartition::CreateCode(*job, partitionName);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());

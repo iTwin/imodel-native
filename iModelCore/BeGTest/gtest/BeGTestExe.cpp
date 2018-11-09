@@ -349,8 +349,9 @@ static int runAllTestsWithTimeout(uint64_t timeoutInSeconds)
     int testResult = 0;
     bool didComplete = false;
     
-    std::thread ([&]()
+    std::thread ([&]
         {
+        BeThreadUtilities::SetCurrentThreadName("Test Runner Thread");
         BeTest::setS_mainThreadId(BeThreadUtilities::GetCurrentThreadId());
         testResult = RUN_ALL_TESTS();
         didComplete = true;        

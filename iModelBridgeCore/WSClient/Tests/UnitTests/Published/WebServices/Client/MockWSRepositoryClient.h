@@ -72,12 +72,24 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
 
         MOCK_CONST_METHOD1(GetInfo, AsyncTaskPtr<WSRepositoryResult>(ICancellationTokenPtr));
 
+        MOCK_CONST_METHOD2(GetInfoWithOptions, AsyncTaskPtr<WSRepositoryResult>
+            (
+            RequestOptionsPtr options,
+            ICancellationTokenPtr canncelationToken
+            ));
+
         MOCK_METHOD1(SetCompressionOptions, void(CompressionOptions));
 
         MOCK_CONST_METHOD0(GetCompressionOptions, CompressionOptionsCR());
 
         MOCK_CONST_METHOD1(VerifyAccess, AsyncTaskPtr<WSVoidResult>
             (
+            ICancellationTokenPtr canncelationToken
+            ));
+
+        MOCK_CONST_METHOD2(VerifyAccessWithOptions, AsyncTaskPtr<WSVoidResult>
+            (
+            RequestOptionsPtr options,
             ICancellationTokenPtr canncelationToken
             ));
 
@@ -88,10 +100,26 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr canncelationToken
             ));
 
+        MOCK_CONST_METHOD4(SendGetObjectRequestWithOptions, AsyncTaskPtr<WSObjectsResult>
+            (
+            ObjectIdCR objectId,
+            Utf8StringCR eTag,
+            RequestOptionsPtr options,
+            ICancellationTokenPtr canncelationToken
+            ));
+
         MOCK_CONST_METHOD3(SendGetChildrenRequest, AsyncTaskPtr<WSObjectsResult>
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD4(SendGetChildrenRequestWithOptions, AsyncTaskPtr<WSObjectsResult>
+            (
+            ObjectIdCR parentObjectId,
+            Utf8StringCR eTag,
+            RequestOptionsPtr options,
             ICancellationTokenPtr ct
             ));
 
@@ -100,6 +128,15 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD5(SendGetChildrenRequestWithOptions, AsyncTaskPtr<WSObjectsResult>
+            (
+            ObjectIdCR parentObjectId,
+            const bset<Utf8String>& propertiesToSelect,
+            Utf8StringCR eTag,
+            RequestOptionsPtr options,
             ICancellationTokenPtr ct
             ));
 
@@ -121,9 +158,26 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
+        MOCK_CONST_METHOD6(SendGetFileRequestWithOptions, AsyncTaskPtr<WSResult>
+            (
+            ObjectIdCR objectId,
+            HttpBodyPtr responseBody,
+            Utf8StringCR eTag,
+            Http::Request::ProgressCallbackCR downloadProgressCallback,
+            RequestOptionsPtr options,
+            ICancellationTokenPtr ct
+            ));
+
         MOCK_CONST_METHOD2(SendGetSchemasRequest, AsyncTaskPtr<WSObjectsResult>
             (
             Utf8StringCR eTag,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD3(SendGetSchemasRequestWithOptions, AsyncTaskPtr<WSObjectsResult>
+            (
+            Utf8StringCR eTag,
+            RequestOptionsPtr options,
             ICancellationTokenPtr ct
             ));
 
@@ -132,6 +186,15 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             WSQueryCR query,
             Utf8StringCR eTag,
             Utf8StringCR skipToken,
+            ICancellationTokenPtr ct
+            ));
+
+        MOCK_CONST_METHOD5(SendQueryRequestWithOptions, AsyncTaskPtr<WSObjectsResult>
+            (
+            WSQueryCR query,
+            Utf8StringCR eTag,
+            Utf8StringCR skipToken,
+            RequestOptionsPtr options,
             ICancellationTokenPtr ct
             ));
 

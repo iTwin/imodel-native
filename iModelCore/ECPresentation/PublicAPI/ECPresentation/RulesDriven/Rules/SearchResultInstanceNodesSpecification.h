@@ -196,8 +196,13 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification ();
 
         //! Constructor.
+        //! @deprecated Use SearchResultInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool)
         ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
-                                                                 bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
+            bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
+
+        //! Constructor.
+        ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
+            bool hideIfNoChildren, bool groupByClass, bool groupByLabel);
         
         //! Copy Constructor.
         ECPRESENTATION_EXPORT SearchResultInstanceNodesSpecification (SearchResultInstanceNodesSpecification const&);

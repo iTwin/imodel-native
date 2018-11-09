@@ -1,11 +1,16 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-NavigationQueryBuilderTests.RelatedInstanceNodes_ShowEmptyGroups                                # Placeholder for a missing feature.
-NavigationQueryBuilderTests.InstancesOfSpecificClasses_ShowEmptyGroups                          # Placeholder for a missing feature.
-RulesDrivenECPresentationManagerNavigationTests.InstancesOfSpecificClassesNodes_ShowEmptyGroups # Placeholder for a missing feature.
-NavigationQueryBuilderTests.AllRelatedInstanceNodes_GroupByRelationship                         # Placeholder for a missing feature.
-NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationshipGroupingNodes   # Placeholder for a missing feature.
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
+RulesDrivenECPresentationManagerContentTests.MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSomeValuesAreNull
+    # Linux, https://bentleycs.visualstudio.com/iModelTechnologies/_build/results?buildId=36157&_a=summary&view=logs
+    # [ RUN      ] RulesDrivenECPresentationManagerContentTests.MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSomeValuesAreNull
+    # /home/platform-bld/vsts_agent/_work/17/s/iModelCore/ECPresentation/Tests/Published/RulesEngine/PresentationManagerContentTests.cpp:6064: Failure
+    #       Expected: varies_string.c_str()
+    #       Which is: "*** Varies ***"
+    # To be equal to: record->GetDisplayValues()["MyClassA_MyClassB_ArrayProperty"].GetString()
+    #       Which is: "`_(x=\x7F"
+    # [  FAILED  ] RulesDrivenECPresentationManagerContentTests.MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenSomeValuesAreNull (7 ms)

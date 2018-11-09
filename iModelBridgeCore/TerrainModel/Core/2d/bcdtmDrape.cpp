@@ -268,6 +268,9 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 /*
 ** Validate Arguments
 */
+lineNum = 0 ;
+volatile long lineL = lineNum;
+    
  if( stringPtsP == NULL || numStringPts < 2  )
    {
     if( dbg )
@@ -297,8 +300,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 /*
 ** Process Each String Section
 */
- lineNum = 0 ;
- volatile long lineL = lineNum;
+ 
  for( p3dP = stringPtsP + 1 ; p3dP < stringPtsP + numStringPts ; ++p3dP )
    {
     ++lineNum ;

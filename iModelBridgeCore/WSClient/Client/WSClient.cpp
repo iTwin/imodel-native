@@ -81,7 +81,7 @@ AsyncTaskPtr<WSVoidResult> WSClient::VerifyConnection() const
     return request.PerformAsync()->Then<WSVoidResult>([] (Http::ResponseCR response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK)
-            return WSVoidResult::Error(WSError());
+            return WSVoidResult::Error({ response });
 
         return WSVoidResult::Success();
         });

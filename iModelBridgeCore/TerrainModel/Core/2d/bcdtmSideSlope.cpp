@@ -5056,7 +5056,7 @@ int bcdtmSideSlope_writeRadialsToBinaryDTMFile
  DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,
  long                 sideSlopeTableSize,
  long                 writeSideSlopeElement,
- wchar_t              *dataFileP
+ wchar_t              const*dataFileP
 )
 /*
 ** This Function Writes The radials To A Binary DTM Data File
@@ -5122,7 +5122,7 @@ int bcdtmSideSlope_writeElementToBinaryDTMFile
 (
  DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,
  long                 sideSlopeTableSize,
- wchar_t              *dataFileP
+ wchar_t              const*dataFileP
 )
 /*
 ** This Function Writes The Side Slope Element To A Binary DTM Data File
@@ -6069,7 +6069,7 @@ int bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile
 (
  DTM_OVERLAP_RADIAL_TABLE *ovlTablePtsP,
  long                     ovlTableSize,
- wchar_t                  *dataFileP
+ wchar_t                  const*dataFileP
 )
 /*
 ** This Function Writes The radials To A Binary DTM Data File
@@ -6121,7 +6121,7 @@ int bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile
 | bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile                      |
 |                                                                       |
 +----------------------------------------------------------------------*/
-int bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,char *Message)
+int bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,char const*Message)
 /*
 ** This Function Write The Overlap Radial Table To The DTM Log File
 */
@@ -12078,7 +12078,7 @@ int bcdtmSideSlope_removeDuplicatesPointArray
 /*
 ** Check For Presence Of Line String
 */
- if( sizeLineString <= 0 || lineString == nullptr ) goto errexit ;
+ if( sizeLineString == nullptr || lineString == nullptr ) goto errexit ;
 /*
 ** Check Point To Point Tolerance Is Greater Than Or Equal To Zero
 */

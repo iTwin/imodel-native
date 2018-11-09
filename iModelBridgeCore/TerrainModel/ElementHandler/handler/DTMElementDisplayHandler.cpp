@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMElementDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -1447,7 +1447,19 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
         DPlane3d dplane;
         cutPlane._GetPlane(dplane, true);
 
-        if (fabs(dplane.normal.z) < mgds_fc_nearZero)
+        bool planeVerticalCutCheck = fabs(dplane.normal.z) < mgds_fc_nearZero;
+
+        ClipMask clipMask;
+        DRange2d range2d;
+        RotMatrix matrix;
+        cutPlane._GetClipRange(clipMask, range2d, matrix);
+
+        DVec3d xDir;
+        matrix.GetColumn(xDir, 0);
+
+        bool matrixVerticalCutCheck = fabs(xDir.z) < mgds_fc_nearZero;
+
+        if (planeVerticalCutCheck || matrixVerticalCutCheck)
             {
             CutGraphicsContainerCP       cutGraphics;
             if (NULL == (cutGraphics = context.GetCutGraphicsCache (thisElm, context.GetCurrDisplayPath(), cutPlane)))
@@ -1458,17 +1470,10 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                 Transform trsf;
                 DTMElementHandlerManager::GetStorageToUORMatrix (trsf, GetModelRef(thisElm), thisElm);
 
-                ClipMask clipMask;
-                DRange2d range2d;
-                RotMatrix matrix;
-                cutPlane._GetClipRange(clipMask, range2d, matrix);
-
                 DRange3d planeRange = DRange3d::From(range2d.low.x, range2d.low.y, 0, range2d.high.x, range2d.high.y, 0);
                 double left = planeRange.low.x;
                 double right = planeRange.high.x;
-                DVec3d xDir;
 
-                matrix.GetColumn(xDir, 0);
                 DPoint3d res[2];
                 res[0] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, left);
                 res[1] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, right);

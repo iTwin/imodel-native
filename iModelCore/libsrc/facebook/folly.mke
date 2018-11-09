@@ -44,6 +44,8 @@ $(o)Singleton$(oext) : $(FollyDir)Singleton.cpp ${MultiCompileDepends}
 
 $(o)BeFolly$(oext) : $(FollyDir)BeFolly.cpp $(FollyVendorAPISrc)BeFolly.h ${MultiCompileDepends}
 
+$(o)BeTimekeeper$(oext) : $(FollyDir)BeTimekeeper.cpp $(FollyVendorAPISrc)BeTimekeeper.h ${MultiCompileDepends}
+
 $(o)Demangle$(oext) : $(FollyDir)Demangle.cpp ${MultiCompileDepends}
 
 $(o)Request$(oext) : $(FollyDir)io/async/Request.cpp ${MultiCompileDepends}
@@ -60,7 +62,9 @@ $(o)SysResource$(oext) : $(FollyDir)portability/SysResource.cpp ${MultiCompileDe
 
 $(o)SharedMutex$(oext) : $(FollyDir)SharedMutex.cpp ${MultiCompileDepends}
 
-$(o)ExceptionWrapper$(oext) : $(FollyDir)ExceptionWrapper.cpp ${MultiCompileDepends}
+$(o)ExceptionWrapper$(oext) : $(FollyDir)ExceptionWrapper.cpp $(FollyVendorAPISrc)ExceptionWrapper.h ${MultiCompileDepends}
+
+$(o)InlineExecutor$(oext) : $(FollyDir)futures/InlineExecutor.cpp $(FollyVendorAPISrc)futures/InlineExecutor.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

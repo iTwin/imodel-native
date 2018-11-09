@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectionClientInterface.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ struct MockConnectionClientInterface : public IConnectionClientInterface
         MOCK_METHOD0(IsRunning, bool());
         MOCK_METHOD0(IsLoggedIn, bool());
         MOCK_METHOD0(GetUserId, Utf8String());
-        MOCK_METHOD1(GetSerializedDelegateSecurityToken, SamlTokenPtr(Utf8StringCR rpUri));
+        MOCK_METHOD2(GetSerializedDelegateSecurityToken, SamlTokenPtr(Utf8StringCR rpUri, Utf8StringP errorStringOut));
         MOCK_METHOD1(AddClientEventListener, void(event_callback callback));
         MOCK_METHOD0(StartClientApp, BentleyStatus());
     };

@@ -46,10 +46,15 @@ struct EXPORT_VTABLE_ATTRIBUTE AllInstanceNodesSpecification : public ChildNodeS
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT AllInstanceNodesSpecification ();
+        
+        //! Constructor.
+        //! @deprecated Use AllInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool, Utf8StringCR)
+        ECPRESENTATION_EXPORT AllInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
+            bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas);
 
         //! Constructor.
-        ECPRESENTATION_EXPORT AllInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-                                                        bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas);
+        ECPRESENTATION_EXPORT AllInstanceNodesSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
+            bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas);
 
         //! Returns true if grouping by class should be applied.
         ECPRESENTATION_EXPORT bool                         GetGroupByClass (void) const;

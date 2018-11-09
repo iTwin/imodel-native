@@ -31,6 +31,16 @@ public:
 };
 
 /*=================================================================================**//**
+* An interface for provider index allocator
+* @bsiclass                                     Grigas.Petraitis                10/2018
++===============+===============+===============+===============+===============+======*/
+struct IProviderIndexAllocator
+    {
+    virtual uint64_t _AllocateIndex() = 0;
+    virtual ~IProviderIndexAllocator() {}
+    };
+
+/*=================================================================================**//**
 * Context for NavNodesProvider implementations.
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
@@ -43,11 +53,11 @@ private:
     INodesProviderFactoryCR m_providerFactory;
     uint64_t const* m_physicalParentNodeId;
     uint64_t const* m_virtualParentNodeId;
-    NavNodesProviderCP m_baseProvider;
+    IProviderIndexAllocator* m_providerIndexAllocator;
+    mutable HierarchyLevelInfo m_hierarchyLevelInfo;
+    mutable DataSourceInfo m_dataSourceInfo;
 
     // optimization flags
-    bool m_isNodesCount;
-    bool m_isNodesCheck;
     bool m_isFullLoadDisabled;
     bool m_isUpdatesDisabled;
 
@@ -89,26 +99,25 @@ public:
     ECPRESENTATION_EXPORT IHierarchyCacheR GetNodesCache() const;
     ECPRESENTATION_EXPORT JsonNavNodeCPtr GetPhysicalParentNode() const;
     uint64_t const* GetPhysicalParentNodeId() const {return m_physicalParentNodeId;}
-    void SetPhysicalParentNode(NavNodeCR node) {DELETE_AND_CLEAR(m_physicalParentNodeId); m_physicalParentNodeId = new uint64_t(node.GetNodeId());}
+    void SetPhysicalParentNodeId(uint64_t id) {DELETE_AND_CLEAR(m_physicalParentNodeId); m_physicalParentNodeId = (0 != id) ? new uint64_t(id) : nullptr;}
+    void SetPhysicalParentNode(NavNodeCR node) {SetPhysicalParentNodeId(node.GetNodeId());}
     ECPRESENTATION_EXPORT JsonNavNodeCPtr GetVirtualParentNode() const;
     uint64_t const* GetVirtualParentNodeId() const {return m_virtualParentNodeId;}
-    void SetVirtualParentNode(NavNodeCR node) {DELETE_AND_CLEAR(m_virtualParentNodeId); m_virtualParentNodeId = new uint64_t(node.GetNodeId());}
-    NavNodesProviderCP GetBaseProvider() const {return m_baseProvider;}
-    void SetBaseProvider(NavNodesProviderCR provider) {m_baseProvider = &provider;}
-    NavNodesProviderPtr CreateProvider(NavNodesProviderContextR, JsonNavNodeCP parentNode) const;
-    IUsedUserSettingsListener& GetUsedSettingsListener() const;
+    void SetVirtualParentNodeId(uint64_t id) {DELETE_AND_CLEAR(m_virtualParentNodeId); m_virtualParentNodeId = (0 != id) ? new uint64_t(id) : nullptr;}
+    void SetVirtualParentNode(NavNodeCR node) {SetVirtualParentNodeId(node.GetNodeId());}
+    NavNodesProviderPtr CreateHierarchyLevelProvider(NavNodesProviderContextR, JsonNavNodeCP parentNode) const;
+    HierarchyLevelInfo const& GetHierarchyLevelInfo() const;
+    DataSourceInfo const& GetDataSourceInfo() const;
     bvector<UserSettingEntry> GetRelatedSettings() const;
+    IProviderIndexAllocator* GetProviderIndexAllocator() const {return m_providerIndexAllocator;}
+    void SetProviderIndexAllocator(IProviderIndexAllocator* allocator) {m_providerIndexAllocator = allocator;}
 
     // optimization flags
-    bool IsNodesCount(bool checkBase = true) const;
-    void SetIsNodesCount(bool value) {m_isNodesCount = value;}
-    bool IsNodesCheck(bool checkBase = true) const;
-    void SetIsNodesCheck(bool value) {m_isNodesCheck = value;}
-    bool IsFullNodesLoadDisabled(bool checkBase = true) const;
+    bool IsFullNodesLoadDisabled() const;
     void SetDisableFullLoad(bool value) {m_isFullLoadDisabled = value;}
-    bool IsUpdatesDisabled(bool checkBase = true) const;
+    bool IsUpdatesDisabled() const;
     void SetIsUpdatesDisabled(bool value) { m_isUpdatesDisabled = value; }
-    bool NeedsFullLoad() const {return !IsNodesCheck() && !IsNodesCount() && !IsFullNodesLoadDisabled();}
+    bool NeedsFullLoad() const {return !IsFullNodesLoadDisabled();}
     
     // root nodes context
     ECPRESENTATION_EXPORT void SetRootNodeContext(RootNodeRuleCR);
@@ -152,6 +161,15 @@ public:
 };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                10/2018
++===============+===============+===============+===============+===============+======*/
+enum class ProviderNodesInitializationStrategy
+    {
+    Automatic,  //!< InitializeNodes is called automatically when GetNode, GetNodesCount or HasNodes are called
+    Manual,     //!< Provider implementation is responsible for calling InitializeNodes before starting to cache its nodes
+    };
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2015
 +===============+===============+===============+===============+===============+======*/
 enum HasChildrenFlag
@@ -170,11 +188,12 @@ struct DisabledFullNodesLoadContext;
 +===============+===============+===============+===============+===============+======*/
 struct DataSourceRelatedSettingsUpdater
     {
-    DataSourceInfo const& m_datasourceInfo;
     NavNodesProviderContextCR m_context;
+    JsonNavNodeCP m_node;
     size_t m_relatedSettingsCountBefore;
 
-    DataSourceRelatedSettingsUpdater(DataSourceInfo const& info, NavNodesProviderContextCR context);
+    DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context);
+    DataSourceRelatedSettingsUpdater(NavNodesProviderContextCR context, JsonNavNodeCR node);
     ~DataSourceRelatedSettingsUpdater();
     };
 
@@ -182,7 +201,7 @@ struct DataSourceRelatedSettingsUpdater
 * Abstract class for navigation node providers.
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
-struct NavNodesProvider : RefCountedBase
+struct NavNodesProvider : RefCountedBase, IProviderIndexAllocator
 {
     struct SpecificationsVisitor;
     friend struct NavNodesProviderContext;
@@ -192,19 +211,24 @@ struct NavNodesProvider : RefCountedBase
 
 private:
     NavNodesProviderContextPtr m_context;
-    DataSourceInfo m_datasourceInfo;
-
-private:
-    bool GetPositionOffsetInternal(size_t& offset, NavNodesProviderCR base, NavNodesProviderCR provider) const;
-    
+    uint64_t m_subProviderIndex;
+    mutable bool m_nodesInitialized;
+    mutable bool m_cachedHasNodesFlag;
+    mutable bool m_hasCachedHasNodesFlag;
+    mutable uint64_t m_cachedNodesCount;
+    mutable bool m_hasCachedNodesCount;
+        
 protected:
     ECPRESENTATION_EXPORT NavNodesProvider(NavNodesProviderContextCR context);
-    DataSourceInfo& GetDataSourceInfo() {return m_datasourceInfo;}
-    void SetDataSourceInfo(DataSourceInfo info) {m_datasourceInfo = info;}
-    HasChildrenFlag AnyChildSpecificationReturnsNodes(JsonNavNode const& parentNode, bool isParentPhysical) const;
-    NavNodesProviderCR GetRootBaseProvider() const;
-    bool GetPositionOffset(size_t& offset, NavNodesProviderCR provider) const;
+    HasChildrenFlag AnyChildSpecificationReturnsNodes(JsonNavNode const& parentNode) const;
+    NavNodesProviderPtr GetCachedProvider() const;
     void FinalizeNode(JsonNavNodeR, bool customizeLabel) const;
+    ECPRESENTATION_EXPORT void InitializeNodes() const;
+    
+    virtual bool _IsCacheable() const = 0;
+    virtual uint64_t _AllocateIndex() override {return m_subProviderIndex++;}
+    virtual ProviderNodesInitializationStrategy _GetInitializationStrategy() const {return ProviderNodesInitializationStrategy::Automatic;}
+    virtual bool _InitializeNodes() {return true;}
 
     virtual EmptyNavNodesProviderCP _AsEmptyProvider() const {return nullptr;}
     virtual SingleNavNodeProviderCP _AsSingleProvider() const {return nullptr;}
@@ -218,10 +242,10 @@ public:
     virtual ~NavNodesProvider() {}
     NavNodesProviderContextR GetContextR() const {return *m_context;}
     NavNodesProviderContextCR GetContext() const {return GetContextR();}
-    DataSourceInfo const& GetDataSourceInfo() const {return m_datasourceInfo;}
     MultiNavNodesProviderCP AsMultiProvider() const {return _AsMultiProvider();}
     EmptyNavNodesProviderCP AsEmptyProvider() const {return _AsEmptyProvider();}
     SingleNavNodeProviderCP AsSingleProvider() const {return _AsSingleProvider();}
+    ECPRESENTATION_EXPORT void Initialize() const;
     ECPRESENTATION_EXPORT void FinalizeNodes();
     ECPRESENTATION_EXPORT bool GetNode(JsonNavNodePtr& node, size_t index) const;
     ECPRESENTATION_EXPORT size_t GetNodesCount() const;
@@ -230,51 +254,38 @@ public:
     void NotifyNodeChanged(JsonNavNodeCR node) const;
 };
 
+/*---------------------------------------------------------------------------------**//**
+* A helper method to initialize nodes provider
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static T WithInitialize(T provider)
+    {
+    provider->Initialize();
+    return provider;
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                10/2018
++===============+===============+===============+===============+===============+======*/
+enum class ProviderCacheType
+    {
+    None,       // always create fresh data provider
+    Combined,   // create cached data provider for physical parent node
+    Full,       // create cached data provider for virtual parent node
+    Partial,    // create cached data provider for a single part of hierarchy level
+    };
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
 struct INodesProviderFactory
 {
 protected:
-    virtual NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR, JsonNavNodeCP) const = 0;
-    virtual NavNodesProviderPtr _CreateForVirtualParent(NavNodesProviderContextR, JsonNavNodeCP) const = 0;
+    virtual NavNodesProviderPtr _Create(NavNodesProviderContextR, JsonNavNodeCP, ProviderCacheType) const = 0;
 public:
     virtual ~INodesProviderFactory() {}
-    NavNodesProviderPtr CreateForHierarchyLevel(NavNodesProviderContextR context, JsonNavNodeCP parent) const {return _CreateForHierarchyLevel(context, parent);}
-    NavNodesProviderPtr CreateForVirtualParent(NavNodesProviderContextR context, JsonNavNodeCP parent) const {return _CreateForVirtualParent(context, parent);}
+    NavNodesProviderPtr Create(NavNodesProviderContextR context, JsonNavNodeCP parent, ProviderCacheType cacheType) const {return _Create(context, parent, cacheType);}
 };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                02/2016
-+===============+===============+===============+===============+===============+======*/
-struct NodesCountContext
-    {
-    NavNodesProviderCR m_provider;
-    bool m_wasNodesCount;
-    NodesCountContext(NavNodesProviderCR provider) 
-        : m_provider(provider)
-        {
-        m_wasNodesCount = m_provider.GetContext().IsNodesCount(false);
-        m_provider.GetContextR().SetIsNodesCount(true);
-        }
-    ~NodesCountContext() {m_provider.GetContextR().SetIsNodesCount(m_wasNodesCount);}
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                02/2016
-+===============+===============+===============+===============+===============+======*/
-struct NodesCheckContext
-    {
-    NavNodesProviderCR m_provider;
-    bool m_wasNodesCheck;
-    NodesCheckContext(NavNodesProviderCR provider) 
-        : m_provider(provider)
-        {
-        m_wasNodesCheck = m_provider.GetContext().IsNodesCheck(false);
-        m_provider.GetContextR().SetIsNodesCheck(true);
-        }
-    ~NodesCheckContext() {m_provider.GetContextR().SetIsNodesCheck(m_wasNodesCheck);}
-    };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
@@ -286,7 +297,7 @@ struct DisabledFullNodesLoadContext
     DisabledFullNodesLoadContext(NavNodesProviderCR provider) 
         : m_provider(provider)
         {
-        m_wasFullLoadDisabled = m_provider.GetContext().IsFullNodesLoadDisabled(false);
+        m_wasFullLoadDisabled = m_provider.GetContext().IsFullNodesLoadDisabled();
         m_provider.GetContextR().SetDisableFullLoad(true);
         }
     ~DisabledFullNodesLoadContext() {m_provider.GetContextR().SetDisableFullLoad(m_wasFullLoadDisabled);}
@@ -298,16 +309,19 @@ struct DisabledFullNodesLoadContext
 struct EmptyNavNodesProvider : NavNodesProvider
 {
 private:
-    EmptyNavNodesProvider(NavNodesProviderContextCR context);
+    EmptyNavNodesProvider(NavNodesProviderContextR context);
 protected:
+    uint64_t _AllocateIndex() override {return 0;}
+    bool _IsCacheable() const override {return true;}
+    ECPRESENTATION_EXPORT bool _InitializeNodes() override;
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return false;}
     bool _HasNodes() const override {return false;}
     size_t _GetNodesCount() const override {return 0;}
     EmptyNavNodesProviderCP _AsEmptyProvider() const override {return this;}
 public:
-    static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextCR context)
+    static RefCountedPtr<EmptyNavNodesProvider> Create(NavNodesProviderContextR context)
         {
-        return new EmptyNavNodesProvider(context);
+        return WithInitialize(new EmptyNavNodesProvider(context));
         }
     };
 
@@ -323,6 +337,7 @@ private:
         : NavNodesProvider(context), m_node(&node)
         {}
 protected:
+    bool _IsCacheable() const override {return false;}
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override
         {
         if (0 != index)
@@ -336,7 +351,7 @@ protected:
 public:
     static RefCountedPtr<SingleNavNodeProvider> Create(JsonNavNode& node, NavNodesProviderContextCR context)
         {
-        return new SingleNavNodeProvider(node, context);
+        return WithInitialize(new SingleNavNodeProvider(node, context));
         }
     };
 
@@ -347,8 +362,10 @@ struct MultiNavNodesProvider : NavNodesProvider
 {
 private:
     bvector<NavNodesProviderPtr> m_providers;
+    // mutable size_t m_cachedNodesCount;
+    // mutable bool m_hasCachedNodesCount;
 protected:
-    MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context) {}
+    MultiNavNodesProvider(NavNodesProviderContextCR context) : NavNodesProvider(context) /*, m_cachedNodesCount(0), m_hasCachedNodesCount(false) */ {}
     void AddProvider(NavNodesProvider& provider) {m_providers.push_back(&provider);}
     void RemoveProvider(NavNodesProvider& provider) {m_providers.erase(std::find(m_providers.begin(), m_providers.end(), &provider));}
     void SetProviders(bvector<NavNodesProviderPtr> const& providers) {m_providers = providers;}
@@ -358,9 +375,8 @@ protected:
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
-    virtual void _OnNodeProvidersRequest() const {}
 public:
-    bvector<NavNodesProviderPtr> const& GetNodeProviders() const {_OnNodeProvidersRequest(); return m_providers;}
+    bvector<NavNodesProviderPtr> const& GetNodeProviders() const {return m_providers;}
 };
 
 typedef RefCountedPtr<struct MultiSpecificationNodesProvider> MultiSpecificationNodesProviderPtr;
@@ -378,17 +394,18 @@ private:
     ECPRESENTATION_EXPORT MultiSpecificationNodesProvider(NavNodesProviderContextR context, ChildNodeRuleSpecificationsList const& specs, NavNodeCR virtualParent);
 
 protected:
+    bool _IsCacheable() const override {return false;}
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     size_t _GetNodesCount() const override;
 
 public:
     static MultiSpecificationNodesProviderPtr Create(NavNodesProviderContextR context, RootNodeRuleSpecificationsList const& specs)
         {
-        return new MultiSpecificationNodesProvider(context, specs);
+        return WithInitialize(new MultiSpecificationNodesProvider(context, specs));
         }
     static MultiSpecificationNodesProviderPtr Create(NavNodesProviderContextR context, ChildNodeRuleSpecificationsList const& specs, NavNodeCR virtualParent)
         {
-        return new MultiSpecificationNodesProvider(context, specs, virtualParent);
+        return WithInitialize(new MultiSpecificationNodesProvider(context, specs, virtualParent));
         }
 };
 
@@ -407,9 +424,10 @@ private:
 
 private:
     ECPRESENTATION_EXPORT CustomNodesProvider(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification);
-    void Initialize();
-
+    
 protected:
+    bool _IsCacheable() const override {return true;}
+    bool _InitializeNodes() override;
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
@@ -417,7 +435,7 @@ protected:
 public:
     static RefCountedPtr<CustomNodesProvider> Create(NavNodesProviderContextCR context, CustomNodeSpecificationCR specification)
         {
-        return new CustomNodesProvider(context, specification);
+        return WithInitialize(new CustomNodesProvider(context, specification));
         }
 };
 
@@ -446,21 +464,22 @@ private:
 private:
     ECPRESENTATION_EXPORT QueryBasedNodesProvider(NavNodesProviderContextCR context, NavigationQuery const& query, bmap<ECClassId, bool> const&);
     bool ShouldReturnChildNodes(JsonNavNode const& node, HasChildrenFlag& hasChildren) const;
-    void Initialize();
     NavNodesProviderPtr CreateProvider(JsonNavNodeR node) const;
     bool HasSimilarNodeInHierarchy(JsonNavNodeCR node, uint64_t parentNodeId) const;
     
 protected:
+    bool _IsCacheable() const override {return true;}
+    ProviderNodesInitializationStrategy _GetInitializationStrategy() const override {return ProviderNodesInitializationStrategy::Manual;}
+    bool _InitializeNodes() override;
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
-    void _OnNodeProvidersRequest() const override;
 
 public:
     static RefCountedPtr<QueryBasedNodesProvider> Create(NavNodesProviderContextCR context, 
         NavigationQuery const& query, bmap<ECClassId, bool> const& usedClassIds = bmap<ECClassId, bool>())
         {
-        return new QueryBasedNodesProvider(context, query, usedClassIds);
+        return WithInitialize(new QueryBasedNodesProvider(context, query, usedClassIds));
         }
     NavigationQueryExecutor const& GetExecutor() const {return m_executor;}
     NavigationQueryExecutor& GetExecutorR() {return m_executor;}
@@ -481,15 +500,16 @@ private:
 private:
     ECPRESENTATION_EXPORT QueryBasedSpecificationNodesProvider(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification);
     bvector<NavigationQueryPtr> CreateQueries(ChildNodeSpecificationCR specification) const;
-    void SetupNestedProviders(bool fresh);
+    void SetupNestedProviders();
     
 protected:
+    bool _IsCacheable() const override {return false;}
     bool _HasNodes() const override;
 
 public:
     static RefCountedPtr<QueryBasedSpecificationNodesProvider> Create(NavNodesProviderContextCR context, ChildNodeSpecificationCR specification)
         {
-        return new QueryBasedSpecificationNodesProvider(context, specification);
+        return WithInitialize(new QueryBasedSpecificationNodesProvider(context, specification));
         }
 };
 
@@ -513,6 +533,7 @@ protected:
     SQLiteCacheNodesProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&);
     BeSQLite::Db& GetCache() const {return m_cache;}
     BeSQLite::StatementCache& GetStatements() const {return m_statements;}
+    bool _IsCacheable() const override {return false;}
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override;
     bool _HasNodes() const override;
     size_t _GetNodesCount() const override;
@@ -527,43 +548,63 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
-struct CachedHierarchyLevelProvider : SQLiteCacheNodesProvider
+struct CachedCombinedHierarchyLevelProvider : SQLiteCacheNodesProvider
 {
 private:
-    Utf8String m_datasourceIds;
-
+    CombinedHierarchyLevelInfo m_info;
 private:
-    CachedHierarchyLevelProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&, uint64_t const* physicalParentNodeId);
-    void InitDatasourceIds(uint64_t const* physicalParentNodeId);
-
+    CachedCombinedHierarchyLevelProvider(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, CombinedHierarchyLevelInfo info)
+        : SQLiteCacheNodesProvider(context, cache, statements), m_info(info)
+        {}
 protected:
     BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
     BeSQLite::CachedStatementPtr _GetCountStatement() const override;
-
 public:
-    ~CachedHierarchyLevelProvider();
-    static RefCountedPtr<CachedHierarchyLevelProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t const* physicalParentNodeId)
+    static RefCountedPtr<CachedCombinedHierarchyLevelProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, CombinedHierarchyLevelInfo info)
         {
-        return new CachedHierarchyLevelProvider(context, cache, statements, physicalParentNodeId);
+        return WithInitialize(new CachedCombinedHierarchyLevelProvider(context, cache, statements, info));
         }
 };
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
-struct CachedVirtualNodeChildrenProvider : SQLiteCacheNodesProvider
+struct CachedHierarchyLevelProvider : SQLiteCacheNodesProvider
 {
 private:
-    CachedVirtualNodeChildrenProvider(NavNodesProviderContextCR, BeSQLite::Db&, BeSQLite::StatementCache&);
-
+    uint64_t m_hierarchyLevelId;
+private:
+    CachedHierarchyLevelProvider(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t hierarchyLevelId)
+        : SQLiteCacheNodesProvider(context, cache, statements), m_hierarchyLevelId(hierarchyLevelId)
+        {}
 protected:
     BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
     BeSQLite::CachedStatementPtr _GetCountStatement() const override;
-
 public:
-    static RefCountedPtr<CachedVirtualNodeChildrenProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements)
+    static RefCountedPtr<CachedHierarchyLevelProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t hierarchyLevelId)
         {
-        return new CachedVirtualNodeChildrenProvider(context, cache, statements);
+        return WithInitialize(new CachedHierarchyLevelProvider(context, cache, statements, hierarchyLevelId));
+        }
+};
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                02/2017
++===============+===============+===============+===============+===============+======*/
+struct CachedPartialDataSourceProvider : SQLiteCacheNodesProvider
+{
+private:
+    uint64_t m_dataSourceId;
+private:
+    CachedPartialDataSourceProvider(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t dataSourceId)
+        : SQLiteCacheNodesProvider(context, cache, statements), m_dataSourceId(dataSourceId)
+        {}
+protected:
+    BeSQLite::CachedStatementPtr _GetNodesStatement() const override;
+    BeSQLite::CachedStatementPtr _GetCountStatement() const override;
+public:
+    static RefCountedPtr<CachedPartialDataSourceProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements, uint64_t dataSourceId)
+        {
+        return WithInitialize(new CachedPartialDataSourceProvider(context, cache, statements, dataSourceId));
         }
 };
 
@@ -582,7 +623,7 @@ protected:
 public:
     static RefCountedPtr<NodesWithUndeterminedChildrenProvider> Create(NavNodesProviderContextCR context, BeSQLite::Db& cache, BeSQLite::StatementCache& statements)
         {
-        return new NodesWithUndeterminedChildrenProvider(context, cache, statements);
+        return WithInitialize(new NodesWithUndeterminedChildrenProvider(context, cache, statements));
         }
 };
 

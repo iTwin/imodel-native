@@ -25,7 +25,7 @@ struct IConnectTokenProvider
 
     //! Is used to get new token even if old one is valid.
     //! Should cache and return the token.
-    //! Should return null if token cannot be updated and authentication should fail.
+    //! Should return null token if it cannot be updated and authentication should fail.
     virtual AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() = 0;
 
     //! Is used to get cached token for each request.

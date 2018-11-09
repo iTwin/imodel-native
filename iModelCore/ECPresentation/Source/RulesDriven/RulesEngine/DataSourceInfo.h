@@ -13,75 +13,84 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*=================================================================================**//**
-* Describes one level of hierarchy which may consist of multiple data sources
+* Describes a combined level of hierarchy which may consist of multiple hierarchy levels
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
-struct HierarchyLevelInfo
+struct CombinedHierarchyLevelInfo
 {
 private:
     Utf8String m_connectionId;
     Utf8String m_rulesetId;
     Utf8String m_locale;
     uint64_t const* m_physicalParentNodeId;
-private:
-    void SetParentNodeId(uint64_t const* id)
+protected:
+    static void SetParentNodeId(uint64_t const*& id, uint64_t const* value, bool cleanupOldValue = true)
         {
-        if (nullptr != id && 0 != *id)
-            m_physicalParentNodeId = new uint64_t(*id);
+        if (cleanupOldValue && nullptr != id)
+            delete id;
+        if (nullptr != value && 0 != *value)
+            id = new uint64_t(*value);
         else
-            m_physicalParentNodeId = nullptr;
+            id = nullptr;
+        }
+    static int CompareIds(uint64_t const* lhs, uint64_t const* rhs)
+        {
+        if (nullptr == lhs && nullptr != rhs)
+            return -1;
+        if (nullptr == rhs && nullptr != lhs)
+            return 1;
+        if (nullptr != lhs && *lhs < *rhs)
+            return 1;
+        if (nullptr != lhs && *lhs > *rhs)
+            return -1;
+        return 0;
         }
 public:
-    HierarchyLevelInfo() : m_physicalParentNodeId(nullptr) {}
-    HierarchyLevelInfo(HierarchyLevelInfo&& other) 
+    CombinedHierarchyLevelInfo() : m_physicalParentNodeId(nullptr) {}
+    CombinedHierarchyLevelInfo(CombinedHierarchyLevelInfo&& other) 
         : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), m_locale(std::move(other.m_locale))
         {
         m_physicalParentNodeId = other.m_physicalParentNodeId;
         other.m_physicalParentNodeId = nullptr;
         }
-    HierarchyLevelInfo(HierarchyLevelInfo const& other)
+    CombinedHierarchyLevelInfo(CombinedHierarchyLevelInfo const& other)
         : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_locale(other.m_locale)
         {
-        SetParentNodeId(other.m_physicalParentNodeId);
+        SetParentNodeId(m_physicalParentNodeId, other.m_physicalParentNodeId, false);
         }
-    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t const* physicalParentNodeId)
+    CombinedHierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t physicalParentNodeId)
         : m_connectionId(connectionId), m_rulesetId(rulesetId), m_locale(locale)
         {
-        SetParentNodeId(physicalParentNodeId);
+        SetParentNodeId(m_physicalParentNodeId, &physicalParentNodeId, false);
         }
-    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t physicalParentNodeId)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_locale(locale)
+    virtual ~CombinedHierarchyLevelInfo()
         {
-        SetParentNodeId(&physicalParentNodeId);
+        DELETE_AND_CLEAR(m_physicalParentNodeId);
         }
-    ~HierarchyLevelInfo() {DELETE_AND_CLEAR(m_physicalParentNodeId);}
-    HierarchyLevelInfo& operator=(HierarchyLevelInfo&& other)
+    CombinedHierarchyLevelInfo& operator=(CombinedHierarchyLevelInfo&& other)
         {
         m_connectionId = std::move(other.m_connectionId);
         m_rulesetId = std::move(other.m_rulesetId);
         m_locale = std::move(other.m_locale);
+        DELETE_AND_CLEAR(m_physicalParentNodeId);
         m_physicalParentNodeId = other.m_physicalParentNodeId;
         other.m_physicalParentNodeId = nullptr;
         return *this;
         }
-    HierarchyLevelInfo& operator=(HierarchyLevelInfo const& other)
+    CombinedHierarchyLevelInfo& operator=(CombinedHierarchyLevelInfo const& other)
         {
         m_connectionId = other.m_connectionId;
         m_rulesetId = other.m_rulesetId;
         m_locale = other.m_locale;
-        SetParentNodeId(other.m_physicalParentNodeId);
+        SetParentNodeId(m_physicalParentNodeId, other.m_physicalParentNodeId);
         return *this;
         }
-    bool IsValid() const {return !m_connectionId.empty();}
-    bool operator<(HierarchyLevelInfo const& other) const
+    bool operator<(CombinedHierarchyLevelInfo const& other) const
         {
-        if (nullptr == m_physicalParentNodeId && nullptr != other.m_physicalParentNodeId)
+        int physicalParentNodeIdCmp = CompareIds(m_physicalParentNodeId, other.m_physicalParentNodeId);
+        if (physicalParentNodeIdCmp < 0)
             return true;
-        if (nullptr == other.m_physicalParentNodeId && nullptr != m_physicalParentNodeId)
-            return false;
-        if (nullptr != m_physicalParentNodeId && *m_physicalParentNodeId < *other.m_physicalParentNodeId)
-            return true;
-        if (nullptr != m_physicalParentNodeId && *m_physicalParentNodeId > *other.m_physicalParentNodeId)
+        if (physicalParentNodeIdCmp > 0)
             return false;
         int rulesetIdCmp = m_rulesetId.CompareTo(other.m_rulesetId);
         if (rulesetIdCmp < 0)
@@ -95,82 +104,161 @@ public:
             return false;
         return (m_connectionId < other.m_connectionId);        
         }
-    bool operator==(HierarchyLevelInfo const& other) const
+    bool operator==(CombinedHierarchyLevelInfo const& other) const
         {
         return m_connectionId == other.m_connectionId
             && m_rulesetId.Equals(other.m_rulesetId)
             && m_locale.Equals(other.m_locale)
-            && (nullptr == m_physicalParentNodeId && nullptr == other.m_physicalParentNodeId
-                || nullptr != m_physicalParentNodeId && nullptr != other.m_physicalParentNodeId && *m_physicalParentNodeId == *other.m_physicalParentNodeId);
+            && 0 == CompareIds(m_physicalParentNodeId, other.m_physicalParentNodeId);
         }
     Utf8StringCR GetConnectionId() const {return m_connectionId;}
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}
     Utf8StringCR GetLocale() const {return m_locale;}
     uint64_t const* GetPhysicalParentNodeId() const {return m_physicalParentNodeId;}
-    void SetPhysicalParentNodeId(uint64_t id) {DELETE_AND_CLEAR(m_physicalParentNodeId); SetParentNodeId(&id);}
+    void SetPhysicalParentNodeId(uint64_t id) {SetParentNodeId(m_physicalParentNodeId, &id);}
+};
+
+/*=================================================================================**//**
+* Describes one level of hierarchy which may consist of multiple data sources
+* @bsiclass                                     Grigas.Petraitis                02/2017
++===============+===============+===============+===============+===============+======*/
+struct HierarchyLevelInfo : CombinedHierarchyLevelInfo
+{
+private:
+    uint64_t m_id;
+    uint64_t const* m_virtualParentNodeId;
+public:
+    HierarchyLevelInfo() : CombinedHierarchyLevelInfo(), m_id(0), m_virtualParentNodeId(nullptr) {}
+    HierarchyLevelInfo(HierarchyLevelInfo&& other) 
+        : CombinedHierarchyLevelInfo(other), m_id(other.m_id)
+        {
+        m_virtualParentNodeId = other.m_virtualParentNodeId;
+        other.m_virtualParentNodeId = nullptr;
+        }
+    HierarchyLevelInfo(HierarchyLevelInfo const& other)
+        : CombinedHierarchyLevelInfo(other), m_id(other.m_id)
+        {
+        SetParentNodeId(m_virtualParentNodeId, other.m_virtualParentNodeId, false);
+        }
+    HierarchyLevelInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t physicalParentNodeId, uint64_t virtualParentNodeId)
+        : CombinedHierarchyLevelInfo(connectionId, rulesetId, locale, physicalParentNodeId), m_id(0)
+        {
+        SetParentNodeId(m_virtualParentNodeId, &virtualParentNodeId, false);
+        }
+    HierarchyLevelInfo(uint64_t id, Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t physicalParentNodeId, uint64_t virtualParentNodeId)
+        : HierarchyLevelInfo(connectionId, rulesetId, locale, physicalParentNodeId, virtualParentNodeId)
+        {
+        m_id = id;
+        }
+    ~HierarchyLevelInfo()
+        {
+        DELETE_AND_CLEAR(m_virtualParentNodeId);
+        }
+    HierarchyLevelInfo& operator=(HierarchyLevelInfo&& other)
+        {
+        CombinedHierarchyLevelInfo::operator=(other);
+        m_id = other.m_id;
+        DELETE_AND_CLEAR(m_virtualParentNodeId);
+        m_virtualParentNodeId = other.m_virtualParentNodeId;
+        other.m_virtualParentNodeId = nullptr;
+        return *this;
+        }
+    HierarchyLevelInfo& operator=(HierarchyLevelInfo const& other)
+        {
+        CombinedHierarchyLevelInfo::operator=(other);
+        m_id = other.m_id;
+        SetParentNodeId(m_virtualParentNodeId, other.m_virtualParentNodeId);
+        return *this;
+        }
+    bool IsValid() const {return 0 != m_id;}
+    bool operator<(HierarchyLevelInfo const& other) const
+        {
+        if (m_id < other.m_id)
+            return true;
+        if (m_id > other.m_id)
+            return false;
+        int virtualParentNodeIdCmp = CompareIds(m_virtualParentNodeId, other.m_virtualParentNodeId);
+        if (virtualParentNodeIdCmp < 0)
+            return true;
+        if (virtualParentNodeIdCmp > 0)
+            return false;
+        return CombinedHierarchyLevelInfo::operator<(other);
+        }
+    bool operator==(HierarchyLevelInfo const& other) const
+        {
+        return m_id == other.m_id
+            && 0 == CompareIds(m_virtualParentNodeId, other.m_virtualParentNodeId)
+            && CombinedHierarchyLevelInfo::operator==(other);
+        }
+    void Invalidate() {m_id = 0;}
+    uint64_t GetId() const {return m_id;}
+    void SetId(uint64_t id) {m_id = id;}
+    uint64_t const* GetVirtualParentNodeId() const {return m_virtualParentNodeId;}
+    void SetVirtualParentNodeId(uint64_t id) {SetParentNodeId(m_virtualParentNodeId, &id);}
 };
     
 /*=================================================================================**//**
 * Describes a single data source
 * @bsiclass                                     Grigas.Petraitis                02/2017
 +===============+===============+===============+===============+===============+======*/
-struct DataSourceInfo : HierarchyLevelInfo
+struct DataSourceInfo
 {
 private:
-    uint64_t m_datasourceId;
-    uint64_t const* m_virtualParentNodeId;
+    uint64_t m_id;
+    uint64_t m_hierarchyLevelId;
+    uint64_t m_index;
 public:
-    DataSourceInfo() : m_datasourceId(0), m_virtualParentNodeId(nullptr) {}
+    DataSourceInfo() : m_id(0), m_hierarchyLevelId(0), m_index(0) {}
     DataSourceInfo(DataSourceInfo const& other)
-        : HierarchyLevelInfo(other), m_datasourceId(other.m_datasourceId), m_virtualParentNodeId(nullptr)
-        {
-        if (nullptr != other.m_virtualParentNodeId)
-            m_virtualParentNodeId = new uint64_t(*other.m_virtualParentNodeId);
-        }
+        : m_id(other.m_id), m_hierarchyLevelId(other.m_hierarchyLevelId), m_index(other.m_index)
+        {}
     DataSourceInfo(DataSourceInfo&& other)
-        : HierarchyLevelInfo(other), m_datasourceId(other.m_datasourceId), m_virtualParentNodeId(other.m_virtualParentNodeId)
+        : m_id(other.m_id), m_hierarchyLevelId(other.m_hierarchyLevelId), m_index(other.m_index)
+        {}
+    DataSourceInfo(uint64_t hierarchyLevelId, uint64_t index)
+        : m_id(0), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
+        {}
+    DataSourceInfo(uint64_t id, uint64_t hierarchyLevelId, uint64_t index)
+        : m_id(id), m_hierarchyLevelId(hierarchyLevelId), m_index(index)
+        {}
+    bool IsValid() const {return 0 != m_id;}
+    bool operator<(DataSourceInfo const& other) const
         {
-        other.m_virtualParentNodeId = nullptr;
+        if (m_id < other.m_id)
+            return true;
+        if (m_id > other.m_id)
+            return false;
+        if (m_hierarchyLevelId < other.m_hierarchyLevelId)
+            return true;
+        if (m_hierarchyLevelId > other.m_hierarchyLevelId)
+            return false;
+        return (m_index < other.m_index);        
         }
-    DataSourceInfo(Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
-        : HierarchyLevelInfo(connectionId, rulesetId, locale, physicalParentNodeId), m_datasourceId(0), m_virtualParentNodeId(nullptr)
-        {
-        if (nullptr != virtualParentNodeId)
-            m_virtualParentNodeId = new uint64_t(*virtualParentNodeId);
-        }
-    DataSourceInfo(uint64_t datasourceId, Utf8String connectionId, Utf8String rulesetId, Utf8String locale, uint64_t const* physicalParentNodeId, uint64_t const* virtualParentNodeId)
-        : HierarchyLevelInfo(connectionId, rulesetId, locale, physicalParentNodeId), m_datasourceId(datasourceId), m_virtualParentNodeId(nullptr)
-        {
-        if (nullptr != virtualParentNodeId)
-            m_virtualParentNodeId = new uint64_t(*virtualParentNodeId);
-        }
-    ~DataSourceInfo() {DELETE_AND_CLEAR(m_virtualParentNodeId);}
-    bool IsValid() const {return 0 != m_datasourceId && HierarchyLevelInfo::IsValid();}
     DataSourceInfo& operator=(DataSourceInfo const& other)
         {
-        HierarchyLevelInfo::operator=(other);
-        m_datasourceId = other.m_datasourceId;
-        m_virtualParentNodeId = (nullptr != other.m_virtualParentNodeId) ? new uint64_t(*other.m_virtualParentNodeId) : nullptr;
+        m_id = other.m_id;
+        m_hierarchyLevelId = other.m_hierarchyLevelId;
+        m_index = other.m_index;
         return *this;
         }
     DataSourceInfo& operator=(DataSourceInfo&& other)
         {
-        HierarchyLevelInfo::operator=(other);
-        m_datasourceId = other.m_datasourceId;
-        m_virtualParentNodeId = other.m_virtualParentNodeId;
-        other.m_virtualParentNodeId = nullptr;
+        m_id = other.m_id;
+        m_hierarchyLevelId = other.m_hierarchyLevelId;
+        m_index = other.m_index;
         return *this;
         }
     bool operator==(DataSourceInfo const& other) const
         {
-        return HierarchyLevelInfo::operator==(other)
-            && m_datasourceId == other.m_datasourceId
-            && (nullptr == m_virtualParentNodeId && nullptr == other.m_virtualParentNodeId
-                || nullptr != m_virtualParentNodeId && nullptr != other.m_virtualParentNodeId && *m_virtualParentNodeId == *other.m_virtualParentNodeId);
+        return m_id == other.m_id
+            && m_hierarchyLevelId == other.m_hierarchyLevelId
+            && m_index == other.m_index;
         }
-    uint64_t GetDataSourceId() const {return m_datasourceId;}
-    void SetDataSourceId(uint64_t id) {m_datasourceId = id;}
-    uint64_t const* GetVirtualParentNodeId() const {return m_virtualParentNodeId;}
+    void Invalidate() {m_id = 0;}
+    uint64_t GetId() const {return m_id;}
+    void SetId(uint64_t id) {m_id = id;}
+    uint64_t GetHierarchyLevelId() const {return m_hierarchyLevelId;}
+    uint64_t GetIndex() const {return m_index;}
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

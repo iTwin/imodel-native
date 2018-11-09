@@ -48,11 +48,16 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : pub
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT InstanceNodesOfSpecificClassesSpecification ();
+        
+        //! Constructor.
+        //! @deprecated Use InstanceNodesOfSpecificClassesSpecification(int, ChildrenHint, bool, bool, bool, bool, Utf8StringCR, Utf8StringCR, bool)
+        ECPRESENTATION_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, bool alwaysReturnsChildren, 
+            bool hideNodesInHierarchy, bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups,
+            Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic);
 
         //! Constructor.
-        ECPRESENTATION_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,
-                                                                      bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups,
-                                                                      Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic);
+        ECPRESENTATION_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,
+            bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic);
 
         //! Returns true if grouping by class should be applied.
         ECPRESENTATION_EXPORT bool                         GetGroupByClass (void) const;
@@ -68,9 +73,11 @@ struct EXPORT_VTABLE_ATTRIBUTE InstanceNodesOfSpecificClassesSpecification : pub
 
         //! Returns true if class grouping nodes should be shown even if there are no 
         //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
+        //! @deprecated
         ECPRESENTATION_EXPORT bool                         GetShowEmptyGroups (void) const;
 
         //! Set ShowEmptyGroups value. Can be boolean.
+        //! @deprecated
         ECPRESENTATION_EXPORT void                         SetShowEmptyGroups (bool value);
 
         //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"

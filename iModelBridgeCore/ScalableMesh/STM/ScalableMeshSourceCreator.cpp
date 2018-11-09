@@ -981,7 +981,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
                 {
                 //pointIndex.DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 7\\Partial Update - Remove\\Log\\NodeAferCreation.xml", false);    
                 //pDataIndex->DumpOctTree("C:\\Users\\Thomas.Butzbach\\Documents\\data_scalableMesh\\ATP\\NodeAferCreation.xml", false);
-                pDataIndex->DumpOctTree("e:\\output\\scmesh\\NodeAferCreation.xml", false);
+                pDataIndex->DumpOctTree((char*)"e:\\output\\scmesh\\NodeAferCreation.xml", false);
                 //pDataIndex->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMesh\\Streaming\\QuebecCityMini\\NodeAferCreationAfterTextures.xml", false);
                 }
     #endif

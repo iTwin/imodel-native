@@ -187,7 +187,7 @@ void SecureStore::SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8CP value)
 
     if (Utf8String::IsNullOrEmpty (value))
         {
-        m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), "null");
+        m_localState.SaveValue (LOCAL_STATE_NAMESPACE, identifier.c_str (), nullptr);
         return;
         }
 

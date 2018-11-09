@@ -13,6 +13,17 @@
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* A performance hint for telling that node always or never returns nodes
+* @bsiclass                                     Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+enum class ChildrenHint
+    {
+    Unknown,
+    Never,
+    Always,
+    };
+
 typedef bvector<struct ChildNodeRule*>          ChildNodeRuleList;
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,21 +33,21 @@ Base class for all ChildNodeSpecifications.
 struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecification
     {
     private:
-        int                m_priority;
-        bool               m_alwaysReturnsChildren;
-        bool               m_hideNodesInHierarchy;
-        bool               m_hideIfNoChildren;
-        bool               m_doNotSort;
-        Utf8String            m_extendedData;
+        int m_priority;
+        bool m_hideNodesInHierarchy;
+        bool m_hideIfNoChildren;
+        bool m_doNotSort;
+        ChildrenHint m_hasChildren;
+        Utf8String m_extendedData;
         RelatedInstanceSpecificationList m_relatedInstances;
-        ChildNodeRuleList  m_nestedRules;
+        ChildNodeRuleList m_nestedRules;
 
     protected:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT ChildNodeSpecification ();
 
         //! Constructor.
-        ECPRESENTATION_EXPORT ChildNodeSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
+        ECPRESENTATION_EXPORT ChildNodeSpecification (int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, bool hideIfNoChildren);
         
         //! Copy constructor.
         ECPRESENTATION_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
@@ -68,11 +79,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         //! Sets the priority of the specification, can be an int.
         ECPRESENTATION_EXPORT void                         SetPriority (int value);
 
+        //! Get a hint for whether nodes produced by this specification always or never returns nodes
+        ChildrenHint GetHasChildren() const { return m_hasChildren; }
+
+        //! Set a hint for whether nodes produced by this specification always or never returns nodes
+        void SetHasChildren(ChildrenHint value) { m_hasChildren = value; }
+
         //! Returns true if specification always returns nodes. This allows to optimize node expand performance.
-        ECPRESENTATION_EXPORT bool                         GetAlwaysReturnsChildren (void) const;
+        //! @deprecated Use GetHasChildren
+        // ECPRESENTATION_EXPORT bool                         GetAlwaysReturnsChildren (void) const;
 
         //! Sets the AlwaysReturnsChildren value. Can be boolean.
-        ECPRESENTATION_EXPORT void                         SetAlwaysReturnsChildren (bool value);
+        //! @deprecated Use SetHasChildren
+        // ECPRESENTATION_EXPORT void                         SetAlwaysReturnsChildren (bool value);
 
         //! If this property is set it will not show nodes of this specification in the hierarchy, instead it will 
         //! use those nodes to get children that will be actually returned.
@@ -89,9 +108,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         ECPRESENTATION_EXPORT void                         SetHideIfNoChildren (bool value);
 
         //! Returns a string that represents extended data that will be passed to ECQuery for this particular specification.
+        //! @deprecated
         ECPRESENTATION_EXPORT Utf8StringCR                 GetExtendedData (void) const;
 
         //! Sets a string that represents extended data that will be passed to ECQuery for this particular specification.
+        //! @deprecated
         ECPRESENTATION_EXPORT void                         SetExtendedData (Utf8StringCR extendedData);
 
         //! Identifies whether ECInstances sort or not returned by specification. If true, then ECInstances will be listed

@@ -450,37 +450,33 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                03/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr _CreateForHierarchyLevel(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
+    NavNodesProviderPtr _Create(NavNodesProviderContextR context, JsonNavNodeCP parent, ProviderCacheType cacheType) const override
         {
-        HierarchyLevelInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(), 
-            context.IsLocalizationContext() ? context.GetLocale() : "", 
-            nullptr != parent ? parent->GetNodeId() : 0);
-        NavNodesProviderPtr provider = m_manager.m_nodesCache->GetDataSource(info);
-        if (provider.IsNull())
-            provider = CreateProvider(context, parent);
-        else
-            AdoptProvider(*provider, context);
-
-        if (provider.IsValid())
+        NavNodesProviderPtr provider;
+        switch (cacheType)
             {
-            BeAssert(provider->GetContext().IsUpdatesDisabled() == context.IsUpdatesDisabled());
-            if (!context.GetCancelationToken().IsCanceled())
-                m_manager.m_nodesCache->CacheHierarchyLevel(info, *provider);
+            case ProviderCacheType::None:
+                break;
+            case ProviderCacheType::Partial:
+                provider = m_manager.m_nodesCache->GetDataSource(context.GetDataSourceInfo());
+                break;
+            case ProviderCacheType::Full:
+                {
+                uint64_t parentId = parent ? parent->GetNodeId() : 0;
+                HierarchyLevelInfo info = m_manager.m_nodesCache->FindHierarchyLevel(context.GetConnection().GetId().c_str(),
+                    context.GetRuleset().GetRuleSetId().c_str(), context.GetLocale().c_str(), parent ? &parentId : nullptr);
+                if (info.IsValid())
+                    provider = m_manager.m_nodesCache->GetHierarchyLevel(info);
+                break;
+                }
+            case ProviderCacheType::Combined:
+                {
+                CombinedHierarchyLevelInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(),
+                    context.GetLocale(), parent ? parent->GetNodeId() : 0);
+                provider = m_manager.m_nodesCache->GetCombinedHierarchyLevel(info);
+                break;
+                }
             }
-        return provider;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Grigas.Petraitis                03/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    NavNodesProviderPtr _CreateForVirtualParent(NavNodesProviderContextR context, JsonNavNodeCP parent) const override
-        {
-        uint64_t parentId = (nullptr != parent) ? parent->GetNodeId() : 0;
-        uint64_t const* parentIdP = (nullptr != parent) ? &parentId : nullptr;
-        DataSourceInfo info(context.GetConnection().GetId(), context.GetRuleset().GetRuleSetId(),
-            context.IsLocalizationContext() ? context.GetLocale() : "",
-            parentIdP, parentIdP);
-        NavNodesProviderPtr provider = m_manager.m_nodesCache->GetDataSource(info);
         if (provider.IsNull())
             provider = CreateProvider(context, parent);
         else
@@ -678,7 +674,15 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
         return nullptr;
 
     // create the nodes provider
-    NavNodesProviderPtr provider = m_nodesProviderFactory->CreateForHierarchyLevel(*context, nullptr);
+    NavNodesProviderPtr provider = m_nodesProviderFactory->Create(*context, nullptr, ProviderCacheType::Combined);
+
+    // cache the provider in quick cache
+    if (provider.IsValid())
+        {
+        CombinedHierarchyLevelInfo info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), 0);
+        m_nodesCache->CacheHierarchyLevel(info, *provider);
+        }
+
     return NavNodesDataSource::Create(*provider);
     }
 
@@ -721,7 +725,15 @@ INavNodesDataSourcePtr RulesDrivenECPresentationManagerImpl::GetCachedDataSource
 
     // create the nodes provider
     JsonNavNodeCPtr jsonParent = GetNodesCache().GetNode(parentNodeId);
-    NavNodesProviderPtr provider = m_nodesProviderFactory->CreateForHierarchyLevel(*context, jsonParent.get());
+    NavNodesProviderPtr provider = m_nodesProviderFactory->Create(*context, jsonParent.get(), ProviderCacheType::Combined);
+
+    // cache the provider in quick cache
+    if (provider.IsValid())
+        {
+        CombinedHierarchyLevelInfo info(connection.GetId(), options.GetRulesetId(), options.GetLocale(), parentNodeId);
+        m_nodesCache->CacheHierarchyLevel(info, *provider);
+        }
+
     return NavNodesDataSource::Create(*provider);
     }
 
@@ -759,7 +771,7 @@ NavNodeCPtr RulesDrivenECPresentationManagerImpl::_GetParent(IConnectionCR, NavN
     if (0 == node.GetParentNodeId())
         return nullptr;
 
-    return GetNodesCache().GetNode(node.GetParentNodeId(), NodeVisibility::Physical);
+    return GetNodesCache().GetNode(node.GetParentNodeId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -796,7 +808,7 @@ static void TraverseHierarchy(RulesDrivenECPresentationManagerImpl& mgr, IConnec
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(IConnectionCR connection, Utf8CP filterText, NavigationOptions const& options, ICancelationTokenCR cancelationToken)
     {
-    if (!GetNodesCache().IsDataSourceCached(connection.GetId(), options.GetRulesetId(), options.GetLocale()))
+    if (!GetNodesCache().IsHierarchyLevelCached(connection.GetId(), options.GetRulesetId(), options.GetLocale()))
         GetRootNodes(connection, PageOptions(), options, cancelationToken);
 
     NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), 

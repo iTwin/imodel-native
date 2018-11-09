@@ -27,23 +27,21 @@ InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpeci
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification
-(
-int       priority,
-bool      alwaysReturnsChildren,
-bool      hideNodesInHierarchy,
-bool      hideIfNoChildren,
-bool      groupByClass,
-bool      groupByLabel,
-bool      showEmptyGroups,
-Utf8StringCR instanceFilter,
-Utf8StringCR classNames,
-bool      arePolymorphic
-) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-    m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
-    m_instanceFilter (instanceFilter), m_classNames (classNames), m_arePolymorphic (arePolymorphic)
-    {
-    }
+InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic) 
+    : InstanceNodesOfSpecificClassesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, 
+        hideIfNoChildren, groupByClass, groupByLabel, instanceFilter, classNames, arePolymorphic)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceNodesOfSpecificClassesSpecification::InstanceNodesOfSpecificClassesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, 
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic) 
+    : ChildNodeSpecification (priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), 
+    m_groupByClass(groupByClass), m_groupByLabel(groupByLabel), m_showEmptyGroups(false), 
+    m_instanceFilter(instanceFilter), m_classNames(classNames), m_arePolymorphic(arePolymorphic)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015

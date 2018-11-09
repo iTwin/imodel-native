@@ -67,25 +67,19 @@ struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : public ChildN
     public:
         //! Constructor. It is used to initialize the rule with default settings.
         ECPRESENTATION_EXPORT RelatedInstanceNodesSpecification ();
+        
+        //! Constructor.
+        //! @deprecated Use RelatedInstanceNodesSpecification(int, ChildrenHint, bool, bool, bool, bool, int, Utf8String, RequiredRelationDirection, Utf8String, Utf8String, Utf8String)
+        ECPRESENTATION_EXPORT RelatedInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+            bool hideIfNoChildren, bool groupByClass, bool groupByRelationship, bool groupByLabel, bool showEmptyGroups, int skipRelatedLevel,
+            Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames,
+            Utf8String relatedClassNames);
 
         //! Constructor.
-        ECPRESENTATION_EXPORT RelatedInstanceNodesSpecification 
-                                          (
-                                           int                        priority, 
-                                           bool                       alwaysReturnsChildren, 
-                                           bool                       hideNodesInHierarchy, 
-                                           bool                       hideIfNoChildren,
-                                           bool                       groupByClass,
-                                           bool                       groupByRelationship,
-                                           bool                       groupByLabel,
-                                           bool                       showEmptyGroups,
-                                           int                        skipRelatedLevel,
-                                           Utf8String                 instanceFilter,
-                                           RequiredRelationDirection  requiredDirection,
-                                           Utf8String                 supportedSchemas,
-                                           Utf8String                 relationshipClassNames,
-                                           Utf8String                 relatedClassNames
-                                          );
+        ECPRESENTATION_EXPORT RelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, 
+            bool hideNodesInHierarchy, bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel,
+            Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String supportedSchemas,
+            Utf8String relationshipClassNames, Utf8String relatedClassNames);
 
         //! Returns true if grouping by class should be applied.
         ECPRESENTATION_EXPORT bool                         GetGroupByClass (void) const;
@@ -94,9 +88,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : public ChildN
         ECPRESENTATION_EXPORT void                         SetGroupByClass (bool value);
 
         //! Returns true if grouping by relationship should be applied.
+        //! @deprecated
         ECPRESENTATION_EXPORT bool                         GetGroupByRelationship (void) const;
 
         //! Sets GroupByRelationship value. Can be boolean.
+        //! @deprecated
         ECPRESENTATION_EXPORT void                         SetGroupByRelationship (bool value);
 
         //! Returns true if grouping by label should be applied.
@@ -107,9 +103,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : public ChildN
 
         //! Returns true if class grouping nodes should be shown even if there are no 
         //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
+        //! @deprecated
         ECPRESENTATION_EXPORT bool                         GetShowEmptyGroups (void) const;
         
         //! Sets ShowEmptyGroups value. Can be boolean.
+        //! @deprecated
         ECPRESENTATION_EXPORT void                         SetShowEmptyGroups (bool value);
 
         //! Returns level of related instances to skip.

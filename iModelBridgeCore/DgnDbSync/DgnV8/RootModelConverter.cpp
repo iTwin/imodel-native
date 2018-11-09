@@ -750,9 +750,22 @@ RootModelConverter::~RootModelConverter()
         //              files all have appdata saying that the converter already knows about them.
         DiscardV8FileSyncInfoAppData(*file);
         }
-    if (ScalableMesh::ScalableMeshLib::IsInitialized())
+
+    m_v8Files.clear();
+    m_filesKeepAlive.clear();
+    m_viewGroup = nullptr;
+    m_rootFile = nullptr;
+    m_drawingModelsKeepAlive.clear();
+    if (!m_params.m_keepHostAliveForUnitTests)
         {
-        ScalableMeshLib::Terminate(ScalableMeshLib::GetHost());
+        ClearV8ProgressMeter();
+
+        if (DgnV8Api::Raster::RasterCoreLib::IsInitialized())
+            DgnV8Api::Raster::RasterCoreLib::GetHost().Terminate(false);
+
+        DgnV8Api::DgnViewLib::Host* host = dynamic_cast<DgnV8Api::DgnViewLib::Host*>(DgnV8Api::DgnPlatformLib::QueryHost());
+        if (NULL != host)
+            host->Terminate(false);
         }
     }
 
@@ -803,6 +816,18 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
         m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Keith.Bentley                   02 / 15
+//---------------------------------------------------------------------------------------
+void RootModelConverter::ConvertElementsInModelWithExceptionHandling(ResolvedModelMapping const& v8mm)
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        ConvertElementsInModel(v8mm);
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -832,7 +857,7 @@ void RootModelConverter::DoConvertSpatialElements()
         StopWatch timer(true);
         uint32_t start = GetElementsConverted();
 
-        ConvertElementsInModel(modelMapping);
+        ConvertElementsInModelWithExceptionHandling(modelMapping);
 
         uint32_t convertedElementCount = (uint32_t) GetElementsConverted() - start;
         ConverterLogging::LogPerformance(timer, "Convert Spatial Elements> Model '%s' (%" PRIu32 " element(s))",
@@ -1320,31 +1345,40 @@ void RootModelConverter::UnmapModelsNotAssignedToBridge()
     DgnV8ModelP rootModel = GetRootModelP();
     for (auto& modelMapping : m_v8ModelMappings)
         {
-        if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
-            {
-            BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
-            keepAlive.push_back(mref);
-            
-            DgnElementId partition = mref->GetModeledElementId();
-            DgnElementCPtr element = GetDgnDb().Elements().GetElement(partition);
-            bool isRootModel = &modelMapping.GetV8Model() == rootModel;
-            if (!isRootModel)
-                {
-                mref->Delete();
-                GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
-                if (element.IsValid())
-                    element->Delete();
-                }
-            else
-                {
-                mref->SetIsPrivate(true);
-                mref->Update();
-                }
-            mappingsToRemove.push_back(modelMapping);
+        if (IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
+            continue;
 
-            Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
-            ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+        BentleyApi::Dgn::DgnModelPtr mref = &modelMapping.GetDgnModel();
+        DgnModelId modelId = mref->GetModelId();
+        if (!IsBimModelAssignedToJobSubject(modelId))
+            continue;
+        
+        DgnElementId partition = mref->GetModeledElementId();
+        //Check whether the root models partition element is the same as this models parition rppt
+        keepAlive.push_back(mref);
+        
+        DgnElementCPtr element = GetDgnDb().Elements().GetElement(partition);
+        bool isRootModel = &modelMapping.GetV8Model() == rootModel;
+        if (!isRootModel)
+            {
+            DgnModelId modelId = mref->GetModelId();
+            mref->Delete();
+            if (_WantModelProvenanceInBim())
+                DgnV8ModelProvenance::Delete(modelId, GetDgnDb());
+            GetSyncInfo().DeleteModel(modelMapping.GetV8ModelSyncInfoId());
+            if (element.IsValid())
+                element->Delete();
             }
+        else
+            {
+            mref->SetIsPrivate(true);
+            mref->Update();
+            }
+        mappingsToRemove.push_back(modelMapping);
+
+        Utf8PrintfString msg("Unmapped %ls in %ls not owned by %ls", modelMapping.GetV8Model().GetModelName(), modelMapping.GetV8Model().GetDgnFileP()->GetFileName().c_str(), _GetParams().GetBridgeRegSubKey().c_str());
+        ReportIssue(IssueSeverity::Info, IssueCategory::Filtering(), Issue::Message(), msg.c_str());
+        
         }
     for (auto const& mappingToRemove : mappingsToRemove)
         {

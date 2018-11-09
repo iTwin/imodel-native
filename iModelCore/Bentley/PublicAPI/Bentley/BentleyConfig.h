@@ -23,6 +23,7 @@
     #define BENTLEYCONFIG_OS_UNIX
     #define BENTLEYCONFIG_DISPLAY_APPLE
     #define BENTLEYCONFIG_GETENV 
+    #define BENTLEYCONFIG_PARASOLID
 
     #include <TargetConditionals.h>
     #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
@@ -34,7 +35,6 @@
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
         #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
         #define BENTLEYCONFIG_DISPLAY_FAKE_QV
-        #define BENTLEYCONFIG_PARASOLID
     #endif
 
 #elif defined (ANDROID)

@@ -191,6 +191,31 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_SecondResponseWithPreconditionFai
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChunkedUploadRequestTests, PerformAsync_ChunkedRequestAndRequestsHeadersAdded_HeadersCorrect)
+    {
+    ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
+    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.SetRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.GetRequestsHeaders().AddValue("A", "1");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, [] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
+        return StubHttpResponse(HttpStatus::ResumeIncomplete);
+        });
+    GetHandler().ForRequest(2, [] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    EXPECT_EQ(HttpStatus::OK, request.PerformAsync()->GetResult().GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                    02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChunkedUploadRequestTests, PerformAsync_LastRequestHeadersAdded_HeadersCorrect)
@@ -267,6 +292,32 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_ResponseToChunkedLastRequestHeade
             EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
             return StubHttpResponse(HttpStatus::OK);
             });
+
+    EXPECT_EQ(HttpStatus::OK, request.PerformAsync()->GetResult().GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChunkedUploadRequestTests, PerformAsync_ChunkedRequestAndRequestsHeadersAndLastRequestHeadersHaveSameKey_HeadersCorrect)
+    {
+    ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
+    request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.SetRequestBody(HttpStringBody::Create("abcd"), nullptr);
+    request.GetRequestsHeaders().AddValue("A", "1");
+    request.GetLastRequestHeaders().AddValue("A", "2");
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, [] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("1", request.GetHeaders().GetValue("A"));
+        return StubHttpResponse(HttpStatus::ResumeIncomplete);
+        });
+    GetHandler().ForRequest(2, [] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("1, 2", request.GetHeaders().GetValue("A"));
+        return StubHttpResponse(HttpStatus::OK);
+        });
 
     EXPECT_EQ(HttpStatus::OK, request.PerformAsync()->GetResult().GetHttpStatus());
     }

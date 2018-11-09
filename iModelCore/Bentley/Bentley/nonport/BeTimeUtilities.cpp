@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTimeUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -296,3 +296,11 @@ uint64_t BeTimeUtilities::ConvertTmToUnixMillis(tm const& timeStructIn)
     return time*1000LL;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BeClock& BeClock::Get()
+    {
+    static BeClock s_clock; // POD type, carries no data
+    return s_clock;
+    }

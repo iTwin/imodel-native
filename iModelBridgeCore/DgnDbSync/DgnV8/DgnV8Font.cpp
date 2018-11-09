@@ -18,7 +18,7 @@
 #include <VersionedDgnV8Api/RmgrTools/Tools/rmgrstrl.h>
 
 // Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
-#include "../../V8IModelExtraFiles/V8IModelExtraFiles.h"
+#include "../../../../V8IModelExtraFiles/V8IModelExtraFiles.h"
 
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"DgnFont"))

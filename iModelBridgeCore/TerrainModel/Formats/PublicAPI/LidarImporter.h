@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/LidarImporter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -61,7 +61,7 @@ struct LidarImporter : SingleTerrainImporter
 
     protected: virtual ImportedTerrain _ImportTerrain (WCharCP name) const override;
     protected: virtual BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr _GetGCS () const override;
-    protected: virtual WCharCP LidarImporter::_GetFileUnitString () const override;
+    protected: virtual WCharCP _GetFileUnitString () const override;
     protected: virtual FileUnit _GetFileUnit () const override;
     /*__PUBLISH_SECTION_START__*/
     public: BENTLEYDTMFORMATS_EXPORT static bool IsFileSupported (WCharCP filename);

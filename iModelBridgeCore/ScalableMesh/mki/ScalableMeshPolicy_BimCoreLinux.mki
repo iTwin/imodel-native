@@ -1,0 +1,110 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/ScalableMeshPolicy_BimCoreLinux.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__ScalableMeshPolicy_mki__)
+    %warn ScalableMeshPolicy.mki is being included redundantly in $(_MakeFileSpec)
+    %if defined (DebugRedundantMkiIncludes)
+        %error DebugRedundantMkiIncludes is defined.
+    %endif  
+    %return
+%endif
+__ScalableTerrainModelPolicy_mki__=1
+
+OPTIMIZE_FOR_SPEED=1
+appName     = ScalableMeshCore
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine = __BENTLEYSTM_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = LINUX_SCALABLEMESH_BUILD
+%include cdefapnd.mki
+
+%include DefaultToolSet.mki
+
+NO_DEFAULT_CLANG_WARNINGS = 1
+
+#Linux options
+ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+
+%if $(BUILD_TOOLSET) != "CLANG"
+    ClangCppCompOpts + -fopenmp
+    ClangCppPchOpts + -fopenmp
+    CCompOpts + -fopenmp
+    cuser + -fopenmp
+%endif
+
+# ------------------------------------
+# Source directories
+# ------------------------------------
+SrcScalableMesh     = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/
+STMPrivateAPISrc            = $(SrcScalableMesh)PrivateAPI/
+SCMPublicAPISrc             = $(SrcScalableMesh)PublicAPI/
+
+foundationsDir              = $(SrcScalableMesh)Foundations/
+memoryDir                   = $(SrcScalableMesh)Memory/
+geocoordsDir                = $(SrcScalableMesh)GeoCoords/
+importDir                   = $(SrcScalableMesh)Import/
+automaticGroundDetectionDir = $(SrcScalableMesh)AutomaticGroundDetection/
+stmDir                      = $(SrcScalableMesh)STM/
+tilePublisherDir            = $(SrcScalableMesh)TilePublisher/
+importerPluginsDir          = $(stmDir)ImportPlugins/
+pluginsDir                  = $(stmDir)Plugins/
+
+
+# ------------------------------------
+# Output directories
+# ------------------------------------
+OutBuildSTM         = $(OutBuildDir)ScalableMeshCore/
+
+#o = !Must be defined by individual mke files!
+o = $(OutBuildSTM)$(appName)/
+
+%if !defined (BuildContext)
+    BuildContext=$(OutBuildContexts)ScalableMeshCore/
+%endif
+ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
+
+#----------------------------------------------------------
+# Compile and link settings
+#----------------------------------------------------------
+%if defined(IncludeCompileLinkMki)
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+%endif
+
+
+PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
+# PublicApiIncludes + -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NOENTRY                 = 1
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)/Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)/Delivery/
+
+# Common library names for linking.  Originally macro-ized when they had numbers in the name of the LIB
+IppGraLibsLib           = $(libprefix)IppGraLibs$(libext)
+IppUtlLibsLib           = $(libprefix)IppUtlLibs$(libext)
+BaseGeocoordLib         = $(libprefix)basegeocoord$(libext)
+BeJsonCppLib            = $(libprefix)BeJsonCpp$(libext)
+BentleyGeomLib          = $(libprefix)BentleyGeom$(libext)
+TerrainModelCoreLib     = $(libprefix)TerrainModelCore$(libext)
+TerrainModelFormatsLib  = $(libprefix)TerrainModelFormats$(libext)
+
+

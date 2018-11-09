@@ -215,7 +215,7 @@ inline bool Manager<T, managePointered>::destroyAll(void)
 }
 
 T_MANAGER
-bool typename Manager<T, managePointered>::apply(ApplyFunction f)
+bool Manager<T, managePointered>::apply(ApplyFunction f)
 {
     bool traverse = true;
 

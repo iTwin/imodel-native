@@ -244,12 +244,103 @@ TEST_F(SchemaUpgradeTestFixture, ModifySchemaVersion)
         </ECEntityClass>
     </ECSchema>)xml"))) << "Decreasing write version is not supported";
 
-    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
     <ECSchema schemaName='TestSchema1' alias='ts1' version='13.1.6' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
         <ECEntityClass typeName='TestClassA' >
             <ECProperty propertyName='L1' typeName='double'/>
         </ECEntityClass>
-    </ECSchema>)xml"))) << "Decreasing minor version is not supported";
+    </ECSchema>)xml"))) << "Decreasing minor version is supported";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     11/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, SchemaDowngrade_MoreComplex)
+    {
+    // import initial schema
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaDowngrade.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="2.4.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Parent" >
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Name" typeName="string" />
+                                <ECProperty propertyName="Code" typeName="int"/>
+                                <ECProperty propertyName="Val" typeName="int" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Sub" >
+                                <BaseClass>Parent</BaseClass>
+                                <ECProperty propertyName="SubProp" typeName="string" />
+                            </ECEntityClass>
+                        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="1.9.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Parent" >
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Name" typeName="string" />
+                                <ECProperty propertyName="Code" typeName="int"/>
+                                <ECProperty propertyName="Val" typeName="int" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Sub" >
+                                <BaseClass>Parent</BaseClass>
+                                <ECProperty propertyName="SubProp" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Sub2" >
+                                <BaseClass>Parent</BaseClass>
+                                <ECProperty propertyName="Sub2Prop" typeName="string" />
+                            </ECEntityClass>
+                        </ECSchema>)xml"))) << "Import schema with smaller read version";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="2.2.78" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Parent" >
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Name" typeName="string" />
+                                <ECProperty propertyName="Code" typeName="int"/>
+                                <ECProperty propertyName="Val" typeName="int" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Sub" >
+                                <BaseClass>Parent</BaseClass>
+                                <ECProperty propertyName="SubProp" typeName="string" />
+                            </ECEntityClass>
+                        </ECSchema>)xml"))) << "Import schema with smaller write version";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="2.4.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+                            <ECEntityClass typeName="Parent" >
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns="ECDbMap.02.00.00"/>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Name" typeName="string" />
+                                <ECProperty propertyName="Code" typeName="int"/>
+                            </ECEntityClass>
+                        </ECSchema>)xml"))) << "Import schema with smaller minor version";
+
+    EXPECT_TRUE(m_ecdb.Schemas().GetClass("TestSchema", "Sub") != nullptr) << "Class Sub is still expected to exist as schema minor version downgrade is skipped.";
+    ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
+    EXPECT_TRUE(parentClass != nullptr);
+    EXPECT_TRUE(parentClass->GetPropertyP("Val") != nullptr) << "Property Val in class Parent is still expected to exist as schema minor version downgrade is skipped.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -4083,66 +4174,6 @@ TEST_F(SchemaUpgradeTestFixture, UpdateMultipleSchemasInDb)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("updateStartupCompanyschema.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.00.ecschema.xml")));
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem::CreateForFile("DSCacheSchema.01.00.03.ecschema.xml")));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DowngradeSchemaMajorVersion)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-
-    //import schema with downgraded major version
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot Downgrade schema Major Version";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DowngradeSchemaMiddleVersion)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-
-    //import schema with downgraded middle version
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot Downgrade schema middle Version";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     04/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, DowngradeSchemaMinorVersion)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-
-    //import schema with downgraded minor version
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem)) << "Cannot Downgrade schema Minor Version";
     }
 
 //---------------------------------------------------------------------------------------
@@ -11873,5 +11904,6 @@ TEST_F(SchemaUpgradeTestFixture, SchemaDiff)
             }
         }
     }
+
 
 END_ECDBUNITTESTS_NAMESPACE

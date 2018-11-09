@@ -97,7 +97,7 @@ struct ContentSetItemExtendedData : ItemExtendedData
 #define NAVNODE_EXTENDEDDATA_VirtualParentId                    "VirtualParentId"
 #define NAVNODE_EXTENDEDDATA_ParentECClassId                    "ParentECClassId"
 #define NAVNODE_EXTENDEDDATA_RelationshipDirection              "RelationshipDirection"
-#define NAVNODE_EXTENDEDDATA_AlwaysReturnsChildren              "AlwaysReturnsChildren"
+#define NAVNODE_EXTENDEDDATA_HasChildrenHint                    "HasChildrenHint"
 #define NAVNODE_EXTENDEDDATA_HideIfOnlyOneChild                 "HideIfOnlyOneChild"
 #define NAVNODE_EXTENDEDDATA_HideIfNoChildren                   "HideIfNoChildren"
 #define NAVNODE_EXTENDEDDATA_HideIfGroupingValueNotSpecified    "HideIfGroupingValueNotSpecified"
@@ -142,8 +142,8 @@ struct NavNodeExtendedData : ItemExtendedData
     ECRelatedInstanceDirection GetRelationshipDirection() const {return (ECRelatedInstanceDirection)GetJson()[NAVNODE_EXTENDEDDATA_RelationshipDirection].GetInt();}
     void SetRelationshipDirection(ECRelatedInstanceDirection direction) {AddMember(NAVNODE_EXTENDEDDATA_RelationshipDirection, rapidjson::Value((int)direction));}
     
-    bool GetAlwaysReturnsChildren() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_AlwaysReturnsChildren) ? GetJson()[NAVNODE_EXTENDEDDATA_AlwaysReturnsChildren].GetBool() : false;}
-    void SetAlwaysReturnsChildren(bool value) {AddMember(NAVNODE_EXTENDEDDATA_AlwaysReturnsChildren, rapidjson::Value(value));}
+    ChildrenHint GetChildrenHint() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_HasChildrenHint) ? (ChildrenHint)GetJson()[NAVNODE_EXTENDEDDATA_HasChildrenHint].GetInt() : ChildrenHint::Unknown;}
+    void SetChildrenHint(ChildrenHint hint) {AddMember(NAVNODE_EXTENDEDDATA_HasChildrenHint, rapidjson::Value((int)hint));}
     
     bool HideIfOnlyOneChild() const {return GetJson().HasMember(NAVNODE_EXTENDEDDATA_HideIfOnlyOneChild) ? GetJson()[NAVNODE_EXTENDEDDATA_HideIfOnlyOneChild].GetBool() : false;}
     void SetHideIfOnlyOneChild(bool value) {AddMember(NAVNODE_EXTENDEDDATA_HideIfOnlyOneChild, rapidjson::Value(value));}

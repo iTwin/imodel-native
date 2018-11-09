@@ -1008,6 +1008,8 @@ protected:
 
 public:
 
+        virtual ~NodeGrid() {}
+
 		NodeGrid(void)
 		{
 			setNumCells(NULL, 0, 0, 0);
@@ -1267,7 +1269,9 @@ template<class Real, class Data> class ContainerH1Grid : public ContainerHv<Real
 {
 public:
 
-	ContainerH1Grid(void)
+    virtual ~ContainerH1Grid() {}
+	
+    ContainerH1Grid(void)
 	{
     ContainerHv<Real, NodeGrid<Real, Data>>::setMaxNodes(1);
 	}

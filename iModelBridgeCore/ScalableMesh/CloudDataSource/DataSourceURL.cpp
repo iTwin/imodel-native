@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "DataSourceURL.h"
-#include "include\DataSourceURL.h"
+#include "include/DataSourceURL.h"
 
 DataSourceURL::DataSourceURL(void)
 {
@@ -119,7 +119,7 @@ DataSourceStatus DataSourceURL::getDirectory(unsigned int directoryIndex, DataSo
     {
         if ((position = find(DATA_SOURCE_URL_SEPARATOR, start)) == npos)
         {
-            dest = L"";
+            dest = DataSourceURL(L"");
             return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
 
@@ -143,7 +143,7 @@ DataSourceStatus DataSourceURL::getPathAfterDirectory(unsigned int directoryInde
     {
         if ((position = find(DATA_SOURCE_URL_SEPARATOR, start)) == npos)
         {
-            dest = L"";
+            dest = DataSourceURL(L"");
             return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
 

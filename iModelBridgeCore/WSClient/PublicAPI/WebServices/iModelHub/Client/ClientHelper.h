@@ -94,6 +94,12 @@ public:
 
     //! Set a custom iModelHub Url
     void SetUrl(Utf8StringCR url) { m_url = url; }
+
+    //! Create client from IConnectTokenProvider
+    //! @param tokenProviderPtr Token provider
+    //! @param prefix Token prefix that should be used for authentication
+    //! @return a connected client
+    IMODELHUBCLIENT_EXPORT static iModel::Hub::ClientPtr CreateClient(IConnectTokenProviderPtr tokenProviderPtr, IConnectAuthenticationProvider::HeaderPrefix prefix = IConnectAuthenticationProvider::HeaderPrefix::Bearer);
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

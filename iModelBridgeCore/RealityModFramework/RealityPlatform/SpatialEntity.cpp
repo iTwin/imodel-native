@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/SpatialEntity.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -111,6 +111,7 @@ SpatialEntityDataSource::SpatialEntityDataSource(UriR uri, Utf8CP type)
     m_dataType = type;
     m_pMetadata = SpatialEntityMetadata::Create();
     m_pServer = SpatialEntityServer::Create();
+    m_visibility = RealityDataBase::Visibility::UNDEFINED_VISIBILITY;
     }
 
 //----------------------------------------------------------------------------------------
@@ -123,6 +124,7 @@ SpatialEntityDataSource::SpatialEntityDataSource(Utf8CP uri, Utf8CP type)
     m_dataType = type;
     m_pMetadata = SpatialEntityMetadata::Create();
     m_pServer = SpatialEntityServer::Create();
+    m_visibility = RealityDataBase::Visibility::UNDEFINED_VISIBILITY;
     }
 
 //-------------------------------------------------------------------------------------
@@ -160,6 +162,44 @@ void SpatialEntityDataSource::SetServer(SpatialEntityServerPtr server) { m_pServ
 
 Utf8StringCR SpatialEntityDataSource::GetCoordinateSystem() const { return m_coordinateSystem; }
 void SpatialEntityDataSource::SetCoordinateSystem(Utf8CP coordSys) { m_coordinateSystem = coordSys; }
+
+RealityDataBase::Visibility SpatialEntityDataSource::GetVisibility() const { return m_visibility; }
+void SpatialEntityDataSource::SetVisibility(RealityDataBase::Visibility visibility) { m_visibility = visibility; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+Utf8String SpatialEntityDataSource::GetVisibilityTag() const
+    {
+    return GetTagFromVisibility(m_visibility);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+//! Static method that converts a classification tag to a classification
+StatusInt SpatialEntityDataSource::GetVisibilityFromTag(RealityDataBase::Visibility& returnedVisibility, Utf8CP visibilityTag)
+    {
+    return RealityDataBase::GetVisibilityFromTag(returnedVisibility, visibilityTag);
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+Utf8String SpatialEntityDataSource::GetTagFromVisibility(RealityDataBase::Visibility visibility)
+    {
+    return RealityDataBase::GetTagFromVisibility(visibility);
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    02/2017
+//-------------------------------------------------------------------------------------
+StatusInt SpatialEntityDataSource::SetVisibilityByTag(Utf8CP visibilityTag)
+    {
+    return GetVisibilityFromTag(m_visibility, visibilityTag);
+    }
 
 //=======================================================================================
 //                              WmsDataSource

@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".hgignore" />
+    <None Include="BEKeychainItem.m" />
+    <None Include="BeSecurity.mke" />
+    <None Include="BeSecurityCompileOptions.mki" />
+    <None Include="libsrc\KeychainItemWrapper\KeychainItemWrapper.m" />
+    <None Include="nonport\android\BeSecurity\android.iml" />
+    <None Include="nonport\android\BeSecurity\AssertBeSecurityPolicy.mki" />
+    <None Include="nonport\android\BeSecurity\BeSecurity.iml" />
+    <None Include="nonport\android\BeSecurity\BeSecurityMavenArchive.mke" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\build.gradle" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\src\main\java\com\bentley\android\security\BeSecurity.java" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\src\main\java\com\bentley\android\security\KeyStoreCipher.java" />
+    <None Include="nonport\android\BeSecurity\BeSecurityProject\src\main\java\com\bentley\android\security\KeyStorePre18.java" />
+    <None Include="nonport\android\BeSecurity\build.gradle" />
+    <None Include="nonport\android\BeSecurity\gradle.properties" />
+    <None Include="nonport\android\BeSecurity\gradlew" />
+    <None Include="nonport\android\BeSecurity\gradlew.bat" />
+    <None Include="nonport\android\BeSecurity\local.properties" />
+    <None Include="nonport\android\BeSecurity\settings.gradle" />
+    <None Include="prewire.mke" />
+    <None Include="SecureStoreIos.mm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BEKeychainItem.h" />
+    <ClInclude Include="libsrc\KeychainItemWrapper\KeychainItemWrapper.h" />
+    <ClInclude Include="PublicAPI\BeSecurity\BeSecurity.h" />
+    <ClInclude Include="PublicAPI\BeSecurity\SecureStore.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="BeSecurity.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="nonport\android\BeSecurity\BeSecurityProject\src\main\AndroidManifest.xml" />
+    <Xml Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\values\strings.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SecureStore.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\drawable-hdpi\ic_launcher.png" />
+    <Image Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\drawable-ldpi\ic_launcher.png" />
+    <Image Include="nonport\android\BeSecurity\BeSecurityProject\src\main\res\drawable-mdpi\ic_launcher.png" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9AB7A553-13E9-4434-BDA0-47C2E558E9A6}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>
+    </NMakeOutput>
+    <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r BeSecurity -f BeSecurity -p BeSecurity re BeSecurityLibrary</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r BeSecurity -f BeSecurity -p BeSecurity re BeSecurityLibrary -s</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r BeSecurity -f BeSecurity -p BeSecurity re BeSecurityLibrary -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(OutRoot)Winx64\BuildContexts\BeSecurity\VendorAPI;$(OutRoot)Winx64\BuildContexts\BeSecurity\PublicAPI;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

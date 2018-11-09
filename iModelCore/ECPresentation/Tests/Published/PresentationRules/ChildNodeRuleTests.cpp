@@ -179,7 +179,7 @@ TEST_F(SubConditionTests, WriteToXml)
         "<Root>"
         R"(<SubCondition Condition="condition">)"
         R"(<SubCondition Condition="nestedCondition"/>)"
-        R"(<AllInstances Priority="1000" AlwaysReturnsChildren="true" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
+        R"(<AllInstances Priority="1000" HasChildren="Always" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
         R"(</SubCondition>)"
         "</Root>";
 
@@ -459,7 +459,7 @@ TEST_F(ChildNodeRuleTests, WriteToXml)
         "<Root>"
         R"(<ChildNodeRule Priority="1000" Condition="condition" OnlyIfNotHandled="true" TargetTree="Both" StopFurtherProcessing="false">)"
         R"(<SubCondition Condition="nestedCondition"/>)"
-        R"(<AllInstances Priority="1000" AlwaysReturnsChildren="true" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
+        R"(<AllInstances Priority="1000" HasChildren="Always" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
         R"(<LabelOverride Priority="1000" OnlyIfNotHandled="false" Condition="" Label="" Description=""/>)"
         R"(</ChildNodeRule>)"
         "</Root>";

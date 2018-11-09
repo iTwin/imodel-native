@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnProvenance.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,16 +29,16 @@ public:
     DGNPLATFORM_EXPORT static void CreateTable(DgnDbR dgndb);
 
     //! Insert an entry
-    DGNPLATFORM_EXPORT static void Insert(uint32_t fileId, Utf8StringCR v8Pathname, Utf8StringCR v8UniqueName, DgnDbR dgndb);
+    DGNPLATFORM_EXPORT static void Insert(BeSQLite::BeGuidCR fileId, Utf8StringCR v8Pathname, Utf8StringCR v8UniqueName, DgnDbR dgndb);
 
     //! Delete an entry
-    DGNPLATFORM_EXPORT static void Delete(uint32_t v8FileId, DgnDbR dgndb);
+    DGNPLATFORM_EXPORT static void Delete(BeSQLite::BeGuidCR v8FileId, DgnDbR dgndb);
 
     //! Find an entry
-    DGNPLATFORM_EXPORT static BentleyStatus Find(Utf8StringP v8Name, Utf8StringP v8UniqueName, uint32_t v8FileId, DgnDbCR dgndb);
+    DGNPLATFORM_EXPORT static BentleyStatus Find(Utf8StringP v8Name, Utf8StringP v8UniqueName, BeSQLite::BeGuidCR v8FileId, DgnDbCR dgndb);
 
     //! Find an entry
-    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(uint32_t* v8FileId, Utf8CP v8NameOrUniqueName, bool findByUniqueName, DgnDbCR dgndb);
+    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(BeSQLite::BeGuid* v8FileId, Utf8CP v8NameOrUniqueName, bool findByUniqueName, DgnDbCR dgndb);
 };
 
 //=======================================================================================
@@ -50,14 +50,25 @@ struct DgnV8ModelProvenance
     //! Create the provenance table
     DGNPLATFORM_EXPORT static void CreateTable(DgnDbR dgndb);
 
+    struct ModelProvenanceEntry
+        {
+        DgnModelId m_modelId;
+        int        m_dgnv8ModelId;
+        Utf8String m_modelName;
+        Transform  m_trans;
+        };
+
     //! Insert an entry
-    DGNPLATFORM_EXPORT static void Insert(DgnModelId modelId, uint32_t v8FileId, int v8ModelId, Utf8StringCR v8ModelName, DgnDbR dgndb);
+    DGNPLATFORM_EXPORT static void Insert(BeSQLite::BeGuidCR v8FileId, ModelProvenanceEntry const& entry, DgnDbR dgndb);
 
     //! Delete an entry
     DGNPLATFORM_EXPORT static void Delete(DgnModelId modelId, DgnDbR dgndb);
 
     //! Find an entry
-    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(uint32_t* v8FileId, int* v8ModelId, Utf8StringP v8ModelName, DgnModelId modelId, DgnDbCR dgndb);
+    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(BeSQLite::BeGuid* v8FileId, int* v8ModelId, Utf8StringP v8ModelName, DgnModelId modelId, DgnDbCR dgndb);
+
+    //Find all the entries for a file
+    DGNPLATFORM_EXPORT static BentleyStatus FindAll(bvector <ModelProvenanceEntry> &entries, BeSQLite::BeGuidCR v8FileId,  DgnDbCR dgndb);
     };
 
 //=======================================================================================
@@ -70,16 +81,16 @@ struct DgnV8ElementProvenance
     DGNPLATFORM_EXPORT static void CreateTable(DgnDbR dgndb);
 
     //! Insert an entry
-    DGNPLATFORM_EXPORT static void Insert(DgnElementId elementId, uint32_t v8FileId, int v8ModelId, int64_t v8ElementId, DgnDbR dgndb);
+    DGNPLATFORM_EXPORT static void Insert(DgnElementId elementId, BeSQLite::BeGuidCR v8FileId, int v8ModelId, int64_t v8ElementId, DgnDbR dgndb);
 
     //! Delete an entry
     DGNPLATFORM_EXPORT static void Delete(DgnElementId elementId, DgnDbR dgndb);
 
     //! Find an entry
-    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(uint32_t* v8FileId, int* v8ModelId, int64_t* v8ElementId, DgnElementId elementId, DgnDbCR dgndb);
+    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(BeSQLite::BeGuid* v8FileId, int* v8ModelId, int64_t* v8ElementId, DgnElementId elementId, DgnDbCR dgndb);
 
     //! Find an entry
-    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(DgnElementId* elementId, uint32_t v8FileId, int64_t v8ElementId, DgnDbCR dgndb);
+    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(DgnElementId* elementId, BeSQLite::BeGuidCR v8FileId, int64_t v8ElementId, DgnDbCR dgndb);
     };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -34,7 +34,7 @@
         <file src="SubParts\libs\BeSecurity.lib"                    target="lib\native\BeSecurity.lib" />
         <file src="SubParts\Assemblies\BeLibxml2B02.dll"            target="lib\native\BeLibxml2B02.dll" />
         <file src="SubParts\libs\BeLibxml2.lib"                     target="lib\native\BeLibxml2.lib" />
-        <file src="SubParts\Assemblies\BeOpenSSLB02.dll"            target="lib\native\BeOpenSSLB02.dll" />
+        <file src="SubParts\Assemblies\BeOpenSSLM02.dll"            target="lib\native\BeOpenSSLM02.dll" />
         <file src="SubParts\libs\BeOpenSSL.lib"                     target="lib\native\BeOpenSSL.lib" />
         <file src="SubParts\libs\BeJsonCpp.lib"                     target="lib\native\BeJsonCpp.lib" />
 

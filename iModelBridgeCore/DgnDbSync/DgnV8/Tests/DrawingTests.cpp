@@ -47,9 +47,6 @@ TEST_F(DrawingTests, Basic3dAttachment)
     LineUpFiles(L"Basic3dAttachment.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
     ASSERT_EQ( 0 , m_count ) << L"The initial V8 file is supposed to be empty!";
 
-    Bentley::WString configVar;
-    int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-
     DgnV8Api::ElementId lineElementId;
     if (true)
         {
@@ -95,7 +92,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         //          Drawing1        <-- DrawingModel  {1 DrawingGraphic (copy of PhysicalObject)}
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 1, numModelsExpected); // expect 1 drawing model and 2 physical models (includes the default WebMercatorModel)
+        countModels(*db, 1, 2); // expect 1 drawing model and 2 physical models (includes the default WebMercatorModel)
 
         // There should be 1 spatial (orthographic) view
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -165,7 +162,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
 
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 2, numModelsExpected); // expect 2 2d models and 2 physical models (includes WebMercatorModel)
+        countModels(*db, 2, 2); // expect 2 2d models and 2 physical models (includes WebMercatorModel)
 
         // There should be 1 spatial view and 1 generated DrawingViewDefinition
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -198,7 +195,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 2, numModelsExpected); // still expect 2 2d models and 2 physical model (includes WebMercatorModel)
+        countModels(*db, 2, 2); // still expect 2 2d models and 2 physical model (includes WebMercatorModel)
 
         // There should still be 1 spatial view and 1 generated DrawingViewDefinition
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -263,9 +260,7 @@ TEST_F(DrawingTests, Sheet_SheetAttachment)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-        countModels(*db, 3, numModelsExpected); // expect 1 sheet model and 2 physical model (includes WebMercatorModel)
+        countModels(*db, 3, 2); // expect 1 sheet model and 1 physical model
 
         // There should be 1 spatial (orthographic) view
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
@@ -442,9 +437,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-        countModels(*db, 3, numModelsExpected);
+        countModels(*db, 3, 2);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
@@ -598,9 +591,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-        countModels(*db, 5, numModelsExpected);
+        countModels(*db, 5, 2);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 6);
@@ -666,9 +657,7 @@ TEST_F(DrawingTests, Attach3dmodeltoSheet)
        {
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-        countModels(*db, 2, numModelsExpected);
+        countModels(*db, 2, 2);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
@@ -753,9 +742,7 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
        {
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-        countModels(*db, 4, numModelsExpected);
+        countModels(*db, 4, 2);
         db->Schemas().CreateClassViewsInDb();
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 3);
@@ -829,9 +816,7 @@ TEST_F(DrawingTests, AttachDwg)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 4 : 3;
-        countModels(*db, 6, numModelsExpected);
+        countModels(*db, 6, 3);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 3);
@@ -915,9 +900,7 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
        {
 
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 3 : 2;
-        countModels(*db, 2, numModelsExpected);
+        countModels(*db, 2, 2);
 
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_SpatialViewDefinition), 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
@@ -1024,9 +1007,7 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
     if (true)
        {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 2 : 1;
-        countModels(*db, 4, numModelsExpected);
+        countModels(*db, 4, 1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
@@ -1081,9 +1062,7 @@ TEST_F(DrawingTests, Cyclic2dModels)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         db->Schemas().CreateClassViewsInDb();
-        Bentley::WString configVar;
-        int numModelsExpected = (SUCCESS == DgnV8Api::ConfigurationManager::GetVariable(configVar, L"DGNCLIENTFX_CREATE_BINGMAP")) ? 2 : 1;
-        countModels(*db, 2, numModelsExpected);
+        countModels(*db, 2, 1);
         ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
         ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
         }

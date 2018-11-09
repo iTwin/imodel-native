@@ -297,6 +297,14 @@ bool WSInfo::IsWebApiSupported(BeVersionCR version) const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WSInfo::IsMaxUploadSizeSupported() const
+    {
+    return m_serverVersion >= BeVersion(2, 6, 8, 9);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool WSInfo::IsNavigationPropertySelectForAllClassesSupported() const

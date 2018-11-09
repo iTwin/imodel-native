@@ -605,12 +605,6 @@ inline void AddTriangleToDTM(BC_DTM_OBJ* dtmObjP, vector<DPoint3d>& points, int3
         }    
     }
 
-template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXTENT>::LoadAdjacencyData(MTGGraph* graph, POINT* pPoints, size_t size) const
-    {
-    size_t ct = size* sizeof(POINT);
-    graph->LoadFromBinaryStream(pPoints, ct);
-    }
-
 inline void ValidateTriangleMesh(vector<int> faces, vector<DPoint3d> stitchedPoints)
     {
     std::map<long long, int> edges;
@@ -851,16 +845,6 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
             }
         }
     points = newSet;
-    /*for (auto& feature : node->m_featureDefinitions)
-        {
-        for (size_t f = 1; f < feature.size(); ++f)
-            {
-            if (feature[f] < matchedIndices.size())
-            const_cast<int32_t&>(feature[f]) = matchedIndices[feature[f]];
-            else const_cast<int32_t&>(feature[f]) = INT_MAX;
-            }
-        }*/
-//    s += " AFTER SIZE " + std::to_string(points.size());
     }
 
     void circumcircle(DPoint3d& center, double& radius, const DPoint3d* triangle);
@@ -983,9 +967,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         faceIndices.clear();
         }
 #endif
-   // if (NULL == node->GetGraphPtr()) node->LoadGraph(true);
-   // *node->GetGraphPtr() = *meshGraphStitched;
-   // *node->GetGraphPtr() = MTGGraph();
+
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
     MTGGraph* graphP = new MTGGraph();
     bvector<int> componentPointsId;
@@ -1171,13 +1153,6 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     vector<int> faceIndices;
     vector<POINT> geometryData;
     bvector<DPoint3d> geomData;
-  /*  size_t ptId = 7309;
-    std::ofstream fn;
-    Utf8String path = "E:\\output\\scmesh\\2015-12-11\\";
-    path += (std::to_string((unsigned long long)node->GetParentNode().GetPtr()) + "_").c_str();
-    path += (std::to_string((unsigned long long)node.GetPtr()) + "_").c_str();
-    Utf8String str1 = "afterStitch_";
-    fn.open((path + str1 + "_processidx.log").c_str(), std::ios_base::trunc);*/
 
     for (size_t g = 0; g < indices.size(); ++g)
         {
@@ -1208,14 +1183,6 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
                 // geometryData.push_back(PointOp<POINT>::Create(stitchedPoints[vIndex - 1].x, stitchedPoints[vIndex - 1].y, stitchedPoints[vIndex - 1].z));
                 if (/*nPointsOutsideTile < 3 && nPointsInsideTile < 3*/ true)
                     {
-                    /*  if (pointsInTile.count(pt) == 0)
-                          {
-                          pointsInTile[pt] = newPtsIndex;
-                          newPtsIndex++;
-                          assert(pointsInTile[pt] < newPtsIndex);
-                          indicesForFace.push_back(vIndex - 1);
-                          }
-                          faceIndices.push_back(pointsInTile[pt] + 1);*/
                     if (pointsInTile[vIndex - 1] == -1)
                         {
                         pointsInTile[vIndex - 1] = newPtsIndex;
@@ -1247,17 +1214,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
             }
         geometryData.resize(geometryData.size() + newPtsIndex);
         geomData.resize(geomData.size() + newPtsIndex);
-       /* for (size_t j = 0; j < pts[g].size(); j++)
-            {
-            if (pointsInTile.count(pts[g][j]) != 0)
-                {
-                assert(pointsInTile[pts[g][j]] < newPtsIndex);
-                geomData[pointsInTile[pts[g][j]]] = pts[g][j];
-                geometryData[pointsInTile[pts[g][j]]].x = pts[g][j].x;
-                geometryData[pointsInTile[pts[g][j]]].y = pts[g][j].y;
-                geometryData[pointsInTile[pts[g][j]]].z = pts[g][j].z;
-                }
-            }*/
+
         for (size_t j = 0; j < pts[g].size(); j++)
             {
             if (pointsInTile[j] != -1)
@@ -1308,13 +1265,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
     for (auto& ptVec : pts) ptVec.resize(geometryData.size());
     assert(geomData.size() < 100000);
-#ifdef SINGLE_TILE
-    if ((minPt.x > TILE_X || maxPt.x < TILE_X || minPt.y > TILE_Y || maxPt.y < TILE_Y)
-        && (minPt.x > TILE_X2 || maxPt.x < TILE_X2 || minPt.y > TILE_Y2 || maxPt.y < TILE_Y2))
-        {
-        faceIndices.clear();
-        }
-#endif
+
     
 ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
     RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(
@@ -1335,53 +1286,7 @@ ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
     storedMemoryPoolItem->SetDirty();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
     SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex);
-   /* for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
-        {
-        TagFeatureEdges(&tempGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
-        }*/
 
-    //tempGraph.SortNodesBasedOnLabel(0);
-/*    str1 += std::to_string(geomData.size()).c_str();
-    PrintGraph(path, str1, &tempGraph);
-    std::ofstream f;
-    f.open((path + str1 + "_idx.log").c_str(), std::ios_base::trunc);
-    f << str;
-    f << " FACE DEFS FOR PT " + std::to_string(ptId) + "\n";
-    for (size_t i = 0; i < faceIndices.size(); i += 3)
-        {
-        if (faceIndices[i] != (int)ptId && faceIndices[i + 1] != (int)ptId && faceIndices[i + 2] != (int)ptId) continue;
-        f << "FACE DEFINITION :" + std::to_string(faceIndices[i]) + " " + std::to_string(faceIndices[i + 1]) + " " + std::to_string(faceIndices[i + 2]) << std::endl;
-        std::string s;
-        print_polygonarray(s, "PTS", &geomData[faceIndices[i] - 1], 1);
-        print_polygonarray(s, "PTS", &geomData[faceIndices[i+1] - 1], 1);
-        print_polygonarray(s, "PTS", &geomData[faceIndices[i+2] - 1], 1);
-        f << "FACE PTS :" + s << std::endl;
-        }
-    f.close();*/
-    //if (NULL == node->GetGraphPtr()) node->LoadGraph(s_useThreadsInStitching);
-    //if (s_useThreadsInStitching) node->LockGraph();
-   // *node->GetGraphPtr() = tempGraph;
-        {
-      /*  Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
-        Utf8String str1 = "afterStitch_graph_";
-        str1 += std::to_string(node->GetBlockID().m_integerID).c_str();
-            {si
-            void* graphData;
-            size_t ct = tempGraph.WriteToBinaryStream(graphData);
-            FILE* graphSaved = fopen((path + str1).c_str(), "wb");
-            fwrite(&ct, sizeof(size_t), 1, graphSaved);
-            fwrite(graphData, 1, ct, graphSaved);
-            size_t npts = geomData.size();
-            fwrite(&npts, sizeof(size_t), 1, graphSaved);
-            fwrite(&geomData[0], sizeof(DPoint3d), npts, graphSaved);
-            delete[] graphData;
-            fclose(graphSaved);
-            }*/
-        }
-
-    //node->SetGraphDirty();
-    //if (s_useThreadsInStitching) node->UnlockGraph();
-    //node->ReleaseGraph();    
     assert(faceIndices.size() % 3 == 0);
     nFaces = (int)faceIndices.size();
     if (faceIndices.size() == 0 || geometryData.size() == 0) return 0;

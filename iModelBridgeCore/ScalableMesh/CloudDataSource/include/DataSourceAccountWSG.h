@@ -57,20 +57,23 @@ public:
                                             DataSourceAccountWSG                (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
         virtual                            ~DataSourceAccountWSG                (void);
 
-        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key);
+        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key) override;
 
         virtual void                        setPrefixPath                       (const DataSourceURL &prefix) override;
 
-        DataSource                   *      createDataSource                    (const SessionName &session);
-        DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
+        DataSource                   *      createDataSource                    (const SessionName &session) override;
+        DataSourceStatus                    destroyDataSource                   (DataSource *dataSource) override;
 
-        DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
-        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
-        DataSourceStatus                    uploadBlobSync                      (DataSourceURL & url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
-        DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize) override;
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session) override;
+        DataSourceStatus                    uploadBlobSync                      (DataSourceURL & url, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size) override;
+        DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size) override;
+    
+#if 0
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+#endif
 
-        virtual void                        setWSGTokenGetterCallback           (const std::function<std::string (void)>& tokenUpdater);
+        virtual void                        setWSGTokenGetterCallback           (const std::function<std::string (void)>& tokenUpdater) override;
 
         CLOUD_EXPORT      void              setOrganizationID                   (const WSGServer::organizationID& orgID);
         CLOUD_EXPORT      void              setUseDirectAzureCalls(const bool& isDirect);

@@ -110,6 +110,8 @@ public:
 
     virtual bool _IsUsingVideoMemory() override;
 
+    virtual bool _HasCompatibleSettings(SmCachedDisplayMesh* cachedDisplayMesh) override;
+
     ScalableMeshDisplayCacheManager(/*ViewContextR viewContext*/);
 
     ~ScalableMeshDisplayCacheManager();
@@ -253,6 +255,11 @@ bool ScalableMeshDisplayCacheManager::_IsUsingVideoMemory()
 {
     return false;
 }
+
+bool ScalableMeshDisplayCacheManager::_HasCompatibleSettings(SmCachedDisplayMesh* cachedDisplayMesh) 
+    {
+    return true;
+    }
 
 ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
 {
@@ -544,7 +551,7 @@ bool DisplayQueryTester::SetQueryParams(const BeFileName& smFileName, const DMat
 
     ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromClipPlanes(clipPlaneSet));
 
-    m_clipVector = ClipVector::CreateFromPrimitive(clipPrimitive);
+    m_clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
 
     m_expectedResults.resize(expectedResults.size());
     memcpy(&m_expectedResults[0], &expectedResults[0], sizeof(double) * expectedResults.size());

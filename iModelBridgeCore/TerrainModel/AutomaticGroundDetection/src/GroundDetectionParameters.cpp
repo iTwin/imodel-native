@@ -117,7 +117,7 @@ void    ProgressReport::SetWorkDone(double workDone)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ProgressReport::StartPhase(int phaseNumber, WChar* traceText)
+void    ProgressReport::StartPhase(int phaseNumber, WChar const* traceText)
     {
     //GROUNDDLOG->trace(traceText);
 
@@ -130,7 +130,7 @@ void    ProgressReport::StartPhase(int phaseNumber, WChar* traceText)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    ProgressReport::EndPhase(WChar* traceText)
+void    ProgressReport::EndPhase(WChar const* traceText)
     {
     m_timer.Stop();
     SetEstimatedRemainingTime(false, 0.0);

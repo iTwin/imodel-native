@@ -12,6 +12,14 @@
 #if TERRAINMODEL_LINUX
 #include <errno.h>
 #endif
+
+#if defined(WIN32) && defined(_MSC_VER) && _MSC_VER >= 1910
+#define STRUCT_OFFSET(s, m)  size_t (&(((s *)0)->m))
+#else
+#include <stddef.h>
+#define STRUCT_OFFSET(s, m)  offsetof (s, m)
+#endif
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  int bcdtmRead_dataFileToDataObject                                |
@@ -2184,7 +2192,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400TinObject
  #ifdef _M_IX86
  headerSize = sizeof(Tinobj);
 #else
- headerSize = offsetof(struct Tinobj,pointsP) + (4 * 4) ;
+ headerSize = STRUCT_OFFSET (struct Tinobj, pointsP) + (4 * 4) ;
 #endif
 
  if( bcdtmStream_fread(&Tinobj,headerSize,1,dtmStreamP) != 1 )

@@ -37,15 +37,8 @@ struct MockQueryProvider : public IQueryProvider
             bool isPersistent
             ));
 
-        MOCK_CONST_METHOD3 (DoUpdateFile, bool
-            (
-            CacheTransactionCR txn,
-            ECInstanceKeyCR instanceKey,
-            bool isPersistent
-            ));
-
         MOCK_CONST_METHOD3(IsFileRetrievalNeeded, ICancellationTokenPtr
-        (
+            (
             CacheTransactionCR txn,
             ECInstanceKeyCR instanceKey,
             bool isPersistent

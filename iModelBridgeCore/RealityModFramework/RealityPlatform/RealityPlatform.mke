@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -36,15 +36,12 @@ nameToDefine=__REALITYPLATFORM_BUILD__
 RealityDepends  =   $(_MakeFileSpec) \
                     $(PublicApiDir)RealityDataPackage.h \
                     $(PublicApiDir)RealityPlatformAPI.h \
-                    $(PublicApiDir)RealityDataSource.h \
                     $(baseDir)RealitySerialization.h
                     
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 $(o)RealityDataPackage$(oext) : $(baseDir)RealityDataPackage.cpp $(PublicApiDir)RealityDataPackage.h $(RealityDepends) ${MultiCompileDepends}
-
-#$(o)RealityDataSource$(oext) : $(baseDir)RealityDataSource.cpp $(PublicApiDir)RealityDataSource.h $(RealityDepends) ${MultiCompileDepends}
 
 $(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${MultiCompileDepends}
 

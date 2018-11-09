@@ -150,15 +150,15 @@ TEST_F(UserInfoTests, QueryUsersInfoByTwoIdsSeparately_OneAddedLater)
 
     mockHandler->ForAnyRequest([=] (Http::RequestCR request)
         {
-        Utf8String user1Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId1);
+        Utf8String user1Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId1.c_str());
 
-        Utf8String user2Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId2);
+        Utf8String user2Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId2.c_str());
 
-        Utf8String user3Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId3);
+        Utf8String user3Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId3.c_str());
 
-        Utf8String user1Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Regular1\",\"Email\":\"bistroatp_reg1@mailinator.com\"},\"eTag\":\"\\\"XsHulgQuqLncjk+KB+RE/c1pr0k=\\\"\"}]}", userId1, userId1);
+        Utf8String user1Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Regular1\",\"Email\":\"bistroatp_reg1@mailinator.com\"},\"eTag\":\"\\\"XsHulgQuqLncjk+KB+RE/c1pr0k=\\\"\"}]}", userId1.c_str(), userId1.c_str());
 
-        Utf8String user2Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Admin1\",\"Email\":\"bistroATP_pmadm1@mailinator.com\"},\"eTag\":\"\\\"3zHySVdWrMmn6dVylJMugn5zUB8=\\\"\"}]}", userId2, userId2);
+        Utf8String user2Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Admin1\",\"Email\":\"bistroATP_pmadm1@mailinator.com\"},\"eTag\":\"\\\"3zHySVdWrMmn6dVylJMugn5zUB8=\\\"\"}]}", userId2.c_str(), userId2.c_str());
 
         if (request.GetUrl().EndsWith("UserInfo"))
             return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user1Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
@@ -235,17 +235,17 @@ TEST_F(UserInfoTests, QueryUsersInfoByTwoIdsTogether_OneAddedLater)
 
     mockHandler->ForAnyRequest([=] (Http::RequestCR request)
         {
-        Utf8String user1Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId1);
+        Utf8String user1Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId1.c_str());
 
-        Utf8String user2Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId2);
+        Utf8String user2Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId2.c_str());
 
-        Utf8String user23Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s','%s'%%5D", userId2, userId3);
+        Utf8String user23Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s','%s'%%5D", userId2.c_str(), userId3.c_str());
 
-        Utf8String user3Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId3);
+        Utf8String user3Request = Utf8PrintfString("UserInfo?$filter=$id+in+%%5B'%s'%%5D", userId3.c_str());
 
-        Utf8String user1Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Admin1\",\"Email\":\"bistroATP_pmadm1@mailinator.com\"},\"eTag\":\"\\\"3zHySVdWrMmn6dVylJMugn5zUB8=\\\"\"}]}", userId1, userId1);
+        Utf8String user1Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Admin1\",\"Email\":\"bistroATP_pmadm1@mailinator.com\"},\"eTag\":\"\\\"3zHySVdWrMmn6dVylJMugn5zUB8=\\\"\"}]}", userId1.c_str(), userId1.c_str());
 
-        Utf8String user2Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Regular1\",\"Email\":\"bistroatp_reg1@mailinator.com\"},\"eTag\":\"\\\"XsHulgQuqLncjk+KB+RE/c1pr0k=\\\"\"}]}", userId2, userId2);
+        Utf8String user2Response = Utf8PrintfString("{\"instances\":[{\"instanceId\":\"%s\",\"schemaName\":\"iModelScope\",\"className\":\"UserInfo\",\"properties\":{\"Id\":\"%s\",\"Name\":\"BistroATP\",\"Surname\":\"Regular1\",\"Email\":\"bistroatp_reg1@mailinator.com\"},\"eTag\":\"\\\"XsHulgQuqLncjk+KB+RE/c1pr0k=\\\"\"}]}", userId2.c_str(), userId2.c_str());
 
         if (request.GetUrl().EndsWith("UserInfo"))
             return Http::Response(Http::HttpResponseContent::Create(Http::HttpStringBody::Create(user1Response)), "", Http::ConnectionStatus::OK, Http::HttpStatus::OK);
