@@ -447,6 +447,9 @@ BentleyStatus iModelBridgeFwk::Briefcase_PullMergePush(Utf8CP descIn, bool doPul
     if (m_bridge)
         comment = m_bridge->_FormatPushComment(*m_briefcaseDgnDb, descIn);
 
+    if (comment.length() > 350) // iModelHub imposes a hard limit on ChangeSet description length.
+        comment.resize(350);
+
     GetProgressMeter().SetCurrentStepName(opName);
     GetLogger().infov("%s %s %s", opName, m_briefcaseBasename.c_str(), comment.c_str());
 

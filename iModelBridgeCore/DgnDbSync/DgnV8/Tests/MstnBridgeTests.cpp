@@ -590,18 +590,10 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
         // There will be more than just the two file-specific changesets. Assert at least 2 more.
         EXPECT_GE(testIModelHubClientForBridges.GetChangesetCount(), csCountBefore + 2) << "each model should have been pushed in its own changeset";
 
-        BentleyApi::BeFileName assignDbName(testDir);
-        assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
-        FakeRegistry testRegistry(testDir, assignDbName);
-        testRegistry.Open();
-        iModelBridgeDocumentProperties ref1DocProps, ref2DocProps;
-        testRegistry._GetDocumentProperties(ref1DocProps, refFile1);
-        testRegistry._GetDocumentProperties(ref2DocProps, refFile2);
-
         auto revstats = testIModelHubClientForBridges.ComputeRevisionStats(*fileInfo.m_db, csCountBefore);
         EXPECT_EQ(revstats.nSchemaRevs, 0) << "no schema changes expected, since the initial conversion did that";
         EXPECT_GE(revstats.nDataRevs, 2) << "each file should have been pushed in its own changeset";
-        EXPECT_TRUE(containsSubstr(revstats.descriptions, ref1DocProps.m_docGuid)) << "first ref should have been pushed in its own revision";
-        EXPECT_TRUE(containsSubstr(revstats.descriptions, ref2DocProps.m_docGuid)) << "second ref should have been pushed in its own revision";
+        EXPECT_TRUE(containsSubstr(revstats.descriptions, "-Ref-1")) << "first ref should have been pushed in its own revision";
+        EXPECT_TRUE(containsSubstr(revstats.descriptions, "-Ref-2")) << "second ref should have been pushed in its own revision";
         }
     }

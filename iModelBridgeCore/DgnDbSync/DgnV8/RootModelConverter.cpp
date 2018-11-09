@@ -1713,8 +1713,8 @@ void SpatialConverterBase::PushChangesForFile(DgnV8FileR file, BentleyApi::Utf8S
         comment = whatData;
     else
         {
-        auto fileProv = SyncInfo::V8FileProvenance::GetById(GetV8FileSyncInfoId(file), GetSyncInfo());
-        comment = BentleyApi::Utf8PrintfString("%s (%s) - %s", fileProv.m_v8Name.c_str(), fileProv.m_uniqueName.c_str(), whatData.c_str());
+        BeFileName filename(file.GetFileName().c_str());
+        comment = BentleyApi::Utf8PrintfString("%s - %s", Utf8String(filename.GetBaseName()).c_str(), whatData.c_str());
         }
     iModelBridge::PushChanges(*m_dgndb, _GetParams(), comment.c_str());
     }
