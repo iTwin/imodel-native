@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IChangeManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -137,10 +137,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! Change whether or not an object is ready to be synced to the server
         virtual BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) = 0;
 
-        //! Add created instance to response to act as placeholder until it is synced to server and pulled back. Instance commit will remove it from response
+        //! Add created instance to response to act as placeholder until it is synced to server and pulled back.
+        //! Instnace placeholder will be removed from response automatically after sync (upload) is done - when CommitInstanceRevision() is called. 
         virtual BentleyStatus AddCreatedInstanceToResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) = 0;
 
-        //! Remove created instance from response
+        //! Remove created instance from response manually.
         virtual BentleyStatus RemoveCreatedInstanceFromResponse(CachedResponseKeyCR responseKey, ECInstanceKeyCR instanceKey) = 0;
 
         // -- Getting changes --
