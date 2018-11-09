@@ -10,7 +10,7 @@
 
 
 // Via RequiredRepository entry in the DgnV8ConverterDLL Part. The way this piece was designed was that is was so small, every library gets and builds as source.
-#include "../../V8IModelExtraFiles/V8IModelExtraFiles.h"
+#include "../../../../V8IModelExtraFiles/V8IModelExtraFiles.h"
 
 #include <VersionedDgnV8Api/PSolid/PSolidCore.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
