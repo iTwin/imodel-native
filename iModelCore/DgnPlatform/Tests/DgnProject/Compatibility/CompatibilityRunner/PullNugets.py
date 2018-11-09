@@ -113,15 +113,13 @@ def main():
 
     # Relevant nugets (all others must be ignored until they are deleted from the server):
     # 2018.9.14.1: nuget before EC3.2 merge
-    # 2018.11.8.1: nuget after EC3.2 merge, but before CoreCustomAttributes schema bump to 1.0.1
     # 2018.11.9.1: nuget after CoreCustomAttributes schema bump to 1.0.1
     bim02devMinimumNugetVersion = "2018.9.14.1"
-    bim02devIgnoreNugetVersions = {"2018.9.19.1","2018.9.20.1", "2018.9.25.1", "2018.10.18.3", "2018.10.19.1"}
+    bim02devIgnoreNugetVersions = {"2018.9.19.1","2018.9.20.1", "2018.9.25.1", "2018.10.18.3", "2018.10.19.1", "2018.11.9.1"}
 
     # Relevant nugets (all others must be ignored until they are deleted from the server):
-    # 2018.11.8.1: nuget after EC3.2 merge, but before CoreCustomAttributes schema bump to 1.0.1
     # 2018.11.9.1: nuget after CoreCustomAttributes schema bump to 1.0.1
-    imodel02MinimumNugetVersion = "2018.11.8.1"
+    imodel02MinimumNugetVersion = "2018.11.9.1"
     imodel02IgnoreNugetVersions = {}
 
     # Test runners are downloaded into src as pulling them in with every TMR might take too long
