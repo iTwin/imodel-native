@@ -2,7 +2,7 @@
 |
 |     $Source: BeJsonUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -194,11 +194,7 @@ uint64_t BeJsonUtilities::UInt64FromValue(JsonValueCR value, uint64_t defaultOnE
 
     // elementIds are usually strings in JavaScript because of UInt64 issues
     if (value.isString())
-        {
-        uint64_t returnValueInt64 = defaultOnError;
-        sscanf(value.asCString(), "%" PRIu64, &returnValueInt64);
-        return returnValueInt64;
-        }
+        return value.asUInt64(defaultOnError);
 
     return defaultOnError;
     }
