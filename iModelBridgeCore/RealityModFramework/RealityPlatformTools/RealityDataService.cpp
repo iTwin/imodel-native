@@ -18,8 +18,10 @@
 #include <stdio.h>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
 #include <iostream>
 #include <Bentley/Base64Utilities.h>
+#include <mutex>
 
 #include "RealityDataServiceInternal.h"
 
@@ -79,6 +81,14 @@ struct RealityDataFileTransfer : public RealityDataUrl
 
         REALITYDATAPLATFORM_EXPORT RawServerResponse& GetResponse() { return m_response; }
 
+        //REALITYDATAPLATFORM_EXPORT void SetChunkSize(uint64_t chunkSize) { m_chunkSize = chunkSize; }
+
+        REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() { return m_chunkSize; }
+
+        REALITYDATAPLATFORM_EXPORT Utf8String GetBlockList() { return m_blockList; }
+
+        REALITYDATAPLATFORM_EXPORT bool IsSingleChunk() { return m_singleChunk; }
+
         size_t                  nbRetry;
         size_t                  m_index;
     protected:
@@ -105,6 +115,93 @@ struct RealityDataFileTransfer : public RealityDataUrl
         time_t                  m_startTime;
 
         RawServerResponse       m_response;
+
+        mutable bool            m_moreToSend;
+        mutable bool            m_singleChunk;
+
+        size_t                  m_chunkSize;
+        uint32_t                m_chunkNumber;
+        Utf8String              m_chunkNumberString;
+
+        Utf8String              m_blockList;
+        char*                   m_fileBuffer;
+        size_t                  m_sizeTransfered;
+    };
+
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              09/2018
+//! RealityDataUploadFileManager
+//! single handle to the actual file, that provides the data to file upload requests
+//=====================================================================================
+struct RealityDataUploadFileManager
+    {
+    RealityDataUploadFileManager(BeFileName fileName, uint32_t uploadCount)
+        {
+        m_fileName = fileName.GetNameUtf8();
+        m_uploadCount = uploadCount;
+        m_completedUploads = 0;
+
+        if(m_uploadCount > 1)
+            {
+            m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
+            for(uint32_t i = 0; i < m_uploadCount; i++)
+                {
+                m_blockList.append("<Latest>");
+                std::stringstream blockIdStream;
+                blockIdStream << std::setw(5) << std::setfill('0') << i;
+                std::string blockId = blockIdStream.str();
+                Utf8String chunkNumberString = Base64Utilities::Encode(blockId.c_str()).c_str();
+                m_blockList.append(chunkNumberString);
+                m_blockList.append("</Latest>");
+                }
+            m_blockList.append("</BlockList>");
+            }
+        else
+            m_blockList = "";
+        m_ready = false;
+        m_chunkNumber = 0;
+        }
+
+    REALITYDATAPLATFORM_EXPORT void ReadyFile()
+        {
+        BeFileStatus status = m_fileStream.Open(m_fileName, BeFileAccess::Read);
+        BeAssert(status == BeFileStatus::Success);
+        m_ready = true;
+        }
+
+    REALITYDATAPLATFORM_EXPORT size_t OnReadData(char* buffer, size_t size, uint32_t& chunkNumber)
+        {
+        if(!m_ready)
+            ReadyFile();
+
+        uint32_t bytesRead = 0;
+        
+        BeFileStatus status = m_fileStream.Read(buffer, &bytesRead, (uint32_t)size);
+        if(status != BeFileStatus::Success)
+            return 0;
+            
+        chunkNumber = m_chunkNumber++;
+
+        return bytesRead;
+        }
+
+    REALITYDATAPLATFORM_EXPORT Utf8String ConfirmUpload() 
+        { 
+        m_completedUploads++;
+        if(m_uploadCount == m_completedUploads)
+            return m_blockList;
+        
+        return "";
+        }
+
+private:
+    Utf8String          m_fileName;
+    BeFile              m_fileStream;
+    Utf8String          m_blockList;
+    uint32_t            m_chunkNumber;
+    uint32_t            m_uploadCount;
+    uint32_t            m_completedUploads;
+    bool                m_ready;
     };
 
 //=====================================================================================
@@ -116,8 +213,7 @@ struct RealityDataFileTransfer : public RealityDataUrl
 struct RealityDataFileUpload : public RealityDataFileTransfer
     {
 public:
-    RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index) : 
-        m_chunkSize(CHUNK_SIZE), m_chunkStop(0), m_chunkNumber(0), m_moreToSend(true) 
+    RealityDataFileUpload(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index, bool singleChunk = false, RealityDataUploadFileManager* fileManager = nullptr)
         {
         m_azureServer = azureServer;
         m_index = index;
@@ -133,23 +229,29 @@ public:
         m_requestType = HttpRequestType::PUT_Request;
 
         filename.GetFileSize(m_fileSize);
+        m_blockList = "";
+        m_moreToSend = true;
+        m_singleChunk = singleChunk;
+        m_fileManager = fileManager;
         }
+
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataFileUpload*> Create(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index);
 
     REALITYDATAPLATFORM_EXPORT void ReadyFile() override
         {
-        BeFileStatus status = m_fileStream.Open(m_filename, BeFileAccess::Read);
-        BeAssert(status == BeFileStatus::Success);
+        m_sizeTransfered = 0;
+        m_fileBuffer = new char[UL_CHUNK_SIZE];
+        m_chunkSize = m_fileManager->OnReadData(m_fileBuffer, UL_CHUNK_SIZE, m_chunkNumber);
 
-        m_transferProgress = 0;
-
-        m_chunkSize = CHUNK_SIZE;
-        m_singleChunk = m_fileSize < m_chunkSize;
-
-        if(!m_singleChunk)
-            m_blockList = "<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>";
+        std::stringstream blockIdStream;
+        blockIdStream << std::setw(5) << std::setfill('0') << m_chunkNumber;
+        std::string blockId = blockIdStream.str();
+        m_chunkNumberString = Base64Utilities::Encode(blockId.c_str()).c_str();
         }
 
     REALITYDATAPLATFORM_EXPORT void Retry() override;
+
+    REALITYDATAPLATFORM_EXPORT bool FinishedSending();
 
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetHttpRequestString() const override
         {
@@ -171,18 +273,8 @@ public:
 
         return m_requestWithToken;
         };
-
-    REALITYDATAPLATFORM_EXPORT void SetChunkSize(uint64_t chunkSize) { m_chunkSize = chunkSize; }
-
-    REALITYDATAPLATFORM_EXPORT bool FinishedSending(); 
-
-    REALITYDATAPLATFORM_EXPORT uint64_t GetMessageSize() { return m_chunkSize; }
-
-    REALITYDATAPLATFORM_EXPORT Utf8String GetBlockList() { return m_blockList; }
     
-    REALITYDATAPLATFORM_EXPORT bool IsSingleChunk() { return m_singleChunk; }
-    
-    REALITYDATAPLATFORM_EXPORT size_t OnReadData(void* buffer, size_t size);
+    REALITYDATAPLATFORM_EXPORT size_t OnReadData(char* buffer, size_t size);
 
     REALITYDATAPLATFORM_EXPORT void UpdateTransferedSize() override;
 
@@ -190,15 +282,133 @@ protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    mutable bool            m_moreToSend;
-    mutable bool            m_singleChunk;
+    RealityDataUploadFileManager* m_fileManager;
+    };
 
-    uint64_t                m_chunkSize;
-    uint64_t                m_chunkStop;
-    uint32_t                m_chunkNumber;
-    Utf8String              m_chunkNumberString;
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              09/2018
+//! RealityDataDownloadFileManager
+//! single handle to the actual file, that combines the data from file download requests
+//! and writes them to the actual file on the disc
+//=====================================================================================
+struct RealityDataDownloadFileManager
+    {
+    RealityDataDownloadFileManager(BeFileName fileName, uint32_t downloadCount, uint64_t fileSize)
+        {
+        m_fileName = fileName.GetNameUtf8();
+        m_downloadCount = downloadCount;
+        m_ready = false;
 
-    Utf8String              m_blockList;
+        m_completedDownloads = bset<size_t>();
+        m_lastWrittenChunk = m_downloadCount + 1;
+        m_data = bmap<size_t, char*>();
+
+        m_lastChunkSize = fileSize % DL_CHUNK_SIZE;
+        m_fileSize = fileSize;
+        }
+
+    ~RealityDataDownloadFileManager()
+        {
+        bmap<size_t, char*>::iterator it = m_data.begin();
+        
+        if(m_lastWrittenChunk <= m_downloadCount)
+            {
+            for(size_t itCount = 0; (itCount <= m_lastWrittenChunk) && (it != m_data.end()); ++itCount)
+                ++it;
+            }
+
+        while (it != m_data.end())
+            {
+            delete[] (*it).second;
+            it++;
+            }
+        }
+
+    REALITYDATAPLATFORM_EXPORT void ReadyFile()
+        {
+        BeFileStatus status = m_fileStream.Create(m_fileName.c_str(), true);
+        BeAssert(status == BeFileStatus::Success);
+        m_ready = true;
+        }
+
+    REALITYDATAPLATFORM_EXPORT size_t OnWriteData(char* buffer, size_t size, size_t position, size_t chunkNumber)
+        {
+        if(!m_ready)
+            ReadyFile();
+
+        if (m_data.find(chunkNumber) == m_data.end())
+            {
+            if (chunkNumber == m_downloadCount -1)
+                m_data.Insert(chunkNumber, new char[m_lastChunkSize]);
+            else
+                m_data.Insert(chunkNumber, new char[DL_CHUNK_SIZE]);
+            }
+
+        char* localBuff = m_data[chunkNumber];
+
+        std::copy(buffer, buffer + size, localBuff + position);
+        return size;
+        }
+
+    REALITYDATAPLATFORM_EXPORT void ConfirmDownload(size_t chunkNumber) 
+        { 
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_completedDownloads.insert(chunkNumber);
+        bset<size_t>::iterator it = m_completedDownloads.begin();
+        
+        if (chunkNumber == 0)
+            {
+            if (WriteToFile(chunkNumber) == BeFileStatus::Success)
+                m_lastWrittenChunk = 0;
+            }
+
+        if(chunkNumber = m_lastWrittenChunk + 1)
+            {
+            it = m_completedDownloads.find(m_lastWrittenChunk);
+            it++;
+            while ((it != m_completedDownloads.end()) && (*it == m_lastWrittenChunk + 1))
+                {
+                if(WriteToFile(*it) != BeFileStatus::Success)
+                    break;
+
+                m_lastWrittenChunk = *it;
+                it++;
+                }
+            }
+        }
+
+private:
+
+    BeFileStatus WriteToFile (size_t index)
+        {
+        char* currentEntry = m_data[index];
+        uint32_t bytesWritten; 
+        
+        m_fileStream.Flush();
+        m_fileStream.SetPointer(0, BeFileSeekOrigin::End);
+        BeFileStatus fStat = m_fileStream.Write(&bytesWritten, currentEntry, (uint32_t)((index != m_downloadCount - 1) ? DL_CHUNK_SIZE : m_lastChunkSize));
+
+        if (fStat != BeFileStatus::Success)
+            return fStat;
+
+        delete[] currentEntry;
+
+        if(index == m_downloadCount - 1)
+            m_fileStream.Close();
+
+        return BeFileStatus::Success;
+        }
+
+    Utf8String                  m_fileName;
+    BeFile                      m_fileStream;
+    size_t                      m_downloadCount;
+    bset<size_t>                m_completedDownloads;
+    size_t                      m_lastWrittenChunk;
+    bool                        m_ready;
+    bmap<size_t, char*>         m_data;
+    size_t                      m_lastChunkSize;
+    uint64_t                    m_fileSize;
+    std::mutex                  m_mutex;
     };
 
 //=====================================================================================
@@ -208,10 +418,10 @@ private:
 //! download process specific functionality.
 //=====================================================================================
 struct RealityDataFileDownload : public RealityDataFileTransfer
-{
+    {
 public:
-    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize, RealityDataServiceDownload* download = nullptr) :
-        iAppend(0)
+    RealityDataFileDownload(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize, RealityDataServiceDownload* download = nullptr, bool singleChunk = false, uint32_t chunkNumber = 0, size_t chunkSize = 0, RealityDataDownloadFileManager* fileManager = nullptr) :
+        m_position(0)
         {
         m_azureServer = azureServer;
         m_index = index;
@@ -224,21 +434,29 @@ public:
 
         m_requestType = HttpRequestType::GET_Request;
 
-        m_downloader = download;
+        m_downloader = download; 
+
+        m_singleChunk = singleChunk;
+        m_chunkNumber = chunkNumber;
+        m_fileManager = fileManager;
+        m_chunkSize = (m_singleChunk) ? m_fileSize : chunkSize;
         }
 
     REALITYDATAPLATFORM_EXPORT void Retry() override;
-
-    size_t                  iAppend;
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataFileDownload*> Create(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize, RealityDataServiceDownload* download = nullptr);
 
     int ProcessProgress(uint64_t currentProgress);
     void SetRDSDownload(RealityDataServiceDownload* downloader) { m_downloader = downloader; }
+    REALITYDATAPLATFORM_EXPORT size_t OnWriteData(char* buffer, size_t size);
+    REALITYDATAPLATFORM_EXPORT void ConfirmDownload();
 
 protected:
     REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
 
 private:
-    RealityDataServiceDownload* m_downloader;
+    RealityDataServiceDownload*         m_downloader;
+    RealityDataDownloadFileManager*     m_fileManager;
+    size_t                              m_position;
     };
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -1165,10 +1383,19 @@ void RealityDataFileUpload::_PrepareHttpRequestStringAndPayload() const
 //=====================================================================================
 bool RealityDataFileUpload::FinishedSending()
     { 
-    if(!m_singleChunk)
-        return !m_moreToSend; 
+    m_blockList = m_fileManager->ConfirmUpload();
+
+
+    m_moreToSend = m_blockList.empty();
+    if(!m_moreToSend)
+        {
+        m_chunkSize = m_blockList.length();
+        m_validRequestString = false;
+        }
     else
-        return (m_transferProgress >= m_fileSize);
+        delete[] m_fileBuffer;
+
+    return m_moreToSend;
     }
 
 //=====================================================================================
@@ -1176,59 +1403,26 @@ bool RealityDataFileUpload::FinishedSending()
 //=====================================================================================
 void RealityDataFileUpload::UpdateTransferedSize()
     {
-    if(m_transferProgress < m_fileSize - 1)
-        {
-        uint64_t uploadStep = m_transferProgress + m_chunkSize;
-        if(m_fileSize > uploadStep)
-            {
-        m_chunkStop = uploadStep;
-            }
-        else
-            {
-            m_chunkStop = m_fileSize;
-            m_chunkSize = m_fileSize - m_transferProgress;
-            }
-
-        if(!m_singleChunk)
-            {
-            m_blockList.append("<Latest>");
-            std::stringstream blockIdStream;
-            blockIdStream << std::setw(5) << std::setfill('0') << m_chunkNumber;
-            std::string blockId = blockIdStream.str();
-            m_chunkNumberString = Base64Utilities::Encode(blockId.c_str()).c_str();
-            m_blockList.append(m_chunkNumberString);
-            m_blockList.append("</Latest>");
-            }
-        m_transferProgress = m_chunkStop;
-        ++m_chunkNumber;
-        }
-    else if (!m_singleChunk)
-        {
-        m_moreToSend = false;
-        m_blockList.append("</BlockList>");
-        m_chunkSize = m_blockList.length();
-        m_validRequestString = false;
-        }
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
+size_t RealityDataFileUpload::OnReadData(char* buffer, size_t size)
     {
-    uint32_t bytesRead = 0;
-    if(m_moreToSend)
-        {
-        BeFileStatus status = m_fileStream.Read(buffer, &bytesRead, (uint32_t)size);
-        if(status != BeFileStatus::Success)
-            return 0;
-        }
-    else if (!m_singleChunk)
+    if(!m_blockList.empty())
         {
         memcpy(buffer, m_blockList.c_str(), m_blockList.length());
-        bytesRead = (uint32_t)m_blockList.length();
+        return (uint32_t)m_blockList.length();
         }
-    return bytesRead;
+    
+    if(size > (m_chunkSize - m_sizeTransfered))
+        size = m_chunkSize - m_sizeTransfered;
+
+    std::copy(m_fileBuffer + m_sizeTransfered, m_fileBuffer + m_sizeTransfered + size, buffer);
+    m_sizeTransfered += size;
+        
+    return size;
     }
 
 //=====================================================================================
@@ -1236,9 +1430,50 @@ size_t RealityDataFileUpload::OnReadData(void* buffer, size_t size)
 //=====================================================================================
 void RealityDataFileUpload::Retry()
     {
-    CloseFile();
+    m_sizeTransfered = 0; //TODO
+    m_validRequestString = false;
+    /*CloseFile();
     m_chunkSize = CHUNK_SIZE;
-    ReadyFile();
+    ReadyFile();*/
+    }
+
+bvector<RealityDataFileUpload*> RealityDataFileUpload::Create(BeFileName filename, BeFileName root, Utf8String azureServer, size_t index)
+    {
+    uint64_t fileSize;
+    filename.GetFileSize(fileSize);
+
+    bvector<RealityDataFileUpload*> uploadList = bvector<RealityDataFileUpload*>();
+
+    uint64_t transferCount = (fileSize / (uint64_t)UL_CHUNK_SIZE);
+    if ( fileSize % UL_CHUNK_SIZE ) //99.9% of cases
+        transferCount ++;
+
+    RealityDataUploadFileManager* fileManager = new RealityDataUploadFileManager(filename, (uint32_t)transferCount);
+
+    for (size_t filePart = 0; filePart < transferCount; filePart++ )
+        {
+        uploadList.push_back(new RealityDataFileUpload(filename, root, azureServer, index + filePart, (transferCount == 1), fileManager));
+        }
+
+    return uploadList;
+    }
+
+bvector<RealityDataFileDownload*> RealityDataFileDownload::Create(BeFileName filename, Utf8String fileUrl, Utf8String azureServer, size_t index, uint64_t fileSize, RealityDataServiceDownload* download)
+    {
+    bvector<RealityDataFileDownload*> downloadList = bvector<RealityDataFileDownload*>();
+
+    uint64_t transferCount = (fileSize / (uint64_t)DL_CHUNK_SIZE);
+    if (fileSize % DL_CHUNK_SIZE) //99.9% of cases
+        transferCount++;
+
+    RealityDataDownloadFileManager* fileManager = new RealityDataDownloadFileManager(filename, (uint32_t)transferCount, fileSize);
+
+    for (size_t filePart = 0; filePart < transferCount; filePart++)
+        {
+        downloadList.push_back(new RealityDataFileDownload(filename, fileUrl, azureServer, index + filePart, fileSize, download, (transferCount == 1), (uint32_t)filePart, (filePart != transferCount - 1) ? DL_CHUNK_SIZE : (fileSize % DL_CHUNK_SIZE), fileManager));
+        }
+
+    return downloadList;
     }
 
 //=====================================================================================
@@ -1246,24 +1481,22 @@ void RealityDataFileUpload::Retry()
 //=====================================================================================
 void RealityDataFileDownload::Retry()
     {
-    iAppend = 0;
-    CloseFile();
-    ReadyFile();
+    m_position = 0; //TODO
+    m_downloader->UpdateTransferAmount(-1 * (int64_t)(m_transferProgress));
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              08/2018
 //=====================================================================================
-int RealityDataFileDownload::ProcessProgress(uint64_t currentProgress)
+int RealityDataFileDownload::ProcessProgress(uint64_t currentProgress) //TODO
     { 
-    if ((m_downloader != nullptr) && (m_downloader->m_pProgressFunc != NULL) 
-        && (currentProgress > m_transferProgress))
+    if ((m_downloader != nullptr) && (currentProgress > m_transferProgress))
         {
         if (NULL != m_downloader->m_pHeartbeatFunc && m_downloader->m_pHeartbeatFunc() != 0)
             return 1;
 
         m_downloader->UpdateTransferAmount(currentProgress - m_transferProgress);
-        m_downloader->m_pProgressFunc(m_filename, ((double)currentProgress) / 100.0 , m_downloader->m_progress);
+        m_downloader->m_pProgressFunc(m_filename, ((double)currentProgress) / m_chunkSize , m_downloader->m_progress);
         m_transferProgress = currentProgress;
         }
     return 0;
@@ -1281,6 +1514,22 @@ void RealityDataFileDownload::_PrepareHttpRequestStringAndPayload() const
     m_validRequestString = true;
 
     m_requestHeader.clear();
+    Utf8String header = Utf8PrintfString("Range: bytes=%d-%d", m_chunkNumber * DL_CHUNK_SIZE, (m_chunkNumber * DL_CHUNK_SIZE) + m_chunkSize - 1);
+    m_requestHeader.push_back(header);
+    }
+
+size_t RealityDataFileDownload::OnWriteData(char* buffer, size_t size)
+    {
+    size_t bytesWritten = m_fileManager->OnWriteData(buffer, size, m_position, m_chunkNumber);
+
+    m_position += bytesWritten;
+    
+    return bytesWritten;
+    }
+
+void RealityDataFileDownload::ConfirmDownload()
+    {
+    m_fileManager->ConfirmDownload(m_chunkNumber);
     }
 
 AzureHandshake::AzureHandshake() : m_isWrite(false)
@@ -1639,7 +1888,7 @@ Utf8String RealityDataServiceUpload::GetAzureToken()
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
+bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount) //TODO
     {
     m_currentTransferedAmount += transferedAmount;
     m_progress = ((double)m_currentTransferedAmount) / m_fullTransferSize;
@@ -1764,7 +2013,8 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     m_handshakeRequest = new AzureHandshake(m_id, true);
     GetAzureToken();
 
-    RealityDataFileUpload* fileUp;
+    //RealityDataFileUpload* fileUp;
+    bvector<RealityDataFileUpload*> fileUps;
 
     if (uploadPath.DoesPathExist() && uploadPath.IsDirectory()) //path is directory, find all documents
         {
@@ -1797,18 +2047,23 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
 
                 if (whiteListed)
                     {
-                    fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
-                    m_filesToTransfer.push_back(fileUp);
-                    m_fullTransferSize += fileUp->GetFileSize();
+                    fileUps = RealityDataFileUpload::Create(fileName, root, m_azureServer, i);
+                    //fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
+                    //m_filesToTransfer.push_back(fileUp);
+                    m_filesToTransfer.insert(m_filesToTransfer.end(), fileUps.begin(), fileUps.end());
+                    i = m_filesToTransfer.size();
+                    m_fullTransferSize += fileUps[0]->GetFileSize();
                     }
                 }
             }
         }
     else if (uploadPath.DoesPathExist())
         {
-        fileUp = new RealityDataFileUpload(uploadPath, uploadPath.GetDirectoryName(), m_azureServer, 0);
-        m_filesToTransfer.push_back(fileUp);
-        m_fullTransferSize = fileUp->GetFileSize();
+        fileUps = RealityDataFileUpload::Create(uploadPath, uploadPath.GetDirectoryName(), m_azureServer, 0);
+        //fileUp = new RealityDataFileUpload(uploadPath, uploadPath.GetDirectoryName(), m_azureServer, 0);
+        //m_filesToTransfer.push_back(fileUp);
+        m_filesToTransfer.insert(m_filesToTransfer.end(), fileUps.begin(), fileUps.end());
+        m_fullTransferSize = fileUps[0]->GetFileSize();
         }
     else
         {
@@ -1844,8 +2099,6 @@ RealityDataServiceDownload::RealityDataServiceDownload(Utf8String serverId, bvec
     GetAzureToken();
 
     m_filesToTransfer = downloadList;
-
-    m_fullTransferSize = (uint64_t) (m_filesToTransfer.size() * (1.0 / m_progressStep));
 
     InitTool();
     }
@@ -1900,6 +2153,8 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
     WString guid = folders[0];
     guid.append(L"/");
     root.ReplaceAll(guid.c_str(), L""); //remove guid from root
+    
+    m_fullTransferSize = 0;
 
     if ((folders.size() > 1) && !m_id.EndsWith("/")) //if path ends with "/" it is a folder; otherwise, it is a single document
         {
@@ -1914,9 +2169,11 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
         downloadLocation.AppendToPath(folders[folders.size() - 1].c_str());
 
         m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, 0, filesInRepo[0].second, this));
+        m_fullTransferSize = filesInRepo[0].second;
         }
     else
         {
+        size_t index = 0;
         for (size_t i = 0; i < filesInRepo.size(); ++i)
             {
             path = filesInRepo[i].first;
@@ -1941,11 +2198,13 @@ RealityDataServiceDownload::RealityDataServiceDownload(BeFileName targetLocation
             downloadLocation = targetLocation;
             downloadLocation.AppendToPath(path.c_str());
 
-            m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second, this));
+            bvector<RealityDataFileDownload*> fileDowns = RealityDataFileDownload::Create(downloadLocation, utf8FileUrl, m_azureServer, index, filesInRepo[i].second, this);
+            m_filesToTransfer.insert(m_filesToTransfer.end(), fileDowns.begin(), fileDowns.end());
+            index = m_filesToTransfer.size();
+            //m_filesToTransfer.push_back(new RealityDataFileDownload(downloadLocation, utf8FileUrl, m_azureServer, i, filesInRepo[i].second, this));
+            m_fullTransferSize += filesInRepo[i].second;
             }
         }
-
-    m_fullTransferSize = (uint64_t)(m_filesToTransfer.size() * (1.0 / m_progressStep));
 
     InitTool();
     }
