@@ -1,0 +1,2824 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Docs/Overview/RulesDrivenPresentationManager.doxpage $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+// __PUBLISH_SECTION_START__
+
+// =======================================================================================
+// Presentation Manager
+// =======================================================================================
+/** @defgroup GROUP_Presentation EC Presentation 
+@see @ref PAGE_PresentationManager "Presentation overview page"
+
+The Presentation module acts as an EC-based data access point for various controls. 
+*/
+
+/** @defgroup GROUP_Presentation_Navigation EC Navigation Presentation
+@ingroup GROUP_Presentation
+
+The Navigation part of the @ref GROUP_Presentation "presentation" module is responsible for providing
+data to create hierarchies.
+*/
+
+/** @defgroup GROUP_Presentation_Content EC Content Presentation
+@ingroup GROUP_Presentation
+
+The Content part of the @ref GROUP_Presentation "presentation" module is responsible for providing data
+for content controls such as Table view and Property pane. Also, it's used 
+in @ref GROUP_UnifiedSelection "unified selection".
+*/
+
+/** @page PAGE_PresentationManager Presentation Manager
+@see @ref GROUP_Presentation
+
+@ref BentleyApi::ECPresentation::IECPresentationManager "Presentation manager" and other classes in 
+the @ref GROUP_Presentation "EC Presentation module" provide an API to retrieve EC data in a user-friendy way. 
+The @ref BentleyApi::ECPresentation::IECPresentationManager "Presentation manager"
+API consists of 2 parts: @ref SECTION_PresentationManager_Navigation "Navigation-related" 
+and @ref SECTION_PresentationManager_Content "Content-related".
+
+@section SECTION_PresentationManager_Navigation Navigation
+The Navigation part of the presentation manager API provides means to create EC-based hierarchies. Examples of such hierarchies are tree views, breadcrumb detail
+views, etc.
+
+@section SECTION_PresentationManager_Content Content
+The Content part of the presentation manager API provides means to get EC-based content for content controls (e.g. table view a.k.a. grid view, property pane) and 
+@ref PAGE_UnifiedSelection "unified selection" controls.
+*/
+
+// =======================================================================================
+// Rules-Driven Presentation Manager
+// =======================================================================================
+/** @defgroup GROUP_RulesDrivenPresentation Rules-Driven EC Presentation
+@ingroup GROUP_Presentation
+@see @ref PAGE_RulesDrivenPresentationManager "Rules-Driven Presentation overview page"
+
+This module is responsible for presenting EC data using @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_PresentationRules
+"presentation rules" which control what data is presented and how it's formatted.
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager Rules-Driven Presentation Manager
+@see @ref GROUP_RulesDrivenPresentation
+
+@ref BentleyApi::ECPresentation::RulesDrivenECPresentationManager "Rules-driven presentation manager" is a 
+concrete @ref BentleyApi::ECPresentation::IECPresentationManager "IECPresentationManager" implementation 
+which uses @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_PresentationRules "presentation rules" to 
+determine the hierarchy and content. 
+
+@tableofcontents
+
+@section SECTION_RulesDrivenPresentationManager_LocatingRulesets Locating Rules
+RulesDrivenPresentationManager is able to find application-provided rulesets using 
+@ref BentleyApi::ECPresentation::RuleSetLocater "Ruleset locaters". Two locaters are delivered with the library: 
+@ref BentleyApi::ECPresentation::DirectoryRuleSetLocater "DirectoryRuleSetLocater" and
+@ref BentleyApi::ECPresentation::FileRuleSetLocater "FileRuleSetLocater". Applications are free to create their 
+own locaters as well. The locaters must be registered in the @ref BentleyApi::ECPresentation::RuleSetLocaterManager "locater manager". 
+See @ref SECTION_RulesDrivenPresentationManager_SettingUp "examples" for how to do that.
+
+@section SECTION_RulesDrivenPresentationManager_ECExpressions ECExpressions
+@subpage PAGE_RulesDrivenPresentationManager_ECExpressions "ECExpressions" are used heavily in presentation rules. They provide conditional
+rule and ECInstance filtering and value formatting.
+
+@section SECTION_RulesDrivenPresentationManager_Localization Localization
+The presentation manager also supports localization described in @subpage PAGE_RulesDrivenPresentationManager_Localization "localization page".
+
+@section SECTION_RulesDrivenPresentationManager_PerformanceTips Performance tips
+@subpage PAGE_RulesDrivenPresentationManager_PerformanceTips "Performance tips page" describes how to write rule set to achieve better performance.
+
+@section SECTION_RulesDrivenPresentationManager_SettingUp Setting Up
+Every application that wants to use rules-driven presentation manager should first make sure it's properly initialized. 
+
+The first thing the application should do is create and register the rules-driven @ref BentleyApi::ECPresentation::IECPresentationManager "IECPresentationManager"
+implementation:
+$SAMPLECODE_BEGIN[SetUpPresentationManager, Set Up IECPresentationManager]
+__PUBLISH_INSERT_FILE__ PresentationManagerSample_SetUp.sampleCode
+$SAMPLECODE_END
+
+For apps which allow editing the below part is also needed:
+$SAMPLECODE_BEGIN[SetUpUpdatesHandling, Set Up Updates Handling]
+__PUBLISH_INSERT_FILE__ PresentationManagerSample_SetUp_UpdateRelated.sampleCode
+$SAMPLECODE_END
+
+@section SECTION_RulesDrivenPresentationManager_CleaningUp Cleaning Up
+To clean up the presentation manager the application only has to make sure it's destroyed and unregistered:
+$SAMPLECODE_BEGIN[CleanUpPresentationManager, Clean Up Presentation Manager]
+__PUBLISH_INSERT_FILE__ PresentationManagerSample_CleanUp.sampleCode
+$SAMPLECODE_END
+*/
+
+// =======================================================================================
+// Presentation Rules
+// =======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_PresentationRules Presentation Rules  
+
+Presentation rules allow to configure how the hierarchy and content are displayed. They use existing @e ECExpressions engine for 
+condition evaluation and can be persisted into XML file. They are not platform dependent.
+
+@section SUBSECTION_RulesDrivenPresentationManager_ECPresentationRules_PresentationRuleset Presentation Rule Set
+
+Presentation rule set is a list of rules that define tree hierarchy and content provided by RulesDrivenPresentationManager.
+The rule set consists of:
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_PresentationRuleset "Ruleset options" - defines 
+ruleset parameters.
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules "Navigation rules":
+    - Root node rules - defines @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_RootNodeRules "rules for root nodes".
+    - Child node rules - defines @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ChildNodeRules "rules for child nodes".
+- Content rules - defines @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules "rules for content" you see in content controls.
+- Customization rules - defines @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules "rules for additional customizations", 
+such as styling, labeling, checkboxes, etc.
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_UserSettings "User settings".
+
+The easiest way to distribute and share rulesets is using XML files. DgnClient SDK delivers an XSD file that helps to write presentation ruleset 
+XML files; the XSD can be found in {DgnClient SDK root}/build/tools/xml/ directory. A simple example of a ruleset XML:
+@code{.xml}
+<?xml version="1.0" encoding="utf-8"?>
+<PresentationRuleSet RuleSetId="MyRuleSet" SupportedSchemas="MySchemaName" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+   <RootNodeRule>
+      ...
+   </RootNodeRule>
+
+   <ChildNodeRule>
+      ...
+   </ChildNodeRule>
+ 
+   <ContentRule>
+      ... 
+   </ContentRule>
+</PresentationRuleSet>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_PresentationRuleset Presentation Ruleset
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_PresentationRuleset_Specification Specification
+
+<table>
+    <caption>PresentationRuleSet XML Element Definition</caption>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>RuleSetId</td>
+        <td>Rule set identificator. This ID is used to bind content controls with the specific rule set.</td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>VersionMajor</td>
+        <td>
+            Major version of the PresentationRuleSet. This will be used in the future when PresentationRuleSets
+            evolve to identify incompatible changes in the rules between versions. For first release it should
+            <b>always be 1</b>.
+        </td>
+        <td>Yes</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>VersionMinor</td>
+        <td>
+            Minor version of PresentationRuleSet. This flag can be used to separate rule sets when they evolve.
+            Ruleset with the highest minor version will be chosen if there are multiple instances with the same
+            RuleSetId.
+        </td>
+        <td>Yes</td>
+        <td>0</td>
+    </tr>
+    <tr>
+        <td>SupportedSchemas</td>
+        <td>
+            List of schema names separated by comma, for which those rules should be applied. Possible values:
+            - Empty - all available schemas will be used.
+            - Explicit - only defined schemas will be used.
+            - Excluded - all available schemas will be used, except defined. To mark the list as exclude list the
+            "E:" prefix should be used, e.g.: "E:MySchemaName1,MySchemaName2"
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>IsSupplemental</td>
+        <td>
+            Identifies whether the rule set is supplemental. If this flag is set, this supplemental rule set will be
+            merged with the primary rule set that has the same RuleSetId and the same VersionMajor value.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>SupplementationPurpose</td>
+        <td>
+            If IsSupplemental set to true it is required to set SupplementationPurpose. This allows to identify why
+            supplementation is done and uniquelly identify particular supplemental rule set. There can be only one
+            supplemental rule set with the same RuleSetId and SupplementationPurpose. If multiple instances are
+            available, only one will be chosen of the highest VersionMinor.
+        </td>
+        <td>Yes (if not supplemental)</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_RootNodeRules_Example Example
+
+An example of PresentationRuleSet XML:
+
+@code{.xml}
+<PresentationRuleSet 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd"
+    RuleSetId="MyRuleSet"
+    VersionMajor="1"
+    VersionMinor="3"
+    SupportedSchemas="MySchemaName">
+</PresentationRuleSet>
+@endcode
+*/
+
+// =======================================================================================
+// Navigation Rules
+// =======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules Navigation Rules  
+
+Navigation rules define the hierarchy that's created for navigation controls. There are 2 types of rules:
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_RootNodeRules "RootNodeRule" defines the nodes at the 
+root hierarchy level.
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ChildNodeRules "ChildNodeRule" defines the nodes at all
+other hierarchy levels.
+
+Each rule can define any number of @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications "specifications".
+
+Navigation rules also support @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_NestedRules "nested rules" and
+@subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_RelatedInstance "RelatedInstance sub-specification".
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_RootNodeRules Root Node Rules  
+  
+Root node rules define the nodes that are displayed at the root hierarchy level.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_RootNodeRules_Specification Specification
+
+<table>
+    <caption>RootNodeRule XML Element Definition</caption>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            This boolean flag identifies whether we should ignore this rule if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>AutoExpand</td>
+        <td>
+            If this flag is set, nodes created by this rule will be automatically expanded.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_RootNodeRules_Example Example
+
+An example of RootNodeRule XML:
+@code{.xml}
+<PresentationRuleSet>
+   <RootNodeRule>
+      <InstancesOfSpecificClasses SchemaName="Bentley_DMS" ClassNames="DMSFolder" GroupByClass="true" />
+   </RootNodeRule>
+</PresentationRuleSet>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ChildNodeRules Child Node Rules  
+
+Child node rules define the nodes that are displayed at each hierarchy level.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ChildNodeRules_Specification Specification
+
+<table>
+    <caption>ChildNodeRule XML Element Definition</caption>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_ChildNodeRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            This boolean flag identifies whether we should ignore this rule if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>StopFurtherProcessing</td>
+        <td>
+            If this flag is set PresentationRulesProcessor will stop processing rules that are lower priority. This really helps in cases 
+            when recursion suppression is needed.
+            <b>Note:</b> If this flag is set, specifications and SubConditions will not be processed.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ChildNodeRules_ECExpressions ECExpression Symbols Available in Navigation Rules
+
+<table>
+    <caption>Root @e ECExpression Context</caption>
+    <tr><th>Symbol</th>     <th>Value</th></tr>
+    <tr><td>ParentNode</td> <td>Returns the parent @ref SECTION_RulesDrivenPresentationManager_ECExpressions_NavNode "NavNode expression context".</td></tr>
+</table>
+
+Additionally, @ref SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings "User Settings" and 
+@ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb "ECDb" symbols are available.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ChildNodeRules_Example Example
+
+An example of ChildNodeRule XML:
+@code{.xml}
+<PresentationRuleSet>
+   <ChildNodeRule Condition="ParentNode.IsInstanceNode" OnlyIfNotHandeled="true">
+      <InstancesOfSpecificClasses SchemaName="Bentley_DMS" ClassNames="DMSFolder" GroupByClass="true" />
+   </ChildNodeRule>
+</PresentationRuleSet>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications Specifications
+
+Rule specifications define what content the rule results in. There are 6 types of navigation rule specifications:
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllInstances
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllRelatedInstances
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_CustomNode
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_InstancesOfSpecificClasses
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_RelatedInstances
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_SearchResultInstances
+
+@ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_NestedRules "Nested rules" and 
+@ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_RelatedInstance "RelatedInstance sub-specifications" are 
+defined as child elements of navigation specifications.
+
+Some of the specifications support filtering which is described in
+@subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_InstanceFilters "this page".
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllInstances AllInstances Specification  
+ 
+Returns all available instance nodes filtered only by the @c SupportedSchemas properties of the specification or the ruleset.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllInstances_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>AlwaysReturnsChildren</td>
+        <td>
+            This identifies whether specification always returns nodes. Setting this flag to true will improve 
+            performance, because it would not require to execute the query in order to check whether the node has any children.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideNodesInHierarchy</td>
+        <td>
+            This option allows to hide nodes provided by this specification and show nodes of its children directly. 
+            This helps if you need to define related instance nodes of particular parent node that is not available in the hierarchy.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideIfNoChildren</td>
+        <td>
+            Hides nodes if they don't have children. <b>Important:</b> this may affect performance significantly.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>GroupByClass</td>
+        <td>
+            Groups instances by ECClass.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>GroupByLabel</td>
+        <td>
+            Groups instances by display label.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>DoNotSort</td>
+        <td>
+            Set this flag to true to suppress default sorting of ECInstances returned by this specification. The order 
+            of persistence provider will be used.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>SupportedSchemas</td>
+        <td>
+            List of schemas that should be used while building the query for gathering all instances. Schema names should 
+            be separated by comma (","). In order to define excluded schemas "E:" prefix can be used.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllInstances_Example Example
+@code{.xml}
+<AllInstances GroupByClass="true" GroupByLabel="true" AlwaysReturnsChildren="false" Priority="1000" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllRelatedInstances AllRelatedInstances Specification  
+
+Returns all related instance nodes for parent ECInstance node.
+
+@pre Can be used only if parent node is ECInstance node, if there is no imediate parent instance node it will go up until it finds one.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllRelatedInstances_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>AlwaysReturnsChildren</td>
+        <td>
+            This identifies whether specification always returns nodes. Setting this flag to true will improve 
+            performance, because it would not require to execute the query in order to check whether the node has any children.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideNodesInHierarchy</td>
+        <td>
+            This option allows to hide nodes provided by this specification and show nodes of its children directly. 
+            This helps if you need to define related instance nodes of particular parent node that is not available in the hierarchy.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideIfNoChildren</td>
+        <td>
+            Hides nodes if they don't have children. <b>Important:</b> this may affect performance significantly.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>GroupByRelationship</td>
+        <td>
+            Groups instances by ECRelationshipClass.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>GroupByClass</td>
+        <td>
+            Groups instances by ECClass.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>GroupByLabel</td>
+        <td>
+            Groups instances by display label.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>DoNotSort</td>
+        <td>
+            Set this flag to true to suppress default sorting of ECInstances returned by this specification. The order 
+            of persistence provider will be used.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>SkipRelatedLevel</td>
+        <td>
+            Skips defined level of related items and shows next level related items. 
+
+            Lets say we have relationship hierarachy A->B->C, but for the user we want to show A->C. In this case we need to set SkipRelatedLevel to 1. 
+            The engine will query all direct relationships and all nested relationships and only nested ones will be shown. If there are more than 
+            1 direct relationships it will take them all.
+        </td>
+        <td>Yes</td>
+        <td>0</td>
+    </tr>
+    <tr>
+        <td>RequiredDirection</td>
+        <td>
+            Direction that will be followed in the relationship select criteria. Possible options: Forward, Backward, Both.
+        </td>
+        <td>Yes</td>
+        <td>Both</td>
+    </tr>
+    <tr>
+        <td>SupportedSchemas</td>
+        <td>
+            List of schemas that should be used while building the query for gathering all related instances. Schema names should be separated 
+            by comma (","). In order to define excluded schemas "E:" prefix can be used.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_AllRelatedInstances_Example Example
+@code{.xml}
+<AllRelatedInstances GroupByClass="true" GroupByLabel="true" SkipRelatedLevel="0" AlwaysReturnsChildren="false" Priority="1000" />
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_CustomNode CustomNode Specification  
+
+Returns a custom-defined node.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_CustomNode_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>HideIfNoChildren</td>
+        <td>
+            Hides nodes if they don't have children. <b>Important:</b> this may affect performance significantly.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>Type</td>
+        <td>
+            Type of the node. Check agains this type in your @e ECExpression.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Label</td>
+        <td>
+            Label of the node. May be @ref PAGE_RulesDrivenPresentationManager_Localization "localized".
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Description</td>
+        <td>
+            Description of the node (used as a tooltip). May be @ref PAGE_RulesDrivenPresentationManager_Localization "localized".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ImageId</td>
+        <td>
+            ID of the image to use for this custom node.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_CustomNode_Example Example
+@code{.xml}
+<CustomNode Type="MyType" Label="MyLabel" Description="MyDescription" ImageId="MyImageId" Priority="1000" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_InstancesOfSpecificClasses InstancesOfSpecificClasses Specification  
+
+Returns all instance nodes of specified ECClasses.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_InstancesOfSpecificClasses_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>AlwaysReturnsChildren</td>
+        <td>
+            This identifies whether specification always returns nodes. Setting this flag to true will improve 
+            performance, because it would not require to execute the query in order to check whether the node has any children.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideNodesInHierarchy</td>
+        <td>
+            This option allows to hide nodes provided by this specification and show nodes of its children directly. 
+            This helps if you need to define related instance nodes of particular parent node that is not available in the hierarchy.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideIfNoChildren</td>
+        <td>
+            Hides nodes if they don't have children. <b>Important:</b> this may affect performance significantly.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>GroupByClass</td>
+        <td>
+            Groups instances by ECClass.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>GroupByLabel</td>
+        <td>
+            Groups instances by display label.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>ShowEmptyGroups</td>
+        <td>
+            If this option is set to true it will show class grouping nodes, defined in the ClassNames, even if they don't 
+            have instances (children). 
+            <b>Important:</b> this option can be used only if @e GroupByClass is set to true.
+            <b>Not supported yet!</b>
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>DoNotSort</td>
+        <td>
+            Set this flag to true to suppress default sorting of ECInstances returned by this specification. The order 
+            of persistence provider will be used.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>ArePolymorphic</td>
+        <td>
+            If this option is set to true, all classes specified by ClassNames will be marked as polymorphic in the query.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>ClassNames</td>
+        <td>
+            Names of ECClasses separated by comma. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>InstanceFilter</td>
+        <td>
+            Condition for filtering instances of defined classes. It gets translated to a WHERE clause in the ECSQL query.        
+            If InstanceFilter is not defined all ECInstances will be shown of defined classes (no filtering will be applied).
+            @see @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_InstanceFilters
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_InstancesOfSpecificClasses_Example Example
+@code{.xml}
+<InstancesOfSpecificClasses ClassNames="MySchemaName:ClassA,ClassB" GroupByClass="true" GroupByLabel="true" ShowEmptyGroups="false" InstanceFilter="this.PropertyName > 10" AlwaysReturnsChildren="false" Priority="1000" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_RelatedInstances RelatedInstances Specification  
+
+Returns related instance nodes of specified related ECClasses.
+
+@pre Can be used only if parent node is ECInstance node, if there is no imediate parent instance node it will go up until it finds one.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_RelatedInstances_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>AlwaysReturnsChildren</td>
+        <td>
+            This identifies whether specification always returns nodes. Setting this flag to true will improve 
+            performance, because it would not require to execute the query in order to check whether the node has any children.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideNodesInHierarchy</td>
+        <td>
+            This option allows to hide nodes provided by this specification and show nodes of its children directly. 
+            This helps if you need to define related instance nodes of particular parent node that is not available in the hierarchy.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideIfNoChildren</td>
+        <td>
+            Hides nodes if they don't have children. <b>Important:</b> this may affect performance significantly.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>GroupByClass</td>
+        <td>
+            Groups instances by ECClass.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>GroupByLabel</td>
+        <td>
+            Groups instances by display label.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>ShowEmptyGroups</td>
+        <td>
+            If this option is set to true it will show class grouping nodes, defined in the ClassNames, even if they don't 
+            have instances (children). 
+            <b>Important:</b> this option can be used only if @e GroupByClass is set to true.
+            <b>Not supported yet!</b>
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>DoNotSort</td>
+        <td>
+            Set this flag to true to suppress default sorting of ECInstances returned by this specification. The order 
+            of persistence provider will be used.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>RequiredDirection</td>
+        <td>
+            Direction that will be followed in the relationship select criteria. Possible options: Forward, Backward, Both.
+        </td>
+        <td>Yes</td>
+        <td>Both</td>
+    </tr>
+    <tr>
+        <td>RelationshipClassNames</td>
+        <td>
+            Names of ECRelationshipClasses separated by comma. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22".
+        </td>
+        <td>Yes (if RelatedClassNames is specificed)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>RelatedClassNames</td>
+        <td>
+            Names of related ECClasses separated by comma. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22".
+            Additionally, "E:" (exclude) and "PE:" (polymorphic exclude) prefixes are supported. Format is the same as above but all classes listed 
+            after the prefix are excluded from the results.
+        </td>
+        <td>Yes (if RelationshipClassNames is specified)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>SkipRelatedLevel</td>
+        <td>
+            Skips defined level of related items and shows next level related items. 
+
+            Lets say we have relationship hierarachy A->B->C, but for the user we want to show A->C. In this case we need to set SkipRelatedLevel to 1. 
+            The engine will query all direct relationships and all nested relationships and only nested ones will be shown. If there are more than 
+            1 direct relationships it will take them all.
+        </td>
+        <td>Yes</td>
+        <td>0</td>
+    </tr>
+    <tr>
+        <td>InstanceFilter</td>
+        <td>
+            Condition for filtering instances of defined classes. It gets translated to a WHERE clause in the ECSQL query.
+            If InstanceFilter is not defined all ECInstances will be shown of defined classes (no filtering will be applied).
+            @see @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_InstanceFilters
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_RelatedInstances_Example Example
+@code{.xml}
+<RelatedInstances RelationshipClassNames="MySchemaName:ClassA,ClassB" RelatedClassNames="MySchemaName:ClassA,ClassB" RequiredDirection="Both" GroupByClass="true" GroupByLabel="true" ShowEmptyGroups="false" SkipRelatedLevel="0" InstanceFilter="this.PropertyName > 10" AlwaysReturnsChildren="false" Priority="1000" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_SearchResultInstances SearchResultInstances Specification  
+
+Returns search results instance nodes. 
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_SearchResultInstances_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>AlwaysReturnsChildren</td>
+        <td>
+            This identifies whether specification always returns nodes. Setting this flag to true will improve 
+            performance, because it would not require to execute the query in order to check whether the node has any children.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideNodesInHierarchy</td>
+        <td>
+            This option allows to hide nodes provided by this specification and show nodes of its children directly. 
+            This helps if you need to define related instance nodes of particular parent node that is not available in the hierarchy.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>HideIfNoChildren</td>
+        <td>
+            Hides nodes if they don't have children. <b>Important:</b> this may affect performance significantly.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>GroupByClass</td>
+        <td>
+            Groups instances by ECClass.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>GroupByLabel</td>
+        <td>
+            Groups instances by display label.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>DoNotSort</td>
+        <td>
+            Set this flag to true to suppress default sorting of ECInstances returned by this specification. The order 
+            of persistence provider will be used.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+</table>
+
+The actual search queries are specified in one of the sub-specifications, specified as child elements for the specification XML node.
+
+@subsection SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_SearchResultInstances_StringQuery_Specification StringQuery Specification
+The @e StringQuery specification contains an ECSQL query which is used to query for instances.
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>SchemaName</td>
+        <td>
+            The schema name of ECClass whose ECInstances the query returns.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ClassName</td>
+        <td>
+            The ECClass name whose ECInstances the query returns.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Content</td>
+        <td>
+            Specifies the search ECSQL query.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@subsection SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_SearchResultInstances_PropertyValueQuery_Specification PropertyValueQuery Specification
+The @e ParentPropertyValue specification specifies the name of the parent instance property whose value is the ECSQL used to query for instances.
+@pre Can be used only if parent node is ECInstance node, if there is no imediate parent instance node it will go up until it finds one.
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>SchemaName</td>
+        <td>
+            The schema name of ECClass whose ECInstances the query returns.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ClassName</td>
+        <td>
+            The ECClass name whose ECInstances the query returns.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ParentPropertyName</td>
+        <td>
+            Specifies the name of the parent instance property whose value contains the ECSQL query.
+            @warning The property whose name is specified must be of string type
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@note If more than one search query is specified, the results get merged.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications_SearchResultInstances_Example Example
+@code{.xml}
+<SearchResultInstances GroupByClass="true" GroupByLabel="true" Priority="1000">
+    <StringQuery SchemaName="TestSchema" ClassName="TestClassA">SELECT * FROM [TestSchema].[TestClassA] c WHERE c.Length < 10</StringQuery>
+    <PropertyValueQuery SchemaName="TestSchema" ClassName="TestClassB" ParentPropertyName="Query" />
+</SearchResultInstances>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_NestedRules Nested Rules
+
+Nested rules are defined as child elements of rule specification(s). They are evaluated and executed only when user expands nodes 
+provided by parent specification. This allows to have isolated/non-global rules at specific level of the hierarchy.
+
+An example of a nested rule:
+@code{.xml}
+<PresentationRuleSet>
+    <RootNodeRule>
+        <InstancesOfSpecificClasses SchemaName="Bentley_DMS" ClassNames="DMSFolder" GroupByClass="true">
+            <!--Nested rule-->
+            <ChildNodeRule Condition="ParentNode.IsInstanceNode">
+                <RelatedInstances RelatedSchemaName="Bentley_DMS" RelatedClassNames="DMSDocument" GroupByClass="true" />
+            </ChildNodeRule>
+        </InstancesOfSpecificClasses>  
+    </RootNodeRule>
+</PresentationRuleSet>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_RelatedInstance RelatedInstance Sub-Specification
+
+This sub-specification allows joining the primary node instance with any number of related instances and creating hierarchies based
+on a mix of those related instances. The related instance property values can be accessed from @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules
+"customization rules" and also used in @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_InstanceFilters "instance filters".
+
+@section PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_RelatedInstance_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>RelationshipName</td>
+        <td>
+            Name of the relationship to use for joining the related instance
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>RelationshipDirection</td>
+        <td>
+            Direction of the relationship. Allowed values: @e Forward or @e Backward.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ClassName</td>
+        <td>
+            Name of the related instance class.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Alias</td>
+        <td>
+            The alias to give for the joined related instance. Alias is used to reference the related instance in @e InstanceFilter and 
+            customization rules. 
+            <b>The value must be unique per-specification!</b>
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@section PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_RelatedInstance_Example Example
+@code{.xml}
+<PresentationRuleSet>
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")' Label='modeledElement.UserLabel' />
+    
+    <GroupingRule Condition='ParentNode.IsNull' SchemaName='BisCore' ClassName='Element'>
+        <PropertyGroup PropertyName='CodeValue' CreateGroupForSingleItem='true' />
+    </GroupingRule>
+
+    <RootNodeRule>
+        <InstancesOfSpecificClasses ClassNames='BisCore:GeometricModel' ArePolymorphic='true' GroupByClass='false' GroupByLabel='false' InstanceFilter='modeledElement.CodeNamespace = 1'>
+            <RelatedInstance RelationshipName="BisCore:ModelModelsElement" RelationshipDirection="Forward" ClassName="BisCore:Element" Alias="modeledElement" />
+        </InstancesOfSpecificClasses>
+    </RootNodeRule>
+</PresentationRuleSet>
+@endcode
+
+In the above example @e BisCore:GeometricModel instances are joined with @e BisCore:Element instances to create the hierarchy. This allows:
+- Related @e BisCore:Element properties to be accessed in @e InstanceFilter using @e modeledElement alias.
+- The @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LabelOverride rule to use @e modeledElement 
+alias to access properties of the joined related instance. 
+- The @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule to be applied because it's 
+grouping @e BisCore:Element which is joined to the primary @e BisCore:GeometricModel instances.
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_InstanceFilters ECExpressions Available in InstanceFilter  
+
+@e ECExpressions that are specified in InstanceFilter specification properties are converted to ECSQL WHERE clause, so they have some limitations - ony a subset
+of all the @e ECExpression symbols are available. The below table lists all of them:
+
+<table>
+    <caption>Root @e ECExpression Context</caption>
+    <tr><th>Symbol</th>     <th>Value</th></tr>
+    <tr><td>parent</td>     <td>Returns the parent @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "ECInstance expression context".</td></tr>
+    <tr><td>this</td>       <td>Returns the @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "expression context" of the ECInstance that's currently being handled.</td></tr>
+</table>
+
+Additionally, @ref SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings "User Settings" and 
+@ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb "ECDb" symbols are available as well.
+*/
+
+// =======================================================================================
+// Content Rules
+// =======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules Content Rules  
+
+Content rules define the content that's displayed in content controls (Table view, Property Pane) and the content that's selected in
+@ref PAGE_UnifiedSelection "unified selection" controls. 
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications Specifications
+Rule specifications define what content the rule results in. There are 3 types of content rule specifications:
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_SelectedNodeInstances
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentRelatedInstances
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentInstancesOfSpecificClasses
+
+Also, each type of content specification supports the following sub-specifications:
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_RelatedProperties
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_HiddenProperties
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_DisplayedProperties
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_CalculatedProperties
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_PropertyEditors
+
+Some of the specifications support filtering which is described in 
+@subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_InstanceFilters "this page".
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specification Specification
+<table>
+    <caption>ContentRule XML Element Definition</caption>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            This boolean flag identifies whether we should ignore this rule if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_ECExpressions ECExpression Symbols Available in Content Rules
+<table>
+    <caption>Root @e ECExpression Context</caption>
+    <tr><th>Symbol</th>     <th>Value</th></tr>
+    <tr><td>ContentDisplayType</td>     <td>Preferred display type of the content. It identifies what control will be used to show the content.</td></tr>
+    <tr><td>SelectionProviderName</td>  <td>Name of the selection handler that last changed the selection.</td></tr>
+    <tr><td>IsSubSelection</td>         <td>Indicates whether the last selection event changed the main selection or sub selection.</td></tr>
+    <tr><td>SelectedNode</td>           <td>Returns the selected @ref SECTION_RulesDrivenPresentationManager_ECExpressions_NavNode "NavNode expression context".</td></tr>
+</table>
+
+Additionally, @ref SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings "User Settings" and 
+@ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb "ECDb" symbols are available.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Example Example
+An example of RootNodeRule XML:
+@code{.xml}
+<PresentationRuleSet>
+    <ContentRule>
+        <SelectedNodeInstances>
+            <RelatedProperties RelationshipSchemaName="DgnContentRelationshipSchema" RelationshipClassNames="OnSameElement" RequiredDirection="Forward" />
+        </SelectedNodeInstances>
+    </ContentRule>
+</PresentationRuleSet>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_SelectedNodeInstances SelectedNodeInstances Specification  
+
+Returns ECInstance(s) of selected node.
+
+@note No data is returned for CustomNode.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_SelectedNodeInstances_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            Identifies whether we should ignore this specification if there is already existing specification with higher priority 
+            that already provides content.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>AcceptableSchemaName</td>
+        <td>
+            Allows to filter selected nodes by specified acceptable schema name. All nodes are accepted if this option is not specified.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>AcceptableClassNames</td>
+        <td>
+            Allows to filter selected nodes by specified acceptable class name. All nodes are accepted if this option is not specified.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>AcceptablePolymorphically</td>
+        <td>
+            Should AcceptableClassNames property be checked polymorphically. If true, all derived classes are accepted as well.
+            @note Only makes sense when AcceptableClassNames property is specified.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_SelectedNodeInstances_Example Example
+@code{.xml}
+<SelectedNodeInstances Priority="2000" AcceptableClassNames="SchemaName:ClassName1,ClassName2" AcceptablePolymorphically="True" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentRelatedInstances ContentRelatedInstances Specification  
+ 
+Returns specified related ECInstance(s) for selected node.
+
+@pre This specification should be used only if selected node is ECInstance node. If selected node is CustomNode, it will search up for 
+the first parent ECInstance node. 
+
+@note Use ContentRule @e Condition to apply specification on correct selected node.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentRelatedInstances_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>RelationshipClassNames</td>
+        <td>
+            Names of ECRelationshipClasses separated by comma. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
+        </td>
+        <td>Yes (if RelatedClassNames is specified)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>RelatedClassNames</td>
+        <td>
+            Names of related ECClasses separated by comma. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
+        </td>
+        <td>Yes (if RelationshipClassNames is specified)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>RequiredDirection</td>
+        <td>
+            Direction that will be folowed in the relationship select criteria. Possible options: Forward, Backward, Both.
+        </td>
+        <td>Yes</td>
+        <td>Both</td>
+    </tr>
+    <tr>
+        <td>SkipRelatedLevel</td>
+        <td>
+            Skips defined level of related items and shows next level related items.
+            @warning Can't be used together with @e IsRecursive
+        </td>
+        <td>Yes</td>
+        <td>0</td>
+    </tr>
+    <tr>
+        <td>IsRecursive</td>
+        <td>
+            Walks the specified relationships recursively to find related instances.
+            @warning Can't be used together with @e SkipRelatedLevel
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>InstanceFilter</td>
+        <td>
+            Condition for filtering instances of defined related classes. It gets translated to a WHERE clause in the ECSQL query.        
+            If InstanceFilter is not defined all ECInstances will be shown of defined related classes (no filtering will be applied).
+            @see @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_InstanceFilters
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentRelatedInstances_Example Example
+@code{.xml}
+<ContentRelatedInstances RelationshipClassNames="MySchemaName:ClassA,ClassB" RelatedClassNames="MySchemaName:ClassA,ClassB" RequiredDirection="Both" SkipRelatedLevel="0" InstanceFilter="this.PropertyName = 10" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentInstancesOfSpecificClasses ContentInstancesOfSpecificClasses Specification  
+
+Returns ECInstance(s) of specified classes.
+
+@note This specification doesn't rely on selected node. It always returns instances for any selected node, so prefiltering should be done in ContentRule @e Condition.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentInstancesOfSpecificClasses_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>ClassNames</td>
+        <td>
+            Comma separated names of ECClasses whose ECInstances should be selected. 
+            Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ArePolymorphic</td>
+        <td>
+            If this option is set to true, all classes specified by ClassNames will be marked as polymorphic in the query.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>InstanceFilter</td>
+        <td>
+            Condition for filtering instances of defined classes. It gets translated to a WHERE clause in the ECSQL query.        
+            If InstanceFilter is not defined all ECInstances will be shown of defined classes (no filtering will be applied).
+            @see @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_InstanceFilters
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_ContentInstancesOfSpecificClasses_Example Example
+@code{.xml}
+<ContentInstancesOfSpecificClasses Priority="2000" ClassNames="MySchemaName:ClassA,ClassB" InstanceFilter="this.PropertyName = 10" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_RelatedProperties RelatedProperties Specification  
+
+This is a sub-specification that allows including additional related instance properties next to primary instance properties. They are defined
+as child elements to @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications "content specifications" or 
+@ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier "content modifier".
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_RelatedProperties_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>RelationshipClassNames</td>
+        <td>
+            Names of ECRelationshipClasses separated by comma.
+        </td>
+        <td>Yes (if RelatedClassNames is specified)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>RelatedClassNames</td>
+        <td>
+            Names of related ECClasses separated by comma.
+        </td>
+        <td>Yes (if RelationshipClassNames is specified)</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>RequiredDirection</td>
+        <td>
+            Direction that will be folowed in the relationship select criteria. Possible options: Forward, Backward, Both.
+        </td>
+        <td>Yes</td>
+        <td>Both</td>
+    </tr>
+    <tr>
+        <td>PropertyNames</td>
+        <td>
+            Names of RelatedClass properties that should be selected and shown for in the content. If this option is not 
+            specified all properties will be shown. "_none_" keyword can be used to suppress all properties.
+            @note The "_none_" keyword is usually used together with nested RelatedProperties.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+This specification can be nested to select properties of ECInstances related through multiple relationships.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_RelatedProperties_Example Example
+@code{.xml}
+<SelectedNodeInstances>
+    <RelatedProperties RelationshipClassNames="DgnContentRelationshipSchema:OnSameElement" RequiredDirection="Forward" />
+</SelectedNodeInstances>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_HiddenProperties HiddenProperties Specification  
+
+This is a sub-specification that allows hiding specified ECInstance properties. They are defined as child elements to 
+@ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications "content specifications" or 
+@ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier "content modifier".
+
+Multiple HiddenPropertiesSpecifications or @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_DisplayedProperties "DisplayedPropertiesSpecifications"
+can be applied for the same properties - in this case specification with highest priority is applied.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_HiddenProperties_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>PropertyNames</td>
+        <td>
+            Comma separated list of ECProperty names which should not be included in content.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+</table>
+
+@note If the class specified in the HiddenProperties sub-specification is different from what the content specification returns, it has no effect.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_HiddenProperties_Example Example
+@code{.xml}
+<SelectedNodeInstances>
+    <HiddenProperties PropertyNames="Label,LastModified" Priority="1000"/>
+</SelectedNodeInstances>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_DisplayedProperties DisplayedProperties Specification  
+
+This is a sub-specification that allows displaying only specified ECInstance properties. They are defined as child elements to 
+@ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications "content specifications" or 
+@ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier "content modifier".
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_DisplayedProperties_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>PropertyNames</td>
+        <td>
+            Comma separated list of ECProperty names which should be included in content.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Controls priority of the specification.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+</table>
+
+@note If the class specified in the DisplayedProperties sub-specification is different from what the content specification returns, it has no effect.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_DisplayedProperties_Example Example
+@code{.xml}
+<SelectedNodeInstances>
+    <DisplayedProperties PropertyNames="Label,LastModified" Priority="1000" />
+</SelectedNodeInstances>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_CalculatedProperties CalculatedProperties Specification  
+
+This is a sub-specification that allows including additional calculated properties into the content. They are defined as 
+child elements to @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications "content specifications" or 
+@ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier "content modifier".
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_CalculatedProperties_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Label</td>
+        <td>
+            Label of the property. May be @ref PAGE_RulesDrivenPresentationManager_Localization "localized".
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Priority of the property. Determines the position of this property in content controls.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+</table>
+
+The content of the XML element defines the ECExpression used to calculate the value. The following symbol sets are available:
+- @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance
+- @ref SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings
+- @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_CalculatedProperties_Example Example
+@code{.xml}
+<SelectedNodeInstances>
+    <CalculatedProperties>
+        <Property Label="@LocalizationNamespace:StringId1@" Priority="5000">this.GetClass().DisplayLabel</Property>
+        <Property Label="@LocalizationNamespace:StringId2@">this.Weight * this.Count</Property>
+    </CalculatedProperties>
+</SelectedNodeInstances>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_PropertyEditors PropertyEditors Specification  
+
+This is a sub-specification that allows specifying custom editors for properties. They are defined as 
+child elements to @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications "content specifications" or 
+@ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier "content modifier".
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_PropertyEditors_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>PropertyName</td>
+        <td>
+            Name of the property for which custom editor should be used.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>EditorName</td>
+        <td>
+            Name of the custom editor.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_PropertyEditors_Example Example
+@code{.xml}
+<SelectedNodeInstances>
+    <PropertyEditors>
+        <Editor PropertyName="StringProperty" EditorName="MyCustomStringEditor" />
+        <Editor PropertyName="IntProperty" EditorName="MyCustomStringEditor" />
+    </PropertyEditors>
+</SelectedNodeInstances>
+@endcode
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_InstanceFilters ECExpressions Available in InstanceFilter    
+
+@e ECExpressions that are specified in InstanceFilter specification properties are converted to ECSQL WHERE clause, so they have some limitations - ony a subset
+of all the @e ECExpression symbols are available. The below table lists all of them:
+
+<table>
+    <caption>Root @e ECExpression Context</caption>
+    <tr><th>Symbol</th>     <th>Value</th></tr>
+    <tr><td>this</td>       <td>Returns the @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "expression context" of the related ECInstance that's currently being handled.</td></tr>
+</table>
+
+Additionally, @ref SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings "User Settings" and 
+@ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb "ECDb" symbols are available as well.
+*/
+
+// =======================================================================================
+// Customization Rules
+// =======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules Customization Rules
+
+Customization rules allow customizing each node or content item separately. Available rules:
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_SortingRule
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ImageIdOverride
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_StyleOverride
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LabelOverride
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LocalizationResourceKeyDefinition
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_CheckBoxRule
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier
+
+Most of the rules have a @e Condition property which uses @subpage SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions
+"ECExpressions" for conditional rule filtering.
+
+<b>Nested customization rules</b>
+
+All customization rules except the @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LocalizationResourceKeyDefinition "LocalizationResourceKeyDefinition"
+can also be nested in @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules "navigation rules". This means that they're applied only for nodes 
+created by those rules.
+
+<b>Customization rule priorities</b>
+
+Customization rules have a @e Priority attribute which defines the order in which they're applied. If priorities match, rules engine looks at the nesting level - the 
+deeper the rule is nested, the higher is its priority. If the nesting levels also match, the rule defined first wins.
+
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule Grouping Rule
+
+Grouping rule is an advanced way to configure node grouping. It allows to define these types of groupings:
+- Group by base class.
+- Group by any property of the instance by common value as well as grouping by range of values.
+- Group multiple instances with the same label in to one ECInstance node. This can be used in cases when these instances represent 
+the same object for the user.
+
+GroupingRule works in conjunction with other grouping options available 
+in @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_NavigationRules_Specifications "navigation specifications":
+@e GroupByClass and @e GroupByLabel. The grouping hierarchy looks like this:
+- Base ECClass grouping node (specified by @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_ClassGroup "base class grouping specification")
+    - ECClass grouping node (specified by @e GroupByClass property)
+      - ECProperty grouping node 1 (specified by @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup "1st property grouping specification")
+          - ECProperty grouping node 2 (specified by @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup "2nd property grouping specification")
+              - ECProperty grouping node n (specified by @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup "n-th property grouping specification")
+                  - Display label grouping node (specified by GroupByLabel property)
+                    - ECInstance nodes (may be grouped under a single node by @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_SameLabelInstanceGroup "same label instance group specification")
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            Indicates whether this rule should be ignored if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>SchemaName</td>
+        <td>
+            Schema name of the class which should be grouped using this grouping rule.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ClassName</td>
+        <td>
+            Class name which should be grouped using this grouping rule.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+Grouping rule has 3 types of grouping specifications which are specified as child elements for the rule in XML:
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_ClassGroup
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup
+- @subpage PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_SameLabelInstanceGroup
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_Example Example
+@code{.xml}
+<GroupingRule Condition='ParentNode.IsNull OR ParentNode.IsSearchNode OR (ParentNode.IsInstanceNode AND (ParentNode.ClassName = "GeneralModelProperties" OR ParentNode.ClassName = "AttachmentModelProperties"))'
+              SchemaName='BaseElementSchema' ClassName='MstnGraphHeader'>
+    <PropertyGroup PropertyName='Level' ImageId='"ECLiteralImage://Level"' CreateGroupForSingleItem='true' />
+</GroupingRule>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_ClassGroup ClassGroup Specification  
+
+This specification allows grouping ECInstance nodes by their base class.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_ClassGroup_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>SchemaName</td>
+        <td>
+            Schema name of the base ECClass.
+        </td>
+        <td>Yes</td>
+        <td>Rule's schema name</td>
+    </tr>
+    <tr>
+        <td>BaseClassName</td>
+        <td>
+            Base ECClass name.
+        </td>
+        <td>Yes</td>
+        <td>Rule's class name</td>
+    </tr>
+    <tr>
+        <td>CreateGroupForSingleItem</td>
+        <td>
+            Should the grouping node be created if there is only one item in that group.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_ClassGroup_Example Example
+@code{.xml}
+<GroupingRule SchemaName='Dgn' ClassName='PhysicalElement'>
+    <ClassGroup SchemaName='Dgn' BaseClassName='Element' />
+</GroupingRule>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup PropertyGroup Specification  
+
+This specification allows grouping by any property of the instance by common value as well as grouping by range of values.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup_Specification Specification
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>PropertyName</td>
+        <td>
+            Name of the ECProperty which is used for grouping.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ImageId</td>
+        <td>
+            ImageId to use for the grouping node.
+        </td>
+        <td>Yes</td>
+        <td>ECProperty configured ImageId</td>
+    </tr>
+    <tr>
+        <td>CreateGroupForSingleItem</td>
+        <td>
+            Should the grouping node be created if there is only one item in that group.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>CreateGroupForUnspecifiedValues</td>
+        <td>
+            Should a separate grouping node be created for nodes whose grouping value is not set.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>GroupingValue</td>
+        <td>
+            Should the instances be grouped on display label (default) or the grouping property value. Grouping by
+            property value is necessary if the display label is overridden to display grouped instances count.
+            Possible options: DisplayLabel or PropertyValue.
+        </td>
+        <td>Yes</td>
+        <td>DisplayLabel</td>
+    </tr>
+    <tr>
+        <td>SortingValue</td>
+        <td>
+            Should the nodes be sorted by display label (default) or the grouping property value. In most cases the result is the same,
+            unless @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LabelOverride rule is used to change the display label.
+            Possible options: DisplayLabel or PropertyValue.
+            @note Sorting by property value only makes sense when instances are grouped by property value as well. So grouping by label and sorting by property
+            value is not possible.
+        </td>
+        <td>Yes</td>
+        <td>DisplayLabel</td>
+    </tr>
+</table>
+
+To create value range grouping, @e Range child XML elements should be specified for each range 
+(see @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup_RangeGroupingExample "example"). 
+The @e Range element specification:
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>FromValue</td>
+        <td>
+            Value that defines the range start (inclusive)
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ToValue</td>
+        <td>
+            Value that defines the range en (inclusive)
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Label</td>
+        <td>
+            Grouping node label. May be @ref PAGE_RulesDrivenPresentationManager_Localization "localized".
+        </td>
+        <td>Yes</td>
+        <td>"FromValue - ToValue"</td>
+    </tr>
+    <tr>
+        <td>ImageId</td>
+        <td>
+            ImageId to use for the grouping node.
+        </td>
+        <td>Yes</td>
+        <td>ImageId specified in the PropertyGroup specification</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup_ValueGroupingExample Value Grouping Example
+@code{.xml}
+<GroupingRule SchemaName='Dgn' ClassName='GeometricElement3d'>
+    <PropertyGroup PropertyName='CategoryId' ImageId='"ECLiteralImage://Category"' CreateGroupForSingleItem='true' />
+</GroupingRule>
+@endcode
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_PropertyGroup_RangeGroupingExample Range Grouping Example
+@code{.xml}
+<GroupingRule SchemaName='Dgn' ClassName='GeometricElement3d'>
+    <PropertyGroup PropertyName='Pitch' ImageId='"ECLiteralImage://Pitch"'>
+        <Range FromValue='0' ToValue='0.5' />
+        <Range FromValue='0.5' ToValue='1' />
+    </PropertyGroup>
+</GroupingRule>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_SameLabelInstanceGroup SameLabelInstanceGroup Specification  
+
+This specification allows grouping multiple instances with the same label into one ECInstance node. This can be 
+used in cases when these instances represent the same object for the user.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_SameLabelInstanceGroup_Specification Specification
+This specification doesn't have any properties.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule_SameLabelInstanceGroup_Example Example
+@code{.xml}
+<GroupingRule SchemaName='Dgn' ClassName='Element'>
+    <SameLabelInstanceGroup />
+</GroupingRule>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_SortingRule Sorting Rule
+
+SortingRule is a rule that allows to configure sorting for certain ECInstance nodes in the hierarchy and/or content. 
+
+It is possible to configure different sorting for different types of ECInstances. Multiple sorting rules may be applied for 
+the same instances - in this case the instances are first sorted by the highest priority rule and then the lower priority ones.
+
+@note This rule is not meant to be used to sort grouping nodes, custom nodes or other non ECInstance type of nodes. 
+Class nodes or class grouping nodes sorting can be customized, though, by setting ClassPriority CustomAttribute on ECClasses.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_SortingRule_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            Indicates whether this rule should be ignored if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>SchemaName</td>
+        <td>
+            Schema name of the ECInstance that needs to be sorted using this rule options. If it is not specified rule will be applied to all ECInstances.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>ClassName</td>
+        <td>
+            Class name of the ECInstance that needs to be sorted using this rule options. If it is not specified rule will be applied to all ECInstances.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>IsPolymorphic</td>
+        <td>
+            Identifies whether ECClass defined in this rule should be accepted polymorphically.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>PropertyName</td>
+        <td>
+            Property name that should be used for sorting.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>SortAscending</td>
+        <td>
+            Will sort in ascending order if set to true, otherwise descending.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>DoNotSort</td>
+        <td>
+            If this option is set, then it will not use any sorting and items will be listed as PersistenceProvider returns them.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_SortingRule_Example Example
+@code{.xml}
+<SortingRule SchemaName="SchemaNameOfECInstance" ClassName="ClassNameOfECInstance" PropertyName="SortByPropertyName" SortAscending="true" />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ImageIdOverride ImageId Override
+
+ImageIdOverride is a rule that allows to override default icon and dynamically define an icon for a particular node based on the context.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ImageIdOverride_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            Indicates whether this rule should be ignored if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>ImageId</td>
+        <td>
+            Defines an ImageId that should be used for nodes that met the @e Condition. This is an @e ECExpression, so @e ImageId can be defined/formated dynamically based on the context - for example ECInstance property value.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ImageIdOverride_Example Example
+@code{.xml}
+<ImageIdOverride Condition='ThisNode.IsInstanceNode ANDALSO ThisNode.ClassName="MstnGraphHeader"' ImageId='"ECLiteralImage://Element_" &amp; this.ElementType' />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier Content Modifier
+
+ContentModifier is a rule that allows supplementing content rules with additional specifications for certain ECClass.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier_Specifications Specifications
+Content modifier supports the following specifications:
+- @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_RelatedProperties
+- @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_HiddenProperties
+- @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_DisplayedProperties
+- @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_CalculatedProperties
+- @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_ContentRules_Specifications_PropertyEditors
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>ClassName</td>
+        <td>
+            Class name which content rules should be supplemented.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>SchemaName</td>
+        <td>
+            Schema name of the class which content rules should be supplemented.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ContentModifier_Example Example
+@code{.xml}
+<ContentModifier ClassName="Element" SchemaName="Dgn">
+    <HiddenProperties PropertyNames="Label,Description" /> 
+</ContentModifier>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_StyleOverride Style Override
+
+StyleOverride is a rule that allows to override default node style and dynamically define a foreground/background colors and a font style 
+for a particular node based on the context.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_StyleOverride_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            Indicates whether this rule should be ignored if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>ForeColor</td>
+        <td>
+            Defines the foregroung color that should be used for nodes that meet the @e Condition.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>BackColor</td>
+        <td>
+            Defines the background color that should be used for nodes that meet the @e Condition.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>FontStyle</td>
+        <td>
+            Defines the font style that should be used for nodes that meet the @e Condition.
+        </td>
+        <td>Yes</td>
+        <td>Regular</td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_StyleOverride_Example Example
+@code{.xml}
+<StyleOverride Condition='ThisNode.IsInstanceNode ANDALSO ThisNode.ClassName="GeneralModelProperties"'
+               ForeColor='IIf(this.IsActive, "DarkCyan", "Black")'
+               BackColor='IIf(this.IsActive, "", "Grey")'
+               FontStyle='IIf(this.IsActive, "Bold, Italic", "")' />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LabelOverride Label Override
+
+LabelOverride is a rule that allows to override default label and description (tooltip) and dynamically define them 
+for a particular node based on the context.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LabelOverride_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            Indicates whether this rule should be ignored if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>Label</td>
+        <td>
+            Defines the label that should be used for nodes that meet the @e Condition. This is an @e ECExpression, so 
+            label can be defined/formatted dynamically based on the context - for example ECInstance property value.
+            May be @ref PAGE_RulesDrivenPresentationManager_Localization "localized".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Description</td>
+        <td>
+            Defines the decription (tooltip) that should be used for nodes that meet the @e Condition. This is an @e ECExpression, so 
+            description can be defined/formatted dynamically based on the context - for example ECInstance property value.
+            May be @ref PAGE_RulesDrivenPresentationManager_Localization "localized".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LabelOverride_Example Example
+@code{.xml}
+<LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO ThisNode.ClassName="DimensionStyle"' Label='this.General.Name' Description='this.General.Description' />
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LocalizationResourceKeyDefinition Localization Resource Key Definition
+
+Localizable strings should contain '@' at the begining and at the end (see @ref PAGE_RulesDrivenPresentationManager_Localization). 
+@e LocalizationResourceKeyDefinition rule allows to append or override the resource key. This is useful when we want to avoid 
+complex rules. This rule also allows to specify default value and priority.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LocalizationResourceKeyDefinition_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Id</td>
+        <td>
+            Id of the resource to localize.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Key</td>
+        <td>
+            New key of the resource.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>DefaultValue</td>
+        <td>
+            Default value which is used if the resource is not found.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LocalizationResourceKeyDefinition_Example Example
+@code{.xml}
+<PresentationRuleSet>
+   <LocalizationResourceKeyDefinition Id="MyLabel" Key="@GistStrings:LocalizedLabelId@" DefaultValue="Raster Attachment" Priority="1000" />
+   <RootNodeRule>
+      <CustomNode Type="MyType" Label="@MyLabel@" Description="@GistStrings:LocalizedDescriptionId@" ImageId="MyImageId" Priority="1000" />
+   </RootNodeRule> 
+</PresentationRuleSet>
+@endcode
+*/
+
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_CheckBoxRule Check Box Rule
+
+CheckBoxRule is a rule that allows to configure check boxes for certain nodes. Is also allows binding check box state with boolean 
+properties by setting @e PropertyName option. If @e PropertyName is not set, then @e DefaultValue is used for default check box state. 
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_CheckBoxRule_Specification Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Priority</td>
+        <td>
+            Defines the order in which presentation rules will be evaluated and executed.
+        </td>
+        <td>Yes</td>
+        <td>1000</td>
+    </tr>
+    <tr>
+        <td>Condition</td>
+        <td>
+            Defines a condition for the rule, which needs to be met in order to execute it. Condition is an @e ECExpression, which can use
+            @ref SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions "a limited set of symbols".
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>OnlyIfNotHandled</td>
+        <td>
+            Indicates whether this rule should be ignored if there is already existing rule with a higher priority.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>PropertyName</td>
+        <td>
+            Bool type ECProperty name which will is bound with the check box state.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>UseInversedPropertyName</td>
+        <td>
+            Identifies whether the property value should be inversed for the check box state.
+        </td>
+        <td>Yes</td>
+        <td>False</td>
+    </tr>
+    <tr>
+        <td>IsEnabled</td>
+        <td>
+            Indicates whether check box is enabled or disabled.
+            @note Only makes sense when not bound to an ECProperty.
+        </td>
+        <td>Yes</td>
+        <td>True</td>
+    </tr>
+    <tr>
+        <td>DefaultValue</td>
+        <td>
+            Default value to use for the check box state.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_CheckBoxRule_Example Example
+@code{.xml}
+<CheckBoxRule Condition='ThisNode.IsInstanceNode ANDALSO ThisNode.ClassName="LevelTableProperties"' PropertyName="Display" UseInversedPropertyValue="false" DefaultValue="false" IsEnabled="2 = 3"/>
+@endcode
+*/
+
+/** @page SECTION_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_ECExpressions ECExpression Symbols Available in Customization Rules
+<table>
+    <caption>Root @e ECExpression Context</caption>
+    <tr><th>Symbol</th>     <th>Value</th></tr>
+    <tr>
+        <td>ParentNode</td>
+        <td>
+            Returns the parent @ref SECTION_RulesDrivenPresentationManager_ECExpressions_NavNode "NavNode expression context".
+        </td>
+    </tr>
+    <tr>
+        <td>ThisNode</td>
+        <td>
+            Returns @ref SECTION_RulesDrivenPresentationManager_ECExpressions_NavNode "NavNode expression context" of the 
+            ECInstance that's currently being handled.
+            <b>Not available in @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule "grouping rules" 
+            and @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_SortingRule "sorting rules".</b>
+        </td>
+    </tr>
+    <tr>
+        <td>this</td>
+        <td>
+            Returns @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "ECInstance expression context" of the 
+            ECInstance that's currently being handled.
+            <b>Not available in @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_GroupingRule "grouping rules" 
+            and @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_SortingRule "sorting rules".</b>
+        </td>
+    </tr>
+</table>
+
+Additionally, @ref SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings "User Settings" and 
+@ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb "ECDb" symbols are available.
+*/
+
+// =======================================================================================
+// User Settings
+// =======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_ECPresentationRules_UserSettings User Settings
+
+Presentation rules support user settings that allow having additional customization of the hierarchy and content based on 
+user preferences. There are @ref SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings "special ECExpression symbols" that 
+can be used to access user settings by their ID, so PresentationRule @e Condition can check for a value and change the behavior. 
+It allows to show/hide some nodes in the hierarchy, change the grouping, etc.
+
+User setting values can be set using the @ref BentleyApi::ECPresentation::UserSettings "user settings API". Also, default user 
+setting values can be specified in the rule set (see below).
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_UserSettings_Specification UserSettings Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>CategoryLabel</td>
+        <td>
+            Label of the category under which all the settings are grouped. If it is not defined, the settings are not grouped.
+            @note Currently this feature is not supported.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+The @e UserSettings XML element can have 2 kinds of child elements: nested @e UserSettings and @e UserSettingsItem described below.
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_UserSettingsItem_Specification UserSettingsItem Specification
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Optional</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>Id</td>
+        <td>
+            Id of the setting that is used to persist the value. The same id can be used in the conditions to get the setting value.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Label</td>
+        <td>
+            Label of the setting item that is shown in the UI.
+            @note Currently this feature is not supported.
+        </td>
+        <td>No</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Options</td>
+        <td>
+            Defines what type of setting value it is. Possible options:
+                - @e YesNo - bool value, that uses Yes/No strings in the UI.
+                - @e ShowHide - bool value, that uses Show/Hide strings in the UI.
+                - @e StringValue - any String value.
+                - @e IntValue - any integer value.
+        </td>
+        <td>Yes</td>
+        <td>bool value with True/False in the UI</td>
+    </tr>
+    <tr>
+        <td>DefaultValue</td>
+        <td>
+            Default value of the setting. This is used when application runs first time and there is no persisted value available.
+        </td>
+        <td>Yes</td>
+        <td></td>
+    </tr>
+</table>
+
+@section SECTION_RulesDrivenPresentationManager_ECPresentationRules_UserSettings_Example Example
+@code{.xml}
+<UserSettings CategoryLabel="Display">
+    <UserSettingsItem Id="DisplayModels"              Label="Models"   Options="ShowHide" DefaultValue="true" />
+    <UserSettings CategoryLabel="In a Model">
+        <UserSettingsItem Id="DisplayInModelElements" Label="Elements" Options="ShowHide" DefaultValue="true" />
+    </UserSettings>
+</UserSettings>
+@endcode
+*/
+
+//=======================================================================================
+// General ECExpressions
+//=======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_ECExpressions ECExpressions
+
+@section SECTION_RulesDrivenPresentationManager_ECExpressions_Contexts Contexts
+
+@subsection SECTION_RulesDrivenPresentationManager_ECExpressions_NavNode NavNode ECExpression Context
+<table>
+    <tr><th>Symbol</th>                         <th>Value</th></tr>
+    <tr><td>IsNull</td>                         <td>Is this context null (boolean).</td></tr>
+    <tr><td>Type</td>                           <td>Type of the node (string).</td></tr>
+    <tr><td>Label</td>                          <td>Node label (string).</td></tr>
+    <tr><td>Description</td>                    <td>Node description (string).</td></tr>
+    <tr><td>ClassName</td>                      <td>ECClass name if it's an EC-related node.</td></tr>
+    <tr><td>SchemaName</td>                     <td>ECSchema name if it's an EC-related node.</td></tr>
+    <tr><td>SchemaMajorVersion</td>             <td>Major schema version if it's an EC-related node.</td></tr>
+    <tr><td>SchemaMinorVersion</td>             <td>Minor schema version if it's an EC-related node.</td></tr>
+    <tr><td>InstanceId</td>                     <td>ECInstanceId if it's an ECInstance node.</td></tr>
+    <tr><td>IsInstanceNode</td>                 <td>Is this an ECInstance node.</td></tr>
+    <tr><td>IsClassNode</td>                    <td>Is this an ECClass node.</td></tr>
+    <tr><td>IsRelationshipClassNode</td>        <td>Is this an ECRelationship node.</td></tr>
+    <tr><td>IsSchemaNode</td>                   <td>Is this an ECSchema node.</td></tr>
+    <tr><td>IsSearchNode</td>                   <td>Is this a search node.</td></tr>
+    <tr><td>IsClassGroupingNode</td>            <td>Is this an ECClass grouping node.</td></tr>
+    <tr><td>IsPropertyGroupingNode</td>         <td>Is this an ECProperty grouping node.</td></tr>
+    <tr><td>GroupedInstancesCount</td>          <td>Count of grouped ECInstances (only available for class, relationship and property grouping nodes).</td></tr>
+    <tr><td>ECInstance</td>                     <td>ECInstance symbol context, if it's an ECInstance node.</td></tr>
+</table>
+
+@subsection SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance ECInstance ECExpression Context
+ECInstance expression context provides access to ECInstance property values, e.g.:
+- this.PropertyName
+- this.StructPropertyName.PropertyName
+
+@section SECTION_RulesDrivenPresentationManager_ECExpressions_Symbols Symbols
+
+@subsection SECTION_RulesDrivenPresentationManager_ECExpressions_UserSettings User Settings Symbols
+User settings symbols allow accessing @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_UserSettings "user setting" values
+through ECExpressions.
+<table>
+    <tr><th>Symbol</th>                             <th>Value</th></tr>
+    <tr><td>GetSettingValue("SettingId")</td>       <td>Get setting value with the specified ID (string).</td></tr>
+    <tr><td>GetSettingIntValue("SettingId")</td>    <td>Get setting value with the specified ID (integer).</td></tr>
+    <tr><td>GetSettingIntValues("SettingId")</td>   <td>Get a list of setting values with the specified ID (integers). See below for an example.</td></tr>
+    <tr><td>GetSettingBoolValue("SettingId")</td>   <td>Get setting value with the specified ID (boolean).</td></tr>
+    <tr><td>HasSetting("SettingId")</td>            <td>Does the setting with the specified ID exist.</td></tr>
+</table>
+
+Value lists in ECExpressions can be handled with lambdas. Currently the rules engine supports only a single simple lambda for @e GetSettingIntValues function:
+@code{.xml}
+GetSettingIntValues("SettingId").AnyMatch(x => x = this.PropertyValue)
+@endcode
+
+@subsection SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb ECDb Symbols
+
+ECDb-related symbols are available when the ECExpression is being evaluated in the context of some ECDb, e.g.
+when an ECExpression is being evaluated when creating nodes or content for some specific connection (ECDb).
+<table>
+    <tr><th>Symbol</th>                             <th>Value</th></tr>
+    <tr><td>ECDb.Path</td>                          <td>Path of the ECDb in context.</td></tr>
+    <tr><td>ECDb.Name</td>                          <td>Name of the ECDb in context.</td></tr>
+    <tr>
+        <td>GetECClassId("ClassName","SchemaName")</td>
+        <td>Returns ID of the ECClass specified by name and schema name.</td>
+    </tr>
+</table>
+
+Additionally, when evaluating @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "ECInstance contexts", 
+the below symbols are available:
+<table>
+    <tr>
+        <th>Symbol</th>
+        <th>Value</th>
+    </tr>
+    <tr>
+        <td>GetRelatedInstance("RelationshipName:0|1:RelatedClassName")</td>
+        <td>Returns related @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "instance context".</td>
+    </tr>
+    <tr>
+        <td>HasRelatedInstance("RelationshipSchemaName:RelationshipName", "Forward|Backward", "RelatedClassSchemaName:RelatedClassName")</td>
+        <td>Returns true if the instance has a related instance.</td>
+    </tr>
+    <tr>
+        <td>GetRelatedValue("RelationshipSchemaName:RelationshipName", "Forward|Backward", "RelatedClassSchemaName:RelatedClassName", "PropertyName")</td>
+        <td>Returns property value of the related instance.</td>
+    </tr>
+</table>
+*/
+
+//=======================================================================================
+// General localization
+//=======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_Localization Localization  
+Most of the strings specified in presentation rules and visible to the end user can be localized. The presentation manager uses
+@ref GROUP_L10N "BeSQLite L10N APIs" to localize its strings.
+
+Localized string format:
+@verbatim
+@L10N_Namespace_ID:L10N_String_ID@
+@endverbatim
+
+Also, multiple localized strings may be used in a single value, e.g. 
+@verbatim
+Test_@Namespace:String1@_test_@Namespace:String2@
+@endverbatim
+
+In addition, @ref PAGE_RulesDrivenPresentationManager_ECPresentationRules_CustomizationRules_LocalizationResourceKeyDefinition "localization resource key definition rules" can 
+be used to simplify localized strings, e.g. the above localized string could be replaced by 2 rules
+@code{.xml}
+<LocalizationResourceKeyDefinition Id="String1" Key="@Namespace:String1@" DefaultValue="String 1" />
+<LocalizationResourceKeyDefinition Id="String2" Key="@Namespace:String2@" DefaultValue="String 2" />
+@endcode
+and this localized string
+@verbatim
+Test_@String1@_test_@String2@
+@endverbatim
+*/
+
+//=======================================================================================
+// Performance tips
+//=======================================================================================
+/** @page PAGE_RulesDrivenPresentationManager_PerformanceTips Performance tips
+These tips will help achieve better presentation performance.
+
+@section SECTION_RulesDrivenPresentationManager_PerformanceTips_WritingRules Writing rule set
+When writing rule set consider:
+<ul>
+    <li>Defining "supported schemas" for rule set and specifications.</li>
+    <li>Making rule specifications as concrete as possible. E.g. instead of specifying just the relationship name, also specify the related class name.</li>
+    <li>Avoiding IsRecursive=True in content queries, if possible.</li>
+</ul>
+
+@section SECTION_RulesDrivenPresentationManger_PerformanceTips_Conditions ECExpressions in rule condition
+When writing rule condition use only these @ref SECTION_RulesDrivenPresentationManager_ECExpressions_NavNode "NavNode expression symbols", if possible:
+<ul>
+    <li>IsOfClass</li>
+	<li>IsInstanceNode</li>
+	<li>IsPropertyGroupingNode</li>
+	<li>IsClassGroupingNode</li>
+	<li>ClassName</li>
+	<li>InstanceId</li>
+</ul>
+Avoid using @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECDb "ECDb symbols" and @ref SECTION_RulesDrivenPresentationManager_ECExpressions_ECInstance "ECInstance symbols".
+*/  

@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // ECPresentation Library                                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="ECPresentation">
+        <SubPart PartName="ECPresentation-PublicAPI" />
+        <SubPart PartName="ECPresentation-PublishedAPI" />
+        <SubPart PartName="ECPresentation-Library" />
+        <SubPart PartName="ECPresentation-Xliffs" />
+    </Part>
+
+    <Part Name="ECPresentation-PublicAPI" BentleyBuildMakeFile="Prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="ECPresentation" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ECPresentation-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
+          BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedAPI +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
+        <SubPart PartName="ECPresentation-Library"/>
+        <SubPart PartName="ECPresentation-PublicAPI"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedAPI" SubPartDirectory="PublishedAPI/ECPresentation" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ECPresentation-Library" BentleyBuildMakeFile="ECPresentation.mke" ApiNumber="M02">
+        <SubPart PartName="ECPresentation-PublicAPI" />
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeRapidJson" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="folly" PartFile="facebook" Repository="Libsrc-facebook"/>
+        <SubPart PartName="BeXml" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="ECDb" PartFile="ECDb" Repository="ECDb" />
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ECObjects" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ECPresentation$(libext)</Libs>
+            <Assemblies>Delivery/$(libprefix)ECPresentation$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // NuGet package creation                                                 // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="NuGetPackage" BentleyBuildMakeFile="ECPresentation.NuGetPackage.mke" OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="ECPresentation" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\ECPresentation\ECPresentation.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // Documentation                                                          // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="Docs/Prewire.mke">
+        <SubPart PartName="Docs-CodeSamples" />
+        <SubPart PartName="Docs-BuildCodeSamples" />
+        <Bindings>
+            <Directory SourceName="Delivery/Docs/Pages" SubPartDirectory="Dox/Pages/ECPresentation"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Docs-CodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECPresentation/Docs/Samples -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECPresentation/Docs/ExtractedSamples -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Delivery/Docs/Extractions">
+        <SubPart PartName="ECPresentation-PublishedAPI" />
+        <Bindings>
+            <Directory SourceName="Delivery/Docs/Extractions" SubPartDirectory="Dox/Extractions/ECPresentation"/>
+        </Bindings>        
+    </Part>
+
+    <Part Name="Docs-BuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECPresentation/Docs/Samples -dBUILD_SAMPLE_CODE_SUB_DIR=ECPresentationSamples">
+        <SubPart PartName="ECPresentation-PublishedAPI" />
+        <SubPart PartName="ECPresentation-Library" />
+    </Part>
+    
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // L10N                                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <Part Name="ECPresentation-Xliffs" BentleyBuildMakeFile="Localization/Xliffs.mke">
+        <Bindings>
+            <Files ProductDirectoryName="ECPresentationXliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/ECPresentation_en.xliff
+                Delivery/xliffs/RulesEngine_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
+    <Part Name="L10N-ECPresentationXliffs-en" OnlyPlatforms="x64"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/PushXliffsFromBuild.mke"
+        BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/ECPresentation/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-ECPresentation/ -dL10N_XLIFF_LANG_DIRECTORY=en">
+        <SubPart PartName="ECPresentation-Xliffs" />
+    </Part>
+
+    <!-- Translated Xliffs are linked into the BuildContext here -->
+    <Part Name="L10N-ECPresentationXliffs-cs" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/ECPresentation_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/RulesEngine_cs.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-de" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/ECPresentation_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/RulesEngine_de.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-es" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/ECPresentation_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/RulesEngine_es.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-fi" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/ECPresentation_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/RulesEngine_fi.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-fr" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/ECPresentation_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/RulesEngine_fr.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-it" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/ECPresentation_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/RulesEngine_it.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-ja" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/ECPresentation_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/RulesEngine_ja.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-ko" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/ECPresentation_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/RulesEngine_ko.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-nl" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/ECPresentation_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/RulesEngine_nl.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-pl" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/ECPresentation_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/RulesEngine_pl.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-pt" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/ECPresentation_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/RulesEngine_pt.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-ru" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/ECPresentation_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/RulesEngine_ru.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-sv" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/ECPresentation_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/RulesEngine_sv.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-tr" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/ECPresentation_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/RulesEngine_tr.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-zh-cn" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/ECPresentation_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/RulesEngine_zh-cn.xliff</Files>
+        </Bindings>
+    </Part>
+    <Part Name="L10N-ECPresentationXliffs-zh-tw" BentleyBuildMakeFile="Localization/l10n-ECPresentation.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
+        <RequiredRepository>l10n-ECPresentation</RequiredRepository>
+        <Bindings>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/RulesEngine_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-ECPresentationXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/ECPresentation_zh-tw.xliff</Files>
+        </Bindings>
+    </Part>
+
+    <!-- ============================================================================ -->
+    <!-- Unit Tests                                                                   -->
+    <!-- ============================================================================ -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+        <SubPart PartName="ECPresentation" />
+        <SubPart PartName="TestsSqlang" />
+        <Bindings>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/ECPresentationTest.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestECPresentationManager.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestConnectionCache.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestSelectionProvider.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestRuleSetLocater.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/TestUserSettings.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/IssueReporter.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/ECPresentation">Delivery/UnitTests/PresentationRulesetTest.h</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECPresentation" SubPartDirectory="UnitTests/ECPresentation">Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="Documents/ECPresentationTestData" SourceName="Delivery/UnitTests/ECPresentationTestData" />
+            <Files Required="false" ProductDirectoryName="UnitTests-Assets" SubPartDirectory="ECPresentationJsonSchema">Delivery/ExpectedNavNodes.jsd</Files>
+        </Bindings>
+    </Part>
+    <Part Name="TestHelpers" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=TestHelpers">
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/TestHelpers" SourceName="Delivery/UnitTests/Objects/TestHelpers"/>
+        </Bindings>
+    </Part>
+    <Part Name="TestsSqlang" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/ECPresentation/SQLang/ECPresentation_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="ECPresentation" />
+        <Bindings>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/ECPresentation_en.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+    <Part Name="BackdoorForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackDoor">
+        <SubPart PartName="TestHelpers" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/BackDoor" SourceName="Delivery/UnitTests/Objects/BackDoor"/>
+        </Bindings>
+    </Part>
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="BackDoorForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="BackDoorForUnitTests" />
+        <SubPart PartName="ECPresentation-PublishedAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance -dUsePublishedApi">
+        <SubPart PartName="BackDoorForUnitTests" />
+        <SubPart PartName="ECPresentation-PublishedAPI" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECPresentation/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
+        </Bindings>
+    </Part>
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished" />
+        <SubPart PartName="UnitTests-Published" />
+    </Part>
+    <Product Name="ECPresentation-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest" />
+    </Product>
+
+    <!-- Performance -->
+    <Product Name="ECPresentation-Tests-Performance">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Performance" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest" />
+    </Product>
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest-Performance -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests-Performance -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECPresentation-Tests-Performance"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECPresentationTest-Performance/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECPresentationTest-Performance/Assets" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Gtest-Performance">
+        <SubPart PartName="Gtest-Performance"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <!-- Memory leak testing -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="ECPresentation-Gtest" />
+    </Part>
+
+    <!-- Desktop -->
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentationTest -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/ECPresentationTest/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/ECPresentationTest/Assets" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=ECPresentation-Gtest -dGTEST_NAME=ECPresentationTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="ECPresentation-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECPresentationTest.log</Files>
+        </Bindings>
+    </Part>
+
+    <!-- Android -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJUP" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-AndroidJUnit">
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECPresentation-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="ECPresentation-AndroidJUnit"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/ECPresentation-AndroidJUnit.log</Files>
+        </Bindings>
+    </Part>
+    <!-- iOS -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/ECPresentation/Project" />
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-iOSXCTest">
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>    
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECPresentation-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="ECPresentation-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/ECPresentation-iOSXCTest.log</Files>
+        </Bindings>
+    </Part>
+    <!-- UWP -->
+    <Part Name="UwpTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECPresentation -dTEST_COLLECTION_PRODUCT=ECPresentation-Tests -dTEST_FRAMEWORK_SQLANG=ECPresentation_en.sqlang.db3" OnlyPlatforms="WinRT*" ApiNumber="M02">
+        <SubProduct ProductName="ECPresentation-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/ECPresentationUwpTest"/>
+        </Bindings>
+    </Part>
+    <Product Name="ECPresentation-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+    <Part Name="RunUwpTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke" BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECPresentation-UwpTest" OnlyPlatforms="WinRT*">
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubProduct ProductName="ECPresentation-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/ECPresentation-UwpTest.log</Files>
+        </Bindings>
+    </Part>
+
+</BuildContext>
