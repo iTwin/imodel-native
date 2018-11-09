@@ -65,7 +65,15 @@ BentleyStatus Client::StopApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-// BentleyStatus Client::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
-//     {
-//     return m_impl->MarkFeature(featureId, featureUserData);
-//     }
+LicenseStatus Client::StartFreeApplication()
+     {
+     return m_impl->StartFreeApplication();
+     }
+
+ /*--------------------------------------------------------------------------------------+
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+ BentleyStatus Client::MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData)
+     {
+     return m_impl->MarkFeature(featureId, featureUserData);
+     }
