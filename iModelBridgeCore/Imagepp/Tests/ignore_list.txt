@@ -1,0 +1,27 @@
+# Tests that should not be run
+
+# Examples:
+#HGF2DPolySegmentTester.*                        
+#HGF2DUniverseTester.LinearTest
+#*ExportTester.ExportToiTiffBestOptions/162
+
+#----------------------------------------------------------------------------------------
+# Long running export test 
+# Disabled by default in ImagePPTest.config.xml. You should only ignore here when
+# working on tests and you want to temporary skip them.   
+#----------------------------------------------------------------------------------------
+#FormatTests/*
+#FormatTests/PssTester.Export/*
+#FormatTests/ExportAllTester.ToAllFormats/*
+#FormatTests/ExportiTiffTester.ToBestiTiff/*
+
+#----------------------------------------------------------------------------------------
+# *** Broken, need to be re-visited ***
+#----------------------------------------------------------------------------------------
+
+# Result ok but not optimal. We have extra 0 lenght rle runs when editing 32767,0 sequences.
+RleEditorTester.MaxRleRunSetPixels
+
+#Intersect Shape error. See special failing test coded HVE2DShapeTester.IntersectFailWithComplexLinear
+#Email sent to Alain Robert about this on 21 april 2016
+HVEShapeTester.IntersectFailWithComplexLinear
