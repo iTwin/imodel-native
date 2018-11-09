@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+              >
+
+    <Part Name="google_v8-Windows" BentleyBuildMakeFile="google_v8_prewire.mke" OnlyPlatforms="x64" ApiNumber="M02">
+        <SdkSource>google_v8_winx64</SdkSource>
+        <Bindings>
+            <Assemblies>Delivery/$(libprefix)v8$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)v8_libbase$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)v8_libplatform$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)v8$(libext)</Libs>
+            <Libs>Delivery/$(libprefix)v8_libbase$(libext)</Libs>
+            <Libs>Delivery/$(libprefix)v8_libplatform$(libext)</Libs>
+            <VendorAPI Domain="google_v8"/>
+            <VendorNotices>Delivery/google_v8-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+
+    <!-- We define this part in order to let bb see that this dependency is for Windows only ... without bb having to pull libv8 and look at the part definition in it. -->
+    <Part Name="BeJavaScriptWindows-Only-SubParts" OnlyPlatforms="x64,x86">
+        <SubPart PartName="google_v8-Windows"/>
+    </Part>
+
+    <!-- We define this part in order to let bb see that this dependency is for Android only ... without bb having to pull libv8 and look at the part definition in it. -->
+    <Part Name="BeJavaScriptAndroid-Only-SubParts" OnlyPlatforms="Android*">
+        <!-- We do not yet have a PRG build for Android. -->
+        <SubPart PartName="google_v8-Android" PartFile="google_v8_5_7_wip" Repository="Thirdparty-google_v8_5_7_wip"/>
+    </Part>
+
+    <!-- We need this shim part because there is no LKG for WinRT, and thus WinRT builds cannot get a partfile from the LKG to see that the part excludes WinRT. -->
+    <Part Name="chakracoreShim" OnlyPlatforms="x64,x86" WipPartEnable="chakracore">
+        <SubPart PartName="chakracore" PartFile="chakracore" Repository="Thirdparty-chakracore"/>
+    </Part>
+
+    <Part Name="BeJavaScript" BentleyBuildMakeFile="BeJavaScript.mke">
+        <RequiredRepository>Thirdparty-nodejs</RequiredRepository>
+        <RequiredRepository>Thirdparty-typescript</RequiredRepository>
+        <RequiredRepository>Thirdparty-chakracore</RequiredRepository>
+        
+        <SubPart PartName="BeJavaScriptTools" />
+        <SubPart PartName="BentleyDll"    PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="BeJsonCpp"     PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeJavaScriptWindows-Only-SubParts"/>
+        <SubPart PartName="BeJavaScriptAndroid-Only-SubParts"/>
+        <SubPart PartName="nodejs"        PartFile="nodejs"           Repository="Thirdparty-nodejs" />
+        <SubPart PartName="typescript"    PartFile="typescript"       Repository="Thirdparty-typescript" />
+        <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="chakracoreShim"/>
+
+        <Bindings>
+            <PublicAPI Domain="BeJavaScript" />
+            <Libs>Delivery/$(stlibprefix)BeJavaScript$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)BeJavaScript$(stlibdebugext)</Libs>
+            <Files SubPartDirectory="BeJavaScriptJs">Delivery/bejavascript.d.ts</Files>
+            <Files SubPartDirectory="BeJavaScriptJs">Delivery/BeJavaScriptTypes.ts</Files>
+            <Files SubPartDirectory="BeJavaScriptTools">Delivery/mergeJsSourceDeliveryFiles.py</Files>
+            <Files SubPartDirectory="BeJavaScriptTools">Delivery/createJavaScriptNativeProjection.py</Files>
+            <Files SubPartDirectory="InternalAPI">Delivery/V8InspectorManager.h</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="BeJavaScriptTools" BentleyBuildMakeFile="BeJavaScriptTools.mke">
+        <Bindings>
+            <PublicAPI Domain="BeJavaScriptTools" />
+        </Bindings>
+    </Part>
+
+</BuildContext>

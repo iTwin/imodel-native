@@ -1,0 +1,31 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: LoggingSDK/src/native/interface/interface.mki $
+#
+#   $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+interfaceDir = $(baseDir)LoggingSDK/src/native/interface/
+
+Includes = $(BuildContext)PublicAPI/Logging/bentleylogging.h
+
+%include MultiCppCompileRule.mki
+
+$(o)bsilog$(oext)          :   $(interfaceDir)bsilog.cpp            $(Includes)
+
+$(o)loggingconfig$(oext)   :   $(interfaceDir)loggingconfig.cpp      $(Includes)
+
+$(o)loggingmanager$(oext)  :   $(interfaceDir)loggingmanager.cpp      $(Includes)
+
+$(o)loggercache$(oext)     :   $(interfaceDir)loggercache.cpp           $(Includes)
+
+$(o)providerproxy$(oext)   :   $(interfaceDir)providerproxy.cpp   $(Includes)
+
+$(o)consoleprovider$(oext) :   $(interfaceDir)consoleprovider.cpp   $(Includes)
+
+$(o)fileprovider$(oext)    :   $(interfaceDir)fileprovider.cpp   $(Includes)
+
+%include MultiCppCompileGo.mki
+
+loggingSdkInterfaceObjFiles =% $(MultiCompileObjectList)
+

@@ -1,0 +1,144 @@
+#----------------------------------------------------------------------------------------
+#   Tests that are ignored on purpose
+#----------------------------------------------------------------------------------------
+BeFileNameTests.BeFileNameUNCPathTest   # Testable UNC path is required to be available globally.
+BeFileNameTests.UNCPrefixedTest         # Testable UNC path is required to be available globally.
+BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be available globally.
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+BeTextFileTests.OpenToWrite                     # WIP
+BeTextFileTests.CountLinesInFile                # WIP
+
+DoubleFormatterTest.ReplaceDecimalSeparator     # Defect 570798. Non-default decimal Separator is not considered.
+
+CRuntimeTests.posixregex # runs only on Android, and it crashes there in regfree, because preg contains garbage $1 = {buffer = 0x0, allocated = 0, used = 0, syntax = 242396, fastmap = 0x0, translate = 0x2 <Address 0x2 out of bounds>
+
+DirectoryObserverTests.ModificationInObservedDirectory_UIThread
+    # WinX64, DgnDb0601, NDEBUG, PRG
+    # <crash, no output provided>
+
+#TFS 633328: randomly Crash on iosArm64
+DirectoryObserverTests.*
+
+#--------------------------------------------------------------------------------------
+# Randomly hanging tests, NDEGUG, Winx64
+#--------------------------------------------------------------------------------------
+
+# These tests directly use the AsyncTask API, or a test helper class that does.
+# Arturas: [ignoring such tests] would be a reasonable thing to do to be on the safe side. As far as I know, tests that use AsyncTask tend to randomly hang, so it is possible that any of those might hang the build. We will look for a short time solution to make sure that we would safely run as many tests as possible and BeFolly is long term plan.
+AsyncTaskTests.*
+UniqueTaskHolderTests.*
+
+WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
+    # bim0200, x64, NDEBUG, PRG, Random
+    # [ RUN      ] WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops
+    # e:\Builds\dcsdk02000138\Source\Bentley\Tests\Published\Tasks\WorkerThreadTests.cpp(38): error: Value of: tWeak.expired()
+    #   Actual: true
+    # Expected: false
+    # [  FAILED  ] WorkerThreadTests.Destr_ThreadHasNoStrongRefsLeft_ThreadRunnerStops (18 ms)
+
+LimitingTaskQueueTests.Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent
+    # bim2-0r1, x64, NDEBUG, Random Hang
+    # Threads:
+    #    50172   0   Main Thread Main Thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            ntdll.dll!NtWaitForAlertByThreadId()    
+    #            ntdll.dll!RtlSleepConditionVariableSRW()     
+    #            KernelBase.dll!SleepConditionVariableSRW()  
+    #            msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210    
+    #            msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77    
+    #            BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 58  
+    #            BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 207    
+    #            BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 344   
+    #            BentleyTest.exe!LimitingTaskQueueTests_Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent_Test::TestBody() Line 149  
+    #            ...
+    #
+    #    31820   0   Worker Thread   BentleyTest.exe!testing::internal::ThreadLocalRegistryImpl::WatcherThreadFunc   BentleyTest.exe!testing::internal::ThreadLocalRegistryImpl::WatcherThreadFunc   Normal
+    #            ntdll.dll!NtWaitForSingleObject()   
+    #            KernelBase.dll!WaitForSingleObjectEx()  
+    #            BentleyTest.exe!testing::internal::ThreadLocalRegistryImpl::WatcherThreadFunc(void *) Line 523   
+    #            kernel32.dll!BaseThreadInitThunk()  
+    #            ntdll.dll!RtlUserThreadStart()  
+    #
+    #    48260   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            ntdll.dll!NtWaitForAlertByThreadId()    
+    #            ntdll.dll!RtlSleepConditionVariableSRW()     
+    #            KernelBase.dll!SleepConditionVariableSRW()  
+    #            msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210    
+    #            msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77    
+    #            BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 58  
+    #            BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 207    
+    #            BentleyB02.dll!BentleyB0200::Tasks::ConcurrentQueue<std::shared_ptr<BentleyB0200::Tasks::AsyncTask> >::ProtectedWaitAndPop(std::shared_ptr<BentleyB0200::Tasks::AsyncTask> &, BentleyB0200::BeMutexHolder &) Line 143    
+    #            BentleyB02.dll!BentleyB0200::Tasks::TaskScheduler::WaitAndPop() Line 82  
+    #            BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_RunAsyncTasksLoop() Line 110   
+    #            BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_Run() Line 95  
+    #            BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Run(std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *> > > > *) Line 247     
+    #            BentleyB02.dll!std::_Pad::_Call_func(void *) Line 210    
+    #            ucrtbase.dll!00007ff8f6dccab0()  
+    #            kernel32.dll!BaseThreadInitThunk()  
+    #            ntdll.dll!RtlUserThreadStart()  
+    #
+    #    45196   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            <Similar to 48260>
+    #
+    #    42960   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            <Similar to 48260>
+    #
+    #    43548   0   Worker Thread   ucrtbase.dll thread msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait    Normal
+    #            <Similar to 48260>
+    #
+    #    51888   0   Worker Thread   ntdll.dll!TppWorkerThread   ntdll.dll!NtWaitForWorkViaWorkerFactory Normal
+    #            ntdll.dll!NtWaitForWorkViaWorkerFactory()   
+    #            ntdll.dll!TppWorkerThread()  
+    #            kernel32.dll!BaseThreadInitThunk()  
+    #            ntdll.dll!RtlUserThreadStart()  
+
+BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
+    # bim2-0r1, x64, DEBUG
+    # [ RUN      ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime
+    # 1095361199000    1095364799000
+    # F:\Bim2-0R1\src\Bentley\Tests\Published\BeTimeUtilities_test.cpp(184): error:       Expected: expectedMillis
+    #       Which is: 1095361199000
+    # To be equal to: actualMillis
+    #       Which is: 1095364799000
+    # [  FAILED  ] BeTimeUtilitiesTests.AdjustUnixMillisForLocalTime (0 ms)
+
+LimitingTaskQueueTests.Push_TaskReturnsValue_SameValueReturned
+    # bim0200dev, x64, NDEBUG, firebug, random hang
+
+WorkerThreadTests.Push_NoParentTask_PrioritySetToNormal
+    # bim0200, x64, NDEBUG, firebug, random hang
+
+WStringTest.FlakyTest
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 10/27/2017
+    # c:\build\src\mds06t\Bentley\Tests\Published\WString_test.cpp(1582): error: Value of: s1 != s2
+    # Actual: false
+    # Expected: true
+
+# This exists to test a new timeout mechanism, so cannot fail slow builds right now.
+BeFileTests1.CreateFile1
+
+# Flakey, especially on high-core machines.
+WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock
+    # [ RUN      ] WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock
+    # D:\vsts_a\1\s\Bentley\Tests\Published\Tasks\WorkerThreadTests.cpp(451): error: Value of: threadStopped
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] WorkerThreadTests.Stop_ThreadStoppedInObjectDesctructorThatHadLifeProlongedByTaskInOtherThread_DoesNotDeadlock (38653 ms)
+    # [----------] 16 tests from WorkerThreadTests (38672 ms total)
+
+# Similar random hang, especially on Linux.
+AsyncTasksManagerTests.*
+
+ThreadlessTaskSchedulerTests.Push_WithinParentTask_ParentExecutionProlonged
+    # [ RUN      ] ThreadlessTaskSchedulerTests.Push_WithinParentTask_ParentExecutionProlonged
+    # C:\Code\repos\iModelCore\imodel02.out\Winx64\BuildContexts\Bentley\SubParts\BeGTest\gtest\BeGTestExe.cpp(360): error: Value of: std::future_status::ready == futureResult.wait_for(std::chrono::seconds(timeoutInSeconds))    
+    #   Actual: false
+    # Expected: true
+    # 
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # ERROR: Test suite exceeded 1800 second(s) and was aborted.
+    #        Errors reported above may either be due to the termination of the test,
+    #        or may be clues for the hang and/or deadlock.
+    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
