@@ -2012,6 +2012,86 @@ struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
     StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
 };
 
+struct GlyphAtlas;
+struct DeferredGlyph
+{
+    Polyface m_polyface;
+    GeometryPtr m_geom;
+    double m_rangePixels;
+    bool m_isContained;
+    bool m_paramsFixed = false;
+
+    DeferredGlyph(Polyface& polyface, Geometry& geom, double rangePixels, bool isContained) : m_polyface(polyface), m_geom(&geom), m_rangePixels(rangePixels), m_isContained(isContained) {}
+    void* GetKey();
+};
+
+typedef bvector<DeferredGlyph> DeferredGlyphList;
+
+struct GlyphLocation
+{
+    uint32_t m_atlasNdx; // which atlas within the manager contains this glyph?
+    uint32_t m_atlasSlotX; // what slot within that atlas has the glyph?
+    uint32_t m_atlasSlotY;
+};
+
+struct GlyphAtlas
+{
+private:
+    static const uint32_t m_glyphSizeInPixels = 48;
+    static const uint32_t m_glyphPaddingInPixels = 16;
+    static const uint32_t m_glyphHalfPaddingInPixels = m_glyphPaddingInPixels / 2;
+    static const uint32_t m_glyphTotalSizeInPixels = m_glyphSizeInPixels + m_glyphPaddingInPixels;
+    static const uint32_t m_maxAtlasGlyphsDim = 64; // 64 glyphs * 64 pixels = 4096 pixels
+
+    uint32_t m_index;
+    uint32_t m_numGlyphs;
+    uint32_t m_numGlyphsInX;
+    uint32_t m_numGlyphsInY;
+    uint32_t m_numPixelsInX;
+    uint32_t m_numPixelsInY;
+    uint32_t m_availGlyphSlotX = 0;
+    uint32_t m_availGlyphSlotY = 0;
+
+    ByteStream m_atlasBytes;
+    TexturePtr m_atlasTexture;
+
+    static bool IsPowerOfTwo(uint32_t num) { return 0 == (num & (num - 1)); }
+    static uint32_t NextHighestPowerOfTwo(uint32_t num)
+        {
+        --num;
+        for (int i = 1; i < 32; i <<= 1)
+            num = num | num >> i;
+        return num + 1;
+        }
+
+    void CalculateSize();
+public:
+    GlyphAtlas(uint32_t index, uint32_t numGlyphs);
+    GlyphAtlas(GlyphAtlas&&);
+    GlyphAtlas& operator=(GlyphAtlas&& other);
+
+    bool AddGlyph(DeferredGlyph& glyph, GlyphLocation& loc);
+    void GetUVCoords(Render::Image* image, const GlyphLocation& loc, DPoint2d uvs[2]);
+    TexturePtr GetTexture(Render::System& renderSystem, DgnDbP db);
+
+    static uint32_t GetMaxGlyphsInAtlas() { return m_maxAtlasGlyphsDim * m_maxAtlasGlyphsDim; }
+};
+
+struct GlyphAtlasManager
+{
+private:
+    bvector<GlyphAtlas> m_atlases;
+    uint32_t m_numGlyphs;
+    uint32_t m_numAtlases;
+    uint32_t m_curAtlasNdx;
+    std::map<void*, GlyphLocation> m_glyphLocations;
+public:
+    GlyphAtlasManager(uint32_t numGlyphs);
+
+    void AddGlyph(DeferredGlyph& glyph);
+    GlyphAtlas& GetAtlasAndLocationForGlyph(DeferredGlyph& glyph, GlyphLocation &loc);
+};
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -2029,6 +2109,8 @@ private:
     bool                    m_maxGeometryCountExceeded = false;
     bool                    m_didDecimate = false;
     ThematicMeshBuilderPtr  m_thematicMeshBuilder;
+    DeferredGlyphList       m_deferredGlyphs;
+    std::set<void*>         m_uniqueGlyphKeys;
 
     // ###TODO: Revisit...lots of small polyfaces can produce excessive vertices...
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
@@ -2038,7 +2120,7 @@ private:
 
     void AddPolyfaces(GeometryR geom, double rangePixels, bool isContained);
     void AddPolyfaces(PolyfaceList& polyfaces, GeometryR geom, double rangePixels, bool isContained);
-    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained);
+    void AddPolyface(Polyface& polyface, GeometryR, double rangePixels, bool isContained, bool doDefer=true);
     void AddClippedPolyface(PolyfaceQueryCR, DgnElementId, DisplayParamsCR, MeshEdgeCreationOptions, bool isPlanar);
 
     void AddStrokes(GeometryR geom, double rangePixels, bool isContained);
@@ -2068,6 +2150,7 @@ public:
     void AddMeshes(GeometryList const& geometries, bool doRangeTest);
     void AddMeshes(GeometryR geom, bool doRangeTest);
     void AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances);
+    void AddDeferredGlyphMeshes(Render::System& renderSystem);
 
     // Return a list of all meshes currently in the builder map
     MeshList GetMeshes(bool isPartialTile);
@@ -2113,6 +2196,258 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
 MeshBuilderR MeshGenerator::GetMeshBuilder(MeshBuilderMap::Key const& key)
     {
     return m_builderMap[key];
+    }
+
+// #define DEBUG_DUMP_TEXTURE_ATLAS_DIR L"E:\\texture_atlas\\"
+#if defined(DEBUG_DUMP_TEXTURE_ATLAS_DIR)
+static void writeAtlasToImageFile(Byte const* data, uint32_t width, uint32_t height, int32_t bytesPerPixel)
+    {
+    bool            rgba = 4 == bytesPerPixel;
+    Image           image(width, height, ByteStream(data, width * height * bytesPerPixel), (rgba) ? Image::Format::Rgba : Image::Format::Rgb);
+    ImageSource     imageSource(image, rgba ? ImageSource::Format::Png: ImageSource::Format::Jpeg);
+
+    static BeAtomic<uint32_t> s_atlasIndex;
+    WPrintfString filename(L"%lsatlas_%u.png", DEBUG_DUMP_TEXTURE_ATLAS_DIR, s_atlasIndex.IncrementAtomicPre());
+    BeFile file;
+    file.Create(filename.c_str(), true);
+    file.Write(nullptr, imageSource.GetByteStream().GetData(), imageSource.GetByteStream().GetSize());
+    file.Close();
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void* DeferredGlyph::GetKey()
+    {
+    return static_cast<void*>(m_polyface.m_glyphImage);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphAtlas::CalculateSize()
+    {
+    m_numGlyphsInX = m_numGlyphs >= m_maxAtlasGlyphsDim ? m_maxAtlasGlyphsDim : m_numGlyphs;
+    if (!GlyphAtlas::IsPowerOfTwo(m_numGlyphsInX))
+        m_numGlyphsInX = GlyphAtlas::NextHighestPowerOfTwo(m_numGlyphsInX);
+
+    m_numGlyphsInY = static_cast<uint32_t>(ceil(static_cast<double>(m_numGlyphs) / m_maxAtlasGlyphsDim));
+    if (!GlyphAtlas::IsPowerOfTwo(m_numGlyphsInY))
+        m_numGlyphsInY = GlyphAtlas::NextHighestPowerOfTwo(m_numGlyphsInY);
+
+    m_numPixelsInX = m_numGlyphsInX * m_glyphTotalSizeInPixels;
+    m_numPixelsInY = m_numGlyphsInY * m_glyphTotalSizeInPixels;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GlyphAtlas::GlyphAtlas(uint32_t index, uint32_t numGlyphs) : m_index(index), m_numGlyphs(numGlyphs)
+    {
+    CalculateSize();
+    m_atlasBytes.Resize(m_numPixelsInX * m_numPixelsInY * 4); // reserve space for all potential glyph
+    memset(m_atlasBytes.GetDataP(), 0, m_atlasBytes.GetSize());
+    m_availGlyphSlotX = m_availGlyphSlotY = m_glyphHalfPaddingInPixels;
+    m_atlasTexture = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GlyphAtlas::GlyphAtlas(GlyphAtlas&& other)
+    {
+    m_index = other.m_index;
+    m_numGlyphs = other.m_numGlyphs;
+    m_numGlyphsInX = other.m_numGlyphsInX;
+    m_numGlyphsInY = other.m_numGlyphsInY;
+    m_numPixelsInX = other.m_numPixelsInX;
+    m_numPixelsInY = other.m_numPixelsInY;
+    m_availGlyphSlotX = other.m_availGlyphSlotX;
+    m_availGlyphSlotY = other.m_availGlyphSlotY;
+    m_atlasBytes = std::move(other.m_atlasBytes);
+    m_atlasTexture = other.m_atlasTexture;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GlyphAtlas& GlyphAtlas::operator=(GlyphAtlas&& other)
+    {
+    if (&other == this)
+        return *this;
+
+    m_index = other.m_index;
+    m_numGlyphs = other.m_numGlyphs;
+    m_numGlyphsInX = other.m_numGlyphsInX;
+    m_numGlyphsInY = other.m_numGlyphsInY;
+    m_numPixelsInX = other.m_numPixelsInX;
+    m_numPixelsInY = other.m_numPixelsInY;
+    m_availGlyphSlotX = other.m_availGlyphSlotX;
+    m_availGlyphSlotY = other.m_availGlyphSlotY;
+    m_atlasBytes = std::move(other.m_atlasBytes);
+    m_atlasTexture = other.m_atlasTexture;
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GlyphAtlas::AddGlyph(DeferredGlyph& glyph, GlyphLocation& loc)
+    {
+    if (m_availGlyphSlotY >= m_numPixelsInY)
+        return false; // this atlas is already filled to capacity
+
+    Render::Image* glyphImage = glyph.m_polyface.m_glyphImage;
+    ByteStream const& glyphBytes = glyphImage->GetByteStream();
+
+    // copy unique glyph to next available location in the atlas
+    for (uint32_t glyphY = 0; glyphY < glyphImage->GetHeight(); glyphY++)
+        {
+        for (uint32_t glyphX = 0; glyphX < glyphImage->GetWidth(); glyphX++)
+            {
+            size_t atlasIndex = (m_availGlyphSlotY + glyphY) * m_numPixelsInX * 4 + (m_availGlyphSlotX + glyphX) * 4;
+            size_t glyphIndex = glyphY * glyphImage->GetWidth() * 4 + glyphX * 4;
+            m_atlasBytes[atlasIndex] = glyphBytes[glyphIndex];
+            m_atlasBytes[atlasIndex + 1] = glyphBytes[glyphIndex + 1];
+            m_atlasBytes[atlasIndex + 2] = glyphBytes[glyphIndex + 2];
+            m_atlasBytes[atlasIndex + 3] = glyphBytes[glyphIndex + 3];
+            }
+        }
+
+    loc.m_atlasSlotX = m_availGlyphSlotX;
+    loc.m_atlasSlotY = m_availGlyphSlotY;
+
+    // calculate next available slot for a glyph
+    m_availGlyphSlotX += m_glyphTotalSizeInPixels;
+    if (m_availGlyphSlotX >= m_numPixelsInX)
+        {
+        m_availGlyphSlotX = m_glyphHalfPaddingInPixels;
+        m_availGlyphSlotY += m_glyphTotalSizeInPixels;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphAtlas::GetUVCoords(Render::Image* glyphImage, const GlyphLocation& loc, DPoint2d uvs[2])
+    {
+    uvs[0].x = loc.m_atlasSlotX / static_cast<double>(m_numPixelsInX);
+    uvs[0].y = loc.m_atlasSlotY / static_cast<double>(m_numPixelsInY);
+    uvs[1].x = (loc.m_atlasSlotX + glyphImage->GetWidth()) / static_cast<double>(m_numPixelsInX);
+    uvs[1].y = (loc.m_atlasSlotY + glyphImage->GetHeight()) / static_cast<double>(m_numPixelsInY);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TexturePtr GlyphAtlas::GetTexture(Render::System& renderSystem, DgnDbP db)
+    {
+    if (!m_atlasTexture.IsNull())
+        return m_atlasTexture;
+
+    Render::Image atlasImage(m_numPixelsInX, m_numPixelsInY, std::move(m_atlasBytes), Render::Image::Format::Rgba);
+
+#if defined(DEBUG_DUMP_TEXTURE_ATLAS_DIR)
+    writeAtlasToImageFile(atlasImage.GetByteStream().data(), atlasImage.GetWidth(), atlasImage.GetHeight(), atlasImage.GetBytesPerPixel());
+#endif
+
+    // create the texture from the atlas image
+    Utf8PrintfString name("gta%u", m_index); 
+    TextureKey key(name);
+    Texture::CreateParams params(key);
+    params.m_isGlyph = true;
+    m_atlasTexture = renderSystem._CreateTexture(atlasImage, *db, params);
+
+    return m_atlasTexture;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GlyphAtlasManager::GlyphAtlasManager(uint32_t numGlyphs) : m_numGlyphs(numGlyphs)
+    {
+    const uint32_t maxGlyphsInAtlas = GlyphAtlas::GetMaxGlyphsInAtlas();
+    m_numAtlases = static_cast<uint32_t>(ceil(m_numGlyphs / static_cast<double>(maxGlyphsInAtlas)));
+    uint32_t i = 0;
+    for (; i < m_numAtlases - 1; i++)
+        m_atlases.emplace_back(i, maxGlyphsInAtlas);
+    m_atlases.emplace_back(i, m_numGlyphs - maxGlyphsInAtlas * (m_numAtlases - 1));
+    m_curAtlasNdx = 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphAtlasManager::AddGlyph(DeferredGlyph& glyph)
+    {
+    void* key = glyph.GetKey();
+    if (m_glyphLocations.end() != m_glyphLocations.find(key))
+        return; // glyph already exists in an atlas
+
+    GlyphLocation loc;
+    if (!m_atlases[m_curAtlasNdx].AddGlyph(glyph, loc))
+        {
+        m_curAtlasNdx++;
+        m_atlases[m_curAtlasNdx].AddGlyph(glyph, loc);
+        }
+    loc.m_atlasNdx = m_curAtlasNdx;
+    m_glyphLocations.insert(std::pair<void*,GlyphLocation>(key, loc));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GlyphAtlas& GlyphAtlasManager::GetAtlasAndLocationForGlyph(DeferredGlyph& glyph, GlyphLocation& loc)
+    {
+    void* key = glyph.GetKey();
+    std::map<void*,GlyphLocation>::iterator itr = m_glyphLocations.find(key);
+    loc = itr->second;
+    return m_atlases[loc.m_atlasNdx];
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
+    {
+    uint32_t numGlyphs = static_cast<uint32_t>(m_deferredGlyphs.size());
+    if (0 == numGlyphs)
+        return;
+
+    GlyphAtlasManager atlasManager(static_cast<uint32_t>(m_uniqueGlyphKeys.size()));
+    for (auto& deferredGlyph : m_deferredGlyphs)
+        atlasManager.AddGlyph(deferredGlyph);
+
+    // add the polyfaces with appropriate UV coordinates
+    for (auto& deferredGlyph : m_deferredGlyphs)
+        {
+        GlyphLocation loc;
+        GlyphAtlas& atlas = atlasManager.GetAtlasAndLocationForGlyph(deferredGlyph, loc);
+
+        // override texture
+        TexturePtr tex = atlas.GetTexture(renderSystem, m_dgndb);
+        deferredGlyph.m_polyface.m_displayParams = deferredGlyph.m_polyface.m_displayParams->CloneForRasterText(*tex);
+
+        if (!deferredGlyph.m_paramsFixed)
+            {
+            // override uvs
+            DPoint2d uvs[2];
+            atlas.GetUVCoords(deferredGlyph.m_polyface.m_glyphImage, loc, uvs);
+            auto& params = deferredGlyph.m_polyface.m_polyface->Param();
+            BeAssert(params.size() >= 4);
+            for (auto& param : params)
+                {
+                param.y = param.y < 0.5 ? uvs[0].x : uvs[1].x;
+                param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
+                }
+            deferredGlyph.m_paramsFixed = true;
+            }
+
+        AddPolyface(deferredGlyph.m_polyface, *deferredGlyph.m_geom, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2218,8 +2553,17 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained)
+void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double rangePixels, bool isContained, bool doDefer)
     {
+    if (nullptr != tilePolyface.m_glyphImage && doDefer)
+        {
+        m_deferredGlyphs.push_back(DeferredGlyph(tilePolyface, geom, rangePixels, isContained)); // defer processing these until we are finished so we can make texture atlas of glyphs
+        void* key = m_deferredGlyphs.back().GetKey();
+        if (m_uniqueGlyphKeys.find(key) == m_uniqueGlyphKeys.end())
+            m_uniqueGlyphKeys.insert(key);
+        return;
+        }
+
     // TFS#817210
     PolyfaceHeaderPtr polyface = tilePolyface.m_polyface.get();
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
@@ -2658,6 +3002,8 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
             }
         }
 
+    if (!isPartialTile)
+        m_meshGenerator.AddDeferredGlyphMeshes(*loadContext.GetRenderSystem());
 
     // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;
@@ -3272,7 +3618,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  10: Change tile cache key such that if tile has no 'zoom factor', it is written as 0, not 1.
     //  11: Added width + height to textures.
     //  12: Fixed display priority range in 2d models
-    return "12";
+    //  13: Texture atlas for raster text
+    return "13";
     }
 
 /*---------------------------------------------------------------------------------**//**

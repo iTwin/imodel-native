@@ -670,12 +670,13 @@ struct Polyface
     double              m_decimationTolerance;
     bool                m_displayEdges;
     bool                m_isPlanar;
+    Image*              m_glyphImage;
 
-    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false, double decimationTolerance=0.0)
-        : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar), m_decimationTolerance(decimationTolerance) { }
+    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false, Image* glyphImage=nullptr, double decimationTolerance=0.0)
+        : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar), m_glyphImage(glyphImage), m_decimationTolerance(decimationTolerance) { }
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
-    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar, m_decimationTolerance); }
+    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar, m_glyphImage, m_decimationTolerance); }
     DisplayParamsCR GetDisplayParams() const { return *m_displayParams; }
     bool CanDecimate() const { return 0.0 < m_decimationTolerance; }
 };
