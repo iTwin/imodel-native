@@ -64,7 +64,7 @@ $(o)MstnBridgeTestsFixture.obj  : $(BEGTEST_INPUT)MstnBridgeTestsFixture.cpp    
 
 $(o)V8FileEditor.obj            : $(BEGTEST_INPUT)V8FileEditor.cpp                           $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)FakeRegistry.obj            : $(SrcRoot)DgnDbSync/iModelBridge/Tests/NonPublished/FakeRegistry.cpp   $(TestsHeaders) ${MultiCompileDepends}
+$(o)FakeRegistry.obj            : $(SrcRoot)imodel02/iModelBridgeCore/DgnDbSync/iModelBridge/Tests/NonPublished/FakeRegistry.cpp   $(TestsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

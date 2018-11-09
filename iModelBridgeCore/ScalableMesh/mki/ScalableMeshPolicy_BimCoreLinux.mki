@@ -48,7 +48,7 @@ cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-er
 # ------------------------------------
 # Source directories
 # ------------------------------------
-SrcScalableMesh     = $(SrcRoot)ScalableMesh/
+SrcScalableMesh     = $(SrcRoot)imodel02/iModelBridgeCore/ScalableMesh/
 STMPrivateAPISrc            = $(SrcScalableMesh)PrivateAPI/
 SCMPublicAPISrc             = $(SrcScalableMesh)PublicAPI/
 
