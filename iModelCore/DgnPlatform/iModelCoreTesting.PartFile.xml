@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+    
+    <Part Name="RunUnitGTest" OnlyPlatforms="x64,macos*,linux*" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs +dAllowIgnore=1"
+            >
+        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
+
+        <SubPart PartName="RunGtest" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="RunGtest" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="RunGtest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="RunGtest" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="RunGtest" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="RunGtest" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="RunGtest" PartFile="geomlibs" Repository="GeomLibs"/>
+        <SubPart PartName="RunGtest" PartFile="Units" Repository="Units"/>
+
+        <!-- These are built, but not run. -->
+        <SubProduct ProductName="GeoCoord-Gtest" PartFile="GeoCoord" Repository="GeoCoord"/>
+    </Part>
+
+    <Part Name="RunUnitJUnit" OnlyPlatforms="android*" Sequential="true" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/ANJU/Logs"
+            >
+        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
+
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="geomlibs" Repository="GeomLibs"/>
+        <SubPart PartName="RunAndroidJUnitTest" PartFile="Units" Repository="Units"/>
+    </Part>
+
+    <Part Name="RunUnitXCTest" OnlyPlatforms="ios*" Sequential="true" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/XCTest/Logs"
+            >
+        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
+
+        <SubPart PartName="RuniOSXCTest" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="geomlibs" Repository="GeomLibs"/>
+        <SubPart PartName="RuniOSXCTest" PartFile="Units" Repository="Units"/>
+    </Part>
+
+    <Part Name="RunUnitCppTest" OnlyPlatforms="winrt*" Sequential="true" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/UwpTest/Logs"
+            >
+        <SubPart PartName="Base" PartFile="BeGTest" Repository="BeGTest"/>
+
+        <SubPart PartName="RunUwpTest" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="RunUwpTest" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="RunUwpTest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="RunUwpTest" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="RunUwpTest" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="RunUwpTest" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="RunUwpTest" PartFile="geomlibs" Repository="GeomLibs"/>
+        <SubPart PartName="RunUwpTest" PartFile="Units" Repository="Units"/>
+    </Part>
+
+</BuildContext>
