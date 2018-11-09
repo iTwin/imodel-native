@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmfndfnc.h                                         aec    07-Feb-1994     */
@@ -38,7 +38,7 @@ int aecDTM_findSurfaceByName /* <= TRUE if error                   */
 (
   struct CIVdtmsrf **srfPP,            /* <= found surface                    */
   struct CIVdtmprj *prjP,              /* => DTM project (or NULL)            */
-  wchar_t *srfNameP                    /* => surface name pointer             */
+  wchar_t const*srfNameP               /* => surface name pointer             */
 );
 
 int aecDTM_findSurfaceByGUID /* <= NULL if error                   */

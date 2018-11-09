@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/msl_array.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1113,12 +1113,12 @@ template <class TYPE> class ArrayPtrClass
 
 	    TYPE& operator* (void)
             {
-            return *(*m_p);
+            return *(*this->m_p);
             }
 
         TYPE* operator-> (void)
             {
-            return *m_p;
+            return *this->m_p;
             }
 
     }; // End Iterator class
@@ -1664,7 +1664,7 @@ template <class TYPE> class ArrayClassWin
 
         {
             arrayPtr = 0;
-            hMem = 0;
+            // hMem = 0;
             *this = tocopy;
         }
 
@@ -1964,7 +1964,7 @@ template <class TYPE> class ArrayBulkPtrClass
 
         {
             arrayPtr = 0;
-            hMem = 0;
+            // hMem = 0;
             *this = tocopy;
         }
 

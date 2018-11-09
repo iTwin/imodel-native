@@ -83,18 +83,18 @@ void RepositoryInfoProvider::UpdateInfo(WSRepositoryCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetRepositoryInfo(ICancellationTokenPtr ct) const
+AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetRepositoryInfo(IWSRepositoryClient::RequestOptionsPtr options, ICancellationTokenPtr ct) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSRepositoryResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetRepositoryInfoRequest(ct);
+        return webApi->SendGetRepositoryInfoRequest(options, ct);
         }, ct);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetInfo(ICancellationTokenPtr ct)
+AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetInfo(IWSRepositoryClient::RequestOptionsPtr options, ICancellationTokenPtr ct)
     {
     BeMutexHolder lock(m_mutex);
     if (CanUseCachedInfo())
@@ -102,7 +102,7 @@ AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetInfo(ICancellationTo
 
     return m_getInfoExecutor.GetTask([=]
         {
-        return GetRepositoryInfo(ct)->Then<WSRepositoryResult>([=] (WSRepositoryResult result)
+        return GetRepositoryInfo(options, ct)->Then<WSRepositoryResult>([=] (WSRepositoryResult result)
             {
             BeMutexHolder lock(m_mutex);
 

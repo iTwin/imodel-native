@@ -1074,7 +1074,7 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
 //            ReportProgress();
             BECN::ECSchemaPtr rightSchema;
             if (BECN::SchemaReadStatus::Success != BECN::ECSchema::ReadFromXmlString(rightSchema, schemaIter->second.c_str(), schemaContext))
-                return nullptr;
+                continue;
             auto diff = ECDiff::Diff(*leftSchema, *rightSchema);
             if (diff->GetStatus() == DiffStatus::Success)
                 {
@@ -1711,7 +1711,7 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
         if (!flatCustomAttributeSchema.IsValid())
             {
             Utf8String error;
-            error.Sprintf("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            error.Sprintf("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", instance->GetClass().GetFullName());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
@@ -1719,7 +1719,7 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
         if (!copiedCA.IsValid())
             {
             Utf8String error;
-            error.Sprintf("Failed to copy custom attribute '%s'. Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            error.Sprintf("Failed to copy custom attribute '%s'. Skipping custom attribute.", instance->GetClass().GetFullName());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
@@ -3140,7 +3140,8 @@ bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR sche
     return BeStringUtilities::Strnicmp(schemaName.c_str(), "PFLModule", 9) == 0 ||
         schemaName.EqualsI("CivilSchema_iModel") ||
         schemaName.EqualsI("BuildingDataGroup") ||
-        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0;
+        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0 ||
+        schemaName.StartsWith("DgnCustomItemTypes_");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3491,12 +3492,13 @@ void DynamicSchemaGenerator::GenerateSchemas(bvector<DgnV8FileP> const& files, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialConverterBase::CreateProvenanceTables()
     {
-    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
-        {
+    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceFile) && _WantModelProvenanceInBim())
         DgnV8FileProvenance::CreateTable(*m_dgndb);
+    if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel) && _WantModelProvenanceInBim())
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
+    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
         DgnV8ElementProvenance::CreateTable(*m_dgndb);
-        }
+    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3512,7 +3514,7 @@ BentleyStatus SpatialConverterBase::MakeSchemaChanges(bvector<DgnFileP> const& f
     _GetParamsR().SetIsUpdating(FindImportJobForModel(*GetRootModelP()).IsValid());
 
 #ifndef NDEBUG
-    if (_WantProvenanceInBim())
+    if (_WantModelProvenanceInBim())
         {
         BeAssert(m_dgndb->TableExists(DGN_TABLE_ProvenanceFile));
         }

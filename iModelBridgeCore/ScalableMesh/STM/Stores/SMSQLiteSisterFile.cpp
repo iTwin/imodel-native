@@ -113,6 +113,56 @@ void SMSQLiteSisterFile::CopyClipSisterFile(SMStoreDataType dataType) const
 
 	BeFileName::BeCopyFile(sqlFileNameSource.c_str(), sqlFileName.c_str());
 }
+
+void SMSQLiteSisterFile::CloseSisterFile(SMStoreDataType dataType)
+{
+    SMSQLiteFilePtr sqlFilePtr;
+
+    switch (dataType)
+    {
+    case SMStoreDataType::LinearFeature:
+    case SMStoreDataType::Graph:
+    {
+        std::lock_guard<std::mutex> lock(m_featureOpen);
+        if (m_smFeatureSQLiteFile.IsValid() && m_smFeatureSQLiteFile->IsOpen())
+        {
+            m_smFeatureSQLiteFile->Close();
+            m_smFeatureSQLiteFile = nullptr;
+        }
+
+    }
+    break;
+
+    case SMStoreDataType::DiffSet:
+    {
+        std::lock_guard<std::mutex> lock(m_clipOpen);
+        if (m_smClipSQLiteFile.IsValid() && m_smClipSQLiteFile->IsOpen())
+        {
+            m_smClipSQLiteFile->Close();
+            m_smClipSQLiteFile = nullptr;
+        }
+    }
+    break;
+
+    case SMStoreDataType::ClipDefinition:
+    case SMStoreDataType::Skirt:
+    case SMStoreDataType::CoveragePolygon:
+    case SMStoreDataType::CoverageName:
+    {
+        std::lock_guard<std::mutex> lock(m_defOpen);
+        if (m_smClipDefinitionSQLiteFile.IsValid() && m_smClipDefinitionSQLiteFile->IsOpen())
+        {
+            m_smClipDefinitionSQLiteFile->Close();
+            m_smClipDefinitionSQLiteFile = nullptr;
+        }
+    }
+    break;
+
+    default:
+        assert(!"Unknown datatype");
+        break;
+    }
+}
    
 SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool createSisterIfMissing, bool useTempPath)
     {
@@ -139,14 +189,19 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                     remove(sqlNameUtf8.c_str());
                     m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_GENERATION_FILE, createSisterIfMissing);
                     //m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
-                    BeAssert(status == SUCCESS);
+                    BeAssert(status == SUCCESS || !createSisterIfMissing);
                     }
                 else
                     {         
 #ifndef NDEBUG
                     //Non sharing process should have create the sister file before sharing process can access it.
+#ifdef __APPLE__
+                    struct stat buffer;
+                    assert(stat(sqlNameUtf8.c_str(), &buffer) == 0);
+#else
                     struct _stat64i32 buffer;
                     assert(_wstat(sqlFileName.c_str(), &buffer) == 0);
+#endif
 #endif
                     m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, true, SQLDatabaseType::SM_GENERATION_FILE, false);
                     BeAssert(status == SUCCESS);
@@ -167,7 +222,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                     
                 StatusInt status;
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_DIFFSETS_FILE, createSisterIfMissing);
-                BeAssert(status == SUCCESS);
+                BeAssert(status == SUCCESS || !createSisterIfMissing);
                 }
 
             sqlFilePtr = m_smClipSQLiteFile;
@@ -187,7 +242,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 StatusInt status;
                 m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_CLIP_DEF_FILE, createSisterIfMissing);
-                BeAssert(status == SUCCESS);
+                BeAssert(status == SUCCESS || createSisterIfMissing == false);
                 }
 
             sqlFilePtr = m_smClipDefinitionSQLiteFile;

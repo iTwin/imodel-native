@@ -57,8 +57,8 @@ namespace pointsengine
 		float			_lod;
 		bool			_lock;
 		volatile bool	_paused; // Accessed from different threads so make sure it is read each time, not cached
-		bool			_filterpaused;
-		bool			_res;
+		// unused - bool			_filterpaused;
+		// unused - bool			_res;
 		bool			_dump;
 		bool			_skipLoad;
 	};

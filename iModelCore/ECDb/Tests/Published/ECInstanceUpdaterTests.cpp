@@ -647,11 +647,22 @@ TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("UpdateTimeOfDayValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/>
             <ECEntityClass typeName="CalendarEntry" modifier="None">
                 <ECProperty propertyName="StartTime" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                            <DateTimeComponent>TimeOfDay</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
                 </ECProperty>
-                <ECProperty propertyName="EndTime" typeName="dateTime" />
+                <ECProperty propertyName="EndTime" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                            <DateTimeComponent>TimeOfDay</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
             </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -693,9 +704,8 @@ TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    // WIP: Once we can use the TimeOfDay component in the schema, we need to adjust the expected time strings
-    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T08:30:00.000\", \"EndTime\":\"2000-01-01T20:00:00.000\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key1.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T00:00:00.000\", \"EndTime\":\"2000-01-01T23:59:59.999\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key2.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"08:30:00.000\", \"EndTime\":\"20:00:00.000\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key1.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"00:00:00.000\", \"EndTime\":\"23:59:59.999\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key2.GetInstanceId().ToString().c_str()).c_str()));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,StartTime,EndTime FROM ts.CalendarEntry"));
@@ -706,12 +716,12 @@ TEST_F(ECInstanceUpdaterTests, UpdateTimeOfDayValues)
         ECValue v;
         ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(v, "StartTime"));
         DateTime actualStartTime = v.GetDateTime();
-        EXPECT_FALSE(actualStartTime.IsTimeOfDay()) << "Schema has changed to use TimeOfDay CA";
+        EXPECT_TRUE(actualStartTime.IsTimeOfDay());
         ASSERT_EQ(expectedStartTime, actualStartTime.GetTimeOfDay());
 
         ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(v, "EndTime"));
         DateTime actualEndTime = v.GetDateTime();
-        EXPECT_FALSE(actualStartTime.IsTimeOfDay()) << "Schema has changed to use TimeOfDay CA";
+        EXPECT_TRUE(actualStartTime.IsTimeOfDay());
         ASSERT_EQ(expectedEndTime, actualEndTime.GetTimeOfDay());
         };
 

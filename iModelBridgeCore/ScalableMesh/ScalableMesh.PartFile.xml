@@ -114,11 +114,12 @@
         <SubPart PartName="DgnPlatformDll"   PartFile="iModelCore/DgnPlatform/DgnPlatform"                          Repository="imodel02" LibType="Static" />
         <SubPart PartName="GeomDlls"        PartFile="iModelCore/GeomLibs/geomlibs"                             Repository="imodel02"  LibType="Static" />
         <SubPart PartName="ImagePP"         PartFile="iModelBridgeCore/Imagepp/ImagePP"                              Repository="imodel02"  LibType="Static" />
-       
         <SubPart PartName="CoreStatic"            PartFile="iModelBridgeCore/TerrainModel/TerrainModelDgnDb"                         Repository="imodel02" LibType="Static" />      
         <SubPart PartName="BeSQLite" PartFile="iModelCore/BeSQLite/BeSQLite" Repository="imodel02" LibType="Static" />
-       
-
+        <SubPart PartName="CloudDataSource"  PartFile="CloudDataSource"                      Repository="ScalableMesh" LibType="Static" />
+        <SubPart PartName="Cgal"             PartFile="Libsrc-Nugets"                        Repository="bsicommon" LibType="Static"/>
+        
+    
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMeshCore$(stlibext)</Libs>
             <PublicAPI Domain="ScalableMesh" />

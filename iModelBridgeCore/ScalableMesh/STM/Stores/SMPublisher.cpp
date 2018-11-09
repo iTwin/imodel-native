@@ -74,9 +74,9 @@ void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, const Transform&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture)
+void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const Transform& transform, bvector<Byte>& outData, bool outputTexture)
     {
-    return _Publish(node, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, outData, outputTexture);
+    return _Publish(node, clips, coverageID, isClipBoundary, transform, outData, outputTexture);
     }
 
 

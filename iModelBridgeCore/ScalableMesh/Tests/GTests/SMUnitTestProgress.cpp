@@ -39,9 +39,9 @@ struct MockListener : IScalableMeshProgressListener
     mutable int m_numCheckContinueOnProgressCalls = 0;
     virtual void CheckContinueOnProgress(IScalableMeshProgress* progress) const override
         {
-        auto progress_percent = progress->GetProgress() * 100.0;
-        std::cout << "\r" << "step [" << progress->GetProgressStepIndex() << "] : " << progress_percent;
-        if (progress_percent >= 100) std::cout << "\r";
+        //auto progress_percent = progress->GetProgress() * 100.0;
+        //std::cout << "\r" << "step [" << progress->GetProgressStepIndex() << "] : " << progress_percent;
+        //if (progress_percent >= 100) std::cout << "\r";
         ++m_numCheckContinueOnProgressCalls;
         };
     };
@@ -68,7 +68,7 @@ struct MockWorker
 
     protected:
 
-        bool DoWork(IScalableMeshProgress* progress)
+        bool DoWork(IScalableMeshProgressPtr progress)
             {
             for (int i = 1; i <= NIterations && !progress->IsCanceled(); i++)
                 {
@@ -82,11 +82,11 @@ struct MockWorker
 template <int NSteps, int NIterations>
 struct MockMultiStepWorker : MockWorker<NIterations>
     {
-    std::future<bool> DoWorkAsync(IScalableMeshProgress* progress)
+    std::future<bool> DoWorkAsync(IScalableMeshProgressPtr progress)
         {
         progress->SetTotalNumberOfSteps(NSteps);
         progress->ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
-        return std::async(std::launch::async, [this, &progress]
+        return std::async(std::launch::async, [this, progress]
             {
             ScalableMeshStep steps[NSteps];
             switch (NSteps)
@@ -171,7 +171,11 @@ TEST_F(ScalableMeshProgressTest, Create)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ScalableMeshProgressTest, CreateWithParam)
     {
-    auto progress = IScalableMeshProgress::Create(ScalableMeshProcessType::SAVEAS_3SM, nullptr);
+    auto filenames = ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_PATH));
+    StatusInt status;
+    auto myScalableMesh = ScalableMesh::IScalableMesh::GetFor(filenames[0], true, true, status);
+
+    auto progress = IScalableMeshProgress::Create(ScalableMeshProcessType::SAVEAS_3SM, myScalableMesh);
     EXPECT_TRUE(progress != nullptr);
     }
 

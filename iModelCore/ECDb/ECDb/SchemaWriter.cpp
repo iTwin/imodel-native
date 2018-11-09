@@ -4066,6 +4066,31 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    11/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+bool NumericChangeIsDecrease(UInt32Change const& change)
+    {
+    if (!change.IsChanged())
+        return false;
+
+    Nullable<uint32_t> oldV = change.GetOld();
+    Nullable<uint32_t> newV = change.GetNew();
+    return oldV != nullptr && newV != nullptr && newV.Value() < oldV.Value();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    11/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+bool IsSupportedSchemaDowngradeChange(SchemaChange& change)
+    {
+    // only minor version may be decreased so that the older version is fully compatible with the new one
+    if (change.VersionRead().IsChanged() || change.VersionWrite().IsChanged())
+        return false;
+
+    return NumericChangeIsDecrease(change.VersionMinor());
+    }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4112,7 +4137,14 @@ BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> con
             {
             for (size_t i = 0; i < ctx.GetDiff().Changes().Count(); i++)
                 {
-                schemaOfInterest.insert(ctx.GetDiff().Changes()[i].GetChangeName());
+                SchemaChange& schemaChange = ctx.GetDiff().Changes()[i];
+                if (IsSupportedSchemaDowngradeChange(schemaChange))
+                    {
+                    LOG.infov("Schema %s is skipped for the schema upgrade because a newer compatible version of it already exists in the file.", schemaChange.GetChangeName());
+                    continue;
+                    }
+
+                schemaOfInterest.insert(schemaChange.GetChangeName());
                 }
             }
         //Remove any irrelevant schemas
@@ -4305,6 +4337,8 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
 
     return SchemaValidator::ValidateSchemas(ImportCtx(), Issues(), out) ? SUCCESS : ERROR;
     }
+
+
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2017

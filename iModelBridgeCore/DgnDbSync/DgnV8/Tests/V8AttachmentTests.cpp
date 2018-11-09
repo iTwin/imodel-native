@@ -427,7 +427,7 @@ TEST_F(V8AttachmentTests, AttachIfc)
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     AttachForeignReferenceFile (L"roof.ifc");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    CheckForeignReferenceOutput (1133);
+    CheckForeignReferenceOutput (788);
     }
 
 /*---------------------------------------------------------------------------------**//**

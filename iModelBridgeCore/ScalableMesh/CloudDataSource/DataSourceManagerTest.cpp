@@ -4,7 +4,7 @@
 #include "DataSourceManagerTest.h"
 #include "DataSourceAzure.h"
 #include "DataSourceStatus.h"
-#include "include\DataSourceManagerTest.h"
+#include "include/DataSourceManagerTest.h"
 
 typedef    unsigned long        TestValue;
 
@@ -24,8 +24,10 @@ CLOUD_EXPORT DataSourceStatus DataSourceManagerTest::testDataSources(void)
     //if ((status = testDataSourceFile()).isFailed())
     //    return status;
 
+#ifdef USE_WASTORAGE
     if ((status = testDataSourceAzure()).isFailed())
         return status;
+#endif
 
     return DataSourceStatus();
 }
@@ -183,6 +185,7 @@ DataSourceStatus DataSourceManagerTest::testDataSourceFile(void)
 }
 
 
+#ifdef USE_WASTORAGE
 DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
 {
     DataSourceAzure                            *    dataSourceAzure;
@@ -247,3 +250,4 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
                                                             // Return OK
     return DataSourceStatus();
 }
+#endif

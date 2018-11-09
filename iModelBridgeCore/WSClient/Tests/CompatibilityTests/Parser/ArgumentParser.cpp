@@ -196,7 +196,7 @@ std::ostream* err
 
             if (!ParseAuth(arg.c_str(), argValue, *currentRepo, err))
                 {
-                PrintError(err, Utf8PrintfString("Invalid format: %s %s", arg, argValue).c_str());
+                PrintError(err, Utf8PrintfString("Invalid format: %s %s", arg.c_str(), argValue).c_str());
                 return -1;
                 }
             }
@@ -207,7 +207,7 @@ std::ostream* err
             BeFileName dir(argValue);
             if (!dir.DoesPathExist() || !dir.IsDirectory())
                 {
-                PrintError(err, Utf8PrintfString("Not a folder: %s %s", arg, argValue).c_str());
+                PrintError(err, Utf8PrintfString("Not a folder: %s %s", arg.c_str(), argValue).c_str());
                 return -1;
                 }
 
@@ -244,7 +244,7 @@ std::ostream* err
             }
         else
             {
-            PrintError(err, Utf8PrintfString("Uknown parameter: %s at positition %d", arg, i).c_str());
+            PrintError(err, Utf8PrintfString("Uknown parameter: %s at positition %d", arg.c_str(), i).c_str());
             return -1;
             }
         }

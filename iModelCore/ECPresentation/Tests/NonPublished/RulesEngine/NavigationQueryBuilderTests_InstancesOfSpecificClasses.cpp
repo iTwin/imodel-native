@@ -82,20 +82,11 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_ShowEmptyGroups)
-    {
-    // WIP - need metadata queries to support selecting classes without instances
-    FAIL();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest                                      Grigas.Petraitis                06/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClass_ChildrenQuery)
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClass, "MyLabel");
-    m_nodesCache.Cache(*parentNode, false);
+    Cache(*parentNode);
     
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, true, false, false, "", "Basic1:Class1A", false);
 
@@ -139,7 +130,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByLabel)
 TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByLabel_ChildrenQuery)
     {
     JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "MyLabel");
-    m_nodesCache.Cache(*parentNode, false);
+    Cache(*parentNode);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, true, false, "", "Basic1:Class1A,Class1B", false);
     
@@ -167,7 +158,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClass, "MyLabel");
-    m_nodesCache.Cache(*parentNode, false);
+    Cache(*parentNode);
     
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, true, true, false, "", "Basic1:Class1A,Class1B", false);
 
@@ -195,9 +186,9 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_GroupByClassAndL
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
     TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClass, "Class Grouping Node");
     JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "Label Grouping Node");
-    m_nodesCache.Cache(*classGroupingNode, false);
+    Cache(*classGroupingNode);
     labelGroupingNode->SetParentNode(*classGroupingNode);
-    m_nodesCache.Cache(*labelGroupingNode, false);
+    Cache(*labelGroupingNode);
     
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, true, true, false, "", "Basic1:Class1A,Class1B", false);
 
@@ -283,7 +274,7 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
 TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_ReferencingParentInstance_WithParentInstanceNode)
     {    
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic2", "Class2"));
-    m_nodesCache.Cache(*parentNode, false);
+    Cache(*parentNode);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Name = parent.Name", "Basic1:Class1A", false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -304,11 +295,11 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
 TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_ReferencingGrandParentInstance)
     {    
     TestNavNodePtr grandparentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic2", "Class2"), ECInstanceId((uint64_t)123));
-    m_nodesCache.Cache(*grandparentNode, false);
+    Cache(*grandparentNode);
 
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic2", "Class2"), ECInstanceId((uint64_t)456));
     parentNode->SetParentNodeId(grandparentNode->GetNodeId());
-    m_nodesCache.Cache(*parentNode, false);
+    Cache(*parentNode);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.Name = parent.parent.Name", "Basic1:Class1A", false);
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -329,11 +320,11 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_R
 TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_ReferencingGrandParentAndParentInstance)
     {    
     TestNavNodePtr grandparentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic2", "Class2"), ECInstanceId((uint64_t)123));
-    m_nodesCache.Cache(*grandparentNode, false);
+    Cache(*grandparentNode);
 
     TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic2", "Class2"), ECInstanceId((uint64_t)456));
     parentNode->SetParentNodeId(grandparentNode->GetNodeId());
-    m_nodesCache.Cache(*parentNode, false);
+    Cache(*parentNode);
 
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, 
         "this.Name = parent.parent.Name OR this.Name = parent.Name", "Basic1:Class1A", false);

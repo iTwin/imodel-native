@@ -8,7 +8,7 @@
   "references": [
     {
       "name" : "CoreCustomAttributes",
-      "version" : "01.00.00"
+      "version" : "01.00.01"
     },
     {
       "name" : "Formats",
@@ -41,7 +41,7 @@
     },
     "ExampleEntity": {
       "schemaItemType": "EntityClass",
-      "modifier": "sealed",
+      "modifier": "Sealed",
       "label": "ExampleEntity",
       "description": "An example entity class.",
       "baseClass": "ExampleSchema.ExampleBaseEntity",
@@ -60,7 +60,7 @@
     },
     "ExampleStruct": {
       "schemaItemType": "StructClass",
-      "modifier": "sealed",
+      "modifier": "Sealed",
       "properties": [
         {
           "type": "PrimitiveArrayProperty",
@@ -83,9 +83,9 @@
     },
     "ExampleRelationship": {
       "schemaItemType": "RelationshipClass",
-      "modifier": "sealed",
-      "strength": "embedding",
-      "strengthDirection": "forward",
+      "modifier": "Sealed",
+      "strength": "Embedding",
+      "strengthDirection": "Forward",
       "source": {
         "multiplicity": "(0..1)",
         "roleLabel": "source roleLabel",
@@ -105,7 +105,7 @@
     },
     "ExampleCustomAttribute": {
         "schemaItemType": "CustomAttributeClass",
-        "modifier": "sealed",
+        "modifier": "Sealed",
         "appliesTo": "Schema, AnyProperty"
     },
     "ExampleKoQ": {

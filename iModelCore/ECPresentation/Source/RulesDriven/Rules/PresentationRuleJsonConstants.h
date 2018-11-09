@@ -143,6 +143,7 @@
 //ChildNodeSpecifications
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_DONOTSORT                               "doNotSort"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_ALWAYSRETURNSCHILDREN                   "alwaysReturnsChildren"
+#define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HASCHILDREN                             "hasChildren"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDENODESINHIERARCHY                    "hideNodesInHierarchy"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEIFNOCHILDREN                        "hideIfNoChildren"
 #define CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES                        "relatedInstances"

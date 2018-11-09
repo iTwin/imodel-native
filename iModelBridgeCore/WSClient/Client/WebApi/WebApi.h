@@ -29,7 +29,11 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
         WebApi(std::shared_ptr<const ClientConfiguration> configuration);
         virtual ~WebApi();
 
-        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryInfoRequest(ICancellationTokenPtr ct = nullptr) const = 0;
+        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryInfoRequest
+            (
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
@@ -42,6 +46,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             ObjectIdCR objectId,
             Utf8StringCR eTag = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -50,6 +55,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -59,12 +65,14 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             HttpBodyPtr bodyResponseOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
@@ -73,6 +81,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
             Utf8StringCR skipToken = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 

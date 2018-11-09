@@ -27,22 +27,22 @@ AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification
-(
-int       priority,
-bool      alwaysReturnsChildren,
-bool      hideNodesInHierarchy,
-bool      hideIfNoChildren,
-bool      groupByClass,
-bool      groupByRelationship,
-bool      groupByLabel,
-int       skipRelatedLevel,
-Utf8StringCR supportedSchemas
-) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-    m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel),
-    m_skipRelatedLevel (skipRelatedLevel), m_supportedSchemas (supportedSchemas), m_requiredDirection (RequiredRelationDirection_Both)
+AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, 
+    bool hideIfNoChildren, bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas) 
+    : AllRelatedInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, 
+        hideIfNoChildren, groupByClass, groupByLabel, skipRelatedLevel, supportedSchemas)
     {
+    m_groupByRelationship = groupByRelationship;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AllRelatedInstanceNodesSpecification::AllRelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, 
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas) 
+    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), m_groupByRelationship(false), 
+    m_groupByLabel(groupByLabel), m_skipRelatedLevel(skipRelatedLevel), m_supportedSchemas(supportedSchemas), m_requiredDirection(RequiredRelationDirection_Both)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015

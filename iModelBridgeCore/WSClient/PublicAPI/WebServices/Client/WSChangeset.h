@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSChangeset.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/ObjectId.h>
-#include <WebServices/Client/RequestOptions.h>
+#include <WebServices/Client/WSError.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -50,7 +50,6 @@ struct WSChangeset
         Format m_format;
         bvector<std::shared_ptr<Instance>> m_instances;
         std::shared_ptr<Options> m_options;
-        Json::Value m_requestOptions;
         size_t m_requestOptionsJsonSize = 0;
 
     private:
@@ -66,9 +65,6 @@ struct WSChangeset
         //! Specify Format::SingeInstance for one instance with related instances changeset format.
         //! Specify Format::MultipleInstance for multiple instances with telated instances changeset format.
         WSCLIENT_EXPORT WSChangeset(Format format = Format::MultipleInstances);
-
-        //! Get set request options for changeset
-        WSCLIENT_EXPORT void SetRequestOptions(RequestOptions options);
 
         //! Add new instance. 
         //! @return added instance. Will assert if adding second instance with Format::SingeInstance and return undefined result.
@@ -89,13 +85,13 @@ struct WSChangeset
         //! Get total relationship count used in changeset.
         WSCLIENT_EXPORT size_t GetRelationshipCount() const;
 
-        //! Request options allows to change default behaviour of WSG request
-        //! Current WSChangeset implementation allows these options: Response Content, Refresh Instances, Custom Options.
-        //! If request options are not initialised, this method initialise them.
+        //! Request options allows to change default behaviour of WSG request.
+        //! Current WSChangeset implementation allows these options: Failure Strategy, Response Content, Refresh Instances, Custom Options.
+        //! If request options are not initialized, this method initialise them.
         //! @return request options
         WSCLIENT_EXPORT Options& GetRequestOptions();
 
-        //! If request options are initialised (by calling GetRequestOptions)
+        //! If request options are initialized (by calling GetRequestOptions)
         //! but are not needed for this WSChangeset, request options can be removed from request.
         WSCLIENT_EXPORT void RemoveRequestOptions();
 
@@ -206,36 +202,57 @@ struct WSChangeset::Options
     friend struct WSChangeset;
 
     public:
+        enum class FailureStrategy
+            {
+            ServerDefault,
+            Continue,
+            Stop
+            };
+
         enum class ResponseContent
             {
-            Null,
+            ServerDefault,
             FullInstance,
             Empty,
             InstanceId
             };
 
-    private:
-        enum class OptRefreshInstances
+        enum class RefreshInstances
             {
-            Null, 
-            Refresh, 
+            ServerDefault,
+            Refresh,
             DontRefresh
             };
 
     private:
-        ResponseContent m_responseContent = ResponseContent::Null;
-        OptRefreshInstances m_refreshInstances = OptRefreshInstances::Null;
-        std::map<Utf8String, Utf8String> m_customOptions;
+        FailureStrategy m_failureStrategy = FailureStrategy::ServerDefault;
+        ResponseContent m_responseContent = ResponseContent::ServerDefault;
+        RefreshInstances m_refreshInstances = RefreshInstances::ServerDefault;
+        Json::Value m_customOptions = Json::objectValue;
         mutable size_t m_baseSize = 0;
 
     private:
+        static Utf8CP GetFailureStrategyStr(FailureStrategy failureStrategy);
         static Utf8CP GetResponseContentStr(ResponseContent option);
         size_t CalculateSize() const;
+        bool IsServerDefault() const;
         void ToJson(JsonValueR jsonOut) const;
 
     public:
+        //! Get FailureStrategy option.
+        WSCLIENT_EXPORT FailureStrategy GetFailureStrategy() const;
+
+        //! Set FailureStrategy option.
+        WSCLIENT_EXPORT void SetFailureStrategy(FailureStrategy value);
+
+        //! Get ResponseContent option.
+        WSCLIENT_EXPORT ResponseContent GetResponseContent() const;
+
         //! Set ResponseContent option.
         WSCLIENT_EXPORT void SetResponseContent(ResponseContent value);
+
+        //! Get RefreshInstances option.
+        WSCLIENT_EXPORT RefreshInstances GetRefreshInstances() const;
 
         //! Set RefreshInstances option.
         //! If RefreshInstances is set to true, newly created or modified instances will be returned refreshed. 
@@ -243,13 +260,25 @@ struct WSChangeset::Options
         //! If refresh operation fails, instance will have property "refreshed" set to false. 
         WSCLIENT_EXPORT void SetRefreshInstances(bool value);
         
+        //! Get custom options.
+        WSCLIENT_EXPORT Json::Value GetCustomOptions() const;
+
         //! Set custom option.
         //! CustomOptions can be used to pass any user data for ec plugin via extended parameters
         //! Will overwrite values with same name.
-        WSCLIENT_EXPORT void SetCustomOption(Utf8StringCR name, Utf8StringCR value);
+        WSCLIENT_EXPORT void SetCustomOption(Utf8StringCR name, Json::Value value);
 
         //! Remove custom option.
         WSCLIENT_EXPORT void RemoveCustomOption(Utf8StringCR name);
+
+        bool operator ==(const Options& other) const
+            {
+            return
+                other.m_failureStrategy == m_failureStrategy &&
+                other.m_responseContent == m_responseContent &&
+                other.m_refreshInstances == m_refreshInstances &&
+                other.m_customOptions == m_customOptions;
+            };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

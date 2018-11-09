@@ -6,11 +6,16 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "SecureStoreTests.h"
-#include <BeSecurity/BeSecurity.h>
-#include "StubLocalState.h"
+#include <Bentley/BeTest.h>
+#include <Bentley/LocalState.h>
+#include <BeSecurity/SecureStore.h>
 
 USING_NAMESPACE_BENTLEY_SECURITY
+
+class SecureStoreTests : public ::testing::Test
+    {
+    public: static void SetUpTestCase();
+    };
 
 void SecureStoreTests::SetUpTestCase()
     {
@@ -23,154 +28,154 @@ void SecureStoreTests::SetUpTestCase()
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, SaveValue_ValuePassed_GeneratesKeyBasedOnNamespaceAndKeyAndStoresToLocalState)
+TEST_F(SecureStoreTests, SaveValue_ValuePassed_GeneratesKeyBasedOnNamespaceAndKeyAndStoresToLocalState)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("TestNameSpace", "TestKey", "Foo");
-    EXPECT_EQ (1, localState.GetStubMap ().size ());
-    EXPECT_TRUE (localState.GetStubMap ().find("fe_shape/TestNameSpace:TestKey")!=localState.GetStubMap().end());
+    store.SaveValue("TestNameSpace", "TestKey", "Foo");
+    EXPECT_EQ(1, localState.GetValues().size());
+    EXPECT_TRUE(localState.GetValues().find({"fe_shape", "TestNameSpace:TestKey"}) != localState.GetValues().end());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, SaveValue_ValuePassed_SavesEncryptedValueAndStoresToLocalState)
+TEST_F(SecureStoreTests, SaveValue_ValuePassed_SavesEncryptedValueAndStoresToLocalState)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("Foo", "Boo", "TestPassword");
-    EXPECT_EQ (1, localState.GetStubMap ().size ());
+    store.SaveValue("Foo", "Boo", "TestPassword");
+    EXPECT_EQ(1, localState.GetValues().size());
 
-    auto storedValue = localState.GetValue ("fe_shape", "Foo:Boo");
-    EXPECT_FALSE (storedValue.empty ());
-    EXPECT_STRNE ("TestPassword", storedValue.c_str());
+    auto storedValue = localState.GetValue("fe_shape", "Foo:Boo");
+    EXPECT_FALSE(storedValue.empty());
+    EXPECT_STRNE("TestPassword", storedValue.c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, SaveValue_EmptyPassword_SavesNullValueToDeleteIt)
+TEST_F(SecureStoreTests, SaveValue_EmptyPassword_SavesNullValueToDeleteIt)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("Foo", "Boo", "TestValue");
-    EXPECT_EQ (1, localState.GetStubMap ().size ());
-    store.SaveValue ("Foo", "Boo", "");
-    EXPECT_EQ (0, localState.GetStubMap ().size ());
+    store.SaveValue("Foo", "Boo", "TestValue");
+    EXPECT_EQ(1, localState.GetValues().size());
+    store.SaveValue("Foo", "Boo", "");
+    EXPECT_EQ(0, localState.GetValues().size());
     }
 #endif
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LoadValue_ValueSavedWithSameKey_ReturnsSameValue)
+TEST_F(SecureStoreTests, LoadValue_ValueSavedWithSameKey_ReturnsSameValue)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("A", "B", "TestValue");
-    EXPECT_STREQ ("TestValue", store.LoadValue ("A", "B").c_str ());
+    store.SaveValue("A", "B", "TestValue");
+    EXPECT_STREQ("TestValue", store.LoadValue("A", "B").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LoadValue_ValuesSavedWithDifferentKeys_ReturnsDifferentValue)
+TEST_F(SecureStoreTests, LoadValue_ValuesSavedWithDifferentKeys_ReturnsDifferentValue)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("A", "B", "TestValue1");
-    store.SaveValue ("A", "C", "TestValue2");
-    EXPECT_STREQ ("TestValue1", store.LoadValue ("A", "B").c_str ());
-    EXPECT_STREQ ("TestValue2", store.LoadValue ("A", "C").c_str ());
+    store.SaveValue("A", "B", "TestValue1");
+    store.SaveValue("A", "C", "TestValue2");
+    EXPECT_STREQ("TestValue1", store.LoadValue("A", "B").c_str());
+    EXPECT_STREQ("TestValue2", store.LoadValue("A", "C").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LoadValue_10KBValueSaved_ReturnsSameValue)
+TEST_F(SecureStoreTests, LoadValue_10KBValueSaved_ReturnsSameValue)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
     // Just generate string with characters
     int count = 10 * 1024;
-    Utf8String value (count, ' ');
+    Utf8String value(count, ' ');
     while (--count >= 0)
         value[count] = ' ' + count % ('z' - ' ' + 1);
 
-    store.SaveValue ("A", "B", value.c_str ());
-    EXPECT_STREQ (value.c_str (), store.LoadValue ("A", "B").c_str ());
+    store.SaveValue("A", "B", value.c_str());
+    EXPECT_STREQ(value.c_str(), store.LoadValue("A", "B").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, SaveValue_EmptyValue_RemovesOldValue)
+TEST_F(SecureStoreTests, SaveValue_EmptyValue_RemovesOldValue)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("A", "B", "TestValue");
-    EXPECT_STREQ ("TestValue", store.LoadValue ("A", "B").c_str ());
+    store.SaveValue("A", "B", "TestValue");
+    EXPECT_STREQ("TestValue", store.LoadValue("A", "B").c_str());
 
-    store.SaveValue ("A", "B", "");
-    EXPECT_STREQ ("", store.LoadValue ("A", "B").c_str ());
+    store.SaveValue("A", "B", "");
+    EXPECT_STREQ("", store.LoadValue("A", "B").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, SaveValue_EmptyNamespace_SavesNothing)
+TEST_F(SecureStoreTests, SaveValue_EmptyNamespace_SavesNothing)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("", "Foo", "Value");
-    EXPECT_TRUE (localState.GetStubMap ().empty ());
-    EXPECT_STREQ ("", store.LoadValue ("", "Foo").c_str ());
+    store.SaveValue("", "Foo", "Value");
+    EXPECT_TRUE(localState.GetValues().empty());
+    EXPECT_STREQ("", store.LoadValue("", "Foo").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, SaveValue_EmptyKey_SavesNothing)
+TEST_F(SecureStoreTests, SaveValue_EmptyKey_SavesNothing)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    store.SaveValue ("Foo", "", "Value");
-    EXPECT_TRUE (localState.GetStubMap ().empty ());
-    EXPECT_STREQ ("", store.LoadValue ("Foo", "").c_str ());
+    store.SaveValue("Foo", "", "Value");
+    EXPECT_TRUE(localState.GetValues().empty());
+    EXPECT_STREQ("", store.LoadValue("Foo", "").c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LoadValue_EmptyNameSpace_DoesNothingAndReturnsEmpty)
+TEST_F(SecureStoreTests, LoadValue_EmptyNameSpace_DoesNothingAndReturnsEmpty)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    EXPECT_EQ ("", store.LoadValue ("", "Foo"));
-    EXPECT_TRUE (localState.GetStubMap ().empty ());
+    EXPECT_EQ("", store.LoadValue("", "Foo"));
+    EXPECT_TRUE(localState.GetValues().empty());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------
-TEST_F (SecureStoreTests, LoadValue_EmptyKey_DoesNothingAndReturnsEmpty)
+TEST_F(SecureStoreTests, LoadValue_EmptyKey_DoesNothingAndReturnsEmpty)
     {
-    StubLocalState localState;
-    SecureStore store (localState);
+    RuntimeLocalState localState;
+    SecureStore store(localState);
 
-    EXPECT_EQ ("", store.LoadValue ("Foo", ""));
-    EXPECT_TRUE (localState.GetStubMap ().empty ());
+    EXPECT_EQ("", store.LoadValue("Foo", ""));
+    EXPECT_TRUE(localState.GetValues().empty());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -178,7 +183,7 @@ TEST_F (SecureStoreTests, LoadValue_EmptyKey_DoesNothingAndReturnsEmpty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_EmptyPassed_ReturnsNonEmpty)
     {
-    StubLocalState localState;
+    RuntimeLocalState localState;
     SecureStore store(localState);
     EXPECT_STRNE("", store.Encrypt("").c_str());
     }
@@ -188,7 +193,7 @@ TEST_F(SecureStoreTests, Encrypt_EmptyPassed_ReturnsNonEmpty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_NullPassed_ReturnsNotEmpty)
     {
-    StubLocalState localState;
+    RuntimeLocalState localState;
     SecureStore store(localState);
     EXPECT_STRNE("", store.Encrypt(nullptr).c_str());
     }
@@ -198,7 +203,7 @@ TEST_F(SecureStoreTests, Encrypt_NullPassed_ReturnsNotEmpty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_ValuePassed_ReturnsNonEmptyDifferentValue)
     {
-    StubLocalState localState;
+    RuntimeLocalState localState;
     SecureStore store(localState);
     EXPECT_STRNE("Foo Boo", store.Encrypt("Foo Boo").c_str());
     }
@@ -208,7 +213,7 @@ TEST_F(SecureStoreTests, Encrypt_ValuePassed_ReturnsNonEmptyDifferentValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_SameValuePassedTwice_ReturnsNonEmptyDifferentValues)
     {
-    StubLocalState localState;
+    RuntimeLocalState localState;
     SecureStore store(localState);
 
     Utf8String encrypted1 = store.Encrypt("Foo");
@@ -223,7 +228,7 @@ TEST_F(SecureStoreTests, Encrypt_SameValuePassedTwice_ReturnsNonEmptyDifferentVa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Decrypt_InvalidValuesPassed_ReturnsEmpty)
     {
-    StubLocalState localState;
+    RuntimeLocalState localState;
     SecureStore store(localState);
 
     BeTest::SetFailOnAssert(false);
@@ -239,7 +244,7 @@ TEST_F(SecureStoreTests, Decrypt_InvalidValuesPassed_ReturnsEmpty)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Decrypt_EncryptedValuePassed_ReturnsOriginal)
     {
-    StubLocalState localState;
+    RuntimeLocalState localState;
     SecureStore store(localState);
     EXPECT_STREQ("", store.Decrypt(store.Encrypt(nullptr).c_str()).c_str());
     EXPECT_STREQ("", store.Decrypt(store.Encrypt("").c_str()).c_str());
@@ -251,7 +256,7 @@ TEST_F(SecureStoreTests, Decrypt_EncryptedValuePassed_ReturnsOriginal)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Decrypt_EncryptedLargeValuePassed_ReturnsOriginal)
     {
-    StubLocalState localState;
+    RuntimeLocalState localState;
     SecureStore store(localState);
 
     Utf8String value;

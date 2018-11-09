@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* allocs.c                                            tmi	10-Apr-199    */
@@ -26,13 +26,13 @@ int aecDTM_allocateSurface /* <= TRUE if error                     */
 (
   struct CIVdtmsrf **srfPP,           /* <= ptr to new surface (or NULL)*/
   struct CIVdtmprj *prjP,             /* => DTM prj to use (or NULL)          */
-  wchar_t *,                          /* => surface file name (or NULL)       */
-  wchar_t *namP,                      /* => surface name (or NULL)            */
-  wchar_t *desP,                      /* => surface desc (or NULL)            */
+  wchar_t const*,                     /* => surface file name (or NULL)       */
+  wchar_t const*namP,                 /* => surface name (or NULL)            */
+  wchar_t const*desP,                 /* => surface desc (or NULL)            */
   double *sclP,                       /* => surface scale (or NULL)           */
   double *mtlP,                       /* => max. tri. length (or NULL)        */
   unsigned long *versionP,            /* => version # (or NULL)               */
-  wchar_t *matP,                      /* => surface material (or NULL)        */
+  wchar_t const*matP,                 /* => surface material (or NULL)        */
   long type                           /* => surface type                      */
 )
 {

@@ -22,11 +22,11 @@ CustomNodeSpecification::CustomNodeSpecification()
     {}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
+* @bsimethod                                    Grigas.Petraitis                10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 CustomNodeSpecification::CustomNodeSpecification (int priority, bool hideIfNoChildren, Utf8StringCR type, Utf8StringCR label, Utf8StringCR description, Utf8StringCR imageId)
-    : ChildNodeSpecification (priority, true, false, hideIfNoChildren), 
-    m_type (type), m_label (label), m_description (description), m_imageId (imageId)
+    : ChildNodeSpecification (priority, ChildrenHint::Always, false, hideIfNoChildren), 
+    m_type(type), m_label(label), m_description(description), m_imageId(imageId)
     {}
 
 /*---------------------------------------------------------------------------------**//**

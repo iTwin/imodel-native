@@ -56,7 +56,7 @@ bvector<Thumbnail::Size> ThumbnailsTests::s_thumbnailSizes;
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ThumbnailsTests, GetiModelThumbnail)
     {
-    for each (Thumbnail::Size size in s_thumbnailSizes)
+    for (Thumbnail::Size size : s_thumbnailSizes)
         {
         ThumbnailImageResult result;
         int retryCount = 5;
@@ -78,7 +78,7 @@ TEST_F(ThumbnailsTests, GetiModelThumbnail)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ThumbnailsTests, GetThumbnailsById)
     {
-    for each (Thumbnail::Size size in s_thumbnailSizes)
+    for (Thumbnail::Size size : s_thumbnailSizes)
         {
         ThumbnailsManagerCR thumbnailsManager = s_connection->GetThumbnailsManager();
         bvector<Utf8String> thumbnailsIds;
@@ -92,7 +92,7 @@ TEST_F(ThumbnailsTests, GetThumbnailsById)
             }
         EXPECT_EQ(4, thumbnailsIds.size());
 
-        for each (Utf8String thumbnailId in thumbnailsIds)
+        for (Utf8String thumbnailId : thumbnailsIds)
             {
             ThumbnailImageResult result = thumbnailsManager.GetThumbnailById(thumbnailId, size)->GetResult();
             EXPECT_TRUE(result.IsSuccess());
@@ -107,10 +107,10 @@ TEST_F(ThumbnailsTests, GetThumbnailsById)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ThumbnailsTests, GetThumbnailsByVersionId)
     {
-    for each (Thumbnail::Size size in s_thumbnailSizes)
+    for (Thumbnail::Size size : s_thumbnailSizes)
         {
         ThumbnailsManagerCR thumbnailsManager = s_connection->GetThumbnailsManager();
-        for each (Utf8String versionId in s_versionIds)
+        for (Utf8String versionId : s_versionIds)
             {
             ThumbnailImageResult result;
             int retryCount = 5;

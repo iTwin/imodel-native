@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Files/FileInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -81,6 +81,14 @@ void FileInfo::SetFilePath(FileCache location, BeFileName relativeDir, Utf8Strin
     SetLocation(location);
     SetRelativePath(relativeDir);
     SetFileName(fileName);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void FileInfo::ClearFilePath()
+    {
+    SetFileName("");
     }
 
 /*--------------------------------------------------------------------------------------+

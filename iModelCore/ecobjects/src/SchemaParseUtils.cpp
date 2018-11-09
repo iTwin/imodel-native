@@ -160,9 +160,9 @@ ECObjectsStatus SchemaParseUtils::ParseDirectionString(ECRelatedInstanceDirectio
     {
     if (0 == directionString.length())
         return ECObjectsStatus::ParseError;
-    if (0 == directionString.CompareToI(DIRECTION_BACKWARD))
+    if (0 == directionString.CompareToI(ECXML_DIRECTION_BACKWARD))
         direction = ECRelatedInstanceDirection::Backward;
-    else if (0 == directionString.CompareToI(DIRECTION_FORWARD))
+    else if (0 == directionString.CompareToI(ECXML_DIRECTION_FORWARD))
         direction = ECRelatedInstanceDirection::Forward;
     else
         return ECObjectsStatus::ParseError;
@@ -210,11 +210,11 @@ ECObjectsStatus SchemaParseUtils::ParseXmlFullyQualifiedName(Utf8StringR alias, 
 // static
 ECObjectsStatus SchemaParseUtils::ParseModifierXmlString(ECClassModifier& modifier, Utf8StringCR modifierString)
     {
-    if (0 == modifierString.CompareToI(ECXML_MODIFIER_ABSTRACT))
+    if (0 == modifierString.CompareToI(MODIFIER_ABSTRACT))
         modifier = ECClassModifier::Abstract;
-    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_SEALED))
+    else if (0 == modifierString.CompareToI(MODIFIER_SEALED))
         modifier = ECClassModifier::Sealed;
-    else if (0 == modifierString.CompareToI(ECXML_MODIFIER_NONE))
+    else if (0 == modifierString.CompareToI(MODIFIER_NONE))
         modifier = ECClassModifier::None;
     else
         {
@@ -337,11 +337,11 @@ ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8
     {
     if (0 == strengthString.length())
         return ECObjectsStatus::ParseError;
-    if (0 == strengthString.CompareToI(STRENGTH_EMBEDDING))
+    if (0 == strengthString.CompareToI(ECXML_STRENGTH_EMBEDDING))
         strength = StrengthType::Embedding;
-    else if (0 == strengthString.CompareToI(STRENGTH_HOLDING))
+    else if (0 == strengthString.CompareToI(ECXML_STRENGTH_HOLDING))
         strength = StrengthType::Holding;
-    else if (0 == strengthString.CompareToI(STRENGTH_REFERENCING))
+    else if (0 == strengthString.CompareToI(ECXML_STRENGTH_REFERENCING))
         strength = StrengthType::Referencing;
     else
         return ECObjectsStatus::ParseError;
@@ -394,14 +394,31 @@ bool SchemaParseUtils::IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullNa
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-Utf8CP SchemaParseUtils::DirectionToString(ECRelatedInstanceDirection direction)
+Utf8CP SchemaParseUtils::DirectionToXmlString(ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
         case ECRelatedInstanceDirection::Forward:
-            return DIRECTION_FORWARD;
+            return ECXML_DIRECTION_FORWARD;
         case ECRelatedInstanceDirection::Backward:
-            return DIRECTION_BACKWARD;
+            return ECXML_DIRECTION_BACKWARD;
+        default:
+            return EMPTY_STRING;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2010
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+Utf8CP SchemaParseUtils::DirectionToJsonString(ECRelatedInstanceDirection direction)
+    {
+    switch (direction)
+        {
+        case ECRelatedInstanceDirection::Forward:
+            return ECJSON_DIRECTION_FORWARD;
+        case ECRelatedInstanceDirection::Backward:
+            return ECJSON_DIRECTION_BACKWARD;
         default:
             return EMPTY_STRING;
         }
@@ -411,26 +428,13 @@ Utf8CP SchemaParseUtils::DirectionToString(ECRelatedInstanceDirection direction)
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-Utf8CP SchemaParseUtils::ModifierToXmlString(ECClassModifier modifier)
+Utf8CP SchemaParseUtils::ModifierToString(ECClassModifier modifier)
     {
     if (ECClassModifier::Abstract == modifier)
-        return ECXML_MODIFIER_ABSTRACT;
+        return MODIFIER_ABSTRACT;
     if (ECClassModifier::Sealed == modifier)
-        return ECXML_MODIFIER_SEALED;
-    return ECXML_MODIFIER_NONE;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman            11/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-Utf8CP SchemaParseUtils::ModifierToJsonString(ECClassModifier modifier)
-    {
-    if (ECClassModifier::Abstract == modifier)
-        return ECJSON_MODIFIER_ABSTRACT;
-    else if (ECClassModifier::Sealed == modifier)
-        return ECJSON_MODIFIER_SEALED;
-    return ECJSON_MODIFIER_NONE;
+        return MODIFIER_SEALED;
+    return MODIFIER_NONE;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -470,16 +474,35 @@ Utf8CP SchemaParseUtils::PrimitiveTypeToString(PrimitiveType primitiveType)
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-Utf8CP SchemaParseUtils::StrengthToString(StrengthType strength)
+Utf8CP SchemaParseUtils::StrengthToXmlString(StrengthType strength)
     {
     switch (strength)
         {
         case StrengthType::Referencing :
-            return STRENGTH_REFERENCING;
+            return ECXML_STRENGTH_REFERENCING;
         case StrengthType::Holding:
-            return STRENGTH_HOLDING;
+            return ECXML_STRENGTH_HOLDING;
         case StrengthType::Embedding:
-            return STRENGTH_EMBEDDING;
+            return ECXML_STRENGTH_EMBEDDING;
+        default:
+            return EMPTY_STRING;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP SchemaParseUtils::StrengthToJsonString(StrengthType strength)
+    {
+    switch (strength)
+        {
+        case StrengthType::Referencing :
+            return ECJSON_STRENGTH_REFERENCING;
+        case StrengthType::Holding:
+            return ECJSON_STRENGTH_HOLDING;
+        case StrengthType::Embedding:
+            return ECJSON_STRENGTH_EMBEDDING;
         default:
             return EMPTY_STRING;
         }

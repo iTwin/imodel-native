@@ -17,14 +17,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceFinder::FindOptions::FindOptions(int relatedDirections /* = RelatedDirection_None */, uint8_t relationshipDepth /* = 0 */, ECClassCP ecClass /* = nullptr */) :
 m_relatedDirections (relatedDirections),
-m_relationshipDepth (relationshipDepth)/*, 
+m_relationshipDepth (relationshipDepth)/*,
 unused - m_ecClass (ecClass)*/
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceFinder::QueryableRelationship::QueryableRelationship(ECN::ECRelationshipClassCR relationshipClass, ECN::ECClassCR thisClass, ECN::ECRelationshipEnd thisRelationshipEnd) 
+ECInstanceFinder::QueryableRelationship::QueryableRelationship(ECN::ECRelationshipClassCR relationshipClass, ECN::ECClassCR thisClass, ECN::ECRelationshipEnd thisRelationshipEnd)
     : m_relationshipClass(&relationshipClass), m_thisClass(&thisClass), m_thisRelationshipEnd(thisRelationshipEnd)
     {
     InitializeRelatedDirection();
@@ -128,14 +128,14 @@ ECSqlStatus ECInstanceFinder::QueryableRelationship::PrepareECSqlStatement(ECDbC
     Utf8String relECSql;
     if (m_thisRelationshipEnd == ECRelationshipEnd_Source)
         {
-        relECSql.Sprintf("SELECT " ECDBSYS_PROP_ECInstanceId "," ECDBSYS_PROP_TargetECClassId "," ECDBSYS_PROP_TargetECInstanceId 
-                         " FROM %s.%s WHERE " ECDBSYS_PROP_SourceECClassId "=%s AND " ECDBSYS_PROP_SourceECInstanceId "=?",
+        relECSql.Sprintf("SELECT " ECDBSYS_PROP_ECInstanceId "," ECDBSYS_PROP_TargetECClassId "," ECDBSYS_PROP_TargetECInstanceId
+                         " FROM %s.%s WHERE " ECDBSYS_PROP_SourceECClassId "=%s AND InVirtualSet(?, " ECDBSYS_PROP_SourceECInstanceId ")",
                          relSchemaName, relClassName, m_thisClass->GetId().ToString().c_str());
         }
     else
         {
         relECSql.Sprintf("SELECT " ECDBSYS_PROP_ECInstanceId "," ECDBSYS_PROP_SourceECClassId "," ECDBSYS_PROP_SourceECInstanceId
-                         " FROM %s.%s WHERE " ECDBSYS_PROP_TargetECClassId "=%s AND " ECDBSYS_PROP_TargetECInstanceId "=?",
+                         " FROM %s.%s WHERE " ECDBSYS_PROP_TargetECClassId "=%s AND InVirtualSet(?, " ECDBSYS_PROP_TargetECInstanceId ")",
                          relSchemaName, relClassName, m_thisClass->GetId().ToString().c_str());
         }
 
@@ -332,53 +332,52 @@ BentleyStatus ECInstanceFinder::FindRelatedInstances(ECInstanceKeyMultiMap* rela
             POSTCONDITION(classP != nullptr, ERROR)
             ClassMap const* classMapP = m_ecDb.Schemas().Main().GetClassMap(*classP);
             POSTCONDITION(classMapP != nullptr, ERROR)
-                if (classMapP->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
-                    {
-                    continue;
-                    }
+            if (classMapP->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
+                {
+                continue;
+                }
 
             status = queryableRelationship.GetPreparedECSqlStatement(statement, m_ecDb);
             POSTCONDITION(status.IsSuccess(), ERROR);
             BeAssert(statement != nullptr);
+            statement->Reset();
+            statement->ClearBindings();
+
+            // Make all seed instances with "this end" class our search criteria
+            ECInstanceIdSet seedIdSet;
+            for (auto it = instanceIdRange.first; it != instanceIdRange.second; ++it)
+                seedIdSet.insert(it->second);
+
+            statement->BindVirtualSet(1, seedIdSet);
 
             ECClassId relationshipClassId = (ECClassId) queryableRelationship.GetRelationshipClass()->GetId();
 
-            // Iterate through all seed instances with "this end" class
-            ECInstanceKeyMultiMapConstIterator instanceIdIter = instanceIdRange.first;
-            while (instanceIdIter != instanceIdRange.second)
+            // Iterate through all found relationship instances with "this end" as one of the seed instances
+            DbResult stepStatus = BE_SQLITE_DONE;
+            while ((stepStatus = statement->Step()) == BE_SQLITE_ROW)
                 {
-                ECInstanceId instanceId = instanceIdIter->second;
-                statement->Reset();
-                statement->ClearBindings();
-                statement->BindId(1, instanceId);
-
-                // Iterate through all relationship instances with "this end" as the seed instance
-                DbResult stepStatus = BE_SQLITE_DONE;
-                while ((stepStatus = statement->Step()) == BE_SQLITE_ROW)
+                // Get relationship instance (key)
+                if (relationshipInstanceKeyMap != nullptr)
                     {
-                    // Get relationship instance (key)
-                    if (relationshipInstanceKeyMap != nullptr)
-                        {
-                        ECInstanceId relationshipInstanceId = statement->GetValueId<ECInstanceId>(0);
-                        POSTCONDITION(relationshipClassId.IsValid() && relationshipInstanceId.IsValid(), ERROR);
-                        ECInstanceKeyMultiMapPair relationshipEntry(relationshipClassId, relationshipInstanceId);
-                        relationshipInstanceKeyMap->insert(relationshipEntry);
-                        }
-
-                    // Get related instance (key)
-                    if (relatedInstanceKeyMap != nullptr)
-                        {
-                        ECClassId referencedEndClassId = (ECClassId) statement->GetValueId<ECClassId>(1);
-                        ECInstanceId referencedEndInstanceId = statement->GetValueId<ECInstanceId>(2);
-                        POSTCONDITION(referencedEndClassId.IsValid() && referencedEndInstanceId.IsValid(), ERROR);
-                        ECInstanceKeyMultiMapPair relatedInstanceEntry(referencedEndClassId, referencedEndInstanceId);
-                        if (relatedInstanceKeyMap->end() == std::find(relatedInstanceKeyMap->begin(), relatedInstanceKeyMap->end(), relatedInstanceEntry))
-                            relatedInstanceKeyMap->insert(relatedInstanceEntry);
-                        }
+                    ECInstanceId relationshipInstanceId = statement->GetValueId<ECInstanceId>(0);
+                    POSTCONDITION(relationshipClassId.IsValid() && relationshipInstanceId.IsValid(), ERROR);
+                    ECInstanceKeyMultiMapPair relationshipEntry(relationshipClassId, relationshipInstanceId);
+                    relationshipInstanceKeyMap->insert(relationshipEntry);
                     }
-                POSTCONDITION(stepStatus == BE_SQLITE_DONE, ERROR);
-                instanceIdIter++;
+
+                // Get related instance (key)
+                if (relatedInstanceKeyMap != nullptr)
+                    {
+                    ECClassId referencedEndClassId = (ECClassId) statement->GetValueId<ECClassId>(1);
+                    ECInstanceId referencedEndInstanceId = statement->GetValueId<ECInstanceId>(2);
+                    POSTCONDITION(referencedEndClassId.IsValid() && referencedEndInstanceId.IsValid(), ERROR);
+                    ECInstanceKeyMultiMapPair relatedInstanceEntry(referencedEndClassId, referencedEndInstanceId);
+                    if (relatedInstanceKeyMap->end() == std::find(relatedInstanceKeyMap->begin(), relatedInstanceKeyMap->end(), relatedInstanceEntry))
+                        relatedInstanceKeyMap->insert(relatedInstanceEntry);
+                    }
                 }
+
+            POSTCONDITION(stepStatus == BE_SQLITE_DONE, ERROR);
             }
 
         classIdIter = instanceIdRange.second;

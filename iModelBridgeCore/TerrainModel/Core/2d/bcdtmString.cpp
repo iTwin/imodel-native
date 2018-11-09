@@ -245,7 +245,7 @@ BENTLEYDTM_Public int bcdtmString_removeDuplicatePoints2D
 /*
 ** Check For Presence Of Line String
 */
- if( numStringPointsP <= 0 || stringPointsP == NULL ) goto errexit ;
+ if( numStringPointsP == nullptr || stringPointsP == NULL ) goto errexit ;
 /*
 ** Check Point To Point Tolerance Is Greater Than Or Equal To Zero
 */

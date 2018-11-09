@@ -24,6 +24,7 @@
 #include "ScalableMeshSourcePersistance.h"
 #include "ScalableMeshImportSequencePersistance.h"
 #include "ScalableMeshContentConfigPersistance.h"
+#include "ScalableMeshTime.h"
 
 using namespace std;
 using namespace ISMStore;

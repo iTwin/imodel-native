@@ -34,7 +34,7 @@ TEST_F(HttpDummyBodyTests, Read_AfterWritingABuffer_Returns0)
     body->Open();
 
     body->Write("abc", 4);
-    EXPECT_EQ(0, body->Read("abc", 4));
+    EXPECT_EQ(0, body->Read((char *)"abc", 4));
     }
 
 /*--------------------------------------------------------------------------------------+

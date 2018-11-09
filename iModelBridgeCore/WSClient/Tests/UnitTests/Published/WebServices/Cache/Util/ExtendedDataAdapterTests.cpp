@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ExtendedDataAdapterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -133,7 +133,7 @@ TEST_F(ExtendedDataAdapterTests, GetData_InstanceDeleted_DataReturnedIsEmpty)
 
     ECSqlStatement stmt;
     Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM TestSchema.TestClass WHERE ECInstanceId=%s", instance.GetInstanceId().ToString());
+    ecsql.Sprintf("DELETE FROM TestSchema.TestClass WHERE ECInstanceId=%s", instance.GetInstanceId().ToString().c_str());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*db, ecsql.c_str(), nullptr));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
@@ -192,7 +192,7 @@ TEST_F(ExtendedDataAdapterTests, GetData_HolderInstanceDeleted_DataReturnedIsEmp
 
     ECSqlStatement stmt;
     Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM TestSchema.TestClass2 WHERE ECInstanceId=%s", holder.GetInstanceId().ToString());
+    ecsql.Sprintf("DELETE FROM TestSchema.TestClass2 WHERE ECInstanceId=%s", holder.GetInstanceId().ToString().c_str());
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*db, ecsql.c_str(), nullptr));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();

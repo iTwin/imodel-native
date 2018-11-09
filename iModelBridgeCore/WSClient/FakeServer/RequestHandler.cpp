@@ -636,9 +636,9 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         JsonValueR properties = instanceAfterChange[ServerSchema::Properties] = Json::objectValue;
         properties[ServerSchema::Property::FileName] = fileName;
         properties[ServerSchema::Property::FileDescription] = fileDescription;
-        properties[ServerSchema::Property::FileSize] = fileSize;
+        properties[ServerSchema::Property::FileSize] = Json::Value(fileSize);
         properties[ServerSchema::Property::FileId] = fileId;
-        properties[ServerSchema::Property::BriefcaseId] = briefcaseCount;
+        properties[ServerSchema::Property::BriefcaseId] = Json::Value(briefcaseCount);
         properties[ServerSchema::Property::MergedChangeSetId] = "";
         properties[ServerSchema::Property::UserOwned] = "";
         properties[ServerSchema::Property::IsReadOnly] = false;

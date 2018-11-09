@@ -232,6 +232,14 @@ std::shared_ptr<bvector<bvector<Byte>>> TrustManager::ReadSystemTrustedCertifica
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String TrustManager::GetImplementationDescription() 
+    { 
+    return "TLS certificate integration: AndroidCAStore";
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TrustManager::CanUseSystemTrustedCertificates()
@@ -243,6 +251,7 @@ bool TrustManager::CanUseSystemTrustedCertificates()
 
 void TrustManager::Initialize(void* arg) {}
 bool TrustManager::CanUseSystemTrustedCertificates() { return false; }
+Utf8String TrustManager::GetImplementationDescription() { return ""; }
 std::shared_ptr<bvector<bvector<Byte>>> TrustManager::ReadSystemTrustedCertificatesBinary() { return nullptr; }
 
 #endif // NON-ANDROID

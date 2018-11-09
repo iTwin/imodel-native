@@ -2,7 +2,7 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/SpatialEntityDataSourceNet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -542,6 +542,26 @@ void SpatialEntityDataSourceNet::SetServerOrganisationPage(String^ link)
 
     (*m_pSource)->GetServerP()->SetOrganisationPage(linkUtf8.c_str());
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain Robert          	    10/2018
+//-------------------------------------------------------------------------------------
+String^ SpatialEntityDataSourceNet::GetVisibilityTag()
+{
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pSource)->GetVisibilityTag().c_str());
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain Robert         	    10/2018
+//-------------------------------------------------------------------------------------
+void SpatialEntityDataSourceNet::SetVisibilityTag(String^ visibilityTag)
+{
+    Utf8String tagUtf8;
+    BeStringUtilities::WCharToUtf8(tagUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(visibilityTag).ToPointer()));
+
+    (*m_pSource)->SetVisibilityByTag(tagUtf8.c_str());
+}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016

@@ -205,6 +205,9 @@ int                    ScalableMeshGroup::_GetRangeInSpecificGCS(DPoint3d& lowPt
     }
 
 
+void                               ScalableMeshGroup::_RegenerateClips(bool forceRegenerate)
+{
+}
 uint64_t                           ScalableMeshGroup::_AddClip(const DPoint3d* pts, size_t ptsSize)
     {
     return 0;
@@ -403,6 +406,15 @@ bool                               ScalableMeshGroup::_GetClip(uint64_t clipID, 
 {
     for (auto& member : m_members)
         if(member->GetClip(clipID, clipData))
+            return true;
+
+    return false;
+}
+
+bool                               ScalableMeshGroup::_GetClip(uint64_t clipID, ClipVectorPtr& clipData)
+{
+    for (auto& member : m_members)
+        if (member->GetClip(clipID, clipData))
             return true;
 
     return false;

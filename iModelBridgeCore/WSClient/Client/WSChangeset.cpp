@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSChangeset.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -72,17 +72,10 @@ size_t WSChangeset::CalculateSize() const
         size -= 2; // size of "{}"
         }
 
-    if (nullptr != m_options)
+    if (nullptr != m_options && !m_options->IsServerDefault())
         {
         size += Utf8String(R"(",requestOptions":)").size();
         size += m_options->CalculateSize();
-        }
-
-    if (!m_requestOptions.isNull())
-        {
-        static const size_t requestOptionsFieldSize = Utf8String(R"(,"requestOptions":)").size();
-        size += requestOptionsFieldSize;
-        size += m_requestOptionsJsonSize;
         }
 
     return size;
@@ -114,11 +107,6 @@ void WSChangeset::ToRequestJson(JsonValueR changesetJson) const
     else
         {
         ToMultipleInstancesRequestJson(changesetJson);
-        }
-
-    if (!m_requestOptions.isNull())
-        {
-        changesetJson["requestOptions"] = m_requestOptions;
         }
     }
 
@@ -162,7 +150,7 @@ void WSChangeset::ToMultipleInstancesRequestJson(JsonValueR changesetJson) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSChangeset::ToOptionsRequestJson(JsonValueR changesetJson) const
     {
-    if (m_options == nullptr)
+    if (nullptr == m_options || m_options->IsServerDefault())
         return;
 
     Json::Value& optionsJson = changesetJson["requestOptions"];
@@ -245,15 +233,6 @@ WSChangeset::Options& WSChangeset::GetRequestOptions()
 void WSChangeset::RemoveRequestOptions()
     {
     m_options = nullptr;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::SetRequestOptions(RequestOptions options)
-    {
-    options.ToJson(m_requestOptions);
-    m_requestOptionsJsonSize = Json::FastWriter::ToString(m_requestOptions).size();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -700,6 +679,31 @@ WSChangeset::ChangeState WSChangeset::Instance::GetState() const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Options::FailureStrategy WSChangeset::Options::GetFailureStrategy() const
+    {
+    return m_failureStrategy;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::SetFailureStrategy(FailureStrategy value)
+    {
+    m_baseSize = 0;
+    m_failureStrategy = value;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Options::ResponseContent WSChangeset::Options::GetResponseContent() const
+    {
+    return m_responseContent;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSChangeset::Options::SetResponseContent(ResponseContent content)
@@ -709,9 +713,40 @@ void WSChangeset::Options::SetResponseContent(ResponseContent content)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WSChangeset::Options::RefreshInstances WSChangeset::Options::GetRefreshInstances() const
+    {
+    return m_refreshInstances;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::Options::SetCustomOption(Utf8StringCR name, Utf8StringCR value)
+void WSChangeset::Options::SetRefreshInstances(bool toRefreshInstance)
+    {
+    m_baseSize = 0;
+    if (toRefreshInstance)
+        {
+        m_refreshInstances = RefreshInstances::Refresh;
+        return;
+        }
+
+    m_refreshInstances = RefreshInstances::DontRefresh;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value WSChangeset::Options::GetCustomOptions() const
+    {
+    return m_customOptions;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::SetCustomOption(Utf8StringCR name, Json::Value value)
     {
     m_baseSize = 0;
     m_customOptions[name] = value;
@@ -723,22 +758,25 @@ void WSChangeset::Options::SetCustomOption(Utf8StringCR name, Utf8StringCR value
 void WSChangeset::Options::RemoveCustomOption(Utf8StringCR name)
     {
     m_baseSize = 0;
-    m_customOptions.erase(name);
+    m_customOptions.removeMember(name);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    julius.cepukenas 09/2016
+* @bsimethod                                                    Mantas.Smicius    09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::Options::SetRefreshInstances(bool toRefreshInstance)
+Utf8CP WSChangeset::Options::GetFailureStrategyStr(FailureStrategy failureStrategy)
     {
-    m_baseSize = 0;
-    if (toRefreshInstance)
+    switch (failureStrategy)
         {
-        m_refreshInstances = OptRefreshInstances::Refresh;
-        return;
+        case FailureStrategy::Stop:
+            return "Stop";
+        case FailureStrategy::Continue:
+            return "Continue";
+        default:
+            BeAssert(false);
+            break;
         }
-
-    m_refreshInstances = OptRefreshInstances::DontRefresh;
+    return nullptr;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -764,36 +802,6 @@ Utf8CP WSChangeset::Options::GetResponseContentStr(ResponseContent response)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSChangeset::Options::ToJson(JsonValueR jsonOut) const
-    {
-    if (ResponseContent::Null == m_responseContent && OptRefreshInstances::Null == m_refreshInstances && m_customOptions.empty())
-        {
-        jsonOut = Json::objectValue;
-        return;
-        }
-
-    if (ResponseContent::Null != m_responseContent)
-        jsonOut["ResponseContent"] = GetResponseContentStr(m_responseContent);
-
-    if (OptRefreshInstances::Null != m_refreshInstances)
-        {
-        if (OptRefreshInstances::Refresh == m_refreshInstances)
-            jsonOut["RefreshInstances"] = true;
-        else
-            jsonOut["RefreshInstances"] = false;
-        }
-
-    if (!m_customOptions.empty())
-        {
-        JsonValueR customOptions = jsonOut["CustomOptions"];
-        for (auto pair : m_customOptions)
-            customOptions[pair.first] = pair.second;
-        }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    julius.cepukenas 09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 size_t WSChangeset::Options::CalculateSize() const
     {
     if (0 != m_baseSize)
@@ -801,7 +809,48 @@ size_t WSChangeset::Options::CalculateSize() const
 
     Json::Value requestOptions;
     ToJson(requestOptions);
-    m_baseSize += Json::FastWriter::ToString(requestOptions).size();
+    m_baseSize = Json::FastWriter::ToString(requestOptions).size();
 
     return m_baseSize;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WSChangeset::Options::IsServerDefault() const
+    {
+    return
+        FailureStrategy::ServerDefault == m_failureStrategy &&
+        ResponseContent::ServerDefault == m_responseContent &&
+        RefreshInstances::ServerDefault == m_refreshInstances &&
+        m_customOptions.empty();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::Options::ToJson(JsonValueR jsonOut) const
+    {
+    if (IsServerDefault())
+        {
+        jsonOut = Json::objectValue;
+        return;
+        }
+
+    if (FailureStrategy::ServerDefault != m_failureStrategy)
+        jsonOut["FailureStrategy"] = GetFailureStrategyStr(m_failureStrategy);
+
+    if (ResponseContent::ServerDefault != m_responseContent)
+        jsonOut["ResponseContent"] = GetResponseContentStr(m_responseContent);
+
+    if (RefreshInstances::ServerDefault != m_refreshInstances)
+        {
+        if (RefreshInstances::Refresh == m_refreshInstances)
+            jsonOut["RefreshInstances"] = true;
+        else
+            jsonOut["RefreshInstances"] = false;
+        }
+
+    if (!m_customOptions.empty())
+        jsonOut["CustomOptions"] = m_customOptions;
     }

@@ -193,6 +193,20 @@ DataSourceStatus DataSourceFile::read(Buffer *dest, DataSize destSize, DataSize 
     return DataSourceStatus();
 }
 
+DataSourceStatus DataSourceFile::read(std::vector<Buffer>& dest)
+    {
+    DataSize sizeToRead = 0;
+    getStream().GetSize(sizeToRead);
+
+    dest.resize(sizeToRead);
+
+    if (BeFileStatus::Success != getStream().Read(dest.data(), nullptr, (uint32_t)sizeToRead))
+        {
+        return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
+        }
+    return DataSourceStatus();
+    }
+
 DataSourceStatus DataSourceFile::write(const Buffer * source, DataSize inputSize)
 {
     uint32_t bytesWritten = 0;

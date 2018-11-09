@@ -1717,13 +1717,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        nestedQuery1->Where("CAST([this].[Description] AS TEXT) LIKE 'Test'", BoundQueryValuesList(), true);
+        nestedQuery1->Where("CAST([this].[Description] AS TEXT) LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList(), true);
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
-        nestedQuery2->Where("CAST([this].[Description] AS TEXT) LIKE 'Test'", BoundQueryValuesList(), true);
+        nestedQuery2->Where("CAST([this].[Description] AS TEXT) LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList(), true);
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();
@@ -1981,7 +1981,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(b2_Class2, false, "this");
-        nestedQuery->Where("CAST([this].[Name] AS TEXT) LIKE 'Test'", BoundQueryValuesList());
+        nestedQuery->Where("CAST([this].[Name] AS TEXT) LIKE 'Test' ESCAPE \'\\\'", BoundQueryValuesList());
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectAll();

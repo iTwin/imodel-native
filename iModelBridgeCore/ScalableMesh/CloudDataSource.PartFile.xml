@@ -2,7 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
-    <Part Name="AzureSDKB02" BentleyBuildMakeFile="nuget.prewire.mke">
+    <!--<Part Name="AzureSDKB02" BentleyBuildMakeFile="nuget.prewire.mke">
         <NuGetPackage targetFramework="native">wastorage.v140</NuGetPackage>
         <Bindings>
           <VendorAPI Domain="wastorage" />
@@ -23,11 +23,11 @@
             <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
             <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
         </Bindings>
-    </Part>
+    </Part>-->
 
     <!--<Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1" ApiNumber="G">-->
       <Part Name="CloudDataSource" BentleyBuildMakeFile="CloudDataSource.mke" ApiNumber="M02">
-        <SubPart PartName="AzureSDKB02" />
+        <!--<SubPart PartName="AzureSDKB02" />-->
         <SubPart PartName="Curl" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <SubPart PartName="BeJsonCpp"  PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
@@ -40,7 +40,7 @@
 
     <Part Name="CloudDataSource_Vancouver" BMakeFile="CloudDataSource_Vancouver.mke">
         <SubPart PartName="Base"     PartFile="iModelCore/Bentley/Bentley"  Repository="imodel02" />
-        <SubPart PartName="AzureSDK" />
+        <!--<SubPart PartName="AzureSDK" />-->
         <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>
         <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" Repository="imodel02"/>
         <Bindings>

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ValueTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -15,18 +15,6 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct ValueTests : ECTestFixture
     {
-    void compareDateTimes(DateTimeCR dateTime1, DateTimeCR dateTime2)
-        {
-        EXPECT_TRUE (dateTime1.Equals (dateTime2, false));
-        EXPECT_EQ (dateTime1.GetYear(), dateTime2.GetYear());
-        EXPECT_EQ (dateTime1.GetMonth(), dateTime2.GetMonth());
-        EXPECT_EQ (dateTime1.GetDay(), dateTime2.GetDay());
-        EXPECT_EQ (dateTime1.GetHour(), dateTime2.GetHour());
-        EXPECT_EQ (dateTime1.GetMinute(), dateTime2.GetMinute());
-        EXPECT_EQ (dateTime1.GetSecond(), dateTime2.GetSecond());
-        EXPECT_EQ (dateTime1.GetMillisecond(), dateTime2.GetMillisecond());
-        }
-
     void checkBinary (Utf8CP text, ECValue &value)
         {
         const Byte binary[] = { 0x00, 0x01, 0x02, 0x03 };
@@ -274,6 +262,69 @@ TEST(ECValueTests, StringOwnership)
     AssertStringOwnership(nullptr, strUtf8, true, //create ECValue which owns the string
                           false, //expected value for OwnsWCharCP
                           true); //expected value for OwnsUtf8CP
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Gintaras.Volkvicius 11/18
+//---------------------------------------------------------------------------------------
+TEST_F(ValueTests, DateTimeTest)
+    {
+    // Arrange
+
+    DateTime dateTime1(2018, 11, 1);
+    DateTime dateTime2(DateTime::Kind::Unspecified, 2018, 11, 1, 0, 0);
+
+    DateTime dateTime3(DateTime::Kind::Unspecified, 2018, 11, 1, 14, 14);
+    DateTime dateTime4(DateTime::Kind::Local, 2018, 11, 1, 14, 14);
+    DateTime dateTime5(DateTime::Kind::Utc, 2018, 11, 1, 14, 14);
+
+    DateTime dateTime6 = DateTime::CreateTimeOfDay(14, 23, 30);
+    DateTime dateTime7(DateTime::Kind::Utc, 2000, 1, 1, 14, 23, 30);
+    DateTime dateTime8(DateTime::Kind::Utc, 2000, 1, 2, 14, 23, 30);
+
+    DateTime dateTime9(DateTime::Kind::Unspecified, 2018, 11, 1, 24, 0);
+    DateTime dateTime10(DateTime::Kind::Unspecified, 2018, 11, 2, 0, 0);
+
+    DateTime dateTime11 = DateTime::CreateTimeOfDay(24, 0, 0);
+    DateTime dateTime12 = DateTime::CreateTimeOfDay(0, 0, 0);
+
+    // Act & Assert
+
+    ECValue value1(dateTime1);
+    ECValue value2(dateTime2);
+    EXPECT_EQ(value1, value2) << value1.ToString() << " and " << value2.ToString();
+
+    ECValue value3(dateTime3);
+    ECValue value4(dateTime4);
+    ECValue value5(dateTime5);
+    EXPECT_NE(value3, value4) << value3.ToString() << " and " << value4.ToString();
+    EXPECT_EQ(value3, value5) << value3.ToString() << " and " << value5.ToString();
+    EXPECT_NE(value4, value5) << value4.ToString() << " and " << value5.ToString();
+
+    ECValue value6(dateTime6);
+    ECValue value7(dateTime7);
+    ECValue value8(dateTime8);
+    EXPECT_EQ(value6, value7) << value6.ToString() << " and " << value7.ToString();
+    EXPECT_NE(value6, value8) << value6.ToString() << " and " << value8.ToString();
+
+    ECValue value9(dateTime9);
+    ECValue value10(dateTime10);
+    EXPECT_EQ(value9, value10) << value9.ToString() << " and " << value10.ToString();
+
+    ECValue value11(dateTime11);
+    ECValue value12(dateTime12);
+    EXPECT_NE(value11, value12) << value11.ToString() << " and " << value12.ToString();
+
+    // Testing commutativity
+
+    EXPECT_EQ(value1 == value2, value2 == value1);
+    EXPECT_EQ(value3 == value4, value4 == value3);
+    EXPECT_EQ(value3 == value5, value5 == value3);
+    EXPECT_EQ(value4 == value5, value5 == value4);
+    EXPECT_EQ(value6 == value7, value7 == value6);
+    EXPECT_EQ(value6 == value8, value8 == value6);
+    EXPECT_EQ(value9 == value10, value10 == value9);
+    EXPECT_EQ(value11 == value12, value12 == value11);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

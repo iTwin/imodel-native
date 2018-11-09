@@ -6947,7 +6947,7 @@ BENTLEYDTM_Public int bcdtmObject_findAndFixMissingStmTrianglesDtmObject
         // Triangulate Poly Hulls
 
         voidP->ppTol = voidP->plTol = 0.0;
-        if (bcdtmObject_triangulateDtmObject (voidP), false, false) goto errexit;
+        if (bcdtmObject_triangulateDtmObject((voidP), false, false)) goto errexit;
         if (bcdtmList_removeNoneFeatureHullLinesDtmObject (voidP)) goto errexit;
         if (dbg == 2) bcdtmWrite_toFileDtmObject (voidP, L"void.tin");
 

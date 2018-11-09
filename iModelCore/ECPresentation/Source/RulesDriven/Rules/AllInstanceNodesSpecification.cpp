@@ -26,19 +26,20 @@ AllInstanceNodesSpecification::AllInstanceNodesSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-AllInstanceNodesSpecification::AllInstanceNodesSpecification 
-(
-int       priority,
-bool      alwaysReturnsChildren,
-bool      hideNodesInHierarchy,
-bool      hideIfNoChildren,
-bool      groupByClass,
-bool      groupByLabel,
-Utf8StringCR supportedSchemas
-) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-    m_groupByClass (groupByClass), m_groupByLabel (groupByLabel), m_supportedSchemas (supportedSchemas)
-    {
-    }
+AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, 
+    bool hideNodesInHierarchy, bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas) 
+    : AllInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, 
+        hideNodesInHierarchy, hideIfNoChildren, groupByClass, groupByLabel, supportedSchemas)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AllInstanceNodesSpecification::AllInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy, 
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, Utf8StringCR supportedSchemas) 
+    : ChildNodeSpecification (priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), 
+    m_groupByClass(groupByClass), m_groupByLabel(groupByLabel), m_supportedSchemas(supportedSchemas)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015

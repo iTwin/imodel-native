@@ -2,7 +2,7 @@
 |
 |     $Source: RealityServicesNet/RealityPackageNet/RealityDataPackageNet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -83,6 +83,11 @@ MultiBandSourcePtr ManagedToNativeMultiBandSource(MultiBandSourceNet^ managedSou
     Utf8String nativeProvider;
     BeStringUtilities::WCharToUtf8(nativeProvider, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetProvider()).ToPointer()));
     nativeSource->SetProvider(nativeProvider.c_str());
+
+    // Visibility.
+    Utf8String nativeVisibilityTag;
+    BeStringUtilities::WCharToUtf8(nativeVisibilityTag, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(managedSource->GetVisibilityTag()).ToPointer()));
+    nativeSource->SetVisibilityByTag(nativeVisibilityTag.c_str());
 
     // Size.
     nativeSource->SetSize(managedSource->GetSize());
@@ -625,6 +630,26 @@ void RealityDataPackageNet::SetBoundingPolygon(List<double>^ polygonPts)
     BoundingPolygonPtr pBoundingPolygon = BoundingPolygon::Create(pts, 4);
     (*m_pPackage)->SetBoundingPolygon(*pBoundingPolygon);
     }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain Robert         	    9/2018
+//-------------------------------------------------------------------------------------
+String^ RealityDataPackageNet::GetContext()
+{
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pPackage)->GetId().c_str());
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain Robert         	    9/2018
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::SetContext(String^ context)
+{
+    Utf8String contextUtf8;
+    BeStringUtilities::WCharToUtf8(contextUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(context).ToPointer()));
+
+    (*m_pPackage)->SetContext(contextUtf8.c_str());
+}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016

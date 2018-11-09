@@ -132,6 +132,18 @@ bool KeySet::Remove(ECClassCP cls, ECInstanceId instanceId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool KeySet::Remove(NavNodeKeyCR nodeKey)
+    {
+    if (0 == m_nodes.erase(&nodeKey))
+        return false;
+    
+    InvalidateNodeKeysContainer();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t KeySet::Remove(KeySetCR toRemove)

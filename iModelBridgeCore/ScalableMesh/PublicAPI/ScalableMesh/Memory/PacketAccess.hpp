@@ -768,7 +768,7 @@ PODPacketProxy<T>::PODPacketProxy ()
 template <typename T>
 void PODPacketProxy<T>::AssignTo (Packet& packet)
     {
-    SetImpl(PrepareRawPacketFor(packet, *this));
+    this->SetImpl(this->PrepareRawPacketFor(packet, *this));
     }
 
 
@@ -779,7 +779,7 @@ void PODPacketProxy<T>::AssignTo (Packet& packet)
 template <typename T>
 void PODPacketProxy<T>::SetSize (size_t                  pi_Size)
     {
-    SetEnd(((iterator)GetImpl().m_pBufferBegin) + pi_Size);
+    this->SetEnd(((iterator)this->GetImpl().m_pBufferBegin) + pi_Size);
     }
 
 /*---------------------------------------------------------------------------------**//**

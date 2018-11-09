@@ -18,6 +18,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
+#define DEFINE_SCHEMA(name, schema_xml) DEFINE_REGISTRY_SCHEMA(UpdateTests, name, schema_xml)
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2016
 +===============+===============+===============+===============+===============+======*/
@@ -43,6 +45,7 @@ public:
 struct UpdateTests : ECPresentationTest
 {
     static BeFileName s_seedProjectPath;
+    static bmap<Utf8String, Utf8String> s_registeredSchemaXmls;
     TestRuleSetLocaterPtr m_locater;
     StubLocalState m_localState;
     ConnectionManager m_connections;
@@ -71,12 +74,13 @@ struct UpdateTests : ECPresentationTest
         projectPath.BeDeleteFile();
         BeFileName::BeCopyFile(s_seedProjectPath, projectPath, true);
         m_db.OpenBeSQLiteDb(projectPath, Db::OpenParams(Db::OpenMode::ReadWrite));
+        SetUpSchemas();
 
         m_locater = TestRuleSetLocater::Create();
         m_updateRecordsHandler = TestUpdateRecordsHandler::Create();
         m_eventsSource = TestECInstanceChangeEventsSource::Create();
 
-        m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+        m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
         m_manager->SetLocalState(&m_localState);
         m_manager->GetLocaters().RegisterLocater(*m_locater);
         m_manager->RegisterECInstanceChangeEventSource(*m_eventsSource);
@@ -117,9 +121,14 @@ struct UpdateTests : ECPresentationTest
         {
         folly::via(&m_manager->GetExecutor(), [](){}).wait();
         }
+
+    static void RegisterSchemaXml(Utf8String name, Utf8String schemaXml);
+    static bmap<Utf8String, Utf8String>& GetRegisteredSchemaXmls();
+    ECSchemaCP GetSchema();
+    void SetUpSchemas();
 };
 BeFileName UpdateTests::s_seedProjectPath;
-
+bmap<Utf8String, Utf8String> UpdateTests::s_registeredSchemaXmls;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -128,9 +137,66 @@ void UpdateTests::SetUpTestCase()
     BeFileName temporaryDirectory;
     BeTest::GetHost().GetTempDir(temporaryDirectory);
 
+    // Set up for defined schemas
     ECDbTestProject seedProject;
     seedProject.Create("UpdateTests", "RulesEngineTest.01.00.ecschema.xml");
     s_seedProjectPath = BeFileName(seedProject.GetECDbPath());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdateTests::RegisterSchemaXml(Utf8String name, Utf8String schemaXml)
+    {
+    GetRegisteredSchemaXmls()[name] = schemaXml;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdateTests::SetUpSchemas()
+    {
+    bvector<ECSchemaPtr> schemas;
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater(m_db.GetSchemaLocater());
+    for (auto pair : GetRegisteredSchemaXmls())
+        {
+        ECSchemaPtr schema;
+        ECSchema::ReadFromXmlString(schema, pair.second.c_str(), *schemaReadContext);
+        if (!schema.IsValid())
+            {
+            BeAssert(false);
+            continue;
+            }
+        schemas.push_back(schema);
+        }
+
+    if (!schemas.empty())
+        {
+        bvector<ECSchemaCP> importSchemas;
+        importSchemas.resize(schemas.size());
+        std::transform(schemas.begin(), schemas.end(), importSchemas.begin(), [](ECSchemaPtr const& schema) { return schema.get(); });
+
+        ASSERT_TRUE(SUCCESS == m_db.Schemas().ImportSchemas(importSchemas));
+        m_db.SaveChanges();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaCP UpdateTests::GetSchema()
+    {
+    return m_db.Schemas().GetSchema(BeTest::GetNameOfCurrentTest());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Haroldas.Vitunskas              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bmap<Utf8String, Utf8String>& UpdateTests::GetRegisteredSchemaXmls()
+    {
+    
+    return s_registeredSchemaXmls;
     }
 
 /*=================================================================================**//**
@@ -2082,7 +2148,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenNothi
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
@@ -2123,7 +2189,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
@@ -2175,7 +2241,7 @@ TEST_F (HierarchyUpdateTests, UpdatesCustomNodeWithHideIfNoChildrenFlagWhenChild
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
     rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, false, false, "RulesEngineTest"));
     CustomNodeSpecificationP spec = new CustomNodeSpecification(1, true, "MyType", "MyLabel", "", "MyImageId");
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     rule->AddSpecification(*spec);
     rules->AddPresentationRule(*rule);
 
@@ -3835,7 +3901,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsInsert
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -3960,7 +4026,7 @@ TEST_F (HierarchyUpdateTests, UpdatesParentsHasChildrenFlagWhenChildNodeIsDelete
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, false, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -4012,7 +4078,7 @@ TEST_F (HierarchyUpdateTests, ShowsParentNodeWithHideIfNoChildrenFlagWhenChildNo
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -4057,7 +4123,7 @@ TEST_F (HierarchyUpdateTests, RemovesParentNodeWithHideIfNoChildrenFlagWhenTheLa
 
     RootNodeRule* rootRule = new RootNodeRule("", 1, false, TargetTree_Both, false);
     CustomNodeSpecification* rootSpec = new CustomNodeSpecification(1, true, "custom", "custom", "custom", "custom");
-    rootSpec->SetAlwaysReturnsChildren(false);
+    rootSpec->SetHasChildren(ChildrenHint::Unknown);
     rootRule->AddSpecification(*rootSpec);
     rules->AddPresentationRule(*rootRule);
 
@@ -5421,6 +5487,190 @@ TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyTo
 
     EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
     EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#28901
+* @betest                                       Haroldas.Vitunskas              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UserSettingsTrackedWhenCustomizingChildNodesDuringHierarchyUpdate, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ElementA">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementB">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesDuringHierarchyUpdate)
+    {
+    // prepare the dataset
+    ECRelationshipClassCP rel = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementOwnsChildElements"));
+    ECClassCP ecClassA = GetSchema()->GetClassCP("ElementA");
+    ECClassCP ecClassB = GetSchema()->GetClassCP("ElementB");
+    ASSERT_NE(nullptr, rel);
+    
+    IECInstancePtr rootElement = RulesEngineTestHelpers::InsertInstance(m_db, *ecClassA);
+    IECInstancePtr childElement = RulesEngineTestHelpers::InsertInstance(m_db, *ecClassB);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *rel, *rootElement, *childElement, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", ecClassA->GetFullName(), false));
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"ElementA\"", 1, false, RuleTargetTree::TargetTree_Both);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", ecClassB->GetFullName(), false));
+
+    rules->AddPresentationRule(*rootRule);
+    rules->AddPresentationRule(*childRule);
+    rules->AddPresentationRule(*new StyleOverride("ThisNode.ClassName=\"ElementB\"", 1, "GetSettingIntValue(\"custom\")", "", ""));
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeCPtr rootNode = rootNodes[0];
+    SetNodeExpanded(*rootNode);
+    
+    // get a child node
+    ASSERT_TRUE(rootNode->HasChildren());
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNode, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    NavNodeCPtr childNode = childNodes[0];
+
+    // modify and update child
+    childElement->SetValue("ElementProperty", ECValue(10));
+    ECInstanceUpdater updater(m_db, *childElement, nullptr);
+    updater.Update(*childElement);
+    m_db.SaveChanges();
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *childElement);
+    
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    // expect user settings have been tracked
+    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
+    ASSERT_EQ(1, hierarchies.size());
+    ASSERT_EQ(m_connections.GetConnection(m_db)->GetId(), hierarchies[0].GetConnectionId());
+    ASSERT_EQ(rules->GetRuleSetId(), hierarchies[0].GetRulesetId());
+    ASSERT_EQ(rootNodes[0]->GetNodeId(), *hierarchies[0].GetPhysicalParentNodeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* VSTS#28901
+* @betest                                       Haroldas.Vitunskas              09/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(UserSettingsTrackedWhenCustomizingChildNodesWithVirtualParentDuringHierarchyUpdate, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementProperty" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ElementA">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementB">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementC">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(HierarchyUpdateTests, UserSettingsTrackedWhenCustomizingChildNodesWithVirtualParentDuringHierarchyUpdate)
+    {
+    // prepare the dataset
+    ECRelationshipClassCP rel = dynamic_cast<ECRelationshipClass const *>(GetSchema()->GetClassCP("ElementOwnsChildElements"));
+    ECClassCP ecClassA = GetSchema()->GetClassCP("ElementA");
+    ECClassCP ecClassB = GetSchema()->GetClassCP("ElementB");
+    ECClassCP ecClassC = GetSchema()->GetClassCP("ElementC");
+    ASSERT_NE(nullptr, rel);
+
+    IECInstancePtr rootElement = RulesEngineTestHelpers::InsertInstance(m_db, *ecClassA);
+    IECInstancePtr virtualElement = RulesEngineTestHelpers::InsertInstance(m_db, *ecClassB);
+    IECInstancePtr childElement = RulesEngineTestHelpers::InsertInstance(m_db, *ecClassC);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *rel, *rootElement, *virtualElement, nullptr, false);
+    RulesEngineTestHelpers::InsertRelationship(m_db, *rel, *virtualElement, *childElement, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "", ecClassA->GetFullName(), false));
+
+    ChildNodeRule* virtualRule = new ChildNodeRule("ParentNode.ClassName=\"ElementA\"", 1, false, RuleTargetTree::TargetTree_Both);
+    virtualRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, true, false, false, false, false,
+        "", ecClassB->GetFullName(), false));
+
+    ChildNodeRule* childRule = new ChildNodeRule("ParentNode.ClassName=\"ElementB\"", 1, false, RuleTargetTree::TargetTree_Both);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false,
+        "", ecClassC->GetFullName(), false));
+
+    rules->AddPresentationRule(*rootRule);
+    rules->AddPresentationRule(*virtualRule);
+    rules->AddPresentationRule(*childRule);
+    rules->AddPresentationRule(*new StyleOverride("ThisNode.ClassName=\"ElementC\"", 1, "GetSettingIntValue(\"custom\")", "", ""));
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeCPtr rootNode = rootNodes[0];
+    SetNodeExpanded(*rootNode);
+
+    // get a child node
+    ASSERT_TRUE(rootNode->HasChildren());
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNode, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, childNodes.GetSize());
+    NavNodeCPtr childNode = childNodes[0];
+
+    // modify and update child
+    childElement->SetValue("ElementProperty", ECValue(10));
+    ECInstanceUpdater updater(m_db, *childElement, nullptr);
+    updater.Update(*childElement);
+    m_db.SaveChanges();
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *childElement);
+
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+
+    // expect user settings have been tracked
+    bvector<HierarchyLevelInfo> hierarchies = static_cast<RulesDrivenECPresentationManagerImpl&>(m_manager->GetImpl()).GetNodesCache().GetRelatedHierarchyLevels(rules->GetRuleSetId().c_str(), "custom");
+    ASSERT_EQ(1, hierarchies.size());
+    ASSERT_EQ(m_connections.GetConnection(m_db)->GetId(), hierarchies[0].GetConnectionId());
+    ASSERT_EQ(rules->GetRuleSetId(), hierarchies[0].GetRulesetId());
+    ASSERT_EQ(rootNodes[0]->GetNodeId(), *hierarchies[0].GetPhysicalParentNodeId());
     }
 
 /*=================================================================================**//**

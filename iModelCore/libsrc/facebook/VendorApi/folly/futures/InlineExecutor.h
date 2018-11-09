@@ -15,19 +15,29 @@
  */
 
 #pragma once
+
+#include <atomic>
+
+#include <folly/CPortability.h>
+#include <folly/CppAttributes.h>
 #include <folly/Executor.h>
 
 namespace folly {
 
-  /// When work is "queued", execute it immediately inline.
-  /// Usually when you think you want this, you actually want a
-  /// QueuedImmediateExecutor.
-  class InlineExecutor : public Executor {
-   public:
-    void add(Func f) override {
-      f();
-    }
-    void addWithPriority(Func f, int8_t) override {add(std::move(f));}
-  };
+/// When work is "queued", execute it immediately inline.
+/// Usually when you think you want this, you actually want a
+/// QueuedImmediateExecutor.
+class InlineExecutor : public Executor {
+ public:
+  // BENTLEY_CHANGE
+  BE_FOLLY_EXPORT static InlineExecutor& instance() noexcept;
 
-}
+  void add(Func f) override { f(); }
+
+ private:
+  static InlineExecutor& instance_slow() noexcept;
+
+  static std::atomic<InlineExecutor*> cache;
+};
+
+} // namespace folly

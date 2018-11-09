@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#define NOMINMAX
+
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTest.h>
 #include <ScalableMesh/ScalableMeshDefs.h>

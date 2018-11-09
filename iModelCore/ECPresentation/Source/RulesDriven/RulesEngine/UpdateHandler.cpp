@@ -89,28 +89,28 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2016
 +===============+===============+===============+===============+===============+======*/
-struct RemoveDataSourceTask : IUpdateTask
+struct RemoveHierarchyLevelTask : IUpdateTask
 {
 private:
     NodesCache& m_cache;
     BeGuid m_removalId;
 
 protected:
-    virtual uint32_t _GetPriority() const override {return TASK_PRIORITY_RemoveDataSource;}
+    virtual uint32_t _GetPriority() const override {return TASK_PRIORITY_RemoveHierarchyLevel;}
     virtual bvector<IUpdateTaskPtr> _Perform() override
         {
-        m_cache.RemoveDataSource(m_removalId);
+        m_cache.RemoveHierarchyLevel(m_removalId);
         return bvector<IUpdateTaskPtr>();
         }
     virtual Utf8String _GetPrintStr() const override
         {
-        Utf8String str = "[RemoveDataSource]";
+        Utf8String str = "[RemoveHierarchyLevel]";
         if (!DidPerform())
             str.append(" RemovalId = ").append(m_removalId.ToString());
         return str;
         }
 public:
-    RemoveDataSourceTask(NodesCache& cache, BeGuid removalId) 
+    RemoveHierarchyLevelTask(NodesCache& cache, BeGuid removalId) 
         : m_cache(cache), m_removalId(removalId)
         {}
 };
@@ -130,13 +130,19 @@ protected:
     virtual bvector<IUpdateTaskPtr> _Perform() override
         {
         HierarchyLevelInfo newInfo(m_hierarchyInfo);
+        newInfo.Invalidate();
         if (nullptr != m_hierarchyInfo.GetPhysicalParentNodeId())
             {
             auto iter = m_updateContext.GetRemapInfo().find(*m_hierarchyInfo.GetPhysicalParentNodeId());
             if (m_updateContext.GetRemapInfo().end() != iter)
                 newInfo.SetPhysicalParentNodeId(iter->second);
             }
-
+        if (nullptr != m_hierarchyInfo.GetVirtualParentNodeId())
+            {
+            auto iter = m_updateContext.GetRemapInfo().find(*m_hierarchyInfo.GetVirtualParentNodeId());
+            if (m_updateContext.GetRemapInfo().end() != iter)
+                newInfo.SetVirtualParentNodeId(iter->second);
+            }
         bvector<IUpdateTaskPtr> subTasks;
         m_updater.Update(subTasks, m_updateContext, m_connection, m_hierarchyInfo, newInfo);
         return subTasks;
@@ -149,6 +155,7 @@ protected:
             str.append(" ConnectionId: ").append(m_hierarchyInfo.GetConnectionId());
             str.append(" RulesetId: ").append(m_hierarchyInfo.GetRulesetId());
             str.append(" PhysicalParentId: ").append((nullptr == m_hierarchyInfo.GetPhysicalParentNodeId()) ? "null" : std::to_string(*m_hierarchyInfo.GetPhysicalParentNodeId()).c_str());
+            str.append(" VirtualParentId: ").append((nullptr == m_hierarchyInfo.GetVirtualParentNodeId()) ? "null" : std::to_string(*m_hierarchyInfo.GetVirtualParentNodeId()).c_str());
             }
         return str;
         }
@@ -290,7 +297,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRemapNodeIdsTask(bmap<uint64_t, uint64_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateRemoveDataSourceTask(BeGuidCR removalId) const
+IUpdateTaskPtr UpdateTasksFactory::CreateRemoveHierarchyLevelTask(BeGuidCR removalId) const
     {
     if (nullptr == m_nodesCache)
         {
@@ -298,7 +305,7 @@ IUpdateTaskPtr UpdateTasksFactory::CreateRemoveDataSourceTask(BeGuidCR removalId
         return nullptr;
         }
 
-    return new RemoveDataSourceTask(*m_nodesCache, removalId);
+    return new RemoveHierarchyLevelTask(*m_nodesCache, removalId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -603,7 +610,7 @@ NavNodesProviderPtr HierarchyUpdater::CreateProvider(IConnectionCR connection, H
 
     // create the provider
     JsonNavNodeCPtr parentNode = (nullptr != info.GetPhysicalParentNodeId()) ? m_nodesCache.GetNode(*info.GetPhysicalParentNodeId()) : nullptr;
-    return m_nodesProviderFactory.CreateForHierarchyLevel(*context, parentNode.get());
+    return m_nodesProviderFactory.Create(*context, parentNode.get(), ProviderCacheType::None);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -614,11 +621,11 @@ void HierarchyUpdater::SynchronizeLists(NavNodesDataSource const& oldDs, size_t&
     size_t newIndexReset = newIndex;
     while (oldIndex < oldDs.GetSize())
         {
+        JsonNavNodeCPtr oldNode = oldDs.GetNode(oldIndex);
         newIndex = newIndexReset;
         bool found = false;
         while (newIndex < newDs.GetSize())
             {
-            JsonNavNodeCPtr oldNode = oldDs.GetNode(oldIndex);
             JsonNavNodePtr newNode = newDs.GetNode(newIndex);
             if (oldNode->GetKey()->IsSimilar(*newNode->GetKey()))
                 {
@@ -693,6 +700,7 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
         subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node, i)));
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -731,23 +739,28 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
         return;
         }
 
-    NavNodesProviderCPtr parentProvider = newProvider.GetContext().GetNodesCache().GetDataSource(*newProvider.GetContext().GetPhysicalParentNodeId(), false);
-    if (parentProvider.IsValid())
+    DataSourceInfo parentDataSource = m_nodesCache.FindDataSource(newProvider.GetContext().GetPhysicalParentNodeId() ? *newProvider.GetContext().GetPhysicalParentNodeId() : 0);
+    if (!parentDataSource.IsValid())
         {
-        NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
-        HierarchyLevelInfo parentInfo(parentProviderContext.GetConnection().GetId(), parentProviderContext.GetRuleset().GetRuleSetId(),
-            parentProviderContext.IsLocalizationContext() ? parentProviderContext.GetLocale() : "", 
-            parentProviderContext.GetPhysicalParentNodeId());
-        subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, parentProviderContext.GetConnection(), parentInfo));
+        BeAssert(false);
+        return;
         }
+    HierarchyLevelInfo parentHierarchyLevelInfo = m_nodesCache.FindHierarchyLevel(parentDataSource.GetHierarchyLevelId());
+    if (!parentHierarchyLevelInfo.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+    subTasks.push_back(m_tasksFactory.CreateRefreshHierarchyTask(*this, context, newProvider.GetContext().GetConnection(), parentHierarchyLevelInfo));
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HierarchyUpdater::CustomizeNode(JsonNavNodeCP oldNode, JsonNavNodeR nodeToCustomize, NavNodesProviderCR newNodeProvider) const
     {
     bool nodeChanged = false;
-    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetDataSourceInfo(), newNodeProvider.GetContext());
+    DataSourceRelatedSettingsUpdater updater(newNodeProvider.GetContext());
 
     // if the old node was customized, we have to customize the new one as well;
     // otherwise the comparison is incorrect
@@ -814,12 +827,15 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
         return;
         }
 
-    NavNodesProviderPtr oldProvider = m_nodesCache.GetDataSource(oldInfo, false);
+    NavNodesProviderPtr oldProvider = m_nodesCache.GetCombinedHierarchyLevel(oldInfo, false, false);
     if (oldProvider.IsNull())
         {
         BeAssert(false);
         return;
         }
+    // note: need to make sure oldProvider initialized its nodes cache before setting the removal id
+    JsonNavNodePtr temp;
+    oldProvider->GetNode(temp, 0);
 
     BeGuid removalId = m_nodesCache.CreateRemovalId(oldInfo);
     LoggingHelper::LogMessage(Log::Update, Utf8PrintfString("Flagged data source for removal with ID %s", removalId.ToString().c_str()).c_str(), NativeLogging::LOG_DEBUG);
@@ -836,7 +852,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
 
         CheckIfParentNeedsUpdate(subTasks, context, *oldProvider, *newProvider);
         }
-    subTasks.push_back(m_tasksFactory.CreateRemoveDataSourceTask(removalId));
+    subTasks.push_back(m_tasksFactory.CreateRemoveHierarchyLevelTask(removalId));
     }
 
 /*---------------------------------------------------------------------------------**//**

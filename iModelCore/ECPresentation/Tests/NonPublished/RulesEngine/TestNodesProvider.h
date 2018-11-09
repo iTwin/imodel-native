@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/TestNodesProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,6 +30,7 @@ private:
     TestNodesProvider(NavNodesProviderContext const& context) : NavNodesProvider(context) {}
 
 protected:
+    bool _IsCacheable() const override {return false;}
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override {return m_getNodeHandler ? m_getNodeHandler(node, index) : false;}
     bool _HasNodes() const override {return m_hasNodesHandler ? m_hasNodesHandler() : false;}
     size_t _GetNodesCount() const override {return m_getNodesCountHandler ? m_getNodesCountHandler() : 0;}
@@ -55,6 +56,7 @@ private:
         {}
     
 protected:
+    bool _IsCacheable() const override {return false;}
     bool _GetNode(JsonNavNodePtr& node, size_t index) const override
         {
         if (index < GetNodesCount())

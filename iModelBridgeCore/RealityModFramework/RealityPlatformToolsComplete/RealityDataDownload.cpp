@@ -404,11 +404,11 @@ SetupRequestStatus RealityDataDownload::Login(LoginInfo& loginInfo, AuthInfo& au
     for (Utf8String header : loginInfo.headers)
         headers = curl_slist_append(headers, header.c_str());
 
-    curl_easy_setopt(curl, CURLOPT_URL, loginInfo.loginUrl);
+    curl_easy_setopt(curl, CURLOPT_URL, loginInfo.loginUrl.c_str());
 
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
 
-    curl_easy_setopt(curl, CURLOPT_CAINFO, Utf8String(m_certPath));
+    curl_easy_setopt(curl, CURLOPT_CAINFO, Utf8String(m_certPath).c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
     //capture full response for debugging
@@ -514,11 +514,11 @@ SetupRequestStatus RealityDataDownload::SetupRequestandFile(FileTransfer* ft, bo
             m_pTokenFunc(currentMirror.tokenType, currentMirror.url, header);
             }
 
-        curl_easy_setopt(pCurl, CURLOPT_URL, currentMirror.url);
+        curl_easy_setopt(pCurl, CURLOPT_URL, currentMirror.url.c_str());
         if (!WString::IsNullOrEmpty(m_certPath.c_str()))
             {
             curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
-            curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
+            curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath).c_str());
             }
 
         struct curl_slist *headers = NULL;
@@ -538,7 +538,7 @@ SetupRequestStatus RealityDataDownload::SetupRequestandFile(FileTransfer* ft, bo
             curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
 
         if(currentCap != nullptr && currentCap->auth.cookie.length() > 0)
-            curl_easy_setopt(pCurl, CURLOPT_COOKIE, currentCap->auth.cookie);
+            curl_easy_setopt(pCurl, CURLOPT_COOKIE, currentCap->auth.cookie.c_str());
         if(currentCap != nullptr && currentCap->auth.postBody.length() > 0)
             {
             curl_easy_setopt(pCurl, CURLOPT_POST, 1);

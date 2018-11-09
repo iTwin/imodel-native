@@ -243,6 +243,10 @@ $(o)DrapeOnGraph$(oext) : $(stmDir)DrapeOnGraph.cpp $(PCHHeaderDepends)  ${Multi
 
 $(o)ScalableMeshProgressiveQuery$(oext) : $(stmDir)ScalableMeshProgressiveQuery.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)ScalableMeshProgressiveQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiveQueryPlanner.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshProgressiveContourQueryPlanner$(oext) : $(stmDir)ScalableMeshProgressiveContourQueryPlanner.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 $(o)ScalableMeshVolume$(oext) : $(stmDir)ScalableMeshVolume.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshSourceImporter$(oext) : $(stmDir)ScalableMeshSourceImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -371,11 +375,12 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     Urlmon.lib \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
-    $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
 	$(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
+
+#	    $(ContextSubpartsLibs)wastorage.lib \
 
 LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)Imagepp.lib \

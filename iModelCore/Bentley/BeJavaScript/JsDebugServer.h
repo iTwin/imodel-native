@@ -8,6 +8,18 @@
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
+#if defined(_MSC_VER)
+    // While these are triggered by websocketpp, the warnings come from templates in STL headers.
+    // As such, they must be pushed before including the STL headers themselves.
+    #pragma warning(push)
+    #pragma warning(disable:4100)
+    #pragma warning(disable:4127)
+    #pragma warning(disable:4244)
+    #pragma warning(disable:4701)
+    #pragma warning(disable:4996)
+    #pragma warning(disable:6385)
+#endif
+
 #include <fstream>
 #include <iostream>
 #include <locale>
@@ -31,15 +43,6 @@
 #define _WEBSOCKETPP_CPP11_SYSTEM_ERROR_
 #undef min
 #undef max
-
-#if defined(_MSC_VER)
-    #pragma warning(push)
-    #pragma warning(disable:4100)
-    #pragma warning(disable:4127)
-    #pragma warning(disable:4701)
-    #pragma warning(disable:4996)
-    #pragma warning(disable:6385)
-#endif
 
 #include <websocketpp/config/core.hpp>
 #include <websocketpp/server.hpp>

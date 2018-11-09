@@ -228,23 +228,73 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
-	WString serverUrl;
-	UINT32 bufLen;
-	CallStatus status = APIERR_SUCCESS;
-	try
-		{
-		CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-		wchar_t* buffer;
-		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &bufLen);
-		bufLen++;
-		buffer = (wchar_t*) calloc(1, bufLen * sizeof(wchar_t));
-		status = CCApi_GetBuddiUrl(api, L"RealityDataServices", buffer, &bufLen);
-		serverUrl.assign(buffer);
-		CCApi_FreeApi(api);
-		}
-	catch (...)
-		{
-		}
+    WString serverUrl;
+    CallStatus status = APIERR_SUCCESS;
+    try
+        {
+        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+        if (!api)
+            {
+            BeAssert(!"Couldn't initialize Connection client COM API");
+            return "";
+            }
+        bool installed;
+        status = CCApi_IsInstalled(api, &installed);
+        if (!installed)
+            {
+            BeAssert(!"Connection client does not seem to be installed\n");
+            CCApi_FreeApi(api);
+            return "";
+            }
+        bool running = false;
+        status = CCApi_IsRunning(api, &running);
+        if (status != APIERR_SUCCESS || !running)
+            {
+            BeAssert(!"Connection client does not seem to be running\n");
+            CCApi_FreeApi(api);
+            return "";
+            }
+        bool loggedIn = false;
+        status = CCApi_IsLoggedIn(api, &loggedIn);
+        if (status != APIERR_SUCCESS || !loggedIn)
+            {
+            BeAssert(!"Connection client does not seem to be logged in\n");
+            CCApi_FreeApi(api);
+            return "";
+            }
+        bool acceptedEula = false;
+        status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
+        if (status != APIERR_SUCCESS || !acceptedEula)
+            {
+            BeAssert(!"Connection client user does not seem to have accepted EULA\n");
+            CCApi_FreeApi(api);
+            return "";
+            }
+        bool sessionActive = false;
+        status = CCApi_IsUserSessionActive(api, &sessionActive);
+        if (status != APIERR_SUCCESS || !sessionActive)
+            {
+            BeAssert(!"Connection client does not seem to have an active session\n");
+            CCApi_FreeApi(api);
+            return "";
+            }
+
+        wchar_t* buddiUrl;
+        UINT32 strlen = 0;
+
+        CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &strlen);
+        strlen += 1;
+        buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
+        CCApi_GetBuddiUrl(api, L"RealityDataServices", buddiUrl, &strlen);
+
+        serverUrl.assign(buddiUrl);
+        free(buddiUrl);
+        CCApi_FreeApi(api);
+        }
+    catch (...)
+        {
+        BeAssert(!"Error thrown while fetching RDS server url");
+        }
     return Utf8String(serverUrl.c_str());
     }
 

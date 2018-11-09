@@ -474,7 +474,7 @@ TEST_F(RulesPreprocessorTests, GetChildNodeSpecifications_BySpecificationIdWithR
     AllInstanceNodesSpecification* spec = new AllInstanceNodesSpecification();
     // set values using individual methods.
     spec->SetPriority(1);
-    spec->SetAlwaysReturnsChildren(false);
+    spec->SetHasChildren(ChildrenHint::Unknown);
     spec->SetHideNodesInHierarchy(false);
     spec->SetHideIfNoChildren(false);
     spec->SetGroupByClass(false);

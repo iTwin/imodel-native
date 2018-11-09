@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/RealityDataPackage.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RealityPlatform/RealityDataPackage.h>
@@ -195,6 +195,9 @@ void       RealityDataPackage::SetCreationDate(DateTimeCR date) {m_creationDate 
 
 BoundingPolygonCR RealityDataPackage::GetBoundingPolygon() const {return *m_pBoundingPolygon;}
 void              RealityDataPackage::SetBoundingPolygon(BoundingPolygonR polygon) {m_pBoundingPolygon = &polygon;}
+
+Utf8StringCR RealityDataPackage::GetContext() const { return m_context; }
+void         RealityDataPackage::SetContext(Utf8CP context) { m_context = context; }
 
 uint32_t RealityDataPackage::GetMajorVersion() const {return m_majorVersion;} 
 void RealityDataPackage::SetMajorVersion(uint32_t major) { m_majorVersion = major; }

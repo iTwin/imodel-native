@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Facebook, Inc.
+ * Copyright 2017-present Facebook, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,3 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <folly/futures/InlineExecutor.h>
+
+#include <folly/Indestructible.h>
+
+namespace folly {
+
+InlineExecutor& InlineExecutor::instance() noexcept {
+    auto const value = cache.load(std::memory_order_acquire);
+    return value ? *value : instance_slow();
+    }
+
+InlineExecutor& InlineExecutor::instance_slow() noexcept {
+  static auto instance = Indestructible<InlineExecutor>{};
+  cache.store(&*instance, std::memory_order_release);
+  return *instance;
+}
+
+std::atomic<InlineExecutor*> InlineExecutor::cache; 
+
+} // namespace folly

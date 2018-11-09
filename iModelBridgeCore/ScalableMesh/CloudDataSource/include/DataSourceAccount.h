@@ -100,12 +100,15 @@ public:
 
             DataSourceStatus            upload                          (DataSource & dataSource);
             DataSourceStatus            download                        (DataSource & dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize);
+            DataSourceStatus            download                        (DataSource & dataSource, std::vector<DataSourceBuffer::BufferData>& dest);
 
     virtual DataSourceStatus            downloadBlobSync                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
     virtual DataSourceStatus            downloadBlobSync                (DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session);
+    virtual DataSourceStatus            downloadBlobSync                (DataSourceURL &url, DataSourceBuffer* buffer, const DataSource::SessionName &session);
     virtual DataSourceStatus            uploadBlobSync                  (DataSource &dataSource, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
     virtual DataSourceStatus            uploadBlobSync                  (DataSourceURL &dataSource, const std::wstring& filename, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
     virtual DataSourceStatus            uploadBlobSync                  (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
+    virtual DataSourceStatus            uploadBlobSync                  (const DataSourceURL &blobPath, DataSourceBuffer *source);
 
 
     virtual DataSourceStatus            setCaching                      (DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);

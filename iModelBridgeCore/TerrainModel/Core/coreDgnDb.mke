@@ -5,6 +5,7 @@
 #   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+NO_DEFAULT_CLANG_WARNINGS = 1
 
 %include  mdl.mki
 %include $(SrcRoot)imodel02/iModelBridgeCore/TerrainModel/privmki/TerrainModelCommon.mki
@@ -14,12 +15,25 @@
 #----------------------------------------------------------------------
 coreDir             = $(_MakeFilePath)
 MultiCompileDepends = $(_MakeFileSpec)
+
 %if defined (MSVC_VERSION)
 CCompOpts + -wd4456 -wd4457 -wd4458 -wd4459
 %else
-ClangCppCompOpts + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -fopenmp -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
-cuser + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -fopenmp -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
-%endif 
+ClangCppCompOpts + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
+cuser + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
+LLVMCommonCompOpts + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
+
+    %if $(BUILD_TOOLSET) != "APPLE_CLANG"
+        ClangCppCompOpts + -fopenmp
+        cuser + -fopenmp
+	LLVMCommonCompOpts + -fopenmp
+    %else
+        ClangCppCompOpts + -Wno-error=delete-non-virtual-dtor
+        cuser + -Wno-error=delete-non-virtual-dtor
+	LLVMCommonCompOpts + -Wno-error=delete-non-virtual-dtor
+    %endif
+%endif
+
 CompileOptionsMki =$(coreDir)coredgnDb.mki
 %include $(CompileOptionsMki)
 

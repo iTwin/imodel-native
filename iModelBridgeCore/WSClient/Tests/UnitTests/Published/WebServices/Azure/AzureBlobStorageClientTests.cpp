@@ -204,3 +204,24 @@ TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsBadRequest_R
     ASSERT_FALSE(result.IsSuccess());
     EXPECT_EQ("Http error: 400", result.GetError().GetDescription());
     }
+
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_FileSmallerThanChunk_UploadsWithOneRequest)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+    uint32_t fileSize = 200;
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("https://test/foo", request.GetUrl().c_str());
+        EXPECT_EQ(fileSize, request.GetRequestBody()->GetLength());
+        EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
+        return StubHttpResponse(HttpStatus::Created, "", {{"ETag", "FooBoo"}});
+        });
+
+    BeFileName filePath = StubFileWithSize(fileSize);
+    auto result = client->SendUpdateFileRequest("https://test/foo", filePath)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    ASSERT_EQ("FooBoo", result.GetValue().GetETag());
+    }
+
