@@ -1,0 +1,128 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/TerrainModelTests/BuildTerrainModelTests.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+SrcTerrainModelTest=$(SrcRoot)TerrainModel/Tests/TerrainModelTests/
+SrcBentleyTest=$(SrcRoot)util/gtest/BentleyTest/
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+NO_LEAN_AND_MEAN=1
+
+%include  mdl.mki
+
+%ifndef UTILROOT
+   UTILROOT=$(SrcRoot)util/
+%endif
+
+appName = TerrainModelTests
+
+executableName = $(appName)
+
+GUnitTestDir = $(UTILROOT)gtest/
+
+dirToSearch = $(GUnitTestDir)include/
+%include cincapnd.mki
+
+dirToSearch     = $(basedir)
+%include cincapnd.mki
+
+dirToSearch     = $(BuildContext)PublicAPI
+%include cincapnd.mki
+
+dirToSearch     = $(BuildContext)VendorAPI
+%include cincapnd.mki
+
+%ifdef DTM_MEMORY_DEBUG
+
+nameToDefine=DTM_MEMORY_DEBUG
+%include cdefapnd.mki
+
+%endif
+o = $(OutputRootDir)Build/TerrainModel/$(appName)/
+
+DependsOnHeaders = $(baseDir)stdafx.h
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+#-----------------------------------------------------------------------
+#   Compile Managed C++ Modules
+#-----------------------------------------------------------------------
+#-showIncludes
+# Add References
+CCPchOpts = -Yc"stdafx.h" -Fp$(o)stdafx.pch
+
+$(o)stdafx$(oext) : $(baseDir)stdafx.cpp $(DependsOnHeaders)
+
+CCPchOpts = -Yu"stdafx.h" -Fp$(o)stdafx.pch
+
+#----------------------------------------------------------------------
+# Compile ForwardDeclarationProblem file
+#----------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+#$(o)CPTestFixture$(oext) : $(baseDir)CPTestFixture.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)StackExaminerGtestHelper$(oext) : $(baseDir)StackExaminerGtestHelper.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)TerrainModelTest$(oext) : $(baseDir)TerrainModelTest.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DrainageTests$(oext) : $(baseDir)DrainageTests.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)FormatTests$(oext) : $(baseDir)FormatTests.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)TMTests$(oext) : $(baseDir)TMTests.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+CCPchOpts =
+
+#------------------------------------------------------------------------
+#   Define objects files
+#------------------------------------------------------------------------
+dlmObjs = \
+$(o)stdafx$(oext) \
+$(MultiCompileObjectList) \
+
+libsUsed = $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext) \
+                        $(BuildContext)SubParts/Libs/$(libprefix)TerrainModelCore$(libext) \
+                        $(BuildContext)SubParts/Libs/$(libprefix)TerrainModelFormats$(libext) \
+                   $(BuildContext)SubParts/Libs/Bentley.lib \
+                   $(BuildContext)SubParts/Libs/BentleyAllocator.lib
+
+#----------------------------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------------------------
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_OUT       = $(o)
+GUNITTEST_NAME      = $(executableName)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_LIBS      = $(libsUsed)
+GUNITTEST_OBJS      = $(dlmObjs)
+GUNITTEST_PATH      = $(o)
+GUNITTEST_SYMB      = $(o)
+
+#--------------------------------------------------------------------------------------
+# Additional code needed to create test
+#--------------------------------------------------------------------------------------
+GTEST_MAIN_IS_SUPPLIED = 1
+%include $(GUnitTestDir)gtestobj.mki
+
+#--------------------------------------------------------------------------------------
+# Notice! Do not run the tests here.  You can't because we don't have the exe and the *.dlls that the test depends on in the Product yet.
+#--------------------------------------------------------------------------------------
+GUNITTEST_NOEXEC=1
+%include $(SharedMki)gunittest.mki
+
+always:
+    @CreateSymLinks.py "$(BuildContext)Delivery\$(executableName).exe=$(o)$(executableName).exe"
+    @CreateSymLinks.py "$(BuildContext)Delivery\$(appName).log.config.xml=$(baseDir)$(appName).log.config.xml"
+
+
