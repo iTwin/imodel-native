@@ -2754,6 +2754,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
     BeAssert(m_includeFilesWithNoVersionExt && "Should be called only when no-extension schemas are to be examined");
 
     BeFileName schemaPathname(schemaPath.c_str());
+    schemaPathname.AppendSeparator();
     schemaPathname.AppendUtf8(schemaName);
     schemaPathname.AppendUtf8(".ecschema.xml");
 
