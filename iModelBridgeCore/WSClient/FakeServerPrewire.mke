@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: FakeServerPrewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+# N.B. $(BuildContext)PublicAPI/WebServices/WebServices.h created by ClientPrewire.mke (WebServicesClient-PublicAPI part).
+
+always:
+    !~@mkdir $(BuildContext)PublicAPI
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/FakeServer=$(_MakeFilePath)/PublicAPI/FakeServer"
+	

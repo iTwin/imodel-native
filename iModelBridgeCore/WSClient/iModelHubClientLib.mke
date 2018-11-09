@@ -1,0 +1,93 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelHubClientLib.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# affects WinRT build only.
+ENABLE_CPP_CX_EXTENSIONS = 1
+
+%include mdl.mki
+
+iModelHubClientSourceDirectory    = $(_MakeFilePath)
+iModelHubClientPublicApiDirectory = $(_MakeFilePath)PublicAPI/WebServices/iModelHub/
+BuildContextLibsDirectory           = $(BuildContext)SubParts/Libs/
+o                                   = $(OutputRootDir)build/WSClient/iModelHub/
+
+always:
+    !~@mkdir $(o)
+
+
+#--------------------------------------------------------------------------------------
+#   Building the WebServicesClient library
+#--------------------------------------------------------------------------------------
+nameToDefine    = __iModelHubClient_DLL_BUILD__
+%include cdefapnd.mki
+%if defined (DEBUG)
+	nameToDefine    = DEBUG
+	%include cdefapnd.mki
+%endif
+
+%if defined (ENABLE_BIM_CRASH_TESTS) || defined (DEBUG)
+	nameToDefine    = ENABLE_BIM_CRASH_TESTS
+	%include cdefapnd.mki
+%endif
+
+%if $(TARGET_PLATFORM)=="Windows"
+    # Ignore inheritance via dominance warning
+    cDefs + -wd4250
+%endif
+
+#--------------------------------------------------------------------------------------
+#   iOS-specific
+#--------------------------------------------------------------------------------------
+AppleCppFileTypeControl = $(AppleCppFileTypeControl_ObjCpp)
+
+# Ignore unknown pragmas
+LLVMCommonCompOpts      + -Wno-unknown-pragmas
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+dirToSearch = $(_MakeFilePath)PublicAPI/
+%include cincapnd.mki
+
+# Prevent fatal error C1128.
+CCCompOpts + -bigobj
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+%include iModelHubClient/Client.mki
+
+%include MultiCppCompileGo.mki
+iModelHubClientObjectList = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = iModelHubClient
+DLM_OBJECT_FILES            = $(iModelHubClientObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+# DgnClientFx library name
+_dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
+
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(libext)
+
+%include $(sharedMki)linkLibrary.mki    
