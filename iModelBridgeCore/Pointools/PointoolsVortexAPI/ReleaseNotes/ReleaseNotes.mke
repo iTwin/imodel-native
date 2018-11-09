@@ -1,0 +1,17 @@
+
+#*--------------------------------------------------------------------------------------+
+#
+#  $Source: ReleaseNotes/ReleaseNotes.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PointoolsVortexAPISrcDir = ${SrcRoot}/Pointools/PointoolsVortexAPI/
+DeliveryDir=$(OutBuildContexts)PointoolsVortexAPI$(VSOutputSubfolder)/Delivery/
+
+%include $(PointoolsVortexAPISrcDir)mki/PointoolsVortexAPI_Version.mki
+PointoolsVortexAPI_ReleaseNotesFile=PointoolsVortexAPI-ReleaseNotes-$(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V).txt
+
+always:
+    @CreateSymLinks.py -f"$(DeliveryDir)${PointoolsVortexAPI_ReleaseNotesFile}"="${PointoolsVortexAPISrcDir}/ReleaseNotes/${PointoolsVortexAPI_ReleaseNotesFile}"
