@@ -952,7 +952,6 @@ MobileGateway::MobileGateway()
             printf("Sending %ld Bytes\n", c);
             auto writeResult = m_client->Write (s, c, [&] (Uv::StatusCR status)
                 {
-     
                 if (status.IsError())
                     {
                     BeAssert (!status.IsError());

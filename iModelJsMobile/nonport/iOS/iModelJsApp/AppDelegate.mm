@@ -62,7 +62,7 @@ extern void imodeljs_addon_setMobileTempDir(Utf8CP d);
         runtime.EvaluateScript (jsTemp.UTF8String);
             
             
-        NSString* backendJsPath = [[ [NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Assets/MobileMain.js"];
+        NSString* backendJsPath = [[ [NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Assets/main.js"];
         NSString* backendJs = [NSString stringWithContentsOfFile:backendJsPath encoding:NSUTF8StringEncoding error:NULL];
         auto evaluated = runtime.EvaluateScript (backendJs.UTF8String,
                         [NSURL fileURLWithPath:backendJsPath].absoluteString.UTF8String);

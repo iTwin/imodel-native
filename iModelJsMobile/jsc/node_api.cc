@@ -2152,6 +2152,7 @@ namespace {
                 _request.data = this;
                 (void)_async_resource;
                 (void)_async_resource_name;
+                _id = ++s_id; 
             }
             
             ~Work() { }
@@ -2171,6 +2172,9 @@ namespace {
                 delete work;
             }
             
+            static uint32_t GetId(Work* work) {
+                return work->_id;
+            }
             static void ExecuteCallback(uv_work_t* req) {
                 Work* work = static_cast<Work*>(req->data);
                 work->_execute(work->_env, work->_data);
@@ -2218,7 +2222,10 @@ namespace {
             napi_async_complete_callback _complete;
             napi_value _async_resource;
             napi_value _async_resource_name;
+            uint32_t _id;
+            static uint32_t s_id;
         };
+    uint32_t Work::s_id = 0;
         
     }  // end of namespace uvimpl
 }  // end of anonymous namespace
@@ -2262,7 +2269,7 @@ napi_status napi_create_async_work(napi_env env,
                       execute, complete, data);
     
     *result = reinterpret_cast<napi_async_work>(work);
-    printf("napi_create_async_work [%p]\n", work);
+    printf("napi_create_async_work [%u]\n", uvimpl::Work::GetId(work));
     return napi_clear_last_error(env);
 }
 //---------------------------------------------------------------------------------------
@@ -2271,9 +2278,9 @@ napi_status napi_create_async_work(napi_env env,
 napi_status napi_delete_async_work(napi_env env, napi_async_work work) {
     CHECK_ENV(env);
     CHECK_ARG(env, work);
-    printf("napi_delete_async_work [%p]\n", work);
-    uvimpl::Work::Delete(reinterpret_cast<uvimpl::Work*>(work));
-    
+    uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
+    printf("napi_delete_async_work [%u]\n", uvimpl::Work::GetId(w));    
+    uvimpl::Work::Delete(w);
     return napi_clear_last_error(env);
 }
 //---------------------------------------------------------------------------------------
@@ -2290,7 +2297,7 @@ napi_status napi_queue_async_work(napi_env env, napi_async_work work) {
     uv_loop_t* event_loop = uv_default_loop();
     
     uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
-    printf("napi_queue_async_work [%p]\n", w);
+    printf("napi_queue_async_work [%u]\n", uvimpl::Work::GetId(w));    
     CALL_UV(env, uv_queue_work(event_loop,
                                w->Request(),
                                uvimpl::Work::ExecuteCallback,
@@ -2306,7 +2313,7 @@ napi_status napi_cancel_async_work(napi_env env, napi_async_work work) {
     CHECK_ARG(env, work);
     
     uvimpl::Work* w = reinterpret_cast<uvimpl::Work*>(work);
-    printf("napi_cancel_async_work [%p]\n", w);
+    printf("napi_cancel_async_work [%u]\n", uvimpl::Work::GetId(w));    
     CALL_UV(env, uv_cancel(reinterpret_cast<uv_req_t*>(w->Request())));
     
     return napi_clear_last_error(env);
