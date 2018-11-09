@@ -1,0 +1,5 @@
+message LineString
+{
+repeated DPoint3d Point = 1;
+}
+

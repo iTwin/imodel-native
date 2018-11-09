@@ -1,0 +1,10 @@
+PRIMITIVE CurveGroup
+<def name=SUMMARY>A collection of ICurve objects.
+</def>
+<def name=Interface_BaseList>IAggregate, ICurve</def>
+
+
+<def name=MEMBERS><list ItemType=ICurve ItemTagName=Curve ItemSemanticName=Curve ItemParamName=curve ListName=mCurve ItemDescription="Curve" ScaleMode=Container/>
+</def>
+
+END_PRIMITIVE
