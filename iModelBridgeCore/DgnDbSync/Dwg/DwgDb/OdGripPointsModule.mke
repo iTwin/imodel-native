@@ -1,0 +1,131 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/DwgDb/OdGripPointsModule.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+#----------------------------------------------------------------------
+# This makefile builds OdGripPointsModule from OpenDWG's source \Core\Examples\GripPoints\
+#----------------------------------------------------------------------
+%if $(DWGTOOLKIT) != "OpenDwg"
+    %error This module is only valid for OpenDWG!
+%endif
+
+%if $(VendorVersion) == "4.1.1"
+    Kernel = Core
+    Drawing = Core
+%else
+    Kernel = Kernel
+    Drawing = Drawing
+%endif
+
+%include  mdl.mki
+
+appName             = OdGripPoints
+OpenDwgCore         = $(BuildContext)VendorAPI/Teigha/$(Kernel)/
+OpenDwgDrawing      = $(BuildContext)VendorAPI/Teigha/$(Drawing)/
+OpenDwgLibsDir      = $(BuildContext)SubParts/Libs/Teigha/
+OdGripPointsDir     = $(OpenDwgDrawing)Examples/GripPoints/
+ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
+
+o   = $(OutputRootDir)Build/$(DWGTOOLKIT)Db/
+always:
+    ~mkdir $(o)
+
+cIncs + -I$(OpenDwgCore)Include/
+
+%if $(OpenDwgCore)!=$(OpenDwgDrawing)
+    cIncs +  -I$(OpenDwgDrawing)Include/
+%endif
+
+#----------------------------------------------------------------------
+#    OdGripPointsModule compile options
+#----------------------------------------------------------------------
+CCompOpts + -D_TOOLKIT_IN_DLL_ -DGRIPPOINTS_DLL_EXPORTS -DGripPoints_EXPORTS -DSKIP_COMPILER_ANALYZE
+CCompOpts + -wd4389 -wd4189 -wd4505
+# CCompOpts + -DODA_LINT <= debugging stuff??
+
+always:
+        |  -------------------------------------------------------
+        |  Building OpenDWG $(appName) /w compiler options:
+        |  -------- -------- --------- -------- -------- ---------
+        |  $(cDefs) $(CCompOpts) $(CCPchOpts) $(cIncs)
+        |  -------- -------- --------- -------- -------- ---------
+
+#----------------------------------------------------------------------
+#   Build vendor object files without pre-compiled headers
+#----------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)Db2dPolylineGripPoints$(oext)           : $(OdGripPointsDir)Db2dPolylineGripPoints.cpp ${MultiCompileDepends}
+
+$(o)Db3dPolylineGripPoints$(oext)           : $(OdGripPointsDir)Db3dPolylineGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbArcGripPoints$(oext)                  : $(OdGripPointsDir)DbArcGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbCameraGripPoints$(oext)               : $(OdGripPointsDir)DbCameraGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbCircleGripPoints$(oext)               : $(OdGripPointsDir)DbCircleGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbDgnUnderlayGripPoints$(oext)          : $(OdGripPointsDir)DbDgnUnderlayGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbDimGripPoints$(oext)                  : $(OdGripPointsDir)DbDimGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbEllipseGripPoints$(oext)              : $(OdGripPointsDir)DbEllipseGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbEntityGripPoints$(oext)               : $(OdGripPointsDir)DbEntityGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbGeoPositionMarkerGripPoints$(oext)    : $(OdGripPointsDir)DbGeoPositionMarkerGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbLineGripPoints$(oext)                 : $(OdGripPointsDir)DbLineGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbMleaderGripPoints$(oext)              : $(OdGripPointsDir)DbMleaderGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbMlineGripPoints$(oext)                : $(OdGripPointsDir)DbMlineGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbOleGripPoints$(oext)                  : $(OdGripPointsDir)DbOleGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbPdfUnderlayGripPoints$(oext)          : $(OdGripPointsDir)DbPdfUnderlayGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbPolygonMeshGripPoints$(oext)          : $(OdGripPointsDir)DbPolygonMeshGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbPolylineGripPoints$(oext)             : $(OdGripPointsDir)DbPolylineGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbRasterImageGripPoints$(oext)          : $(OdGripPointsDir)DbRasterImageGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbTextGripPoints$(oext)                 : $(OdGripPointsDir)DbTextGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbTraceGripPoints$(oext)                : $(OdGripPointsDir)DbTraceGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbViewportGripPoints$(oext)             : $(OdGripPointsDir)DbViewportGripPoints.cpp ${MultiCompileDepends}
+
+$(o)DbWipeoutGripPoints$(oext)              : $(OdGripPointsDir)DbWipeoutGripPoints.cpp ${MultiCompileDepends}
+
+$(o)OdGripPointsModule$(oext)               : $(OdGripPointsDir)OdGripPointsModule.cpp ${MultiCompileDepends}
+
+$(o)StdAfx$(oext)                           : $(OdGripPointsDir)StdAfx.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+cppObjects          =% $(MultiCompileObjectList)
+
+%include MultiCppCompileRule.mki
+
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_FILES    = $(cppObjects)
+DLM_EXPORT_OBJS     = $(cppObjects)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+
+LINKER_LIBRARIES    = $(OpenDwgLibsDir)TD_Db$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_Root$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_DbRoot$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_Alloc$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_Key$(libext)
+LINKER_LIBRARIES    + $(OpenDwgLibsDir)TD_Ge$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+

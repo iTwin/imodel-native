@@ -1,0 +1,218 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/DwgDb/DwgDbExchange.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include  mdl.mki
+
+%if $(DWGTOOLKIT) != "OpenDwg" && $(DWGTOOLKIT) != "RealDwg"
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+%elif $(DWGTOOLKIT) == "RealDwg" && $(TARGET_PLATFORM) != "Windows"
+    %error RealDWG only supports Windows platform!
+%endif
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+DeliveryNamespace   = OpenDwgImporter
+OutBuildNamespace   = OpenDwgDb
+VendorNoticeName    = teigha-notice.txt
+
+#----------------------------------------------------------------------
+#   Build OpenDWG's grip points module from Examples
+#----------------------------------------------------------------------
+always:
+    !$(_bmake) $(_MakeFilePath)OdGripPointsModule.mke
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+DeliveryNamespace   = RealDwg$(VendorVersion)Importer
+OutBuildNamespace   = RealDwg$(VendorVersion)Db
+VendorNoticeName    = realdwg-notice.txt
+
+%endif      # Open/RealDwg
+
+
+appName             = $(DWGTOOLKIT)DbExchange
+baseDir             = $(_MakeFilePath)
+pubApiDir           = $(SrcRoot)DgnDbSync/PublicAPI/Dwg/DwgDb/
+VendorNoticeDir     = $(baseDir)Notices/
+ContextDeliveryDir  = $(BuildContext)Delivery/$(DeliveryNamespace)/
+
+o                   = $(OutputRootDir)Build/$(OutBuildNamespace)/
+always:
+    ~mkdir $(o)
+
+CompileOptionsMki   = $(baseDir)DwgDbCompileOptions.mki
+%include $(CompileOptionsMki)
+
+DwgDbDepends        = $(pubApiDir)DwgDbCommon.h                 \
+                      $(pubApiDir)BasicTypes.h                  \
+                      $(pubApiDir)DwgDbObjects.h                \
+                      $(pubApiDir)DwgDbEntities.h               \
+                      $(pubApiDir)DwgDbDatabase.h               \
+                      $(pubApiDir)DwgDbSymbolTables.h           \
+                      $(pubApiDir)DwgDrawables.h                \
+                      $(pubApiDir)DwgRxObjects.h                \
+                      $(pubApiDir)DwgResBuf.h                   \
+                      $(pubApiDir)DwgDbHost.h                   \
+                      $(baseDir)ToolkitHost.h                   \
+                      $(baseDir)DwgDbUtil.h
+
+#----------------------------------------------------------------------
+#   Build vendor object files without pre-compiled headers
+#----------------------------------------------------------------------
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+%include MultiCppCompileRule.mki
+
+# source files from \Core\Extensions\ExServices\...
+$(o)OdFileBuf$(oext)                    : $(ToolkitCoreServices)OdFileBuf.cpp ${MultiCompileDepends}
+
+$(o)ExUndoController$(oext)             : $(ToolkitHostServices)ExUndoController.cpp ${MultiCompileDepends}
+
+$(o)ExHostAppServices$(oext)            : $(ToolkitHostServices)ExHostAppServices.cpp ${MultiCompileDepends}
+
+$(o)ExSystemServices$(oext)             : $(ToolkitCoreServices)ExSystemServices.cpp ${MultiCompileDepends}
+
+$(o)ExGiRasterImage$(oext)              : $(ToolkitCoreServices)ExGiRasterImage.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+toolkitObjects       =  $(o)OdFileBuf$(oext)            \
+                        $(o)ExUndoController$(oext)     \
+                        $(o)ExHostAppServices$(oext)    \
+                        $(o)ExSystemServices$(oext)     \
+                        $(o)ExGiRasterImage$(oext)
+
+%elif $(DWGTOOLKIT) == "RealDwg" && $(VendorVersion) == "2016"
+
+toolkitObjects       =  $(ContextSubpartsLibs)rcexelib$(oext)
+
+%endif      # Open/RealDwg
+
+#----------------------------------------------------------------------
+#   Pre-compile headers
+#----------------------------------------------------------------------
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+PchCompiland                    = $(baseDir)DwgDbInternal.cpp
+PchOutputDir                    = $(o)
+PchExplicitDepends              = $(DwgDbDepends)
+PchExtraOptions                 = -D__DWGDB_BUILD__
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)BasicTypes$(oext)           : $(baseDir)BasicTypes.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)ToolkitHost$(oext)          : $(baseDir)ToolkitHost.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)DwgDbUtil$(oext)            : $(baseDir)DwgDbUtil.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)DbDatabase$(oext)           : $(baseDir)DbDatabase.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)DbObjects$(oext)            : $(baseDir)DbObjects.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)DbEntities$(oext)           : $(baseDir)DbEntities.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)RxObjects$(oext)            : $(baseDir)RxObjects.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)SymbolTables$(oext)         : $(baseDir)SymbolTables.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)GiDrawables$(oext)          : $(baseDir)GiDrawables.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)ResBuf$(oext)               : $(baseDir)ResBuf.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+$(o)BrepConverter$(oext)        : $(baseDir)BrepConverter.cpp $(DwgDbDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+cppObjects          =% $(MultiCompileObjectList)
+
+FileTypeControl =
+CCPchOpts =
+CPchOpts =
+
+%include MultiCppCompileRule.mki
+
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_FILES    = $(cppObjects) $(toolkitObjects)
+DLM_EXPORT_OBJS     = $(cppObjects) $(toolkitObjects)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_OBJECT_PCH      = $(o)DwgDbInternal$(oext) 
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+
+LINKER_LIBRARIES_DELAYLOADED    = $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ContextSubpartsLibs)BentleyGeom$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ContextSubpartsLibs)pskernel$(libext)
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+LINKER_LIBRARIES    = $(ToolkitLibs)TD_Db$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_Root$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_DbRoot$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_Alloc$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_Key$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_Ge$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gi$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_Gs$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)TD_ExamplesCommon$(libext)
+LINKER_LIBRARIES    + crypt32$(libext) Urlmon$(libext)
+
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_SpatialIndex$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_AcisBuilder$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)TD_Br$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcModelDocObj$(libext)
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+
+%if !defined ($(VendorVersion))
+    VendorVersion   = 2018
+%endif
+
+%if $(VendorVersion) == 2016
+    RealDwgSuffix   = 20
+%elif $(VendorVersion) == 2017
+    RealDwgSuffix   = 21
+%elif $(VendorVersion) == 2018
+    RealDwgSuffix   = 22
+%endif
+
+LINKER_LIBRARIES    = $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)acge$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)ac1st$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)acgiapi$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)axdb$(libext)
+LINKER_LIBRARIES    + $(ToolkitLibs)rxapi$(libext)
+%if $(VendorVersion) >= 2017
+LINKER_LIBRARIES    + $(ToolkitLibs)acpal$(libext)
+%endif
+
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acISMobj$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acbr$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acgex$(RealDwgSuffix)$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)AcDbPointCloudObj$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acModelDocObj$(libext)
+LINKER_LIBRARIES_DELAYLOADED    + $(ToolkitLibs)acSceneOE$(libext)
+
+# Need UuidCreate
+LINKER_LIBRARIES_DELAYLOADED    + Rpcrt4.lib
+
+%endif  // OpenDwg or RealDwg
+
+%include $(sharedMki)linkLibrary.mki
+
+# Symblink Copyright notices
+#
+$(ContextDeliveryDir)$(VendorNoticeName) : $(VendorNoticeDir)$(VendorNoticeName)
+    $(LinkFirstDepToFirstTarget)
