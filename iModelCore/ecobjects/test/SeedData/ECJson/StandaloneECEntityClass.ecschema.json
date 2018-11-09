@@ -1,0 +1,20 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "EntityClass",
+  "name": "ExampleEntity",
+  "modifier": "Sealed",
+  "label": "ExampleEntity",
+  "description": "An example entity class.",
+  "baseClass": "ExampleSchema.ExampleBaseEntity",
+  "customAttributes": [
+    {
+      "className" : "ExampleSchema.ExampleCustomAttribute"
+    }
+  ],
+  "mixins": [
+    "ExampleSchema.ExampleMixinA",
+    "ExampleSchema.ExampleMixinB"
+  ]
+}

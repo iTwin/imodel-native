@@ -1,0 +1,16 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
+  "schemaVersion": "03.01.00",
+  "schemaItemType": "KindOfQuantity",
+  "schema": "ExampleSchema",
+  "name": "ExampleKoQ",
+  "relativeError": 3.0,
+  "persistenceUnit": "Units.MM",
+  "presentationUnits": [
+      "Formats.DefaultRealU[Units.MM]",
+      "Formats.DefaultRealU(3)[Units.MM]",
+      "Formats.DefaultRealU[Units.MM|]",
+      "Formats.DefaultReal[Units.M|meters]",
+      "Formats.AmerFI[Units.FT|feets][Units.IN|inches]"
+  ]
+}
