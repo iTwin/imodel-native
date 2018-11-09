@@ -1,0 +1,8 @@
+-i..\..\Include
+-e801
+-e834
+-esym(534,CS_stcpy,CS_stncp,CS_stncp)
+-esym(534,CS_adjll)
+-esym(534,CS_bswap)
+
+
