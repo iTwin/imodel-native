@@ -2,7 +2,7 @@
 #
 #     $Source: uwp/MakeUwpTestProject.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %ifndef TEST_NAME
@@ -130,7 +130,6 @@ DLM_OBJECT_FILES    = $(unitTestObjs)
 DLM_EXPORT_OBJS     = $(unitTestObjs)
 DLM_OBJECT_DEST     = $(o)
 DLM_SYMB_DEST       = $(o)
-DLM_MAP_DEST        = $(o)
 DLM_NO_SIGN         = 1
 DLM_NOENTRY         = 0
 
