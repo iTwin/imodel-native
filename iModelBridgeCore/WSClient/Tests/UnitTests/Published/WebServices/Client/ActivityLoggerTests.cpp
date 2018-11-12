@@ -58,14 +58,6 @@ WStringCR expectedNamespace = WString()
     EXPECT_EQ(1, stubLogger.GetLogsCount());
     }
 
-void InvokeActionWithVaList(std::function<void(va_list)> action, ...)
-    {
-    va_list args;
-    va_start(args, action);
-    action(args);
-    va_end(args);
-    }
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -300,14 +292,14 @@ TEST_F(ActivityLoggerTests, messageva_WithActivityIdAndWCharCPMessageAndWithoutN
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        InvokeActionWithVaList([=, &logger] (va_list args)
-            {
-            logger.messageva(NativeLogging::SEVERITY::LOG_WARNING, L"Something %s logged", args);
-            }, L"is");
+        std::vector<uint64_t> arguments;
+        arguments.push_back(8);
+        arguments.push_back(16);
+        logger.messageva(NativeLogging::SEVERITY::LOG_WARNING, L"Expected %i, but actual was %i", reinterpret_cast<va_list>(arguments.data()));
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_WARNING;
-    auto expectedMessage = L"messagevaWCharCP: Something is logged (ActivityId: 1E51)";
+    auto expectedMessage = L"messagevaWCharCP: Expected 8, but actual was 16 (ActivityId: 1E51)";
 
     TestActivityLoggerWithActivityId(activityName, activityId, onAct, expectedSeverity, expectedMessage);
     }
@@ -322,14 +314,13 @@ TEST_F(ActivityLoggerTests, messageva_WithActivityIdAndUtf8CPMessageAndWithoutNa
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        InvokeActionWithVaList([=, &logger] (va_list args)
-            {
-            logger.messageva(NativeLogging::SEVERITY::LOG_ERROR, "Something %s logged", args);
-            }, "is");
+        std::vector<uint64_t> arguments;
+        arguments.push_back(1);
+        logger.messageva(NativeLogging::SEVERITY::LOG_ERROR, "%i message has been logged", reinterpret_cast<va_list>(arguments.data()));
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_ERROR;
-    auto expectedMessage = "messagevaUtf8CP: Something is logged (ActivityId: 1E51)";
+    auto expectedMessage = "messagevaUtf8CP: 1 message has been logged (ActivityId: 1E51)";
 
     TestActivityLoggerWithActivityId(activityName, activityId, onAct, expectedSeverity, expectedMessage);
     }
@@ -384,11 +375,11 @@ TEST_F(ActivityLoggerTests, messagev_WithActivityIdAndWCharCPMessageAndNameSpace
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        logger.messagev(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_ERROR, L"Something %s logged", L"is");
+        logger.messagev(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_ERROR, L"Logged %s with %i arguments", L"message", 2);
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_ERROR;
-    auto expectedMessage = L"messagevWCharCP: Something is logged (ActivityId: 1E51)";
+    auto expectedMessage = L"messagevWCharCP: Logged message with 2 arguments (ActivityId: 1E51)";
     auto expectedNameSpace = L"Testing.Namespace";
 
     TestActivityLoggerWithActivityId(activityName, activityId, onAct, expectedSeverity, expectedMessage, expectedNameSpace);
@@ -424,14 +415,13 @@ TEST_F(ActivityLoggerTests, messageva_WithActivityIdAndWCharCPMessageAndNameSpac
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        InvokeActionWithVaList([=, &logger] (va_list args)
-            {
-            logger.messageva(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_WARNING, L"Something %s logged", args);
-            }, L"is");
+        std::vector<WCharCP> arguments;
+        arguments.push_back(L"Parameter1");
+        logger.messageva(L"Testing.Namespace", NativeLogging::SEVERITY::LOG_WARNING, L"Parameter1 is logged", reinterpret_cast<va_list>(arguments.data()));
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_WARNING;
-    auto expectedMessage = L"messagevaWCharCP: Something is logged (ActivityId: 1E51)";
+    auto expectedMessage = L"messagevaWCharCP: Parameter1 is logged (ActivityId: 1E51)";
     auto expectedNameSpace = L"Testing.Namespace";
 
     TestActivityLoggerWithActivityId(activityName, activityId, onAct, expectedSeverity, expectedMessage, expectedNameSpace);
@@ -447,14 +437,13 @@ TEST_F(ActivityLoggerTests, messageva_WithActivityIdAndUtf8CPMessageAndNameSpace
     
     auto onAct = [=] (ActivityLogger logger)
         {
-        InvokeActionWithVaList([=, &logger] (va_list args)
-            {
-            logger.messageva("Testing.Namespace", NativeLogging::SEVERITY::LOG_ERROR, "Something %s logged", args);
-            }, "is");
+        std::vector<Utf8CP> arguments;
+        arguments.push_back("Parameter1");
+        logger.messageva("Testing.Namespace", NativeLogging::SEVERITY::LOG_ERROR, "Parameter1 is logged", reinterpret_cast<va_list>(arguments.data()));
         };
     
     auto expectedSeverity = NativeLogging::SEVERITY::LOG_ERROR;
-    auto expectedMessage = "messagevaUtf8CP: Something is logged (ActivityId: 1E51)";
+    auto expectedMessage = "messagevaUtf8CP: Parameter1 is logged (ActivityId: 1E51)";
     auto expectedNameSpace = "Testing.Namespace";
 
     TestActivityLoggerWithActivityId(activityName, activityId, onAct, expectedSeverity, expectedMessage, expectedNameSpace);
