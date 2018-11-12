@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "ProfileMixins.h"
+#include "ICenterLineProfile.h"
 #include "DerivedProfile.h"
 #include "AsymmetricIShapeProfile.h"
 #include "BentPlateProfile.h"

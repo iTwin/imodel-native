@@ -51,7 +51,7 @@
     <ClCompile Include="Implementation\IShapeProfile.cpp" />
     <ClCompile Include="Implementation\LShapeProfile.cpp" />
     <ClCompile Include="Implementation\Profile.cpp" />
-    <ClCompile Include="Implementation\ProfileMixins.cpp" />
+    <ClCompile Include="Implementation\ICenterLineProfile.cpp" />
     <ClCompile Include="Implementation\ProfilesDomain.cpp" />
     <ClCompile Include="Implementation\ProfilesInternal.cpp" />
     <ClCompile Include="Implementation\RectangleProfile.cpp" />
@@ -87,7 +87,7 @@
     <ClInclude Include="PublicAPI\IShapeProfile.h" />
     <ClInclude Include="PublicAPI\LShapeProfile.h" />
     <ClInclude Include="PublicAPI\Profile.h" />
-    <ClInclude Include="PublicAPI\ProfileMixins.h" />
+    <ClInclude Include="PublicAPI\ICenterLineProfile.h" />
     <ClInclude Include="PublicAPI\ProfilesApi.h" />
     <ClInclude Include="PublicAPI\ProfilesDefinitions.h" />
     <ClInclude Include="PublicAPI\ProfilesDomain.h" />

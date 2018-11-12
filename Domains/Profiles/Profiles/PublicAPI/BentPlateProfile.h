@@ -9,7 +9,7 @@
 
 #include "ProfilesDefinitions.h"
 #include "CenteredProfile.h"
-#include "ProfileMixins.h"
+#include "ICenterLineProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 

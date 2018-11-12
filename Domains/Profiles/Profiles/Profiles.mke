@@ -85,7 +85,7 @@ $(o)LShapeProfile$(oext) : $(appSrc)LShapeProfile.cpp ${MultiCompileDepends} $(a
 
 $(o)Profile$(oext) : $(appSrc)Profile.cpp ${MultiCompileDepends} $(appPublicApi)Profile.h
 
-$(o)ProfileMixins$(oext) : $(appSrc)ProfileMixins.cpp ${MultiCompileDepends} $(appPublicApi)ProfileMixins.h
+$(o)ICenterLineProfile$(oext) : $(appSrc)ICenterLineProfile.cpp ${MultiCompileDepends} $(appPublicApi)ICenterLineProfile.h
 
 $(o)ProfilesDomain$(oext) : $(appSrc)ProfilesDomain.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesDomain.h
 

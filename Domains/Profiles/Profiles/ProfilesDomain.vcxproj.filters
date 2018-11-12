@@ -91,9 +91,6 @@
     <ClCompile Include="Implementation\Profile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Implementation\ProfileMixins.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="Implementation\ProfilesDomain.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -137,6 +134,9 @@
       <Filter>Src</Filter>
     </ClCompile>
     <ClCompile Include="Implementation\CircleProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\ICenterLineProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -195,9 +195,6 @@
     <ClInclude Include="PublicAPI\Profile.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ProfileMixins.h">
-      <Filter>Src\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ProfilesApi.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
@@ -244,6 +241,9 @@
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\CircleProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ICenterLineProfile.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/Implementation/ProfileMixins.cpp $
+|     $Source: Profiles/Implementation/ICenterLineProfile.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles\ProfileMixins.h>
+#include <Profiles\ICenterLineProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
