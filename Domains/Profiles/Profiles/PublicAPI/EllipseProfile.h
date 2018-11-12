@@ -9,7 +9,6 @@
 
 #include "ProfilesDefinitions.h"
 #include "CenteredProfile.h"
-#include "ProfileMixins.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -17,7 +16,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct EllipseProfile : CenteredProfile, IEllipseProfile
+struct EllipseProfile : CenteredProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_EllipseProfile, CenteredProfile);
     friend struct EllipseProfileHandler;
@@ -30,6 +29,12 @@ public:
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(EllipseProfile)
 
     PROFILES_EXPORT static EllipseProfilePtr Create(Dgn::DgnModelCR model);
+
+    PROFILES_EXPORT double GetXRadius() const;
+    PROFILES_EXPORT void SetXRadius(double val);
+
+    PROFILES_EXPORT double GetYRadius() const;
+    PROFILES_EXPORT void SetYRadius(double val);
 
     }; // EllipseProfile
 

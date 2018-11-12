@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct HollowEllipseProfile : CenteredProfile, ICenterLineProfile, IEllipseProfile
+struct HollowEllipseProfile : CenteredProfile, ICenterLineProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowEllipseProfile, CenteredProfile);
     friend struct HollowEllipseProfileHandler;
@@ -30,6 +30,12 @@ public:
     DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowEllipseProfile)
 
     PROFILES_EXPORT static HollowEllipseProfilePtr Create(Dgn::DgnModelCR model);
+
+    PROFILES_EXPORT double GetXRadius() const;
+    PROFILES_EXPORT void SetXRadius(double val);
+
+    PROFILES_EXPORT double GetYRadius() const;
+    PROFILES_EXPORT void SetYRadius(double val);
 
     }; // HollowEllipseProfile
 

@@ -123,11 +123,13 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_DoubleCShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
+#define PRF_PROP_EllipseProfile_XRadius                                          "XRadius"
+#define PRF_PROP_EllipseProfile_YRadius                                          "YRadius"
+#define PRF_PROP_HollowEllipseProfile_XRadius                                    "XRadius"
+#define PRF_PROP_HollowEllipseProfile_YRadius                                    "YRadius"
 #define PRF_PROP_HollowRectangleProfile_FilletRadius                             "FilletRadius"
 #define PRF_PROP_ICenterLineProfile_CenterLine                                   "CenterLine"
 #define PRF_PROP_ICenterLineProfile_WallThickness                                "WallThickness"
-#define PRF_PROP_IEllipseProfile_XRadius                                         "XRadius"
-#define PRF_PROP_IEllipseProfile_YRadius                                         "YRadius"
 #define PRF_PROP_ILShapeProfile_Width                                            "Width"
 #define PRF_PROP_ILShapeProfile_Depth                                            "Depth"
 #define PRF_PROP_IRectangleShapeProfile_Width                                    "Width"
@@ -258,7 +260,6 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowEllipseProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowRectangleProfile)
 PROFILES_TYPEDEFS(ICenterLineProfile)
-PROFILES_TYPEDEFS(IEllipseProfile)
 PROFILES_TYPEDEFS(ILShapeProfile)
 PROFILES_TYPEDEFS(IRectangleShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(IShapeProfile)

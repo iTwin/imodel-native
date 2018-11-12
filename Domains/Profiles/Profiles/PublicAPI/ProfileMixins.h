@@ -33,24 +33,6 @@ public:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct IEllipseProfile : NonCopyableClass
-    {
-protected:
-    virtual ~IEllipseProfile() = default;
-
-public:
-    PROFILES_EXPORT double GetXRadius() const;
-    PROFILES_EXPORT void SetXRadius(double val);
-
-    PROFILES_EXPORT double GetYRadius() const;
-    PROFILES_EXPORT void SetYRadius(double val);
-
-    }; // IEllipseProfile
-
-//=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
-//=======================================================================================
 struct ILShapeProfile : NonCopyableClass
     {
 protected:

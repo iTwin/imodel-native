@@ -22,4 +22,36 @@ HollowEllipseProfilePtr HollowEllipseProfile::Create(DgnModelCR model)
     return new HollowEllipseProfile(params);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double HollowEllipseProfile::GetXRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_HollowEllipseProfile_XRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HollowEllipseProfile::SetXRadius(double val)
+    {
+    SetPropertyValue(PRF_PROP_HollowEllipseProfile_XRadius, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double HollowEllipseProfile::GetYRadius() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_HollowEllipseProfile_YRadius);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HollowEllipseProfile::SetYRadius(double val)
+    {
+    SetPropertyValue(PRF_PROP_HollowEllipseProfile_YRadius, ECN::ECValue(val));
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
