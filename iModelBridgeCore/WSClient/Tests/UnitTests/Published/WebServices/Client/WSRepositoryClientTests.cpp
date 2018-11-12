@@ -745,27 +745,34 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi2
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
+    BeMutex m_mutex;
     set<Utf8CP> requestIds;
 
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
-    GetHandler().ForRequest(2, [=, &requestIds] (Http::RequestCR request)
+    GetHandler().ForRequest(2, [=, &requestIds, &m_mutex] (Http::RequestCR request)
         {
         auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
         EXPECT_NE(nullptr, actualActivityId);
+
+        BeMutexHolder lock(m_mutex);
         requestIds.insert(actualActivityId);
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
+    GetHandler().ForRequest(3, [=, &requestIds, &m_mutex] (Http::RequestCR request)
         {
         auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
         EXPECT_NE(nullptr, actualActivityId);
+
+        BeMutexHolder lock(m_mutex);
         requestIds.insert(actualActivityId);
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    client->SendGetChildrenRequest(ObjectId())->GetResult();
-    client->SendGetChildrenRequest(ObjectId())->GetResult();
+    bvector<AsyncTaskPtr<WSObjectsResult>> tasks;
+    tasks.push_back(client->SendGetChildrenRequest(ObjectId()));
+    tasks.push_back(client->SendGetChildrenRequest(ObjectId()));
+    AsyncTask::WhenAll(tasks)->Wait();
 
     auto uniqueRequestIds = requestIds.size();
     EXPECT_EQ(2, uniqueRequestIds);
