@@ -17,19 +17,19 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct HollowEllipseProfile : CenteredProfile, ICenterLineProfile
+struct HollowCircleProfile : CenteredProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowEllipseProfile, CenteredProfile);
-    friend struct HollowEllipseProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowCircleProfile, CenteredProfile);
+    friend struct HollowCircleProfileHandler;
 
 protected:
-    explicit HollowEllipseProfile(CreateParams const& params) : T_Super(params) {}
+    explicit HollowCircleProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(HollowEllipseProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowEllipseProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(HollowCircleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowCircleProfile)
 
-    PROFILES_EXPORT static HollowEllipseProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static HollowCircleProfilePtr Create(Dgn::DgnModelCR model);
 
     PROFILES_EXPORT double GetXRadius() const;
     PROFILES_EXPORT void SetXRadius(double val);
@@ -37,17 +37,17 @@ public:
     PROFILES_EXPORT double GetYRadius() const;
     PROFILES_EXPORT void SetYRadius(double val);
 
-    }; // HollowEllipseProfile
+    }; // HollowCircleProfile
 
 //=======================================================================================
-//! Handler for HollowEllipseProfile class
+//! Handler for HollowCircleProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HollowEllipseProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE HollowCircleProfileHandler : CenteredProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowEllipseProfile, HollowEllipseProfile, HollowEllipseProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowCircleProfile, HollowCircleProfile, HollowCircleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
 
-    }; // HollowEllipseProfileHandler
+    }; // HollowCircleProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

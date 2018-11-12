@@ -16,19 +16,19 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct EllipseProfile : CenteredProfile
+struct CircleProfile : CenteredProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_EllipseProfile, CenteredProfile);
-    friend struct EllipseProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CircleProfile, CenteredProfile);
+    friend struct CircleProfileHandler;
 
 protected:
-    explicit EllipseProfile(CreateParams const& params) : T_Super(params) {}
+    explicit CircleProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(EllipseProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(EllipseProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(CircleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CircleProfile)
 
-    PROFILES_EXPORT static EllipseProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CircleProfilePtr Create(Dgn::DgnModelCR model);
 
     PROFILES_EXPORT double GetXRadius() const;
     PROFILES_EXPORT void SetXRadius(double val);
@@ -36,17 +36,17 @@ public:
     PROFILES_EXPORT double GetYRadius() const;
     PROFILES_EXPORT void SetYRadius(double val);
 
-    }; // EllipseProfile
+    }; // CircleProfile
 
 //=======================================================================================
-//! Handler for EllipseProfile class
+//! Handler for CircleProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE EllipseProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE CircleProfileHandler : CenteredProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_EllipseProfile, EllipseProfile, EllipseProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CircleProfile, CircleProfile, CircleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
 
-    }; // EllipseProfileHandler
+    }; // CircleProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

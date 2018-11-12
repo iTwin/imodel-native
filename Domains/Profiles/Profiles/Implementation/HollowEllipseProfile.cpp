@@ -11,47 +11,47 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(HollowEllipseProfileHandler)
+HANDLER_DEFINE_MEMBERS(HollowCircleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowEllipseProfilePtr HollowEllipseProfile::Create(DgnModelCR model)
+HollowCircleProfilePtr HollowCircleProfile::Create(DgnModelCR model)
     {
     CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new HollowEllipseProfile(params);
+    return new HollowCircleProfile(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double HollowEllipseProfile::GetXRadius() const
+double HollowCircleProfile::GetXRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_HollowEllipseProfile_XRadius);
+    return GetPropertyValueDouble(PRF_PROP_HollowCircleProfile_XRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowEllipseProfile::SetXRadius(double val)
+void HollowCircleProfile::SetXRadius(double val)
     {
-    SetPropertyValue(PRF_PROP_HollowEllipseProfile_XRadius, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_HollowCircleProfile_XRadius, ECN::ECValue(val));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double HollowEllipseProfile::GetYRadius() const
+double HollowCircleProfile::GetYRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_HollowEllipseProfile_YRadius);
+    return GetPropertyValueDouble(PRF_PROP_HollowCircleProfile_YRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowEllipseProfile::SetYRadius(double val)
+void HollowCircleProfile::SetYRadius(double val)
     {
-    SetPropertyValue(PRF_PROP_HollowEllipseProfile_YRadius, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_HollowCircleProfile_YRadius, ECN::ECValue(val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -56,8 +56,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_DerivedProfile                                     "DerivedProfile"
 #define PRF_CLASS_DoubleCShapeProfile                                "DoubleCShapeProfile"
 #define PRF_CLASS_DoubleLShapeProfile                                "DoubleLShapeProfile"
-#define PRF_CLASS_EllipseProfile                                     "EllipseProfile"
-#define PRF_CLASS_HollowEllipseProfile                               "HollowEllipseProfile"
+#define PRF_CLASS_CircleProfile                                      "CircleProfile"
+#define PRF_CLASS_HollowCircleProfile                                "HollowCircleProfile"
 #define PRF_CLASS_HollowRectangleProfile                             "HollowRectangleProfile"
 #define PRF_CLASS_IShapeProfile                                      "IShapeProfile"
 #define PRF_CLASS_LShapeProfile                                      "LShapeProfile"
@@ -123,10 +123,10 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_DoubleCShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
-#define PRF_PROP_EllipseProfile_XRadius                                          "XRadius"
-#define PRF_PROP_EllipseProfile_YRadius                                          "YRadius"
-#define PRF_PROP_HollowEllipseProfile_XRadius                                    "XRadius"
-#define PRF_PROP_HollowEllipseProfile_YRadius                                    "YRadius"
+#define PRF_PROP_CircleProfile_XRadius                                           "XRadius"
+#define PRF_PROP_CircleProfile_YRadius                                           "YRadius"
+#define PRF_PROP_HollowCircleProfile_XRadius                                     "XRadius"
+#define PRF_PROP_HollowCircleProfile_YRadius                                     "YRadius"
 #define PRF_PROP_HollowRectangleProfile_FilletRadius                             "FilletRadius"
 #define PRF_PROP_ICenterLineProfile_CenterLine                                   "CenterLine"
 #define PRF_PROP_ICenterLineProfile_WallThickness                                "WallThickness"
@@ -256,8 +256,8 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DerivedProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleCShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleLShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowEllipseProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CircleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowCircleProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowRectangleProfile)
 PROFILES_TYPEDEFS(ICenterLineProfile)
 PROFILES_TYPEDEFS(ILShapeProfile)
