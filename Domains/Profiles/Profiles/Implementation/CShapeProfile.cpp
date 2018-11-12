@@ -25,6 +25,38 @@ CShapeProfilePtr CShapeProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double CShapeProfile::GetFlangeWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CShapeProfile_FlangeWidth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CShapeProfile::SetFlangeWidth(double val)
+    {
+    SetPropertyValue(PRF_PROP_CShapeProfile_FlangeWidth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CShapeProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CShapeProfile::SetDepth(double val)
+    {
+    SetPropertyValue(PRF_PROP_CShapeProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 double CShapeProfile::GetFlangeThickness() const
     {
     return GetPropertyValueDouble(PRF_PROP_CShapeProfile_FlangeThickness);

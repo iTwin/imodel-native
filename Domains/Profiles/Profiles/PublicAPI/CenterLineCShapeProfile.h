@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! A C shaped Profile with rounded corners, similar to cold-formed steel C-shapes.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CenterLineCShapeProfile : CenteredProfile, ICShapeProfile, ICenterLineProfile
+struct CenterLineCShapeProfile : CenteredProfile, ICenterLineProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CenterLineCShapeProfile, CenteredProfile);
     friend struct CenterLineCShapeProfileHandler;
@@ -32,6 +32,12 @@ public:
     PROFILES_EXPORT static CenterLineCShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
+    PROFILES_EXPORT double GetFlangeWidth() const;
+    PROFILES_EXPORT void SetFlangeWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
+
     PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
 

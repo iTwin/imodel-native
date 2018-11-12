@@ -51,40 +51,6 @@ void ICenterLineProfile::SetWallThickness(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double ICShapeProfile::GetWidth() const
-    {
-    return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ICShapeProfile_Width);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ICShapeProfile::SetWidth(double val)
-    {
-    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICShapeProfile_Width, ECN::ECValue(val));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-double ICShapeProfile::GetDepth() const
-    {
-    return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ICShapeProfile_Depth);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ICShapeProfile::SetDepth(double val)
-    {
-    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ICShapeProfile_Depth, ECN::ECValue(val));
-    }
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double IEllipseProfile::GetXRadius() const
     {
     return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_IEllipseProfile_XRadius);
