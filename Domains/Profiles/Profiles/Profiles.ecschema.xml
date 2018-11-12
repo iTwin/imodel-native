@@ -184,9 +184,9 @@
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
         <ECProperty propertyName="LegLength" typeName="double" description="" />
-        <ECProperty propertyName="Thickness" typeName="dobule" description="" />
+        <ECProperty propertyName="Thickness" typeName="double" description="" />
         <!-- Optional -->
-        <ECProperty propertyName="Angle" typeName="dobule" description="Bend angle between the two legs. Default angle of 60 degress is applied if not specified." />
+        <ECProperty propertyName="Angle" typeName="double" description="Bend angle between the two legs. Default angle of 60 degress is applied if not specified." />
     </ECEntityClass>
 
     <ECEntityClass typeName="TShapeProfile" modifier="Sealed" description="A T-shaped Profile similar to rolled steel T-shapes.">
@@ -367,7 +367,7 @@
             <ClassHasHandler xmlns="BisCore.1.0" />
         </ECCustomAttributes>
         <ECProperty propertyName="SideCount" typeName="int" description="Count of sides (edges) the polygon is made of. Value cannot be less than 3 (triangle)." />
-        <ECProperty propertyName="SideLength" typeName="dobule" description="Constant length of each polygon side (edge)." />
+        <ECProperty propertyName="SideLength" typeName="double" description="Constant length of each polygon side (edge)." />
     </ECEntityClass>
 
     <ECEntityClass typeName="CapsuleProfile" modifier="Sealed" description="">
