@@ -300,6 +300,13 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
         LOG.warningv("Class '%s' has no description. Please add a description.", ecClass.GetFullName());
         }
 
+    // RULE: Classes should not use deprecated custom attributes (warn)
+    for (IECInstancePtr customAttribute : ecClass.GetCustomAttributes(false))
+        {
+        if (customAttribute->GetClass().GetCustomAttributeLocal("Deprecated").IsValid())
+            LOG.warningv("Class '%s' uses CustomAttribute '%s', which is flagged as deprecated.", ecClass.GetFullName(), customAttribute->GetClass().GetName().c_str());
+        }
+
     bool IsModel = (!ecClass.GetSchema().GetName().EqualsI("BisCore")) && ecClass.Is("BisCore", "Model");
 
     // RULE: Properties should not be of type long.
@@ -367,6 +374,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                        ecClass.GetFullName(), prop->GetName().c_str(), ecClass.GetFullName());
             status = ECObjectsStatus::Error;
             }
+
         }
 
     // RULE: No properties can have the same display label and category
@@ -534,6 +542,7 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         status = ECObjectsStatus::Error;
 
     // RULE: An Entity Class may not implement both bis:IParentElement and bis:ISubModeledElement.
+    // RULE: An Entity Class should not subclass deprecated classes (warn)
     bool foundIParentElement = false;
     bool foundISubModelElement = false;
     for (ECClassCP baseClass : entity.GetBaseClasses())
@@ -545,6 +554,9 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
 
         if (ECObjectsStatus::Success != CheckForModelBaseClasses(*baseClass, entity))
             status = ECObjectsStatus::Error;
+        
+        if (baseClass->GetCustomAttributeLocal("Deprecated").IsValid())
+            LOG.warningv("Entity class '%s' uses base class '%s', which is is flagged as deprecated. Please use updated classes.", entity.GetFullName(), baseClass->GetFullName());
         }
     if (foundIParentElement && foundISubModelElement)
         {
