@@ -9,7 +9,6 @@
 
 #include "ProfilesDefinitions.h"
 #include "SinglePerimeterProfile.h"
-#include "ProfileMixins.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -17,7 +16,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CustomShapeProfile : SinglePerimeterProfile, ICustomProfile
+struct CustomShapeProfile : SinglePerimeterProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomShapeProfile, SinglePerimeterProfile);
     friend struct CustomShapeProfileHandler;

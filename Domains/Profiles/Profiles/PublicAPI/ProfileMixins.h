@@ -33,17 +33,6 @@ public:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct ICustomProfile : NonCopyableClass
-    {
-protected:
-    virtual ~ICustomProfile() = default;
-
-    }; // ICustomProfile
-
-//=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
-//=======================================================================================
 struct IEllipseProfile : NonCopyableClass
     {
 protected:

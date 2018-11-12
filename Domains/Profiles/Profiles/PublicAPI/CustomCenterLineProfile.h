@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CustomCenterLineProfile : SinglePerimeterProfile, ICustomProfile, ICenterLineProfile
+struct CustomCenterLineProfile : SinglePerimeterProfile, ICenterLineProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomCenterLineProfile, SinglePerimeterProfile);
     friend struct CustomCenterLineProfileHandler;
