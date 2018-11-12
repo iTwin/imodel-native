@@ -23,8 +23,8 @@
 #include <Profiles\CenterLineZShapeProfile.h>
 #include <Profiles\CShapeProfile.h>
 #include <Profiles\CustomShapeProfile.h>
-#include <Profiles\DoubleCProfile.h>
-#include <Profiles\DoubleLProfile.h>
+#include <Profiles\DoubleCShapeProfile.h>
+#include <Profiles\DoubleLShapeProfile.h>
 #include <Profiles\EllipseProfile.h>
 #include <Profiles\HollowEllipseProfile.h>
 #include <Profiles\HollowRectangleProfile.h>

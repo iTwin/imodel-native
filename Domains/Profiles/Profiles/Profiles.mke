@@ -69,9 +69,9 @@ $(o)CustomShapeProfile$(oext) : $(appSrc)CustomShapeProfile.cpp ${MultiCompileDe
 
 $(o)DerivedProfile$(oext) : $(appSrc)DerivedProfile.cpp ${MultiCompileDepends} $(appPublicApi)DerivedProfile.h
 
-$(o)DoubleCProfile$(oext) : $(appSrc)DoubleCProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleCProfile.h
+$(o)DoubleCShapeProfile$(oext) : $(appSrc)DoubleCShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleCShapeProfile.h
 
-$(o)DoubleLProfile$(oext) : $(appSrc)DoubleLProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleLProfile.h
+$(o)DoubleLShapeProfile$(oext) : $(appSrc)DoubleLShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleLShapeProfile.h
 
 $(o)EllipseProfile$(oext) : $(appSrc)EllipseProfile.cpp ${MultiCompileDepends} $(appPublicApi)EllipseProfile.h
 

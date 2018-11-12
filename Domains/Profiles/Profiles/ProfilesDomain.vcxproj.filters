@@ -79,12 +79,6 @@
     <ClCompile Include="Implementation\DerivedProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Implementation\DoubleCProfile.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Implementation\DoubleLProfile.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="Implementation\EllipseProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -139,6 +133,12 @@
     <ClCompile Include="Implementation\ProfilesInternal.cpp">
       <Filter>Src\Pch</Filter>
     </ClCompile>
+    <ClCompile Include="Implementation\DoubleCShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\DoubleLShapeProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Implementation\ProfilesInternal.h">
@@ -181,12 +181,6 @@
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DerivedProfile.h">
-      <Filter>Src\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\DoubleCProfile.h">
-      <Filter>Src\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\DoubleLProfile.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\EllipseProfile.h">
@@ -244,6 +238,12 @@
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ZShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DoubleCShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DoubleLShapeProfile.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>

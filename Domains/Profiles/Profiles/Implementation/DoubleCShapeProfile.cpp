@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/Implementation/DoubleCProfile.cpp $
+|     $Source: Profiles/Implementation/DoubleCShapeProfile.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles\DoubleCProfile.h>
+#include <Profiles\DoubleCShapeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
