@@ -16,35 +16,35 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! A CompositeProfile comprised of back-to-back Cs.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct DoubleCProfile : CompositeProfile
+struct DoubleCShapeProfile : CompositeProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleCProfile, CompositeProfile);
-    friend struct DoubleCProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleCShapeProfile, CompositeProfile);
+    friend struct DoubleCShapeProfileHandler;
 
 protected:
-    explicit DoubleCProfile(CreateParams const& params) : T_Super(params) {}
+    explicit DoubleCShapeProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(DoubleCProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(DoubleCProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(DoubleCShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(DoubleCShapeProfile)
 
-    PROFILES_EXPORT static DoubleCProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static DoubleCShapeProfilePtr Create(/*TODO: args*/);
 
 public:
     PROFILES_EXPORT double GetSpacing() const;
     PROFILES_EXPORT void SetSpacing(double val);
 
-    }; // DoubleCProfile
+    }; // DoubleCShapeProfile
 
 //=======================================================================================
-//! Handler for DoubleCProfile class
+//! Handler for DoubleCShapeProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DoubleCProfileHandler : CompositeProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE DoubleCShapeProfileHandler : CompositeProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleCProfile, DoubleCProfile, DoubleCProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleCShapeProfile, DoubleCShapeProfile, DoubleCShapeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
 
-    }; // DoubleCProfileHandler
+    }; // DoubleCShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE
