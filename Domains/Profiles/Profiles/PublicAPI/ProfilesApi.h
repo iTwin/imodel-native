@@ -34,6 +34,7 @@
 #include "RectangleProfile.h"
 #include "RegularPolygonProfile.h"
 #include "RoundedRectangleProfile.h"
+#include "SchifflerizedLShapeProfile.h"
 #include "SinglePerimeterProfile.h"
 #include "StandardProfileAspect.h"
 #include "TrapeziumProfile.h"

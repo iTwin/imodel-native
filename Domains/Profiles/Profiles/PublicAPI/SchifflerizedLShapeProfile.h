@@ -1,0 +1,65 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Profiles/PublicAPI/SchifflerizedLShapeProfile.h $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+#include "ProfilesDefinitions.h"
+#include "CenteredProfile.h"
+
+BEGIN_BENTLEY_PROFILES_NAMESPACE
+
+//=======================================================================================
+//! 
+//! @ingroup GROUP_Profiles
+//=======================================================================================
+struct SchifflerizedLShapeProfile : CenteredProfile
+    {
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_SchifflerizedLShapeProfile, CenteredProfile);
+    friend struct SchifflerizedLShapeProfileHandler;
+
+protected:
+    explicit SchifflerizedLShapeProfile(CreateParams const& params) : T_Super(params) {}
+
+public:
+    DECLARE_PROFILES_QUERYCLASS_METHODS(SchifflerizedLShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(SchifflerizedLShapeProfile)
+
+    PROFILES_EXPORT static SchifflerizedLShapeProfilePtr Create(/*TODO: args*/);
+
+public:
+    PROFILES_EXPORT double GetLegLength() const;
+    PROFILES_EXPORT void SetLegLength(double val);
+
+    PROFILES_EXPORT double GetThickness() const;
+    PROFILES_EXPORT void SetThickness(double val);
+
+    PROFILES_EXPORT double GetFilletRadius() const;
+    PROFILES_EXPORT void SetFilletRadius(double val);
+
+    PROFILES_EXPORT double GetEdgeRadius() const;
+    PROFILES_EXPORT void SetEdgeRadius(double val);
+
+    PROFILES_EXPORT double GetLegSlope() const;
+    PROFILES_EXPORT void SetLegSlope(double val);
+
+    PROFILES_EXPORT double GetAngle() const;
+    PROFILES_EXPORT void SetAngle(double val);
+
+    }; // SchifflerizedLShapeProfile
+
+//=======================================================================================
+//! Handler for SchifflerizedLShapeProfile class
+//! @ingroup GROUP_Profiles
+//! @private
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SchifflerizedLShapeProfileHandler : CenteredProfileHandler
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, SchifflerizedLShapeProfile, SchifflerizedLShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+
+    }; // SchifflerizedLShapeProfileHandler
+
+END_BENTLEY_PROFILES_NAMESPACE

@@ -97,6 +97,8 @@ $(o)RegularPolygonProfile$(oext) : $(appSrc)RegularPolygonProfile.cpp ${MultiCom
 
 $(o)RoundedRectangleProfile$(oext) : $(appSrc)RoundedRectangleProfile.cpp ${MultiCompileDepends} $(appPublicApi)RoundedRectangleProfile.h
 
+$(o)SchifflerizedLShapeProfile$(oext) : $(appSrc)SchifflerizedLShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)SchifflerizedLShapeProfile.h
+
 $(o)SinglePerimeterProfile$(oext) : $(appSrc)SinglePerimeterProfile.cpp ${MultiCompileDepends} $(appPublicApi)SinglePerimeterProfile.h
 
 $(o)StandardProfileAspect$(oext) : $(appSrc)StandardProfileAspect.cpp ${MultiCompileDepends} $(appPublicApi)StandardProfileAspect.h

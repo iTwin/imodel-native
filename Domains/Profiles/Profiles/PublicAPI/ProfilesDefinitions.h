@@ -66,6 +66,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_RectangleProfile                                   "RectangleProfile"
 #define PRF_CLASS_RegularPolygonProfile                              "RegularPolygonProfile"
 #define PRF_CLASS_RoundedRectangleProfile                            "RoundedRectangleProfile"
+#define PRF_CLASS_SchifflerizedLShapeProfile                         "SchifflerizedLShapeProfile"
 #define PRF_CLASS_SinglePerimeterProfile                             "SinglePerimeterProfile"
 #define PRF_CLASS_TShapeProfile                                      "TShapeProfile"
 #define PRF_CLASS_TTShapeProfile                                     "TTShapeProfile"
@@ -156,6 +157,12 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_RoundedRectangleProfile_Width                                   "Width"
 #define PRF_PROP_RoundedRectangleProfile_Depth                                   "Depth"
 #define PRF_PROP_RoundedRectangleProfile_RoundingRadius                          "RoundingRadius"
+#define PRF_PROP_SchifflerizedLShapeProfile_LegLength                            "LegLength"
+#define PRF_PROP_SchifflerizedLShapeProfile_Thickness                            "Thickness"
+#define PRF_PROP_SchifflerizedLShapeProfile_FilletRadius                         "FilletRadius"
+#define PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius                           "EdgeRadius"
+#define PRF_PROP_SchifflerizedLShapeProfile_LegSlope                             "LegSlope"
+#define PRF_PROP_SchifflerizedLShapeProfile_Angle                                "Angle"
 #define PRF_PROP_StandardProfileAspect_Manufacturer                              "Manufacturer"
 #define PRF_PROP_StandardProfileAspect_Revision                                  "Revision"
 #define PRF_PROP_StandardProfileAspect_StandardsOrganization                     "StandardsOrganization"
@@ -274,6 +281,7 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(Profile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(RectangleProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(RegularPolygonProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(RoundedRectangleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(SchifflerizedLShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(SinglePerimeterProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(StandardProfileAspect)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(TShapeProfile)

@@ -34,6 +34,7 @@
 #include <Profiles\RectangleProfile.h>
 #include <Profiles\RegularPolygonProfile.h>
 #include <Profiles\RoundedRectangleProfile.h>
+#include <Profiles\SchifflerizedLShapeProfile.h>
 #include <Profiles\StandardProfileAspect.h>
 #include <Profiles\TrapeziumProfile.h>
 #include <Profiles\TShapeProfile.h>
@@ -73,6 +74,7 @@ ProfilesDomain::ProfilesDomain() : DgnDomain(PRF_SCHEMA_NAME, "Bentley Profiles 
     RegisterHandler(HollowRectangleProfileHandler::GetHandler());
     RegisterHandler(IShapeProfileHandler::GetHandler());
     RegisterHandler(LShapeProfileHandler::GetHandler());
+    RegisterHandler(SchifflerizedLShapeProfileHandler::GetHandler());
     RegisterHandler(RectangleProfileHandler::GetHandler());
     RegisterHandler(RegularPolygonProfileHandler::GetHandler());
     RegisterHandler(RoundedRectangleProfileHandler::GetHandler());

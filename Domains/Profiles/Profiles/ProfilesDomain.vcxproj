@@ -58,6 +58,7 @@
     <ClCompile Include="Implementation\RectangleProfile.cpp" />
     <ClCompile Include="Implementation\RegularPolygonProfile.cpp" />
     <ClCompile Include="Implementation\RoundedRectangleProfile.cpp" />
+    <ClCompile Include="Implementation\SchifflerizedLShapeProfile.cpp" />
     <ClCompile Include="Implementation\SinglePerimeterProfile.cpp" />
     <ClCompile Include="Implementation\StandardProfileAspect.cpp" />
     <ClCompile Include="Implementation\TrapeziumProfile.cpp" />
@@ -96,6 +97,7 @@
     <ClInclude Include="PublicAPI\RectangleProfile.h" />
     <ClInclude Include="PublicAPI\RegularPolygonProfile.h" />
     <ClInclude Include="PublicAPI\RoundedRectangleProfile.h" />
+    <ClInclude Include="PublicAPI\SchifflerizedLShapeProfile.h" />
     <ClInclude Include="PublicAPI\SinglePerimeterProfile.h" />
     <ClInclude Include="PublicAPI\StandardProfileAspect.h" />
     <ClInclude Include="PublicAPI\TrapeziumProfile.h" />

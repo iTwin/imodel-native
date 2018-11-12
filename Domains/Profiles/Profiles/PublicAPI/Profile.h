@@ -36,7 +36,6 @@ public:
 
     }; // Profile
 
-
 //=======================================================================================
 //! Handler for Profile class
 //! @ingroup GROUP_Profiles
