@@ -11,7 +11,7 @@ USING_NAMESPACE_IMAGEPP
 #include "SMMeshIndex.hpp"
 #include "ScalableMeshQuery.h"
    
-
+bool s_simplifyOverviewClips = true;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 

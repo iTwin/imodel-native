@@ -1332,52 +1332,57 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
 
             bool clipsLoaded = false;
             if (flags->ShouldLoadClips())
-                {
+            {
                 if (flags->ShouldUseClipsToShow())
-                    {
-                    bset<uint64_t> clipsToShow; 
-                    
+                {
+                    bset<uint64_t> clipsToShow;
+
                     flags->GetClipsToShow(clipsToShow);
 
                     if (clipsToShow.size() > 0)
-                        { 
+                    {
                         DifferenceSet clipDiffSet;
-                        
+
                         bool anythingToApply = ComputeDiffSet(clipDiffSet, clipsToShow, flags->ShouldInvertClips());
 
                         if (anythingToApply)
-                            {
+                        {
                             clipDiffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
-                                                                                    toLoadUv, toLoadUvIndex, toLoadUvCount,
-                                                                                    dataPoints.data(), dataPoints.size(),
-                                                                                    dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                                                                    dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                                toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                dataPoints.data(), dataPoints.size(),
+                                dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
 
                             clipsLoaded = true;
-                            }                        
                         }
                     }
+                }
                 else
-                    {
+                {
                     m_meshNode->ComputeMergedClips();
                     uint64_t clipId = 0;
                     if (m_meshNode->HasClip(clipId))
+                    {
+                        assert(m_meshNode->GetDiffSetPtr() != nullptr);
+
+                        if (m_meshNode->GetDiffSetPtr() != nullptr)
                         {
-                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                            for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
                             {
-                            if (diffSet.clientID == clipId)
+                                if (diffSet.clientID == clipId)
                                 {
-                                diffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes, 
-                                                               toLoadUv, toLoadUvIndex, toLoadUvCount, 
-                                                               dataPoints.data(), dataPoints.size(),
-                                                               dataFaceIndexes.data(), dataFaceIndexes.size(),
-                                                               dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0,0,0));
-                                clipsLoaded = true;
+                                    diffSet.template ApplyClipDiffSetToMesh<DPoint3d, DPoint2d>(toLoadPoints, toLoadNbPoints, toLoadFaceIndexes, toLoadNbFaceIndexes,
+                                        toLoadUv, toLoadUvIndex, toLoadUvCount,
+                                        dataPoints.data(), dataPoints.size(),
+                                        dataFaceIndexes.data(), dataFaceIndexes.size(),
+                                        dataUVCoords.data(), dataUVIndexes.data(), dataUVCoords.size(), DPoint3d::From(0, 0, 0));
+                                    clipsLoaded = true;
                                 }
                             }
                         }
                     }
                 }
+            }
 
             if (!clipsLoaded)
                 {
@@ -1566,12 +1571,17 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                     m_meshNode->ComputeMergedClips();
                     if (coverageID == 0 || m_meshNode->HasClip(coverageID))
                         {
-                        for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
+                        assert(m_meshNode->GetDiffSetPtr() != nullptr);
+
+                        if (m_meshNode->GetDiffSetPtr() != nullptr)
                             {
-                            if (diffSet.clientID == coverageID)
+                            for (const auto& diffSet : *m_meshNode->GetDiffSetPtr())
                                 {
-                                anythingToApply = true;
-                                clipDiffSet = &diffSet;
+                                if (diffSet.clientID == coverageID)
+                                    {
+                                    anythingToApply = true;
+                                    clipDiffSet = &diffSet;
+                                    }
                                 }
                             }
                         }
@@ -3175,6 +3185,13 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     if (m_meshNode == nullptr) return true;
     if (m_meshNode->m_nbClips == 0) return true;
     else return m_meshNode->IsClippingUpToDate();
+    }
+
+template <class POINT> uint64_t ScalableMeshNode<POINT>::_LastClippingStateUpdateTimestamp() const
+    {
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
+    if (m_meshNode == nullptr) return 0;
+    return m_meshNode->LastClippingStateUpdateTimestamp();
     }
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const

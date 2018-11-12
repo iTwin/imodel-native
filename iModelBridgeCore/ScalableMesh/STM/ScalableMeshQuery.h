@@ -1453,6 +1453,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool _IsClippingUpToDate() const override;
 
+        virtual uint64_t _LastClippingStateUpdateTimestamp() const override;
+
         virtual bool _IsDataUpToDate() const override;
 
         virtual void _UpdateData() override;
@@ -1500,7 +1502,9 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalableMeshCachedDisplayNode, 
                                                          public virtual ScalableMeshNode<POINT>
     {    
+#if ANDROID
     typedef ScalableMeshNode<POINT> __super;
+#endif
     private: 
             //NEEDS_WORK_TEXTURE
             IScalableMeshMeshPtr    m_loadedMesh;
@@ -1558,9 +1562,9 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
     {    
 
     private: 
-    
+#if ANDROID    
     typedef ScalableMeshNode<POINT> __super;
-
+#endif
             mutable RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
             bvector<ClipVectorPtr>                                          m_clipVectors;            
@@ -1698,7 +1702,9 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
     template<class POINT> class ScalableMeshContourCachedDisplayNode : public virtual ScalableMeshCachedDisplayNode<POINT>
     {
+#if ANDROID
     typedef ScalableMeshCachedDisplayNode<POINT> __super;
+#endif
     private:
         
         bvector<bvector<DPoint3d>> m_contours;

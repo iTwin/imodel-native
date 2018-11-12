@@ -525,6 +525,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
 
         virtual bool _IsClippingUpToDate() const = 0;
 
+        virtual uint64_t _LastClippingStateUpdateTimestamp() const = 0;
+
         virtual bool _IsDataUpToDate() const = 0;
 
         virtual void _UpdateData() = 0;
@@ -614,6 +616,8 @@ struct IScalableMeshNode : virtual public RefCountedBase
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
 
         BENTLEY_SM_EXPORT bool IsClippingUpToDate() const;
+
+        BENTLEY_SM_EXPORT uint64_t LastClippingStateUpdateTimestamp() const;
 
         BENTLEY_SM_EXPORT bool IsDataUpToDate() const;
 

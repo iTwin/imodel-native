@@ -50,6 +50,8 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 extern ScalableMeshScheduler* s_clipScheduler;
 extern std::mutex s_schedulerLock;
 
+extern bool s_simplifyOverviewClips;
+
 /*template<> struct PoolItem<DifferenceSet>
     {
     typedef HPMIndirectCountLimitedPoolItem<DifferenceSet> Type;
@@ -109,7 +111,9 @@ template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
     {
+#if ANDROID
     typedef SMPointIndexNode < POINT, EXTENT > __super;
+#endif
     friend class ISMPointIndexMesher<POINT, EXTENT>;
     friend class SMMeshIndex < POINT, EXTENT > ;
     using typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap;
@@ -290,7 +294,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                RefreshMergedClipsRecursive();
 
     //Checks whether clip should apply to node and update lists accordingly
-    void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
+   void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent,size_t& nOfNodesTouched, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
+   bool                SyncWithClipSets(const bvector<uint64_t>& clipId, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr = Transform::FromIdentity());
+   bool SyncWithClipSets(const bset<uint64_t>& clips, const IScalableMesh* meshP);
+   bool SyncWithClipSets(const bset<uint64_t>& clips, Transform tr = Transform::FromIdentity());
 
     ClipRegistry* GetClipRegistry() const
         {
@@ -299,19 +306,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void  BuildSkirts();
 
-#if 0
-    void CreateSkirtsForMatchingTerrain();
-
-    SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
-
-    void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
-#endif
 
     bool HasAnyClip();
-
     bool HasClip(uint64_t clipId);
 
     bool IsClippingUpToDate();
+
+    uint64_t LastClippingStateUpdateTimestamp() const;
 
     //If necessary, update clips so as to merge them with other clips on the node.
     void  ComputeMergedClips(Transform tr = Transform::FromIdentity());
@@ -329,9 +330,19 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //Completes an async clip operation.
     void DoClip(uint64_t clipId, bool isVisible);
 
+    void CollectClipIds(bset<uint64_t>& clipIds) const;
+
     const DifferenceSet GetClipSet(size_t index) const
         {
         RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffset = GetDiffSetPtr();
+
+        assert(diffset != nullptr);
+
+        if (diffset == nullptr)
+            {
+            return DifferenceSet(); 
+            }
+
         return (*diffset.get())[index];
         }
 
@@ -843,6 +854,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
     atomic<size_t> m_nbClips;
+    mutable atomic<uint64_t> m_updateClipTimestamp;
 
     std::mutex m_dtmLock;
     std::mutex m_displayMeshLock;
@@ -891,7 +903,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     template<class POINT, class EXTENT> class SMMeshIndex : public SMPointIndex < POINT, EXTENT >
     {
+#if ANDROID
     typedef SMPointIndex < POINT, EXTENT > __super;
+#endif
     friend class SMMeshIndexNode < POINT, EXTENT > ;
     public:
         BENTLEY_SM_EXPORT SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
@@ -1000,6 +1014,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         SharedTextureManager m_texMgr;
                 
+        uint64_t                       m_nodeInstanciationClipTimestamp = std::chrono::system_clock::now().time_since_epoch().count();
         WorkerThreadPoolPtr            m_creationProcessThreadPoolPtr;
 
         bvector < RefCountedPtr<EditOperation> > m_edits;
@@ -1011,7 +1026,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         template <class POINT, class EXTENT> class SMIndexNodeVirtual<POINT, EXTENT, SMMeshIndexNode<POINT, EXTENT>> : public SMMeshIndexNode<POINT, EXTENT>
         {
+#if ANDROID
         typedef SMMeshIndexNode<POINT, EXTENT> __super;
+#endif
         public:
             SMIndexNodeVirtual(const SMMeshIndexNode<POINT, EXTENT>* rParentNode) : SMMeshIndexNode<POINT, EXTENT>(rParentNode->GetSplitTreshold(), rParentNode->GetNodeExtent(), const_cast<SMMeshIndexNode<POINT, EXTENT>*>(rParentNode))
             {

@@ -1574,6 +1574,9 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     else return DTM_ERROR;
 
+    //first we initialize the tolerance by "trying" to triangulate the empty TM object...
+    bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+
     DPoint3d triangle[4];
 
 
@@ -1589,12 +1592,13 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         triangle[3] = triangle[0];
 
         //colinearity test
-        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
+        if (triangle[0].AlmostEqualXY(triangle[1], (bcDtmP)->ppTol) || triangle[1].AlmostEqualXY(triangle[2], (bcDtmP)->ppTol) || triangle[2].AlmostEqualXY(triangle[0], (bcDtmP)->ppTol)) continue;
         DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
         double param;
         DPoint3d closestPt;
         triSeg.ProjectPointXY(closestPt, param, triangle[2]);
-        if (closestPt.AlmostEqualXY(triangle[2])) continue;
+        // for some reason, in the code, the tolerances are divided by 100 by the time the lines are being added
+        if (closestPt.AlmostEqualXY(triangle[2], (bcDtmP)->plTol /100)) continue;
         if (destIdx[m_faceIndexes[t] - 1] == -1)
             {
             pts.push_back(m_points[m_faceIndexes[t] - 1]);
@@ -1636,6 +1640,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
 
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+
     assert(status == SUCCESS);
 
 #if SM_TRACE_EMPTY_FEATURES
@@ -3052,6 +3057,11 @@ bool IScalableMeshNode::IsClippingUpToDate() const
     {
     return _IsClippingUpToDate();
     }
+
+uint64_t IScalableMeshNode::LastClippingStateUpdateTimestamp() const
+{
+    return _LastClippingStateUpdateTimestamp();
+}
 
 void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
