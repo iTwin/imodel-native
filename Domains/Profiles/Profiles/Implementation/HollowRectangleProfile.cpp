@@ -25,6 +25,38 @@ HollowRectangleProfilePtr HollowRectangleProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double HollowRectangleProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_Width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HollowRectangleProfile::SetWidth(double val)
+    {
+    SetPropertyValue(PRF_PROP_HollowRectangleProfile_Width, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double HollowRectangleProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HollowRectangleProfile::SetDepth(double val)
+    {
+    SetPropertyValue(PRF_PROP_HollowRectangleProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 double HollowRectangleProfile::GetFilletRadius() const
     {
     return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_FilletRadius);

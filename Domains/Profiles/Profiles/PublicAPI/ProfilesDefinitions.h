@@ -127,11 +127,11 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
 #define PRF_PROP_HollowCircleProfile_Radius                                      "Radius"
+#define PRF_PROP_HollowRectangleProfile_Width                                    "Width"
+#define PRF_PROP_HollowRectangleProfile_Depth                                    "Depth"
 #define PRF_PROP_HollowRectangleProfile_FilletRadius                             "FilletRadius"
 #define PRF_PROP_ICenterLineProfile_CenterLine                                   "CenterLine"
 #define PRF_PROP_ICenterLineProfile_WallThickness                                "WallThickness"
-#define PRF_PROP_IRectangleShapeProfile_Width                                    "Width"
-#define PRF_PROP_IRectangleShapeProfile_Depth                                    "Depth"
 #define PRF_PROP_IShapeProfile_Width                                             "Width"
 #define PRF_PROP_IShapeProfile_Depth                                             "Depth"
 #define PRF_PROP_IShapeProfile_FlangeThickness                                   "FlangeThickness"
@@ -148,6 +148,10 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_LShapeProfile_VerticalLegSlope                                  "VerticalLegSlope"
 #define PRF_PROP_Profile_Name                                                    "Name"
 #define PRF_PROP_Profile_Shape                                                   "Shape"
+#define PRF_PROP_RectangleProfile_Width                                          "Width"
+#define PRF_PROP_RectangleProfile_Depth                                          "Depth"
+#define PRF_PROP_RoundedRectangleProfile_Width                                   "Width"
+#define PRF_PROP_RoundedRectangleProfile_Depth                                   "Depth"
 #define PRF_PROP_RoundedRectangleProfile_RoundingRadius                          "RoundingRadius"
 #define PRF_PROP_StandardProfileAspect_Manufacturer                              "Manufacturer"
 #define PRF_PROP_StandardProfileAspect_Revision                                  "Revision"
@@ -260,7 +264,6 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CircleProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowCircleProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowRectangleProfile)
 PROFILES_TYPEDEFS(ICenterLineProfile)
-PROFILES_TYPEDEFS(IRectangleShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(IShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(LShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(Profile)

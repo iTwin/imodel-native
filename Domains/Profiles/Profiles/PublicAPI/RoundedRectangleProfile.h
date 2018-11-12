@@ -9,7 +9,6 @@
 
 #include "ProfilesDefinitions.h"
 #include "CenteredProfile.h"
-#include "ProfileMixins.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -17,7 +16,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct RoundedRectangleProfile : CenteredProfile, IRectangleShapeProfile
+struct RoundedRectangleProfile : CenteredProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RoundedRectangleProfile, CenteredProfile);
     friend struct RoundedRectangleProfileHandler;
@@ -32,6 +31,12 @@ public:
     PROFILES_EXPORT static RoundedRectangleProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
+    PROFILES_EXPORT double GetWidth() const;
+    PROFILES_EXPORT void SetWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
+
     PROFILES_EXPORT double GetRoundingRadius() const;
     PROFILES_EXPORT void SetRoundingRadius(double val);
 

@@ -22,4 +22,36 @@ RectangleProfilePtr RectangleProfile::Create(DgnModelCR model)
     return new RectangleProfile(params);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double RectangleProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_RectangleProfile_Width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RectangleProfile::SetWidth(double val)
+    {
+    SetPropertyValue(PRF_PROP_RectangleProfile_Width, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double RectangleProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_RectangleProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RectangleProfile::SetDepth(double val)
+    {
+    SetPropertyValue(PRF_PROP_RectangleProfile_Depth, ECN::ECValue(val));
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct HollowRectangleProfile : CenteredProfile, IRectangleShapeProfile, ICenterLineProfile
+struct HollowRectangleProfile : CenteredProfile, ICenterLineProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, CenteredProfile);
     friend struct HollowRectangleProfileHandler;
@@ -32,6 +32,12 @@ public:
     PROFILES_EXPORT static HollowRectangleProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
+    PROFILES_EXPORT double GetWidth() const;
+    PROFILES_EXPORT void SetWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
+
     PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
 

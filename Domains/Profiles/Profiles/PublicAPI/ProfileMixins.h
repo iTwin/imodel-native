@@ -29,22 +29,4 @@ public:
 
     }; // ICenterLineProfile
 
-//=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
-//=======================================================================================
-struct IRectangleShapeProfile : NonCopyableClass
-    {
-protected:
-    virtual ~IRectangleShapeProfile() = default;
-
-public:
-    PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
-
-    PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
-
-    }; // IRectangleShapeProfile
-
 END_BENTLEY_PROFILES_NAMESPACE

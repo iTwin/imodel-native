@@ -25,6 +25,38 @@ RoundedRectangleProfilePtr RoundedRectangleProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double RoundedRectangleProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_Width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoundedRectangleProfile::SetWidth(double val)
+    {
+    SetPropertyValue(PRF_PROP_RoundedRectangleProfile_Width, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double RoundedRectangleProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoundedRectangleProfile::SetDepth(double val)
+    {
+    SetPropertyValue(PRF_PROP_RoundedRectangleProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 double RoundedRectangleProfile::GetRoundingRadius() const
     {
     return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_RoundingRadius);
