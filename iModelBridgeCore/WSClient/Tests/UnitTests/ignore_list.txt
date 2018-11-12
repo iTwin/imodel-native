@@ -18,14 +18,6 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
 #Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
 *ConnectWebServicesClientCTests*
 
-#----------------------------------------------------------------------------------------
-#   Test that fail becouse of issue with Web Api version 2.7
-#----------------------------------------------------------------------------------------
-WSRepositoryClientTests.SendQueryRequest_WebApiV26_CapsWebApiToV26
-WSRepositoryClientTests.SendQueryRequest_WebApiV28_CapsWebApiToV27
-WSRepositoryClientTests.SendDeleteObjectRequest_EnableJobsWebApiV2ResponseSendsJobsSequence_SendsJobDeleteRequest
-WSRepositoryClientTests.SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success
-
 #--------------------------------------------------------------------------------
 # RANDOM reproduceable crashes/hangs that break DEV builds
 #--------------------------------------------------------------------------------
@@ -138,46 +130,6 @@ UrlProviderTests.GetUrl_ValidateAllGetters
     # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(103): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
     # Expected: to be called once
     # Actual: never called - unsatisfied and active
-
-CachingDataSourceTests.SyncCachedData_InitialInstanceRemovesChildAndPathToIt_ChildInstanceIsRemovedAndNotCached
-
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/26/2018
-    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7442): error: Actual function call count doesn't match EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _))...
-    # Expected: to be called once
-    # Actual: never called - unsatisfied and active
-    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7441): error: Actual function call count doesn't match EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _))...
-    # Expected: to be called once
-    # Actual: never called - unsatisfied and active
-
-CachingDataSourceTests.SyncCachedData_InitialInstanceRemovesNonExistingChildAndPathToIt_ChildInstanceIsRemovedAndNotCached
-
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/26/2018
-    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7485): error: Actual function call count doesn't match EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _))...
-    # Expected: to be called once
-    # Actual: never called - unsatisfied and active
-    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7484): error: Actual function call count doesn't match EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _))...
-    # Expected: to be called once
-    # Actual: never called - unsatisfied and active
-
-CachingDataSourceTests.SyncCachedData_InitialInstancesWithProviders_OnProgressCallsWithInitialAndNewQuery
-
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 07/26/2018
-    # GMOCK WARNING:
-    # Uninteresting mock function call - taking default action specified at:
-    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7844):
-    # Function call: DoUpdateFile(@000000149BDFFB20 24-byte object <40-26 54-15 F8-7F 00-00 48-05 F0-92 A5-01 00-00 E0-90 5F-93 A5-01 00-00>, @000000149BDFFA80 1:2, false)
-    # Returns: false
-    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
-    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7855): error:       Expected: expectedProgress[progressCalled]
-    # Which is: Bytes: 0/0, Instances: 0/2, Synced: 0.250000, Label:
-    # To be equal to: progress
-    # Which is: Bytes: 0/0, Instances: 0/1, Synced: 0.333333, Label:
-    # GMOCK WARNING:
-    # Uninteresting mock function call - taking default action specified at:
-    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Cache\CachingDataSourceTests.cpp(7844):
-    # Function call: DoUpdateFile(@000000149BDFFB20 24-byte object <40-26 54-15 F8-7F 00-00 48-05 F0-92 A5-01 00-00 E0-90 5F-93 A5-01 00-00>, @000000149BDFFA80 3:4, false)
-    # Returns: false
-    # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
 
 DataSourceCacheTests.GetExtendedData_UpdatedDataForObject_WorksFine
 
@@ -328,3 +280,11 @@ DataSourceCacheTests.UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed
     # [2] RtlLookupFunctionEntry (0x7ffb57064710)
     # [1] KiUserExceptionDispatcher (0x7ffb570d9030)
     # [0] BentleyB0200::BeSQLite::Db::IsReadonly (0x7ffb1d75da80)
+
+WSRepositoryClientTests.SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId
+
+    # VSTS#44815
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 11/12/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Client\WSRepositoryClientTests.cpp(771): error:       Expected: 2
+    # To be equal to: uniqueRequestIds
+    # Which is: 1

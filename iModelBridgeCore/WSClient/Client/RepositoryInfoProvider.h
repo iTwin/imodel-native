@@ -37,7 +37,7 @@ struct RepositoryInfoProvider
         void UpdateInfo(WSRepositoryCR info);
         void NotifyInfoUpdated(WSRepositoryCR info) const;
 
-        AsyncTaskPtr<WSRepositoryResult> GetRepositoryInfo(ICancellationTokenPtr ct) const;
+        AsyncTaskPtr<WSRepositoryResult> GetRepositoryInfo(IWSRepositoryClient::RequestOptionsPtr options, ICancellationTokenPtr ct) const;
 
     public:
         RepositoryInfoProvider(std::shared_ptr<const ClientConnection> connection);
@@ -46,7 +46,7 @@ struct RepositoryInfoProvider
         void RegisterInfoListener(std::weak_ptr<IWSRepositoryClient::IRepositoryInfoListener> listener);
         void UnregisterInfoListener(std::weak_ptr<IWSRepositoryClient::IRepositoryInfoListener> listener);
 
-        AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct);
+        AsyncTaskPtr<WSRepositoryResult> GetInfo(IWSRepositoryClient::RequestOptionsPtr options, ICancellationTokenPtr ct);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
