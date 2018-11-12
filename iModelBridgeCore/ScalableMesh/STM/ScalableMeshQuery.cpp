@@ -3341,8 +3341,6 @@ template class ScalableMeshFullResolutionPointQuery<DPoint3d>;
 
 template class ScalableMeshViewDependentPointQuery<DPoint3d>;
 
-template class ScalableMeshFixResolutionViewPointQuery<DPoint3d>;
-
 template class ScalableMeshViewDependentMeshQuery<DPoint3d>;
 
 template class ScalableMeshFullResolutionMeshQuery<DPoint3d>;

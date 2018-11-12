@@ -472,7 +472,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     static const uint64_t maxQueueSize = /*std::max((uint64_t)this->m_SMIndex->m_totalNumNodes, (uint64_t)*/30000;//);
 
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
-    static Distribution_Type::Ptr distributor = nullptr; 
+    static typename Distribution_Type::Ptr distributor = nullptr; 
 
     if (this->m_nodeHeader.m_level == 0)
         {
@@ -3754,7 +3754,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
     if (!GetClipRegistry()->IsClipDefinitionFileExist())
-        return false;
+        return nullptr;
 
    //if (this->m_SMIndex->IsTerrain() == false) 
     //   return poolMemItemPtr;

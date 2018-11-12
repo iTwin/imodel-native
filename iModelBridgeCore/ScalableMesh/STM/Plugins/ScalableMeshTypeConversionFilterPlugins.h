@@ -669,9 +669,9 @@ template <typename SrcPointT, typename DstPointT>
 struct PointDimConverterTrait
     {
     template <bool IsSameType>
-    struct Impl         { typedef IDTMPointDimConverter<SrcPointT, DstPointT> type; };
-    template <>
-    struct Impl<true>   { typedef DimTypeConvSame__To__Same type; };
+    struct Impl         { typedef typename std::conditional<IsSameType,
+                         DimTypeConvSame__To__Same,
+                         IDTMPointDimConverter<SrcPointT, DstPointT> >::type type; };
 
     typedef typename Impl<std::is_same<SrcPointT,DstPointT>::value>::type type;
     };

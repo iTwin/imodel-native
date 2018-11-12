@@ -1500,7 +1500,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalableMeshCachedDisplayNode, 
                                                          public virtual ScalableMeshNode<POINT>
     {    
-
+    typedef ScalableMeshNode<POINT> __super;
     private: 
             //NEEDS_WORK_TEXTURE
             IScalableMeshMeshPtr    m_loadedMesh;
@@ -1558,6 +1558,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
     {    
 
     private: 
+    
+    typedef ScalableMeshNode<POINT> __super;
 
             mutable RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
@@ -1696,7 +1698,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
     template<class POINT> class ScalableMeshContourCachedDisplayNode : public virtual ScalableMeshCachedDisplayNode<POINT>
     {
-
+    typedef ScalableMeshCachedDisplayNode<POINT> __super;
     private:
         
         bvector<bvector<DPoint3d>> m_contours;

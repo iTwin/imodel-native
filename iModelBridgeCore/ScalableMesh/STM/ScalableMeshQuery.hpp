@@ -3754,7 +3754,7 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(bvector<IScal
     ScalableMeshNodeRayQueryParams* params = (ScalableMeshNodeRayQueryParams*)scmQueryParamsPtr.get();
     DRay3d ray = DRay3d::FromOriginAndVector(*pTestPt, params->GetDirection());
 
-    std::vector<SMPointIndexNode<POINT, Extent3dType>::QueriedNode> nodesP;
+    std::vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> nodesP;
     ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, Extent3dType> query(this->m_scmIndexPtr->GetContentExtent(), 
                                                                                  scmQueryParamsPtr->GetLevel() == (size_t)-1 ? m_scmIndexPtr->GetDepth() : scmQueryParamsPtr->GetLevel(),
                                                                                  ray, 

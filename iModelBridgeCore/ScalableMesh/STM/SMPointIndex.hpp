@@ -4144,8 +4144,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Advise
     //NEEDS_WORK_SM : Could change those loops in Advise function by direct position mapping
     for (; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
-        std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>::iterator neighborIter(m_apNeighborNodes[neighborPosInd].begin());
-        std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>::iterator neighborIterEnd(m_apNeighborNodes[neighborPosInd].end());
+        typename std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>::iterator neighborIter(m_apNeighborNodes[neighborPosInd].begin());
+        typename std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>::iterator neighborIterEnd(m_apNeighborNodes[neighborPosInd].end());
 
         bool isFound = false;
 

@@ -109,6 +109,7 @@ template<class POINT, class EXTENT> class SMMeshIndex;
 
 template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndexNode < POINT, EXTENT >
     {
+    typedef SMPointIndexNode < POINT, EXTENT > __super;
     friend class ISMPointIndexMesher<POINT, EXTENT>;
     friend class SMMeshIndex < POINT, EXTENT > ;
     using typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap;
@@ -890,6 +891,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     template<class POINT, class EXTENT> class SMMeshIndex : public SMPointIndex < POINT, EXTENT >
     {
+    typedef SMPointIndex < POINT, EXTENT > __super;
     friend class SMMeshIndexNode < POINT, EXTENT > ;
     public:
         BENTLEY_SM_EXPORT SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
@@ -1009,6 +1011,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         template <class POINT, class EXTENT> class SMIndexNodeVirtual<POINT, EXTENT, SMMeshIndexNode<POINT, EXTENT>> : public SMMeshIndexNode<POINT, EXTENT>
         {
+        typedef SMMeshIndexNode<POINT, EXTENT> __super;
         public:
             SMIndexNodeVirtual(const SMMeshIndexNode<POINT, EXTENT>* rParentNode) : SMMeshIndexNode<POINT, EXTENT>(rParentNode->GetSplitTreshold(), rParentNode->GetNodeExtent(), const_cast<SMMeshIndexNode<POINT, EXTENT>*>(rParentNode))
             {

@@ -1219,9 +1219,9 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
                 GeoPoint inLatLong, outLatLong;
                 if (this->m_sourceGCS->LatLongFromCartesian(inLatLong, point) != SUCCESS)
                     assert(false); // Error in reprojection
-                if (this->m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *m_destinationGCS) != SUCCESS)
+                if (this->m_sourceGCS->LatLongFromLatLong(outLatLong, inLatLong, *this->m_destinationGCS) != SUCCESS)
                     assert(false); // Error in reprojection
-                if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
+                if (this->m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
                     assert(false); // Error in reprojection
                 };
             //bvector<DPoint3d> corners(8);

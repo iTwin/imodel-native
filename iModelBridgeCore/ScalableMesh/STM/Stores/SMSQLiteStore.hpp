@@ -240,12 +240,12 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetUseTempPath(bool useTempP
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
     {
-    __super::SaveSisterFiles();
+    SMSQLiteSisterFile::SaveSisterFiles();
     }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CompactProjectFiles()
 {
-	__super::Compact();
+	SMSQLiteSisterFile::Compact();
 }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
@@ -423,7 +423,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::EraseClipFile() const
      
     const_cast<SMSQLiteStore<EXTENT>*>(this)->CloseSisterFile(SMStoreDataType::DiffSet);
     
-#ifdef __APPLE__
+#if defined(__APPLE__) || ANDROID
     Utf8String slqFileNameUtf8(sqlFileName.c_str());
     remove(slqFileNameUtf8.c_str());
 #else

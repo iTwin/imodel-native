@@ -192,8 +192,8 @@ class IDTMFeatureArray : public HPU::CompositeArrayBase<IDTMFeatureFacade<PointT
             IDTMFeatureArray_Type1;
         typedef IDTMFeatureArray_Type1 super_class;
 
-        typedef IDTMFeatureArray_Type1::const_reference const_reference;
-        typedef IDTMFeatureArray_Type1::const_iterator const_iterator;
+        typedef typename IDTMFeatureArray_Type1::const_reference const_reference;
+        typedef typename IDTMFeatureArray_Type1::const_iterator const_iterator;
 
         explicit                                IDTMFeatureArray(size_t                      pi_Capacity = 0,
                                                                  size_t                      pi_TotalPointCapacity = 0);
@@ -206,7 +206,7 @@ class IDTMFeatureArray : public HPU::CompositeArrayBase<IDTMFeatureFacade<PointT
 
 
         typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert(const_iterator   pi_Position,
-                                                                                                         IDTMFeatureArray_Type1::const_reference  pi_rFeature);
+                                                                                                         typename IDTMFeatureArray_Type1::const_reference  pi_rFeature);
 
         typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert(const_iterator              pi_Position,
                                                                                                          feature_type                pi_FeatureType,
