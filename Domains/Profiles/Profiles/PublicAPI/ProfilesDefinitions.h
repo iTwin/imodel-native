@@ -56,6 +56,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_DerivedProfile                                     "DerivedProfile"
 #define PRF_CLASS_DoubleCShapeProfile                                "DoubleCShapeProfile"
 #define PRF_CLASS_DoubleLShapeProfile                                "DoubleLShapeProfile"
+#define PRF_CLASS_EllipseProfile                                     "EllipseProfile"
 #define PRF_CLASS_CircleProfile                                      "CircleProfile"
 #define PRF_CLASS_HollowCircleProfile                                "HollowCircleProfile"
 #define PRF_CLASS_HollowRectangleProfile                             "HollowRectangleProfile"
@@ -126,6 +127,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_DoubleCShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
 #define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
+#define PRF_PROP_EllipseProfile_XRadius                                          "XRadius"
+#define PRF_PROP_EllipseProfile_YRadius                                          "YRadius"
 #define PRF_PROP_HollowCircleProfile_Radius                                      "Radius"
 #define PRF_PROP_HollowRectangleProfile_Width                                    "Width"
 #define PRF_PROP_HollowRectangleProfile_Depth                                    "Depth"
@@ -260,6 +263,7 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DerivedProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleCShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleLShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CircleProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowCircleProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowRectangleProfile)

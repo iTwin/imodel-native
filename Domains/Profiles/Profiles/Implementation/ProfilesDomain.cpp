@@ -25,6 +25,7 @@
 #include <Profiles\CustomShapeProfile.h>
 #include <Profiles\DoubleCShapeProfile.h>
 #include <Profiles\DoubleLShapeProfile.h>
+#include <Profiles\EllipseProfile.h>
 #include <Profiles\CircleProfile.h>
 #include <Profiles\HollowCircleProfile.h>
 #include <Profiles\HollowRectangleProfile.h>
@@ -66,6 +67,7 @@ ProfilesDomain::ProfilesDomain() : DgnDomain(PRF_SCHEMA_NAME, "Bentley Profiles 
     RegisterHandler(CenterLineLShapeProfileHandler::GetHandler());
     RegisterHandler(CenterLineZShapeProfileHandler::GetHandler());
     RegisterHandler(CShapeProfileHandler::GetHandler());
+    RegisterHandler(EllipseProfileHandler::GetHandler());
     RegisterHandler(CircleProfileHandler::GetHandler());
     RegisterHandler(HollowCircleProfileHandler::GetHandler());
     RegisterHandler(HollowRectangleProfileHandler::GetHandler());

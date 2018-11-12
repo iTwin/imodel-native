@@ -73,6 +73,8 @@ $(o)DoubleCShapeProfile$(oext) : $(appSrc)DoubleCShapeProfile.cpp ${MultiCompile
 
 $(o)DoubleLShapeProfile$(oext) : $(appSrc)DoubleLShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)DoubleLShapeProfile.h
 
+$(o)EllipseProfile$(oext) : $(appSrc)EllipseProfile.cpp ${MultiCompileDepends} $(appPublicApi)EllipseProfile.h
+
 $(o)CircleProfile$(oext) : $(appSrc)CircleProfile.cpp ${MultiCompileDepends} $(appPublicApi)CircleProfile.h
 
 $(o)HollowCircleProfile$(oext) : $(appSrc)HollowCircleProfile.cpp ${MultiCompileDepends} $(appPublicApi)HollowCircleProfile.h

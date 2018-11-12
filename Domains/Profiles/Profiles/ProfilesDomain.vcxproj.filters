@@ -139,6 +139,9 @@
     <ClCompile Include="Implementation\ICenterLineProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="Implementation\EllipseProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Implementation\ProfilesInternal.h">
@@ -244,6 +247,9 @@
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ICenterLineProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\EllipseProfile.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
