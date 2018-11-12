@@ -2,7 +2,7 @@
 #
 #  $Source: BentleyTest/TestRunner/TestRunner.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -62,7 +62,6 @@ EXE_OBJS            = $(objs)
 LINKER_LIBRARIES    = advapi32.lib User32.lib shlwapi.lib $(testRunnerDependencies) wininet.lib
 EXE_TMP_DIR         = $(o)
 EXE_SYMB_DEST       = $(o)
-EXE_MAP_DEST        = $(o)
 EXE_NO_SIGN         = 1
 EXE_LOPT1           = -LargeAddressAware
 
