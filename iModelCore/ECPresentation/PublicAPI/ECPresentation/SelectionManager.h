@@ -175,6 +175,7 @@ private:
 private:
     void OnRegistered(SelectionManager&);
     void OnUnregistered(SelectionManager&);
+    void CallSelectInstances(SelectionChangedEventCR, bvector<ECClassInstanceKey> const&);
 
 protected:
     //! ISelectionChangesListener implementation. Handles the selection event.
@@ -207,6 +208,10 @@ protected:
     //! @param[in] evt  The selection change event that resulted in this method being called.
     //! @param[in] keys The keys of ECInstances to select.
     virtual void _SelectInstances(SelectionChangedEventCR evt, bvector<ECClassInstanceKey> const& keys) {}
+
+    //! Called to get an executor to call _SelectInstances callback.
+    //! @return An executor to call the callback or nullptr to call using current executor on arbitrary thread.
+    virtual folly::Executor* _GetSelectExecutor() const {return nullptr;}
 
 //__PUBLISH_SECTION_END__
 protected:
