@@ -16,38 +16,38 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! A CompositeProfile comprised of back-to-back Ls with the horizontal legs at the top of the Profile.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct DoubleLProfile : CompositeProfile
+struct DoubleLShapeProfile : CompositeProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleLProfile, CompositeProfile);
-    friend struct DoubleLProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleLShapeProfile, CompositeProfile);
+    friend struct DoubleLShapeProfileHandler;
 
 protected:
-    explicit DoubleLProfile(CreateParams const& params) : T_Super(params) {}
+    explicit DoubleLShapeProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(DoubleLProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(DoubleLProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(DoubleLShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(DoubleLShapeProfile)
 
-    PROFILES_EXPORT static DoubleLProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static DoubleLShapeProfilePtr Create(/*TODO: args*/);
 
 public:
     PROFILES_EXPORT double GetSpacing() const;
     PROFILES_EXPORT void SetSpacing(double val);
 
-    PROFILES_EXPORT int GetEnum() const;
-    PROFILES_EXPORT void SetEnum(int val);
+    PROFILES_EXPORT int GetType() const;
+    PROFILES_EXPORT void SetType(int val);
 
-    }; // DoubleLProfile
+    }; // DoubleLShapeProfile
 
 //=======================================================================================
-//! Handler for DoubleLProfile class
+//! Handler for DoubleLShapeProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DoubleLProfileHandler : CompositeProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE DoubleLShapeProfileHandler : CompositeProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleLProfile, DoubleLProfile, DoubleLProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleLShapeProfile, DoubleLShapeProfile, DoubleLShapeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
 
-    }; // DoubleLProfileHandler
+    }; // DoubleLShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

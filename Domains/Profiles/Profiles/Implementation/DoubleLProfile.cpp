@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(DoubleLProfileHandler)
+HANDLER_DEFINE_MEMBERS(DoubleLShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleLProfilePtr DoubleLProfile::Create(/*TODO: args*/)
+DoubleLShapeProfilePtr DoubleLShapeProfile::Create(/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }
@@ -23,33 +23,33 @@ DoubleLProfilePtr DoubleLProfile::Create(/*TODO: args*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DoubleLProfile::GetSpacing() const
+double DoubleLShapeProfile::GetSpacing() const
     {
-    return GetPropertyValueDouble(PRF_PROP_DoubleLProfile_Spacing);
+    return GetPropertyValueDouble(PRF_PROP_DoubleLShapeProfile_Spacing);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleLProfile::SetSpacing(double val)
+void DoubleLShapeProfile::SetSpacing(double val)
     {
-    SetPropertyValue(PRF_PROP_DoubleLProfile_Spacing, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_DoubleLShapeProfile_Spacing, ECN::ECValue(val));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DoubleLProfile::GetEnum() const
+int DoubleLShapeProfile::GetType() const
     {
-    return GetPropertyValueInt32(PRF_PROP_DoubleLProfile_Enum);
+    return GetPropertyValueInt32(PRF_PROP_DoubleLShapeProfile_Type);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleLProfile::SetEnum(int val)
+void DoubleLShapeProfile::SetType(int val)
     {
-    SetPropertyValue(PRF_PROP_DoubleLProfile_Enum, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_DoubleLShapeProfile_Type, ECN::ECValue(val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

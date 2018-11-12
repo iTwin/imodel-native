@@ -55,7 +55,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_CustomShapeProfile                                 "CustomShapeProfile"
 #define PRF_CLASS_DerivedProfile                                     "DerivedProfile"
 #define PRF_CLASS_DoubleCProfile                                     "DoubleCProfile"
-#define PRF_CLASS_DoubleLProfile                                     "DoubleLProfile"
+#define PRF_CLASS_DoubleLShapeProfile                                "DoubleLShapeProfile"
 #define PRF_CLASS_EllipseProfile                                     "EllipseProfile"
 #define PRF_CLASS_HollowEllipseProfile                               "HollowEllipseProfile"
 #define PRF_CLASS_HollowRectangleProfile                             "HollowRectangleProfile"
@@ -117,8 +117,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_DerivedProfile_Scale                                            "Scale"
 #define PRF_PROP_DerivedProfile_CardinalPoint                                    "CardinalPoint"
 #define PRF_PROP_DoubleCProfile_Spacing                                          "Spacing"
-#define PRF_PROP_DoubleLProfile_Spacing                                          "Spacing"
-#define PRF_PROP_DoubleLProfile_Enum                                             "Enum"
+#define PRF_PROP_DoubleLShapeProfile_Spacing                                     "Spacing"
+#define PRF_PROP_DoubleLShapeProfile_Type                                        "Type"
 #define PRF_PROP_HollowRectangleProfile_FilletRadius                             "FilletRadius"
 #define PRF_PROP_ICShapeProfile_Width                                            "Width"
 #define PRF_PROP_ICShapeProfile_Depth                                            "Depth"
@@ -251,7 +251,7 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomCompositeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DerivedProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleCProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleLProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleLShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowEllipseProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowRectangleProfile)
