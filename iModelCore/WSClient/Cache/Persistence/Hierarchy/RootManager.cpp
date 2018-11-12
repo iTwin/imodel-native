@@ -536,7 +536,7 @@ BentleyStatus RootManager::RemoveRoot(Utf8StringCR rootName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootManager::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
     {
-    return RemoveRoots("[" CLASS_Root_PROPERTY_Name "] LIKE ?", (rootPrefix + "%").c_str());
+    return RemoveRoots("instr([" CLASS_Root_PROPERTY_Name "], ?) = 1", rootPrefix.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
