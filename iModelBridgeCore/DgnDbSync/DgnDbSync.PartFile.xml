@@ -192,7 +192,7 @@
 
     <Part Name="DgnV8BridgeInstallFiles" OnlyPlatforms="x64" BentleyBuildMakeFile="DgnV8/Converters/Dgnv8BridgeInstaller/Dgnv8BridgeInstaller.prewire.mke">
       <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
-      <SubPart PartName="Microsoft_VC_140" PartFile="iModelBridgeCore/DgnDbSync/Microsoft_VC_14_0" Repository="Mergemodule-Microsoft_VC_14.0_u3"/>
+      <SubPart PartName="Microsoft_VC_140" PartFile="Microsoft_VC_14_0" Repository="Mergemodule-Microsoft_VC_14.0_u3"/>
       <SubPart Repository="Miscdev-Eula" PartFile="Eula" PartName="Eula"/>
       <Bindings>
         <Files BindToWixBuild="true" SubPartDirectory="installer">
