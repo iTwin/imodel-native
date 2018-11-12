@@ -256,40 +256,28 @@ GeometricPrimitivePtr DwgBrepExt::CreateGeometry (DwgDbPlaneSurfaceP planeSurfac
     if (status != DwgDbStatus::Success || regions.empty())
         return  nullptr;
 
-    CurveVectorPtr  shape;
-
-    // explode the region to lines, expecting only one region:
-    for (auto& region : regions)
+    CurveVectorPtr  shapes;
+    if (regions.size() == 1)
         {
-        if (!shape.IsValid())
+        // a single shape
+        shapes = DwgHelper::CreateCurveVectorFrom (*regions.front());
+        ::free (regions.front());
+        }
+    else
+        {
+        // unite multiple shapes
+        shapes = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+        for (auto& region : regions)
             {
-            DwgDbObjectPArray   entities;
-            status = region->Explode (entities);
-            if (status != DwgDbStatus::Success || entities.empty())
-                return  nullptr;
-
-            auto numPoints = entities.size ();
-            DPoint3dArray   points(numPoints);
-
-            for (int i = 0; i < numPoints; i++)
-                {
-                auto line = DwgDbLine::Cast (entities[i]);
-                if (nullptr != line)
-                    points[i] = line->GetStartPoint ();
-
-                ::free (entities[i]);
-                }
-
-            // create a shape
-            PolylineFactory plineFactory(numPoints, &points.front(), true);
-            shape = plineFactory.CreateCurveVector (false);
+            auto shape = DwgHelper::CreateCurveVectorFrom (*region, CurveVector::BOUNDARY_TYPE_Outer);
+            if (shape.IsValid())
+                shapes->Add (shape);
+            ::free (region);
             }
-        
-        ::free (region);
         }
 
     // for a model element, get a placement point and move the shape in reverse:
-    if (shape.IsValid() && nullptr != m_toBimContext)
+    if (shapes.IsValid() && nullptr != m_toBimContext)
         {
         Transform   moveToOrigin;
         if (nullptr == m_toBimContext)
@@ -298,10 +286,10 @@ GeometricPrimitivePtr DwgBrepExt::CreateGeometry (DwgDbPlaneSurfaceP planeSurfac
             moveToOrigin = m_toBimContext->GetTransform ();
 
         this->SetPlacementPoint (moveToOrigin);
-        shape->TransformInPlace (moveToOrigin);
+        shapes->TransformInPlace (moveToOrigin);
         }
 
-    return GeometricPrimitive::Create(shape);
+    return GeometricPrimitive::Create(shapes);
     }
 
 /*---------------------------------------------------------------------------------**//**
