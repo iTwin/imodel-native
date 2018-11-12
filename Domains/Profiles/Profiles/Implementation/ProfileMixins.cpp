@@ -47,41 +47,6 @@ void ICenterLineProfile::SetWallThickness(double val)
     }
 
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-double ILShapeProfile::GetWidth() const
-    {
-    return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ILShapeProfile_Width);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ILShapeProfile::SetWidth(double val)
-    {
-    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ILShapeProfile_Width, ECN::ECValue(val));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-double ILShapeProfile::GetDepth() const
-    {
-    return (dynamic_cast<Dgn::DgnElement const*> (this))->GetPropertyValueDouble(PRF_PROP_ILShapeProfile_Depth);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ILShapeProfile::SetDepth(double val)
-    {
-    (dynamic_cast<Dgn::DgnElement*> (this))->SetPropertyValue(PRF_PROP_ILShapeProfile_Depth, ECN::ECValue(val));
-    }
-
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -9,7 +9,6 @@
 
 #include "ProfilesDefinitions.h"
 #include "CenteredProfile.h"
-#include "ProfileMixins.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -17,7 +16,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! An L-shaped Profile similar to rolled steel L-shapes.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct LShapeProfile : CenteredProfile, ILShapeProfile
+struct LShapeProfile : CenteredProfile
     {
     DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, CenteredProfile);
     friend struct LShapeProfileHandler;
@@ -32,6 +31,12 @@ public:
     PROFILES_EXPORT static LShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
+    PROFILES_EXPORT double GetWidth() const;
+    PROFILES_EXPORT void SetWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
+
     PROFILES_EXPORT double GetThickness() const;
     PROFILES_EXPORT void SetThickness(double val);
 

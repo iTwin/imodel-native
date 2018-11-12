@@ -25,6 +25,38 @@ LShapeProfilePtr LShapeProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void LShapeProfile::SetWidth(double val)
+    {
+    SetPropertyValue(PRF_PROP_LShapeProfile_Width, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double LShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void LShapeProfile::SetDepth(double val)
+    {
+    SetPropertyValue(PRF_PROP_LShapeProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetThickness() const
     {
     return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Thickness);

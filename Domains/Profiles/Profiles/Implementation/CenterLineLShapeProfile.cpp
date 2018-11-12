@@ -25,6 +25,38 @@ CenterLineLShapeProfilePtr CenterLineLShapeProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineLShapeProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_Width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CenterLineLShapeProfile::SetWidth(double val)
+    {
+    SetPropertyValue(PRF_PROP_CenterLineLShapeProfile_Width, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CenterLineLShapeProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CenterLineLShapeProfile::SetDepth(double val)
+    {
+    SetPropertyValue(PRF_PROP_CenterLineLShapeProfile_Depth, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 double CenterLineLShapeProfile::GetFilletRadius() const
     {
     return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_FilletRadius);

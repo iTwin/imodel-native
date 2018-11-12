@@ -33,24 +33,6 @@ public:
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct ILShapeProfile : NonCopyableClass
-    {
-protected:
-    virtual ~ILShapeProfile() = default;
-
-public:
-    PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
-
-    PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
-
-    }; // ILShapeProfile
-
-//=======================================================================================
-//! 
-//! @ingroup GROUP_Profiles
-//=======================================================================================
 struct IRectangleShapeProfile : NonCopyableClass
     {
 protected:
