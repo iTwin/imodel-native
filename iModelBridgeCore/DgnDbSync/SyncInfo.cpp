@@ -83,6 +83,7 @@ BentleyStatus SyncInfo::CreateTables()
         {
         CreateECTables();
         ImportJob::CreateTable(*m_dgndb);
+        GeomPart::CreateTable(*m_dgndb);
         m_dgndb->SaveChanges();
         return BSISUCCESS;
         }
@@ -176,6 +177,7 @@ BentleyStatus SyncInfo::CreateTables()
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
 
     ImportJob::CreateTable(*m_dgndb);
+    GeomPart::CreateTable(*m_dgndb);
 
     //need a unique index to ensure uniqueness for schemas based on checksum
     Utf8String ddl;
@@ -543,6 +545,118 @@ ResolvedImportJob Converter::FindImportJobForModel(DgnV8ModelR rootModel)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::GeomPart::CreateTable (BeSQLite::Db& db)
+    {
+    if (db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
+        return;
+    db.CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart),
+                         "Id INTEGER PRIMARY KEY,"
+                         "Tag TEXT"
+                         );
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart) "TagIdx ON "  SYNC_TABLE_GeomPart "(Tag)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult SyncInfo::GeomPart::Insert (BeSQLite::Db& db) const
+    {
+    Statement stmt;
+    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart) "(Id,Tag) VALUES (?,?)");
+    int col = 1;
+    stmt.BindId(col++, m_id);
+    stmt.BindText(col++, m_tag, Statement::MakeCopy::No);
+    auto res = stmt.Step();
+    return res;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SyncInfo::GeomPart::GetSelectSql()
+    {
+    return "SELECT Id,Tag FROM " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::GeomPart::FromSelect(BeSQLite::Statement& stmt)
+    {
+    int col = 0;
+    m_id = stmt.GetValueId<DgnGeometryPartId>(col++);
+    m_tag = stmt.GetValueText(col++);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartIterator::GeomPartIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
+    {
+    m_params.SetWhere(where);
+    Utf8String sqlString = MakeSqlString(GeomPart::GetSelectSql().c_str());
+    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPart SyncInfo::GeomPartIterator::GeomPartIterator::Entry::GetGeomPart()
+    {
+    SyncInfo::GeomPart GeomPart;
+    GeomPart.FromSelect(*m_sql);
+    return GeomPart;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartIterator::Entry SyncInfo::GeomPartIterator::begin() const
+    {
+    m_stmt->Reset();
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::GeomPart::FindByTag(GeomPart& GeomPart, DgnDbCR db, Utf8CP tag)
+    {
+    if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
+        return BSIERROR;
+
+    if (Utf8String::IsNullOrEmpty(tag))
+        return BSIERROR;
+
+    GeomPartIterator iter(db, "Tag=?");
+    iter.GetStatement()->BindText(1, tag, Statement::MakeCopy::No);
+    auto i = iter.begin();
+    if (i == iter.end())
+        return BSIERROR;
+    GeomPart.FromSelect(*iter.GetStatement());
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::GeomPart::FindById(GeomPart& GeomPart, DgnDbCR db, DgnGeometryPartId partId)
+    {
+    if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
+        return BSIERROR;
+
+    GeomPartIterator iter(db, "Id=?");
+    iter.GetStatement()->BindId(1, partId);
+    auto i = iter.begin();
+    if (i == iter.end())
+        return BSIERROR;
+    GeomPart.FromSelect(*iter.GetStatement());
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId SyncInfo::GetV8ModelIdFromV8ModelSyncInfoId(V8ModelSyncInfoId msiid)
@@ -667,6 +781,33 @@ bool SyncInfo::V8FileProvenance::FindByName(bool fillLastMod)
         m_fileSize = stmt->GetValueInt64(col++);    // FileSize
         }
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::FileIterator::Entry::GetV8FileSyncInfoId(SyncInfo& si)
+    {
+    V8FileProvenance fp(si);
+    fp.m_syncId = GetV8FileSyncInfoId();
+    fp.m_uniqueName = GetUniqueName();
+    fp.m_v8Name = GetV8Name();
+    fp.m_idPolicy = GetCannotUseElementIds()? StableIdPolicy::ByHash : StableIdPolicy::ById;
+    fp.m_lastSaveTime = GetLastSaveTime();
+    fp.m_lastModifiedTime = GetLastModifiedTime();
+    fp.m_fileSize = GetFileSize();
+    return fp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::V8FileProvenance::GetById(V8FileSyncInfoId sid, SyncInfo& syncInfo)
+    {
+    FileIterator files(syncInfo.GetConverter().GetDgnDb(), "Id=?");
+    files.GetStatement()->BindInt(1, sid.GetValue());
+    SyncInfo::FileIterator::Entry entry = files.begin();
+    return (entry != files.end())? entry.GetV8FileSyncInfoId(syncInfo): V8FileProvenance(syncInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1963,7 +2104,7 @@ void SyncInfo::GetCurrentImageryInfo(Utf8StringCR fileName, uint64_t& currentLas
         if (BeFileName::GetFileSize(tempFileSize, beFile) != BeFileNameStatus::Success
             || BeFileName::GetFileTime(nullptr, nullptr, &mtime, beFile) != BeFileNameStatus::Success)
             {
-            Utf8PrintfString msg("Unable to get file info for '%s'", fileName);
+            Utf8PrintfString msg("Unable to get file info for '%s'", fileName.c_str());
             //ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
             }
         currentLastModifiedTime = mtime;

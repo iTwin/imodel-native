@@ -29,28 +29,38 @@ void RootModelConverter::_ConvertSheets()
     {
     SetStepName(Converter::ProgressMessage::STEP_CONVERTING_SHEETS());
 
-    bmultiset<ResolvedModelMapping> sheets;
+    bmap<DgnV8FileP, bmultiset<ResolvedModelMapping>> sheets;
+    int32_t count = 0;
     for (auto v8mm : m_v8ModelMappings)
         {
         if (!IsFileAssignedToBridge(*v8mm.GetV8Model().GetDgnFileP()))
             continue;
 
         if (v8mm.GetDgnModel().IsSheetModel())
-            sheets.insert(v8mm);
+            {
+            ++count;
+            sheets[v8mm.GetV8Model().GetDgnFileP()].insert(v8mm);
+            }
         }
 
 
-    AddTasks((uint32_t)sheets.size());
+    AddTasks(count);
 
     SpatialViewFactory nvvf(*this);
 
-    for (auto v8mm : sheets)
+    for (auto& v8FileGroup: sheets)
         {
-        SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
+        for (auto v8mm : v8FileGroup.second)
+            {
+            SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
         
-        BeAssert(!v8mm.GetDgnModel().Is3d() && "sheets are NEVER converted to 3D models!");
+            BeAssert(!v8mm.GetDgnModel().Is3d() && "sheets are NEVER converted to 3D models!");
 
-        SheetsConvertModelAndViews(v8mm, nvvf);
+            SheetsConvertModelAndViewsWithExceptionHandling(v8mm, nvvf);
+            }
+        
+        if (_GetParams().GetPushIntermediateRevisions() == iModelBridge::Params::PushIntermediateRevisions::ByFile)
+            PushChangesForFile(*v8FileGroup.first, ConverterDataStrings::Sheets());
         }
     }
 
@@ -151,6 +161,17 @@ void Converter::DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/1
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::SheetsConvertModelAndViewsWithExceptionHandling(ResolvedModelMapping const& v8mm, ViewFactory& nvvf)
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        SheetsConvertModelAndViews(v8mm, nvvf);
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedModelConversion(v8mm))
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16

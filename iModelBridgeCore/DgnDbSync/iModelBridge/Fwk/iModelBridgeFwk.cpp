@@ -18,6 +18,7 @@
 #include <Logging/bentleylogging.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <iModelBridge/iModelBridgeRegistry.h>
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include "../iModelBridgeHelpers.h"
 #include <iModelBridge/Fwk/IModelClientForBridges.h>
 #include <BentleyLog4cxx/log4cxx.h>
@@ -57,6 +58,14 @@ static iModelBridge* s_bridgeForTesting;
 static IModelBridgeRegistry* s_registryForTesting;
 
 static int s_maxWaitForMutex = 60000;
+
+struct IBriefcaseManagerForBridges : RefCounted<iModelBridge::IBriefcaseManager>
+{
+    iModelBridgeFwk& m_fwk;
+    IBriefcaseManagerForBridges(iModelBridgeFwk& f) : m_fwk(f) {}
+    BentleyStatus _PullAndMerge() override { return m_fwk.Briefcase_PullMergePush(nullptr, true, false); }
+    PushStatus _Push(Utf8CP comment) override { m_fwk.Briefcase_PullMergePush(comment, false, true); return m_fwk.m_lastBridgePushStatus; }
+};
 
 void iModelBridgeFwk::SetBridgeForTesting(iModelBridge& b)
     {
@@ -1059,11 +1068,14 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         }
     if (!m_jobEnvArgs.m_skipAssignmentCheck)
         params.SetDocumentPropertiesAccessor(*this);
+    if (m_bcMgrForBridges.IsValid())
+        params.SetBriefcaseManager(*m_bcMgrForBridges);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     params.ParseJsonArgs(m_jobEnvArgs.m_argsJson, true);
     params.m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
     //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
     params.m_dmsSupport = m_dmsSupport;
+    params.SetPushIntermediateRevisions(iModelBridge::Params::PushIntermediateRevisions::ByFile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1820,6 +1832,8 @@ iModelBridgeFwk::iModelBridgeFwk()
 :m_logProvider(NULL), m_dmsSupport(NULL)
     {
     m_client = nullptr;
+    m_bcMgrForBridges = new IBriefcaseManagerForBridges(*this);
+    m_lastBridgePushStatus = iModelBridge::IBriefcaseManager::PushStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1869,13 +1883,13 @@ void iModelBridgeFwk::ReportIssue(WStringCR msg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString iModelBridgeFwk::GetMutexName()
+void iModelBridgeFwk::GetMutexName(wchar_t* buf, size_t bufLen)
     {
     WString mname(m_jobEnvArgs.m_stagingDir);
     mname.ReplaceAll(L"\\", L"_");
-    if (mname.length() > MAX_PATH)
-        mname = mname.substr(mname.length() - (MAX_PATH-1));
-    return mname;
+    wcsncpy(buf, mname.c_str(), bufLen-1);
+    if (mname.length() > (bufLen-1))
+        buf[bufLen-1] = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1884,35 +1898,39 @@ WString iModelBridgeFwk::GetMutexName()
 int iModelBridgeFwk::Run(int argc, WCharCP argv[])
     {
 #ifdef _WIN32
-    auto mutex = ::CreateMutexW(nullptr, false, GetMutexName().c_str());
+    wchar_t mutexName[256];
+    GetMutexName(mutexName, sizeof(mutexName)/sizeof(mutexName[0]));
+    auto mutex = ::CreateMutexW(nullptr, false, mutexName);
     if (nullptr == mutex)
         {
-        fprintf(stderr, "%ls - cannot create mutex", GetMutexName().c_str());
+        fprintf(stderr, "%ls - cannot create mutex", mutexName);
         return -1;
         }
     HRESULT hr = ::WaitForSingleObject(mutex, s_maxWaitForMutex);
     if (WAIT_OBJECT_0 != hr)
         {
         if (WAIT_TIMEOUT == hr)
-            fprintf(stderr, "%ls - Another job is taking a long time. Try again later", GetMutexName().c_str());
+            fprintf(stderr, "%ls - Another job is taking a long time. Try again later", mutexName);
         else
-            fprintf(stderr, "%ls - Error getting named mutex. Try again later", GetMutexName().c_str());
+            fprintf(stderr, "%ls - Error getting named mutex. Try again later", mutexName);
         return -1;
         }
 #endif
 
     int res = -2;
-    try
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         res = RunExclusive(argc, argv);
         }
-    catch(...)
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS
         {
-#ifdef _WIN32
-        ::ReleaseMutex(mutex);
-        ::CloseHandle(mutex);
-#endif
+        fprintf(stderr, "Unhandled exception terminated bridge.\n");
         }
+
+#ifdef _WIN32
+    ::ReleaseMutex(mutex);
+    ::CloseHandle(mutex);
+#endif
 
     return res;
     }

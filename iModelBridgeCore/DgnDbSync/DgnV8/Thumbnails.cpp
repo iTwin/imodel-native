@@ -158,6 +158,18 @@ bool Converter::ThumbnailUpdateRequired(ViewDefinition const& view)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::GenerateThumbnailsWithExceptionHandling()
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        GenerateThumbnails();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(ReportFailedThumbnails())
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateThumbnails()

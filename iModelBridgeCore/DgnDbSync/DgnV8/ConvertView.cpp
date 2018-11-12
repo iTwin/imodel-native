@@ -84,10 +84,15 @@ void Converter::AddAttachmentsToSelection(DgnModelIdSet& selector, DgnV8ModelRef
         Transform thisTrans = ComputeAttachmentTransform(trans, *attachment);
 
         ResolvedModelMapping modelMapping = FindModelForDgnV8Model(*attachedModel, thisTrans);
-        if (!modelMapping.IsValid())
-            continue;
+        if (modelMapping.IsValid())
+            selector.insert(modelMapping.GetDgnModel().GetModelId());
+        else
+            {
+            DgnV8ModelProvenance::ModelProvenanceEntry entryFound;
+            if (BSISUCCESS == FindModelProvenanceEntry(entryFound, *attachedModel, trans))
+                selector.insert(entryFound.m_modelId);
+            }
 
-        selector.insert(modelMapping.GetDgnModel().GetModelId());
         AddAttachmentsToSelection(selector, *attachment, thisTrans);
         }
     }

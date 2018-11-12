@@ -9,9 +9,9 @@
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="B02">
         <SubPart PartName="iModelDmsSupport" Repository="DmsSupport" PartFile="iModelDmsSupport"/>
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
-        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
+        <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
         <SubPart PartName="PublicAPI" />
-      
+
       <Bindings>
             <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iModelBridge$(ApiNumber)$(shlibext)</Assemblies>
@@ -113,7 +113,6 @@
 
     <Part Name="iModelBridgeFwkLib" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwkLib.mke" ApiNumber="B02">
       <SubPart PartName="PublicAPI"/>
-      <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubPart PartName="iModelBridgeFwk-en"/>
       <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
@@ -155,6 +154,8 @@
       <ProductDirectory Name="Assets"                    Path="assets" LibType="static"/>
       <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="dynamic"/>
       <ProductDirectory Name="VendorNotices"             Path="notices" LibType="static" />
+      <ProductDirectory Name="DgnV8Dlls"                 Deliver="false" LibType="dynamic" />
+      <ProductDirectory Name="DgnV8Dlls"                 Deliver="false" LibType="static" />
     </ProductDirectoryList>
 
     <Part Name="iModelBridgeAssignExeShim_Dynamic" OnlyPlatforms="x64">

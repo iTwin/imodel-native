@@ -31,6 +31,7 @@ struct IModelClientForBridges
 
     virtual StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName) = 0;
     virtual StatusInt OpenBriefcase(Dgn::DgnDbR db) = 0;
+    virtual StatusInt Push(Utf8CP) = 0;
     virtual StatusInt PullMergeAndPush(Utf8CP) = 0;
     virtual StatusInt PullAndMerge() = 0;
     virtual StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) = 0;
@@ -72,6 +73,7 @@ public:
 
     StatusInt AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repoId) override;
     StatusInt OpenBriefcase(Dgn::DgnDbR db) override;
+    StatusInt Push(Utf8CP) override;
     StatusInt PullMergeAndPush(Utf8CP) override;
     StatusInt PullAndMerge() override;
     StatusInt PullAndMergeSchemaRevisions(Dgn::DgnDbPtr& db) override;

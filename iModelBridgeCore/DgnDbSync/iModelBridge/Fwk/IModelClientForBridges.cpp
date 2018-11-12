@@ -256,6 +256,20 @@ StatusInt IModelHubClient::CreateRepository(Utf8CP repoName, BeFileNameCR localD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt IModelClientBase::Push(Utf8CP descr)
+    {
+    auto progress = getHttpProgressMeter();
+    auto result = m_briefcase->Push(descr, false, progress)->GetResult();
+    if (result.IsSuccess())
+        return SUCCESS;
+
+    m_lastServerError = result.GetError();
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IModelClientBase::PullMergeAndPush(Utf8CP descr)
     {
     auto progress = getHttpProgressMeter();

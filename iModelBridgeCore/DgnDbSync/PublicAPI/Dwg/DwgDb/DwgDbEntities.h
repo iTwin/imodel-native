@@ -471,14 +471,18 @@ public:
     DWGDB_EXPORT DVec3d     GetMinorAxis () const;
     DWGDB_EXPORT DVec3d     GetNormal () const;
     DWGDB_EXPORT double     GetStartAngle () const;
+    DWGDB_EXPORT double     GetStartParam () const;
     DWGDB_EXPORT double     GetEndAngle () const;
+    DWGDB_EXPORT double     GetEndParam () const;
     DWGDB_EXPORT DwgDbStatus SetCenter (DPoint3dCR center);
     //! Set the radius of the major axis - currently valid for RealDWG only!
     DWGDB_EXPORT DwgDbStatus SetMajorRadius (double radius);
     //! Set the radius of the minor axis - currently valid for RealDWG only!
     DWGDB_EXPORT DwgDbStatus GetMinorRadius (double radius);
     DWGDB_EXPORT DwgDbStatus SetStartAngle (double angle);
+    DWGDB_EXPORT DwgDbStatus SetStartParam (double param);
     DWGDB_EXPORT DwgDbStatus SetEndAngle (double angle);
+    DWGDB_EXPORT DwgDbStatus SetEndParam (double param);
     //! Set this ellipse with known parameters.
     //! @param[in] center The center of the ellipse, in WCS.
     //! @param[in] normal The unit vector of the normal.
