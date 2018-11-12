@@ -342,11 +342,10 @@ BentleyStatus CachedResponseManager::DeleteResponsesByPrefix(Utf8StringCR respon
         return
             "SELECT ECClassId, ECInstanceId "
             "FROM ONLY " ECSql_CachedResponseInfo " "
-            "WHERE [" CLASS_CachedResponseInfo_PROPERTY_Name "] LIKE ? ";
+            "WHERE instr([" CLASS_CachedResponseInfo_PROPERTY_Name "], ?) = 1 ";
         });
 
-    Utf8String wildcardedPrefix = responsePrefix + "%";
-    statement->BindText(1, wildcardedPrefix.c_str(), IECSqlBinder::MakeCopy::No);
+    statement->BindText(1, responsePrefix.c_str(), IECSqlBinder::MakeCopy::No);
 
     return m_hierarchyManager.DeleteInstances(*statement);
     }
