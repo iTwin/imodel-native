@@ -24,6 +24,7 @@
 #include <DgnDbSync/DgnDbSync.h>
 #include <DgnDbSync/DgnV8/Converter.h>
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include <LinearReferencing/LinearReferencingApi.h>
 #include <RoadRailAlignment/RoadRailAlignmentApi.h>
 #include <RoadRailPhysical/RoadRailPhysicalApi.h>
