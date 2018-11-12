@@ -25,33 +25,17 @@ CircleProfilePtr CircleProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CircleProfile::GetXRadius() const
+double CircleProfile::GetRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_CircleProfile_XRadius);
+    return GetPropertyValueDouble(PRF_PROP_CircleProfile_Radius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CircleProfile::SetXRadius(double val)
+void CircleProfile::SetRadius(double val)
     {
-    SetPropertyValue(PRF_PROP_CircleProfile_XRadius, ECN::ECValue(val));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-double CircleProfile::GetYRadius() const
-    {
-    return GetPropertyValueDouble(PRF_PROP_CircleProfile_XRadius);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CircleProfile::SetYRadius(double val)
-    {
-    SetPropertyValue(PRF_PROP_CircleProfile_XRadius, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_CircleProfile_Radius, ECN::ECValue(val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

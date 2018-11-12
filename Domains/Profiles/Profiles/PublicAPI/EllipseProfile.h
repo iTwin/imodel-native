@@ -30,11 +30,8 @@ public:
 
     PROFILES_EXPORT static CircleProfilePtr Create(Dgn::DgnModelCR model);
 
-    PROFILES_EXPORT double GetXRadius() const;
-    PROFILES_EXPORT void SetXRadius(double val);
-
-    PROFILES_EXPORT double GetYRadius() const;
-    PROFILES_EXPORT void SetYRadius(double val);
+    PROFILES_EXPORT double GetRadius() const;
+    PROFILES_EXPORT void SetRadius(double val);
 
     }; // CircleProfile
 

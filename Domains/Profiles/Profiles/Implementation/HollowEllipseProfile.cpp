@@ -25,33 +25,17 @@ HollowCircleProfilePtr HollowCircleProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double HollowCircleProfile::GetXRadius() const
+double HollowCircleProfile::GetRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_HollowCircleProfile_XRadius);
+    return GetPropertyValueDouble(PRF_PROP_HollowCircleProfile_Radius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowCircleProfile::SetXRadius(double val)
+void HollowCircleProfile::SetRadius(double val)
     {
-    SetPropertyValue(PRF_PROP_HollowCircleProfile_XRadius, ECN::ECValue(val));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-double HollowCircleProfile::GetYRadius() const
-    {
-    return GetPropertyValueDouble(PRF_PROP_HollowCircleProfile_YRadius);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void HollowCircleProfile::SetYRadius(double val)
-    {
-    SetPropertyValue(PRF_PROP_HollowCircleProfile_YRadius, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_HollowCircleProfile_Radius, ECN::ECValue(val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
