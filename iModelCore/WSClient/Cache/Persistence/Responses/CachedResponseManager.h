@@ -78,7 +78,6 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
             uint64_t page,
             Utf8StringCR propertyName
             );
-        BentleyStatus DeleteResponses(ECSqlStatementPtr statement, const ECInstanceKeyMultiMap& nodesToLeave);
 
         //! When instance is of cached data, get CacheNodeKey for it.
         //! Return same if its from cache schema
