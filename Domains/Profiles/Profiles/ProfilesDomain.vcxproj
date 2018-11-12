@@ -45,8 +45,8 @@
     <ClCompile Include="Implementation\DerivedProfile.cpp" />
     <ClCompile Include="Implementation\DoubleCShapeProfile.cpp" />
     <ClCompile Include="Implementation\DoubleLShapeProfile.cpp" />
-    <ClCompile Include="Implementation\EllipseProfile.cpp" />
-    <ClCompile Include="Implementation\HollowEllipseProfile.cpp" />
+    <ClCompile Include="Implementation\CircleProfile.cpp" />
+    <ClCompile Include="Implementation\HollowCircleProfile.cpp" />
     <ClCompile Include="Implementation\HollowRectangleProfile.cpp" />
     <ClCompile Include="Implementation\IShapeProfile.cpp" />
     <ClCompile Include="Implementation\LShapeProfile.cpp" />
@@ -81,8 +81,8 @@
     <ClInclude Include="PublicAPI\DerivedProfile.h" />
     <ClInclude Include="PublicAPI\DoubleCShapeProfile.h" />
     <ClInclude Include="PublicAPI\DoubleLShapeProfile.h" />
-    <ClInclude Include="PublicAPI\EllipseProfile.h" />
-    <ClInclude Include="PublicAPI\HollowEllipseProfile.h" />
+    <ClInclude Include="PublicAPI\CircleProfile.h" />
+    <ClInclude Include="PublicAPI\HollowCircleProfile.h" />
     <ClInclude Include="PublicAPI\HollowRectangleProfile.h" />
     <ClInclude Include="PublicAPI\IShapeProfile.h" />
     <ClInclude Include="PublicAPI\LShapeProfile.h" />

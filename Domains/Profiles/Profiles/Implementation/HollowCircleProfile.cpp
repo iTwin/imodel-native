@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/Implementation/HollowEllipseProfile.cpp $
+|     $Source: Profiles/Implementation/HollowCircleProfile.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles\HollowEllipseProfile.h>
+#include <Profiles\HollowCircleProfile.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE

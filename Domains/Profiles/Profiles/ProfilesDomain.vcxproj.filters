@@ -79,12 +79,6 @@
     <ClCompile Include="Implementation\DerivedProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Implementation\EllipseProfile.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
-    <ClCompile Include="Implementation\HollowEllipseProfile.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="Implementation\HollowRectangleProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
@@ -139,6 +133,12 @@
     <ClCompile Include="Implementation\DoubleLShapeProfile.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="Implementation\HollowCircleProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\CircleProfile.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Implementation\ProfilesInternal.h">
@@ -181,12 +181,6 @@
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DerivedProfile.h">
-      <Filter>Src\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\EllipseProfile.h">
-      <Filter>Src\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\HollowEllipseProfile.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\HollowRectangleProfile.h">
@@ -244,6 +238,12 @@
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DoubleLShapeProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\HollowCircleProfile.h">
+      <Filter>Src\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CircleProfile.h">
       <Filter>Src\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>

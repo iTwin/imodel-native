@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/PublicAPI/HollowEllipseProfile.h $
+|     $Source: Profiles/PublicAPI/CircleProfile.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,6 @@
 
 #include "ProfilesDefinitions.h"
 #include "CenteredProfile.h"
-#include "ProfileMixins.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -17,34 +16,34 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct HollowCircleProfile : CenteredProfile, ICenterLineProfile
+struct CircleProfile : CenteredProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowCircleProfile, CenteredProfile);
-    friend struct HollowCircleProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CircleProfile, CenteredProfile);
+    friend struct CircleProfileHandler;
 
 protected:
-    explicit HollowCircleProfile(CreateParams const& params) : T_Super(params) {}
+    explicit CircleProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(HollowCircleProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowCircleProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(CircleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CircleProfile)
 
-    PROFILES_EXPORT static HollowCircleProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CircleProfilePtr Create(Dgn::DgnModelCR model);
 
     PROFILES_EXPORT double GetRadius() const;
     PROFILES_EXPORT void SetRadius(double val);
 
-    }; // HollowCircleProfile
+    }; // CircleProfile
 
 //=======================================================================================
-//! Handler for HollowCircleProfile class
+//! Handler for CircleProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HollowCircleProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE CircleProfileHandler : CenteredProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowCircleProfile, HollowCircleProfile, HollowCircleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CircleProfile, CircleProfile, CircleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
 
-    }; // HollowCircleProfileHandler
+    }; // CircleProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

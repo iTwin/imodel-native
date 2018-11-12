@@ -25,8 +25,8 @@
 #include <Profiles\CustomShapeProfile.h>
 #include <Profiles\DoubleCShapeProfile.h>
 #include <Profiles\DoubleLShapeProfile.h>
-#include <Profiles\EllipseProfile.h>
-#include <Profiles\HollowEllipseProfile.h>
+#include <Profiles\CircleProfile.h>
+#include <Profiles\HollowCircleProfile.h>
 #include <Profiles\HollowRectangleProfile.h>
 #include <Profiles\IShapeProfile.h>
 #include <Profiles\LShapeProfile.h>

@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/Implementation/EllipseProfile.cpp $
+|     $Source: Profiles/Implementation/CircleProfile.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles\EllipseProfile.h>
+#include <Profiles\CircleProfile.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
