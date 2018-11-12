@@ -132,6 +132,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_inputFileName;
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
+		Utf8String m_jobSubjectName;
 
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;

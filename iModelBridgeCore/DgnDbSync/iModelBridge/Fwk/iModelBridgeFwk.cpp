@@ -210,10 +210,11 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
         L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
-        L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-assetsDir=            (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
         L"--fwk-bridgeAssetsDir=      (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
         L"--fwk-imodelbank-url=       (optional)  The URL of the iModelBank server to use. If none is provided, then iModelHub will be used.\n"
+        L"--fwk-job-subject-name=     (optional)  The unique name of the Job Subject element that the bridge must use.\n"
+        L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-jobrequest-guid=      (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
         );
     }
@@ -433,7 +434,11 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             m_jobRequestId = getArgValue(argv[iArg]);
             continue;
             }
-
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-job-subject-name="))
+            {
+            m_jobSubjectName = getArgValue(argv[iArg]);
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
         return BSIERROR;
@@ -1076,6 +1081,8 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
     //Set up Dms files would have loaded the DMS accesor. Set it on the params for the Dgnv8 Bridge
     params.m_dmsSupport = m_dmsSupport;
     params.SetPushIntermediateRevisions(iModelBridge::Params::PushIntermediateRevisions::ByFile);
+	if (!m_jobEnvArgs.m_jobSubjectName.empty())
+		params.SetBridgeJobName(m_jobEnvArgs.m_jobSubjectName);
     }
 
 /*---------------------------------------------------------------------------------**//**
