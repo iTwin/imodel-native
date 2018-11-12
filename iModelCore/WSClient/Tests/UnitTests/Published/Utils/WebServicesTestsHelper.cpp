@@ -162,11 +162,15 @@ Http::Response StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, 
 WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
     {
     BeVersion serverVersion;
-    if (webApiVersion >= BeVersion(2, 8))
+    if (webApiVersion >= BeVersion(2, 9))
+        {
+        serverVersion = BeVersion(2, 9);
+        }
+    else if (webApiVersion >= BeVersion(2, 8))
         {
         serverVersion = BeVersion(2, 8);
         }
-    if (webApiVersion >= BeVersion(2, 7))
+    else if (webApiVersion >= BeVersion(2, 7))
         {
         serverVersion = BeVersion(2, 7);
         }
@@ -372,6 +376,9 @@ BeFileName StubFile(Utf8StringCR content, Utf8StringCR customFileName)
     {
     BeFileName filePath = StubFilePath(customFileName);
 
+    if (!filePath.GetDirectoryName().DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(filePath.GetDirectoryName()));
+
     BeFile file;
     file.Create(filePath);
     file.Write(nullptr, content.c_str(), static_cast<uint32_t>(content.length()));
@@ -383,6 +390,9 @@ BeFileName StubFile(Utf8StringCR content, Utf8StringCR customFileName)
 BeFileName StubFileWithSize(uint64_t bytesCount, Utf8StringCR customFileName)
     {
     BeFileName filePath = StubFilePath(customFileName);
+
+    if (!filePath.GetDirectoryName().DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(filePath.GetDirectoryName()));
 
     BeFile file;
     EXPECT_EQ(BeFileStatus::Success, file.Create(filePath));

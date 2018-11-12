@@ -13,6 +13,7 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+typedef std::deque<ECInstanceKey> ECInstanceKeyDeque;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -73,7 +74,8 @@ struct SyncCachedDataTask : public CachingTaskBase
         void StartCaching();
         void CacheInitialInstances(CacheTransactionCR txn, const bset<Instance>& instanceKeys);
 
-        void ContinueCachingQueries(CacheTransactionCR txn);
+        void ContinueCachingQueries();
+        AsyncTaskPtr<void> PrepareCachingQueriesAsync(ECInstanceKeyDeque cachedInstancesDeque, bool syncRecursively);
         void PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively);
 
         void InvalidatePersistentInstances();

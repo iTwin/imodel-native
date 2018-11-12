@@ -88,7 +88,7 @@ struct DiskRepositoryClient : public IWSRepositoryClient
         virtual IWSClientPtr GetWSClient() const override
             {
             return m_client;
-            };
+            }
 
         virtual Utf8StringCR GetRepositoryId() const override
             {
@@ -98,12 +98,17 @@ struct DiskRepositoryClient : public IWSRepositoryClient
         virtual void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic) override
             {
             BeAssert(false);
-            };
+            }
 
         virtual AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override
             {
             FBC_NOT_IMPLEMENTED(WSVoidResult);
-            };
+            }
+
+        virtual AsyncTaskPtr<WSVoidResult> VerifyAccessWithOptions(RequestOptionsPtr options = nullptr, ICancellationTokenPtr ct = nullptr) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSVoidResult);
+            }
 
         virtual void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override {};
 
@@ -115,7 +120,15 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             repo.SetServerUrl("FakeUrl");
             repo.SetId("FakeId");
             return CreateCompletedAsyncTask(WSRepositoryResult::Success(repo));
-            };
+            }
+
+        virtual AsyncTaskPtr<WSRepositoryResult> GetInfoWithOptions(RequestOptionsPtr options = nullptr, ICancellationTokenPtr ct = nullptr) const override
+            {
+            WSRepository repo;
+            repo.SetServerUrl("FakeUrl");
+            repo.SetId("FakeId");
+            return CreateCompletedAsyncTask(WSRepositoryResult::Success(repo));
+            }
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
@@ -127,10 +140,32 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             FBC_NOT_IMPLEMENTED(WSObjectsResult);
             }
 
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSObjectsResult);
+            }
+
         virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
             ObjectIdCR parentObjectId,
             Utf8StringCR eTag = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSObjectsResult);
+            }
+
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequestWithOptions
+            (
+            ObjectIdCR parentObjectId,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
@@ -142,6 +177,18 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             ObjectIdCR parentObjectId,
             const bset<Utf8String>& propertiesToSelect,
             Utf8StringCR eTag = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSObjectsResult);
+            }
+
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequestWithOptions
+            (
+            ObjectIdCR parentObjectId,
+            const bset<Utf8String>& propertiesToSelect,
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {
@@ -169,17 +216,52 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             FBC_NOT_IMPLEMENTED(WSResult);
             }
 
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequestWithOptions
+            (
+            ObjectIdCR objectId,
+            Http::HttpBodyPtr responseBodyOut,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSResult);
+            }
+
         virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequestWithOptions
+            (
+            Utf8StringCR eTag = nullptr,
+            RequestOptionsPtr options = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSObjectsResult);
+            }
+
         virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
             WSQueryCR query,
             Utf8StringCR eTag = nullptr,
             Utf8StringCR skipToken = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSObjectsResult);
+            }
+
+        virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequestWithOptions
+            (
+            WSQueryCR query,
+            Utf8StringCR eTag = nullptr,
+            Utf8StringCR skipToken = nullptr,
+            RequestOptionsPtr options = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override
             {

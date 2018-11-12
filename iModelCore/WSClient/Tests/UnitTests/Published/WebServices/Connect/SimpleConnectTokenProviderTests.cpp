@@ -31,6 +31,7 @@ TEST_F(SimpleConnectTokenProviderTests, UpdateToken_DefaultCallback_ReturnsNullT
     SimpleConnectTokenProvider provider(token);
 
     EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
+    EXPECT_EQ(nullptr, provider.GetToken());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -44,18 +45,53 @@ TEST_F(SimpleConnectTokenProviderTests, UpdateToken_CreatedWithTokenAndUpdateCal
     SimpleConnectTokenProvider provider(token, onUpdate);
 
     EXPECT_EQ("NewToken", provider.UpdateToken()->GetResult()->AsString());
+    EXPECT_EQ("NewToken", provider.GetToken()->AsString());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             julius.cepukenas    10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SimpleConnectTokenProviderTests, GetToken_AfterUpdateToken_SameToken)
+TEST_F(SimpleConnectTokenProviderTests, GetToken_CreatedWithStringToken_ReturnsCorrectToken)
     {
-    auto onUpdate = [] { return CreateCompletedAsyncTask<ISecurityTokenPtr>(std::make_shared<SecurityToken>("NewToken")); };
+    SimpleConnectTokenProvider provider("token");
 
-    auto token = std::make_shared<SecurityToken>("token");
-    SimpleConnectTokenProvider provider(token, onUpdate);
+    EXPECT_EQ("token", provider.GetToken()->AsString());
+    EXPECT_EQ("token", provider.GetToken()->ToAuthorizationString());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleConnectTokenProviderTests, UpdateToken_CreatedWithStringAndDefaultCallback_ReturnsNullToken)
+    {
+    SimpleConnectTokenProvider provider("token");
+
+    EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
+    EXPECT_EQ(nullptr, provider.GetToken());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                              julius.cepukenas    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleConnectTokenProviderTests, UpdateToken_CreatedWithStringAndUpdateCallback_CallsAndReturnsUpdateCallbackResult)
+    {
+    auto onUpdate = [] { return CreateCompletedAsyncTask<Utf8String>("NewToken"); };
+
+    SimpleConnectTokenProvider provider("token", onUpdate);
 
     EXPECT_EQ("NewToken", provider.UpdateToken()->GetResult()->AsString());
     EXPECT_EQ("NewToken", provider.GetToken()->AsString());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             julius.cepukenas    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleConnectTokenProviderTests, UpdateToken_CreatedWithOnUpdateThatReturnsEmptyString_ReturnsNullToken)
+    {
+    auto onUpdate = [] { return CreateCompletedAsyncTask<Utf8String>(""); };
+
+    SimpleConnectTokenProvider provider("token", onUpdate);
+
+    EXPECT_EQ(nullptr, provider.UpdateToken()->GetResult());
+    EXPECT_EQ(nullptr, provider.GetToken());
     }

@@ -52,7 +52,7 @@ struct VersionsTests : public iModelTestsBase
     +---------------+---------------+---------------+---------------+---------------+------*/
     void ValidateThumbnailSelection(bvector<VersionInfoPtr> versions, Thumbnail::Size expectedSizes)
         {
-        for each (VersionInfoPtr version in versions)
+        for (VersionInfoPtr version: versions)
             {
             if (version->GetId() != s_version5->GetId() &&
                 version->GetId() != s_version10->GetId() &&
@@ -403,7 +403,7 @@ TEST_F(VersionsTests, GetVersionsWithThumbnails)
     for (int i = 0; i <= 6; i++)
         {
         bvector<Utf8String> versionIds = versionsWithoutThumbnails;
-        for each (Utf8String versionId in versionIds)
+        for (Utf8String versionId : versionIds)
             {
             VersionInfoPtr version = versionManager.GetVersionById(versionId, nullptr, Thumbnail::Size::Large)->GetResult().GetValue();
             if ("" == version->GetLargeThumbnailId())
