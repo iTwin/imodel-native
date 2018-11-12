@@ -46,7 +46,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE EllipseProfileHandler : CenteredProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_EllipseProfile, EllipseProfile, EllipseProfileHandler, EllipseProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_EllipseProfile, EllipseProfile, EllipseProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
 
     }; // EllipseProfileHandler
 
