@@ -779,6 +779,30 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi2
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_ActivityIdSpecifiedAndWebApi27_SendsRequestsWithSpecifiedMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_STREQ("specifiedActivityId", actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions().SetActivityId("specifiedActivityId");
+
+    client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+
+    EXPECT_TRUE(options->GetActivityOptions().HasActivityId());
+    EXPECT_STREQ("specifiedActivityId", options->GetActivityOptions().GetActivityId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyObjectId_ErrorNotSupported)
