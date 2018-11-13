@@ -12,7 +12,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="ScalableMeshSchemaIos" OnlyPlatforms="iOSARM64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchemaIos.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1">
+    
+<!--    <Part Name="ScalableMeshSchemaIos" OnlyPlatforms="iOSARM64" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchemaIos.mke" ApiNumber="B02" BentleyBuildMakeOptions="-dUSE_STATIC_LIBRARIES=1 -dCREATE_STATIC_LIBRARIES=1"> -->
+      <Part Name="ScalableMeshSchemaIos" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchemaIos.mke" ApiNumber="B02" > 
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
         <SubPart PartName="ScalableMeshCoreStaticLinux" PartFile="ScalableMesh" Repository="ScalableMesh" LibType="Static"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" LibType="Static"/>
