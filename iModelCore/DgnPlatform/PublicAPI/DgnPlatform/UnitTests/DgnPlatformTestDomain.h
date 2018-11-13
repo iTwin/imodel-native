@@ -496,45 +496,6 @@ struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
 };
 
 //=======================================================================================
-//! A test IDgnElementDependencyHandler
-// @bsiclass                                                     Sam.Wilson      01/15
-//=======================================================================================
-struct TestElementDrivesElementHandler : Dgn::DgnElementDependencyHandler
-    {
-    struct Callback
-    {
-        virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) = 0;
-        virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData) = 0;
-    };
-private:
-    DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, TestElementDrivesElementHandler, Dgn::DgnDomain::Handler, )
-    static bool s_shouldFail;
-    static bool s_shouldFailFatal;
-    bvector<EC::ECInstanceId> m_relIds;
-    bvector<Dgn::dgn_TxnTable::ElementDep::DepRelData> m_deletedRels;
-    static Callback* s_callback;
-
-    void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
-    void _ProcessDeletedDependency(Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData) override;
-
-public:
-    void Clear() {m_relIds.clear(); m_deletedRels.clear();}
-    static void SetCallback(Callback* cb) { s_callback = cb; }
-
-    static void SetShouldFail(bool b) {s_shouldFail = b;}
-    static void SetShouldFailFatal(bool b) { s_shouldFailFatal = b; }
-
-    static void UpdateProperty1(Dgn::DgnDbR, EC::ECInstanceKeyCR);
-    static void SetProperty1(Dgn::DgnDbR, Utf8CP, EC::ECInstanceKeyCR);
-    static Utf8String GetProperty1(Dgn::DgnDbR, EC::ECInstanceId);
-
-    static ECN::ECClassCR GetECClass(Dgn::DgnDbR db) {return *db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);}
-
-    static ECInstanceKey Insert(Dgn::DgnDbR db, Dgn::DgnElementId root, Dgn::DgnElementId dependent);
-    static BeSQLite::DbResult Delete(Dgn::DgnDbR db, ECInstanceKeyCR key);
-    };
-
-//=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
 struct DgnPlatformTestDomain : Dgn::DgnDomain

@@ -577,73 +577,7 @@ TEST_F(ImportTest, OpenStatementsProblem)
     ASSERT_TRUE(model2.IsValid());
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
-TEST_F(ImportTest, ImportElementsWithDependencies)
-{
-    SetupSeedProject(L"ImportElementsWithDependencies.bim", Db::OpenMode::ReadWrite, true);
-    TestElementDrivesElementHandler::GetHandler().Clear();
-
-    // ******************************
-    //  Create model1
-
-    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
-
-    // Create 2 elements and make the first depend on the second
-    {
-        DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
-
-        TestElementPtr e1 = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "e1");
-        ASSERT_TRUE(m_db->Elements().Insert(*e1).IsValid());
-
-        TestElementPtr e2 = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "e2");
-        ASSERT_TRUE(m_db->Elements().Insert(*e2).IsValid());
-
-        TestElementDrivesElementHandler::Insert(*m_db, e2->GetElementId(), e1->GetElementId());
-
-        m_db->SaveChanges();
-
-        ASSERT_EQ(TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1);
-        TestElementDrivesElementHandler::GetHandler().Clear();
-    }
-
-    //  ******************************
-    //  Create model2 as a copy of model1
-    if (true)
-    {
-        PhysicalPartitionCPtr partition2 = PhysicalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "Partition2");
-        ASSERT_TRUE(partition2.IsValid());
-        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, partition2->GetElementId());
-        ASSERT_TRUE(model2.IsValid());
-
-        m_db->SaveChanges();
-        ASSERT_EQ(TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1);
-        TestElementDrivesElementHandler::GetHandler().Clear();
-    }
-
-    //  *******************************
-    //  Import into separate db
-    if (true)
-    {
-        DgnDbPtr db2 = openCopyOfDb(L"ImportElementsWithDependencies_Destination.bim");
-        ASSERT_TRUE(db2.IsValid());
-
-        DgnImportContext import3(*m_db, *db2);
-        DgnDbStatus stat;
-        PhysicalPartitionCPtr partition3 = PhysicalPartition::CreateAndInsert(*db2->Elements().GetRootSubject(), "Partition3");
-        ASSERT_TRUE(partition3.IsValid());
-        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3, *partition3);
-        ASSERT_TRUE(model3.IsValid());
-        ASSERT_EQ(DgnDbStatus::Success, stat);
-
-        db2->SaveChanges();
-
-        ASSERT_EQ(TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1);
-        TestElementDrivesElementHandler::GetHandler().Clear();
-    }
-}
-
+#if defined JS_TXN_MGR_CHANGE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle      02/18
 //---------------------------------------------------------------------------------------
@@ -729,6 +663,7 @@ TEST_F(ImportTest, InsertOtherElementsInElementDrivesElementOnRootChanged)
 
     TestElementDrivesElementHandler::GetHandler().Clear();
     }
+#endif
 
 #if defined (BENTLEY_WIN32) // Relies on getting fonts from the OS; this is Windows Desktop-only.
 

@@ -811,8 +811,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     void SetIModelDb(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, obj, );
+        auto jsTxn = obj.Get("txns");  // should have a member object named "txns"
+        if  (jsTxn.IsUndefined())
+            return;
+
         if (m_dgndb.IsValid())
-            m_dgndb->m_jsIModelDb = &obj;
+            m_dgndb->m_jsIModelDb = Napi::ObjectReference::New(obj);
     }
 
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)

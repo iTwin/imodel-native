@@ -50,6 +50,31 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
     ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Napi::Object DgnDb::GetJsTnxs() 
+    {
+    return  m_jsIModelDb == nullptr ? Napi::Object() : m_jsIModelDb.Get("txns").As<Napi::Object>();  // should have a member object named "txns"
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Napi::String DgnDb::GetJsClassName(DgnElementId id) 
+    {
+    auto el = Elements().Get<DgnElement>(id);
+    return ToJsString(el.IsValid() ? el->GetElementClass()->GetFullName() : "");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) 
+    {
+    obj.Get(methodName).As<Napi::Function>().Call(obj, args);
+    }
+
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016

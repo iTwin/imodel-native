@@ -51,13 +51,6 @@ enum class TxnAction
 //=======================================================================================
 //! Interface to be implemented to monitor changes to a DgnDb.
 //! Call DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor to register a TxnMonitor.
-//!<p>
-//! Here is an example of how to implement a TxnMonitor that checks for deleted elements by their ECClass.
-//!<p>
-//! __PUBLISH_INSERT_FILE__ TxnManager_TxnMonitor_ElementsByClass_Includes.sampleCode
-//! __PUBLISH_INSERT_FILE__ TxnManager_TxnMonitor_ElementsByClass.sampleCode
-//!
-//! @ingroup GROUP_TxnManager
 // @bsiclass                                                      Keith.Bentley   10/07
 //=======================================================================================
 struct TxnMonitor
@@ -65,7 +58,7 @@ struct TxnMonitor
     virtual void _OnCommit(TxnManager&) {}
     virtual void _OnCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
-    virtual void _OnPrepareForUndoRedo() {}
+    virtual void _OnPrepareForUndoRedo(TxnManager&) {}
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
@@ -309,6 +302,7 @@ private:
     bool m_initTableHandlers;
     bool m_enableNotifyTxnMonitors;
     bool m_enableRebasers;
+
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnCommitted(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
@@ -351,6 +345,7 @@ private:
     void CancelDynamics();
 
 public:
+    void CallJsMonitors(Utf8CP methodName, int* arg = nullptr);
     DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
     DgnDbStatus DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private

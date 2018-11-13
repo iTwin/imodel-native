@@ -28,10 +28,7 @@ HANDLER_DEFINE_MEMBERS(TestInformationRecordHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestGroupHandler)
-HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
-bool TestElementDrivesElementHandler::s_shouldFail;
-bool TestElementDrivesElementHandler::s_shouldFailFatal;
 TestDriverBundle::Callback* TestDriverBundle::s_callback = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
@@ -605,81 +602,6 @@ DgnDbStatus TestMultiAspect::_SetPropertyValue(Utf8CP propertyName, ECN::ECValue
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElementDrivesElementHandler::_OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target)
-    {
-    if (s_shouldFail)
-        db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Warning, "ABC failed"));
-    if (s_shouldFailFatal)
-        db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Fatal, "ABC failed"));
-
-    m_relIds.push_back(relationshipId);
-
-    if (nullptr != s_callback)
-        s_callback->_OnRootChanged(db, relationshipId, source, target);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElementDrivesElementHandler::_ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData)
-    {
-    m_deletedRels.push_back(relData);
-
-    if (nullptr != s_callback)
-        s_callback->_ProcessDeletedDependency(db, relData);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceKeyCR key)
-    {
-    SetProperty1(db, "changed", key);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElementDrivesElementHandler::SetProperty1(DgnDbR db, Utf8CP value, EC::ECInstanceKeyCR key)
-    {
-    auto inst = db.Schemas().GetClass(key.GetClassId())->GetDefaultStandaloneEnabler()->CreateInstance();
-    inst->SetValue("Property1", ECN::ECValue(value));
-    ASSERT_EQ(BE_SQLITE_OK, db.UpdateLinkTableRelationshipProperties(key, *inst));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TestElementDrivesElementHandler::GetProperty1(DgnDbR db, EC::ECInstanceId id)
-    {
-    ECSqlStatement stmt;
-    stmt.Prepare(db, "SELECT Property1 FROM " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " WHERE(ECInstanceId=?)");
-    stmt.BindId(1, id);
-    EXPECT_EQ(stmt.Step(), BE_SQLITE_ROW);
-    return stmt.GetValueText(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId root, DgnElementId dependent)
-    {
-    ECInstanceKey rkey;
-    db.InsertLinkTableRelationship(rkey, (ECN::ECRelationshipClassCR)(GetECClass(db)), root, dependent);
-    return rkey;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mindaugas.Butkus                07/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult TestElementDrivesElementHandler::Delete(Dgn::DgnDbR db, ECInstanceKeyCR key)
-    {
-    return db.DeleteLinkTableRelationship(key);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
@@ -695,8 +617,4 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestInformationRecordHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
-    RegisterHandler(TestElementDrivesElementHandler::GetHandler());
     }
-
-TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;
-

@@ -63,6 +63,8 @@
 #include <ECObjects/ECSchema.h>
 #include <Units/Units.h>
 #include <Logging/bentleylogging.h>
+#include <node-addon-api/napi.h>
+
 
 #define DGNCORE_RUNONCE_CHECK(VAR) {if (VAR) return; VAR=true;}
 #define DGNCORELOG NativeLogging::LoggingManager::GetLogger(L"DgnPlatform")

@@ -1,16 +1,9 @@
-rem echo off
+echo off
 SETLOCAL
 
 if not defined OutRoot goto :badOutRoot
 
-if [%1] == [] (
-  if not defined imodeljsDir (
-    echo testing
-  )
-  set tempDir=%imodeljsDir%
-) else (
-  set tempDir=%1
-)
+set tempDir=%imodeljsDir%
 
 if not exist %tempDir% goto :badJsDir
 
@@ -32,7 +25,7 @@ echo This is a Development build, and this semaphore helps bypass native version
 goto :xit
 
 :badJsDir
-echo Set the environment variable imodeljsDir, or pass an argument, that points to an imodeljs directory.
+echo Set the environment variable imodeljsDir that points to an imodeljs directory.
 goto :xit
 
 :badOutRoot
