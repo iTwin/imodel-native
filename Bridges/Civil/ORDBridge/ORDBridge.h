@@ -23,7 +23,7 @@ private:
     BentleyStatus CreateSyncInfoIfNecessary();
 
     Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams m_params;
-    std::unique_ptr<ORDConverter> m_converter;
+    ORDConverter* m_converter;
 
 protected:
     Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR);
@@ -58,7 +58,15 @@ public:
     static WCharCP GetRegistrySubKey() { return L"OpenRoadsDesignerBridge"; }
     static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
 
-    ORDBridge() {}
+    ORDBridge() : m_converter(nullptr) {}
+    virtual ~ORDBridge()
+        {
+        if (m_converter != nullptr)
+            {
+            delete m_converter;
+            m_converter = nullptr;
+            }
+        }
 };
 
 END_ORDBRIDGE_NAMESPACE

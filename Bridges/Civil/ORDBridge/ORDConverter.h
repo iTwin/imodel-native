@@ -71,6 +71,11 @@ public:
         m_skipECContent = false;
         }
 
+    virtual ~ORDConverter()
+        {
+
+        }
+
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
     void SetIsProcessing(bool newVal) { m_isProcessing = newVal; }
 

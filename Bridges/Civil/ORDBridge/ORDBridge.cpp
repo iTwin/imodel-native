@@ -316,7 +316,9 @@ BentleyStatus ORDBridge::CreateSyncInfoIfNecessary()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
     {
-    m_converter.reset(new ORDConverter(m_params));
+    if (m_converter != nullptr)
+        delete m_converter;
+    m_converter = new ORDConverter(m_params);
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
     if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())
@@ -330,7 +332,20 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDBridge::_OnCloseBim(BentleyStatus)
     {
-    m_converter.reset(nullptr); // this also has the side effect of closing the source files
+    // this also has the side effect of closing the source files
+    if (m_converter != nullptr)
+        {
+        IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+            {
+            // TODO: Some CIF object smart pointers are blowing up after deleting 
+            // the converter instance.  Look into this!
+            //delete m_converter;
+            }
+        IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(;)
+            {
+            }
+        m_converter = nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
