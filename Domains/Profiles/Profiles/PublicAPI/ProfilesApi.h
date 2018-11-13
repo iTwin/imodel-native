@@ -19,7 +19,7 @@
 #include "CenterLineZShapeProfile.h"
 #include "CompositeProfile.h"
 #include "CShapeProfile.h"
-#include "CustomCenterLineProfile.h"
+#include "ArbitraryCenterLineProfile.h"
 #include "CustomCompositeProfile.h"
 #include "ArbitraryShapeProfile.h"
 #include "DoubleCShapeProfile.h"
