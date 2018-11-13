@@ -156,6 +156,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_Profile_Shape                                                   "Shape"
 #define PRF_PROP_RectangleProfile_Width                                          "Width"
 #define PRF_PROP_RectangleProfile_Depth                                          "Depth"
+#define PRF_PROP_RegularPolygonProfile_SideCount                                 "SideCount"
+#define PRF_PROP_RegularPolygonProfile_SideLength                                "SideLength"
 #define PRF_PROP_RoundedRectangleProfile_Width                                   "Width"
 #define PRF_PROP_RoundedRectangleProfile_Depth                                   "Depth"
 #define PRF_PROP_RoundedRectangleProfile_RoundingRadius                          "RoundingRadius"

@@ -30,6 +30,12 @@ public:
 
     PROFILES_EXPORT static RegularPolygonProfilePtr Create(/*TODO: args*/);
 
+    PROFILES_EXPORT double GetSideCount() const;
+    PROFILES_EXPORT void SetSideCount(double val);
+
+    PROFILES_EXPORT double GetSideLength() const;
+    PROFILES_EXPORT void SetSideLength(double val);
+
     }; // RegularPolygonProfile
 
 //=======================================================================================
