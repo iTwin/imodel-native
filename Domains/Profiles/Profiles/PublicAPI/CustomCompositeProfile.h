@@ -16,31 +16,31 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! A Profile comprised of multiple SinglePerimeterProfiles.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CustomCompositeProfile : CompositeProfile
+struct ArbitraryCompositeProfile : CompositeProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomCompositeProfile, CompositeProfile);
-    friend struct CustomCompositeProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCompositeProfile, CompositeProfile);
+    friend struct ArbitraryCompositeProfileHandler;
 
 protected:
-    explicit CustomCompositeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit ArbitraryCompositeProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(CustomCompositeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CustomCompositeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(ArbitraryCompositeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(ArbitraryCompositeProfile)
 
-    PROFILES_EXPORT static CustomCompositeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static ArbitraryCompositeProfilePtr Create(/*TODO: args*/);
 
-    }; // CustomCompositeProfile
+    }; // ArbitraryCompositeProfile
 
 //=======================================================================================
-//! Handler for CustomCompositeProfile class
+//! Handler for ArbitraryCompositeProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CustomCompositeProfileHandler : CompositeProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCompositeProfileHandler : CompositeProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CustomCompositeProfile, CustomCompositeProfile, CustomCompositeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCompositeProfile, ArbitraryCompositeProfile, ArbitraryCompositeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
 
-    }; // CustomCompositeProfileHandler
+    }; // ArbitraryCompositeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

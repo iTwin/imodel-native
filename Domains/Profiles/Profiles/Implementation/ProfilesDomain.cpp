@@ -55,7 +55,7 @@ ProfilesDomain::ProfilesDomain() : DgnDomain(PRF_SCHEMA_NAME, "Bentley Profiles 
     RegisterHandler(CompositeProfileHandler::GetHandler());
     RegisterHandler(DoubleLShapeProfileHandler::GetHandler());
     RegisterHandler(DoubleCShapeProfileHandler::GetHandler());
-    RegisterHandler(CustomCompositeProfileHandler::GetHandler());
+    RegisterHandler(ArbitraryCompositeProfileHandler::GetHandler());
     RegisterHandler(SinglePerimeterProfileHandler::GetHandler());
     RegisterHandler(ArbitraryShapeProfileHandler::GetHandler());
     RegisterHandler(ArbitraryCenterLineProfileHandler::GetHandler());
