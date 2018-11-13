@@ -385,6 +385,7 @@ protected:
 
     virtual ClipVectorCP _GetClipVector() const { return nullptr; } // clip vector used by DrawArgs when rendering
     virtual Transform _GetTransform(RenderContextR context) const { return GetLocation(); } // transform used by DrawArgs when rendering
+    virtual bool _IsBackgroundImagery() const { return false; } // drawn before scene without depth.
     Transform GetDisplayTransform(RenderContextR context) const;
 
     virtual void _OnAddToRangeIndex(DRange3dCR range, DgnElementId id) { }

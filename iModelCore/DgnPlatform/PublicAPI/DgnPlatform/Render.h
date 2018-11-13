@@ -3392,6 +3392,7 @@ struct GraphicBranch
     ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
     FeatureSymbologyOverridesCPtr m_symbologyOverrides;
+    bool m_isBackgroundImagery = false;
 
     void Add(Graphic& graphic) {m_entries.push_back(&graphic);BeAssert(m_entries.back().IsValid());}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }

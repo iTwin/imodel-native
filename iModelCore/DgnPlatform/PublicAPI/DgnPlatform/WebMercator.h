@@ -117,6 +117,7 @@ struct MapRoot : TileTree::QuadTree::Root
     DPoint3d ToWorldPoint(GeoPoint);
     Utf8String _ConstructTileResource(TileTree::TileCR tile) const override;
     Utf8CP _GetName() const override {return "WebMercator";}
+    bool _IsBackgroundImagery() const override {return true;}
 
     MapRoot(DgnDbR db, DgnModelId modelId, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}

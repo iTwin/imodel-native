@@ -1969,7 +1969,7 @@ DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTi
     : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan),
     m_viewFlagsOverrides(root._GetViewFlagsOverrides())
     {
-    //
+    m_graphics.m_isBackgroundImagery = root._IsBackgroundImagery();
     }
 
 /*---------------------------------------------------------------------------------**//**
