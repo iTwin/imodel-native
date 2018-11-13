@@ -1,0 +1,47 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: apps/winx64/imodeljswinx64-exe.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName = imodeljswinx64
+o = $(OutputRootDir)Build/$(appName)/
+
+always:
+    ~mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)imodeljswinx64-main$(oext) : $(_MakeFilePath)imodeljswinx64-main.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Link the executable
+#--------------------------------------------------------------------------------------
+EXE_DEST            = $(o)
+EXE_NAME            = $(appName)
+EXE_OBJS            = $(MultiCompileObjectList)
+
+%ifdef __unix
+
+THIN_ARCHIVE_NAME = libimodeljswinx64SubParts.a
+%include $(SharedMki)rollUpSubPartsLibsThin.mki
+EXE_OBJS + $(THIN_ARCHIVE_PATH)
+
+%else
+
+EXE_LOPT1           = -entry:wmainCRTStartup
+
+LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(libprefix)iModelJs$(libext)
+
+%endif
+
+%include $(SharedMki)linktool.mki
