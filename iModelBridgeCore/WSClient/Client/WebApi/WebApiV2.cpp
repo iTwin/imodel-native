@@ -16,7 +16,6 @@
 #define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
 #define HEADER_MasFileETag                 "Mas-File-ETag"
 #define HEADER_MasServerHeader             "Mas-Server"
-#define HEADER_MasRequestId                "Mas-Request-Id"
 
 #define VALUE_FileAccessUrlType_Azure      "AzureBlobSasUrl"
 #define VALUE_True                         "true"
@@ -261,7 +260,12 @@ ActivityLogger WebApiV2::CreateActivityLogger(Utf8StringCR activityName, IWSRepo
     else
         activityId = m_configuration->GetActivityIdGenerator().GenerateNextId();
 
-    return ActivityLogger(LOG, activityName, HEADER_MasRequestId, activityId);
+    auto headerName = IWSRepositoryClient::ActivityOptions::HeaderName::Default;
+    if (nullptr != options)
+        headerName = options->GetActivityOptions().GetHeaderName();
+    Utf8String headerNameString = IWSRepositoryClient::ActivityOptions::HeaderNameToString(headerName);
+
+    return ActivityLogger(LOG, activityName, headerNameString, activityId);
     }
 
 /*--------------------------------------------------------------------------------------+
