@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -84,7 +84,7 @@ private:
     virtual ImportCommandBase*  _Create(SourceDataSQLite&      sourceData) const = 0;
 
 protected:
-    virtual                     ~CmdCreator                () = 0 {}
+    virtual                     ~CmdCreator                () {}
 
 
     const DataTypeFamily*       LoadType(SourceDataSQLite&      sourceData) const

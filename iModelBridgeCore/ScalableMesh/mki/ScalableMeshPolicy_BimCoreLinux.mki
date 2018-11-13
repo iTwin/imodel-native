@@ -28,21 +28,34 @@ nameToDefine = __BENTLEYSTM_BUILD__
 nameToDefine = LINUX_SCALABLEMESH_BUILD
 %include cdefapnd.mki
 
+%include PlatformSetup.mki
 %include DefaultToolSet.mki
 
 NO_DEFAULT_CLANG_WARNINGS = 1
 
+%message "BimCore MKI"
+%message $(BUILD_TOOLSET)
+#no MS compatibility for Android
+%if $(BUILD_TOOLSET) == "ANDROID_CLANG"
+ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor  -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+%else
 #Linux options
 ClangCppCompOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
 ClangCppPchOpts + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
 CCompOpts +  -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
 cuser + -Wno-error=pragma-once-outside-header -DLINUX_SCALABLEMESH_BUILD -Wno-error=unknown-pragmas -Wno-error=unused-private-field -Wno-error=unused-value -fdelayed-template-parsing -Wno-error=inconsistent-missing-override -Wno-error=format -Wno-error=delete-non-virtual-dtor -fms-compatibility -fms-compatibility-version=19 -Wno-error=bool-conversion -Wno-error=microsoft-unqualified-friend -Wno-error=microsoft-pure-definition -Wno-error=microsoft-template -Wno-error=enum-compare -Wno-error=unused-variable -Wno-error=microsoft-default-arg-redefinition -Wno-error=typename-missing -Wno-error=dynamic-class-memaccess -D__CLANG__ -Wno-error=invalid-noreturn
+%endif
 
 %if $(BUILD_TOOLSET) != "CLANG"
+%if $(BUILD_TOOLSET) != "ANDROID_CLANG"
     ClangCppCompOpts + -fopenmp
     ClangCppPchOpts + -fopenmp
     CCompOpts + -fopenmp
     cuser + -fopenmp
+%endif
 %endif
 
 # ------------------------------------
