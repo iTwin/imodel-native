@@ -1195,9 +1195,9 @@ bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& e
     datumDef.delta_X = deltaX;
     datumDef.delta_Y = deltaY;
     datumDef.delta_Z = deltaZ;
-    datumDef.rot_X = rotX;
-    datumDef.rot_Y = rotY;
-    datumDef.rot_Z = rotZ;
+    datumDef.rot_X = -rotX; // Sign reversal because EPSG:9606 convention is normally used.
+    datumDef.rot_Y = -rotY;
+    datumDef.rot_Z = -rotZ;
     datumDef.bwscale = scalePPM;
     datumDef.to84_via = cs_DTCTYP_7PARM;
 
@@ -1228,6 +1228,41 @@ bool FindDatumFromTransformationParams(WString& paramDatumName, const WString& e
         }
 
     paramDatum->Destroy();
+
+
+    // If we get here then we have not found the correct datum. This may be due to the fact the rotations signs refer to EPSG:9607 convention though it should not.
+    // We inverse rotations signs and start over.
+    datumDef.rot_X = rotX; // Sign reversal because EPSG:9606 convention is normally used.
+    datumDef.rot_Y = rotY;
+    datumDef.rot_Z = rotZ;
+
+    paramDatum = Datum::CreateDatum(datumDef, LibraryManager::Instance()->GetSystemLibrary());
+
+    if (!paramDatum->IsValid())
+        {
+        paramDatum->Destroy();
+        return false;
+        }
+
+    foundIndex = -1;
+    for (index = 0; ((foundIndex < 0) && (0 < CSMap::CS_dtEnum(index, dtKeyName, sizeof(dtKeyName)))); index++)
+        {
+        DatumCP indexDatum = Datum::CreateDatum(WString(dtKeyName, false).c_str());
+
+        if (indexDatum->IsValid() && DatumEquivalent(*(paramDatum->GetCSDatum()), *(indexDatum->GetCSDatum()), false, true))
+            {
+            paramDatumName = WString(dtKeyName, false);
+            paramDatum->Destroy();
+            indexDatum->Destroy();
+            return true;
+            }
+        indexDatum->Destroy();
+
+        }
+
+    paramDatum->Destroy();
+
+
     return false;
     }
 
@@ -1316,7 +1351,7 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             if (SUCCESS != (status = GetTOWGS84 (wkt, deltaX, deltaY, deltaZ, rotX, rotY, rotZ, scalePPM)))
                 return status;
             else
-                transfoParamPresent = true;
+                transfoParamPresent = true; // Note that the rotation convention is according to operation EPSG:9606 which is reverse to our convention
 
         // Check end of section
         if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L"]")))
@@ -6301,7 +6336,7 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
     if (SUCCESS != status || (m_csParameters->prj_code == cs_PRJCOD_WCCST && wktFlavorOGC == wktFlavor) || 
                              (m_csParameters->prj_code == cs_PRJCOD_MNDOTT && wktFlavorOGC == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MNDOTL && wktFlavorOGC == wktFlavor) ||
-                             (m_csParameters->prj_code == cs_PRJCOD_HOM1XY && wktFlavorOracle9 == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_HOM1XY) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorGeoTiff == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOracle == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOracle9 == wktFlavor) ||
@@ -6312,7 +6347,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                              (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAK) ||
                              (m_csParameters->prj_code == cs_PRJCOD_KROVAKMOD) ||
-                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOGC == wktFlavor && AString(m_csParameters->csdef.key_nm) == "EPSG:900913" ))
+                             (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorOGC == wktFlavor && AString(m_csParameters->csdef.key_nm) == "EPSG:900913" ) ||
+                             (WString(wellKnownText).find(L"TOWGS84") != WString::npos))
                             
         {
         try {
