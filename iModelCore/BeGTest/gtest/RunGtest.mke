@@ -117,11 +117,7 @@ always:
 
 %message See $(ResultsCapture)
 
-BreakOnFailure = 0
-%if defined (BEGTEST_BREAK_ON_FAILURE)
-	BreakOnFailure = 1
-%endif
-
 always:
-	python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
+	python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] 1
 	~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
+

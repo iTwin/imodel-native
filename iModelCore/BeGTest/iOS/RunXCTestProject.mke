@@ -81,13 +81,9 @@ always:
         -xcodebuild test -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
     %endif
 
-BreakOnFailure = 0
-%if defined (BEGTEST_BREAK_ON_FAILURE)
-    BreakOnFailure = 1
-%endif
-
 always:
-    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
+    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] 1
 
 always:
     ~linkfile "$(BuildContext)Delivery/XCTest/Logs/$(XCTEST_LOGFILE_NAME)=$(logFile)"
+
