@@ -73,17 +73,17 @@ void CenterLineLShapeProfile::SetFilletRadius(double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CenterLineLShapeProfile::GetLipLength() const
+double CenterLineLShapeProfile::GetGirth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_LipLength);
+    return GetPropertyValueDouble(PRF_PROP_CenterLineLShapeProfile_Girth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CenterLineLShapeProfile::SetLipLength(double val)
+void CenterLineLShapeProfile::SetGirth(double val)
     {
-    SetPropertyValue(PRF_PROP_CenterLineLShapeProfile_LipLength, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_CenterLineLShapeProfile_Girth, ECN::ECValue(val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

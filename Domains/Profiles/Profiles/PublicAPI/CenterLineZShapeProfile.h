@@ -41,8 +41,8 @@ public:
     PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius(double val);
 
-    PROFILES_EXPORT double GetLipLength() const;
-    PROFILES_EXPORT void SetLipLength(double val);
+    PROFILES_EXPORT double GetGirth() const;
+    PROFILES_EXPORT void SetGirth(double val);
 
     }; // CenterLineZShapeProfile
 
