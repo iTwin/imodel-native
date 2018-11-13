@@ -900,7 +900,7 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_parasolidBodies.clear ();
 
     // start block stack by input entity's block
-    auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase();
+    auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
     auto blockId = nullptr == ent ? dwg->GetModelspaceId() : ent->GetOwnerId();
     m_blockStack.push_back (BlockInfo(blockId, L"ModelSpace", DwgSyncInfo::GetDwgFileId(*dwg)));
     }

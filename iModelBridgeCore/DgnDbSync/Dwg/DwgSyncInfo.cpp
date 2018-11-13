@@ -2024,7 +2024,7 @@ DwgSyncInfo::Material   DwgSyncInfo::InsertMaterial (RenderMaterialId id, DwgDbM
         {
         prov.m_id = RenderMaterialId ();
         m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, IssueCategory::Sync(), Issue::MaterialError(),
-                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
+                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id.GetValue()).c_str());
         }
 
     return prov;
@@ -2184,7 +2184,7 @@ DwgSyncInfo::Group   DwgSyncInfo::InsertGroup (DgnElementId id, DwgDbGroupCR gro
         {
         prov.m_id = DgnElementId ();
         m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, IssueCategory::Sync(), Issue::GroupError(),
-                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
+                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id.GetValue()).c_str());
         }
 
     return prov;

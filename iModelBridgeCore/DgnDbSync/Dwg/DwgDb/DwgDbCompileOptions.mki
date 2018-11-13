@@ -58,6 +58,9 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
     # C4505: unreferenced local function has been removed
     CCompOpts + -wd4505
 
+    # C5043: 'operator new' exception specification does not match previous declaration
+    CCompOpts + -wd5043
+
 %if defined (DEBUG_TEIGHA_SOURCE)
     # C4005: 'WIN32_LEAN_AND_MEAN' : macro redefinition in ExSystemServices.cpp
     CCompOpts + -wd4005

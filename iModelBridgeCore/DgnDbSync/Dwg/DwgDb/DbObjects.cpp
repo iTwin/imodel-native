@@ -201,7 +201,7 @@ void            DwgDbDictionaryIterator::Next () { nullptr!=m_dictionaryIterator
 bool            DwgDbDictionaryIterator::Done () const { return nullptr!=m_dictionaryIterator && m_dictionaryIterator->done(); }
 bool            DwgDbDictionaryIterator::SetPosition (DwgDbObjectIdCR id) { return nullptr!=m_dictionaryIterator && m_dictionaryIterator->setPosition(id); }
 DwgDbObjectId   DwgDbDictionaryIterator::GetObjectId () const { return nullptr!=m_dictionaryIterator ? m_dictionaryIterator->objectId() : DwgDbObjectId(); }
-DwgString       DwgDbDictionaryIterator::GetName () const { return nullptr!=m_dictionaryIterator ? m_dictionaryIterator->name() : DwgString(); }
+DwgString       DwgDbDictionaryIterator::GetName () const { return nullptr!=m_dictionaryIterator ? DwgString(m_dictionaryIterator->name()) : DwgString(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/16

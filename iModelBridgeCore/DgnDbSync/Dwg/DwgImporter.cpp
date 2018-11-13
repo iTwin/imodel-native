@@ -921,7 +921,7 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
     DgnClassId  modelType = this->_GetModelType (dwgBlock);
     DgnModelId  modelId = this->CreateModel (dwgBlock, modelName.c_str(), modelType);
     if (!modelId.IsValid())
-        return nullptr;
+        return ResolvedModelMapping();
 
     DgnModelP   model = m_dgndb->Models().GetModel(modelId).get ();
     if (nullptr == model)

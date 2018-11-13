@@ -19,9 +19,9 @@ static DwgBridge*   s_dwgBridgeInstance = nullptr;
 
 // Need different registry keys for OpenDWG and RealDWG bridge installers to avoid conflicts uninstalling the products.
 #ifdef DWGTOOLKIT_OpenDwg
-    static wchar_t* s_dwgBridgeRegKey = L"OpenDwgBridge";
+    static const wchar_t* s_dwgBridgeRegKey = L"OpenDwgBridge";
 #elif DWGTOOLKIT_RealDwg
-    static wchar_t* s_dwgBridgeRegKey = L"RealDwgBridge";
+    static const wchar_t* s_dwgBridgeRegKey = L"RealDwgBridge";
 #endif
 
 
