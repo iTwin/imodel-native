@@ -1,4 +1,16 @@
-import argparse, json, os, sys
+import argparse, json, os, sys, time
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+def doubleToTimeString(start, end):
+    d = (end - start)
+
+    if d < 60:
+        return "{:0.2f} second(s)".format(d)
+    
+    if d < 60*60:
+        return str(d/60.0) + " minutes(s)"
+
+    return str(d/(60.0*60.0)) + " hour(s)"
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 def main():
@@ -16,6 +28,11 @@ def main():
 
     with open(args.config, 'r') as configFile:
         config = json.load(configFile)
+
+    callTimes = {}
+    status = 0
+
+    totalTimeStart = time.time()
 
     for stratConfig in config['strategies']:
         if args.arch and not args.arch.lower() in stratConfig['archs'].lower().split('+'):
@@ -77,15 +94,26 @@ def main():
             action)
         
         print(cmd)
+        cmdStartTime = time.time()
         status = os.system(cmd)
+        callTimes[stratConfig['name']] = doubleToTimeString(cmdStartTime, time.time())
         
         # On Linux, `bash` seems to return 256 on an error, regardless of what the SH script actually returns.
         # Linux + VSTS agent only expects error codes 0..255.
         # I don't think the actual code is important here, so remap to 0/1.
         if status != 0:
-            return 1
+            status = 1
+            break
     
-    return 0
+    print('--------------------------------------------------')
+    for cmd in callTimes:
+        print('{1} of {2} took {3}'.format(args.action, cmd, callTimes[cmd]))
+
+    print('')
+    print('Total time: ' + doubleToTimeString(totalTimeStart, time.time()))
+    print('--------------------------------------------------')
+
+    return status
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
