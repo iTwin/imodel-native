@@ -107,7 +107,7 @@ def main():
     
     print('--------------------------------------------------')
     for cmd in callTimes:
-        print('{1} of {2} took {3}'.format(args.action, cmd, callTimes[cmd]))
+        print('{0} of {1} took {2}'.format(args.action, cmd, callTimes[cmd]))
 
     print('')
     print('Total time: ' + doubleToTimeString(totalTimeStart, time.time()))
