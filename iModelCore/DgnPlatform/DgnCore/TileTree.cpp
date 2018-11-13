@@ -1632,7 +1632,7 @@ void OctTree::Tile::_ValidateChildren() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MissingNodes::Insert(TileCR tile, bool prioritize)
     {
-    if (tile.IsNotLoaded())
+    if (tile._IsPartial() || tile.IsNotLoaded())
         m_set.insert(Node(tile, prioritize));
     }
 
