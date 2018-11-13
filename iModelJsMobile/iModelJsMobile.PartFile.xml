@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="iModelJsMobile.Dev" PrgOutputDir="iModelJsMobile">
+        <SubPart PartName="iModelCorePRG" PartFile="iModelCore" Repository="DgnPlatform"/>
+        <SubPart PartName="RunGtest"/>
+    </Part>
+
+    <Part Name="iModelJs" BentleyBuildMakeFile="iModelJs.mke" ApiNumber="B02">
+        <RequiredRepository>Libsrc-websocketpp</RequiredRepository>
+
+        <SubPart PartName="WebSocketPP" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="libuv" PartFile="libuv" Repository="Thirdparty-libuv" />
+        <SubPart PartName="node-addon-api"/>
+        <SubPart PartName="iModelJsNodeAddonLib-Mobile" Repository="iModelJsNodeAddon" PartFile="iModelJsNodeAddon" />
+        <SubPart PartName="iModelJsWindows-Only-SubParts" />
+
+        <Bindings>
+            <PublicAPI Domain="iModelJs" />
+            <Libs>Delivery/$(libprefix)iModelJs$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)iModelJs$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelJsWindows-Only-SubParts" OnlyPlatforms="x64,x86">
+        <SdkSource>google_v8_winx64</SdkSource>
+    </Part>
+
+    <Part Name="node-addon-api" BentleyBuildMakeFile="prewirenapi.mke">
+        <Bindings>
+            <PublicAPI Domain="node-addon-api"/>
+        </Bindings>
+    </Part>
+
+    <!-- ========================================================================================================
+      Platform-specific apps
+     ======================================================================================================== -->
+    <!-- This is a fake product that allows for testing of the mobile architecture on Windows desktop -->
+    <Product Name="imodeljswinx64-product">
+        <SubPart PartName="imodeljswinx64-exe" LibType="Dynamic"/>
+        <SubPart PartName="imodeljswinx64-unix" LibType="Static"/>
+        <Directories DirectoryListName="imodeljswinx64" />
+    </Product>
+
+    <Part Name="imodeljswinx64-exe" BentleyBuildMakeFile="apps/winx64/imodeljswinx64-exe.mke" OnlyPlatforms="x64">
+        <SubPart PartName="iModelJs" LibType="Dynamic" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/imodeljswinx64$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="imodeljswinx64-unix" BentleyBuildMakeFile="apps/winx64/imodeljswinx64-exe.mke" OnlyPlatforms="MacOS*,Linux*">
+        <SubPart PartName="iModelJs" LibType="Static" />
+        <Bindings>
+            <Files ProductDirectoryName="ApplicationRoot">Delivery/imodeljswinx64$(exeext)</Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="imodeljswinx64">
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="ApplicationRoot" Path="" LibType="Static"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"   RelativeTo="ApplicationRoot" LibType="Static"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"  LibType="static"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
+    </ProductDirectoryList>
+
+    <Part Name="imodeljsiosapp" BentleyBuildMakeFile="nonport/iOS/iModelJsApp/iModelJsApp.mke">
+        <SubPart PartName="iModelJs" LibType="Static" />
+    </Part>
+
+    <!-- ========================================================================================================
+      Build Unit Tests
+     ======================================================================================================== -->
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="iModelJs" SubPartDirectory="UnitTests/iModelJs">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTestsEnvironment" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Environment">
+        <SubPart PartName="iModelJs" />
+        <SubPart PartName="PrewireForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="iModelJs/Environment" SourceName="Delivery/UnitTests/Objects/Environment"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="UnitTestsEnvironment" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="iModelJs/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="Tests">
+        <SubPart PartName="UnitTests-NonPublished"/>
+    </Part>
+
+    <Product Name="iModelJs-Tests">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <!-- ********************** -->
+    <!-- **** Gtest        **** -->
+    <!-- ********************** -->
+
+    <Part Name="Gtest-Base" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
+    BentleyBuildMakeOptions="-dTEST_NAME=iModelJsTests -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64">
+        <SubProduct ProductName="iModelJs-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelJsTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelJsTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Part Name="Gtest-Windows" OnlyPlatforms="x64">
+        <SubPart PartName="Gtest-Base" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="Gtest-Unix" OnlyPlatforms="MacOS*,Linux*,iOSARM64">
+        <SubPart PartName="Gtest-Base" LibType="Static"/>
+    </Part>
+
+    <Product Name="iModelJs-Gtest">
+        <SubPart PartName="Gtest-Windows"/>
+        <SubPart PartName="Gtest-Unix"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=iModelJs-Gtest -dGTEST_NAME=iModelJsTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/iModelJsTests" OnlyPlatforms="x86,x64,MacOs*,Linux*,iOSARM64">
+        <SubProduct ProductName="iModelJs-Gtest" />
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** AndroidJUnit **** -->
+    <!-- ********************** -->
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelJs -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+        <SubProduct ProductName="iModelJs-Tests"/>
+        <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="AndroidJUnit-Project" SourceName="Delivery/ANJU/iModelJs/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelJs-AndroidJUnit" >
+        <SubPart PartName="AndroidJUnit" LibType="Static"/>
+        <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=iModelJs-AndroidJUnit" OnlyPlatforms="Android*">
+        <SubProduct ProductName="iModelJs-AndroidJUnit"/>
+    </Part>
+
+    <!-- ********************** -->
+    <!-- **** iOSXCTest **** -->
+    <!-- ********************** -->
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=iModelJs -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="iModelJs-Tests"/>
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/iModelJs/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelJs-iOSXCTest" >
+        <SubPart PartName="iOSXCTest" LibType="Static"/>
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=iModelJs-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="iModelJs-iOSXCTest"/>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest" DeferType="BuildUnitTests"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=iModelJs -dTEST_COLLECTION_PRODUCT=iModelJs-Tests -dTEST_FRAMEWORK_SQLANG=iModelJsNodeAddon_en.sqlang.db3"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="B02"
+        >
+        <SubProduct ProductName="iModelJs-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/iModelJsUwpTest"/>
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelJs-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=iModelJs-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubProduct ProductName="iModelJs-UwpTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/iModelJs-UwpTest.log</Files>
+        </Bindings>
+
+    </Part>
+
+</BuildContext>
