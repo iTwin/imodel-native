@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/Implementation/CustomShapeProfile.cpp $
+|     $Source: Profiles/Implementation/ArbitraryShapeProfile.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles\CustomShapeProfile.h>
+#include <Profiles\ArbitraryShapeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 

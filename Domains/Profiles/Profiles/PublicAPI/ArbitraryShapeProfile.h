@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/PublicAPI/CustomShapeProfile.h $
+|     $Source: Profiles/PublicAPI/ArbitraryShapeProfile.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -21,7 +21,7 @@
 #include "CShapeProfile.h"
 #include "CustomCenterLineProfile.h"
 #include "CustomCompositeProfile.h"
-#include "CustomShapeProfile.h"
+#include "ArbitraryShapeProfile.h"
 #include "DoubleCShapeProfile.h"
 #include "DoubleLShapeProfile.h"
 #include "EllipseProfile.h"
