@@ -29,6 +29,7 @@
 #include <map>
 
 #ifdef __APPLE__
+    #define _RWSTD_NO_IMPLICIT_INCLUSION
 	#define TARGET_CPU_ARM64 1
 #endif	
 #include <BeSQLite/BeSQLite.h>
