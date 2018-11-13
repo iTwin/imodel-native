@@ -43,9 +43,6 @@ public:
     PROFILES_EXPORT DPoint2d GetScale() const;
     PROFILES_EXPORT void SetScale(DPoint2dCR val);
 
-    PROFILES_EXPORT DPoint2d GetCardinalPoint() const;
-    PROFILES_EXPORT void SetCardinalPoint(DPoint2dCR val);
-
     }; // DerivedProfile
 
 //=======================================================================================

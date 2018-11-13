@@ -84,20 +84,4 @@ void DerivedProfile::SetScale(DPoint2dCR val)
     SetPropertyValue(PRF_PROP_DerivedProfile_Scale, ECN::ECValue(val));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d DerivedProfile::GetCardinalPoint() const
-    {
-    return GetPropertyValueDPoint2d(PRF_PROP_DerivedProfile_CardinalPoint);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DerivedProfile::SetCardinalPoint(DPoint2dCR val)
-    {
-    SetPropertyValue(PRF_PROP_DerivedProfile_CardinalPoint, ECN::ECValue(val));
-    }
-
 END_BENTLEY_PROFILES_NAMESPACE
