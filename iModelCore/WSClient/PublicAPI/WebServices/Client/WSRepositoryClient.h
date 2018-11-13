@@ -499,18 +499,34 @@ struct IWSRepositoryClient::RequestOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IWSRepositoryClient::ActivityOptions
     {
+    public:
+        enum class HeaderName
+            {
+            MasRequestId,
+            XCorrelationId,
+            Default = MasRequestId
+            };
+
     private:
+        HeaderName m_headerName;
         Utf8String m_activityId;
 
     public:
         ActivityOptions() :
+        m_headerName(HeaderName::Default),
         m_activityId(Utf8String())
             {}
 
-        //! Activity id for all Http requests in current Api method
+        //! Header name for Activity id in each Http request to WSG
+        void SetHeaderName(HeaderName headerName) { m_headerName = headerName; }
+        HeaderName GetHeaderName() const { return m_headerName; }
+
+        //! Activity id for all Http requests in current Api method. Optional
         void SetActivityId(Utf8StringCR activityId) { m_activityId = activityId; }
         Utf8StringCR GetActivityId() const { return m_activityId; }
         bool HasActivityId() const { return !m_activityId.empty(); }
+
+        WSCLIENT_EXPORT static Utf8String HeaderNameToString(HeaderName headerName);
     };
 
 /*--------------------------------------------------------------------------------------+
