@@ -90,13 +90,9 @@ $(logFile) : $(TestBundle)
 
 %message See $(logFile)
 
-BreakOnFailure = 0
-%if defined (BEGTEST_BREAK_ON_FAILURE)
-    BreakOnFailure = 1
-%endif
-
 always:
-    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
+    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] 1
 
 always:
     ~linkfile "$(BuildContext)Delivery/UwpTest/Logs/$(UWPTEST_LOGFILE_NAME)=$(logFile)"
+
