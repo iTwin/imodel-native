@@ -661,8 +661,19 @@ TEST_F(JsonInserterTests, InsertTimeOfDayValues)
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
             <ECEntityClass typeName="CalendarEntry" modifier="None">
                 <ECProperty propertyName="StartTime" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                            <DateTimeComponent>TimeOfDay</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
                 </ECProperty>
-                <ECProperty propertyName="EndTime" typeName="dateTime" />
+                <ECProperty propertyName="EndTime" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                            <DateTimeComponent>TimeOfDay</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
             </ECEntityClass>
         </ECSchema>)xml")));
 
@@ -680,9 +691,8 @@ TEST_F(JsonInserterTests, InsertTimeOfDayValues)
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
 
-    // WIP: Once we can use the TimeOfDay component in the schema, we need to adjust the expected time strings
-    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T08:00:00.000\", \"EndTime\":\"2000-01-01T17:30:45.500\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key1.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue("[{\"StartTime\": \"2000-01-01T00:00:00.000\", \"EndTime\":\"2000-01-02T00:00:00.000\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key2.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"08:00:00.000\", \"EndTime\":\"17:30:45.500\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key1.GetInstanceId().ToString().c_str()).c_str()));
+    EXPECT_EQ(JsonValue("[{\"StartTime\": \"00:00:00.000\", \"EndTime\":\"00:00:00.000\"}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT StartTime,EndTime FROM ts.CalendarEntry WHERE ECInstanceId=%s", key2.GetInstanceId().ToString().c_str()).c_str()));
     }
 
 #define JSONTABLE_NAME "testjson"

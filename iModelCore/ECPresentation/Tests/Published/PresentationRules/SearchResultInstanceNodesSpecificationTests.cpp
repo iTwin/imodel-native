@@ -401,7 +401,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, WriteToJson)
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "CustomQueryInstanceNodes",
         "priority": 123,
-        "alwaysReturnsChildren": true,
+        "hasChildren": "Always",
         "hideNodesInHierarchy": true,
         "hideIfNoChildren": true,
         "groupByClass": false,
@@ -521,7 +521,7 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<SearchResultInstances Priority="1000" AlwaysReturnsChildren="false" HideNodesInHierarchy="false" HideIfNoChildren="false" ExtendedData="" DoNotSort="false" GroupByClass="false" GroupByLabel="false">)"
+            R"(<SearchResultInstances Priority="1000" HasChildren="Unknown" HideNodesInHierarchy="false" HideIfNoChildren="false" ExtendedData="" DoNotSort="false" GroupByClass="false" GroupByLabel="false">)"
                 R"(<StringQuery SchemaName="TestSchema" ClassName="TestClass">TestQuery</StringQuery>)"
                 R"(<PropertyValueQuery SchemaName="TestSchema" ClassName="TestClass" ParentPropertyName="TestParent"/>)"
             R"(</SearchResultInstances>)"

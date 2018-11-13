@@ -134,7 +134,7 @@ bool JsonNavNode::_HasChildren() const
         return true;
 
     NavNodeExtendedData extendedData(*this);
-    return extendedData.GetAlwaysReturnsChildren();
+    return ChildrenHint::Always == extendedData.GetChildrenHint();
     }
 
 /*---------------------------------------------------------------------------------**//**

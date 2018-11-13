@@ -27,8 +27,6 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 struct Uri : public RefCountedBase
     {
     public:
-        friend struct RealityDataSource;
-
         //! Create a uri with a fully qualified identifier or with separated parts.
         REALITYDATAPLATFORM_EXPORT static UriPtr Create(Utf8CP resourceIdentifier);
         REALITYDATAPLATFORM_EXPORT static UriPtr Create(Utf8CP source, Utf8CP fileInCompound);
@@ -523,6 +521,25 @@ public:
     REALITYDATAPLATFORM_EXPORT SpatialEntityServerP GetServerP();
     REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerPtr server);
 
+    //! Code indicating the visibility of the data. The recognised keywords are:
+    //! PUBLIC_VISIBILITY - Usualy indicates data is public thus useable by anyone
+    //! ENTERPRISE - Usually indicates data can be used by any member of the owning enterprise regardless of access rights
+    //! PERMISSION - Usually indicates that data can be used by someone having the appropriate access rigths. This is the default value.
+    //! PRIVATE - Usually indicates only the owner of the data can use it.
+    REALITYDATAPLATFORM_EXPORT RealityDataBase::Visibility GetVisibility() const;
+    REALITYDATAPLATFORM_EXPORT void SetVisibility(RealityDataBase::Visibility visibility);
+
+    //! Enables setting the visibility by a string. The only valid values are "PUBLIC", "ENTERPRISE", "PERMISSION" and "PRIVATE"
+    //! Returns SUCCESS if value set and ERROR if given tag is invalid
+    //! Note that the tag value UNDEFINED is supported but should not be used if possible. It remains the default value.
+    REALITYDATAPLATFORM_EXPORT Utf8String GetVisibilityTag() const;
+    REALITYDATAPLATFORM_EXPORT StatusInt SetVisibilityByTag(Utf8CP visibility);
+
+    //! Static helper method: converts a visibility tag to a visibility
+    //! Returns SUCCESS if value valid and ERROR if given tag is invalid. In case of error the visibility value remains unchanged
+    REALITYDATAPLATFORM_EXPORT static StatusInt GetVisibilityFromTag(RealityDataBase::Visibility& returnedVisibility, Utf8CP visibilityTag);
+    REALITYDATAPLATFORM_EXPORT static Utf8String GetTagFromVisibility(RealityDataBase::Visibility returnedVisibility);
+
     //! Get/Set
     //! A string containing a key to the data provider. Keys are informally attributed and must 
     //! be representative of the source of the data (not the file distribution organism). 
@@ -575,8 +592,11 @@ protected:
     Utf8String m_noDataValue;
     Utf8String m_coordinateSystem;
 
+    RealityDataBase::Visibility m_visibility;
+
     Utf8String m_provider;
     Utf8String m_providerName;
+
     SpatialEntityMetadataPtr m_pMetadata;
     bvector<UriPtr> m_sisterFiles;
 

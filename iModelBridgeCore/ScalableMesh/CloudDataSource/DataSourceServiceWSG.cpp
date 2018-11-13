@@ -2,7 +2,7 @@
 #include "DataSourceServiceWSG.h"
 #include "DataSourceAccountWSG.h"
 #include "DataSourceAccount.h"
-#include "include\DataSourceServiceWSG.h"
+#include "include/DataSourceServiceWSG.h"
 
 
 DataSourceServiceWSG::DataSourceServiceWSG(DataSourceManager &manager, const DataSourceService::ServiceName & service) : DataSourceService(manager, service)

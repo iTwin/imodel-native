@@ -314,7 +314,7 @@ namespace pcloud
         //  {
         //  #pragma omp for ...........
         //  }
-#if defined (BENTLEY_WIN32) 
+#if defined (BENTLEY_WIN32) && _MSC_VER < 1910 // less then 2017
 			pt::vector3 pnt1;
 			pt::vector3d pnt1d;
 

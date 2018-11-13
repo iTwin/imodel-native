@@ -17,6 +17,7 @@
 struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccessor
     {
     std::map<BentleyApi::WString, std::vector<BentleyApi::BeFileName>> m_assignments;
+    std::map<BentleyApi::BeFileName, iModelBridgeDocumentProperties> m_docProps;
 
     bool _IsFileAssignedToBridge(BentleyApi::BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override
         {
@@ -31,7 +32,15 @@ struct MultiBridgeTestDocumentAccessor : iModelBridge::IDocumentPropertiesAccess
         return false;
         }
 
-    BentleyApi::BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BentleyApi::BeFileNameCR fn) override {return BentleyApi::BSIERROR;}
+    BentleyApi::BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BentleyApi::BeFileNameCR fn) override
+        {
+        auto found = m_docProps.find(fn);
+        if (found == m_docProps.end())
+            return BentleyApi::BSIERROR;
+        props = found->second;
+        return BentleyApi::BSISUCCESS;
+        }
+
     BentleyApi::BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BentleyApi::BeFileNameR localFilePath, BentleyApi::BeSQLite::BeGuid const& docGuid) override {BeAssert(false); return BentleyApi::BSIERROR;}
     BentleyApi::BentleyStatus _AssignFileToBridge(BentleyApi::BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override {BeAssert(false); return BentleyApi::BSIERROR;}
     };
@@ -87,7 +96,7 @@ static void doConvert(DefinitionModelIds& defids,
     params.SetBridgeRegSubKey(bridgeRegSubKey);
     params.SetDocumentPropertiesAccessor(docaccessor);
     params.SetInputFileName(inputFileName);
-    
+    params.m_keepHostAliveForUnitTests = true;
     RootModelConverter converter(params);
     converter.SetDgnDb(db);
     converter.SetIsUpdating(isUpdate);
@@ -282,6 +291,18 @@ static int countElementsInModel(BentleyApi::Dgn::DgnModelCR model)
     return stmt->GetValueInt(0);
     }
 
+static void getModelsInView(DgnModelIdSet& modelsInView, DgnDbR db, Utf8CP codeValue)
+    {
+    auto getViewSelStmt = db.GetPreparedECSqlStatement("SELECT ecinstanceid from bis.SpatialViewDefinition where CodeValue=?");
+    getViewSelStmt->BindText(1, codeValue, BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_ROW, getViewSelStmt->Step());
+    auto viewDef = db.Elements().Get<SpatialViewDefinition>(getViewSelStmt->GetValueId<DgnElementId>(0));
+    ASSERT_TRUE(viewDef.IsValid());
+    auto modSel = db.Elements().Get<ModelSelector>(viewDef->GetModelSelectorId());
+    ASSERT_TRUE(modSel.IsValid());
+    modelsInView = modSel->GetModels();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * This test verifies that a bridge will process all of its assigned documents, 
 * even if they are hidden behind reference attachments that are not assigned to it.
@@ -320,21 +341,73 @@ TEST_F(MultiBridgeTests, Sandwich)
     // r is assigned to rref
     docaccessor.m_assignments[L"r"].push_back(rRefFileName);
 
-    DefinitionModelIds mDefs, rDefs;
+    docaccessor.m_docProps[m_v8FileName] = iModelBridgeDocumentProperties("10000000-0000-0000-0000-000000000001", "wurnm", "durnm", "otherm", "");
+    docaccessor.m_docProps[mRefFileName] = iModelBridgeDocumentProperties("20000000-0000-0000-0000-000000000002", "wurnmr", "durnmr", "othermr", "");
+    docaccessor.m_docProps[rRefFileName] = iModelBridgeDocumentProperties("30000000-0000-0000-0000-000000000003", "wurnrr", "durnrr", "otherrr", "");
+
+    DefinitionModelIds mDefs;
     RunBridge(mDefs, L"m", docaccessor, true);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+
+        // Having run only bridge 'm', we should have only models from files that are assigned to 'm'. 
+        // No model from a file assigned to 'r' should be in the iModel.
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size()) << "No model (master) a file assigned to 'r' should be in the iModel";;
+        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(0, rrefModels.size()) << "No model (rref) from a file assigned to 'r' should be in the iModel";
+        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
+
+        ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
+        ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
+
+        DgnModelIdSet modelsInView;
+        getModelsInView(modelsInView, *db, "Default Views - View 1");
+        ASSERT_EQ(modelsInView.size(), 2) << "No model (rref) from a file assigned to 'r' should be in the iModel and so should not be in the view.";
+        }
+
+    DefinitionModelIds rDefs;
     RunBridge(rDefs, L"r", docaccessor, true);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
 
-    auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
-    ASSERT_TRUE(db.IsValid());
+        // Now that we have run both bridges, we should see all of the original models.
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
+        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
 
-    // Each model is created in the physical partition of each bridge.
-    auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(2, masterModels.size());
-    auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
-    auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, rrefModels.size());
+        ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
+        ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
+        ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
 
-    ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
-    ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
-    ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
+            DgnModelIdSet modelsInView;
+        getModelsInView(modelsInView, *db, "Default Views - View 1");
+        ASSERT_EQ(modelsInView.size(), 2) << "Even though 'r' converted the model rref, since it did not also update the view, the view should still be lacking rref.";
+        }
+
+    // Run m one more time.
+    RunBridge(mDefs, L"m", docaccessor, false);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+
+        // The model and element counts should not have changed.
+        auto masterModels = getModelsByName(*db, "master"); ASSERT_EQ(1, masterModels.size());
+        auto rrefModels = getModelsByName(*db, "rref"); ASSERT_EQ(1, rrefModels.size());
+        auto mrefModels = getModelsByName(*db, "mref"); ASSERT_EQ(1, mrefModels.size());
+
+        ASSERT_EQ(2, countElementsInModel(*masterModels[0]));
+        ASSERT_EQ(2, countElementsInModel(*rrefModels[0]));
+        ASSERT_EQ(2, countElementsInModel(*mrefModels[0]));
+
+        // m should have updated the view definition to include rref.
+        DgnModelIdSet modelsInView;
+        getModelsInView(modelsInView, *db, "Default Views - View 1");
+        ASSERT_EQ(modelsInView.size(), 3) << "bridge 'm' should have update the view to include rref, since it was mapped into the iModel by bridge 'r'.";
+        }
     }
 
 

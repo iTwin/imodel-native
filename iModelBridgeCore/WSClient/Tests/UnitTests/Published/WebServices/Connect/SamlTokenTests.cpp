@@ -185,6 +185,25 @@ TEST_F(SamlTokenTests, AsString_AnyStringPassed_ReturnsSame)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SamlTokenTests, IsValidAt_XmlConditionWithInvalidDateValue_ReturnsFalse)
+    {
+    Utf8String tokenStr =
+        R"(<saml:Assertion MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+            <saml:Conditions 
+                NotBefore   ="2000-01-01T00:00:00.000Z"
+                NotOnOrAfter="notADate">
+            </saml:Conditions>
+        </saml:Assertion>)";
+
+    SamlToken token(tokenStr);
+    BeTest::SetFailOnAssert(false);
+    EXPECT_FALSE(token.IsValidAt(DateTime(DateTime::Kind::Utc, 2100, 01, 01, 0, 0, 0)));
+    BeTest::SetFailOnAssert(true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, IsValidAt_XmlConditionWithDates_ValidOnlyIfBetweenDates)
     {
     Utf8String tokenStr =

@@ -245,11 +245,9 @@ TEST_F(PushRetryTests, ConfirmUploadFails)
 
     std::shared_ptr<MockHttpHandler> blobStorageMockHandler = std::make_shared<MockHttpHandler>();
     blobStorageMockHandler->
-        ExpectRequests(4)
+        ExpectRequests(2)
         .ForRequest(1, SuccessResponse) // Upload file
-        .ForRequest(2, SuccessResponse) // Upload file
-        .ForRequest(3, SuccessResponse) // Upload file
-        .ForRequest(4, SuccessResponse); // Upload file
+        .ForRequest(2, SuccessResponse); // Upload file
 
     // Set other wsclient
     IWSRepositoryClientPtr newClient = iModelHubHelpers::CreateWSClient(s_info, mockHandler);

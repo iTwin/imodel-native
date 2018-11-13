@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* fndsrf.c					   tmi	    10-Apr-1990       */
@@ -28,7 +28,7 @@ int aecDTM_findSurfaceByName /* <= TRUE if error                   */
 (
   struct CIVdtmsrf **srfPP,             /* <= found surface                   */
   struct CIVdtmprj *prjP,               /* => DTM project (or NULL)           */
-  wchar_t *srfNameP                     /* => surface name pointer            */
+  wchar_t const*srfNameP                /* => surface name pointer            */
 )
 {
   int sts = DTM_M_NOSRFF;

@@ -306,6 +306,7 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
     // RULE: All properties should have a description (warn)
     // RULE: All extended types of properties should be on the valid list
     // RULE: All Model subclasses outside of BisCore should not add properties
+    // RULE: All properties with customattribute CustomHandledProperty must have customattribute ClassHasHandler locally defined in their class
     for (ECPropertyP prop : ecClass.GetProperties(false))
         {
         if (prop->GetTypeName().Equals("long") && !prop->GetIsNavigation())
@@ -358,6 +359,13 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
             status = ECObjectsStatus::Error;
             LOG.errorv("Class '%s' adds property '%s.%s' despite being a subclass of 'BisCore:Model' defined outside 'BisCore'. Model subclasses should not add new properties.",
                        ecClass.GetFullName(), ecClass.GetFullName(), prop->GetName().c_str());
+            }
+
+        if (prop->GetCustomAttributeLocal("CustomHandledProperty").IsValid() && ecClass.GetCustomAttributeLocal("ClassHasHandler").IsNull())
+            {
+            LOG.errorv("Property '%s.%s' cannot have CustomAttribute 'CustomHandledProperty'. Class '%s' must define CustomAttribute 'ClassHasHandler' and not derive it from a base class.",
+                       ecClass.GetFullName(), prop->GetName().c_str(), ecClass.GetFullName());
+            status = ECObjectsStatus::Error;
             }
         }
 

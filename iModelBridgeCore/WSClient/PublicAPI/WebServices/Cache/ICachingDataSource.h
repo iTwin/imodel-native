@@ -67,7 +67,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         struct RetrieveOptions;
 
         struct SelectProvider;
-        
+
         struct Progress;
 
         struct Error;
@@ -92,7 +92,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         typedef const FailedObjects& FailedObjectsCR;             
 
         typedef std::function<void(ProgressCR progress)> ProgressCallback;
-        
+
+        struct ProgressHandler
+            {
+            public:
+                ProgressCallback progressCallback;
+                std::function<bool(ECInstanceKeyCR instance, CacheTransactionCR txn)> shouldReportInstanceProgress;
+
+            public:
+                ProgressHandler() : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportInstanceProgress([] (ECInstanceKeyCR instance, CacheTransactionCR txn) { return true; }) {};
+                ProgressHandler(std::nullptr_t) : progressCallback([] (ICachingDataSource::ProgressCR) {}), shouldReportInstanceProgress([] (ECInstanceKeyCR instance, CacheTransactionCR txn) { return true; }) {};
+                ProgressHandler(ProgressCallback callback) : progressCallback(callback), shouldReportInstanceProgress([] (ECInstanceKeyCR instance, CacheTransactionCR txn) { return true; }) {};
+            };
+
+        typedef std::shared_ptr<ProgressHandler> ProgressHandlerPtr;
+
         typedef AsyncResult<void, Error>                    Result;
         typedef AsyncResult<KeysData, Error>                KeysResult;
         typedef AsyncResult<ObjectsData, Error>             ObjectsResult;
@@ -280,7 +294,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param initialInstances - list of instances that should be used to start syncing
         //! @param initialQueries - list of queries that should be used to start syncing
         //! @param queryProviders - list of query providers to get queries and file download option for each instance that is being synced
-        //! @param onProgress - progress callback
+        //! @param progressHandler - progress callback and managment
         //! Synced parameter - reports instances + queries synced. File sync represented by bytes synced.
         //! Note that synced value will fluctuate if query providers return more queries to sync.
         //! Label parameter can be empty or show file label being synced. 
@@ -293,7 +307,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            ProgressCallback onProgress = nullptr,
+            ProgressHandler progressHandler = ProgressHandler(),
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 

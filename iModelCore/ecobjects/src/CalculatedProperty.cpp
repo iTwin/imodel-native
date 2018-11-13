@@ -2,7 +2,7 @@
 |
 |     $Source: src/CalculatedProperty.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -342,35 +342,38 @@ ECObjectsStatus CalculatedPropertySpecification::Evaluate (ECValueR newValue, EC
                 if (nullptr != typeAdapter)
                     {
                     IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*ecprop, instance);
-                    context->SetEvaluationOptions (m_evaluationOptions);
-
-                    if ((allowTypeConversions || enforceGlobalRepresentation) && typeAdapter->RequiresExpressionTypeConversion (m_evaluationOptions) && !typeAdapter->ConvertFromExpressionType (exprValue, *context))
+                    if (context.IsValid())
                         {
-                        gotValue = false;
-                        }
-                    else if (convertUnits && typeAdapter->SupportsUnits())
-                        {
-                        gotValue = false;
-                        UnitSpec units;
+                        context->SetEvaluationOptions(m_evaluationOptions);
 
-                        // We only care about units if the ECProperty is unitized...otherwise ignore units of expression result
-                        if (typeAdapter->GetUnits (units, *context))
+                        if ((allowTypeConversions || enforceGlobalRepresentation) && typeAdapter->RequiresExpressionTypeConversion(m_evaluationOptions) && !typeAdapter->ConvertFromExpressionType(exprValue, *context))
                             {
-                            if (units.IsUnspecified())
-                                gotValue = true;    // not unitized
-                            else
+                            gotValue = false;
+                            }
+                        else if (convertUnits && typeAdapter->SupportsUnits())
+                            {
+                            gotValue = false;
+                            UnitSpec units;
+
+                            // We only care about units if the ECProperty is unitized...otherwise ignore units of expression result
+                            if (typeAdapter->GetUnits(units, *context))
                                 {
-                                // If expression result has no units, assume same units as ECProperty.
-                                UnitSpecCR exprUnits = valueResult->GetResult().GetUnits();
-                                if (exprUnits.IsUnspecified() || exprUnits.IsEquivalent (units))
-                                    gotValue = true;
-                                else if (units.IsCompatible (exprUnits) && exprValue.ConvertToPrimitiveType (PRIMITIVETYPE_Double))
+                                if (units.IsUnspecified())
+                                    gotValue = true;    // not unitized
+                                else
                                     {
-                                    double dv = exprValue.GetDouble();
-                                    if (exprUnits.ConvertTo (dv, units))
+                                    // If expression result has no units, assume same units as ECProperty.
+                                    UnitSpecCR exprUnits = valueResult->GetResult().GetUnits();
+                                    if (exprUnits.IsUnspecified() || exprUnits.IsEquivalent(units))
+                                        gotValue = true;
+                                    else if (units.IsCompatible(exprUnits) && exprValue.ConvertToPrimitiveType(PRIMITIVETYPE_Double))
                                         {
-                                        exprValue.SetDouble (dv);
-                                        gotValue = exprValue.ConvertToPrimitiveType (m_propertyType);
+                                        double dv = exprValue.GetDouble();
+                                        if (exprUnits.ConvertTo(dv, units))
+                                            {
+                                            exprValue.SetDouble(dv);
+                                            gotValue = exprValue.ConvertToPrimitiveType(m_propertyType);
+                                            }
                                         }
                                     }
                                 }

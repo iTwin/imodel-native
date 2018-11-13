@@ -67,13 +67,13 @@ TEST_F(CustomNodeSpecificationTests, LoadsFromJsonWithDefaultValues)
 TEST_F(CustomNodeSpecificationTests, WriteToJson)
     {
     CustomNodeSpecification spec(1000, true, "type", "label", "descr", "imageid");
-    spec.SetAlwaysReturnsChildren(true);
+    spec.SetHasChildren(ChildrenHint::Never);
     spec.SetDoNotSort(true);
     spec.SetHideNodesInHierarchy(true);
     Json::Value json = spec.WriteJson();
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "CustomNode",
-        "alwaysReturnsChildren": true,
+        "hasChildren": "Never",
         "hideNodesInHierarchy": true,
         "hideIfNoChildren": true,
         "doNotSort": true,
@@ -141,7 +141,7 @@ TEST_F(CustomNodeSpecificationTests, WritesToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<CustomNode Priority="1000" AlwaysReturnsChildren="false"
+            R"(<CustomNode Priority="1000" HasChildren="Unknown"
                 HideNodesInHierarchy="false" HideIfNoChildren="false" ExtendedData="" DoNotSort="false"
                 Type="type" Label="label" Description="description" ImageId="imgID"/>)"
         "</Root>";

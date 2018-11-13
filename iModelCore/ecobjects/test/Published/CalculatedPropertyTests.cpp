@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/CalculatedPropertyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -626,4 +626,52 @@ TEST_F(CalculatedPropertyTests, EmptyParserRegExSameAsNoParserRegEx)
     EXPECT_STREQ("Silly", displayLabel.GetUtf8CP());
     }
 
+struct FakeTypeAdapter : IECTypeAdapter
+    {
+    protected:
+        virtual bool                _HasStandardValues() const  { return true; }
+        virtual bool                _IsStruct() const  { return true; }
+        virtual bool                _IsTreatedAsString() const  { return true; }
+
+        virtual IECInstancePtr      _CondenseFormatterForSerialization(ECN::IECInstanceCR formatter) const  { return nullptr; }
+        virtual IECInstancePtr      _PopulateDefaultFormatterProperties(ECN::IECInstanceCR formatter) const  { return nullptr; }
+        virtual IECInstancePtr      _CreateDefaultFormatter(bool includeAllValues, bool forDwg) const  { return nullptr; }
+        virtual bool                _GetPlaceholderValue(ECValueR v, IECTypeAdapterContextCR context) const  { return true; }
+
+        virtual bool                _CanConvertToString(IECTypeAdapterContextCR context) const  { return true; }
+        virtual bool                _CanConvertFromString(IECTypeAdapterContextCR context) const  { return true; }
+        virtual bool                _ConvertToString(Utf8StringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const  { return true; }
+        virtual bool                _ConvertFromString(ECValueR v, Utf8CP str, IECTypeAdapterContextCR context) const  { return true; }
+
+        virtual bool                _RequiresExpressionTypeConversion(EvaluationOptions evalOptions) const  { return true; }
+        virtual bool                _ConvertToExpressionType(ECValueR v, IECTypeAdapterContextCR context) const  { return true; }
+        virtual bool                _ConvertFromExpressionType(ECValueR v, IECTypeAdapterContextCR context) const  { return true; }
+
+        virtual bool                _GetDisplayType(PrimitiveType& type) const  { return true; }
+        virtual bool                _ConvertToDisplayType(ECValueR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const  { return true; }
+        virtual bool                _AllowExpandMembers() const  { return true; }
+
+        virtual bool                _SupportsUnits() const  { return true; }
+        virtual bool                _GetUnits(UnitSpecR unit, IECTypeAdapterContextCR context) const  { return true; }
+
+        virtual bool                _GetPropertyNotSetValue(ECValueR v) const { return false; }
+
+        virtual bool                _IsOrdinalType() const  { return true; }
+
+    public:
+        static RefCountedPtr<FakeTypeAdapter> Create() { return new FakeTypeAdapter(); }
+    };
+
+//--------------------------------------------------------------------------------------//
+// @bsimethod                                                Colin.Kerr         09/17
+//+---------------+---------------+---------------+---------------+---------------+-----//
+TEST_F(CalculatedPropertyTests, CanCalculateValueWhenCachedTypeAdapterSet)
+    {
+    IECInstancePtr instance = CreateTestCase("S", "\"Banana\"", 0, "FAILED");
+    ECPropertyP sProp = instance->GetClass().GetPropertyP("S");
+    
+    RefCountedPtr<FakeTypeAdapter> adapter = FakeTypeAdapter::Create();
+    sProp->SetCachedTypeAdapter(adapter.get());
+    Test(*instance, "S", "Banana");
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

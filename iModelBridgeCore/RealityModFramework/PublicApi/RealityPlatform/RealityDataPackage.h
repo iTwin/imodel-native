@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityDataPackage.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -172,6 +172,12 @@ public:
     REALITYDATAPLATFORM_EXPORT BoundingPolygonCR GetBoundingPolygon() const;    
     REALITYDATAPLATFORM_EXPORT void SetBoundingPolygon(BoundingPolygonR polygon);    // Package object will increment ref count of 'polygon'.
 
+    //! Context provided when the package was created.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContext() const;
+    REALITYDATAPLATFORM_EXPORT void SetContext(Utf8CP context);
+
+
+
     //! A read-only access to data source container. Might be empty.
     REALITYDATAPLATFORM_EXPORT bvector<PackageRealityDataPtr> const& GetImageryGroup() const;
     REALITYDATAPLATFORM_EXPORT bvector<PackageRealityDataPtr> const& GetModelGroup() const;
@@ -216,6 +222,7 @@ private:
     Utf8String m_name;
     Utf8String m_description;
     Utf8String m_copyright;
+    Utf8String m_context;
 
     Utf8String m_id;
     DateTime m_creationDate;

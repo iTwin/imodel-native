@@ -26,7 +26,7 @@ struct HierarchyUpdater;
 enum TaskPriority
     {
     TASK_PRIORITY_RemapNodeIds = 700,
-    TASK_PRIORITY_RemoveDataSource = 500,
+    TASK_PRIORITY_RemoveHierarchyLevel = 500,
     TASK_PRIORITY_RefreshHierarchy = 1000,
     TASK_PRIORITY_InvalidateContent = 500,
     TASK_PRIORITY_Report = 100,
@@ -63,14 +63,14 @@ struct UpdateContext
 private:
     bmap<uint64_t, uint64_t> m_remapInfo;
     bset<uint64_t> m_removedNodeIds;
-    bset<HierarchyLevelInfo> m_handledHierarchies;
+    bset<CombinedHierarchyLevelInfo> m_handledHierarchies;
     bset<Utf8String> m_reportedContentRulesetIds;
 public:
     bmap<uint64_t, uint64_t>& GetRemapInfo() {return m_remapInfo;}
     bset<uint64_t>& GetRemovedNodeIds() {return m_removedNodeIds;}
     bset<uint64_t> const& GetRemovedNodeIds() const {return m_removedNodeIds;}
-    bset<HierarchyLevelInfo>& GetHandledHierarchies() {return m_handledHierarchies;}
-    bset<HierarchyLevelInfo> const& GetHandledHierarchies() const {return m_handledHierarchies;}
+    bset<CombinedHierarchyLevelInfo>& GetHandledHierarchies() {return m_handledHierarchies;}
+    bset<CombinedHierarchyLevelInfo> const& GetHandledHierarchies() const {return m_handledHierarchies;}
     bset<Utf8String>& GetReportedContentRulesetIds() {return m_reportedContentRulesetIds;}
 };
 
@@ -121,7 +121,7 @@ public:
     // hierarchy-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemapNodeIdsTask(bmap<uint64_t, uint64_t> const&) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshHierarchyTask(HierarchyUpdater const&, UpdateContext&, IConnectionCR, HierarchyLevelInfo const&) const;
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemoveDataSourceTask(BeSQLite::BeGuidCR removalId) const;
+    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemoveHierarchyLevelTask(BeSQLite::BeGuidCR removalId) const;
 
     // content-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateContentInvalidationTask(ContentCache&, UpdateContext&, ContentProviderR) const;

@@ -188,12 +188,12 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
             // we will preserve the elevations separately.
             DRange3d queryExtent;
 
-            queryExtent.low.x = ExtentOp<EXTENT>::GetXMin(m_extent);
-            queryExtent.low.y = ExtentOp<EXTENT>::GetYMin(m_extent);
-            queryExtent.low.z = ExtentOp<EXTENT>::GetZMin(m_extent);
-            queryExtent.high.x = ExtentOp<EXTENT>::GetXMax(m_extent);
-            queryExtent.high.y = ExtentOp<EXTENT>::GetYMax(m_extent);
-            queryExtent.high.z = ExtentOp<EXTENT>::GetZMax(m_extent);
+            queryExtent.low.x = ExtentOp<EXTENT>::GetXMin(this->m_extent);
+            queryExtent.low.y = ExtentOp<EXTENT>::GetYMin(this->m_extent);
+            queryExtent.low.z = ExtentOp<EXTENT>::GetZMin(this->m_extent);
+            queryExtent.high.x = ExtentOp<EXTENT>::GetXMax(this->m_extent);
+            queryExtent.high.y = ExtentOp<EXTENT>::GetYMax(this->m_extent);
+            queryExtent.high.z = ExtentOp<EXTENT>::GetZMax(this->m_extent);
 
             GetReprojectedBoxDomainLimited(m_targetGCSPtr, m_sourceGCSPtr, m_viewBox, m_viewBox, queryExtent, NULL);    
 
@@ -202,7 +202,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
 
         virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
         {
-            auto ret = new ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>(m_extent, m_rootToViewMatrix, m_viewportRotMatrix, m_viewBox, m_gatherTileBreaklines);
+            auto ret = new ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>(this->m_extent, this->m_rootToViewMatrix, this->m_viewportRotMatrix, m_viewBox, this->m_gatherTileBreaklines);
             ret->SetMaxPixelError(GetMaxPixelError());
             ret->SetMeanScreenPixelsPerPoint(GetMeanScreenPixelsPerPoint());
             return ret;
@@ -247,7 +247,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelPointIndexQue
         
                             virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
                             {
-                                auto ret = new ScalableMeshQuadTreeLevelPointIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel, m_viewBox);
+                                auto ret = new ScalableMeshQuadTreeLevelPointIndexQuery<POINT, EXTENT>(this->m_extent, this->m_requestedLevel, m_viewBox);
                                 return ret;
                             }
 };        
@@ -320,7 +320,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
 
         virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
         {
-            auto ret = new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel,m_viewBox, m_pixelTolerance);
+            auto ret = new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>(this->m_extent, this->m_requestedLevel, this->m_viewBox, this->m_pixelTolerance);
             ret->m_useAllRes = m_useAllRes;
             ret->m_alwaysVisible = m_alwaysVisible;
             ret->m_extent3d = m_extent3d;
@@ -381,7 +381,7 @@ public:
 
                             void       SetLevel(size_t level)
                             {
-                                m_requestedLevel = level;
+                                this->m_requestedLevel = level;
                             }
         
         // The Query process gathers points up to level depth              
@@ -396,7 +396,7 @@ public:
 
         virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
         {
-            auto ret = new ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel, m_target, m_is2d, m_depth, m_useUnboundedRay, m_intersect);
+            auto ret = new ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, EXTENT>(this->m_extent, this->m_requestedLevel, m_target, m_is2d, m_depth, m_useUnboundedRay, m_intersect);
             return ret;
         }
 };    
@@ -440,7 +440,7 @@ public:
 
         virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
         {
-            auto ret = new ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, EXTENT>(m_extent, m_requestedLevel, m_target, m_depth);
+            auto ret = new ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, EXTENT>(this->m_extent, this->m_requestedLevel, m_target, m_depth);
             return ret;
         }
 
@@ -555,9 +555,9 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
 
         virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
         {
-            auto ret = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>(m_extent, m_rootToViewMatrix, m_viewportRotMatrix, m_viewBox, m_gatherTileBreaklines, m_viewClipVector, m_invertClips, m_maxNumberOfPoints);
-            ret->SetMaxPixelError(GetMaxPixelError());
-            ret->SetMeanScreenPixelsPerPoint(GetMeanScreenPixelsPerPoint());
+            auto ret = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>(this->m_extent, this->m_rootToViewMatrix, this->m_viewportRotMatrix, this->m_viewBox, this->m_gatherTileBreaklines, this->m_viewClipVector, this->m_invertClips, this->m_maxNumberOfPoints);
+            ret->SetMaxPixelError(this->GetMaxPixelError());
+            ret->SetMeanScreenPixelsPerPoint(this->GetMeanScreenPixelsPerPoint());
             return ret;
         }
         
@@ -592,9 +592,9 @@ public:
 
     virtual ISMPointIndexQuery<POINT, EXTENT>* Clone()
     {
-        auto ret = new ScalableMeshQuadTreeContextMeshQuery<POINT, EXTENT>(m_extent, m_rootToViewMatrix, m_viewportRotMatrix, m_viewClipVector);
-        ret->SetMaxPixelError(GetMaxPixelError());
-        ret->SetMeanScreenPixelsPerPoint(GetMeanScreenPixelsPerPoint());
+        auto ret = new ScalableMeshQuadTreeContextMeshQuery<POINT, EXTENT>(this->m_extent, this->m_rootToViewMatrix, this->m_viewportRotMatrix, this->m_viewClipVector);
+        ret->SetMaxPixelError(this->GetMaxPixelError());
+        ret->SetMeanScreenPixelsPerPoint(this->GetMeanScreenPixelsPerPoint());
         return ret;
     }
 };

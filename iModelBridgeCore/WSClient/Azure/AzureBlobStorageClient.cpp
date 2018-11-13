@@ -2,7 +2,7 @@
 |
 |     $Source: Azure/AzureBlobStorageClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -170,6 +170,29 @@ ICancellationTokenPtr ct
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendAsOneChunk
+(
+Utf8StringCR url,
+HttpBodyPtr httpBody,
+uint64_t fileSize,
+Http::Request::ProgressCallbackCR progressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    Http::Request request(url, "PUT", m_customHandler);
+    request.GetHeaders().SetValue("x-ms-blob-type", "BlockBlob");
+    request.SetRequestBody(httpBody);
+    SetCommonRequestOptions(request, Http::Request::RetryOption::ResetTransfer, AzureBlobStorageClient::Timeout::Transfer::Upload, nullptr, progressCallback, ct);
+
+    return request.PerformAsync()->Then<AzureResult>([=] (Http::ResponseCR httpResponse)
+        {
+        return ResolveFinalResponse(httpResponse);
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Andrius.Zonys   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<AzureResult> AzureBlobStorageClient::SendUpdateFileRequest
@@ -198,6 +221,9 @@ ICancellationTokenPtr ct
 
     if (progressCallback)
         progressCallback(0, (double) fileSize);
+
+    if (fileSize <= chunkSize)
+        return SendAsOneChunk(url, body, fileSize, progressCallback, ct);
 
     return SendChunkAndContinue(url, blockIds, body, fileSize, chunkSize, 0, progressCallback, ct);
     }

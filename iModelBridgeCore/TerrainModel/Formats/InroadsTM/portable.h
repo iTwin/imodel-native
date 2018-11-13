@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* portable.h                                                                 */
@@ -172,7 +172,7 @@ struct CString : WString
 template <class A, class AR, class B, class BR> class CMap : public bmap<A, B>
     {
     public: void InitHashTable (int) {}
-            void RemoveAll () { clear (); }
+            void RemoveAll () { this->clear (); }
             void SetAt (A key, B value)
                 {
                 (*this)[key] = value;
@@ -191,7 +191,7 @@ template <class A, class AR, class B, class BR> class CMap : public bmap<A, B>
                 }
             int GetCount ()
                 {
-                return (int)size ();
+                return (int)this->size ();
                 }
             void GetNextAssoc (
                 POSITION& rNextPosition,
@@ -199,8 +199,8 @@ template <class A, class AR, class B, class BR> class CMap : public bmap<A, B>
                 B& rValue
                 ) const
                 {
-                iterator* nextPos = (iterator*)rNextPosition;
-                if ((*nextPos) == end ())
+                typename bmap<A,B>::iterator* nextPos = reinterpret_cast<typename bmap<A,B>::iterator*>(rNextPosition);
+                if ((*nextPos) == this->end ())
                     {
                     delete nextPos;
                     rNextPosition = nullptr;
@@ -214,7 +214,7 @@ template <class A, class AR, class B, class BR> class CMap : public bmap<A, B>
                 }
             POSITION GetStartPosition ()
                 {
-                return (POSITION)new iterator (begin ());
+                return (POSITION)new typename bmap<A,B>::iterator (this->begin ());
                 }
     };
 
@@ -239,7 +239,7 @@ template <class A> class CArray : public bvector<A>
             }
         void RemoveAt (int i)
             {
-            this->erase (begin()+i);
+            this->erase (this->begin()+i);
             }
         void Add (A value)
             {

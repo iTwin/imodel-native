@@ -112,7 +112,7 @@ int IMHSClientExe::CreateNewModelAndPush(Utf8String projectId, Utf8String imodel
 
     // Create model in the briefcase
     Utf8String name;
-    name.Sprintf("TestModeltpt%s", guid);
+    name.Sprintf("TestModeltpt%s", guid.c_str());
     CreateModel(name.c_str(), briefcaseDb);
     BeSQLite::DbResult saveResult = briefcaseDb.SaveChanges();
     if(BE_SQLITE_OK != saveResult)

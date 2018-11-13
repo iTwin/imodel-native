@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpProxy.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,7 @@
 #include <Bentley/Tasks/AsyncTask.h>
 #include <BeHttp/HttpResponse.h>
 #include <BeHttp/Credentials.h>
+#include <BeHttp/BeUri.h>
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
@@ -33,8 +34,10 @@ private:
     
     mutable Utf8String m_pacUrl;
     mutable Utf8String m_pacScript;
-    bvector<Utf8String> m_proxyBypassHosts;
     mutable Tasks::AsyncTaskPtr<Response> m_pacResponseTask;
+
+protected:
+    bvector<Utf8String> m_proxyBypassHosts;
     
 private:
     bool LoadSystemProxySettings();
@@ -42,6 +45,10 @@ private:
     bool DownloadPacScriptIfNeeded();
     BentleyStatus GetProxyUrlsFromPacScript(Utf8StringCR requestUrl, bvector<Utf8String>& proxyUrlsOut) const;
     static Utf8String GetLastErrorAsString();
+
+private:
+    static bool MatchPatternWithUrl(Utf8StringCR pattern, BeUriCR url);
+    static bool MatchPatternWithString(const char* pattern, const char* string);
 
 public:
     //! Create empty proxy

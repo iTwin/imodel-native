@@ -95,7 +95,7 @@ void ScalableMeshThreadPool::_StartWatcherThread()
 #ifndef NDEBUG
 #if _WIN32
     DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(watcherThread.native_handle()));
-    SetThreadName(ThreadId, "SM Watcher Thread");
+    SetThreadName(ThreadId, (char *)"SM Watcher Thread");
 #endif
 #endif
     hasWatcherThread = true;
@@ -109,7 +109,7 @@ void ScalableMeshThreadPool::_StartWork(uint8_t thread)
 #if _WIN32
 #ifndef NDEBUG
     DWORD ThreadId = ::GetThreadId(static_cast<HANDLE>(workerThreads[thread].native_handle()));
-    SetThreadName(ThreadId, "SM Worker Thread");
+    SetThreadName(ThreadId, (char*)"SM Worker Thread");
 #endif
 #endif
     }

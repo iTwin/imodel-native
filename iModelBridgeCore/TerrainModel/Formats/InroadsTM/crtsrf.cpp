@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* crtsrf.c                                            tmi    24-Jan-1994     */
@@ -31,10 +31,10 @@ int aecDTM_createSurface /* <= TRUE if error                       */
 (
   struct CIVdtmsrf **srfPP,         /* <= surface created (or NULL)           */
   struct CIVdtmprj *prjP,           /* => project to use (or NULL)            */
-  wchar_t *nameP,                   /* => name                                */
-  wchar_t *descP,                   /* => description (or NULL)               */
-  wchar_t *fileP,                   /* => file name (or NULL)                 */
-  wchar_t *matP,                    /* => material name (or NULL)             */
+  wchar_t const*nameP,              /* => name                                */
+  wchar_t const*descP,              /* => description (or NULL)               */
+  wchar_t const*fileP,              /* => file name (or NULL)                 */
+  wchar_t const*matP,               /* => material name (or NULL)             */
   double maxTriLength,              /* => max tri length (normally 0.)        */
   double scale,                     /* => scale (normally 0.)                 */
   long type                         /* => surface type                        */
@@ -58,10 +58,10 @@ int aecDTM_createSurfaceEx /* <= TRUE if error                     */
 (
   struct CIVdtmsrf **srfPP,         /* <= surface created (or NULL)           */
   struct CIVdtmprj *prjP,           /* => project to use (or NULL)            */
-  wchar_t *nameP,                   /* => name                                */
-  wchar_t *descP,                   /* => description (or NULL)               */
-  wchar_t *fileP,                   /* => file name (or NULL)                 */
-  wchar_t *matP,                    /* => material name (or NULL)             */
+  wchar_t const*nameP,              /* => name                                */
+  wchar_t const*descP,              /* => description (or NULL)               */
+  wchar_t const*fileP,              /* => file name (or NULL)                 */
+  wchar_t const*matP,               /* => material name (or NULL)             */
   double maxTriLength,              /* => max tri length (normally 0.)        */
   double scale,                     /* => scale (normally 0.)                 */
   int updateExplorer,               /* => update explorer window with surface */

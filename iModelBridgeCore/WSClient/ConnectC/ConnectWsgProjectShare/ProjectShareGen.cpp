@@ -2,7 +2,7 @@
 |
 |     $Source: ConnectC/ConnectWsgProjectShare/ProjectShareGen.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //--------------------------------------------------------------------------------------+
@@ -119,7 +119,7 @@ CWSCCDATABUFHANDLE folderHasContentBuffer
     if (ModifiedTimeStamp != nullptr) propertiesJson["ModifiedTimeStamp"] = Utf8String(ModifiedTimeStamp);
     if (CreatedTimeStamp != nullptr) propertiesJson["CreatedTimeStamp"] = Utf8String(CreatedTimeStamp);
     if (FileExists != nullptr) propertiesJson["FileExists"] = *FileExists;
-    if (Size != nullptr) propertiesJson["Size"] = *Size;
+    if (Size != nullptr) propertiesJson["Size"] = Json::Value(*Size);
     if (Description != nullptr) propertiesJson["Description"] = Utf8String(Description);
     if (FileName != nullptr) propertiesJson["FileName"] = Utf8String(FileName);
     if (RootFile != nullptr) propertiesJson["RootFile"] = *RootFile;
@@ -278,7 +278,7 @@ bool* DownloadAccess
     if (ModifiedTimeStamp != nullptr) propertiesJson["ModifiedTimeStamp"] = Utf8String(ModifiedTimeStamp);
     if (CreatedTimeStamp != nullptr) propertiesJson["CreatedTimeStamp"] = Utf8String(CreatedTimeStamp);
     if (FileExists != nullptr) propertiesJson["FileExists"] = *FileExists;
-    if (Size != nullptr) propertiesJson["Size"] = *Size;
+    if (Size != nullptr) propertiesJson["Size"] = Json::Value(*Size);
     if (Description != nullptr) propertiesJson["Description"] = Utf8String(Description);
     if (FileName != nullptr) propertiesJson["FileName"] = Utf8String(FileName);
     if (RootFile != nullptr) propertiesJson["RootFile"] = *RootFile;
@@ -445,7 +445,7 @@ CWSCCDATABUFHANDLE folderHasContentBuffer
     if (ModifiedBy != nullptr) propertiesJson["ModifiedBy"] = Utf8String(ModifiedBy);
     if (ModifiedTimeStamp != nullptr) propertiesJson["ModifiedTimeStamp"] = Utf8String(ModifiedTimeStamp);
     if (RootFolder != nullptr) propertiesJson["RootFolder"] = *RootFolder;
-    if (Size != nullptr) propertiesJson["Size"] = *Size;
+    if (Size != nullptr) propertiesJson["Size"] = Json::Value(*Size);
     if (Description != nullptr) propertiesJson["Description"] = Utf8String(Description);
     if (IsAutomatedPublishingFolder != nullptr) propertiesJson["IsAutomatedPublishingFolder"] = *IsAutomatedPublishingFolder;
     if (DeletedTimeStamp != nullptr) propertiesJson["DeletedTimeStamp"] = Utf8String(DeletedTimeStamp);
@@ -596,7 +596,7 @@ WCharCP DeletedTimeStamp
     if (ModifiedBy != nullptr) propertiesJson["ModifiedBy"] = Utf8String(ModifiedBy);
     if (ModifiedTimeStamp != nullptr) propertiesJson["ModifiedTimeStamp"] = Utf8String(ModifiedTimeStamp);
     if (RootFolder != nullptr) propertiesJson["RootFolder"] = *RootFolder;
-    if (Size != nullptr) propertiesJson["Size"] = *Size;
+    if (Size != nullptr) propertiesJson["Size"] = Json::Value(*Size);
     if (Description != nullptr) propertiesJson["Description"] = Utf8String(Description);
     if (IsAutomatedPublishingFolder != nullptr) propertiesJson["IsAutomatedPublishingFolder"] = *IsAutomatedPublishingFolder;
     if (DeletedTimeStamp != nullptr) propertiesJson["DeletedTimeStamp"] = Utf8String(DeletedTimeStamp);

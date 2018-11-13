@@ -7,20 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ScalableMeshSchemaPCH.h"
-#include <ScalableMesh\ScalableMeshLib.h>
-#include <ScalableMesh\IScalableMeshClippingOptions.h>
-#include <BeSQLite\BeSQLite.h>
-#include <ScalableMeshSchema\ScalableMeshHandler.h>
-#include "ScalableMeshDisplayCacheManager.h"
-#include <ScalableMesh\GeoCoords\GCS.h>
-#include <DgnPlatform\LinkElement.h>
-#include <Bentley\BeDirectoryIterator.h>
+#include <ScalableMesh/ScalableMeshLib.h>
+#include <ScalableMesh/IScalableMeshClippingOptions.h>
+#include <BeSQLite/BeSQLite.h>
+#include <ScalableMeshSchema/ScalableMeshHandler.h>
+#include <ScalableMesh/GeoCoords/GCS.h>
+#include <DgnPlatform/LinkElement.h>
+#include <Bentley/BeDirectoryIterator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshSaveAs.h>
-#include <ScalableMesh/IScalableMeshProgress.h>
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
-#include <DgnPlatform\TextString.h>
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 
 #define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
 #define SCALABLEMESH_MODEL_PROP_GroundCoverages "SmGroundCoverages"
@@ -269,8 +265,7 @@ void ScalableMeshModel::ClearAllDisplayMem()
         return;
 
     IScalableMeshProgressiveQueryEngine::CancelAllQueries();
-    ClearProgressiveQueriesInfo();
-    m_currentDrawingInfoPtr = nullptr;    
+    ClearProgressiveQueriesInfo();    
     m_smPtr->RemoveAllDisplayData();    
     RefreshClips();
     }
@@ -401,7 +396,7 @@ void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& d
 
     smtFileName = dgnDbFileName.GetDirectoryName();
     smtFileName.AppendToPath(dgnDbFileName.GetFileNameWithoutExtension().c_str());
-    smtFileName.AppendString(L"\\terrain.3sm");
+    smtFileName.AppendString(L"//terrain.3sm");
     }
 
 //=======================================================================================
@@ -482,9 +477,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_loadedAllModels = false;
     m_startClipCount = 0;
     
-    m_displayTexture = true;
-
-    m_displayNodesCache = new ScalableMeshDisplayCacheManager();
+    m_displayTexture = true;    
     }
 
 //----------------------------------------------------------------------------------------
@@ -496,13 +489,7 @@ ScalableMeshModel::~ScalableMeshModel()
     }
 
 void ScalableMeshModel::Cleanup(bool isModelDelete)
-    {
-    if (nullptr != m_currentDrawingInfoPtr.get())
-    {
-        m_currentDrawingInfoPtr->m_meshNodes.clear();
-        m_currentDrawingInfoPtr->m_overviewNodes.clear();
-    }
-
+    {    
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(GetDgnDb()));
     if (appData != nullptr && appData->m_smTerrainPhysicalModelP == this)
         ScalableMeshTerrainModelAppData::Delete(GetDgnDb());
@@ -516,12 +503,12 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
             m_smPtr->GetExtraFileNames(extraFileNames);
 
         //Close the 3SM file, to close extra clip files.
-		m_currentDrawingInfoPtr = nullptr;		
         m_smPtr = nullptr;        
 
         for (auto& extraFileName : extraFileNames)
             {
-            _wremove(extraFileName.c_str());
+            Utf8String fileNameUtf8(extraFileName.c_str());
+            remove(fileNameUtf8.c_str());
             }        
         }    
     }
@@ -612,9 +599,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     m_smPtr->Reproject(projGCS, dgnProject);
 
     m_smToModelUorTransform = m_smPtr->GetReprojectionTransform();
-    
-    m_storageToUorsTransfo = DMatrix4d::From(m_smToModelUorTransform);
-
+        
     bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
     assert(invertResult);
     
@@ -653,12 +638,12 @@ bool ScalableMeshModel::AllowPublishing() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Richard.Bois     08/2018
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir) const
+void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& transform) const
     {
     if (!AllowPublishing())
         return;
 
-    if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir))
+        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, transform))
         {
         BeFileName oldRootFile = outputDir;
         oldRootFile.AppendToPath(L"n_0.json");
@@ -672,19 +657,11 @@ void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR 
 void ScalableMeshModel::CloseFile()
     {
 	if (m_subModel)
-	{
+	    {
 		m_loadedAllModels = false;
-	}
-
-    if (nullptr != m_currentDrawingInfoPtr.get())
-        {
-        m_currentDrawingInfoPtr->m_meshNodes.clear();
-        m_currentDrawingInfoPtr->m_overviewNodes.clear();
-        m_currentDrawingInfoPtr->m_smPtr = nullptr;
-        }
+	    }
     
-    m_smPtr = nullptr;
-    m_displayNodesCache = nullptr;
+    m_smPtr = nullptr;    
     m_tryOpen = false;
 
     //Ensure the file has really been closed.
@@ -809,11 +786,8 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb,
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 Transform ScalableMeshModel::GetUorsToStorage()
-    {
-    Transform t;
-    t.InitFrom(m_storageToUorsTransfo);
-    t = t.ValidatedInverse();
-    return t;
+    {    
+    return m_modelUorToSmTransform;
     }
 
 //----------------------------------------------------------------------------------------
@@ -857,7 +831,7 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb, b
     if (!tmFileName.DoesPathExist() && createDir)
         BeFileName::CreateNewDirectory(tmFileName.c_str());
 
-    tmFileName.AppendString(L"\\terrain.3sm");
+    tmFileName.AppendString(L"//terrain.3sm");
     return tmFileName;
     }
 
@@ -1310,6 +1284,7 @@ void ScalableMeshModel::SetDisplayTexture(bool displayTexture)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
     {
+    assert(!"Not implemented yet in the tiletree display mechanism.");
     m_isProgressiveDisplayOn = isProgressiveDisplayOn;
     }
 
@@ -1421,7 +1396,8 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 */
         }
 
-    db.SaveChanges();
+    // Leave it to iModelBridge to do SaveChanges; otherwise it breaks bridge's bulk operation.
+    // db.SaveChanges();
 
     return model.get();
     }
@@ -1541,9 +1517,9 @@ void ScalableMeshModel::_OnSaveJsonProperties()
 //----------------------------------------------------------------------------------------
 void SMModelClipInfo::FromBlob(size_t& currentBlobInd, const uint8_t* pClipData)
     {    
-    __int64 nbPts;
-    memcpy(&nbPts, &pClipData[currentBlobInd], sizeof(__int64));
-    currentBlobInd += sizeof(__int64);
+    int64_t nbPts;
+    memcpy(&nbPts, &pClipData[currentBlobInd], sizeof(int64_t));
+    currentBlobInd += sizeof(int64_t);
          
     m_shape.resize(nbPts);
     memcpy(&m_shape[0], &pClipData[currentBlobInd], m_shape.size() * sizeof(DPoint3d));
@@ -1565,9 +1541,9 @@ void SMModelClipInfo::FromBlob(size_t& currentBlobInd, const uint8_t* pClipData)
 void SMModelClipInfo::ToBlob(bvector<uint8_t>& clipData)
     {        
     size_t currentBlobInd = clipData.size();    
-    clipData.resize(clipData.size() + sizeof(__int64));
-    __int64 nbPts = (__int64)m_shape.size();
-    memcpy(&clipData[currentBlobInd], &nbPts, sizeof(__int64));
+    clipData.resize(clipData.size() + sizeof(int64_t));
+    int64_t nbPts = (int64_t)m_shape.size();
+    memcpy(&clipData[currentBlobInd], &nbPts, sizeof(int64_t));
     
     currentBlobInd = clipData.size();
     clipData.resize(clipData.size() + m_shape.size() * sizeof(DPoint3d));
@@ -2108,9 +2084,9 @@ void SMClipProvider::ListTerrainRegionIDs(bvector<uint64_t>& ids)
     }
 
 // This moved from ScalableMeshHandler.h because it produces compilation errors if that header is included in a C++/CLI build.
-folly::Future<BentleyStatus> SMNode::SMLoader::_GetFromSource()
-    {
-    //ScalableMesh has his own loader
-    return SUCCESS;
-    }
+//folly::Future<BentleyStatus> SMNode::SMLoader::_GetFromSource()
+//    {
+//    //ScalableMesh has his own loader
+//    return SUCCESS;
+//    }
 

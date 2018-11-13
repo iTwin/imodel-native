@@ -5,8 +5,10 @@
 #include "DataSourceServiceManager.h"
 #include "DataSourceAzure.h"
 #include "DataSourceServiceFile.h"
+#ifdef USE_WASTORAGE
 #include "DataSourceServiceAzure.h"
-#include "include\DataSourceManager.h"
+#endif
+#include "include/DataSourceManager.h"
 #include <assert.h>
 
 DataSourceManager *DataSourceManager::dataSourceManager = nullptr;
@@ -231,6 +233,8 @@ DataSourceStatus DataSourceManager::destroyDataSources(const SessionName &sessio
 }
 
 
+
+#ifdef USE_WASTORAGE
 DataSourceAccount *DataSourceManager::initializeAzureTest(void)
 {
     DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
@@ -250,3 +254,4 @@ DataSourceAccount *DataSourceManager::initializeAzureTest(void)
 
     return accountAzure;
 }
+#endif

@@ -24,8 +24,11 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\TestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
     <ClInclude Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.h" />
+    <ClInclude Include="Published\Utils\StubLogger.h" />
     <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\StubFileManager.h" />
+    <ClInclude Include="Published\WebServices\Client\ActivityIdGeneratorTests.h" />
+    <ClInclude Include="Published\WebServices\Client\ActivityLoggerTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockRepositoryInfoListener.h" />
     <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
@@ -106,6 +109,8 @@
     <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Connect\SamlTokenTests.h" />
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\SecurityTokenTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\SimpleConnectTokenProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\StubLocalState.h" />
     <ClInclude Include="Published\Utils\FSTest.h" />
@@ -178,7 +183,10 @@
     <ClCompile Include="BackDoor\TestEnvironment.cpp" />
     <ClCompile Include="BackDoor\DgnClientFxViewportHelpers.cpp" />
     <ClCompile Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.cpp" />
+    <ClCompile Include="Published\Utils\StubLogger.cpp" />
     <ClCompile Include="Published\WebServices\Azure\EventServiceClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ActivityIdGeneratorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\ActivityLoggerTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSRepositoryTests.cpp" />
     <ClCompile Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.cpp" />
     <ClCompile Include="NonPublished\CordovaPluginTests.cpp" />
@@ -230,7 +238,6 @@
     <ClCompile Include="Published\WebServices\Cache\Util\JsonUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ProgressFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
-    <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSChangesetTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\WSJobTests.cpp" />
@@ -293,6 +300,8 @@
     <ClCompile Include="Published\ViewportTests.cpp" />
     <ClCompile Include="Published\UnitTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ChunkedUploadRequestTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\SecurityTokenTests.cpp" />
+    <ClCompile Include="Published\WebServices\Connect\SimpleConnectTokenProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ObjectIdTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\PassportTests.cpp" />

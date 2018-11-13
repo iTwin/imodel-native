@@ -1627,7 +1627,7 @@ bool                containsSchemaChanges
     properties[ServerSchema::Property::Description] = changeSet->GetSummary();
     uint64_t size;
     changeSet->GetRevisionChangesFile().GetFileSize(size);
-    properties[ServerSchema::Property::FileSize] = (uint32_t)size;
+    properties[ServerSchema::Property::FileSize] = Json::Value(size);
     properties[ServerSchema::Property::ParentId] = changeSet->GetParentId();
     properties[ServerSchema::Property::SeedFileId] = changeSet->GetDbGuid();
     properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();

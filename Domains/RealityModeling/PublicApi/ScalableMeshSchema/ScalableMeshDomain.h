@@ -9,9 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnDomain.h>
-#include <ScalableMeshSchema\ExportMacros.h>
-#include <ScalableMeshSchema\ScalableMeshSchemaCommon.h>
-#include <ScalableMeshSchema\ScalableMeshSchemaApi.h>
+#include <ScalableMeshSchema/ExportMacros.h>
+#include <ScalableMeshSchema/ScalableMeshSchemaCommon.h>
+#include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 

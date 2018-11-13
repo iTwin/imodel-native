@@ -89,7 +89,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, WriteToJson)
     Json::Value expected = Json::Reader::DoParse(R"({
         "specType": "InstanceNodesOfSpecificClasses",
         "priority": 456,
-        "alwaysReturnsChildren": true,
+        "hasChildren": "Always",
         "hideNodesInHierarchy": true,
         "hideIfNoChildren": true,
         "classes": [
@@ -180,7 +180,7 @@ TEST_F(InstanceNodesOfSpecificClassesSpecificationTests, WritesToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-           R"(<InstancesOfSpecificClasses Priority="1000" AlwaysReturnsChildren="false" HideNodesInHierarchy="false" 
+           R"(<InstancesOfSpecificClasses Priority="1000" HasChildren="Unknown" HideNodesInHierarchy="false" 
                HideIfNoChildren="false" ExtendedData="" DoNotSort="false" ClassNames="TestSchema:TestClass"
                ArePolymorphic="true" GroupByClass="false" GroupByLabel="false" ShowEmptyGroups="true" InstanceFilter=""/>)"
         "</Root>";

@@ -1024,6 +1024,7 @@
     <ClInclude Include="STM\ScalableMeshInfo.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreatorWorker.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">

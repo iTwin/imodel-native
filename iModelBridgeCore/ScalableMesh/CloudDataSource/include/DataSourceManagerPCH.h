@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,9 @@
 #include "DataSourceManagerTest.h"
 #include "DataSourceMode.h"
 #include "DataSourceService.h"
+#ifdef USE_WASTORAGE
 #include "DataSourceServiceAzure.h"
+#endif
 #include "DataSourceServiceFile.h"
 #include "DataSourceServiceManager.h"
 #include "DataSourceStatus.h"
@@ -35,5 +37,8 @@
 #include "DataSourceTransferScheduler.h"
 #include "DataSourceURL.h"
 #include "Manager.h"
-#include "PerformanceTimer.h"
+
+#ifdef _WIN32
+    #include "PerformanceTimer.h"
+#endif
 

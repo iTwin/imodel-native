@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncLocalChangesTask.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -792,10 +792,7 @@ bset<CacheChangeGroup*>& changesetChangeGroupsOut
 )
     {
     auto changeset = std::make_shared<WSChangeset>();
-
-    RequestOptions options;
-    options.SetFailureStrategy(m_options.GetFailureStrategy());
-    changeset->SetRequestOptions(options);
+    changeset->GetRequestOptions().SetFailureStrategy(m_options.GetFailureStrategy());
 
     bool changesetClipped = false;
     size_t i = m_changeGroupIndexToSyncNext;

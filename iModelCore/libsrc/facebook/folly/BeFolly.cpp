@@ -2,7 +2,7 @@
 |
 |     $Source: folly/BeFolly.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -126,18 +126,20 @@ BEGIN_UNNAMED_NAMESPACE
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
 struct IoThreadPoolImp : ThreadPool
-{
+    {
     IoThreadPoolImp() : ThreadPool(std::max<uint32_t>(10, BeThreadUtilities::GetHardwareConcurrency()*2), "IO"){}
     ~IoThreadPoolImp() {}
-};
+    };
+
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
 struct CpuThreadPoolImp : ThreadPool
-{
+    {
     CpuThreadPoolImp() : ThreadPool(BeThreadUtilities::GetHardwareConcurrency(), "CPU"){}
     ~CpuThreadPoolImp() {}
-};
+    };
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -158,11 +160,13 @@ ThreadPool& ThreadPool::GetCpuPool()
     return *s_pool.try_get_fast();
     }
 
-namespace folly{
+namespace folly
+    {
 template<>
     LeakySingleton<ThreadLocal<SingletonThreadLocal<std::shared_ptr<RequestContext>,detail::DefaultTag>::Wrapper,void,void>,detail::DefaultTag>::Entry &
-    LeakySingleton<ThreadLocal<SingletonThreadLocal<std::shared_ptr<RequestContext>,detail::DefaultTag>::Wrapper,void,void>,detail::DefaultTag>::entryInstance(){
-    static auto entry = detail::createGlobal<Entry, void>();
-    return *entry;
-  }
-}
+    LeakySingleton<ThreadLocal<SingletonThreadLocal<std::shared_ptr<RequestContext>,detail::DefaultTag>::Wrapper,void,void>,detail::DefaultTag>::entryInstance()
+        {
+        static auto entry = detail::createGlobal<Entry, void>();
+        return *entry;
+        }
+    }

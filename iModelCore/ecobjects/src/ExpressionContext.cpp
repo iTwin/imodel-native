@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -694,21 +694,24 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
             if (nullptr != adapter)
                 {
                 IECTypeAdapterContextPtr context = IECTypeAdapterContext::Create (*arrayProp, instance);
-                context->SetEvaluationOptions (getEvaluationOptions(contextsStack));
-                if (allowsTypeConversion(contextsStack) || enforceGlobalRepresentation(contextsStack))
+                if (context.IsValid())
                     {
-                    if (adapter->RequiresExpressionTypeConversion (getEvaluationOptions(contextsStack)) && !adapter->ConvertToExpressionType (arrayVal, *context))
+                    context->SetEvaluationOptions(getEvaluationOptions(contextsStack));
+                    if (allowsTypeConversion(contextsStack) || enforceGlobalRepresentation(contextsStack))
+                        {
+                        if (adapter->RequiresExpressionTypeConversion(getEvaluationOptions(contextsStack)) && !adapter->ConvertToExpressionType(arrayVal, *context))
+                            {
+                            evalResult.Clear();
+                            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Could not convert value to expression type");
+                            return ExpressionStatus::UnknownError;
+                            }
+                        }
+                    else if (adapter->SupportsUnits() && !adapter->GetUnits(units, *context))
                         {
                         evalResult.Clear();
-                        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Could not convert value to expression type");
+                        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Could not get units");
                         return ExpressionStatus::UnknownError;
                         }
-                    }
-                else if (adapter->SupportsUnits () && !adapter->GetUnits (units, *context))
-                    {
-                    evalResult.Clear();
-                    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError. Could not get units");
-                    return ExpressionStatus::UnknownError;
                     }
                 }
             }

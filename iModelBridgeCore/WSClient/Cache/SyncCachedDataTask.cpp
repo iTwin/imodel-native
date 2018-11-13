@@ -27,12 +27,12 @@ CachingDataSourcePtr ds,
 bvector<ECInstanceKey> initialInstances,
 bvector<IQueryProvider::Query> initialQueries,
 bvector<IQueryProviderPtr> queryProviders,
-ICachingDataSource::ProgressCallback onProgress,
+ICachingDataSource::ProgressHandler progressHandler,
 ICancellationTokenPtr ct
 ) :
 CachingTaskBase(ds, ct),
 m_queryProviders(queryProviders),
-m_onProgress(onProgress ? onProgress : [] (CachingDataSource::ProgressCR) {})
+m_progressHandler(progressHandler)
     {
     for (auto& key : initialInstances)        
         m_initialInstances.push_back(Instance(key));
@@ -50,13 +50,13 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     size_t synced = m_syncedInitialInstances + m_syncedQueries;
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
-    size_t syncedInstances = m_syncedInstances;
-    size_t totalInstances = m_instancesWithQueriesProvided.size();
+    size_t syncedInstances = m_syncedInstancesToReportProgress.size();
+    size_t totalInstances = m_instancesToReportProgress.size();
 
     if (totalInstances == 0)
         totalInstances = m_initialInstances.size();
 
-    m_onProgress({        
+    m_progressHandler.progressCallback({
         progress,
         {(double) syncedInstances, (double) totalInstances},
         m_downloadBytesProgress,
@@ -88,9 +88,9 @@ void SyncCachedDataTask::StartCaching()
     
     bset<Instance> instancesToCache(m_initialInstances.begin(), m_initialInstances.end());
     CacheInitialInstances(txn, instancesToCache);
-    ContinueCachingQueries(txn);
-
     txn.Commit();
+
+    ContinueCachingQueries();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -117,8 +117,11 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
         {
         m_syncedInitialInstances = synced;
 
-        for (auto instance : instanceKeys)            
-            PrepareCachingQueries(txn, instance.key, true);
+        ECInstanceKeyDeque cachedInstancesDeque;
+        for (auto instance : instanceKeys)
+            cachedInstancesDeque.push_back(instance.key);
+
+        PrepareCachingQueriesAsync(cachedInstancesDeque, true);
 
         if (0 != synced)
             ReportProgress();
@@ -132,9 +135,7 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
         if (IsTaskCanceled())
             return;
 
-        auto txn = m_ds->StartCacheTransaction();
-        ContinueCachingQueries(txn);
-        txn.Commit();
+        ContinueCachingQueries();
         });
     }
 
@@ -175,7 +176,7 @@ void SyncCachedDataTask::CacheFiles()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
+void SyncCachedDataTask::ContinueCachingQueries()
     {
     if (IsTaskCanceled() || m_queriesToCache.empty())
         return;
@@ -186,7 +187,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
     if (!providedQuery->query.IsValid())
         {
         LOG.warningv("Invalid query provided");
-        ContinueCachingQueries(txn);
+        ContinueCachingQueries();
         return;
         }
 
@@ -201,7 +202,8 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
         {
         if (IsTaskCanceled())
             return;
-        
+
+        ECInstanceKeyDeque cachedInstancesDeque;
         auto txn = m_ds->StartCacheTransaction();
         if (result.IsSuccess())
             {
@@ -217,26 +219,39 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
             if (IsTaskCanceled())
                 return;
             
+            
             for (auto& pair : cachedInstances)
-                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively);
+                cachedInstancesDeque.push_back(ECInstanceKey(pair.first, pair.second));
+
             }
         else
             {
             RegisterError(txn, responseKey, result.GetError());
             }
 
-        if (providedQuery->instance != nullptr)
-            {
-            providedQuery->instance->Remove(*providedQuery);
-            if (providedQuery->instance->IsComplete())
-                m_syncedInstances++;
-            }
-
-        m_syncedQueries++;
-        ReportProgress();
-
-        ContinueCachingQueries(txn);
         txn.Commit();
+        PrepareCachingQueriesAsync(cachedInstancesDeque, syncRecursively)
+            ->Then(m_ds->GetCacheAccessThread(), [=]
+            { 
+            if (providedQuery->instance != nullptr)
+                {
+                providedQuery->instance->Remove(*providedQuery);
+                if (providedQuery->instance->IsComplete())
+                    {
+                    auto instanceKey = providedQuery->instance->key;
+                    auto txn = m_ds->StartCacheTransaction();
+                    auto reportProgress = m_progressHandler.shouldReportInstanceProgress(instanceKey, txn);
+                    txn.Commit();
+                    if (reportProgress)
+                        m_syncedInstancesToReportProgress.insert(instanceKey);
+                    }
+                }
+
+            m_syncedQueries++;
+            ReportProgress();
+
+            ContinueCachingQueries();
+            });
         });
     }
 
@@ -269,12 +284,39 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, ECInstanceKeyCR i
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Daumantas.Kojelis    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<void> SyncCachedDataTask::PrepareCachingQueriesAsync(ECInstanceKeyDeque cachedInstancesDeque, bool syncRecursively)
+    {
+    if (IsTaskCanceled() || cachedInstancesDeque.empty())
+        return CreateCompletedAsyncTask();
+
+    auto instanceKey = cachedInstancesDeque.front();
+    cachedInstancesDeque.pop_front();
+
+    return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        PrepareCachingQueries(txn, instanceKey, syncRecursively);
+        txn.Commit();
+
+        return PrepareCachingQueriesAsync(cachedInstancesDeque, syncRecursively);
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively)
     {
-    if (m_instancesWithQueriesProvided.find(instanceKey) != m_instancesWithQueriesProvided.end())
+    if (m_instanceQueriesPrepared.find(instanceKey) != m_instanceQueriesPrepared.end())
         return;
+
+    m_instanceQueriesPrepared.insert(instanceKey);
+
+    auto reportProgress = m_progressHandler.shouldReportInstanceProgress(instanceKey, txn);
+    if (reportProgress)
+        m_instancesToReportProgress.insert(instanceKey);
 
     bool isPersistent = IsInstancePersistent(txn, instanceKey);
     auto instancePtr = std::make_shared<Instance>(instanceKey);
@@ -289,7 +331,7 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
                 auto cacheQueryPtr = std::make_shared<CacheQuery>(query);
                 cacheQueryPtr->instance = instancePtr;
                 instancePtr->cacheQueries.push_back(cacheQueryPtr);
-                
+
                 m_queriesToCache.insert(m_queriesToCache.end(), cacheQueryPtr);
                 }
             }
@@ -310,10 +352,8 @@ void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanc
 
     size_t instanceQueriesCount = instancePtr->cacheQueries.size();
     m_totalQueries += instanceQueriesCount;
-    if (instanceQueriesCount == 0)
-        m_syncedInstances++;
-    
-    m_instancesWithQueriesProvided.insert(instanceKey);
+    if (instanceQueriesCount == 0 && reportProgress)
+        m_syncedInstancesToReportProgress.insert(instancePtr->key);
     }
 
 /*--------------------------------------------------------------------------------------+

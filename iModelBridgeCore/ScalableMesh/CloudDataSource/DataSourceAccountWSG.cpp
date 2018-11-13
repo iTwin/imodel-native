@@ -162,6 +162,8 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(DataSource &dataSource, Da
     return uploadBlobSync(url, dataSource.getSubPath().c_str(), source, size);
     }
 
+
+#if 0
 DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &url, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
 {
 (void)url;
@@ -229,6 +231,7 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &url, 
 
     return DataSourceStatus();
 }
+#endif
 
 void DataSourceAccountWSG::setWSGTokenGetterCallback(const std::function<std::string(void)>& tokenGetter)
     {

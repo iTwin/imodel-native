@@ -5,7 +5,11 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "malloc.h"
+#ifndef __APPLE__
+   #include "malloc.h"
+#else
+   #include <stdlib.h>
+#endif
 #include "bcDTMBaseDef.h"
 #include "DTMEvars.h"
 #include "bcDTMStream.h"

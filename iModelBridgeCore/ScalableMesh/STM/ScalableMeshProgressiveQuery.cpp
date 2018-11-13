@@ -1268,7 +1268,8 @@ void InitializeProgressiveQueries()
 
 void ClearProgressiveQueriesInfo()
     {
-    s_newQueryStartingNodeProcessor->ClearNodeInfo();
+    if (s_newQueryStartingNodeProcessor)
+        s_newQueryStartingNodeProcessor->ClearNodeInfo();
     }
 
 void TerminateProgressiveQueries()

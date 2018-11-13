@@ -38,6 +38,7 @@
     <ClCompile Include="Performance\PerformanceSchemaManagerTests.cpp" />
     <ClCompile Include="Performance\PerformanceSharedTableTests.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />
+    <ClCompile Include="Published\ECInstanceFinderTests.cpp" />
     <ClCompile Include="Published\FuzzTests.cpp" />
     <ClCompile Include="Published\TableSpaceTests.cpp" />
     <ClCompile Include="Published\BulkCrudTestFixture.cpp" />

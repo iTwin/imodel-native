@@ -446,6 +446,21 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 
         DgnV8Api::ConfigurationManager::DefineVariable(L"MS_SMARTSOLID", smartSolidDir.c_str());
         }    
+
+    // PSolidCore depends on MS_TMP - VSTS 39658:
+    if (!IsValidConfigFilePath(L"MS_TMP"))
+        {
+        Bentley::WChar  tmp[MAX_PATH];
+        if (::GetTempPathW(MAX_PATH, tmp))
+            {
+            BeFileName  dir(tmp);
+            dir.AppendToPath (L"\\Bentley\\DgnV8Converter");
+            if (dir.DoesPathExist() || BeFileName::CreateNewDirectory(dir.c_str()) == BeFileNameStatus::Success)
+                DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TMP", dir.c_str());
+            else
+                DgnV8Api::ConfigurationManager::DefineVariable(L"MS_TMP", tmp);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -698,6 +713,7 @@ void   Converter::InitializeDgnv8Platform(BentleyApi::BeFileName const& thisLibr
     std::call_once(s_initOnce, [&]
         {
         BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
+        dllDirectory.AppendToPath(L"DgnV8");
         initializeV8HostConfigVars(Bentley::BeFileName(dllDirectory.c_str()), 0, nullptr);
         DgnV8Api::DgnPlatformLib::Initialize(*new MinimalV8Host, true);
         BentleyApi::BeFileName realdwgDirectory(dllDirectory);
@@ -742,7 +758,7 @@ BentleyStatus Converter::GetAuthoringFileInfo(WCharP buffer, const size_t buffer
         {
         // Fulfill the request of VSTS 32629 - assign an i.dgn file to MicroStation Bridge by default:
         affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::High;
-        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"IModelBridgeForMstn");
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"iModelBridgeForMstn");
         return  BSISUCCESS;
         }
 

@@ -357,7 +357,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 
     if (!drawingGraphic.IsValid())
         {
-        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicCreationFailure(), "", model.GetName().c_str(), elementClassId.GetValue(), categoryId.GetValue(), code.GetValueUtf8());
+        ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::ExtractedGraphicCreationFailure(), "", model.GetName().c_str(), elementClassId.GetValue(), categoryId.GetValue(), code.GetValueUtf8().c_str());
         BeAssert(false);
         return DgnDbStatus::BadRequest;
         }

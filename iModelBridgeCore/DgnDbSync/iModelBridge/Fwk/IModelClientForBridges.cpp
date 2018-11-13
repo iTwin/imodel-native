@@ -114,7 +114,7 @@ IModelHubClient::IModelHubClient(iModelBridgeFwk::IModelHubArgs const& args, Web
         m_projectId = ClientHelper::GetInstance()->QueryProjectId(&wserror, args.m_bcsProjectId);
         if (m_projectId.empty())
             {
-            GetLogger().fatalv("Cannot find iModelHub project: [%s]", args.m_bcsProjectId);
+            GetLogger().fatalv("Cannot find iModelHub project: [%s]", args.m_bcsProjectId.c_str());
             if (wserror.GetStatus() != WebServices::WSError::Status::None)
                 GetLogger().fatalv("%s - %s", wserror.GetDisplayMessage().c_str(), wserror.GetDisplayDescription().c_str());
             m_client = nullptr;

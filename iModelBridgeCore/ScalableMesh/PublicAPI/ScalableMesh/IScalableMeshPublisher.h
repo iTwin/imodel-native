@@ -49,7 +49,7 @@ struct IScalableMeshPublisher: virtual public RefCountedBase
         
         virtual void _Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData, bool outputTexture) = 0;
 
-        virtual void _Publish(IScalableMeshNodePtr nodePtr, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture) = 0;
+        virtual void _Publish(IScalableMeshNodePtr nodePtr, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const Transform& transform, bvector<Byte>& outData, bool outputTexture) = 0;
 
         virtual void _ExtractPublishNodeHeader(IScalableMeshNodePtr nodePtr, Json::Value& smHeader) = 0;
 
@@ -63,6 +63,8 @@ struct IScalableMeshPublisher: virtual public RefCountedBase
         BENTLEY_SM_IMPORT_EXPORT void Publish(IScalableMeshNodePtr node, const Transform& transform, bvector<Byte>& outData, bool outputTexture);
 
         BENTLEY_SM_IMPORT_EXPORT void Publish(IScalableMeshNodePtr nodePtr, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData, bool outputTexture);
+
+        BENTLEY_SM_IMPORT_EXPORT void Publish(IScalableMeshNodePtr nodePtr, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, const uint64_t& coverageID, bool isClipBoundary, const Transform& transform, bvector<Byte>& outData, bool outputTexture);
 
         BENTLEY_SM_IMPORT_EXPORT void ExtractPublishNodeHeader(IScalableMeshNodePtr nodePtr, Json::Value& smHeader);
 

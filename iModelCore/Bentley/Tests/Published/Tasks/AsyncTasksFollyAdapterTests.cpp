@@ -132,7 +132,7 @@ TEST_F(AsyncTasksFollyAdapterTests, ToFolly_VoidTaskNotYetCompleted_CompletesUni
 TEST_F(AsyncTasksFollyAdapterTests, FromFolly_CompletedFuture_ReturnsCompletedTask)
     {
     folly::Future<int> future = folly::makeFuture(123);
-    AsyncTaskPtr<int> task = AsyncTaskFollyAdapter::FromFolly(future);
+    AsyncTaskPtr<int> task = AsyncTaskFollyAdapter::FromFolly(std::move(future));
 
     ASSERT_TRUE(task->IsCompleted());
     EXPECT_EQ(123, task->GetResult());
@@ -144,7 +144,7 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_CompletedFuture_ReturnsCompletedTa
 TEST_F(AsyncTasksFollyAdapterTests, FromFolly_CompletedUnitFuture_ReturnsCompletedVoidTask)
     {
     folly::Future<folly::Unit> future = folly::makeFuture<folly::Unit>(folly::Unit());
-    AsyncTaskPtr<void> task = AsyncTaskFollyAdapter::FromFolly(future);
+    AsyncTaskPtr<void> task = AsyncTaskFollyAdapter::FromFolly(std::move(future));
 
     ASSERT_TRUE(task->IsCompleted());
     }
@@ -160,7 +160,7 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_FutureNotYetCompleted_CompletesTas
         return 789;
         });
 
-    AsyncTaskPtr<int> task = AsyncTaskFollyAdapter::FromFolly(future);
+    AsyncTaskPtr<int> task = AsyncTaskFollyAdapter::FromFolly(std::move(future));
 
     EXPECT_FALSE(task->IsCompleted());
 
@@ -178,7 +178,7 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_UnitFutureNotYetCompleted_Complete
     TestExecutor thread;
     folly::Future<folly::Unit> future = folly::via(&thread, [] {});
 
-    AsyncTaskPtr<void> task = AsyncTaskFollyAdapter::FromFolly(future);
+    AsyncTaskPtr<void> task = AsyncTaskFollyAdapter::FromFolly(std::move(future));
 
     EXPECT_FALSE(task->IsCompleted());
 
@@ -203,7 +203,7 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_FutureNotYetCompletedAndCalledFrom
     WorkerThreadPtr workerThread = WorkerThread::Create();
     auto parentTask = workerThread->ExecuteAsync([&]
         {
-        convertedTask = AsyncTaskFollyAdapter::FromFolly(future);
+        convertedTask = AsyncTaskFollyAdapter::FromFolly(std::move(future));
         });
 
     BeThreadUtilities::BeSleep(10);
@@ -231,7 +231,7 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_UnitFutureNotYetCompletedAndCalled
     WorkerThreadPtr workerThread = WorkerThread::Create();
     auto parentTask = workerThread->ExecuteAsync([&]
         {
-        convertedTask = AsyncTaskFollyAdapter::FromFolly(future);
+        convertedTask = AsyncTaskFollyAdapter::FromFolly(std::move(future));
         });
 
     BeThreadUtilities::BeSleep(10);
@@ -268,7 +268,7 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_FutureThrowsCustomException_TaskRe
         return value;
         });
 
-    AsyncTaskPtr<TestType> task = AsyncTaskFollyAdapter::FromFolly(future);
+    AsyncTaskPtr<TestType> task = AsyncTaskFollyAdapter::FromFolly(std::move(future));
 
     EXPECT_FALSE(task->IsCompleted());
 
@@ -291,7 +291,7 @@ TEST_F(AsyncTasksFollyAdapterTests, FromFolly_UnitFutureThrowsCustomException_Ta
         throw 666;
         });
 
-    AsyncTaskPtr<void> task = AsyncTaskFollyAdapter::FromFolly(future);
+    AsyncTaskPtr<void> task = AsyncTaskFollyAdapter::FromFolly(std::move(future));
 
     EXPECT_FALSE(task->IsCompleted());
 

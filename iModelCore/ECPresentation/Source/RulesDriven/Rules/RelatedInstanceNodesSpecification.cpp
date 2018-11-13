@@ -28,28 +28,27 @@ RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification 
-(
-int                        priority, 
-bool                       alwaysReturnsChildren, 
-bool                       hideNodesInHierarchy, 
-bool                       hideIfNoChildren,
-bool                       groupByClass,
-bool                       groupByRelationship,
-bool                       groupByLabel,
-bool                       showEmptyGroups,
-int                        skipRelatedLevel,
-Utf8String                 instanceFilter,
-RequiredRelationDirection  requiredDirection,
-Utf8String                 supportedSchemas,
-Utf8String                 relationshipClassNames,
-Utf8String                 relatedClassNames
-) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
-    m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel), m_showEmptyGroups (showEmptyGroups), 
-    m_skipRelatedLevel (skipRelatedLevel), m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
-    m_supportedSchemas (supportedSchemas), m_relationshipClassNames (relationshipClassNames),  m_relatedClassNames (relatedClassNames)
+RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,  
+    bool hideIfNoChildren, bool groupByClass, bool groupByRelationship, bool groupByLabel, bool showEmptyGroups, int skipRelatedLevel, 
+    Utf8String instanceFilter, RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames, 
+    Utf8String relatedClassNames) 
+    : RelatedInstanceNodesSpecification(priority, alwaysReturnsChildren ? ChildrenHint::Always : ChildrenHint::Unknown, hideNodesInHierarchy, hideIfNoChildren, 
+    groupByClass, groupByLabel, skipRelatedLevel, instanceFilter, requiredDirection, supportedSchemas, relationshipClassNames, relatedClassNames)
     {
+    m_groupByRelationship = groupByRelationship;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RelatedInstanceNodesSpecification::RelatedInstanceNodesSpecification(int priority, ChildrenHint hasChildren, bool hideNodesInHierarchy,  
+    bool hideIfNoChildren, bool groupByClass, bool groupByLabel, int skipRelatedLevel, Utf8String instanceFilter, 
+    RequiredRelationDirection requiredDirection, Utf8String supportedSchemas, Utf8String relationshipClassNames, Utf8String relatedClassNames) 
+    : ChildNodeSpecification(priority, hasChildren, hideNodesInHierarchy, hideIfNoChildren), m_groupByClass(groupByClass), 
+    m_groupByRelationship(false), m_groupByLabel(groupByLabel), m_showEmptyGroups(false), m_skipRelatedLevel(skipRelatedLevel), 
+    m_instanceFilter(instanceFilter), m_requiredDirection(requiredDirection), m_supportedSchemas(supportedSchemas), 
+    m_relationshipClassNames(relationshipClassNames), m_relatedClassNames(relatedClassNames)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
