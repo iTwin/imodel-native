@@ -27,9 +27,11 @@ const uint32_t IWSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; /
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IWSRepositoryClient::RequestOptions::RequestOptions() : m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default) 
+IWSRepositoryClient::RequestOptions::RequestOptions() :
+m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default),
+m_activityOptions(std::make_shared<ActivityOptions>()),
+m_jobOptions(std::make_shared<JobOptions>())
     {
-    m_jobOptions = std::make_shared<JobOptions>();
     }
 
 /*--------------------------------------------------------------------------------------+

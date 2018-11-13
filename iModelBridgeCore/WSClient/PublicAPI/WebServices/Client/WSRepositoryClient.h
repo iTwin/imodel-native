@@ -64,6 +64,9 @@ struct IWSRepositoryClient
 
     struct RequestOptions;
     typedef std::shared_ptr<RequestOptions> RequestOptionsPtr;
+    struct ActivityOptions;
+    typedef ActivityOptions& ActivityOptionsR;
+    typedef std::shared_ptr<ActivityOptions> ActivityOptionsPtr;
     struct JobOptions;
     typedef std::shared_ptr<JobOptions> JobOptionsPtr;
 
@@ -473,6 +476,7 @@ struct IWSRepositoryClient::RequestOptions
     {
     private:
         uint64_t m_transferTimeOut;
+        ActivityOptionsPtr m_activityOptions;
         JobOptionsPtr m_jobOptions;
 
     public:
@@ -482,9 +486,31 @@ struct IWSRepositoryClient::RequestOptions
         void SetTransferTimeOut(uint64_t timeOut) {m_transferTimeOut = timeOut;}
         uint64_t GetTransferTimeOut() const {return m_transferTimeOut;}
 
+        //! Retrieve options for activity
+        ActivityOptionsR GetActivityOptions() { return *m_activityOptions; }
+
         //! Retrieve options required for WSG asynchronous job operations
         //! Jobs API can be enabled through these options
         JobOptionsPtr GetJobOptions() { return m_jobOptions; }
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct IWSRepositoryClient::ActivityOptions
+    {
+    private:
+        Utf8String m_activityId;
+
+    public:
+        ActivityOptions() :
+        m_activityId(Utf8String())
+            {}
+
+        //! Activity id for all Http requests in current Api method
+        void SetActivityId(Utf8StringCR activityId) { m_activityId = activityId; }
+        Utf8StringCR GetActivityId() const { return m_activityId; }
+        bool HasActivityId() const { return !m_activityId.empty(); }
     };
 
 /*--------------------------------------------------------------------------------------+

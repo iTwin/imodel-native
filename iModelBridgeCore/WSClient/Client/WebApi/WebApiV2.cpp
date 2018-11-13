@@ -248,9 +248,19 @@ Utf8String WebApiV2::CreateNavigationSubPath(ObjectIdCR parentId) const
 ActivityLogger WebApiV2::CreateActivityLogger(Utf8StringCR activityName, IWSRepositoryClient::RequestOptionsPtr options) const
     {
     if (m_info.GetWebApiVersion() < BeVersion(2, 7))
-        return ActivityLogger(LOG, activityName);
+        {
+        auto activityLogger = ActivityLogger(LOG, activityName);
+        if (nullptr != options && options->GetActivityOptions().HasActivityId())
+            activityLogger.warning("Activity id will be ignored, because it's supported from WebApi 2.7 only");
+        return activityLogger;
+        }
 
-    Utf8String activityId = m_configuration->GetActivityIdGenerator().GenerateNextId();
+    Utf8String activityId;
+    if (nullptr != options && options->GetActivityOptions().HasActivityId())
+        activityId = options->GetActivityOptions().GetActivityId();
+    else
+        activityId = m_configuration->GetActivityIdGenerator().GenerateNextId();
+
     return ActivityLogger(LOG, activityName, HEADER_MasRequestId, activityId);
     }
 
