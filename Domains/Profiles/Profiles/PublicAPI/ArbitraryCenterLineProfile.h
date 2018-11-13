@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "SinglePerimeterProfile.h"
+#include "ArbitraryShapeProfile.h"
 #include "ICenterLineProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -17,9 +17,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct ArbitraryCenterLineProfile : SinglePerimeterProfile, ICenterLineProfile
+struct ArbitraryCenterLineProfile : ArbitraryShapeProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, SinglePerimeterProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryShapeProfile);
     friend struct ArbitraryCenterLineProfileHandler;
 
 protected:
@@ -38,9 +38,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCenterLineProfileHandler : SinglePerimeterProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCenterLineProfileHandler : ArbitraryShapeProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryCenterLineProfile, ArbitraryCenterLineProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryCenterLineProfile, ArbitraryCenterLineProfileHandler, ArbitraryShapeProfileHandler, PROFILES_EXPORT)
 
     }; // ArbitraryCenterLineProfileHandler
 
