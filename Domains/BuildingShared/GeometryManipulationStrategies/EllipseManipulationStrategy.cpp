@@ -166,7 +166,14 @@ void EllipseManipulationStrategy::UpdateSweep
     {
     if (m_workingPlane.normal.IsZero())
         {
-        _SetProperty(prop_Normal(), DVec3d::FromCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, end)));
+        DVec3d centerToStart = DVec3d::FromStartEnd(center, start);
+        DVec3d centerToEnd = DVec3d::FromStartEnd(center, end);
+        if (centerToStart.IsZero() || centerToEnd.IsZero())
+            return;
+
+        centerToStart.Normalize();
+        centerToEnd.Normalize();
+        _SetProperty(prop_Normal(), DVec3d::FromCrossProduct(centerToStart, centerToEnd));
         }
 
     if (m_workingPlane.normal.IsZero())

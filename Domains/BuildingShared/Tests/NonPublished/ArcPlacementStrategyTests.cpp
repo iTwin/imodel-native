@@ -314,6 +314,32 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartCenterPlacementStrategyTests, GetNormal_StartCenterEndAlmostInline_NormalIsZeroVector)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
+    ASSERT_TRUE(sut.IsValid());
+
+    DPoint3d start = DPoint3d::From(115596.02633837331, 44433.203571780570, 0);
+    DPoint3d center = DPoint3d::From(105955.35751244408, 54401.581828836148, 0);
+    DPoint3d badEnd = DPoint3d::From(115596.02633837330, 44433.203571780556, 0);
+    DPoint3d goodEnd = DPoint3d::From(115596.02633837330, 44433.203571780556, 1);
+    DVec3d expectedNormal = DVec3d::FromNormalizedCrossProduct(DVec3d::FromStartEnd(center, start), DVec3d::FromStartEnd(center, goodEnd));
+
+    sut->AddKeyPoint(start);
+    sut->AddKeyPoint(center);
+    sut->AddDynamicKeyPoint(badEnd);
+    DVec3d normal;
+    ASSERT_NE(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    sut->AddDynamicKeyPoint(goodEnd);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    ASSERT_TRUE(normal.AlmostEqual(expectedNormal));
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInline_HalfSweepCW)
