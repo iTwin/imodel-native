@@ -1257,7 +1257,7 @@ TEST_F(iModelBridgeTests, MixedFileTypeBridgeAssignmentTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(iModelBridgeTests, TestMultipleRootsSameSubject_ToyTile)
+TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disabled, because it uses ToyTile bridge, which is not expressed in a part dependency
     {
 #define BRIDGE_REG_SUBKEY_TOY_TILE L"ToyTile"
 
