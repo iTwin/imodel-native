@@ -36,6 +36,7 @@
 #include <Profiles\RoundedRectangleProfile.h>
 #include <Profiles\SchifflerizedLShapeProfile.h>
 #include <Profiles\StandardProfileAspect.h>
+#include <Profiles\CustomCardinalPointsAspect.h>
 #include <Profiles\TrapeziumProfile.h>
 #include <Profiles\TShapeProfile.h>
 #include <Profiles\TTShapeProfile.h>
@@ -51,6 +52,7 @@ DOMAIN_DEFINE_MEMBERS(ProfilesDomain)
 ProfilesDomain::ProfilesDomain() : DgnDomain(PRF_SCHEMA_NAME, "Bentley Profiles Domain", 1)
     {
     RegisterHandler(StandardProfileAspectHandler::GetHandler());
+    RegisterHandler(CustomCardinalPointsAspectHandler::GetHandler());
     RegisterHandler(ProfileHandler::GetHandler());
     RegisterHandler(CompositeProfileHandler::GetHandler());
     RegisterHandler(DoubleLShapeProfileHandler::GetHandler());

@@ -181,6 +181,9 @@
     <ClCompile Include="Implementation\ParametricProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles</Filter>
     </ClCompile>
+    <ClCompile Include="Implementation\CustomCardinalPointsAspect.cpp">
+      <Filter>Src\Aspects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Implementation\ProfilesInternal.h">
@@ -293,6 +296,9 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\ParametricProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\CustomCardinalPointsAspect.h">
+      <Filter>PublicAPI\Aspects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

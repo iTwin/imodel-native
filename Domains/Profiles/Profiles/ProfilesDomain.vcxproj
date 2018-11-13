@@ -33,6 +33,7 @@
     <ClCompile Include="Implementation\AsymmetricIShapeProfile.cpp" />
     <ClCompile Include="Implementation\BentPlateProfile.cpp" />
     <ClCompile Include="Implementation\CapsuleProfile.cpp" />
+    <ClCompile Include="Implementation\CustomCardinalPointsAspect.cpp" />
     <ClCompile Include="Implementation\ParametricProfile.cpp" />
     <ClCompile Include="Implementation\CenterLineCShapeProfile.cpp" />
     <ClCompile Include="Implementation\CenterLineLShapeProfile.cpp" />
@@ -71,6 +72,7 @@
     <ClInclude Include="PublicAPI\AsymmetricIShapeProfile.h" />
     <ClInclude Include="PublicAPI\BentPlateProfile.h" />
     <ClInclude Include="PublicAPI\CapsuleProfile.h" />
+    <ClInclude Include="PublicAPI\CustomCardinalPointsAspect.h" />
     <ClInclude Include="PublicAPI\ParametricProfile.h" />
     <ClInclude Include="PublicAPI\CenterLineCShapeProfile.h" />
     <ClInclude Include="PublicAPI\CenterLineLShapeProfile.h" />

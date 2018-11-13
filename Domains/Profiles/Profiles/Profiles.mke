@@ -103,6 +103,8 @@ $(o)SinglePerimeterProfile$(oext) : $(appSrc)SinglePerimeterProfile.cpp ${MultiC
 
 $(o)StandardProfileAspect$(oext) : $(appSrc)StandardProfileAspect.cpp ${MultiCompileDepends} $(appPublicApi)StandardProfileAspect.h
 
+$(o)CustomCardinalPointsAspect$(oext) : $(appSrc)CustomCardinalPointsAspect.cpp ${MultiCompileDepends} $(appPublicApi)CustomCardinalPointsAspect.h
+
 $(o)TShapeProfile$(oext) : $(appSrc)TShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)TShapeProfile.h
 
 $(o)TTShapeProfile$(oext) : $(appSrc)TTShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)TTShapeProfile.h

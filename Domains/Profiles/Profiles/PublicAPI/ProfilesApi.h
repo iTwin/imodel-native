@@ -37,6 +37,7 @@
 #include "SchifflerizedLShapeProfile.h"
 #include "SinglePerimeterProfile.h"
 #include "StandardProfileAspect.h"
+#include "CustomCardinalPointsAspect.h"
 #include "TrapeziumProfile.h"
 #include "TShapeProfile.h"
 #include "TTShapeProfile.h"
