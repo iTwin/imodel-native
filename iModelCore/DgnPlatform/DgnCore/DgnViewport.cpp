@@ -1276,20 +1276,19 @@ void DecorationAnimator::_OnInterrupted(DgnViewportR vp)
 struct ReadPixelsTask : Render::SceneTask
 {
     BSIRect m_rect;
-    Render::PixelData::Selector m_selector;
     Render::IPixelDataBufferCPtr m_buffer;
 
-    ReadPixelsTask(Render::Target& target, Priority priority, BSIRectCR rect, Render::PixelData::Selector selector)
-        : SceneTask(&target, Operation::ReadPixels, priority), m_rect(rect), m_selector(selector) { }
+    ReadPixelsTask(Render::Target& target, Priority priority, BSIRectCR rect)
+        : SceneTask(&target, Operation::ReadPixels, priority), m_rect(rect) { }
 
     Utf8CP _GetName() const override { return "Read Pixels"; }
-    Outcome _Process(StopWatch&) override { m_buffer = m_target->_ReadPixels(m_rect, m_selector); return Outcome::Finished; }
+    Outcome _Process(StopWatch&) override { m_buffer = m_target->_ReadPixels(m_rect); return Outcome::Finished; }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect, Render::PixelData::Selector selector)
+Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect)
     {
     if (!IsActive())
         return nullptr;
@@ -1299,7 +1298,7 @@ Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect, Render::Pix
     if (!rect.IsContained(&viewRect))
         return nullptr;
 
-    RefCountedPtr<ReadPixelsTask> task = new ReadPixelsTask(*m_renderTarget, Task::Priority::Highest(), rect, selector);
+    RefCountedPtr<ReadPixelsTask> task = new ReadPixelsTask(*m_renderTarget, Task::Priority::Highest(), rect);
     RenderQueue().AddTask(*task);
     RenderQueue().WaitForIdle();
 
@@ -1343,7 +1342,7 @@ bool DgnViewport::GetPixelDataWorldPoint(DPoint3dR world, IPixelDataBufferCR pix
 StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP inViewRect)
     {
     BSIRect                 viewRect = GetViewRect();
-    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect);
 
     lowNpc  = 1.0;
     highNpc = 0.0;
@@ -1377,7 +1376,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& hig
 StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP inViewRect)
     {
     BSIRect                 viewRect = GetViewRect();
-    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect);
     size_t                  pixelCount = 0;
 
     if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
@@ -1421,7 +1420,7 @@ StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, 
     if (!pickRect.Overlap(&overlapRect, &viewRect))
         return ERROR;
     
-    IPixelDataBufferCPtr    pixels = ReadPixels(overlapRect, PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(overlapRect);
 
     for (int testRadius=0; testRadius<radiusPixels; testRadius++)
         {
