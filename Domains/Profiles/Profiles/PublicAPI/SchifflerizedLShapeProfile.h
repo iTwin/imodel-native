@@ -58,7 +58,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SchifflerizedLShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, SchifflerizedLShapeProfile, SchifflerizedLShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_SchifflerizedLShapeProfile, SchifflerizedLShapeProfile, SchifflerizedLShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // SchifflerizedLShapeProfileHandler
 
