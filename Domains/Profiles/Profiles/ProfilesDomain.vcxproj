@@ -40,7 +40,7 @@
     <ClCompile Include="Implementation\CompositeProfile.cpp" />
     <ClCompile Include="Implementation\CShapeProfile.cpp" />
     <ClCompile Include="Implementation\ArbitraryCenterLineProfile.cpp" />
-    <ClCompile Include="Implementation\CustomCompositeProfile.cpp" />
+    <ClCompile Include="Implementation\ArbitraryCompositeProfile.cpp" />
     <ClCompile Include="Implementation\ArbitraryShapeProfile.cpp" />
     <ClCompile Include="Implementation\DerivedProfile.cpp" />
     <ClCompile Include="Implementation\DoubleCShapeProfile.cpp" />
@@ -78,7 +78,7 @@
     <ClInclude Include="PublicAPI\CompositeProfile.h" />
     <ClInclude Include="PublicAPI\CShapeProfile.h" />
     <ClInclude Include="PublicAPI\ArbitraryCenterLineProfile.h" />
-    <ClInclude Include="PublicAPI\CustomCompositeProfile.h" />
+    <ClInclude Include="PublicAPI\ArbitraryCompositeProfile.h" />
     <ClInclude Include="PublicAPI\ArbitraryShapeProfile.h" />
     <ClInclude Include="PublicAPI\DerivedProfile.h" />
     <ClInclude Include="PublicAPI\DoubleCShapeProfile.h" />

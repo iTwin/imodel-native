@@ -20,7 +20,7 @@
 #include "CompositeProfile.h"
 #include "CShapeProfile.h"
 #include "ArbitraryCenterLineProfile.h"
-#include "CustomCompositeProfile.h"
+#include "ArbitraryCompositeProfile.h"
 #include "ArbitraryShapeProfile.h"
 #include "DoubleCShapeProfile.h"
 #include "DoubleLShapeProfile.h"

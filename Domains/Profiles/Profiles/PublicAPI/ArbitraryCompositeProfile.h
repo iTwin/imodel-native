@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/PublicAPI/CustomCompositeProfile.h $
+|     $Source: Profiles/PublicAPI/ArbitraryCompositeProfile.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -63,7 +63,7 @@ $(o)CompositeProfile$(oext) : $(appSrc)CompositeProfile.cpp ${MultiCompileDepend
 
 $(o)ArbitraryCenterLineProfile$(oext) : $(appSrc)ArbitraryCenterLineProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryCenterLineProfile.h
 
-$(o)CustomCompositeProfile$(oext) : $(appSrc)CustomCompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CustomCompositeProfile.h
+$(o)ArbitraryCompositeProfile$(oext) : $(appSrc)ArbitraryCompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryCompositeProfile.h
 
 $(o)ArbitraryShapeProfile$(oext) : $(appSrc)ArbitraryShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)ArbitraryShapeProfile.h
 

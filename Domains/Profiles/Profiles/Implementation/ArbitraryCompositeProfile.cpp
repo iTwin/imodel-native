@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/Implementation/CustomCompositeProfile.cpp $
+|     $Source: Profiles/Implementation/ArbitraryCompositeProfile.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ProfilesInternal.h"
-#include <Profiles\CustomCompositeProfile.h>
+#include <Profiles\ArbitraryCompositeProfile.h>
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 

@@ -12,7 +12,7 @@
 #include <Profiles\SinglePerimeterProfile.h>
 #include <Profiles\CompositeProfile.h>
 #include <Profiles\ArbitraryCenterLineProfile.h>
-#include <Profiles\CustomCompositeProfile.h>
+#include <Profiles\ArbitraryCompositeProfile.h>
 #include <Profiles\CenteredProfile.h>
 #include <Profiles\DerivedProfile.h>
 #include <Profiles\AsymmetricIShapeProfile.h>
