@@ -1520,7 +1520,6 @@ protected:
 public:
     BE_JSON_NAME(id)
     BE_JSON_NAME(classFullName)
-    BE_JSON_NAME(bisBaseClass)
     BE_JSON_NAME(model)
     BE_JSON_NAME(code)
     BE_JSON_NAME(parent)
@@ -1528,7 +1527,6 @@ public:
     BE_JSON_NAME(userLabel)
     BE_JSON_NAME(jsonProperties)
 
-    static void AddBisClassName(JsonValueR val, ECN::ECClassCP ecClass); //!< @private
     static Utf8CP MyHandlerECClassName() {return BIS_CLASS_Element;}                //!< @private
     Utf8CP GetHandlerECClassName() const {return _GetHandlerECClassName();}             //!< @private
     Utf8CP GetSuperHandlerECClassName() const {return _GetSuperHandlerECClassName();}   //!< @private
