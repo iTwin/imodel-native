@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -16,9 +16,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct TrapeziumProfile : CenteredProfile
+struct TrapeziumProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, CenteredProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, ParametricProfile);
     friend struct TrapeziumProfileHandler;
 
 protected:
@@ -50,9 +50,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE TrapeziumProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE TrapeziumProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, TrapeziumProfile, TrapeziumProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, TrapeziumProfile, TrapeziumProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // TrapeziumProfileHandler
 

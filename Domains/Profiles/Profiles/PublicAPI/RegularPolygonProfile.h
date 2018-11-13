@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -16,9 +16,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct RegularPolygonProfile : CenteredProfile
+struct RegularPolygonProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, CenteredProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, ParametricProfile);
     friend struct RegularPolygonProfileHandler;
 
 protected:
@@ -43,9 +43,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RegularPolygonProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE RegularPolygonProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, RegularPolygonProfile, RegularPolygonProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, RegularPolygonProfile, RegularPolygonProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // RegularPolygonProfileHandler
 

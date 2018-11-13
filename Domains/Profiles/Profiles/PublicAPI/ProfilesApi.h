@@ -13,7 +13,7 @@
 #include "AsymmetricIShapeProfile.h"
 #include "BentPlateProfile.h"
 #include "CapsuleProfile.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 #include "CenterLineCShapeProfile.h"
 #include "CenterLineLShapeProfile.h"
 #include "CenterLineZShapeProfile.h"

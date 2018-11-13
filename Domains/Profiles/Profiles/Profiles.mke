@@ -57,7 +57,7 @@ $(o)CenterLineLShapeProfile$(oext) : $(appSrc)CenterLineLShapeProfile.cpp ${Mult
 
 $(o)CenterLineZShapeProfile$(oext) : $(appSrc)CenterLineZShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenterLineZShapeProfile.h
 
-$(o)CenteredProfile$(oext) : $(appSrc)CenteredProfile.cpp ${MultiCompileDepends} $(appPublicApi)CenteredProfile.h
+$(o)ParametricProfile$(oext) : $(appSrc)ParametricProfile.cpp ${MultiCompileDepends} $(appPublicApi)ParametricProfile.h
 
 $(o)CompositeProfile$(oext) : $(appSrc)CompositeProfile.cpp ${MultiCompileDepends} $(appPublicApi)CompositeProfile.h
 

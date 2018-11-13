@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 #include "ICenterLineProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -17,9 +17,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct HollowRectangleProfile : CenteredProfile, ICenterLineProfile
+struct HollowRectangleProfile : ParametricProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, CenteredProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, ParametricProfile);
     friend struct HollowRectangleProfileHandler;
 
 protected:
@@ -48,9 +48,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE HollowRectangleProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE HollowRectangleProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, HollowRectangleProfile, HollowRectangleProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, HollowRectangleProfile, HollowRectangleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // HollowRectangleProfileHandler
 

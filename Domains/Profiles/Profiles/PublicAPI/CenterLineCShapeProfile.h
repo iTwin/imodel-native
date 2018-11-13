@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 #include "ICenterLineProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -17,9 +17,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! A C shaped Profile with rounded corners, similar to cold-formed steel C-shapes.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CenterLineCShapeProfile : CenteredProfile, ICenterLineProfile
+struct CenterLineCShapeProfile : ParametricProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CenterLineCShapeProfile, CenteredProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CenterLineCShapeProfile, ParametricProfile);
     friend struct CenterLineCShapeProfileHandler;
 
 protected:
@@ -51,9 +51,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CenterLineCShapeProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE CenterLineCShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CenterLineCShapeProfile, CenterLineCShapeProfile, CenterLineCShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CenterLineCShapeProfile, CenterLineCShapeProfile, CenterLineCShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // CenterLineCShapeProfileHandler
 

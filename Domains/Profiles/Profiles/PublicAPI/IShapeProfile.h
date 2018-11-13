@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -16,9 +16,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! An I shaped Profile similar to rolled steel I-shapes.
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct IShapeProfile : CenteredProfile
+struct IShapeProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_IShapeProfile, CenteredProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_IShapeProfile, ParametricProfile);
     friend struct IShapeProfileHandler;
 
 protected:
@@ -59,9 +59,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE IShapeProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE IShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_IShapeProfile, IShapeProfile, IShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_IShapeProfile, IShapeProfile, IShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // IShapeProfileHandler
 

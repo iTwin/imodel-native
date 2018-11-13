@@ -13,7 +13,7 @@
 #include <Profiles\CompositeProfile.h>
 #include <Profiles\ArbitraryCenterLineProfile.h>
 #include <Profiles\ArbitraryCompositeProfile.h>
-#include <Profiles\CenteredProfile.h>
+#include <Profiles\ParametricProfile.h>
 #include <Profiles\DerivedProfile.h>
 #include <Profiles\AsymmetricIShapeProfile.h>
 #include <Profiles\BentPlateProfile.h>
@@ -60,7 +60,7 @@ ProfilesDomain::ProfilesDomain() : DgnDomain(PRF_SCHEMA_NAME, "Bentley Profiles 
     RegisterHandler(ArbitraryShapeProfileHandler::GetHandler());
     RegisterHandler(ArbitraryCenterLineProfileHandler::GetHandler());
     RegisterHandler(DerivedProfileHandler::GetHandler());
-    RegisterHandler(CenteredProfileHandler::GetHandler());
+    RegisterHandler(ParametricProfileHandler::GetHandler());
     RegisterHandler(AsymmetricIShapeProfileHandler::GetHandler());
     RegisterHandler(BentPlateProfileHandler::GetHandler());
     RegisterHandler(CapsuleProfileHandler::GetHandler());

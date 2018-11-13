@@ -21,4 +21,3 @@ ArbitraryCompositeProfilePtr ArbitraryCompositeProfile::Create(/*TODO: args*/)
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
-

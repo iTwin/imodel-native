@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
@@ -16,9 +16,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct SchifflerizedLShapeProfile : CenteredProfile
+struct SchifflerizedLShapeProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_SchifflerizedLShapeProfile, CenteredProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_SchifflerizedLShapeProfile, ParametricProfile);
     friend struct SchifflerizedLShapeProfileHandler;
 
 protected:
@@ -56,9 +56,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SchifflerizedLShapeProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE SchifflerizedLShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, SchifflerizedLShapeProfile, SchifflerizedLShapeProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, SchifflerizedLShapeProfile, SchifflerizedLShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // SchifflerizedLShapeProfileHandler
 

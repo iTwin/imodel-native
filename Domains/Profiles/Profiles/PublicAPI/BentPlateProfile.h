@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ProfilesDefinitions.h"
-#include "CenteredProfile.h"
+#include "ParametricProfile.h"
 #include "ICenterLineProfile.h"
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
@@ -17,9 +17,9 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct BentPlateProfile : CenteredProfile, ICenterLineProfile
+struct BentPlateProfile : ParametricProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_BentPlateProfile, CenteredProfile);
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_BentPlateProfile, ParametricProfile);
     friend struct BentPlateProfileHandler;
 
 protected:
@@ -51,9 +51,9 @@ public:
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE BentPlateProfileHandler : CenteredProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE BentPlateProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_BentPlateProfile, BentPlateProfile, BentPlateProfileHandler, CenteredProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_BentPlateProfile, BentPlateProfile, BentPlateProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // BentPlateProfileHandler
 
