@@ -173,9 +173,10 @@ private:
     SelectionManager* m_manager;
 
 private:
+    NativeLogging::ILogger& GetLogger() const;
     void OnRegistered(SelectionManager&);
     void OnUnregistered(SelectionManager&);
-    void CallSelectInstances(SelectionChangedEventCR, bvector<ECClassInstanceKey> const&);
+    void CallSelectInstances(SelectionChangedEventCR, bvector<ECClassInstanceKey>);
 
 protected:
     //! ISelectionChangesListener implementation. Handles the selection event.

@@ -458,6 +458,11 @@ SelectionChangedEventPtr SelectionChangedEvent::FromJson(IConnectionCacheCR conn
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                               Grigas.Petraitis    11/2018
+//---------------------------------------------------------------------------------------
+NativeLogging::ILogger& SelectionSyncHandler::GetLogger() const {return *NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_DGNCLIENTFX_SELECTION ".SelectionSyncHandler");}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    08/2016
 //---------------------------------------------------------------------------------------
 void SelectionSyncHandler::OnRegistered(SelectionManager& manager)
@@ -504,12 +509,17 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     SelectionInfoCPtr selectionInfo = SelectionInfo::Create(evt.GetSourceName(), evt.IsSubSelection());
     KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
     
+    Utf8String evtGuid = BeGuid(true).ToString();
+    GetLogger().debugv("_OnSelectionChanged [%s]: source = '%s', sub = '%s', keys count = %" PRIu64,
+        evtGuid.c_str(), evt.GetSourceName().c_str(), evt.IsSubSelection() ? "true" : "false", (uint64_t)inputKeys->size());
+
     // get the default content descriptor
     IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), 
-        contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).then([this, evt = SelectionChangedEventCPtr(&evt)](ContentDescriptorCPtr defaultDescriptor)
+        contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).then([this, evtGuid, evt = SelectionChangedEventCPtr(&evt)](ContentDescriptorCPtr defaultDescriptor)
         {
         if (defaultDescriptor.IsNull())
             {
+            GetLogger().debugv("_OnSelectionChanged [%s]: No descriptor", evtGuid.c_str());
             CallSelectInstances(*evt, bvector<ECClassInstanceKey>());
             return;
             }
@@ -519,10 +529,11 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
         descriptor->AddContentFlag(ContentFlags::KeysOnly);
 
         // request for content
-        IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).then([this, evt](ContentCPtr content)
+        IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).then([this, evtGuid, evt](ContentCPtr content)
             {
             if (content.IsNull())
                 {
+                GetLogger().debugv("_OnSelectionChanged [%s]: No content", evtGuid.c_str());
                 CallSelectInstances(*evt, bvector<ECClassInstanceKey>());
                 return;
                 }
@@ -531,6 +542,9 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
             bvector<ECClassInstanceKey> selectedKeys;
             for (ContentSetItemCPtr const& record : content->GetContentSet())
                 std::copy(record->GetKeys().begin(), record->GetKeys().end(), std::back_inserter(selectedKeys));
+            
+            GetLogger().debugv("_OnSelectionChanged [%s]: Set size = %" PRIu64 ", keys count = %" PRIu64, 
+                evtGuid.c_str(), (uint64_t)content->GetContentSet().GetSize(), (uint64_t)selectedKeys.size());
             CallSelectInstances(*evt, selectedKeys);
             });
         });
@@ -539,7 +553,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    11/2018
 //---------------------------------------------------------------------------------------
-void SelectionSyncHandler::CallSelectInstances(SelectionChangedEventCR evt, bvector<ECClassInstanceKey> const& keys)
+void SelectionSyncHandler::CallSelectInstances(SelectionChangedEventCR evt, bvector<ECClassInstanceKey> keys)
     {
     folly::via(_GetSelectExecutor(), [this, evt = SelectionChangedEventCPtr(&evt), keys]()
         {

@@ -61,6 +61,7 @@ KeySetPtr KeySet::Create(bvector<ECClassCP> const& classes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 INavNodeKeysContainerCPtr KeySet::GetAllNavNodeKeys() const
     {
+    BeMutexHolder lock(m_mutex);
     if (m_nodeKeysContainer.IsNull())
         {
         NavNodeKeyList keys;
@@ -81,6 +82,7 @@ INavNodeKeysContainerCPtr KeySet::GetAllNavNodeKeys() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool KeySet::Contains(ECClassCP cls, ECInstanceId instanceId) const
     {
+    BeMutexHolder lock(m_mutex);
     auto iter = m_instances.find(cls);
     return m_instances.end() != iter && iter->second.end() != iter->second.find(instanceId);
     }
@@ -90,6 +92,8 @@ bool KeySet::Contains(ECClassCP cls, ECInstanceId instanceId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t KeySet::MergeWith(KeySetCR other)
     {
+    BeMutexHolder lock(m_mutex);
+
     if (Equals(other))
         return 0;
 
@@ -119,6 +123,8 @@ uint64_t KeySet::MergeWith(KeySetCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool KeySet::Remove(ECClassCP cls, ECInstanceId instanceId)
     {
+    BeMutexHolder lock(m_mutex);
+
     auto classIter = m_instances.find(cls);
     if (m_instances.end() == classIter)
         return false;
@@ -136,6 +142,8 @@ bool KeySet::Remove(ECClassCP cls, ECInstanceId instanceId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool KeySet::Remove(NavNodeKeyCR nodeKey)
     {
+    BeMutexHolder lock(m_mutex);
+
     if (0 == m_nodes.erase(&nodeKey))
         return false;
     
@@ -148,6 +156,8 @@ bool KeySet::Remove(NavNodeKeyCR nodeKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t KeySet::Remove(KeySetCR toRemove)
     {
+    BeMutexHolder lock(m_mutex);
+
     uint64_t removed = 0;
     for (auto const& entry : toRemove.m_instances)
         {
@@ -174,6 +184,7 @@ uint64_t KeySet::Remove(KeySetCR toRemove)
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document KeySet::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
+    BeMutexHolder lock(m_mutex);
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
