@@ -50,7 +50,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_CenterLineZShapeProfile                            "CenterLineZShapeProfile"
 #define PRF_CLASS_CenteredProfile                                    "CenteredProfile"
 #define PRF_CLASS_CompositeProfile                                   "CompositeProfile"
-#define PRF_CLASS_CustomCenterLineProfile                            "CustomCenterLineProfile"
+#define PRF_CLASS_ArbitraryCenterLineProfile                         "ArbitraryCenterLineProfile"
 #define PRF_CLASS_CustomCompositeProfile                             "CustomCompositeProfile"
 #define PRF_CLASS_ArbitraryShapeProfile                              "ArbitraryShapeProfile"
 #define PRF_CLASS_DerivedProfile                                     "DerivedProfile"
@@ -265,7 +265,7 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CenterLineLShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CenterLineZShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CenteredProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CompositeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomCenterLineProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ArbitraryCenterLineProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomCompositeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ArbitraryShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DerivedProfile)

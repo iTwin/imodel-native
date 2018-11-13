@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(CustomCenterLineProfileHandler)
+HANDLER_DEFINE_MEMBERS(ArbitraryCenterLineProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomCenterLineProfilePtr CustomCenterLineProfile::Create(/*TODO: args*/)
+ArbitraryCenterLineProfilePtr ArbitraryCenterLineProfile::Create(/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }

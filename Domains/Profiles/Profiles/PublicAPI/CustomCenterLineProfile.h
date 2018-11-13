@@ -17,31 +17,31 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CustomCenterLineProfile : SinglePerimeterProfile, ICenterLineProfile
+struct ArbitraryCenterLineProfile : SinglePerimeterProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomCenterLineProfile, SinglePerimeterProfile);
-    friend struct CustomCenterLineProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, SinglePerimeterProfile);
+    friend struct ArbitraryCenterLineProfileHandler;
 
 protected:
-    explicit CustomCenterLineProfile(CreateParams const& params) : T_Super(params) {}
+    explicit ArbitraryCenterLineProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(CustomCenterLineProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CustomCenterLineProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(ArbitraryCenterLineProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(ArbitraryCenterLineProfile)
 
-    PROFILES_EXPORT static CustomCenterLineProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static ArbitraryCenterLineProfilePtr Create(/*TODO: args*/);
 
-    }; // CustomCenterLineProfile
+    }; // ArbitraryCenterLineProfile
 
 //=======================================================================================
-//! Handler for CustomCenterLineProfile class
+//! Handler for ArbitraryCenterLineProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CustomCenterLineProfileHandler : SinglePerimeterProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCenterLineProfileHandler : SinglePerimeterProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CustomCenterLineProfile, CustomCenterLineProfile, CustomCenterLineProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryCenterLineProfile, ArbitraryCenterLineProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
 
-    }; // CustomCenterLineProfileHandler
+    }; // ArbitraryCenterLineProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE
