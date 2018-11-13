@@ -15,19 +15,17 @@
             "augments": "BuildAll",
             "version_env": "VER_IMODELJSNODEADDON",
             "version_file": "$SRCROOT/iModel02/iModelJsNodeAddon/package_version.txt"
-        }
-    ],
-
-    "archived_strategies": [
+        },
         {
-            "comments": "Does not yet build with VS 2017",
-
             "name": "iModelBridgeCore",
             "archs": "x64",
             "augments": "BuildAll",
             "version_env": "VER_IMODELBRIDGECORE",
             "version_seed": "2.1.0"
-        },
+        }
+    ],
+
+    "archived_strategies": [
         {
             "comments": "Integration tests that take too long for PR turnaround",
 
