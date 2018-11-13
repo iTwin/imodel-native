@@ -59,7 +59,7 @@ namespace Internal {
     const ExtractionConfig*         m_extractionConfigP;
     const FilteringConfig*          m_filteringConfigP;
 
-    const ImagePP::HFCPtr<ImagePP::HVEClipShape> m_clipShapeP;
+    const IMAGEPP_NAMESPACE_NAME::HFCPtr<IMAGEPP_NAMESPACE_NAME::HVEClipShape> m_clipShapeP;
 
 
     virtual void _SetAreAttachmentsImported(bool importAttachments) override
@@ -109,12 +109,12 @@ namespace Internal {
         }
     virtual const CustomFilteringSequence&  _GetTargetFilters() const { return m_targetFilters; }
 
-    virtual void _SetClipShape(const ImagePP::HFCPtr<ImagePP::HVEClipShape>& clipShapePtr)
+    virtual void _SetClipShape(const IMAGEPP_NAMESPACE_NAME::HFCPtr<IMAGEPP_NAMESPACE_NAME::HVEClipShape>& clipShapePtr)
         {
-        const_cast<ImagePP::HFCPtr<ImagePP::HVEClipShape>&>(m_clipShapeP) = clipShapePtr.GetPtr();
+        const_cast<IMAGEPP_NAMESPACE_NAME::HFCPtr<IMAGEPP_NAMESPACE_NAME::HVEClipShape>&>(m_clipShapeP) = clipShapePtr.GetPtr();
         }
 
-    virtual const ImagePP::HVEClipShape* _GetClipShape() const
+    virtual const IMAGEPP_NAMESPACE_NAME::HVEClipShape* _GetClipShape() const
         {
         return m_clipShapeP.GetPtr();
         }
@@ -145,7 +145,7 @@ public:
         m_hasDefaultTargetLayer = config.m_hasDefaultTargetLayer;
         m_defaultTargetGCSP = config.m_defaultTargetGCSP;
         m_targetFilters = config.m_targetFilters;
-        const_cast<ImagePP::HFCPtr<ImagePP::HVEClipShape>&>(m_clipShapeP) = config.m_clipShapeP.GetPtr();
+        const_cast<IMAGEPP_NAMESPACE_NAME::HFCPtr<IMAGEPP_NAMESPACE_NAME::HVEClipShape>&>(m_clipShapeP) = config.m_clipShapeP.GetPtr();
         return *this;
         }
     

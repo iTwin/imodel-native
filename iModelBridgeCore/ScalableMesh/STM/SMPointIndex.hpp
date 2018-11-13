@@ -9142,7 +9142,7 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNod
     HINVARIANTS;
     
     // NEEDS_WORK_SM : Would querying the node count directly from sqlite be more efficient?
-    if (m_countsOfNodesTotal == 0)
+    if (m_countsOfNodesTotal <= 1)
         GatherCounts();
 
     return m_countsOfNodesTotal;

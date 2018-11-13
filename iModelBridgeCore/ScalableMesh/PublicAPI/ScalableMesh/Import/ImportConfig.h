@@ -46,9 +46,9 @@ struct ImportConfig : RefCountedBase
         virtual void _SetTargetFilters(const CustomFilteringSequence& targetFilters) = 0;
         virtual const CustomFilteringSequence& _GetTargetFilters(void) const = 0;
 
-        virtual void _SetClipShape(const ImagePP::HFCPtr<ImagePP::HVEClipShape>& clipShapePtr) = 0;
+        virtual void _SetClipShape(const IMAGEPP_NAMESPACE_NAME::HFCPtr<IMAGEPP_NAMESPACE_NAME::HVEClipShape>& clipShapePtr) = 0;
 
-        virtual const ImagePP::HVEClipShape* _GetClipShape() const = 0;
+        virtual const IMAGEPP_NAMESPACE_NAME::HVEClipShape* _GetClipShape() const = 0;
 
         virtual bool                    _HasDefaultTargetGCS() const = 0;
         virtual const GCS&              _GetDefaultTargetGCS() const = 0;
@@ -101,12 +101,12 @@ struct ImportConfig : RefCountedBase
             {
             return _SetTargetFilters(targetFilters);
             }
-        IMPORT_DLLE void SetClipShape(const ImagePP::HFCPtr<ImagePP::HVEClipShape>& clipShapePtr)
+        IMPORT_DLLE void SetClipShape(const IMAGEPP_NAMESPACE_NAME::HFCPtr<IMAGEPP_NAMESPACE_NAME::HVEClipShape>& clipShapePtr)
             {
             return _SetClipShape(clipShapePtr);
             }
 
-        IMPORT_DLLE const ImagePP::HVEClipShape* GetClipShape() const
+        IMPORT_DLLE const IMAGEPP_NAMESPACE_NAME::HVEClipShape* GetClipShape() const
             {
             return _GetClipShape();
             }

@@ -617,6 +617,11 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
             if (this->m_dirty)
                 {                
                 HPMBlockID blockID = HPMBlockID(this->m_nodeId);
+                if (m_dataType == SMStoreDataType::TextureCompressed)
+                {
+                    m_dataStore->StoreCompressedBlock(this->m_data, this->m_size, blockID);
+                }
+                else
                 m_dataStore->StoreBlock(this->m_data, this->m_size, blockID);                                
                 }
             }    

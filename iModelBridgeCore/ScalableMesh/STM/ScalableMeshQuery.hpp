@@ -3335,7 +3335,7 @@ template <class POINT> SMNodeViewStatus ScalableMeshNode<POINT>::_IsCorrectForVi
     return SMNodeViewStatus::NotVisible;    
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
@@ -3365,12 +3365,14 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
 
     bvector<int> componentPointsId;
    // if (NULL == m_meshNode->GetGraphPtr()) m_meshNode->CreateGraph();
-    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
-    MTGGraph* newGraphP = new MTGGraph();
-    CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
-    graphPtr->SetData(newGraphP);
-    graphPtr->SetDirty();
-
+    if (computeGraph)
+    {
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(m_meshNode->GetGraphPtr());
+        MTGGraph* newGraphP = new MTGGraph();
+        CreateGraphFromIndexBuffer(newGraphP, (const long*)&indicesVec[0], (int)nIndices, (int)nodePts.size(), componentPointsId, &nodePts[0]);
+        graphPtr->SetData(newGraphP);
+        graphPtr->SetDirty();
+    }
 
     if (componentPointsId.size() > 0)
         {
@@ -3391,7 +3393,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d*
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());
     pointsPtr->clear();
@@ -3457,7 +3459,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     return BSISUCCESS;
     }
 
-template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID)
+template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->m_node->GetPointsPtr());    
     pointsPtr->clear();
