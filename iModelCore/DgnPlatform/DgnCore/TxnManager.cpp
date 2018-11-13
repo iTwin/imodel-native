@@ -50,6 +50,21 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
     }
 
 /*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::CallJsMonitors(Utf8CP methodName, int* arg)
+    {
+    Napi::Object jsTxns = m_dgndb.GetJsTnxs();
+    if (jsTxns == nullptr) 
+        return;
+
+    std::vector<napi_value> args;
+    if (nullptr != arg)
+        args.push_back(Napi::Number::New(jsTxns.Env(), *arg));
+    m_dgndb.CallJsFunction(jsTxns, methodName, args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * We keep a statement cache just for TxnManager statements
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1307,7 +1322,7 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowCrossSessio
     if (lastUndoableId >= lastId || pos < lastUndoableId)
         return DgnDbStatus::CannotUndo;
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
 
     TxnRange range(pos, lastId);
     return ReverseActions(range, false);
@@ -1374,7 +1389,7 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowCros
         return DgnDbStatus::NothingToUndo;
         }
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
 
     TxnRange range(firstId, lastId);
     return ReverseActions(range, true);
@@ -1401,7 +1416,7 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
         return DgnDbStatus::NothingToUndo;
         }
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
 
     TxnRange range(lastUndoableId, GetCurrentTxnId());
     return ReverseActions(range, true);
@@ -1459,7 +1474,7 @@ DgnDbStatus TxnManager::ReinstateTxn()
         return DgnDbStatus::NothingToRedo;
         }
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
     TxnRange*  revTxn = &m_reversedTxn.back();
     return  ReinstateActions(*revTxn);
     }
@@ -2239,25 +2254,29 @@ struct TxnCommittedCaller
 //=======================================================================================
 struct PrepareForUndoRedoCaller
     {
-    void operator() (TxnMonitorR handler) const {handler._OnPrepareForUndoRedo();}
+    TxnManagerR m_mgr;
+    PrepareForUndoRedoCaller(TxnManagerR mgr) : m_mgr(mgr) {}
+    void operator() (TxnMonitorR handler) const {handler._OnPrepareForUndoRedo(m_mgr);}
     };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/13
 //=======================================================================================
-struct UndoRedoFinishedCaller
+struct UndoRedoCaller
     {
     TxnManagerR m_mgr;
     TxnAction m_action;
-    UndoRedoFinishedCaller(TxnManager& mgr, TxnAction action) : m_mgr(mgr), m_action(action) {}
+    UndoRedoCaller(TxnManager& mgr, TxnAction action) : m_mgr(mgr), m_action(action) {}
     void operator()(TxnMonitorR handler) const {handler._OnUndoRedo(m_mgr, m_action);}
     };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
     {
+    mgr.CallJsMonitors("_onCommit");
     CallMonitors(TxnCommitCaller(mgr));
     }
 
@@ -2266,23 +2285,26 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnCommitted(TxnManagerR mgr)
     {
+    mgr.CallJsMonitors("_onCommitted");
     CallMonitors(TxnCommittedCaller(mgr));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR summary)
+void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR mgr)
     {
-    CallMonitors(TxnAppliedCaller(summary));
+    mgr.CallJsMonitors("_onAppliedChanges");
+    CallMonitors(TxnAppliedCaller(mgr));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Zukauskas               11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo()
+void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo(TxnManagerR mgr)
     {
-    CallMonitors(PrepareForUndoRedoCaller());
+    mgr.CallJsMonitors("_onPrepareForUndRedo");
+    CallMonitors(PrepareForUndoRedoCaller(mgr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2290,7 +2312,9 @@ void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedo(TxnManager& mgr, TxnAction action)
     {
-    CallMonitors(UndoRedoFinishedCaller(mgr, action));
+    int jsAction = (int) action;
+    mgr.CallJsMonitors("_onUndoRedo", &jsAction);
+    CallMonitors(UndoRedoCaller(mgr, action));
     }
 
 /*---------------------------------------------------------------------------------**//**

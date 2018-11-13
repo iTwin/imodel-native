@@ -1022,6 +1022,7 @@ TEST_F(DynamicTxnsTest, TxnMonitors)
     ExpectNoneExist(dynamicIds);
     }
 
+#if defined JS_TXN_MGR_CHANGE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1092,34 +1093,27 @@ struct RootChangedCallback : TestElementDrivesElementHandler::Callback
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DynamicChangesProcessor : DynamicTxnProcessor
 {
-    size_t m_expectedCount;
     uint32_t m_expectedWidth;
-    DgnElementId m_depId;
-    RootChangedCallback& m_cb;
     DgnDbR m_db;
-    size_t m_actualCount;
     uint32_t m_actualWidth;
 
-    DynamicChangesProcessor(RootChangedCallback& cb, DgnElementId depId, DgnDbR db)
-        : m_expectedCount(0), m_expectedWidth(0), m_depId(depId), m_cb(cb), m_db(db),
-          m_actualCount(0), m_actualWidth(0) { }
+    DynamicChangesProcessor(DgnElementId depId, DgnDbR db)
+        : m_expectedCount(0), m_expectedWidth(0),  m_db(db),
+          m_actualWidth(0) { }
 
     void _ProcessDynamicChanges() override
         {
-        m_actualCount = m_cb.GetInvokeCount();
         m_actualWidth = getDependentWidth(m_depId, m_db);
         }
 
     void Expect(size_t count, uint32_t width)
         {
         Reset();
-        m_expectedCount = count;
         m_expectedWidth = width;
         }
 
     void Reset()
         {
-        m_actualCount = 0;
         m_actualWidth = 0;
         }
 };
@@ -1222,6 +1216,7 @@ TEST_F(DynamicTxnsTest, IndirectChanges)
     EXPECT_EQ(2, getDependentWidth(depId, db));
     EXPECT_FALSE(cb.WasInvoked());
     }
+#endif
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
