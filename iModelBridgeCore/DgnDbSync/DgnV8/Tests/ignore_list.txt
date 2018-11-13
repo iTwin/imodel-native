@@ -44,3 +44,16 @@ MultiBridgeTests.Sandwich
     #d:\bsw\imodel02-hg\src\DgnDbSync\DgnV8\Tests\MultiBridgeTests.cpp(377): error:       Expected: 1
     #To be equal to: masterModels.size()
     #     Which is: 2
+
+TransformTests.Test1
+    # files on imodel02 CI jobs
+    # https://bentleycs.visualstudio.com/iModelTechnologies/_build/results?buildId=36993&_a=summary&view=logs
+    # [ RUN      ] TransformTests.Test1
+    # D:\vsts_a\39\bbsrc\imodel02\iModelBridgeCore\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(435): error:       Expected: hadAnyChanges
+    #       Which is: true
+    # To be equal to: expectUpdate
+    #       Which is: false
+    # D:\vsts_a\39\bbsrc\imodel02\iModelBridgeCore\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1181): error:       Expected: 0
+    # To be equal to: m_count
+    #       Which is: 2
+    # [  FAILED  ] TransformTests.Test1 (718 ms)
