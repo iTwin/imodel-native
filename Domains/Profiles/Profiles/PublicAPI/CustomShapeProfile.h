@@ -16,19 +16,19 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //! 
 //! @ingroup GROUP_Profiles
 //=======================================================================================
-struct CustomShapeProfile : SinglePerimeterProfile
+struct ArbitraryShapeProfile : SinglePerimeterProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CustomShapeProfile, SinglePerimeterProfile);
-    friend struct CustomShapeProfileHandler;
+    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ArbitraryShapeProfile, SinglePerimeterProfile);
+    friend struct ArbitraryShapeProfileHandler;
 
 protected:
-    explicit CustomShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit ArbitraryShapeProfile(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(CustomShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CustomShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS(ArbitraryShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS(ArbitraryShapeProfile)
 
-    PROFILES_EXPORT static CustomShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static ArbitraryShapeProfilePtr Create(/*TODO: args*/);
 
 public:
     PROFILES_EXPORT IGeometryPtr GetOuterCurve() const;
@@ -37,17 +37,17 @@ public:
     PROFILES_EXPORT IGeometryPtr GetInnerCurves() const;
     PROFILES_EXPORT void SetInnerCurves(IGeometryPtr val);
 
-    }; // CustomShapeProfile
+    }; // ArbitraryShapeProfile
 
 //=======================================================================================
-//! Handler for CustomShapeProfile class
+//! Handler for ArbitraryShapeProfile class
 //! @ingroup GROUP_Profiles
 //! @private
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CustomShapeProfileHandler : SinglePerimeterProfileHandler
+struct EXPORT_VTABLE_ATTRIBUTE ArbitraryShapeProfileHandler : SinglePerimeterProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CustomShapeProfile, CustomShapeProfile, CustomShapeProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ArbitraryShapeProfile, ArbitraryShapeProfile, ArbitraryShapeProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
 
-    }; // CustomShapeProfileHandler
+    }; // ArbitraryShapeProfileHandler
 
 END_BENTLEY_PROFILES_NAMESPACE

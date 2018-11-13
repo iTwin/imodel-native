@@ -52,7 +52,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_CLASS_CompositeProfile                                   "CompositeProfile"
 #define PRF_CLASS_CustomCenterLineProfile                            "CustomCenterLineProfile"
 #define PRF_CLASS_CustomCompositeProfile                             "CustomCompositeProfile"
-#define PRF_CLASS_CustomShapeProfile                                 "CustomShapeProfile"
+#define PRF_CLASS_ArbitraryShapeProfile                              "ArbitraryShapeProfile"
 #define PRF_CLASS_DerivedProfile                                     "DerivedProfile"
 #define PRF_CLASS_DoubleCShapeProfile                                "DoubleCShapeProfile"
 #define PRF_CLASS_DoubleLShapeProfile                                "DoubleLShapeProfile"
@@ -120,8 +120,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_CenterLineZShapeProfile_FilletRadius                            "FilletRadius"
 #define PRF_PROP_CenterLineZShapeProfile_Girth                                   "Girth"
 #define PRF_PROP_CircleProfile_Radius                                            "Radius"
-#define PRF_PROP_CustomShapeProfile_OuterCurve                                   "OuterCurve"
-#define PRF_PROP_CustomShapeProfile_InnerCurves                                  "InnerCurves"
+#define PRF_PROP_ArbitraryShapeProfile_OuterCurve                                "OuterCurve"
+#define PRF_PROP_ArbitraryShapeProfile_InnerCurves                               "InnerCurves"
 #define PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis                          "MirrorProfileAboutYAxis"
 #define PRF_PROP_DerivedProfile_Offset                                           "Offset"
 #define PRF_PROP_DerivedProfile_Rotation                                         "Rotation"
@@ -269,7 +269,7 @@ PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CenteredProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CompositeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomCenterLineProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomCompositeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ArbitraryShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DerivedProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleCShapeProfile)
 PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleLShapeProfile)
