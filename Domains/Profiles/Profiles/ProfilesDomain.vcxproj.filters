@@ -172,13 +172,13 @@
     <ClCompile Include="Implementation\DerivedProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles</Filter>
     </ClCompile>
-    <ClCompile Include="Implementation\CustomCenterLineProfile.cpp">
-      <Filter>Src\SinglePerimeterProfiles</Filter>
-    </ClCompile>
     <ClCompile Include="Implementation\CenteredProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles</Filter>
     </ClCompile>
     <ClCompile Include="Implementation\ArbitraryShapeProfile.cpp">
+      <Filter>Src\SinglePerimeterProfiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Implementation\ArbitraryCenterLineProfile.cpp">
       <Filter>Src\SinglePerimeterProfiles</Filter>
     </ClCompile>
   </ItemGroup>
@@ -288,10 +288,10 @@
     <ClInclude Include="PublicAPI\StandardProfileAspect.h">
       <Filter>PublicAPI\Aspects</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\CustomCenterLineProfile.h">
+    <ClInclude Include="PublicAPI\ArbitraryShapeProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ArbitraryShapeProfile.h">
+    <ClInclude Include="PublicAPI\ArbitraryCenterLineProfile.h">
       <Filter>PublicAPI\SinglePerimeterProfiles</Filter>
     </ClInclude>
   </ItemGroup>

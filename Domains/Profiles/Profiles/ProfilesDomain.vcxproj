@@ -39,7 +39,7 @@
     <ClCompile Include="Implementation\CenterLineZShapeProfile.cpp" />
     <ClCompile Include="Implementation\CompositeProfile.cpp" />
     <ClCompile Include="Implementation\CShapeProfile.cpp" />
-    <ClCompile Include="Implementation\CustomCenterLineProfile.cpp" />
+    <ClCompile Include="Implementation\ArbitraryCenterLineProfile.cpp" />
     <ClCompile Include="Implementation\CustomCompositeProfile.cpp" />
     <ClCompile Include="Implementation\ArbitraryShapeProfile.cpp" />
     <ClCompile Include="Implementation\DerivedProfile.cpp" />
@@ -77,7 +77,7 @@
     <ClInclude Include="PublicAPI\CenterLineZShapeProfile.h" />
     <ClInclude Include="PublicAPI\CompositeProfile.h" />
     <ClInclude Include="PublicAPI\CShapeProfile.h" />
-    <ClInclude Include="PublicAPI\CustomCenterLineProfile.h" />
+    <ClInclude Include="PublicAPI\ArbitraryCenterLineProfile.h" />
     <ClInclude Include="PublicAPI\CustomCompositeProfile.h" />
     <ClInclude Include="PublicAPI\ArbitraryShapeProfile.h" />
     <ClInclude Include="PublicAPI\DerivedProfile.h" />

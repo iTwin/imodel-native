@@ -11,7 +11,7 @@
 #include <Profiles\Profile.h>
 #include <Profiles\SinglePerimeterProfile.h>
 #include <Profiles\CompositeProfile.h>
-#include <Profiles\CustomCenterLineProfile.h>
+#include <Profiles\ArbitraryCenterLineProfile.h>
 #include <Profiles\CustomCompositeProfile.h>
 #include <Profiles\CenteredProfile.h>
 #include <Profiles\DerivedProfile.h>

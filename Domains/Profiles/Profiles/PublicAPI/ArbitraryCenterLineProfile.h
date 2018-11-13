@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Profiles/PublicAPI/CustomCenterLineProfile.h $
+|     $Source: Profiles/PublicAPI/ArbitraryCenterLineProfile.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
