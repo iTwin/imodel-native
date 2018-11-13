@@ -120,8 +120,6 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_CenterLineZShapeProfile_FilletRadius                            "FilletRadius"
 #define PRF_PROP_CenterLineZShapeProfile_Girth                                   "Girth"
 #define PRF_PROP_CircleProfile_Radius                                            "Radius"
-#define PRF_PROP_ArbitraryShapeProfile_OuterCurve                                "OuterCurve"
-#define PRF_PROP_ArbitraryShapeProfile_InnerCurves                               "InnerCurves"
 #define PRF_PROP_DerivedProfile_MirrorProfileAboutYAxis                          "MirrorProfileAboutYAxis"
 #define PRF_PROP_DerivedProfile_Offset                                           "Offset"
 #define PRF_PROP_DerivedProfile_Rotation                                         "Rotation"

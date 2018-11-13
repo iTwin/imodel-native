@@ -30,13 +30,6 @@ public:
 
     PROFILES_EXPORT static ArbitraryShapeProfilePtr Create(/*TODO: args*/);
 
-public:
-    PROFILES_EXPORT IGeometryPtr GetOuterCurve() const;
-    PROFILES_EXPORT void SetOuterCurve(IGeometryPtr val);
-
-    PROFILES_EXPORT IGeometryPtr GetInnerCurves() const;
-    PROFILES_EXPORT void SetInnerCurves(IGeometryPtr val);
-
     }; // ArbitraryShapeProfile
 
 //=======================================================================================
