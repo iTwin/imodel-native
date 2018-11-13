@@ -1270,24 +1270,6 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Add the name of the most derived class in BisCore as the "bisBaseClass" member to the supplied
-* Json object. This helps frontend code determine the "bis type" for classes from other domains.
-* @bsimethod                                    Keith.Bentley                   06/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::AddBisClassName(JsonValueR val, ECClassCP ecClass)
-    {
-    while (0 != BeStringUtilities::Strnicmp("biscore", ecClass->GetFullName(), 6))
-        {
-        auto baseClasses = ecClass->GetBaseClasses();
-        if (baseClasses.empty())
-            return;
-        ecClass = baseClasses[0];
-        }
-
-    val[json_bisBaseClass()] = ecClass->GetName();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
@@ -1296,7 +1278,6 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     auto ecClass = GetElementClass();
     BeAssert(ecClass != nullptr);
     val[json_classFullName()] = ecClass->GetFullName();
-    AddBisClassName(val, ecClass);
 
     val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
