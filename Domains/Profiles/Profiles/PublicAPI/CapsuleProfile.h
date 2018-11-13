@@ -30,6 +30,12 @@ public:
 
     PROFILES_EXPORT static CapsuleProfilePtr Create(Dgn::DgnModelCR model);
 
+    PROFILES_EXPORT double GetWidth() const;
+    PROFILES_EXPORT void SetWidth(double val);
+
+    PROFILES_EXPORT double GetDepth() const;
+    PROFILES_EXPORT void SetDepth(double val);
+
     }; // CapsuleProfile
 
 //=======================================================================================

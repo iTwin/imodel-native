@@ -22,4 +22,36 @@ CapsuleProfilePtr CapsuleProfile::Create(DgnModelCR model)
     return new CapsuleProfile(params);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CapsuleProfile::GetWidth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CapsuleProfile_Width);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CapsuleProfile::SetWidth(double val)
+    {
+    SetPropertyValue(PRF_PROP_CapsuleProfile_Width, ECN::ECValue(val));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double CapsuleProfile::GetDepth() const
+    {
+    return GetPropertyValueDouble(PRF_PROP_CapsuleProfile_Depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CapsuleProfile::SetDepth(double val)
+    {
+    SetPropertyValue(PRF_PROP_CapsuleProfile_Depth, ECN::ECValue(val));
+    }
+
 END_BENTLEY_PROFILES_NAMESPACE
