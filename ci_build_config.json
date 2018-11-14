@@ -4,7 +4,7 @@
     "strategies": [
         {
             "name": "iModelCore",
-            "archs": "x64+androidarm64+iosarm64+macosx64+linuxx64",
+            "archs": "x64+winrtx64+androidarm64+iosarm64+macosx64+linuxx64",
             "augments": "",
             "version_env": "VER_IMODELCORE",
             "version_seed": "2.1.0"
