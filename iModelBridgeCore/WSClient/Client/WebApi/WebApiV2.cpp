@@ -249,20 +249,25 @@ ActivityLogger WebApiV2::CreateActivityLogger(Utf8StringCR activityName, IWSRepo
     if (m_info.GetWebApiVersion() < BeVersion(2, 7))
         {
         auto activityLogger = ActivityLogger(LOG, activityName);
-        if (nullptr != options && options->GetActivityOptions().HasActivityId())
-            activityLogger.warning("Activity id will be ignored, because it's supported from WebApi 2.7 only");
+        if (nullptr != options && options->GetActivityOptions()->HasActivityId())
+            activityLogger.warning("Specified activity id will be ignored, because it's supported from WebApi 2.7 only");
         return activityLogger;
         }
 
     Utf8String activityId;
-    if (nullptr != options && options->GetActivityOptions().HasActivityId())
-        activityId = options->GetActivityOptions().GetActivityId();
+    if (nullptr != options && options->GetActivityOptions()->HasActivityId())
+        {
+        activityId = options->GetActivityOptions()->GetActivityId();
+        }
     else
+        {
         activityId = m_configuration->GetActivityIdGenerator().GenerateNextId();
+        }
 
     auto headerName = IWSRepositoryClient::ActivityOptions::HeaderName::Default;
     if (nullptr != options)
-        headerName = options->GetActivityOptions().GetHeaderName();
+        headerName = options->GetActivityOptions()->GetHeaderName();
+
     Utf8String headerNameString = IWSRepositoryClient::ActivityOptions::HeaderNameToString(headerName);
 
     return ActivityLogger(LOG, activityName, headerNameString, activityId);

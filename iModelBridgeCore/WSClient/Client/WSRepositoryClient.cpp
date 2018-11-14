@@ -48,6 +48,7 @@ Utf8String IWSRepositoryClient::ActivityOptions::HeaderNameToString(HeaderName h
         case HeaderName::XCorrelationId:
             return HEADER_XCorrelationId;
         }
+
     BeAssert(false && "Unknown header name for ActivityId");
     return Utf8String();
     }

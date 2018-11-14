@@ -65,7 +65,6 @@ struct IWSRepositoryClient
     struct RequestOptions;
     typedef std::shared_ptr<RequestOptions> RequestOptionsPtr;
     struct ActivityOptions;
-    typedef ActivityOptions& ActivityOptionsR;
     typedef std::shared_ptr<ActivityOptions> ActivityOptionsPtr;
     struct JobOptions;
     typedef std::shared_ptr<JobOptions> JobOptionsPtr;
@@ -487,7 +486,7 @@ struct IWSRepositoryClient::RequestOptions
         uint64_t GetTransferTimeOut() const {return m_transferTimeOut;}
 
         //! Retrieve options for activity
-        ActivityOptionsR GetActivityOptions() { return *m_activityOptions; }
+        ActivityOptionsPtr GetActivityOptions() { return m_activityOptions; }
 
         //! Retrieve options required for WSG asynchronous job operations
         //! Jobs API can be enabled through these options
@@ -513,19 +512,27 @@ struct IWSRepositoryClient::ActivityOptions
 
     public:
         ActivityOptions() :
-        m_headerName(HeaderName::Default),
-        m_activityId(Utf8String())
+        m_headerName(HeaderName::Default)
             {}
 
-        //! Header name for Activity id in each Http request to WSG
+        //! Set header name for Activity id in each Http request to WSG
         void SetHeaderName(HeaderName headerName) { m_headerName = headerName; }
+
+        //! Get header name for Activity id in each Http request to WSG
         HeaderName GetHeaderName() const { return m_headerName; }
 
-        //! Activity id for all Http requests in current Api method. Optional
+        //! Set custom activity id for all Http requests in current Api method.
+        //! If activity id is not set then unique value will be generated.
+        //! It is not recommended to use custom activity id value. Optional
         void SetActivityId(Utf8StringCR activityId) { m_activityId = activityId; }
+
+        //! Get activity id for all Http requests in current Api method
         Utf8StringCR GetActivityId() const { return m_activityId; }
+
+        //! Check if activity id is set
         bool HasActivityId() const { return !m_activityId.empty(); }
 
+        //! Converts specified HeaderName enum value to String
         WSCLIENT_EXPORT static Utf8String HeaderNameToString(HeaderName headerName);
     };
 
