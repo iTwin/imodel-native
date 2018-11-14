@@ -430,6 +430,7 @@ struct WebMercatorDisplayHandler : DisplayStyle::BackgroundMapDisplayHandler
 
     WebMercatorDisplayHandler(Json::Value const&  settings);
     void _Initialize(Json::Value const& settings) override;
+    virtual bool _GetDisplayPlane(DPlane3dR) override;
 
     TileTree::RootPtr _GetTileTree(SceneContextR sceneContext) override;
 };

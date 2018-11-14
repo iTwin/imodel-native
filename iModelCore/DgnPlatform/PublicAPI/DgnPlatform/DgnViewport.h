@@ -206,6 +206,7 @@ protected:
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const;
+    void ExtendRangeForBackgroundMap(DRange3dR extents) const;
     virtual double _GetCameraFrustumNearScaleLimit() const {return GetRenderTarget()->_GetCameraFrustumNearScaleLimit();}
 
     virtual bool _IsVisible() const {return true;}

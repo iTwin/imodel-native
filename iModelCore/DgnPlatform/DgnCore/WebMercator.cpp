@@ -1311,3 +1311,20 @@ TileTree::RootPtr WebMercatorDisplayHandler::_GetTileTree(SceneContextR sceneCon
     m_provider->_FetchTemplateUrl();
     return nullptr;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WebMercatorDisplayHandler::_GetDisplayPlane(DPlane3dR plane)
+    {
+    if (m_provider.IsNull())
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    double z = m_settings[WebMercatorModel::json_groundBias()].asDouble(-1.0);
+    plane.InitFromOriginAndNormal(0.0, 0.0, z, 0.0, 0.0, 1.0);
+    return true;
+    }
+
