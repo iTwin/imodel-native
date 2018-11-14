@@ -341,7 +341,7 @@ void LastPackageRequest::_PrepareHttpRequestStringAndPayload() const
     {
     m_serverName = GeoCoordinationService::GetServerName();
     WSGURL::_PrepareHttpRequestStringAndPayload();
-    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s/PreparedPackage?last=true", GeoCoordinationService::GetWSGProtocol(), GeoCoordinationService::GetRepoName(), GeoCoordinationService::GetSchemaName()));
+    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s/PreparedPackage?last=true", GeoCoordinationService::GetWSGProtocol().c_str(), GeoCoordinationService::GetRepoName().c_str(), GeoCoordinationService::GetSchemaName().c_str()));
     }
 
 //=====================================================================================
