@@ -1118,7 +1118,7 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
     if (nullptr == m_bridge)
         return BentleyStatus::SUCCESS;
 
-    StopWatch releaseBridge;
+    StopWatch releaseBridge (true);
     auto releaseFunc = m_jobEnvArgs.ReleaseBridge();
     if (nullptr == releaseFunc)
         {
@@ -1516,7 +1516,7 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
 BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     {
     GetLogger().trace("Entering TryOpenBimWithBisSchemaUpgrade");
-    StopWatch openBimWithSchemaUpgrade;
+    StopWatch openBimWithSchemaUpgrade(true);
     bool madeSchemaChanges = false;
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);

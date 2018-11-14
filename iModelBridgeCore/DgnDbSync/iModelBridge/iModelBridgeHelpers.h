@@ -35,7 +35,7 @@ struct iModelBridgeCallOpenCloseFunctions
 
     void CallOpenFunctions(DgnDbR db)
         {
-        StopWatch stopWatch;
+        StopWatch stopWatch(true);
         m_bstatus = m_bridge._OnOpenBim(db);
         if (BSISUCCESS == m_bstatus)
             m_sstatus = m_bridge._OpenSource();
@@ -45,7 +45,7 @@ struct iModelBridgeCallOpenCloseFunctions
 
     void CallCloseFunctions()
         {
-        StopWatch stopWatch;
+        StopWatch stopWatch(true);
         if (BSISUCCESS != m_bstatus)    // If I never opened the BIM, then don't make any callbacks
             return;
 
