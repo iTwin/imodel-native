@@ -479,6 +479,90 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishConstructionGeometry)
     ASSERT_TRUE(lineStringCP4->IsSameStructureAndGeometry(*expectedLineStringCP4));
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartCenterPlacementStrategyTests, ChangeNormalWhilePickingEndPoint)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AddKeyPoint({1,0,0});
+    sut->AddKeyPoint({0,0,0});
+    sut->AddDynamicKeyPoint({0,1,0});
+
+    DVec3d actualNormal;
+    DVec3d expectedNormal;
+    double expectedRadius = 1;
+
+    expectedNormal = DVec3d::From(0, 0, 1);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), actualNormal));
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), expectedRadius);
+    // Don't care about the sweep sign here since we expect a 90 degree arc
+    // and we are checking start/end points too.
+    ASSERT_DOUBLE_EQ(fabs(arc.sweep), Angle::DegreesToRadians(90));
+    DPoint3d arcStart, arcEnd;
+    arc.EvaluateEndPoints(arcStart, arcEnd);
+    ASSERT_TRUE(arcStart.AlmostEqual(DPoint3d::From(1, 0, 0)));
+    ASSERT_TRUE(arcEnd.AlmostEqual(DPoint3d::From(0, 1, 0)));
+    ASSERT_TRUE(DVec3d::FromNormalizedCrossProduct(arc.vector0, arc.vector90).AlmostEqual(expectedNormal));
+
+    expectedNormal = DVec3d::From(0, -1, 0);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    sut->AddDynamicKeyPoint({0,0,1});
+    arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), expectedRadius);
+    ASSERT_DOUBLE_EQ(fabs(arc.sweep), Angle::DegreesToRadians(90));
+    arc.EvaluateEndPoints(arcStart, arcEnd);
+    ASSERT_TRUE(arcStart.AlmostEqual(DPoint3d::From(1, 0, 0)));
+    ASSERT_TRUE(arcEnd.AlmostEqual(DPoint3d::From(0, 0, 1)));
+    ASSERT_TRUE(DVec3d::FromNormalizedCrossProduct(arc.vector0, arc.vector90).AlmostEqual(expectedNormal));
+
+    expectedNormal = DVec3d::From(1, 1, 0);
+    expectedNormal.Normalize();
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    sut->AddDynamicKeyPoint({0,0,1});
+    arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), expectedRadius);
+    ASSERT_DOUBLE_EQ(fabs(arc.sweep), Angle::DegreesToRadians(90));
+    arc.EvaluateEndPoints(arcStart, arcEnd);
+    DVec3d expectedCenterToArcStart = DVec3d::From(1, -1, 0);
+    expectedCenterToArcStart.Normalize();
+    ASSERT_TRUE(arcStart.AlmostEqual(expectedCenterToArcStart));
+    ASSERT_TRUE(arcEnd.AlmostEqual(DPoint3d::From(0, 0, 1)));
+
+    expectedNormal = DVec3d::From(-1, 0, 0);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    sut->AddDynamicKeyPoint({0,0,1});
+
+    // should produce invalid arc, because the radius should be 0 (center point matches with the start point)
+    ASSERT_FALSE(sut->FinishPrimitive().IsValid());
+
+    // go back to the initial normal to check if the keypoint for arc start was untouched.
+    expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    sut->AddDynamicKeyPoint({0,1,0});
+    arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), expectedRadius);
+    ASSERT_DOUBLE_EQ(fabs(arc.sweep), Angle::DegreesToRadians(90));
+    arc.EvaluateEndPoints(arcStart, arcEnd);
+    ASSERT_TRUE(arcStart.AlmostEqual(DPoint3d::From(1, 0, 0)));
+    ASSERT_TRUE(arcEnd.AlmostEqual(DPoint3d::From(0, 1, 0)));
+    ASSERT_TRUE(DVec3d::FromNormalizedCrossProduct(arc.vector0, arc.vector90).AlmostEqual(expectedNormal));
+    }
+
 #pragma endregion
 
 #pragma region Arc_CenterStart_PlacementStrategy

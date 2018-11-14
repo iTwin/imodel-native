@@ -42,6 +42,10 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         static bool PointsOnLine(DPoint3dCR, DPoint3dCR, DPoint3dCR);
         void UpdateLastArc();
 
+        //! Returns the Start keypoint rotated around the Center keypoint so that
+        //! the vector that goes from center to this point is perpendicular to the normal.
+        DPoint3d GetArcStart() const;
+
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
 

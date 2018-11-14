@@ -116,14 +116,14 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
         if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
             return nullptr;
 
-        DVec3d centerToStart = GetStart() - GetCenter();
+        DVec3d centerToStart = GetArcStart() - GetCenter();
         if (DoubleOps::AlmostEqual(centerToStart.Magnitude(), 0))
             return nullptr;
 
         DVec3d centerToMid = GeometryUtils::CreateVectorFromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 4));
         DVec3d centerToEnd = GeometryUtils::CreateVectorFromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 2));
 
-        DPoint3d start = GetStart();
+        DPoint3d start = GetArcStart();
         DPoint3d mid = GetCenter() + centerToMid;
         DPoint3d end = GetCenter() + centerToEnd;
 
@@ -150,7 +150,7 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
         if (BentleyStatus::SUCCESS != _TryGetProperty(prop_Normal(), normal))
             return nullptr;
 
-        DVec3d centerStart = DVec3d::FromStartEnd(GetCenter(), GetStart());
+        DVec3d centerStart = DVec3d::FromStartEnd(GetCenter(), GetArcStart());
         if (DoubleOps::AlmostEqual(centerStart.Magnitude(), 0)) // 0 radius arc
             return nullptr;
 
@@ -241,7 +241,7 @@ bvector<IGeometryPtr> ArcManipulationStrategy::_FinishConstructionGeometry() con
             return bvector<IGeometryPtr>();
 
         DPoint3d center = GetCenter();
-        DPoint3d start = GetStart();
+        DPoint3d start = GetArcStart();
         DVec3d centerStart = start - center;
 
         if (m_useRadius)
@@ -268,7 +268,7 @@ void ArcManipulationStrategy::_OnKeyPointsChanged()
         return;
 
     if (IsCenterSet())
-        UpdateSweep(GetStart(), GetCenter(), GetEnd());
+        UpdateSweep(GetArcStart(), GetCenter(), GetEnd());
     else if(IsMidSet())
         {
         DEllipse3d tmpArc = DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd());
@@ -527,4 +527,41 @@ void ArcManipulationStrategy::_ResetDynamicKeyPoint()
     {
     UpdateLastArc();
     T_Super::_ResetDynamicKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPoint3d ArcManipulationStrategy::GetArcStart() const
+    {
+    // We need start and center keypoints, since we need to keep the radius,
+    // which is determined by the distance between those two points.
+    if (!IsStartSet() || !IsCenterSet())
+        return INVALID_POINT;
+
+    DPoint3d startKeyPoint = GetStart();
+    DPoint3d centerKeyPoint = GetCenter();
+    double radius = centerKeyPoint.Distance(startKeyPoint);
+
+    DVec3d normal;
+    // Vector from center to start should be perpendicular to normal,
+    // so we cannot calculate the arc start point without it.
+    if (_TryGetProperty(prop_Normal(), normal) != BentleyStatus::SUCCESS)
+        return startKeyPoint;
+    
+    DPlane3d workingPlane = DPlane3d::FromOriginAndNormal(centerKeyPoint, normal);
+
+    DPoint3d tmpArcStartPoint;
+    workingPlane.ProjectPoint(tmpArcStartPoint, startKeyPoint);
+    // Can't do anything if the projection is the same as the center point.
+    // We would get a zero vector with which we couldn't do much.
+    if (tmpArcStartPoint.AlmostEqual(centerKeyPoint))
+        return tmpArcStartPoint;
+
+    DVec3d centerToArcStart = DVec3d::FromStartEnd(centerKeyPoint, tmpArcStartPoint);
+    centerToArcStart.ScaleToLength(radius);
+
+    DPoint3d arcStartPoint = centerKeyPoint;
+    arcStartPoint.Add(centerToArcStart);
+    return arcStartPoint;
     }
