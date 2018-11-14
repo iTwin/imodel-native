@@ -243,6 +243,8 @@ CoreFileObjectList =% $(MultiCompileObjectList)
 
 # Drainage files
 
+%if $(BUILD_TOOLSET) != "APPLE_CLANG"
+
 nameToDefine = __BENTLEYTMDRAINAGE_BUILD__
 %include cdefapnd.mki
 
@@ -268,6 +270,7 @@ $(o)bcdtmDrainageUtility$(oext)   : $(coreDir)../Drainage/bcdtmDrainageUtility.c
 
 $(o)WaterAnalysis$(oext)            : $(baseDir)../Drainage/WaterAnalysis.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(baseDir)../Drainage/PublicAPI/WaterAnalysis.h ${MultiCompileDepends}
 
+%endif
 
 %include MultiCppCompileGo.mki
 

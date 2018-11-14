@@ -25,9 +25,9 @@ thread_local DTMUserTag *tmpUserTagP = NULL;
 /*
 **  Global Error Message
 */
-thread_local long    DTM_DTM_ERROR_STATUS = 0;
-thread_local long    DTM_DTM_ERROR_NUMBER = 0;
-thread_local char    DTM_DTM_ERROR_MESSAGE[256] = { 0 };
+BENTLEYDTM_EXPORT thread_local long    DTM_DTM_ERROR_STATUS = 0;
+BENTLEYDTM_EXPORT thread_local long    DTM_DTM_ERROR_NUMBER = 0;
+BENTLEYDTM_EXPORT thread_local char    DTM_DTM_ERROR_MESSAGE[256] = { 0 };
 /*
 **  Global Variables
 */  
