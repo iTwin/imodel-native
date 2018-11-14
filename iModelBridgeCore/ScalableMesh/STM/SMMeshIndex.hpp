@@ -2606,7 +2606,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
     }
 
-template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr = Transform::FromIdentity())
+template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr)
 {
     bvector<uint64_t> clipList;
     bvector<DRange3d> clipRanges;
@@ -2653,7 +2653,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndexNode<POINT, EXTENT>::Colle
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/18
 //=======================================================================================
-template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr = Transform::FromIdentity())
+template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr)
 {
     if (!IsLoaded()) Load();
 

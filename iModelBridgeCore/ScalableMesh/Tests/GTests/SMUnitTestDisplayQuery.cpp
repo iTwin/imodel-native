@@ -116,6 +116,11 @@ public:
 
     ~ScalableMeshDisplayCacheManager();
 
+    bool _HasCompatibleSettings(SmCachedDisplayMesh* mesh)
+    {
+        return true;
+    }
+
 };
 
 
