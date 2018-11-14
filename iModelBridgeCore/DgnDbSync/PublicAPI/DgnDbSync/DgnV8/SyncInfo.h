@@ -156,19 +156,19 @@ struct SyncInfo
     //! There should be 1 File entry in syncinfo for each v8 file processed by the converter.
     struct V8FileProvenance : FileInfo
         {
-        SyncInfo&   m_syncInfo;
+        friend SyncInfo;
+        SyncInfo*           m_syncInfo;
         V8FileSyncInfoId    m_syncId;
 
-        V8FileProvenance(SyncInfo& s) : m_syncInfo(s) {} 
-        V8FileProvenance(DgnV8FileCR, SyncInfo&, StableIdPolicy);
-        DGNDBSYNC_EXPORT V8FileProvenance(BentleyApi::BeFileNameCR, SyncInfo&, StableIdPolicy);
-
+        private:
         BeSQLite::DbResult Insert();
-        BeSQLite::DbResult Update();
-        DGNDBSYNC_EXPORT bool FindByName(bool fillLastModData);
-        bool IsValid() const {return m_syncId.IsValid();}
+        BeSQLite::DbResult Update(V8FileSyncInfoId, FileInfo const&);
 
-        DGNDBSYNC_EXPORT static V8FileProvenance GetById(V8FileSyncInfoId, SyncInfo&);
+        V8FileProvenance(SyncInfo& s) : m_syncInfo(&s) {} 
+        V8FileProvenance(DgnV8FileCR, SyncInfo&, StableIdPolicy);
+
+        public:
+        bool IsValid() const {return m_syncId.IsValid();}
         };
 
     struct FileIterator : BeSQLite::DbTableIterator
@@ -188,7 +188,7 @@ struct SyncInfo
             DGNDBSYNC_EXPORT uint64_t GetFileSize();
             DGNDBSYNC_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
             Entry const& operator* () const {return *this;}
-            V8FileProvenance GetV8FileSyncInfoId(SyncInfo& si);
+            V8FileProvenance GetV8FileProvenance(SyncInfo& si);
         };
 
         typedef Entry const_iterator;
@@ -659,8 +659,6 @@ protected:
     //! Optimized for fast look-up
     BentleyStatus FindFirstSubCategory (DgnSubCategoryId&, BeSQLite::Db&, V8ModelSource, uint32_t flid, Level::Type ltype);
 
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertFile(V8FileProvenance&, FileInfo const&);
-
     BentleyStatus PerformVersionChecks();
 
 public:
@@ -712,7 +710,7 @@ public:
     //! @{
 
     //! Get a name for the specified file that not used by any other file registered in SyncInfo
-    Utf8String GetUniqueName(WStringCR fullname);
+    Utf8String GetUniqueNameForFile(DgnV8FileCR file);
 
     //! Query if the specified file appears to have changed, compared to save data in syncinfo
     //! @return true if the file is not found in syncinfo or if it is found and its last-save time is different
@@ -723,6 +721,13 @@ public:
     //! @param[in] uniqueName       the key that identifies the file in sync info
     DGNDBSYNC_EXPORT bool HasDiskFileChanged(BeFileNameCR v8FileName);
 
+    DGNDBSYNC_EXPORT V8FileProvenance InsertFile(BeSQLite::DbResult*, DgnV8FileCR, StableIdPolicy);
+    DGNDBSYNC_EXPORT V8FileProvenance UpdateFile(BeSQLite::DbResult*, DgnV8FileCR);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFileById(V8FileSyncInfoId);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFile(DgnV8FileCR);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFileByFileName(BeFileNameCR);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFileByUniqueName(Utf8StringCR);
+    
     //! @private
     BentleyStatus DeleteFile(V8FileSyncInfoId);
 
