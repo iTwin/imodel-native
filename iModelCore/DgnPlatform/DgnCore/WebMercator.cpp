@@ -771,7 +771,7 @@ static AttributionAppData::Key    s_attributionAppDataKey;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BingImageryProvider::_OnSelectTiles (bvector<TileCPtr>& selected, DrawArgsR args) const
     {
-    ViewController& viewController = args.m_context.GetViewportR().GetViewControllerR();
+    ViewController& viewController = args.GetContext().GetViewportR().GetViewControllerR();
 
     // get our AppData from the viewController.
     bool                newView = false;

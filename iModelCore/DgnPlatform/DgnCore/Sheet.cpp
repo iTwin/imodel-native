@@ -1160,7 +1160,7 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile3d::Select(bvector<TileTree:
         {
         if (m_tilePolys.empty())
             {
-            CreatePolys(args.m_context); // m_graphicsClip on tree must be set before creating polys (the polys that represent the tile)
+            CreatePolys(args.GetContext()); // m_graphicsClip on tree must be set before creating polys (the polys that represent the tile)
             if (m_tilePolys.empty())
                 {
                 SetNotFound();
@@ -1168,7 +1168,7 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile3d::Select(bvector<TileTree:
                 }
             }
 
-        CreateGraphics(args.m_context);
+        CreateGraphics(args.GetContext());
         }
 
     if (IsReady())
@@ -1205,7 +1205,7 @@ void Sheet::Attachment::Tile3d::_DrawGraphics(DrawArgsR args) const
     params.SetLineColor(color);
     params.SetFillColor(color);
 
-    auto gf = args.m_context.CreateSceneGraphic();
+    auto gf = args.GetContext().CreateSceneGraphic();
     gf->ActivateGraphicParams(params);
     gf->AddRangeBox(GetRange());
 
@@ -1220,7 +1220,7 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     auto const& myRoot = GetRoot2d();
     auto& viewRoot = *myRoot.m_viewRoot;
 
-    TileTree::DrawArgs args = viewRoot.CreateDrawArgs(myArgs.m_context);
+    TileTree::DrawArgs args = viewRoot.CreateDrawArgs(myArgs.GetContext());
     args.m_location = myRoot.m_drawingToAttachment;
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
     args.m_clip = GetRoot2d().m_graphicsClip.get();
@@ -1242,14 +1242,14 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     params.SetLineColor(color);
     params.SetFillColor(color);
 
-    auto gf = myArgs.m_context.CreateSceneGraphic();
+    auto gf = myArgs.GetContext().CreateSceneGraphic();
     gf->ActivateGraphicParams(params);
     gf->AddRangeBox(GetRange());
 
     // Put in a branch so it doesn't get clipped...
     GraphicBranch branch;
     branch.Add(*gf->Finish());
-    myArgs.m_graphics.Add(*args.m_context.CreateBranch(branch, GetRoot().GetDgnDb(), Transform::FromIdentity()));
+    myArgs.m_graphics.Add(*args.GetContext().CreateBranch(branch, GetRoot().GetDgnDb(), Transform::FromIdentity()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1285,7 +1285,7 @@ void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
     fillColor.SetAlpha(0x7f);
     params.SetFillColor(fillColor);
 
-    auto gf = args.m_context.CreateSceneGraphic();
+    auto gf = args.GetContext().CreateSceneGraphic();
     gf->ActivateGraphicParams(params);
 
     for (auto& mesh : clipper.GetOutput())

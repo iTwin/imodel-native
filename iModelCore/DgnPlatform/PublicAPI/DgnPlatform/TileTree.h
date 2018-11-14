@@ -712,7 +712,9 @@ struct TileArgs
 //=======================================================================================
 struct DrawArgs : TileArgs
 {
+private:
     SceneContextR m_context;
+public:
     Render::GraphicBranch m_graphics;
     MissingNodesR m_missing;
     BeTimePoint m_now;
@@ -735,6 +737,11 @@ struct DrawArgs : TileArgs
     uint32_t GetMaxDepth() const;
 
     void InvalidateCopyrightInfo();
+
+    // NB: Do not assume the frustum, world-to-view map, etc match those on the context - may be expanded for tile selection (e.g. map tiles).
+    SceneContextR GetContext() { return m_context; }
+    DGNPLATFORM_EXPORT Render::FrustumPlanes const& GetFrustumPlanes() const;
+    DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
     };
     
 //=======================================================================================
