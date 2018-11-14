@@ -782,6 +782,74 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi2
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_ActivityOptionsEnabledAndWebApi25_SendsRequestsWithoutActivityId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_MasRequestId));
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_XCorrelationId));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+    client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_DefaultActivityOptionsAndWebApi27_SendsRequestsWithMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+
+    EXPECT_FALSE(options->GetActivityOptions()->HasActivityId());
+    EXPECT_TRUE(options->GetActivityOptions()->GetActivityId().empty());
+
+    client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_EmptyActivityIdSpecifiedAndWebApi27_SendsRequestsWithGeneratedMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->GetActivityOptions()->SetActivityId(Utf8String());
+
+    EXPECT_FALSE(options->GetActivityOptions()->HasActivityId());
+    EXPECT_TRUE(options->GetActivityOptions()->GetActivityId().empty());
+
+    client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_ActivityIdSpecifiedAndWebApi27_SendsRequestsWithSpecifiedMasRequestId)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
@@ -795,41 +863,18 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_ActivityIdSpecifiedAndWeb
         });
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
-    options->GetActivityOptions().SetActivityId("specifiedActivityId");
+    options->GetActivityOptions()->SetActivityId("specifiedActivityId");
+
+    EXPECT_TRUE(options->GetActivityOptions()->HasActivityId());
+    EXPECT_STREQ("specifiedActivityId", options->GetActivityOptions()->GetActivityId().c_str());
 
     client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
-
-    EXPECT_TRUE(options->GetActivityOptions().HasActivityId());
-    EXPECT_STREQ("specifiedActivityId", options->GetActivityOptions().GetActivityId().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mantas.Smicius    11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_HeaderNameSetToXCorrelationIdAndWebApi27_SendsRequestsWithXCorrelationId)
-    {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
-    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
-        {
-        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_MasRequestId));
-        EXPECT_NE(nullptr, request.GetHeaders().GetValue(HEADER_XCorrelationId));
-        return StubHttpResponse(HttpStatus::OK);
-        });
-
-    IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
-    options->GetActivityOptions().SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
-
-    client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
-
-    EXPECT_EQ(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId, options->GetActivityOptions().GetHeaderName());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Mantas.Smicius    11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_HeaderNameSetToXCorrelationIdAndActivityIdSpecifiedAndWebApi27_SendsRequestsWithSpecifiedXCorrelationId)
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_HeaderNameSetToXCorrelationIdAndWebApi27_SendsRequestsWithSpecifiedXCorrelationId)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -842,8 +887,8 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_HeaderNameSetToXCorrelati
         });
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
-    options->GetActivityOptions().SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
-    options->GetActivityOptions().SetActivityId("specifiedActivityId");
+    options->GetActivityOptions()->SetHeaderName(IWSRepositoryClient::ActivityOptions::HeaderName::XCorrelationId);
+    options->GetActivityOptions()->SetActivityId("specifiedActivityId");
 
     client->SendGetChildrenRequestWithOptions(ObjectId(), nullptr, options)->GetResult();
     }
