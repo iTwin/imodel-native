@@ -445,6 +445,7 @@
         <Target multiplicity="(0..*)" roleLabel="is part of" polymorphic="true">
             <Class class="SinglePerimeterProfile" />
         </Target>
+        <ECProperty propertyName="Index" typeName="int" description="" />
         <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
         <ECProperty propertyName="Rotation" typeName="double" description="" />
@@ -459,7 +460,7 @@
         <ECProperty propertyName="Type" typeName="DoubleLShapeProfileType" description="" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="DoubleLShapeProfileRefersToLProfiles" modifier="Sealed" strength="referencing">
+    <ECRelationshipClass typeName="DoubleLShapeProfileRefersToLShapeProfile" modifier="Sealed" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleLShapeProfile" />
@@ -467,6 +468,7 @@
         <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="true">
             <Class class="LShapeProfile" />
         </Target>
+        <ECProperty propertyName="Index" typeName="int" description="" />
     </ECRelationshipClass>
 
     <ECEntityClass typeName="DoubleCShapeProfile" modifier="Sealed" description="A CompositeProfile comprised of back-to-back Cs.">
@@ -477,7 +479,7 @@
         <ECProperty propertyName="Spacing" typeName="double" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="DoubleCShapeProfileRefersToCProfiles" modifier="Sealed" strength="referencing">
+    <ECRelationshipClass typeName="DoubleCShapeProfileRefersToCShapeProfile" modifier="Sealed" strength="referencing">
     <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleCShapeProfile" />
@@ -485,5 +487,6 @@
         <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="true">
             <Class class="CShapeProfile" />
         </Target>
+        <ECProperty propertyName="Index" typeName="int" description="" />
     </ECRelationshipClass>
 </ECSchema>
