@@ -359,6 +359,18 @@ TEST_F(HttpRequestTests, Perform_RequestCouldNotConnect_SetsEffectiveUrlToReques
     Response response = request.Perform().get();
 
     EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
+    EXPECT_EQ("http://foo.boo.test.not.existing", response.GetEffectiveUrl());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_UrlWithSlashRequestCouldNotConnect_SetsEffectiveUrlToRequestUrl)
+    {
+    Request request("http://foo.boo.test.not.existing/");
+    Response response = request.Perform().get();
+
+    EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
     EXPECT_EQ("http://foo.boo.test.not.existing/", response.GetEffectiveUrl());
     }
 

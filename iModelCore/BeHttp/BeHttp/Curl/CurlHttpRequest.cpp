@@ -951,7 +951,6 @@ ConnectionStatus CurlHttpRequest::ResolveConnectionStatus(CURLcode curlStatus)
         case CURLE_SEND_ERROR:                              // Happens with uploads when iOS app is sent to background
         case CURLE_RECV_ERROR:                              // Server killed or other error
             return ConnectionStatus::ConnectionLost;
-        case CURLE_SSL_CACERT:
         case CURLE_PEER_FAILED_VERIFICATION:
         case CURLE_SSL_CONNECT_ERROR:                       // Something wrong with server SSL configuration. WinSSL error when certificate is not valid.
             return ConnectionStatus::CertificateError;      // Server uses invalid certificate or one that we cannot validate
