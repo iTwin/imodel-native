@@ -51,6 +51,7 @@
 #include <Dwg/ProtocalExtensions.h>
 #include <Dwg/DwgL10N.h>
 
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include <Logging/BentleyLogging.h>
 
 #define LOG             DwgImportLogging::GetLogger (DwgImportLogging::Namespace::General)

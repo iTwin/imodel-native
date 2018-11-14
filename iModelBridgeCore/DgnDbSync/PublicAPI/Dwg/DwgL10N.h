@@ -52,7 +52,7 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(ElementFilteredOut)          // =="Element [%s] was not converted."==
     L10N_STRING(EmptyGeometry)               // ==" No geometry created for entity %s."== <<Leading space is necessary>>
     L10N_STRING(Error)                       // =="Error: %s"==
-    L10N_STRING(Exception)                   // =="DWGToolKit Exception: %s"==
+    L10N_STRING(Exception)                   // =="Exception thrown: %s"==
     L10N_STRING(FatalError)                  // =="A fatal error is stopping the conversion: %s"==
     L10N_STRING(ProgramExits)                // =="The importer must exit due to a fatal error!"==
     L10N_STRING(FileFilteredOut)             // =="File [%s] was not converted."==

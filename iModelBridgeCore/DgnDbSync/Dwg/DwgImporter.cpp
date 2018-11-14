@@ -1966,7 +1966,11 @@ BentleyStatus   DwgImporter::Process ()
     DwgImportLogging::LogPerformance(timer, "Create Spaces");
 
     timer.Start();
-    this->_ImportDwgModels ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportDwgModels ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Exception(), "failed processing models"));
     if (this->WasAborted())
         return BSIERROR;
 
@@ -2008,28 +2012,44 @@ BentleyStatus   DwgImporter::Process ()
     DwgImportLogging::LogPerformance(timer, "Import Modelspace Viewports");
 
     timer.Start();
-    this->_ImportEntitySection ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportEntitySection ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing entity section"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Entity Section/ModelSpace");
 
     timer.Start();
-    this->_ImportLayouts ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportLayouts ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing layouts"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Layouts");
 
     timer.Start();
-    this->_ImportGroups ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_ImportGroups ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed processing groups"));
     if (this->WasAborted())
         return BSIERROR;
 
     DwgImportLogging::LogPerformance(timer, "Import Groups");
 
     timer.Start ();
-    this->_FinishImport ();
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        this->_FinishImport ();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(this->ReportError(IssueCategory::Unknown(), Issue::Error(), "failed cleaning up the importer"));
     if (this->WasAborted())
         return BSIERROR;
 
