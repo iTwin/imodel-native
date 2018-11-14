@@ -441,6 +441,7 @@ void DgnViewport::ExtendRangeForBackgroundMap(DRange3dR extents) const
         RootToNpcFromViewDef(worldToNpc, unused, nullptr, m_viewOrg, m_viewDelta, m_rotMatrix);
 
         Frustum frustum;
+        memcpy(frustum.m_pts, s_NpcCorners, sizeof (DPoint3d) * NPC_CORNER_COUNT);
         worldToNpc.M1.MultiplyAndRenormalize(frustum.m_pts, frustum.m_pts, 8);
 
         bool includeHorizon = false;
