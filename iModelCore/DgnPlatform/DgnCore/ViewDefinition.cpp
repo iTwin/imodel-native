@@ -2686,6 +2686,6 @@ RefCountedPtr<TileTree::Root>  DisplayStyle::GetBackgroundMapTileTree(SceneConte
 bool DisplayStyle::GetBackgroundMapDisplayPlane(DPlane3dR plane)
     {
     auto handler = GetBackgroundMapHandler();
-    return nullptr != handler ? handler->_GetDisplayPlane(plane) : nullptr;
+    return nullptr != handler ? handler->_GetDisplayPlane(plane) : false;
     }
 
