@@ -438,7 +438,7 @@ void DgnViewport::ExtendRangeForBackgroundMap(DRange3dR extents) const
         {
         DMap4d worldToNpc;
         double unused;
-        RootToNpcFromViewDef(worldToNpc, unused, nullptr, m_viewOrg, m_viewDelta, m_rotMatrix);
+        RootToNpcFromViewDef(worldToNpc, unused, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix);
 
         Frustum frustum;
         memcpy(frustum.m_pts, s_NpcCorners, sizeof (DPoint3d) * NPC_CORNER_COUNT);
