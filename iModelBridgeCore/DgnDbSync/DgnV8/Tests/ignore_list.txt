@@ -8,31 +8,3 @@ NamedGroupTests.NamedGroupOf2dElement
     #   Actual: false
     # Expected: true
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
-
-
-MstnBridgeTests.ConvertAttachmentMultiBridgeSharedReference
-
-    # VSTS#41169
-    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 10/30/2018
-    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    # *********************** STACK TRACE ************************
-    # [19] _C_specific_handler (0x7ff9dffbbff0)
-    # [18] _chkstk (0x7ff9eee64d50)
-    # [17] RtlWalkFrameChain (0x7ff9eede4b40)
-    # [16] KiUserExceptionDispatcher (0x7ff9eee63d70)
-    # [15] BentleyB0200::BeSQLite::Db::SaveChanges (0x7ff9d7550860)
-    # [14] MstnBridgeTestsFixture::SetupTestDirectory (0x7ff68fe1e2a0)
-    # [13] MstnBridgeTests_ConvertAttachmentMultiBridgeSharedReference_Test::TestBody (0x7ff68fe158c0)
-    # [12] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff68fdfeb60)
-    # [11] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff68fdfe9f0)
-    # [10] testing::Test::Run (0x7ff68fe0e050)
-    # [9] testing::TestInfo::Run (0x7ff68fe0e360)
-    # [8] testing::TestCase::Run (0x7ff68fe0e170)
-    # [7] testing::internal::UnitTestImpl::RunAllTests (0x7ff68fe0e620)
-    # [6] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff68fdfec00)
-    # [5] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff68fdfeae0)
-    # [4] testing::UnitTest::Run (0x7ff68fe0e500)
-    # [3] main (0x7ff68fe229a0)
-    # [2] __scrt_common_main_seh (0x7ff68fe27138)
-    # [1] BaseThreadInitThunk (0x7ff9eeac1fd0)
-    # [0] RtlUserThreadStart (0x7ff9eee2cb10)

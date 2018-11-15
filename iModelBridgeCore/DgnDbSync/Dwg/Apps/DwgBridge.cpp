@@ -186,7 +186,7 @@ BentleyStatus   DwgBridge::_OnOpenBim (DgnDbR bim)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DwgBridge::_OnCloseBim (BentleyStatus status)
+void DwgBridge::_OnCloseBim (BentleyStatus status, iModelBridge::ClosePurpose purpose)
     {
     // remove the importer
     m_importer.reset (nullptr);
@@ -308,7 +308,7 @@ BentleyStatus   DwgBridge::_OpenSource ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    DwgBridge::_CloseSource (BentleyStatus status)
+void    DwgBridge::_CloseSource (BentleyStatus status, iModelBridge::ClosePurpose)
     {
     }
 
