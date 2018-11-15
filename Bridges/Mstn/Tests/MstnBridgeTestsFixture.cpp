@@ -353,18 +353,15 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId)
     {
-    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
-    estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM "
-                  BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
-
-                  // SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS o"
-                     "SourceInfo"             "." "SoureElementInfo"                " AS o"
-
-                  " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SourceId = '?')");
+    Utf8CP sqlStmt = "SELECT g.ECInstanceId FROM "
+        BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g, "
+        SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS o"
+        " WHERE (o.Element.Id=g.ECInstanceId) AND (o.SourceId = ? )";
+    BentleyApi::BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(sqlStmt);
     BentleyApi::Utf8PrintfString srcElementIdStr("%lld", srcElementId);
-    estmt.BindText(1, srcElementIdStr.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    if (BE_SQLITE_ROW != estmt.Step())
+    stmt->BindText(1, srcElementIdStr.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
         return BentleyApi::BentleyStatus::BSIERROR;
-    elementId = estmt.GetValueId<DgnElementId>(0);
+    elementId = stmt->GetValueId<DgnElementId>(0);
     return BentleyApi::BentleyStatus::BSISUCCESS;
     }

@@ -91,7 +91,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MstnBridgeTests, DISABLED_TestSourceElementIdAspect)
+TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     {
     auto bridgeRegSubKey = L"iModelBridgeForMstn";
 
@@ -130,6 +130,9 @@ TEST_F(MstnBridgeTests, DISABLED_TestSourceElementIdAspect)
     DbFileInfo info(dbFile);
     DgnElementId id;
     ASSERT_EQ(SUCCESS, info.GetiModelElementByDgnElementId(id, srcId));
+
+    ASSERT_TRUE(id.IsValid());
+
     }
 extern "C"
     {
