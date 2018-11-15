@@ -91,7 +91,7 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MstnBridgeTests, DISABLED_TestSourceElementIdAspect)
+TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     {
     auto bridgeRegSubKey = L"iModelBridgeForMstn";
 

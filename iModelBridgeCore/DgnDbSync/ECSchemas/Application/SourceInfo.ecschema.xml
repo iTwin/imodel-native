@@ -3,7 +3,7 @@
 
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
 
-    <ECEntityClass typeName="SoureElementInfo" >
+    <ECEntityClass typeName="SourceElementInfo" >
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="SourceId" typeName="string" />
         <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json"/>

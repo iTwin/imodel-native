@@ -41,7 +41,7 @@
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
 #define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
-#define SOURCEINFO_CLASS_SoureElementInfo   "SoureElementInfo"
+#define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
