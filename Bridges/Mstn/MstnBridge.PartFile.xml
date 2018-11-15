@@ -4,12 +4,12 @@
     xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
     >
 
-    <Part Name="MstnBridgePRG">
+    <Part Name="MstnBridgePRG" PrgOutputDir="MstnBridge">
         <SubProduct ProductName="MstnBridge"/>
         <SubProduct ProductName="MstnBridgeTests"/>
     </Part>
 
-    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true" PrgOutputDir="MstnBridge">
+    <Product Name="MstnBridge" SaveProduct="true" BuildInstallSet="true">
         <SubPart PartName="MstnBridgeInstallFiles"/>
         <SubPart PartName="DgnV8ConverterExe" PartFile="DgnDbSync" Repository="DgnDbSync"/>
         <SubPart PartName="iModelBridgeFwkExe" PartFile="iModelBridge" Repository="DgnDbSync"/>
