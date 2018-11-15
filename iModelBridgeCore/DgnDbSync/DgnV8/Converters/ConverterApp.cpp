@@ -489,9 +489,18 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_OnCloseBim(BentleyStatus)
+void RootModelConverterApp::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose)
     {
+    bool keepHostAliveOriginal = false;
+    if (NULL != m_converter.get())
+        {
+        bool keepHostAlive = m_converter->GetParams().GetKeepHostAlive();
+        keepHostAliveOriginal = keepHostAlive;
+        keepHostAlive |= purpose == iModelBridge::ClosePurpose::SchemaUpgrade;
+        m_converter->SetKeepHostAlive(keepHostAlive);
+        }
     m_converter.reset(nullptr); // this also has the side effect of closing the source files
+    m_params.SetKeepHostAlive(keepHostAliveOriginal);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -523,7 +532,7 @@ BentleyStatus RootModelConverterApp::_OpenSource()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootModelConverterApp::_CloseSource(BentleyStatus)
+void RootModelConverterApp::_CloseSource(BentleyStatus, iModelBridge::ClosePurpose)
     {
     // _OnCloseBim will close the source files
     }

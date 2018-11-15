@@ -30,12 +30,12 @@ struct iModelBridgeCallOpenCloseFunctions
 
     ~iModelBridgeCallOpenCloseFunctions()
         {
-        CallCloseFunctions();
+        CallCloseFunctions(iModelBridge::ClosePurpose::Finished);
         }
 
     void CallOpenFunctions(DgnDbR db)
         {
-        StopWatch stopWatch;
+        StopWatch stopWatch(true);
         m_bstatus = m_bridge._OnOpenBim(db);
         if (BSISUCCESS == m_bstatus)
             m_sstatus = m_bridge._OpenSource();
@@ -43,16 +43,16 @@ struct iModelBridgeCallOpenCloseFunctions
         iModelBridgeFwk::LogPerformance(stopWatch, "Time required to open source file and BIM");
         }
 
-    void CallCloseFunctions()
+    void CallCloseFunctions(iModelBridge::ClosePurpose purpose)
         {
-        StopWatch stopWatch;
+        StopWatch stopWatch(true);
         if (BSISUCCESS != m_bstatus)    // If I never opened the BIM, then don't make any callbacks
             return;
 
         if (BSISUCCESS == m_sstatus)    //  If I opened the source
-            m_bridge._CloseSource(m_status);    // close it
+            m_bridge._CloseSource(m_status, purpose);    // close it
         
-        m_bridge._OnCloseBim(m_status); // close the bim
+        m_bridge._OnCloseBim(m_status, purpose); // close the bim
 
         iModelBridgeFwk::LogPerformance(stopWatch, "Time required to close source file and BIM");
         }
