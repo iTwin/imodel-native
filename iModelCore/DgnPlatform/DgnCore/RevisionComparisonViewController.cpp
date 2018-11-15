@@ -56,16 +56,6 @@ PersistentState ComparisonData::GetPersistentState(DgnElementId id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-PersistentState ComparisonData::GetAnyPersistentState(DgnElementId id) const
-    {
-    // NB: This is inefficient, but it's also not actually used.
-    auto iter = std::find_if(m_persistent.begin(), m_persistent.end(), [=](PersistentState const& arg) { return arg.m_elementId == id; });
-    return m_persistent.end() != iter ? *iter : PersistentState();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransientState ComparisonData::GetTransientState(DgnElementId id) const
@@ -102,40 +92,6 @@ StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpco
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComparisonData::HideElement(DgnElementId id, bool transient, bool hidden)
-    {
-    if (transient)
-        {
-        for (TransientState& state : m_transient)
-            {
-            if (state.GetElementId() == id)
-                state.SetHidden(hidden);
-            }
-        }
-    else
-        {
-        for (PersistentState& state : m_persistent)
-            {
-            if (state.m_elementId == id)
-                state.SetHidden(hidden);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
- * @bsimethod                                                    Diego.Pinate    11/18
- +---------------+---------------+---------------+---------------+---------------+------*/
-void ComparisonData::ClearHidden()
-    {
-    for (TransientState& state : m_transient)
-        state.SetHidden(false);
-    for (PersistentState& state : m_persistent)
-        state.SetHidden(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
  RevisionComparison::Controller::Controller(SpatialViewDefinition const& view, ComparisonData const& data, Show flags, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(flags)//, m_label(TextString::Create())
@@ -157,19 +113,15 @@ void RevisionComparison::Controller::SetItemsDisplayHandler(std::function<void(R
     m_cnmHandler = handler;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
+//-------------------------------------------------------------------------------------------
+// @bsimethod                                                 Diego.Pinate     01/18
+//-------------------------------------------------------------------------------------------
 void RevisionComparison::Controller::_OnCategoryChange(bool singleEnable)
     {
     T_Super::_OnCategoryChange(singleEnable);
 
     // TFS#798515: Provide callbacks for _OnCategoryChange so that version compare may sync view controllers
     m_cnmHandler(this);
-
-    // Invalidate so that we redraw world decorations that may need to be hidden or shown based on categories
-    if (nullptr != m_vp)
-        m_vp->InvalidateDecorations();
     }
 
 //-------------------------------------------------------------------------------------------
@@ -243,14 +195,6 @@ void Controller::_AddFeatureOverrides(Render::FeatureSymbologyOverrides& ovrs) c
         // In 'target' view, hide persistent state of modified and inserted elements
         for (auto const& entry : m_comparisonData->GetPersistentStates())
             if (entry.IsInsertion() || entry.IsModified())
-                ovrs.NeverDraw(entry.m_elementId);
-        }
-
-    // Never draw things that have been hidden by the user in overview stage
-    if (WantShowBoth())
-        {
-        for (auto const& entry : m_comparisonData->GetPersistentStates())
-            if (entry.IsHidden())
                 ovrs.NeverDraw(entry.m_elementId);
         }
 
@@ -402,121 +346,22 @@ void    RevisionComparison::Controller::SetVersionLabel(Utf8String label)
     }
 
 /*---------------------------------------------------------------------------------**//**
- * Taken from QV
- * @bsimethod                                                    Diego.Pinate    11/18
- +---------------+---------------+---------------+---------------+---------------+------*/
-DRange1d TransientState::GetRange(double pixelSize, AxisAlignedBox3d const& range) const
-    {
-    static double sizeDependentRatio = 5.0;
-    static double pixelToChordRatio = 0.5;
-    static double minRangeRelTol = 1.0e-4;
-    static double maxRangeRelTol = 1.5e-2;
-    DRange1d pixelSizeRange;
-    double maxDimension = range.DiagonalDistance();
-    double minChordTol = minRangeRelTol * maxDimension;
-    double maxChordTol = maxRangeRelTol * maxDimension;
-    double chordTol = pixelToChordRatio * pixelSize;
-    bool isMin = false, isMax = false;
-
-    if (isMin = (chordTol < minChordTol))
-        chordTol = minChordTol;
-    else if (isMax = (chordTol > maxChordTol))
-        chordTol = maxChordTol;
-
-    if (isMin)
-        pixelSizeRange = DRange1d::FromLowHigh(0.0, chordTol * sizeDependentRatio);
-    else if (isMax)
-        pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, DBL_MAX);
-    else
-        pixelSizeRange = DRange1d::FromLowHigh(chordTol / sizeDependentRatio, chordTol * sizeDependentRatio);
-
-    return pixelSizeRange;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TransientGraphic::IsValidForSize(double metersPerPixel) const
-    {
-    if (0.0 == metersPerPixel || (0.0 == m_minSize && 0.0 == m_maxSize))
-        return true;
-
-    return (metersPerPixel >= m_minSize && metersPerPixel <= m_maxSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransientGraphic TransientState::GetFromCache(double pixelSize) const
-    {
-    for (auto tg : m_graphicCache)
-        if (tg.IsValidForSize(pixelSize))
-            return tg;
-
-    return TransientGraphic();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicP TransientState::GetGraphic(ViewContextR context) const
     {
+    if (m_graphic.IsValid())
+        return m_graphic.get();
+
     auto geomElem = m_element->ToGeometrySource();
-    if (nullptr == geomElem)
-        return nullptr;
+    if (nullptr != geomElem)
+        m_graphic = geomElem->Stroke(context, 0.0);
 
-    AxisAlignedBox3d elementRange = geomElem->CalculateRange3d();
-    DPoint3d center = elementRange.GetCenter();
-    double pixelSize = context.GetPixelSizeAtPoint(&center);
-
-    // Check if based on pixel size and range if we should draw
-    double numPixels = elementRange.DiagonalDistance() / pixelSize;
-    if (numPixels < 1.0)
-        return nullptr;
-
-    DRange1d pixelRange = GetRange(pixelSize, elementRange);
-    TransientGraphic tg = GetFromCache(pixelSize);
-    if (tg.IsValid())
-        return tg.m_graphic.get();
-
-    Render::GraphicPtr graphic = geomElem->Stroke(context, pixelSize);
-    if (!graphic.IsValid())
-        return nullptr;
-
-    m_graphicCache.push_back(TransientGraphic(GetElementId(), graphic, pixelRange));
-    return graphic.get();
+    return m_graphic.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    11/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicP TransientState::GetGraphic(ViewContextR context, bool wantShowBoth, DgnCategoryIdSet const& categories, DgnModelIdSet const& models) const
-    {
-    // Check if this element was hidden by the user (only in overview stage, e.g. WantShowBoth == true)
-    if (IsHidden() && wantShowBoth)
-        return nullptr;
-
-    // Joe doesn't want to show the transient/updated state of a modified element
-    // if we are showing them in a single view
-    if (wantShowBoth && IsModified())
-        return nullptr;
-
-    // Don't want to draw if we can't see the range of the transient element in the view
-    AxisAlignedBox3d elementRange = m_element->ToGeometrySource()->CalculateRange3d();
-    if (!context.IsRangeVisible(elementRange))
-        return nullptr;
-
-    // Check if models and categories are on for this geometry
-    GeometrySourceCP geomSource = m_element->ToGeometrySource();
-    if (categories.find(geomSource->GetCategoryId()) == categories.end() || 
-            models.find(m_element->GetModelId()) == models.end())
-        return nullptr;
-
-    return GetGraphic(context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Diego.Pinate    11/18
+* @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR context)
     {
@@ -525,26 +370,17 @@ void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR contex
     if (!WantShowTarget())
         return;
 
-    SpatialViewDefinitionP viewDef = GetViewDefinitionR().ToSpatialViewP();
-    if (viewDef == nullptr)
-        {
-        BeAssert(false && "View definition is not spatial.");
-        return;
-        }
-
-    DgnCategoryIdSet viewedCategories = viewDef->GetCategorySelector().GetCategories();
-    DgnModelIdSet viewedModels = viewDef->GetModelSelector().GetModels();
-
     for (auto& element : m_comparisonData->GetTransientStates())
         {
-        Render::GraphicP graphic = element.GetGraphic(context, WantShowBoth(), viewedCategories, viewedModels);
-        if (nullptr == graphic)
-            {
-            element.SetIsDrawn(false);
+        // Joe doesn't want to show the transient/updated state of a modified element
+        // if we are showing them in a single view
+        if (WantShowBoth() && element.IsModified())
             continue;
-            }
 
-        element.SetIsDrawn(true);
+        Render::GraphicP graphic = element.GetGraphic(context);
+        if (nullptr == graphic)
+            continue;
+
         bool useUntouched = m_focusedElementId.IsValid() && m_focusedElementId != element.m_element->GetElementId();
         Symbology::Appearance app = useUntouched ? m_symbology.GetUntouchedOverrides() : m_symbology.GetTargetRevisionOverrides(element.m_opcode);
         OvrGraphicParams ovrs = app.ToOvrGraphicParams();
