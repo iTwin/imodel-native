@@ -135,8 +135,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_inputFileName;
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
-		Utf8String m_jobSubjectName;
-        bool       m_storeElementIdsInBIM;
+        Utf8String m_jobSubjectName;
+        bool       m_storeElementIdsInBIM {};
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
