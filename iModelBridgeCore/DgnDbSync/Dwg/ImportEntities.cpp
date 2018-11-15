@@ -2319,61 +2319,99 @@ bool    ElementFactory::NeedsSeparateElement (DgnCategoryId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnGeometryPartId ElementFactory::CreateGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, Utf8StringCR partTag, DwgImporter::GeometryEntry const& geomEntry)
+    {
+    DgnGeometryPartId   partId;
+    partId.Invalidate ();
+
+    auto& db = m_importer.GetDgnDb ();
+    auto partBuilder = GeometryBuilder::CreateGeometryPart (db, m_is3d);
+    if (!partBuilder.IsValid())
+        return  partId;
+
+    auto geomPart = DgnGeometryPart::Create (*m_partModel);
+    if (!geomPart.IsValid())
+        return  partId;
+
+    // show part name as block name
+    geomPart->SetUserLabel (geomEntry.GetBlockName().c_str());
+
+    // build a valid part transform, and transform geometry in-place as necessary
+    auto geometry = geomEntry.GetGeometry ();
+    this->TransformGeometry (geometry, geomToLocal, &partScale);
+
+    partBuilder->Append (geometry);
+
+    // insert the new part to db
+    if (partBuilder->Finish(*geomPart) != BSISUCCESS || !db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+        return  partId;
+
+    partId = geomPart->GetId ();
+    range = geomPart->GetBoundingBox ();
+
+    // insert the new part into the syncInfo
+    DwgSyncInfo::GeomPart   syncPart(partId, partTag);
+    if (syncPart.Insert(db) != BeSQLite::BE_SQLITE_DONE)
+        m_importer.ReportError (IssueCategory::Sync(), Issue::Error(), "failed adding geometry part in the SyncInfo");
+
+    return  partId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ElementFactory::GetGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, DgnGeometryPartId partId, DwgImporter::GeometryEntry const& geomEntry)
+    {
+    auto& db = m_importer.GetDgnDb ();
+    if (DgnGeometryPart::QueryGeometryPartRange(range, db, partId) != BSISUCCESS)
+        {
+        BeAssert (false && "cannot query existing part range!!");
+        return  BSIERROR;
+        }
+
+    // build a valid part transform from DWG transform
+    geomToLocal.InitProduct (m_modelTransform, geomToLocal);
+    DwgHelper::GetTransformForSharedParts (&geomToLocal, &partScale, geomToLocal);
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo)
     {
     // this method creates a new shared part geometry
     auto& db = m_importer.GetDgnDb ();
-    auto codeValue = this->BuildPartCodeValue (geomEntry, partNo);
-    auto partCode = m_importer.CreateCode (codeValue.c_str());
+    auto partTag = this->BuildPartCodeValue (geomEntry, partNo);
     auto geomToLocal = geomEntry.GetTransform ();
     double partScale = 0.0;
+    DRange3d range;
 
-    auto partId = DgnGeometryPart::QueryGeometryPartId (*m_partModel, partCode.GetValueUtf8());
+    DgnGeometryPartId       partId;
+    DwgSyncInfo::GeomPart   syncPart;
+    if (DwgSyncInfo::GeomPart::FindByTag(syncPart, db, partTag.c_str()) == BSISUCCESS)
+        partId = syncPart.GetPartId ();
+
     if (!partId.IsValid())
         {
         // create a new geometry part:
-        auto partBuilder = GeometryBuilder::CreateGeometryPart (db, m_is3d);
-        if (!partBuilder.IsValid())
+        partId = this->CreateGeometryPart (range, partScale, geomToLocal, partTag, geomEntry);
+        if (!partId.IsValid())
             return  BSIERROR;
-
-        auto geomPart = DgnGeometryPart::Create (*m_partModel, partCode.GetValueUtf8());
-        if (!geomPart.IsValid())
-            return  BSIERROR;
-
-        // show part name as block name
-        geomPart->SetUserLabel (geomEntry.GetBlockName().c_str());
-
-        // build a valid part transform, and transform geometry in-place as necessary
-        auto geometry = geomEntry.GetGeometry ();
-        this->TransformGeometry (geometry, geomToLocal, &partScale);
-
-        partBuilder->Append (geometry);
-        
-        // insert the new part to db
-        if (partBuilder->Finish(*geomPart) != BSISUCCESS || !db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-            return  BSIERROR;
-
-        part.SetPartId (geomPart->GetId());
-        part.SetPartRange (geomPart->GetBoundingBox());
         }
     else
         {
         // use existing geometry part
-        DRange3d    range;
-        if (DgnGeometryPart::QueryGeometryPartRange(range, db, partId) != BSISUCCESS)
-            BeAssert (false && "cannot query existing part range!!");
-
-        // build a valid part transform from DWG transform
-        geomToLocal.InitProduct (m_modelTransform, geomToLocal);
-        DwgHelper::GetTransformForSharedParts (&geomToLocal, &partScale, geomToLocal);
-
-        part.SetPartId (partId);
-        part.SetPartRange (range);
+        if (this->GetGeometryPart(range, partScale, geomToLocal, partId, geomEntry) != BSISUCCESS)
+            return  BSIERROR;
         }
 
     part.SetTransform (Transform::FromProduct(m_invBaseTransform, geomToLocal));
     part.SetGeometryParams (geomEntry.GetGeometryParams());
     part.SetPartScale (partScale);
+    part.SetPartId (partId);
+    part.SetPartRange (range);
 
     return  BSISUCCESS;
     }
