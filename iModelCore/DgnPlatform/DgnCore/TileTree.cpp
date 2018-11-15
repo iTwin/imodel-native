@@ -1023,7 +1023,7 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
     Frustum worldBox = box.TransformBy(args.GetLocation());
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(worldBox);
+    bool isOutside = FrustumPlanes::Contained::Outside == args.GetFrustumPlanes().Contains(worldBox);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
     }
@@ -1071,9 +1071,9 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 
 #if defined(LIMIT_MIN_PIXEL_SIZE)
     constexpr double s_minPixelSizeAtPoint = 1.0E-7;
-    double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
+    double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.GetPixelSizeAtPoint(&center));
 #else
-    double pixelSizeAtPt = args.m_context.GetPixelSizeAtPoint(&center);
+    double pixelSizeAtPt = args.GetPixelSizeAtPoint(&center);
     double pixelSize = 0.0 != pixelSizeAtPt ? radius / pixelSizeAtPt : 1.0E-3;
 #endif
 
@@ -1726,6 +1726,24 @@ void DrawArgs::InvalidateCopyrightInfo()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::FrustumPlanes const& DrawArgs::GetFrustumPlanes() const
+    {
+    // ###TODO: handle expanded frustum
+    return m_context.GetFrustumPlanes();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double DrawArgs::GetPixelSizeAtPoint(DPoint3dCP origin) const
+    {
+    // ###TODO: handle expanded frustum
+    return m_context.GetPixelSizeAtPoint(origin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StreamBuffer::ReadBytes(void* buf, uint32_t size)
@@ -1969,7 +1987,7 @@ DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTi
     : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan),
     m_viewFlagsOverrides(root._GetViewFlagsOverrides())
     {
-    //
+    m_graphics.m_isBackgroundImagery = root._IsBackgroundImagery();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2335,7 +2353,7 @@ void Tile::AddDebugRangeGraphics(DrawArgsR args) const
     GraphicParams params;
     params.SetLineColor(ColorDef::Red());
 
-    auto graphic = args.m_context.CreateSceneGraphic();
+    auto graphic = args.GetContext().CreateSceneGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddRangeBox(m_range);
     args.m_graphics.Add(*graphic->Finish());

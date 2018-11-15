@@ -53,6 +53,7 @@ public:
         {
         virtual void _Initialize(Json::Value const& settings) = 0;
         virtual RefCountedPtr<TileTree::Root> _GetTileTree(SceneContextR sceneContext) = 0;
+        virtual bool _GetDisplayPlane(DPlane3dR) = 0;
         };
 
 protected:
@@ -76,6 +77,8 @@ protected:
     JsonValueR GetStylesR() {return m_jsonProperties[json_styles()];}
 
     void ChangeSubCategoryDisplay(DgnSubCategoryId, bool onOff);
+
+    BackgroundMapDisplayHandler* GetBackgroundMapHandler();
 public:
     BE_JSON_NAME(styles);
     BE_JSON_NAME(viewflags);
@@ -146,6 +149,7 @@ public:
     DGNPLATFORM_EXPORT void SetBackgroundMapSettings(MapType mapType, Utf8StringCR& provider, double groundBias);
     bool GetDisplayBackgroundMap() const;
     RefCountedPtr<TileTree::Root>  GetBackgroundMapTileTree(SceneContextR sceneContext);
+    bool GetBackgroundMapDisplayPlane(DPlane3dR);
 
     //! Create a DgnCode for a DisplayStyle given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_DisplayStyle, scope, name);}

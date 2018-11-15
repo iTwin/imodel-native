@@ -206,6 +206,7 @@ protected:
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const;
+    void ExtendRangeForBackgroundMap(DRange3dR extents) const;
     virtual double _GetCameraFrustumNearScaleLimit() const {return GetRenderTarget()->_GetCameraFrustumNearScaleLimit();}
 
     virtual bool _IsVisible() const {return true;}
@@ -623,9 +624,8 @@ public:
 
     //! Read selected data about each pixel within a rectangular portion of the viewport.
     //! @param[in] viewRect The area of the view to read. The origin specifies the upper-left corner. Must lie entirely within the viewport's dimensions.
-    //! @param[in] selector Specifies the type(s) of data to read.
     //! @return an IPixelDataBuffer object from which the selected data can be retrieved, or nullptr on error.
-    DGNPLATFORM_EXPORT Render::IPixelDataBufferCPtr ReadPixels(BSIRectCR viewRect, Render::PixelData::Selector selector);
+    DGNPLATFORM_EXPORT Render::IPixelDataBufferCPtr ReadPixels(BSIRectCR viewRect);
 
     //! Return the NPC geometry point for pixel data.
     //! @param[out] npc The npc point for visible geometry at the specified location.

@@ -2660,7 +2660,7 @@ bool DisplayStyle::GetDisplayBackgroundMap() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<TileTree::Root>  DisplayStyle::GetBackgroundMapTileTree(SceneContextR sceneContext)
+DisplayStyle::BackgroundMapDisplayHandler* DisplayStyle::GetBackgroundMapHandler()
     {
     if (!GetDisplayBackgroundMap())
         return nullptr;
@@ -2668,23 +2668,24 @@ RefCountedPtr<TileTree::Root>  DisplayStyle::GetBackgroundMapTileTree(SceneConte
     if (!m_backGroundMapDisplayHandler.IsValid())
         m_backGroundMapDisplayHandler = new WebMercator::WebMercatorDisplayHandler(GetStyle(json_backgroundMap()));;
 
-    return m_backGroundMapDisplayHandler->_GetTileTree(sceneContext);
+    return m_backGroundMapDisplayHandler.get();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<TileTree::Root>  DisplayStyle::GetBackgroundMapTileTree(SceneContextR sceneContext)
+    {
+    auto handler = GetBackgroundMapHandler();
+    return nullptr != handler ? handler->_GetTileTree(sceneContext) : nullptr;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayStyle::GetBackgroundMapDisplayPlane(DPlane3dR plane)
+    {
+    auto handler = GetBackgroundMapHandler();
+    return nullptr != handler ? handler->_GetDisplayPlane(plane) : false;
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                                            
