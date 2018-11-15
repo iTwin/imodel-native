@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="SourceInfo" alias="sInfo" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+
+    <ECEntityClass typeName="SoureElementInfo" >
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECProperty propertyName="SourceId" typeName="string" />
+        <ECProperty propertyName="Properties" typeName="string" extendedTypeName="Json"/>
+    </ECEntityClass>
+</ECSchema>
