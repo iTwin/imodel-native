@@ -1967,7 +1967,7 @@ BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewIn
         return BeSQLite::DbResult::BE_SQLITE_ERROR_FileNotFound;
 
     stmt.BindInt(col++, v8FileId.GetValue());
-    stmt.BindInt(col++, viewElemRef->GetElementId());
+    stmt.BindInt64(col++, viewElemRef->GetElementId());
     stmt.BindText(col++, viewName, Statement::MakeCopy::Yes);
     stmt.BindDouble(col++, viewElemRef->GetLastModified());
     auto res = stmt.Step();
