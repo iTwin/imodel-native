@@ -88,6 +88,49 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, DISABLED_TestSourceElementIdAspect)
+    {
+    auto bridgeRegSubKey = L"iModelBridgeForMstn";
+
+    auto testDir = getiModelBridgeTestsOutputDir(L"TestSourceElementIdAspect");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args);
+    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
+    args.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+    args.push_back(L"--fwk-storeElementIdsInBIM");
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+    args.push_back(L"--fwk-skip-assignment-check");
+
+    // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
+    TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
+    iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
+
+    testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
+    BentleyApi::BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"test1Assignments.db");
+
+    BentleyApi::BeFileName dbFile(testDir);
+    dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
+    
+    int64_t srcId = AddLine(inputFile);
+    if (true)
+        {
+        // and run an update
+        RunTheBridge(args);
+        }
+    DbFileInfo info(dbFile);
+    DgnElementId id;
+    ASSERT_EQ(SUCCESS, info.GetiModelElementByDgnElementId(id, srcId));
+    }
 extern "C"
     {
     EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;

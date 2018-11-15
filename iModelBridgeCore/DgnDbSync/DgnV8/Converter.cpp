@@ -2083,6 +2083,10 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
     if (NULL == aspectClass)
         return ERROR;
 
+    ECN::IECInstanceCP aspect = DgnElement::GenericMultiAspect::GetAspect(*results.m_element, *aspectClass, BeSQLite::EC::ECInstanceId());
+    if (NULL != aspect)
+        return SUCCESS;//Assuming dgnv8 element mapping is n->1. So no need to update the element id.
+
     auto aspectInstance = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
     Utf8PrintfString elementId("%lld", v8eh.GetElementId());
     aspectInstance->SetValue("SourceId", ECN::ECValue(elementId.c_str()));

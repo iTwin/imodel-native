@@ -191,8 +191,9 @@ void MstnBridgeTestsFixture::AddAttachment(BentleyApi::BeFileName& inputFile, Be
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
+int64_t MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
     {
+    int64_t elementId = 0;
     ScopedDgnv8Host testHost;
     bool adoptHost = NULL == DgnV8Api::DgnPlatformLib::QueryHost();
     if (adoptHost)
@@ -202,8 +203,10 @@ void MstnBridgeTestsFixture::AddLine(BentleyApi::BeFileName& inputFile)
     v8editor.Open(inputFile);
     DgnV8Api::ElementId eid1;
     v8editor.AddLine(&eid1);
+    elementId = eid1;
     v8editor.Save();
     }
+    return elementId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -343,4 +346,22 @@ void MstnBridgeTestsFixture::SetupTestDirectory(BentleyApi::BeFileNameR testDir,
     testRegistry.Save();
     //We need to shut down v8host at the end so that rest of the processing works.
     TerminateHost();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::BentleyStatus MstnBridgeTestsFixture::DbFileInfo::GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId)
+    {
+    BentleyApi::BeSQLite::EC::ECSqlStatement estmt;
+    estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM "
+                  BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " AS g,"
+                  SOURCEINFO_ECSCHEMA_NAME "." SOURCEINFO_CLASS_SoureElementInfo " AS o"
+                  " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SourceId = '?')");
+    BentleyApi::Utf8PrintfString srcElementIdStr("%lld", srcElementId);
+    estmt.BindText(1, srcElementIdStr.c_str(), BentleyApi::BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW != estmt.Step())
+        return BentleyApi::BentleyStatus::BSIERROR;
+    elementId = estmt.GetValueId<DgnElementId>(0);
+    return BentleyApi::BentleyStatus::BSISUCCESS;
     }
