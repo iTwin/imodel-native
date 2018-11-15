@@ -36,7 +36,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File, int32_t num, bool useOffsetForElement);
 
-    void AddLine(BentleyApi::BeFileName& inputFile);
+    int64_t AddLine(BentleyApi::BeFileName& inputFile);
 
     struct DbFileInfo
         {
@@ -48,6 +48,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
         int32_t GetPhysicalModelCount();
         int32_t GetBISClassCount(CharCP className);
         int32_t GetModelProvenanceCount(BentleyApi::BeSQLite::BeGuidCR fileGuid);
+        BentleyApi::BentleyStatus GetiModelElementByDgnElementId(BentleyApi::Dgn::DgnElementId& elementId, int64_t srcElementId);
         };
     
 
