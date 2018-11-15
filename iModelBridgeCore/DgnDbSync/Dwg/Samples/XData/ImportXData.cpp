@@ -161,7 +161,7 @@ BentleyStatus   ImportXData::_ImportEntity (ElementImportResults& results, Eleme
         return  status;
         }
 
-    LOG.tracev ("DgnElement %s(ID=%lld) has been created, checking XDATA...", dgnElement->GetDisplayLabel().c_str(), dgnElement->GetElementId());
+    LOG.tracev ("DgnElement %s(ID=%lld) has been created, checking XDATA...", dgnElement->GetDisplayLabel().c_str(), dgnElement->GetElementId().GetValue());
 
     // Convert XDATA as Adhoc properties and add them to the new element:
     status = ConvertXData (*dgnElement, inputs.GetEntity());

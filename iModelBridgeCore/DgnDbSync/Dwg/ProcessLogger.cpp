@@ -145,7 +145,7 @@ Utf8String      DwgImporter::IssueReporter::FmtElement (DgnElementCR el)
     {
     auto ecclass = el.GetElementClass();
     Utf8String ecclassName(ecclass? ecclass->GetName(): "?");
-    return Utf8PrintfString("element %s (%lld)", ecclassName.c_str(), el.GetElementId());
+    return Utf8PrintfString("element %s (%lld)", ecclassName.c_str(), el.GetElementId().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**

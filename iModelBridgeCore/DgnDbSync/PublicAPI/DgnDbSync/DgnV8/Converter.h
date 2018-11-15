@@ -612,7 +612,8 @@ struct Converter
         Utf8String m_pwUser;
         Utf8String m_pwPassword;
         Utf8String m_pwDataSource;
-
+        //!private
+        bool m_keepHostAlive {};
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
             {
@@ -648,7 +649,8 @@ struct Converter
         void SetProjectWiseDataSource(Utf8CP pwDataSource) {m_pwDataSource = pwDataSource;}
         void SetProcessAffected(bool processAffected) { m_processAffected = processAffected; }
         void SetConvertViewsOfAllDrawings(bool b) { m_convertViewsOfAllDrawings = b;}
-
+        void SetKeepHostAlive(bool b) { m_keepHostAlive = b; }
+        bool GetKeepHostAlive() const { return m_keepHostAlive; }
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
         BeFileNameCR GetConfigFile2() const {return m_configFile2;}
@@ -1031,6 +1033,8 @@ public:
     bool ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model);
     //! @}
 
+    //!Allows a bridge to store element provenance in an iModel
+    BentleyStatus  AddElementSourceInfo(ElementConversionResults& results, DgnV8EhCR v8eh);
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
@@ -1043,6 +1047,7 @@ public:
     bool HasRootTransChanged() const {return m_rootTransHasChanged;}
 
     void SetIsUpdating(bool b) {_GetParamsR().SetIsUpdating(b);}
+    void SetKeepHostAlive(bool b) { _GetParamsR().SetKeepHostAlive(b); }
 
     static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME)
         {
@@ -2515,8 +2520,6 @@ struct RootModelConverter : SpatialConverterBase
         RootModelChoice const& GetRootModelChoice() const {return m_rootModelChoice;}
         void AddDrawingOrSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
 
-        //!private
-        bool m_keepHostAliveForUnitTests {};
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };

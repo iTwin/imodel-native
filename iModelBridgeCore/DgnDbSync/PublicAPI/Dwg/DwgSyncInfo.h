@@ -35,6 +35,7 @@ BEGIN_DWG_NAMESPACE
 #define SYNC_TABLE_Discards     SYNCINFO_TABLE("Discards")
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
 #define SYNC_TABLE_Block        SYNCINFO_TABLE("Block")
+#define SYNC_TABLE_GeometryPart SYNCINFO_TABLE("GeometryPart")
 
 struct DwgImporter;
 
@@ -670,6 +671,50 @@ struct DwgSyncInfo
         DWG_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry(nullptr, false); }
         };  // GroupIterator
+
+    // GeomPart to track & retrieve parts created as shared geometry in db
+    struct GeomPart
+        {
+    private:
+        DgnGeometryPartId   m_id;
+        Utf8String          m_tag;
+
+    public:
+        GeomPart () {}
+        GeomPart (DgnGeometryPartId id, Utf8StringCR tag) : m_id(id), m_tag(tag) {}
+
+        BeSQLite::DbResult Insert (BeSQLite::Db& db) const;
+        void FromSelect (BeSQLite::Statement& db);
+        bool IsValid () const { return m_id.IsValid(); }
+        DgnGeometryPartId GetPartId () const { return m_id; }
+        void SetPartId (DgnGeometryPartId id) { m_id = id; }
+        Utf8StringCR GetPartTag () const { return m_tag; }
+        void SetPartTag (Utf8StringCR tag) { m_tag = tag; }
+        static Utf8String GetSelectSql ();
+        DWG_EXPORT static BentleyStatus FindById (GeomPart& part, DgnDbCR db, DgnGeometryPartId id);
+        DWG_EXPORT static BentleyStatus FindByTag (GeomPart& part, DgnDbCR db, Utf8CP tag);
+        };  // GeomPart
+
+    struct GeomPartIterator : BeSQLite::DbTableIterator
+        {
+        DWG_EXPORT GeomPartIterator (DgnDbCR db, Utf8CP where);
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct GeomPartIterator;
+                Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+
+            public:
+                DWG_EXPORT GeomPart Get ();
+                Entry const& operator* () const { return *this; }
+            };  // Entry
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DWG_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        };  // GeomPartIterator
 
 
     DwgImporter&        m_dwgImporter;

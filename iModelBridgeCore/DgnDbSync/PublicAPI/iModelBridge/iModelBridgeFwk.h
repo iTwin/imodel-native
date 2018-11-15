@@ -100,7 +100,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BentleyStatus IModelHub_DoCreatedRepository();
     BentleyStatus IModelHub_DoNewBriefcaseNeedsLocks();
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
-
+    BentleyStatus GetSchemaLock();
+    BentleyStatus ImportDgnProvenance(bool& madeChanges);
+    BentleyStatus ImportElementAspectSchema(bool& madeChanges);
+    
     enum class SyncState
         {
         Initial = 0,                // Initial state: we may or may not have server revisions to pull or local Txns to push
@@ -132,7 +135,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_inputFileName;
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
-
+        Utf8String m_jobSubjectName;
+        bool       m_storeElementIdsInBIM {};
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.

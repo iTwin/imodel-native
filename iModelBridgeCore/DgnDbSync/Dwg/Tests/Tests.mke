@@ -26,11 +26,13 @@ DwgImporterLib  = $(BuildContext)Delivery/$(DWGTOOLKIT)$(VendorVersion)Importer/
     CCompOpts +% -DPRG=1
 %endif
 
+%if MSVC_VERSION > 1900
+# C4996: 'std::tr1': warning STL4002: The non-Standard std::tr1 namespace and TR1-only machinery are deprecated and will be REMOVED.
+    CCompOpts +% -D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
+%endif
+
 # We don't want to run the test from the build location because the dependencies are not there.
 GUNITTEST_NOEXEC = 1
-
-# This macro is used by gtestobj.mki
-GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
 
 BEGTEST_NAME=$(programName)
 BEGTEST_OUTPUT=$(OutputRootDir)build/$(BEGTEST_NAME)/
@@ -80,6 +82,8 @@ GUNITTEST_PATH      = $(o)
 GUNITTEST_SYMB      = $(o)
 GTEST_MAIN_IS_SUPPLIED = 1
 
+# This macro is used by gtestobj.mki
+GUnitTestDir        = $(BuildContext)SubParts/google_gtest/
 %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
 LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
