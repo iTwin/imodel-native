@@ -130,6 +130,9 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     DbFileInfo info(dbFile);
     DgnElementId id;
     ASSERT_EQ(SUCCESS, info.GetiModelElementByDgnElementId(id, srcId));
+
+    ASSERT_TRUE(id.IsValid());
+
     }
 extern "C"
     {
