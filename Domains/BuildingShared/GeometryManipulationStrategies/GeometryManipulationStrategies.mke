@@ -97,6 +97,8 @@ $(o)PointPlacementStrategy$(oext) : $(_MakeFilePath)PointPlacementStrategy.cpp $
 
 $(o)PointManipulationStrategy$(oext) : $(_MakeFilePath)PointManipulationStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/PointManipulationStrategy.h
 
+$(o)IArcElementKeyPointContainer$(oext) : $(_MakeFilePath)IArcElementKeyPointContainer.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/IArcElementKeyPointContainer.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

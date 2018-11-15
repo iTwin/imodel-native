@@ -122,6 +122,50 @@ void IArcPlacementStrategy::SetRadius
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool IArcKeyPointContainer::TryGetStartKeyPoint
+(
+    DPoint3dR startKeyPoint
+) const
+    {
+    return _TryGetStartKeyPoint(startKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool IArcKeyPointContainer::TryGetCenterKeyPoint
+(
+    DPoint3dR centerKeyPoint
+) const
+    {
+    return _TryGetCenterKeyPoint(centerKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool IArcKeyPointContainer::TryGetMidKeyPoint
+(
+    DPoint3dR midKeyPoint
+) const
+    {
+    return _TryGetMidKeyPoint(midKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool IArcKeyPointContainer::TryGetEndKeyPoint
+(
+    DPoint3dR endKeyPoint
+) const
+    {
+    return _TryGetEndKeyPoint(endKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategy::ArcPlacementStrategy
@@ -339,4 +383,67 @@ void ArcPlacementStrategy::_SetRadius
 )
     {
     _SetProperty(prop_Radius(), radius);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+template<bool(ArcManipulationStrategy::*isSet)() const, DPoint3d(ArcManipulationStrategy::*get)() const>
+bool ArcPlacementStrategy::TryGetKeyPoint
+(
+    ArcManipulationStrategyCP container,
+    DPoint3dR pointToSet
+) const
+    {
+    BeAssert(nullptr != container);
+
+    if (!(container->*isSet)())
+        return false;
+
+    pointToSet = (container->*get)();
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcPlacementStrategy::_TryGetStartKeyPoint
+(
+    DPoint3dR startKeyPoint
+) const
+    {
+    return TryGetKeyPoint<&ArcManipulationStrategy::IsStartSet, &ArcManipulationStrategy::GetStart>(m_manipulationStrategy.get(), startKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcPlacementStrategy::_TryGetCenterKeyPoint
+(
+    DPoint3dR centerKeyPoint
+) const
+    {
+    return TryGetKeyPoint<&ArcManipulationStrategy::IsCenterSet, &ArcManipulationStrategy::GetCenter>(m_manipulationStrategy.get(), centerKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcPlacementStrategy::_TryGetMidKeyPoint
+(
+    DPoint3dR midKeyPoint
+) const
+    {
+    return TryGetKeyPoint<&ArcManipulationStrategy::IsMidSet, &ArcManipulationStrategy::GetMid>(m_manipulationStrategy.get(), midKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ArcPlacementStrategy::_TryGetEndKeyPoint
+(
+    DPoint3dR endKeyPoint
+) const
+    {
+    return TryGetKeyPoint<&ArcManipulationStrategy::IsEndSet, &ArcManipulationStrategy::GetEnd>(m_manipulationStrategy.get(), endKeyPoint);
     }

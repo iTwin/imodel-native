@@ -69,9 +69,32 @@ struct IArcPlacementStrategy
     };
 
 //=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               11/2018
+//=======================================================================================
+struct IArcKeyPointContainer
+    {
+    protected:
+        virtual ~IArcKeyPointContainer() {}
+
+        virtual bool _TryGetStartKeyPoint(DPoint3dR) const = 0;
+        virtual bool _TryGetCenterKeyPoint(DPoint3dR) const = 0;
+        virtual bool _TryGetMidKeyPoint(DPoint3dR) const = 0;
+        virtual bool _TryGetEndKeyPoint(DPoint3dR) const = 0;
+
+    public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool TryGetStartKeyPoint(DPoint3dR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool TryGetCenterKeyPoint(DPoint3dR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool TryGetMidKeyPoint(DPoint3dR) const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bool TryGetEndKeyPoint(DPoint3dR) const;
+    };
+
+//=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacementStrategy
+struct ArcPlacementStrategy 
+    : public CurvePrimitivePlacementStrategy
+    , IArcPlacementStrategy
+    , IArcKeyPointContainer
     {
     DEFINE_T_SUPER(CurvePrimitivePlacementStrategy)
 
@@ -80,6 +103,8 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
         IArcPlacementMethodPtr m_placementMethod;
 
         static IArcPlacementMethodPtr CreatePlacementMethod(ArcPlacementMethod method, ArcManipulationStrategyR manipulationStrategy);
+
+        template<bool(ArcManipulationStrategy::*isSet)() const, DPoint3d(ArcManipulationStrategy::*get)() const> bool TryGetKeyPoint(ArcManipulationStrategyCP strategy, DPoint3dR pointToSet) const;
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementStrategy(ArcManipulationStrategyR manipulationStrategy, IArcPlacementMethodR method);
@@ -106,6 +131,12 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
         virtual void _SetSweep(double sweep) override;
         virtual void _SetUseRadius(bool useRadius) override;
         virtual void _SetRadius(double radius) override;
+
+        // IArcKeyPointContainer
+        virtual bool _TryGetStartKeyPoint(DPoint3dR) const override;
+        virtual bool _TryGetCenterKeyPoint(DPoint3dR) const override;
+        virtual bool _TryGetMidKeyPoint(DPoint3dR) const override;
+        virtual bool _TryGetEndKeyPoint(DPoint3dR) const override;
 
     public:
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }

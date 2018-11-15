@@ -92,67 +92,143 @@ TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
+    DPoint3d start, mid, center, end;
+
     assertKeyPoints(manipSut, false, false, false, false, "Initial state");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "Initial state";
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
 
     sut->AddDynamicKeyPoint({2,0,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, false, false, "[AddDynamicKeyPoint] Has 1 dynamic key point");
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
 
     sut->AddKeyPoint({2,0,0});
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point";
     assertKeyPoints(manipSut, true, false, false, false, "[AddKeyPoint] Has 1 key point");
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+
     sut->AddDynamicKeyPoint({0,-3,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, false, true, "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point");
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(center.AlmostEqual({0,-3,0}));
 
     sut->AddKeyPoint({0,-3,0});
     assertKeyPoints(manipSut, true, false, false, true, "[AddKeyPoint] Has 2 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points";
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(center.AlmostEqual({0,-3,0}));
+
     sut->AddDynamicKeyPoint({0,3,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point");
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point";
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(center.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->AddKeyPoint({0,3,0});
     ASSERT_TRUE(sut->IsComplete());
     ASSERT_FALSE(sut->CanAcceptMorePoints());
     assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Has 3 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(center.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->AddDynamicKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Can't add more than 3 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(center.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+
     sut->AddKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Can't add more than 3 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(center.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, false, true, "[PopKeyPoint] Has 2 key point");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key point";
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(center.AlmostEqual({0,-3,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, false, false, "[PopKeyPoint] Has 1 key point");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point";
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, false, false, false, false, "[PopKeyPoint] Has 0 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
     ASSERT_FALSE(sut->IsComplete());
     ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
     }
 
 //--------------------------------------------------------------------------------------
@@ -576,47 +652,123 @@ TEST_F(ArcCenterStartPlacementStrategyTests, KeyPointManipulation)
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
+    DPoint3d start, mid, center, end;
+
     assertKeyPoints(manipSut, false, false, false, false, "Initial state");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "Initial state";
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
 
     sut->AddDynamicKeyPoint({2,0,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
     assertKeyPoints(manipSut, false, false, false, true, "[AddDynamicKeyPoint] Has 1 dynamic key point");
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
 
     sut->AddKeyPoint({2,0,0});
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point";
     assertKeyPoints(manipSut, false, false, false, true, "[AddKeyPoint] Has 1 key point");
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+
     sut->AddDynamicKeyPoint({0,-3,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, false, true, "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point");
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(start.AlmostEqual({0,-3,0}));
 
     sut->AddKeyPoint({0,-3,0});
     assertKeyPoints(manipSut, true, false, false, true, "[AddKeyPoint] Has 2 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(start.AlmostEqual({0,-3,0}));
+
     sut->AddDynamicKeyPoint({0,3,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point");
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(start.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->AddKeyPoint({0,3,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Has 3 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(start.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->AddDynamicKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddDynamicKeyPoint] Can't add more than 3 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(start.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+
     sut->AddKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, false, true, "[AddKeyPoint] Can't add more than 3 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(start.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, false, true, "[PopKeyPoint] Has 2 key point");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key point";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(start.AlmostEqual({0,-3,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, false, false, false, true, "[PopKeyPoint] Has 1 key point");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point";
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(center.AlmostEqual({2,0,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, false, false, false, false, "[PopKeyPoint] Has 0 key points");
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
     }
 
 //--------------------------------------------------------------------------------------
@@ -847,47 +999,123 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, KeyPointManipulation)
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
+    DPoint3d start, mid, center, end;
+
     assertKeyPoints(manipSut, false, false, false, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "Initial state";
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
 
     sut->AddDynamicKeyPoint({2,0,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, false, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
 
     sut->AddKeyPoint({2,0,0});
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point";
     assertKeyPoints(manipSut, true, false, false, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+
     sut->AddDynamicKeyPoint({0,-3,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, true, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
 
     sut->AddKeyPoint({0,-3,0});
     assertKeyPoints(manipSut, true, false, true, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
+
     sut->AddDynamicKeyPoint({0,3,0});
     assertKeyPoints(manipSut, true, true, true, false);
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->AddKeyPoint({0,3,0});
     assertKeyPoints(manipSut, true, true, true, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->AddDynamicKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, true, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+
     sut->AddKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, true, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
 
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, true, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key point";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, false, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, false, false, false, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
     }
 
 //--------------------------------------------------------------------------------------
@@ -1038,47 +1266,123 @@ TEST_F(ArcStartEndMidPlacementStrategyTests, KeyPointManipulation)
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
+    DPoint3d start, mid, center, end;
+
     assertKeyPoints(manipSut, false, false, false, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
 
     sut->AddDynamicKeyPoint({2,0,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 dynamic key point";
     assertKeyPoints(manipSut, true, false, false, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
 
     sut->AddKeyPoint({2,0,0});
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 1 key point";
     assertKeyPoints(manipSut, true, false, false, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+
     sut->AddDynamicKeyPoint({0,-3,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 1 key point, 1 dynamic key point";
     assertKeyPoints(manipSut, true, true, false, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,-3,0}));
 
     sut->AddKeyPoint({0,3,0});
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 2 key points";
     assertKeyPoints(manipSut, true, true, false, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+
     sut->AddDynamicKeyPoint({0,3,0});
     ASSERT_TRUE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Has 2 key points, 1 dynamic key point";
     assertKeyPoints(manipSut, true, true, true, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,3,0}));
 
     sut->AddKeyPoint({0,-3,0});
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Has 3 key points";
     assertKeyPoints(manipSut, true, true, true, false);
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
 
     sut->AddDynamicKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, true, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddDynamicKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
+
     sut->AddKeyPoint({2,0,0});
     assertKeyPoints(manipSut, true, true, true, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[AddKeyPoint] Can't add more than 3 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+    ASSERT_TRUE(mid.AlmostEqual({0,-3,0}));
 
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, true, false, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 2 key points";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+    ASSERT_TRUE(end.AlmostEqual({0,3,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, true, false, false, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 1 key point";
+    ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+    ASSERT_TRUE(start.AlmostEqual({2,0,0}));
+
     sut->PopKeyPoint();
     assertKeyPoints(manipSut, false, false, false, false);
     ASSERT_FALSE(sut->IsDynamicKeyPointSet()) << "[PopKeyPoint] Has 0 key points";
+    ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+    ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+    ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+    ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
     }
 
 //--------------------------------------------------------------------------------------

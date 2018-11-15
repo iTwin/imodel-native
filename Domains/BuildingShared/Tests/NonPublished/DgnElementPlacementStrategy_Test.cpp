@@ -13,6 +13,7 @@
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(TestElementPlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(TestElementManipulationStrategy)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(TestArcKeyPointContainer)
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -68,14 +69,46 @@ struct TestElementManipulationStrategy : DgnElementManipulationStrategy
     };
 
 //=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               11/2018
+//=======================================================================================
+struct TestArcKeyPointContainer : IArcKeyPointContainer
+    {
+    private:
+        bool m_isStartSet;
+        bool m_isCenterSet;
+        bool m_isEndSet;
+        bool m_isMidSet;
+        DPoint3d m_start;
+        DPoint3d m_center;
+        DPoint3d m_end;
+        DPoint3d m_mid;
+
+    protected:
+        virtual bool _TryGetStartKeyPoint(DPoint3dR p) const override { p.Init(m_start.x, m_start.y, m_start.z); return m_isStartSet; }
+        virtual bool _TryGetCenterKeyPoint(DPoint3dR p) const override { p.Init(m_center.x, m_center.y, m_center.z); return m_isCenterSet; }
+        virtual bool _TryGetMidKeyPoint(DPoint3dR p) const override { p.Init(m_mid.x, m_mid.y, m_mid.z); return m_isMidSet; }
+        virtual bool _TryGetEndKeyPoint(DPoint3dR p) const override { p.Init(m_end.x, m_end.y, m_end.z); return m_isEndSet; }
+
+    public:
+        void SetStart(bool set, DPoint3dCP p) { m_isStartSet = set; if (nullptr != p) m_start.Init(p->x, p->y, p->z); }
+        void SetCenter(bool set, DPoint3dCP p) { m_isCenterSet = set; if (nullptr != p) m_center.Init(p->x, p->y, p->z); }
+        void SetEnd(bool set, DPoint3dCP p) { m_isEndSet = set; if (nullptr != p) m_end.Init(p->x, p->y, p->z); }
+        void SetMid(bool set, DPoint3dCP p) { m_isMidSet = set; if (nullptr != p) m_mid.Init(p->x, p->y, p->z); }
+    };
+
+//=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               05/2018
 //=======================================================================================
-struct TestElementPlacementStrategy : DgnElementPlacementStrategy
+struct TestElementPlacementStrategy 
+    : DgnElementPlacementStrategy
+    , IArcElementKeyPointContainer
     {
     DEFINE_T_SUPER(DgnElementPlacementStrategy)
 
     private:
         TestElementManipulationStrategyPtr m_manipStrategy;
+
+        TestArcKeyPointContainerCP m_keyPointContainer;
 
     protected:
         TestElementPlacementStrategy(Dgn::DgnDbR db)
@@ -90,10 +123,13 @@ struct TestElementPlacementStrategy : DgnElementPlacementStrategy
         virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const override {}
         virtual Utf8String _GetMessage() const override { return ""; }
 
+        virtual IArcKeyPointContainer const& _GetIArcKeyPointContainer() const override { BeAssert(nullptr != m_keyPointContainer); return *m_keyPointContainer; }
+
     public:
         static TestElementPlacementStrategyPtr Create(Dgn::DgnDbR db) { return new TestElementPlacementStrategy(db); }
 
         void SetConstructionGeometryForTest(bvector<IGeometryPtr> const& constructionGeometry) { m_manipStrategy->SetConstructionGeometryForTest(constructionGeometry); }
+        void SetArcKeyPointContainerForTest(TestArcKeyPointContainerCP container) { m_keyPointContainer = container; }
     };
 
 END_BUILDING_SHARED_NAMESPACE
@@ -222,5 +258,87 @@ TEST_F(DgnElementPlacementStrategyTestFixture, AddWorldOverlay)
         ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive().IsValid());
         ASSERT_TRUE(actualGeometry->GetAsICurvePrimitive()->IsSameStructureAndGeometry(*expectedArc));
         ASSERT_EQ(1, builder->m_geometry.front().m_graphicParams.GetWidth());
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                11/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnElementPlacementStrategyTestFixture, ArcKeyPointContainer)
+    {
+    TestElementPlacementStrategyPtr sut = TestElementPlacementStrategy::Create(GetDgnDb());
+    ASSERT_TRUE(sut.IsValid());
+
+    TestArcKeyPointContainer container;
+    sut->SetArcKeyPointContainerForTest(&container);
+
+    DPoint3d start, mid, center, end;
+
+    if (true)
+        {
+        container.SetStart(false, nullptr);
+        container.SetCenter(false, nullptr);
+        container.SetMid(false, nullptr);
+        container.SetEnd(false, nullptr);
+        ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+        ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+        ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+        ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+        }
+
+    if (true)
+        {
+        DPoint3d tmpStart {1,0,0};
+        container.SetStart(true, &tmpStart);
+        container.SetCenter(false, nullptr);
+        container.SetMid(false, nullptr);
+        container.SetEnd(false, nullptr);
+        ASSERT_TRUE(sut->TryGetStartKeyPoint(start));
+        ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+        ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+        ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+        ASSERT_TRUE(start.AlmostEqual(tmpStart));
+        }
+
+    if (true)
+        {
+        DPoint3d tmpMid {0,1,0};
+        container.SetStart(false, nullptr);
+        container.SetCenter(false, nullptr);
+        container.SetMid(true, &tmpMid);
+        container.SetEnd(false, nullptr);
+        ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+        ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+        ASSERT_TRUE(sut->TryGetMidKeyPoint(mid));
+        ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+        ASSERT_TRUE(mid.AlmostEqual(tmpMid));
+        }
+
+    if (true)
+        {
+        DPoint3d tmpCenter {0,0,1};
+        container.SetStart(false, nullptr);
+        container.SetCenter(true, &tmpCenter);
+        container.SetMid(false, nullptr);
+        container.SetEnd(false, nullptr);
+        ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+        ASSERT_TRUE(sut->TryGetCenterKeyPoint(center));
+        ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+        ASSERT_FALSE(sut->TryGetEndKeyPoint(end));
+        ASSERT_TRUE(center.AlmostEqual(tmpCenter));
+        }
+
+    if (true)
+        {
+        DPoint3d tmpEnd {1,1,1};
+        container.SetStart(false, nullptr);
+        container.SetCenter(false, nullptr);
+        container.SetMid(false, nullptr);
+        container.SetEnd(true, &tmpEnd);
+        ASSERT_FALSE(sut->TryGetStartKeyPoint(start));
+        ASSERT_FALSE(sut->TryGetCenterKeyPoint(center));
+        ASSERT_FALSE(sut->TryGetMidKeyPoint(mid));
+        ASSERT_TRUE(sut->TryGetEndKeyPoint(end));
+        ASSERT_TRUE(end.AlmostEqual(tmpEnd));
         }
     }

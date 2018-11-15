@@ -100,6 +100,7 @@ END_BUILDING_SHARED_NAMESPACE
 #include "ArcStartMidEndPlacementMethod.h"
 #include "ArcStartEndMidPlacementMethod.h"
 
+#include "IArcElementKeyPointContainer.h"
 #include "ElementManipulationStrategy.h"
 #include "ElementPlacementStrategy.h"
 
