@@ -345,7 +345,7 @@ private:
     void CancelDynamics();
 
 public:
-    void CallJsMonitors(Utf8CP methodName, int* arg = nullptr);
+    void CallJsMonitors(Utf8CP eventName, int* arg = nullptr);
     DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
     DgnDbStatus DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private
@@ -353,9 +353,9 @@ public:
     void OnEndValidate(); //!< @private
     void AddTxnTable(DgnDomain::TableHandler*);//!< @private
     DGNPLATFORM_EXPORT TxnManager(DgnDbR); //!< @private
-    BeSQLite::DbResult InitializeTableHandlers(); //!< @private
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InitializeTableHandlers(); //!< @private
     TxnRelationshipLinkTables& RelationshipLinkTables(); //!< @private
-    void EnableNotifyTxnMontiors(bool enabled) { m_enableNotifyTxnMonitors = enabled; }
+    void EnableNotifyTxnMonitors(bool enabled) { m_enableNotifyTxnMonitors = enabled; }
     
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
@@ -436,11 +436,6 @@ public:
     //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.
     BeSQLite::DbResult LoadRebases(BeSQLite::Rebaser& rebaser, int64_t thruId);
     
-#ifdef WIP_DONT_VALIDATE_REJECTIONS
-    //! @private - query if an in-coming change to this element was rejected/skipped
-    DGNPLATFORM_EXPORT bool WasElementChangeRejected(DgnElementId);
-#endif
-
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
 
