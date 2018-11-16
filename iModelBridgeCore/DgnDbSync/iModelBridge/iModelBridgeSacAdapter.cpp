@@ -213,7 +213,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
 
         if (madeDynamicSchemaChanges) // if _MakeSchemaChanges made any dynamic schema changes, we close and re-open in order to accommodate them.
             {
-            callCloseOnReturn.CallCloseFunctions();
+            callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade);
 
             _hadDomainSchemaChanges = false;
             db = bridge.OpenBimAndMergeSchemaChanges(dbres, _hadDomainSchemaChanges, outputFileName);

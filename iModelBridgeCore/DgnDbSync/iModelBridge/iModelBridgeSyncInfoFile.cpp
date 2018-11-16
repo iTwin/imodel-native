@@ -613,10 +613,10 @@ BentleyStatus iModelBridgeWithSyncInfoBase::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeWithSyncInfoBase::_OnCloseBim(BentleyStatus status)
+void iModelBridgeWithSyncInfoBase::_OnCloseBim(BentleyStatus status, iModelBridge::ClosePurpose purpose)
     {
     m_syncInfo.DetachFromBIM();
-    T_Super::_OnCloseBim(status);
+    T_Super::_OnCloseBim(status, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**

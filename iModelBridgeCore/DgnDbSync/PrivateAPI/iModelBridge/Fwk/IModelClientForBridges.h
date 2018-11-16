@@ -21,7 +21,7 @@
 #include <iModelBridge/iModelBridgeFwk.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
-
+typedef std::shared_ptr<struct WebServices::IConnectSignInManager> OidcSignInManagerPtr;
 // ========================================================================================================
 //! Interface to be adopted by a class that defines the interface between iModelBridgeFwk and an IModel server.
 // ========================================================================================================
@@ -65,7 +65,7 @@ protected:
     iModel::Hub::Error m_lastServerError;
     uint8_t m_maxRetryCount {};
     WebServices::ClientInfoPtr m_clientInfo;
-
+    OidcSignInManagerPtr m_oidcMgr;
 public:
     IModelClientBase(WebServices::ClientInfoPtr ci, uint8_t maxRetryCount, WebServices::UrlProvider::Environment, int64_t cacheTimeOutMs);
 

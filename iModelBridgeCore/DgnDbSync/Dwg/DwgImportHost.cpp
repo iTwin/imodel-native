@@ -341,7 +341,7 @@ bool            DwgImportHost::FindFontFile (WStringR outFile, WCharCP inFont, A
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbStatus     DwgImportHost::_FindFile (WStringR fullpathOut, WCharCP filenameIn, DwgDbDatabaseP dwg, AcadFileType hint)
     {
-    WCharP      pExtension = nullptr;
+    WCharCP     pExtension = nullptr;
     WString     suggestedPath;
 
     switch (hint)

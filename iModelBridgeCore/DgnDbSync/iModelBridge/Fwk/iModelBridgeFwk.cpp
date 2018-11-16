@@ -216,6 +216,7 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-job-subject-name=     (optional)  The unique name of the Job Subject element that the bridge must use.\n"
         L"--fwk-jobrun-guid=          (optional)  A unique GUID that identifies this job run for activity tracking. This will be passed along to all dependant services and logs.\n"
         L"--fwk-jobrequest-guid=      (optional)  A unique GUID that identifies this job run for correlation. This will be limited to the native callstack.\n"
+        L"--fwk-storeElementIdsInBIM  (optional)  Request the bridge to store element ids of the source file in an element aspect inside the bim file."
         );
     }
 
@@ -439,6 +440,12 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             m_jobSubjectName = getArgValue(argv[iArg]);
             continue;
             }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-storeElementIdsInBIM"))
+            {
+            m_storeElementIdsInBIM = true;
+            continue;
+            }
+
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
         return BSIERROR;
@@ -1118,7 +1125,7 @@ BentleyStatus iModelBridgeFwk::ReleaseBridge()
     if (nullptr == m_bridge)
         return BentleyStatus::SUCCESS;
 
-    StopWatch releaseBridge;
+    StopWatch releaseBridge (true);
     auto releaseFunc = m_jobEnvArgs.ReleaseBridge();
     if (nullptr == releaseFunc)
         {
@@ -1516,7 +1523,7 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
 BentleyStatus   iModelBridgeFwk::TryOpenBimWithBisSchemaUpgrade()
     {
     GetLogger().trace("Entering TryOpenBimWithBisSchemaUpgrade");
-    StopWatch openBimWithSchemaUpgrade;
+    StopWatch openBimWithSchemaUpgrade(true);
     bool madeSchemaChanges = false;
     DbResult dbres;
     m_briefcaseDgnDb = iModelBridge::OpenBimAndMergeSchemaChanges(dbres, madeSchemaChanges, m_briefcaseName);
@@ -1573,6 +1580,94 @@ int             iModelBridgeFwk::StoreHeaderInformation()
     
     m_briefcaseDgnDb->SaveProjectGuid(connectProjectId);
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::GetSchemaLock()
+    {
+    RepositoryStatus status = RepositoryStatus::Success;
+    int retryAttempt = 0;
+    do
+        {
+        if (retryAttempt > 0)
+            GetLogger().infov("GetSchemaLock failed. Retrying.");
+        status = m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result();
+        } while ((RepositoryStatus::Success != status) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry());
+
+    return (status != RepositoryStatus::Success) ? BSIERROR : BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::ImportDgnProvenance(bool& madeChanges)
+    {
+    bool needFileProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
+    bool needModelProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
+
+    if (needFileProvenance || needModelProvenance)
+        {
+        if (SUCCESS != GetSchemaLock())
+            {
+            GetLogger().fatal("GetSchemaLock failed after all the retries. Aborting.");
+            return BSIERROR;
+            }
+        if (needFileProvenance)
+            DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
+        if (needModelProvenance)
+            DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
+        }
+
+    madeChanges = (needFileProvenance || needModelProvenance);
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
+    {
+    if (!m_jobEnvArgs.m_storeElementIdsInBIM)
+        return BSISUCCESS;
+
+    if (m_briefcaseDgnDb->Schemas().ContainsSchema(SOURCEINFO_ECSCHEMA_NAME))
+        return BSISUCCESS;
+
+    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaPathname.AppendToPath(L"ECSchemas/Application/SourceInfo.ecschema.xml");
+
+    if (!schemaPathname.DoesPathExist())
+        {
+        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+        return BSIERROR;
+        }
+
+    ECN::ECSchemaPtr schema;
+    ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(m_briefcaseDgnDb->GetSchemaLocater());
+    ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schema, schemaPathname.GetName(), *schemaContext);
+
+    // CreateSearchPathSchemaFileLocater
+    if (ECN::SchemaReadStatus::Success != status)
+        {
+        LOG.errorv("Error reading schema %ls", schemaPathname.GetName());
+        return BSIERROR;
+        }
+
+    if (SUCCESS != GetSchemaLock())
+        {
+        GetLogger().fatal("GetSchemaLock failed for ImportElementAspectSchema after all the retries. Ignoring.");
+        return BSIERROR;
+        }
+
+    bvector<ECN::ECSchemaCP> schemas;
+    schemas.push_back(schema.get());
+    if (SchemaStatus::Success != m_briefcaseDgnDb->ImportV8LegacySchemas(schemas))
+        return BSIERROR;
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1647,24 +1742,9 @@ int iModelBridgeFwk::UpdateExistingBim()
         BeAssert(!anyTxnsInFile(*m_briefcaseDgnDb));
 
         //Get the schema lock if needed.
-
-        bool needFileProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceFile) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
-        bool needModelProvenance = !m_briefcaseDgnDb->TableExists(DGN_TABLE_ProvenanceModel) && iModelBridge::WantModelProvenanceInBim(*m_briefcaseDgnDb);
-
-        if (needFileProvenance || needModelProvenance)
-            {
-            if (RepositoryStatus::Success != m_briefcaseDgnDb->BriefcaseManager().LockSchemas().Result())
-                {
-                LOG.fatalv("Unable to obtain the schema lock");
-                return BentleyStatus::ERROR;
-                }
-
-            if (needFileProvenance)
-                DgnV8FileProvenance::CreateTable(*m_briefcaseDgnDb);
-            if (needModelProvenance)
-                DgnV8ModelProvenance::CreateTable(*m_briefcaseDgnDb);
-            }
-        
+        bool hasChanges = false;
+        if (BSISUCCESS != ImportDgnProvenance(hasChanges))
+            return BentleyStatus::ERROR;
 
         //  Tell the bridge that the briefcase is now open and ask it to open the source file(s).
         iModelBridgeCallOpenCloseFunctions callCloseOnReturn(*m_bridge, *m_briefcaseDgnDb);
@@ -1680,7 +1760,7 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //                                       *** NB: CALLER CLEANS UP m_briefcaseDgnDb! ***
 
-        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb) || needFileProvenance || needModelProvenance) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
+        if (m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb) || hasChanges) // if bridge made any changes, they must be pushed and cleared out before we can make schema changes
             {
             if (BSISUCCESS != Briefcase_PullMergePush("initialization changes"))
                 return RETURN_STATUS_SERVER_ERROR;
@@ -1691,6 +1771,11 @@ int iModelBridgeFwk::UpdateExistingBim()
 
         //  Let the bridge generate schema changes
         GetLogger().infov("bridge:%s iModel:%s - MakeSchemaChanges.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+        if (BSISUCCESS != ImportElementAspectSchema(hasChanges))
+            {
+            GetLogger().error("Importing Element Aspect schema failed.");
+            }
+
         m_briefcaseDgnDb->BriefcaseManager().StartBulkOperation();
         int bridgeSchemaChangeStatus = m_bridge->_MakeSchemaChanges();
         if (BSISUCCESS != bridgeSchemaChangeStatus)
@@ -1699,7 +1784,7 @@ int iModelBridgeFwk::UpdateExistingBim()
             while ((BSISUCCESS != bridgeSchemaChangeStatus) && (++retryAttempt < m_maxRetryCount) && IModelClientBase::SleepBeforeRetry())
                 {
                 GetLogger().infov("_MakeSchemaChanges failed. Retrying.");
-                callCloseOnReturn.CallCloseFunctions(); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
+                callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade); // re-initialize the bridge, to clear out the side-effects of the previous failed attempt
                 m_briefcaseDgnDb->AbandonChanges();
                 if (BSISUCCESS != ProcessSchemaChange())    // make sure that we are at the tip and that we have absorbed any schema changes from the server
                     return RETURN_STATUS_SERVER_ERROR;
@@ -1716,7 +1801,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         madeSchemaChanges = m_briefcaseDgnDb->Txns().HasChanges() || anyTxnsInFile(*m_briefcaseDgnDb); // see if bridge actually made any changes
         if (madeSchemaChanges)
             {
-            callCloseOnReturn.CallCloseFunctions();
+            callCloseOnReturn.CallCloseFunctions(iModelBridge::ClosePurpose::SchemaUpgrade);
             if (0 != ProcessSchemaChange())  // pullmergepush + re-open
                 return BSIERROR;
             callCloseOnReturn.CallOpenFunctions(*m_briefcaseDgnDb);
@@ -2025,4 +2110,14 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         }
 
     return *m_registry;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::SetTokenProvider(WebServices::IConnectTokenProviderPtr provider)
+    {
+    if (m_useIModelHub && NULL != m_iModelHubArgs)
+        m_iModelHubArgs->m_tokenProvider = provider;
     }

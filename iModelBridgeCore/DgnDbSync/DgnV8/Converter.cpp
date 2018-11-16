@@ -2087,6 +2087,26 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
     return gs->Is3d() != v8mm.GetDgnModel().Is3dModel();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ BentleyStatus  Converter::AddElementSourceInfo(ElementConversionResults& results, DgnV8EhCR v8eh)
+    {
+    ECN::ECClassCP aspectClass = GetDgnDb().Schemas().GetClass(SOURCEINFO_ECSCHEMA_NAME, SOURCEINFO_CLASS_SoureElementInfo);
+    if (NULL == aspectClass)
+        return ERROR;
+
+    ECN::IECInstanceCP aspect = DgnElement::GenericMultiAspect::GetAspect(*results.m_element, *aspectClass, BeSQLite::EC::ECInstanceId());
+    if (NULL != aspect)
+        return SUCCESS;//Assuming dgnv8 element mapping is n->1. So no need to update the element id.
+
+    auto aspectInstance = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    Utf8PrintfString elementId("%lld", v8eh.GetElementId());
+    aspectInstance->SetValue("SourceId", ECN::ECValue(elementId.c_str()));
+
+    return DgnElement::GenericMultiAspect::AddAspect(*results.m_element, *aspectInstance) == DgnDbStatus::Success ? BSISUCCESS : BSIERROR;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2014
 //---------------------------------------------------------------------------------------
@@ -2235,6 +2255,10 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             return BSIERROR;
         }
 
+    if (SUCCESS != AddElementSourceInfo(results, v8eh))
+        {
+        //TODO Log error
+        }
     return BentleyApi::SUCCESS;
     }
 

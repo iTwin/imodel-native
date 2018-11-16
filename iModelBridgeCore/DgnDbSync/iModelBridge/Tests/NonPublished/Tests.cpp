@@ -466,8 +466,8 @@ TEST_F(iModelBridgeTests, iModelBridgeSyncInfoFileTesterSyncInfoFile)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, b._ConvertToBim(*subj));      // Nearly all of the testing is done in here.
 
-    b._CloseSource(BSISUCCESS);
-    b._OnCloseBim(BSISUCCESS);
+    b._CloseSource(BSISUCCESS, iModelBridge::ClosePurpose::Finished);
+    b._OnCloseBim(BSISUCCESS, iModelBridge::ClosePurpose::Finished);
     b._Terminate(BSISUCCESS);
 
     db->SaveChanges();

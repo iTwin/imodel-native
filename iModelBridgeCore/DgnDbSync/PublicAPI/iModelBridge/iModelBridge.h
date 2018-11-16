@@ -40,6 +40,9 @@
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
+#define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
+#define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct iModelBridgeFwk;
@@ -756,21 +759,28 @@ public:
     //! @see _OnCloseBim
     virtual BentleyStatus _OnOpenBim(DgnDbR db) = 0;
 
+    enum ClosePurpose
+        {
+        Finished,
+        SchemaUpgrade
+        };
+
     //! When this function is called, the bridge must let go of any pointer it may be holding to the briefcase, and it must detach
     //! syncinfo from the briefcase. 
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
     //! @note _OnOpenBim and _OnCloseBim may be called more than once during a conversion.
-    virtual void _OnCloseBim(BentleyStatus updateStatus) = 0;
+    virtual void _OnCloseBim(BentleyStatus updateStatus, ClosePurpose) = 0;
 
     //! Open the data source and be prepared to do the conversion
     //! @return non-zero error status if the bridge cannot open the source. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @see _CloseSource
     virtual BentleyStatus _OpenSource() {return BSISUCCESS;}
 
+
     //! The bridge can close its source data files, because the conversion is finished. It may have been terminated abnormally.
     //! This function will not be called if _OpenSource returned a non-zero error status.
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
-    virtual void _CloseSource(BentleyStatus updateStatus) {}
+    virtual void _CloseSource(BentleyStatus updateStatus, ClosePurpose) {}
     
     //! By overriding this function, the bridge may make changes to schemas in the briefcase.
     //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
@@ -985,7 +995,7 @@ public:
     BentleyStatus _OnOpenBim(DgnDbR db) override {m_db = &db; return BSISUCCESS;}
 
     //! Release the reference to the BIM when the conversion is over.
-    void _OnCloseBim(BentleyStatus) override {m_db = nullptr;}
+    void _OnCloseBim(BentleyStatus, ClosePurpose purpose) override {m_db = nullptr;}
 
     void _Terminate(BentleyStatus) override {}
 
