@@ -570,9 +570,9 @@ BeSQLite::DbResult DgnDb::_OnAfterProfileUpgrade()
 
     if (Txns().HasChanges())
         {
-        Txns().EnableNotifyTxnMontiors(false);
+        Txns().EnableNotifyTxnMonitors(false);
         DbResult r = SaveChanges("Automatic Profile Upgrade");
-        Txns().EnableNotifyTxnMontiors(true);
+        Txns().EnableNotifyTxnMonitors(true);
         return r;
         }
 

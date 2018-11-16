@@ -52,7 +52,7 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::CallJsMonitors(Utf8CP methodName, int* arg)
+void TxnManager::CallJsMonitors(Utf8CP eventName, int* arg)
     {
     Napi::Object jsTxns = m_dgndb.GetJsTnxs();
     if (jsTxns == nullptr) 
@@ -61,7 +61,8 @@ void TxnManager::CallJsMonitors(Utf8CP methodName, int* arg)
     std::vector<napi_value> args;
     if (nullptr != arg)
         args.push_back(Napi::Number::New(jsTxns.Env(), *arg));
-    m_dgndb.CallJsFunction(jsTxns, methodName, args);
+
+    m_dgndb.RaiseJsEvent(jsTxns, eventName, args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -287,10 +288,8 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
 DbResult TxnManager::InitializeTableHandlers()
     {
     BeAssert(m_isTracking && "Tracking must be enabled before initializing table handlers");
-    BeAssert(m_dgndb.IsBriefcase() && "No need to initialize table handlers in the master copy");
-    BeAssert(!m_dgndb.IsReadonly() && "No need to initialize table handlers in a Readonly DgnDb");
 
-    if (m_initTableHandlers)
+    if (m_initTableHandlers || m_dgndb.IsReadonly())
         return BE_SQLITE_OK;
 
     for (auto table : m_tables)
@@ -726,6 +725,10 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             Restart();
         if (GetDgnDb().BriefcaseManager().IsBulkOperation() && (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().EndBulkOperation().Result()))
             return OnCommitStatus::Abort;
+
+        if (isCommit && m_enableNotifyTxnMonitors)
+            T_HOST.GetTxnAdmin()._OnCommit(*this);
+
         return OnCommitStatus::Continue;
         }
 
@@ -784,13 +787,14 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         DbResult result = SaveDataChanges(dataChangeSet, operation); // save changeSet into DgnDb itself, along with the description of the operation we're performing
         if (result != BE_SQLITE_DONE)
             return OnCommitStatus::Abort;
-
-        // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-        if (m_enableNotifyTxnMonitors)
-            T_HOST.GetTxnAdmin()._OnCommit(*this);
-
-        OnEndValidate();
         }
+
+    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+    if (m_enableNotifyTxnMonitors)
+        T_HOST.GetTxnAdmin()._OnCommit(*this);
+
+    if (!dataChangeSet.IsEmpty())
+        OnEndValidate();
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
@@ -2270,13 +2274,12 @@ struct UndoRedoCaller
     void operator()(TxnMonitorR handler) const {handler._OnUndoRedo(m_mgr, m_action);}
     };
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
     {
-    mgr.CallJsMonitors("_onCommit");
+    mgr.CallJsMonitors("onCommit");
     CallMonitors(TxnCommitCaller(mgr));
     }
 
@@ -2285,7 +2288,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnCommitted(TxnManagerR mgr)
     {
-    mgr.CallJsMonitors("_onCommitted");
+    mgr.CallJsMonitors("onCommitted");
     CallMonitors(TxnCommittedCaller(mgr));
     }
 
@@ -2294,7 +2297,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommitted(TxnManagerR mgr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR mgr)
     {
-    mgr.CallJsMonitors("_onAppliedChanges");
+    mgr.CallJsMonitors("onChangesApplied");
     CallMonitors(TxnAppliedCaller(mgr));
     }
 
@@ -2303,7 +2306,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR mgr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo(TxnManagerR mgr)
     {
-    mgr.CallJsMonitors("_onPrepareForUndRedo");
+    mgr.CallJsMonitors("onBeforeUndoRedo");
     CallMonitors(PrepareForUndoRedoCaller(mgr));
     }
 
@@ -2313,7 +2316,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo(TxnManagerR mgr)
 void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedo(TxnManager& mgr, TxnAction action)
     {
     int jsAction = (int) action;
-    mgr.CallJsMonitors("_onUndoRedo", &jsAction);
+    mgr.CallJsMonitors("onAfterUndoRedo", &jsAction);
     CallMonitors(UndoRedoCaller(mgr, action));
     }
 

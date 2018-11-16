@@ -72,7 +72,30 @@ Napi::String DgnDb::GetJsClassName(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) 
     {
-    obj.Get(methodName).As<Napi::Function>().Call(obj, args);
+    auto func = obj.Get(methodName);
+    if (!func.IsFunction()) {
+        Utf8String err("method not found: ");
+        err += methodName;
+        Napi::TypeError::New(obj.Env(), err.c_str()).ThrowAsJavaScriptException();
+        return;
+    }
+    func.As<Napi::Function>().Call(obj, args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDb::RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_value> const& args) 
+    {
+    auto event = obj.Get(eventName);
+    if (!event.IsObject()) {
+        Utf8String err("BeEvent object not found: ");
+        err += eventName;
+        Napi::TypeError::New(obj.Env(), err.c_str()).ThrowAsJavaScriptException();
+        return;
+    }
+
+    CallJsFunction(event.As<Napi::Object>(), "raiseEvent", args);
     }
 
 //--------------------------------------------------------------------------------------

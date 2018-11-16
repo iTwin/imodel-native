@@ -739,10 +739,10 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
 
     // Don't check m_tracker->HasChanges - may have dynamic changes to rollback
     ChangeTracker::OnCommitStatus trackerStat = (m_tracker.IsValid()) ?  m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Continue;
-
     if (trackerStat == ChangeTracker::OnCommitStatus::Abort)
         {
         BeAssert(false);
+        m_inCommit = false;
         return  BE_SQLITE_ERROR_ChangeTrackError;
         }
 
