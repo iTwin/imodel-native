@@ -2499,7 +2499,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
                 {
                 rasterImage = glyph->GetRaster() ? &glyph->GetRaster()->m_image : nullptr; // save the raster image to put into texture atlas
                 Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
-                polyface = raster.m_polyface;
+                polyface = raster.m_polyface->Clone();
                 }
             else
                 {
