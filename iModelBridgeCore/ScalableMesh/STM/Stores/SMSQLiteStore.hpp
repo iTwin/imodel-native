@@ -15,6 +15,7 @@
 #include <ImagePP\all\h\HGF2DProjective.h>
 
 #include <ImagePP\all\h\HRFVirtualEarthFile.h>
+#include <BeJpeg/BeJpeg.h>
 
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
@@ -240,12 +241,12 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetUseTempPath(bool useTempP
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
     {
-    __super::SaveSisterFiles();
+    SMSQLiteSisterFile::SaveSisterFiles();
     }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CompactProjectFiles()
 {
-	__super::Compact();
+	SMSQLiteSisterFile::Compact();
 }
 
 template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DRange3d>& tileRanges)
@@ -423,7 +424,7 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::EraseClipFile() const
      
     const_cast<SMSQLiteStore<EXTENT>*>(this)->CloseSisterFile(SMStoreDataType::DiffSet);
     
-#ifdef __APPLE__
+#if defined(__APPLE__) || ANDROID
     Utf8String slqFileNameUtf8(sqlFileName.c_str());
     remove(slqFileNameUtf8.c_str());
 #else
@@ -680,6 +681,36 @@ template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>:
     {                
     }
 
+template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreTextureCompressed(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
+{
+    if (countData == 0)
+    {
+        int64_t id = blockID.IsValid() ? blockID.m_integerID : SQLiteNodeHeader::NO_NODEID;
+        bvector<uint8_t> texData;
+        {
+            SharedTransaction trans(m_smSQLiteFile, false);
+            m_smSQLiteFile->StoreTexture(id, texData, 0); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
+        }
+        return HPMBlockID(id);
+    }
+    BeJpegDecompressor reader;
+    uint32_t w, h;
+    reader.ReadHeader(w, h, (uint8_t*)DataTypeArray, countData);
+    bvector<uint8_t> texData(4 * sizeof(int) + countData);
+    int *pHeader = (int*)(texData.data());
+    pHeader[0] = w;
+    pHeader[1] = h;
+    pHeader[2] = 3;
+    pHeader[3] = 0;
+    memcpy(texData.data() + 4 * sizeof(int), DataTypeArray, countData);
+    int64_t id = blockID.IsValid() ? blockID.m_integerID : SQLiteNodeHeader::NO_NODEID;
+    {
+        SharedTransaction trans(m_smSQLiteFile, false);
+        m_smSQLiteFile->StoreTexture(id, texData, w*h*3); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
+    }
+    return HPMBlockID(id);
+}
+
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreTexture(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
     if (countData == 0)
@@ -765,6 +796,19 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
     delete[] ct;
     return ptArray;
     }
+
+template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreCompressedBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+{
+    if (m_dataType == SMStoreDataType::Texture)
+    {
+        return StoreTextureCompressed(DataTypeArray, maxCountData, blockID);
+    }
+    else
+    {
+        assert(!"Unsupported type");
+        return HPMBlockID();
+    }
+}
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {

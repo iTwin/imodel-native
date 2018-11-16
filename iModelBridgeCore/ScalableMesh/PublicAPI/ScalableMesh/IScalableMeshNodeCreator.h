@@ -53,6 +53,8 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
                                                            bool computeNodeID = true,
                                                            uint64_t nodeId = 0);
 
+        BENTLEY_SM_IMPORT_EXPORT int64_t AddTextureCompressed(int width, int height, int nOfChannels, const byte* texData, size_t compressedSize);
+
         BENTLEY_SM_IMPORT_EXPORT int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData);
         
         BENTLEY_SM_IMPORT_EXPORT void AddTexture(int width, int height, int nOfChannels, const byte* texData, int64_t texID);

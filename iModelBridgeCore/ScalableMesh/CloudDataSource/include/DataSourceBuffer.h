@@ -12,7 +12,11 @@ class DataSourceBuffer
 public:
 
     typedef unsigned char               BufferData;
+#if ANDROID
+    typedef uint64_t               BufferSize;
+#else
     typedef unsigned long long          BufferSize;
+#endif
     typedef std::vector<BufferData>     BufferVectorData;
     typedef unsigned int                SegmentIndex;
     typedef ActivitySemaphore::Timeout  Timeout;

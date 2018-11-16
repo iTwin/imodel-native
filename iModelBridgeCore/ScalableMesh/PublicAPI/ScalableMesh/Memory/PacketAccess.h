@@ -147,7 +147,7 @@ class PODPacketProxy : public NonConstPacketProxyBase<T>
     friend class                        RawPacket;
 
 public:
-    typedef NonConstPacketProxyBase<T>::iterator iterator;
+    typedef typename NonConstPacketProxyBase<T>::iterator iterator;
     explicit                            PODPacketProxy                     (Packet&                 packet);
     explicit                            PODPacketProxy                     ();
 

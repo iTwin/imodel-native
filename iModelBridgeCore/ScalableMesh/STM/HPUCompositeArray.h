@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/HPUCompositeArray.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -376,11 +376,11 @@ public:
 
     const_iterator Begin () const
         {
-        return const_iterator(const_cast<HeaderArray::iterator>(m_HeaderArray.Begin()), const_cast<array_type*>(ReinterpretAsDerived())); //TDORay
+        return const_iterator(const_cast<typename HeaderArray::iterator>(m_HeaderArray.Begin()), const_cast<array_type*>(ReinterpretAsDerived())); //TDORay
         }
     const_iterator End () const
         {   
-        return const_iterator(const_cast<HeaderArray::iterator>(m_HeaderArray.End()), const_cast<array_type*>(ReinterpretAsDerived())); //TDORay
+        return const_iterator(const_cast<typename HeaderArray::iterator>(m_HeaderArray.End()), const_cast<array_type*>(ReinterpretAsDerived())); //TDORay
         }
 
     bool                                    IsValidIterator                    (const const_iterator&       pi_Iterator);

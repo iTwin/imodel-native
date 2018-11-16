@@ -20,6 +20,10 @@
 #ifdef __APPLE__
 	#define _VA_LIST
 #endif	
+#if ANDROID
+#include <cctype>
+#include <cstring>
+#endif
 #include <thread>
 #include <atomic>
 #include <mutex> 
@@ -47,8 +51,8 @@
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
-#include <TerrainModel/Core/bcdtminlines.h>
 #ifndef LINUX_SCALABLEMESH_BUILD
+#include <TerrainModel/Core/bcdtminlines.h>
 #include <TerrainModel\Formats\InroadsImporter.h>
 #endif
 

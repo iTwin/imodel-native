@@ -1574,6 +1574,9 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     else return DTM_ERROR;
 
+    //first we initialize the tolerance by "trying" to triangulate the empty TM object...
+    bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+
     DPoint3d triangle[4];
 
 
@@ -1589,12 +1592,13 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         triangle[3] = triangle[0];
 
         //colinearity test
-        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
+        if (triangle[0].AlmostEqualXY(triangle[1], (bcDtmP)->ppTol) || triangle[1].AlmostEqualXY(triangle[2], (bcDtmP)->ppTol) || triangle[2].AlmostEqualXY(triangle[0], (bcDtmP)->ppTol)) continue;
         DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
         double param;
         DPoint3d closestPt;
         triSeg.ProjectPointXY(closestPt, param, triangle[2]);
-        if (closestPt.AlmostEqualXY(triangle[2])) continue;
+        // for some reason, in the code, the tolerances are divided by 100 by the time the lines are being added
+        if (closestPt.AlmostEqualXY(triangle[2], (bcDtmP)->plTol /100)) continue;
         if (destIdx[m_faceIndexes[t] - 1] == -1)
             {
             pts.push_back(m_points[m_faceIndexes[t] - 1]);
@@ -1636,6 +1640,7 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
 
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
+
     assert(status == SUCCESS);
 
 #if SM_TRACE_EMPTY_FEATURES
@@ -3053,6 +3058,11 @@ bool IScalableMeshNode::IsClippingUpToDate() const
     return _IsClippingUpToDate();
     }
 
+uint64_t IScalableMeshNode::LastClippingStateUpdateTimestamp() const
+{
+    return _LastClippingStateUpdateTimestamp();
+}
+
 void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
     return _GetSkirtMeshes(meshes, activeClips);
@@ -3115,19 +3125,19 @@ int IScalableMeshNodeRayQuery::Query(bvector<IScalableMeshNodePtr>&             
     }
   
 
-StatusInt  IScalableMeshNodeEdit::AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices)
+StatusInt  IScalableMeshNodeEdit::AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices, bool computeGraph)
     {
-    return _AddMesh(vertices, nVertices, indices, nIndices);
+    return _AddMesh(vertices, nVertices, indices, nIndices, computeGraph);
     }
 
-StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& pointsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID)
+StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& pointsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
     {
-    return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture, texID);
+    return _AddTexturedMesh(vertices, pointsIndices, uv, uvIndices, nTexture, texID, computeGraph);
     }
 
-StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID)
+StatusInt IScalableMeshNodeEdit::AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<int32_t>& ptsIndices, bvector<DPoint2d>& uv, bvector<int32_t>& uvIndices, size_t nTexture, int64_t texID, bool computeGraph)
     {
-    return _AddTexturedMesh(vertices, ptsIndices, uv, uvIndices, nTexture, texID);
+    return _AddTexturedMesh(vertices, ptsIndices, uv, uvIndices, nTexture, texID, computeGraph);
     }
 
 
@@ -3340,8 +3350,6 @@ template class ScalableMeshFixResolutionViewPointQuery<DPoint3d>;
 template class ScalableMeshFullResolutionPointQuery<DPoint3d>;
 
 template class ScalableMeshViewDependentPointQuery<DPoint3d>;
-
-template class ScalableMeshFixResolutionViewPointQuery<DPoint3d>;
 
 template class ScalableMeshViewDependentMeshQuery<DPoint3d>;
 

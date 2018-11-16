@@ -119,7 +119,7 @@ DataSourceStatus DataSourceURL::getDirectory(unsigned int directoryIndex, DataSo
     {
         if ((position = find(DATA_SOURCE_URL_SEPARATOR, start)) == npos)
         {
-            dest = DataSourceURL(L"");
+            dest = DataSourceURL((const wchar_t*)L"");
             return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
 
@@ -143,7 +143,7 @@ DataSourceStatus DataSourceURL::getPathAfterDirectory(unsigned int directoryInde
     {
         if ((position = find(DATA_SOURCE_URL_SEPARATOR, start)) == npos)
         {
-            dest = DataSourceURL(L"");
+            dest = DataSourceURL((const wchar_t*)L"");
             return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
 
