@@ -83,8 +83,8 @@ END_BENTLEY_PROFILES_NAMESPACE
 
 
 // Properties
-#define PRF_PROP_AsymmetricIShapeProfile_TopWidth                                "TopWidth"
-#define PRF_PROP_AsymmetricIShapeProfile_BottomWidth                             "BottomWidth"
+#define PRF_PROP_AsymmetricIShapeProfile_TopFlangeWidth                          "TopFlangeWidth"
+#define PRF_PROP_AsymmetricIShapeProfile_BottomFlangeWidth                       "BottomFlangeWidth"
 #define PRF_PROP_AsymmetricIShapeProfile_Depth                                   "Depth"
 #define PRF_PROP_AsymmetricIShapeProfile_TopFlangeThickness                      "TopFlangeThickness"
 #define PRF_PROP_AsymmetricIShapeProfile_BottomFlangeThickness                   "BottomFlangeThickness"
@@ -136,7 +136,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_HollowRectangleProfile_FilletRadius                             "FilletRadius"
 #define PRF_PROP_ICenterLineProfile_CenterLine                                   "CenterLine"
 #define PRF_PROP_ICenterLineProfile_WallThickness                                "WallThickness"
-#define PRF_PROP_IShapeProfile_Width                                             "Width"
+#define PRF_PROP_IShapeProfile_FlangeWidth                                       "FlangeWidth"
 #define PRF_PROP_IShapeProfile_Depth                                             "Depth"
 #define PRF_PROP_IShapeProfile_FlangeThickness                                   "FlangeThickness"
 #define PRF_PROP_IShapeProfile_WebThickness                                      "WebThickness"
@@ -169,7 +169,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_StandardProfileAspect_Revision                                  "Revision"
 #define PRF_PROP_StandardProfileAspect_StandardsOrganization                     "StandardsOrganization"
 #define PRF_PROP_CustomCardinalPointsAspect_Points                               "Points"
-#define PRF_PROP_TShapeProfile_Width                                             "Width"
+#define PRF_PROP_TShapeProfile_FlangeWidth                                       "FlangeWidth"
 #define PRF_PROP_TShapeProfile_Depth                                             "Depth"
 #define PRF_PROP_TShapeProfile_FlangeThickness                                   "FlangeThickness"
 #define PRF_PROP_TShapeProfile_WebThickness                                      "WebThickness"

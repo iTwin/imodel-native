@@ -31,8 +31,8 @@ public:
     PROFILES_EXPORT static IShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
-    PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
+    PROFILES_EXPORT double GetFlangeWidth() const;
+    PROFILES_EXPORT void SetFlangeWidth(double val);
 
     PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);

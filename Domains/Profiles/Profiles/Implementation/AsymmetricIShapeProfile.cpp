@@ -25,33 +25,33 @@ AsymmetricIShapeProfilePtr AsymmetricIShapeProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AsymmetricIShapeProfile::GetTopWidth() const
+double AsymmetricIShapeProfile::GetTopFlangeWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopWidth);
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_TopFlangeWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AsymmetricIShapeProfile::SetTopWidth(double val)
+void AsymmetricIShapeProfile::SetTopFlangeWidth(double val)
     {
-    SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_TopWidth, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_TopFlangeWidth, ECN::ECValue(val));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AsymmetricIShapeProfile::GetBottomWidth() const
+double AsymmetricIShapeProfile::GetBottomFlangeWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomWidth);
+    return GetPropertyValueDouble(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AsymmetricIShapeProfile::SetBottomWidth(double val)
+void AsymmetricIShapeProfile::SetBottomFlangeWidth(double val)
     {
-    SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_BottomWidth, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_AsymmetricIShapeProfile_BottomFlangeWidth, ECN::ECValue(val));
     }
 
 /*---------------------------------------------------------------------------------**//**

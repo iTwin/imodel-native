@@ -25,17 +25,17 @@ TShapeProfilePtr TShapeProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double TShapeProfile::GetWidth() const
+double TShapeProfile::GetFlangeWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_Width);
+    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetWidth(double val)
+void TShapeProfile::SetFlangeWidth(double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_Width, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_TShapeProfile_FlangeWidth, ECN::ECValue(val));
     }
 
 /*---------------------------------------------------------------------------------**//**

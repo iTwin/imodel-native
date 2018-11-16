@@ -31,11 +31,11 @@ public:
     PROFILES_EXPORT static AsymmetricIShapeProfilePtr Create(Dgn::DgnModelCR model);
 
 public:
-    PROFILES_EXPORT double GetTopWidth() const;
-    PROFILES_EXPORT void SetTopWidth(double val);
+    PROFILES_EXPORT double GetTopFlangeWidth() const;
+    PROFILES_EXPORT void SetTopFlangeWidth(double val);
 
-    PROFILES_EXPORT double GetBottomWidth() const;
-    PROFILES_EXPORT void SetBottomWidth(double val);
+    PROFILES_EXPORT double GetBottomFlangeWidth() const;
+    PROFILES_EXPORT void SetBottomFlangeWidth(double val);
 
     PROFILES_EXPORT double GetDepth() const;
     PROFILES_EXPORT void SetDepth(double val);

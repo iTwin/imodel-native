@@ -25,17 +25,17 @@ IShapeProfilePtr IShapeProfile::Create(DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double IShapeProfile::GetWidth() const
+double IShapeProfile::GetFlangeWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_Width);
+    return GetPropertyValueDouble(PRF_PROP_IShapeProfile_FlangeWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IShapeProfile::SetWidth(double val)
+void IShapeProfile::SetFlangeWidth(double val)
     {
-    SetPropertyValue(PRF_PROP_IShapeProfile_Width, ECN::ECValue(val));
+    SetPropertyValue(PRF_PROP_IShapeProfile_FlangeWidth, ECN::ECValue(val));
     }
 
 /*---------------------------------------------------------------------------------**//**
