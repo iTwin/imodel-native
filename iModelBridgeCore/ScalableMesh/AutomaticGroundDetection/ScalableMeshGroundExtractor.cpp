@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -384,9 +384,13 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
             }
         }
 
-
 	DRange3d extractionRange = DRange3d::From(m_extractionArea);
-	double targetResolutionThreshold = 0.01;//sqrt((extractionRange.XLength()*extractionRange.YLength()* m_smGcsRatioToMeter) / 1000000.0);
+	double targetResolutionThreshold = 0.01;//1 cm max
+    
+    if (m_smGcsRatioToMeter != 0)
+        {
+        targetResolutionThreshold /= m_smGcsRatioToMeter;
+        }
         
     if (minTextureResolution != DBL_MAX)
         return  m_limitTextureResolution ? std::max(targetResolutionThreshold,minTextureResolution) * m_smGcsRatioToMeter
