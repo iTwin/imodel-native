@@ -25,7 +25,7 @@ thread_local char    DTM_DTM_ERROR_MESSAGE[256] = {0};
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long MessageNumber,char *DtmMessage,...)
+BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long MessageNumber,char const*DtmMessage,...)
 /*
 ** Called By DTM Functions for Outputting Messages
 **
@@ -3529,6 +3529,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
 #else
     #ifdef __APPLE__
         fseek(dtmFP,featureFileOffset,SEEK_SET) ;
+    #elif ANDROID
+        fseeko(dtmFP,featureFileOffset,SEEK_SET) ;
     #else
         fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
     #endif
@@ -3544,6 +3546,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
 #else
     #ifdef __APPLE__
         fseek(dtmFP,featureFileOffset,SEEK_SET) ;
+    #elif ANDROID
+        fseeko(dtmFP,featureFileOffset,SEEK_SET) ;
     #else
         fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
     #endif
@@ -3731,6 +3735,8 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 #else
     #ifdef __APPLE__
         dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #elif ANDROID
+        dtmHeader.featureFileOffset = ftello(dtmFP) ;
     #else
         dtmHeader.featureFileOffset = ftello64(dtmFP) ;
     #endif
@@ -3839,6 +3845,8 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 #else
     #ifdef __APPLE__
         fseek(dtmFP,0,SEEK_SET) ;
+    #elif ANDROID
+        fseeko(dtmFP,0,SEEK_SET) ;
     #else
         fseeko64(dtmFP,0,SEEK_SET) ;
     #endif
@@ -3950,6 +3958,8 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 #else
     #ifdef __APPLE__
         dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #elif ANDROID
+        dtmHeader.featureFileOffset = ftello(dtmFP) ;
     #else
         dtmHeader.featureFileOffset = ftello64(dtmFP) ;
     #endif
@@ -4047,6 +4057,8 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 #else
     #ifdef __APPLE__
         fseek(dtmFP,0,SEEK_SET) ;
+    #elif ANDROID
+        fseeko(dtmFP,0,SEEK_SET) ;
     #else
         fseeko64(dtmFP,0,SEEK_SET) ;
     #endif
@@ -4310,6 +4322,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 #else
     #ifdef __APPLE__
            dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #elif ANDROID
+        dtmHeader.featureFileOffset = ftello(dtmFP) ;
     #else
            dtmHeader.featureFileOffset = ftello64(dtmFP) ;
     #endif
@@ -4379,6 +4393,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 #else
     #ifdef __APPLE__
        fseek(dtmFP,0,SEEK_END) ;
+    #elif ANDROID
+        fseeko(dtmFP,0,SEEK_SET) ;
     #else
        fseeko64(dtmFP,0,SEEK_END) ;
     #endif
@@ -4437,6 +4453,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 #else
     #ifdef __APPLE__
         fseek(dtmFP,0,SEEK_SET) ;
+    #elif ANDROID
+        fseeko(dtmFP,0,SEEK_SET) ;
     #else
         fseeko64(dtmFP,0,SEEK_SET) ;
     #endif
@@ -4605,6 +4623,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 #else
     #ifdef __APPLE__
        dtmHeader.featureFileOffset = ftell(dtmFP) ;
+    #elif ANDROID
+        dtmHeader.featureFileOffset = ftello(dtmFP) ;
     #else
        dtmHeader.featureFileOffset = ftello64(dtmFP) ;
     #endif
@@ -4674,6 +4694,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 #else
     #ifdef __APPLE__
        fseek(dtmFP,0,SEEK_END) ;
+    #elif ANDROID
+        fseeko(dtmFP,0,SEEK_END) ;
     #else
        fseeko64(dtmFP,0,SEEK_END) ;
     #endif
@@ -4733,6 +4755,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 #else
     #ifdef __APPLE__
         fseek(dtmFP,0,SEEK_SET) ;
+    #elif ANDROID
+        fseeko(dtmFP,0,SEEK_SET) ;
     #else
         fseeko64(dtmFP,0,SEEK_SET) ;
     #endif

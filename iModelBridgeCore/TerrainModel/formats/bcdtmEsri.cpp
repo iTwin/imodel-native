@@ -871,7 +871,7 @@ BENTLEYDTM_Private int bcdtmFormatEsri_closeEsriShapeFiles(EsriFileInfo *esriFil
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t *dtmTypeP,uint32_t shapeType) 
+BENTLEYDTM_Private int bcdtmFormatEsri_openEsriShapeFilesForExport(EsriFileInfo *esriFileInfoP,wchar_t const*dtmTypeP,uint32_t shapeType) 
 {
  int ret=DTM_SUCCESS,dbg=0 ;
  wchar_t fileName[256] = L"";

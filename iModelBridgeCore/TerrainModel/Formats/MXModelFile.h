@@ -400,7 +400,7 @@ class DLL ClassList
         MXRunTimeClass* newMXRunTimeClass(const char* const className, const char* const parentClass, IsTypeFunction isType, ClassMakeFunction makeFunction);
         void deleteClass(MXRunTimeClass* classPtr);
         ClassList();
-        static ClassList& ClassList::Instance()
+        static ClassList& Instance()
             {
             if(!cl_classList) cl_classList = new ClassList();
             return *cl_classList;
@@ -690,7 +690,7 @@ class DLL MXModelFile
     {
     private:
         __int64 _pos;
-        inline BeFile* fopen (WCharCP filename, char* type)
+        inline BeFile* fopen (WCharCP filename, char const* type)
             {
             BeFile* hand = new BeFile ();
 
@@ -1610,7 +1610,7 @@ class DLL MXTriangleString : public StringTableRecord
             }
         virtual ErrorStatus getTriangle(const int triangleNumber, ElementTriangleString& data);
         ErrorStatus getTriangle(const int triangleNumber, ElementTriangleStringDoubles*& doubles, ElementTriangleStringInts*& ints, bool setWrite = FALSE);
-        int MXTriangleString::loadTriangle(int recordNumber);
+        int loadTriangle(int recordNumber);
 
         virtual ErrorStatus setTriangle(const int triangleNumber, const ElementTriangleString& data);
 
@@ -2516,13 +2516,13 @@ class DLL MXStringDimData
             if(_data)
                 delete [] _data;
             }
-        ErrorStatus MXStringDimData::getDouble(const int pointNum, const int dim, double& value) const;
-        ErrorStatus MXStringDimData::getInt(const int pointNum, const int dim, int& value) const;
-        ErrorStatus MXStringDimData::getText(const int pointNum, const int dim, const char*& data) const;
+        ErrorStatus getDouble(const int pointNum, const int dim, double& value) const;
+        ErrorStatus getInt(const int pointNum, const int dim, int& value) const;
+        ErrorStatus getText(const int pointNum, const int dim, const char*& data) const;
 
-        ErrorStatus MXStringDimData::setDouble(const int pointNum, const int dim, double value);
-        ErrorStatus MXStringDimData::setInt(const int pointNum, const int dim, int value);
-        ErrorStatus MXStringDimData::setText(const int pointNum, const int dim, const char* data);
+        ErrorStatus setDouble(const int pointNum, const int dim, double value);
+        ErrorStatus setInt(const int pointNum, const int dim, int value);
+        ErrorStatus setText(const int pointNum, const int dim, const char* data);
 
         int numDimensions(void) const
             {

@@ -47,8 +47,8 @@ public:
 
      static ProgressReportPtr Create(IGroundDetectionProgressListener* pProgressListener);
 
-     void                StartPhase(int phaseNumber, WChar* traceText=L"Start Phase");
-     void                EndPhase(WChar* traceText = L"End Phase");
+     void                StartPhase(int phaseNumber, WChar const* traceText=L"Start Phase");
+     void                EndPhase(WChar const* traceText = L"End Phase");
      int                 GetCurrentPhase() const;
      void                SetTotalNumberOfPhases(int totalNumberOfPhases);
      int                 GetTotalNumberOfPhases() const;
