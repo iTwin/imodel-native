@@ -84,6 +84,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         virtual ECRelationshipClassCP FindClosestRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId) = 0;
 
         virtual ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) = 0;
+        virtual ECInstanceKey GetInstanceKeyFromJsonInstance(const rapidjson::Value& ecInstanceJson) = 0;
 
         virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql) = 0;
 
