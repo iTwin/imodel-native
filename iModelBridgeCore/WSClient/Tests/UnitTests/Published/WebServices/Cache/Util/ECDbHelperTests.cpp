@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECDbHelperTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -121,4 +121,48 @@ TEST_F(ECDbHelperTests, MergeMultiMaps_MultipleValues_ReturnsMerged)
     EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(ECClassId(UINT64_C(1)), ECInstanceId(UINT64_C(3))));
     EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(ECClassId(UINT64_C(2)), ECInstanceId(UINT64_C(1))));
     EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(ECClassId(UINT64_C(3)), ECInstanceId(UINT64_C(1))));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonInstance_ValidJsonInstance_ReturnsCorrectECInstanceId)
+    {
+    Json::Value value;
+    value[ECJsonUtilities::json_id().c_str()] = "32";
+
+    auto result = ECDbHelper::ECInstanceIdFromJsonInstance(value);
+    EXPECT_EQ(32, result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonInstance_ValidRapidJsonInstance_ReturnsCorrectECInstanceId)
+    {
+    rapidjson::Document document(rapidjson::kObjectType);
+    document.AddMember(rapidjson::Value().SetString(ECJsonUtilities::json_id().c_str(), document.GetAllocator()).Move(), "32", document.GetAllocator());
+
+    auto result = ECDbHelper::ECInstanceIdFromJsonInstance(document);
+    EXPECT_EQ(32, result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonValue_ValidJsonValue_ReturnsCorrectECInstanceId)
+    {
+    Json::Value value("32");
+    auto result = ECDbHelper::ECInstanceIdFromJsonValue(value);
+    EXPECT_EQ(32, result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonValue_ValidRapidJsonValue_ReturnsCorrectECInstanceId)
+    {
+    rapidjson::Value value("32");
+    auto result = ECDbHelper::ECInstanceIdFromJsonValue(value);
+    EXPECT_EQ(32, result.GetValue());
     }

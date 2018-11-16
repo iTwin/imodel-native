@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbHelper.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -96,6 +96,18 @@ ECInstanceId ECDbHelper::ECInstanceIdFromJsonValue(JsonValueCR jsonValue)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceId ECDbHelper::ECInstanceIdFromJsonValue(const rapidjson::Value& jsonValue)
+    {
+    if (jsonValue.IsNull() || !jsonValue.IsString())
+        {
+        return ECInstanceId();
+        }
+    return ECInstanceIdFromString(jsonValue.GetString());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma   02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceId ECDbHelper::ECInstanceIdFromJsonInstance(JsonValueCR jsonInstance)
@@ -105,6 +117,18 @@ ECInstanceId ECDbHelper::ECInstanceIdFromJsonInstance(JsonValueCR jsonInstance)
         return ECInstanceId();
         }
     return ECInstanceIdFromJsonValue(jsonInstance[ECJsonUtilities::json_id()]);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys   11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceId ECDbHelper::ECInstanceIdFromJsonInstance(const rapidjson::Value& jsonInstance)
+    {
+    if (!jsonInstance.HasMember(ECJsonUtilities::json_id().c_str()))
+        {
+        return ECInstanceId();
+        }
+    return ECInstanceIdFromJsonValue(jsonInstance[ECJsonUtilities::json_id().c_str()]);
     }
 
 /*--------------------------------------------------------------------------------------+
