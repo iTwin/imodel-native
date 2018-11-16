@@ -1210,6 +1210,9 @@ protected:
     //! @param[in] dwgGroup Input object of the DWG group dictionary.
     //! @note When a change is detected for a DWG group, _UpdateGroup will be called; otherwise _ImportGroup will be called, by the default implementation.
     DWG_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSyncInfo::Group const& prov, DwgDbGroupCR dwgGroup);
+    //! Tell DwgSyncInfo how to sync groups: group object alone or members included?
+    //! @return True to include members - needed when members are not made persistent elements; False to sync group object only - members are tracked by entity mappings.
+    DWG_EXPORT virtual bool _ShouldSyncGroupWithMembers () const { return false; }
 
     //! @name Options and configs
     //! @{
