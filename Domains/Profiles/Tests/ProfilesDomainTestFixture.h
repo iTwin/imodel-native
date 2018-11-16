@@ -26,6 +26,7 @@ class ProfilesDomainTestsFixture : public testing::Test
     {
     private:
         static ProfilesDomainTestsHost s_host;
+        static BeFileName s_baseDbPath;
         Dgn::DgnDbPtr m_dbPtr;
         Dgn::DgnModelPtr m_modelPtr;
 

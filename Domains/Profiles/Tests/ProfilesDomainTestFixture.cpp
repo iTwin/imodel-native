@@ -8,6 +8,7 @@ using namespace BeSQLite;
 using namespace Dgn;
 
 ProfilesDomainTestsHost ProfilesDomainTestsFixture::s_host;
+BeFileName ProfilesDomainTestsFixture::s_baseDbPath;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Arturas.Mizaras          11/17
@@ -133,6 +134,18 @@ static BeFileName getOutputDirectory()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeFileName getWorkingDbPath(BeFileName const& baseDbPath)
+    {
+    WString directory = baseDbPath.GetDirectoryName();
+    WString name = baseDbPath.GetFileNameWithoutExtension();
+    WString extension = baseDbPath.GetExtension();
+
+    return BeFileName (directory + name + L"_Working." + extension);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbPtr createDgnDb(BeFileName const& bimFilename)
@@ -151,14 +164,18 @@ static DgnDbPtr createDgnDb(BeFileName const& bimFilename)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
-* @description Method called before each test.
+* @description Method called before each test. Copy base (empty) db file and open it as
+* a working db for the test.
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUp()
     {
-    // TODO Karolis: Would be nice not to create a new bim everytime, but instead to rollback
-    // all changes and have a fresh db for unit tests that way.
-    BeFileName bimFilename = getOutputDirectory().AppendToPath(L"ProfilesTests");
-    m_dbPtr = createDgnDb (bimFilename);
+    BeFileName workingDbPath = getWorkingDbPath(s_baseDbPath);
+    BeFileNameStatus fileCopyStatus = BeFileName::BeCopyFile(s_baseDbPath, workingDbPath);
+    BeAssert(fileCopyStatus == BeFileNameStatus::Success);
+
+    DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
+    BeSQLite::DbResult openStatus;
+    m_dbPtr = DgnDb::OpenDgnDb(&openStatus, workingDbPath, openParams);
     BeAssert(m_dbPtr.IsValid());
 
     SubjectCPtr rootSubjectPtr = m_dbPtr->Elements().GetRootSubject();
@@ -185,7 +202,8 @@ void ProfilesDomainTestsFixture::TearDown()
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
-* @description Method called only once for the the test case. Called before first test. 
+* @description Method called only once for the the test case. Called before first test.
+* Create a base db file that will be used as a starting point for each test. 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUpTestCase()
     {
@@ -193,6 +211,13 @@ void ProfilesDomainTestsFixture::SetUpTestCase()
 
     BentleyStatus registrationStatus = DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     BeAssert(BentleyStatus::SUCCESS == registrationStatus);
+
+    DgnDbPtr dbPtr = createDgnDb (getOutputDirectory().AppendToPath(L"ProfilesTests"));
+    BeAssert(dbPtr.IsValid());
+
+    // Get fully qualified path (including db extension)
+    s_baseDbPath = dbPtr->GetFileName();
+    dbPtr->CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
