@@ -430,6 +430,17 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECRelationshipClass typeName="CompositeProfileRefersToSinglePerimeterProfiles" modifier="Abstract" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="has profiles" polymorphic="true">
+            <Class class="CompositeProfile" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is part of" polymorphic="true">
+            <Class class="SinglePerimeterProfile" />
+        </Target>
+        <ECProperty propertyName="Index" typeName="int" description="" />
+    </ECRelationshipClass>
+
     <ECEntityClass typeName="ArbitraryCompositeProfile" modifier="Sealed" description="A Profile comprised of multiple SinglePerimeterProfiles.">
         <BaseClass>CompositeProfile</BaseClass>
         <ECCustomAttributes>
@@ -438,14 +449,13 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ArbitraryCompositeProfileRefersToSinglePerimeterProfiles" modifier="Sealed" strength="referencing">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>CompositeProfileRefersToSinglePerimeterProfiles</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="has profiles" polymorphic="false">
             <Class class="ArbitraryCompositeProfile" />
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is part of" polymorphic="true">
             <Class class="SinglePerimeterProfile" />
         </Target>
-        <ECProperty propertyName="Index" typeName="int" description="" />
         <ECProperty propertyName="MirrorProfileAboutYAxis" typeName="boolean" description="" />
         <ECProperty propertyName="Offset" typeName="point2d" description="" />
         <ECProperty propertyName="Rotation" typeName="double" description="" />
@@ -461,14 +471,13 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="DoubleLShapeProfileRefersToLShapeProfile" modifier="Sealed" strength="referencing">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <BaseClass>CompositeProfileRefersToSinglePerimeterProfiles</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleLShapeProfile" />
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="true">
             <Class class="LShapeProfile" />
         </Target>
-        <ECProperty propertyName="Index" typeName="int" description="" />
     </ECRelationshipClass>
 
     <ECEntityClass typeName="DoubleCShapeProfile" modifier="Sealed" description="A CompositeProfile comprised of back-to-back Cs.">
@@ -480,13 +489,12 @@
     </ECEntityClass>
 
     <ECRelationshipClass typeName="DoubleCShapeProfileRefersToCShapeProfile" modifier="Sealed" strength="referencing">
-    <BaseClass>bis:ElementRefersToElements</BaseClass>
+    <BaseClass>CompositeProfileRefersToSinglePerimeterProfiles</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="is double profile of" polymorphic="false">
             <Class class="DoubleCShapeProfile" />
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is single profile of" polymorphic="true">
             <Class class="CShapeProfile" />
         </Target>
-        <ECProperty propertyName="Index" typeName="int" description="" />
     </ECRelationshipClass>
 </ECSchema>
