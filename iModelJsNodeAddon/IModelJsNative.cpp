@@ -1001,6 +1001,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb->Txns().EnableTracking(true);
         m_dgndb->Txns().InitializeTableHandlers();
     }
+    Napi::Value BeginMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().BeginMultiTxnOperation());}
+    Napi::Value EndMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().EndMultiTxnOperation());}
     Napi::Value GetUndoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetUndoString());}
     Napi::Value GetRedoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());}
@@ -1761,6 +1763,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
             InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
+            InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
             InstanceMethod("briefcaseManagerStartBulkOperation", &NativeDgnDb::BriefcaseManagerStartBulkOperation),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
@@ -1777,6 +1780,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("enableTxnTesting", &NativeDgnDb::EnableTxnTesting),
+            InstanceMethod("endMultiTxnOperation", &NativeDgnDb::EndMultiTxnOperation),
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
