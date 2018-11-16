@@ -1530,7 +1530,7 @@ BENTLEYDTM_EXPORT                      int bcdtmWrite_geopakDatFileFromDtmObject
 BENTLEYDTM_EXPORT                      int bcdtmWrite_latticeObject (DTM_LAT_OBJ *Lattice, WCharCP latticeFileName);
 BENTLEYDTM_Private                     int bcdtmWrite_loadDtmFeatureFunction (DTMFeatureType dtmFeatureType, DTMUserTag dtmUserTag, DTMFeatureId dtmFeatureId, DPoint3d *featurePtsP, size_t numFeaturePts, void *userP);
 BENTLEYDTM_Public                      int bcdtmWrite_logMessage (long Status, char *DtmMessage, ...);
-BENTLEYDTM_EXPORT                      int bcdtmWrite_message (long MessageType, long MessageLevel, long MessageNumber, char *DtmMessage, ...);
+BENTLEYDTM_EXPORT                      int bcdtmWrite_message (long MessageType, long MessageLevel, long MessageNumber, char const*DtmMessage, ...);
 BENTLEYDTM_EXPORT                      int bcdtmWrite_toFileDtmObject (BC_DTM_OBJ *dtmP, WCharCP dtmFileNameP);
 BENTLEYDTM_EXPORT                      int bcdtmWrite_toFileLatticeObject (DTM_LAT_OBJ *Lattice, WCharCP LatticeFileName);
 BENTLEYDTM_Public                      int bcdtmWrite_writeAtFilePositionGeopakTinObjectDtmObject (BC_DTM_OBJ *dtmP, FILE* dtmFP, long filePosition);
