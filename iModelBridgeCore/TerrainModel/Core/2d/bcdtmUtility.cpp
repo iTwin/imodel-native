@@ -8,6 +8,7 @@
 #include "bcDTMBaseDef.h"
 #include "DTMEvars.h"
 #include "bcdtminlines.h" 
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -89,36 +90,7 @@ BENTLEYDTM_EXPORT int bcdtmUtility_getDtmStateDtmObject (BC_DTM_OBJ *dtmP, DTMSt
  errexit :
  return(DTM_ERROR) ;
 }
-/*-------------------------------------------------------------------+
-|                                                                    |
-|                                                                    |
-|                                                                    |
-+-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmUtility_getLastDtmErrorMessage(long *errorStatusP,long *errorNumberP,char **errorMessagePP)
-/*
-** This function gets the last dtm error number and message 
-**
-*/
-{
-/*
-** Initialise
-*/
- if( *errorMessagePP != NULL ) { free(*errorMessagePP) ; *errorMessagePP = NULL ; }
- *errorStatusP = DTM_DTM_ERROR_STATUS ;
- *errorNumberP = DTM_DTM_ERROR_NUMBER ;
- *errorMessagePP = ( char *) malloc ((strlen(DTM_DTM_ERROR_MESSAGE)+1)*sizeof(char)) ;
- if( *errorMessagePP == NULL ) goto errexit ;
- strcpy(*errorMessagePP,DTM_DTM_ERROR_MESSAGE) ;
-/*
-** Job Completed
-*/
- return(DTM_SUCCESS) ;
-/*
-** Error Exit
-*/
- errexit :
- return(DTM_ERROR) ;
-}
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

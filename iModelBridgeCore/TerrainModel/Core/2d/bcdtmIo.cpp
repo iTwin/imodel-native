@@ -15,6 +15,11 @@
 #endif
 
 BENTLEYDTM_EXPORT bool sOutputToConsole = false;
+
+thread_local long    DTM_DTM_ERROR_STATUS = 0;
+thread_local long    DTM_DTM_ERROR_NUMBER = 0;
+thread_local char    DTM_DTM_ERROR_MESSAGE[256] = {0};
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -5319,3 +5324,34 @@ BENTLEYDTM_Public int bcdtmRead_binaryFileP3D(WCharCP FileName, DPoint3d **DataP
 */
  return(0) ;
 }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_EXPORT int bcdtmUtility_getLastDtmErrorMessage(long *errorStatusP,long *errorNumberP,char **errorMessagePP)
+/*
+** This function gets the last dtm error number and message 
+**
+*/
+    {
+    /*
+    ** Initialise
+    */
+    if( *errorMessagePP != NULL ) { free(*errorMessagePP) ; *errorMessagePP = NULL ; }
+    *errorStatusP = DTM_DTM_ERROR_STATUS ;
+    *errorNumberP = DTM_DTM_ERROR_NUMBER ;
+    *errorMessagePP = ( char *) malloc ((strlen(DTM_DTM_ERROR_MESSAGE)+1)*sizeof(char)) ;
+    if( *errorMessagePP == NULL ) goto errexit ;
+    strcpy(*errorMessagePP,DTM_DTM_ERROR_MESSAGE) ;
+    /*
+    ** Job Completed
+    */
+    return(DTM_SUCCESS) ;
+    /*
+    ** Error Exit
+    */
+errexit :
+    return(DTM_ERROR) ;
+    }
