@@ -726,9 +726,6 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         if (GetDgnDb().BriefcaseManager().IsBulkOperation() && (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().EndBulkOperation().Result()))
             return OnCommitStatus::Abort;
 
-        if (isCommit && m_enableNotifyTxnMonitors)
-            T_HOST.GetTxnAdmin()._OnCommit(*this);
-
         return OnCommitStatus::Continue;
         }
 
@@ -740,10 +737,12 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     Restart();  // Clear the change tracker since we have copied any changes to change sets
 
-    DeleteReversedTxns(); // these Txns are no longer reachable
-
     if (!isCommit)
         return CancelChanges(dataChangeSet);
+
+    // NOTE: you can't delete reversed Txns for CancelChanges because the database gets rolled back and they come back! That's OK,
+    // just leave them reversed and they'll get thrown away on the next commit (or reinstated.)
+    DeleteReversedTxns(); // these Txns are no longer reachable. 
 
     if (!dataChangeSet.IsEmpty())
         {
