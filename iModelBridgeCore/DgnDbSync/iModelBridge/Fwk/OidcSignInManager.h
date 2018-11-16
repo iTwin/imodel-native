@@ -12,13 +12,14 @@
 
 
 #define TOKENPREFIX_Bearer               "Bearer"
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef Tasks::AsyncResult<void, Tasks::AsyncError> OidcSignInResult;
 
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                     Algirdas.Mikoliunas    08/2018
+* @bsiclass                           Modified from Algirdas.Mikoliunas    08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct OidcSignInManager> OidcSignInManagerPtr;
+
 struct OidcSignInManager : WebServices::IConnectSignInManager
     {
     private:
@@ -41,5 +42,7 @@ struct OidcSignInManager : WebServices::IConnectSignInManager
             ) const override;
 
     public:
+        OidcSignInManager(WebServices::IConnectTokenProviderPtr m_tokenProvider);
         Tasks::AsyncTaskPtr<OidcSignInResult> SignInWithCallBack();
     };
+END_BENTLEY_DGN_NAMESPACE

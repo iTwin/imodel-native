@@ -9,7 +9,9 @@
 
 #include <Bentley\WString.h>
 #include <WebServices\Connect\ISecurityToken.h>
+#include <iModelBridge/iModelBridgeFwkRegistry.h>
 
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas    08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -33,3 +35,4 @@ struct OidcToken : public WebServices::ISecurityToken
         bool operator==(ISecurityToken const& other) const override;
     };
 
+END_BENTLEY_DGN_NAMESPACE

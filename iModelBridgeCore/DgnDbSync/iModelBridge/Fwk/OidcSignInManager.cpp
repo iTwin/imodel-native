@@ -12,6 +12,8 @@
 
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
 
+USING_NAMESPACE_BENTLEY_DGN
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -96,4 +98,13 @@ WebServices::AuthenticationHandlerPtr OidcSignInManager::_GetAuthenticationHandl
         );
     connectHandler->EnableExpiredTokenRefresh();
     return connectHandler;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+OidcSignInManager::OidcSignInManager(WebServices::IConnectTokenProviderPtr m_tokenProvider)
+    :m_tokenProvider(m_tokenProvider)
+    {
+
     }

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "OidcTokenProvider.h"
-
+USING_NAMESPACE_BENTLEY_DGN
 
 #define IMODELHUB_ClientId            "imodel-hub-integration-tests-2485"
 #define IMODELHUB_Scope               "openid profile email imodelhub"
