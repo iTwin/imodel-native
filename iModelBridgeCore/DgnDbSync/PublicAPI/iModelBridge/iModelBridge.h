@@ -625,6 +625,11 @@ struct iModelBridge
 	    //! @return the document GUID, if available.
 	    IMODEL_BRIDGE_EXPORT BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const;
 
+	    //! Get the document URN for the specified file, if available.
+	    //! @param localFileName    The filename of the source file.
+	    //! @return the document URN, if available.
+	    IMODEL_BRIDGE_EXPORT Utf8String QueryDocumentURN(BeFileNameCR localFileName) const;
+
         //!Get/Set the client info when talking to iModelHub or other services. 
         //!Individual bridges are supposed to set it up in its constructor so that when briefcase creation is called, appropriate ids are passed along.
         IMODEL_BRIDGE_EXPORT WebServices::ClientInfoPtr GetClientInfo() const;
@@ -866,6 +871,12 @@ public:
     // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
                                                 BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel);
+    // @private
+    IMODEL_BRIDGE_EXPORT static BentleyStatus ParseDocGuidFromPwUri(BeSQLite::BeGuid& guid, Utf8StringCR pwUrl);
+
+    // @private
+    static bool IsPwUrn(Utf8StringCR urn) {return urn.StartsWith("pw://");}
+
     // @private
     IMODEL_BRIDGE_EXPORT static SHA1 ComputeRepositoryLinkHash(RepositoryLinkCR);
 

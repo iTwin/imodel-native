@@ -673,11 +673,13 @@ public:
     //! @param sstate Optional. If specified, the state of the document. If not specified, the state defaults to an empty hash and the last modified time of the file.
     //! @param kind Optional. The document kind. Defaults to "DocumentWithBeGuid"
     //! @param srid Optional. The document scope. Defaults to 0
+    //! @param knownUrn Optional. The URN of the master document. Defaults to "".
     //! @return the resulting RepositoryLink Element and corresponding SyncInfo record
     //! @see GetAllDocumentGuidsInSyncInfo, DeleteAllItemsFromDocumentInSyncInfo
     IMODEL_BRIDGE_EXPORT iModelBridgeSyncInfoFile::ConversionResults RecordDocument(iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
                                                                 BeFileNameCR fileName = BeFileName(), iModelBridgeSyncInfoFile::SourceState const* sstate = nullptr,
-                                                                Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID());
+                                                                Utf8CP kind = "DocumentWithBeGuid", iModelBridgeSyncInfoFile::ROWID srid = iModelBridgeSyncInfoFile::ROWID(),
+                                                                Utf8StringCR knownUrn = Utf8String());
 
     //! Convenience method to detect deleted documents and delete everything that was created from them.
     //! This method takes care of detecting which documents were deleted (in cooperation with iModelBridge::IDocumentPropertiesAccessor).

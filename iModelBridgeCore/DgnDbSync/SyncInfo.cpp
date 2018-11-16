@@ -332,20 +332,15 @@ Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     //  The unique name must also be stable. If the whole project is moved to a new directory or machine, 
     //  the unique names of the files must be unaffected.
 
-    BeFileName fullFileName(file.GetFileName().c_str());
+    // If we have a DMS URN for the document corresponding to this file, that is the unique name.
+    Utf8String urn = GetConverter().GetDocumentURNforFile(file);
+    if (!urn.empty())
+        return urn;
 
-    // If we have a DMS GUID for the document corresponding to this file, that is the unique name.
-    BeGuid docGuid = GetConverter().GetParams().QueryDocumentGuid(BeFileName(fullFileName));
-    if (docGuid.IsValid())
-        {
-        Utf8String lguid = docGuid.ToString();
-        lguid.ToLower();
-        return lguid;
-        }
-
-    // If we do not have a GUID, we try to compute a stable unique name from the filename.
+    // If we do not have a DMS URN, we try to compute a stable unique name from the filename.
     // The full path should be unique already. To get something that is stable, we use only as much of 
     // the full path as we need to distinguish between like-named files in different directories.
+    BeFileName fullFileName(file.GetFileName().c_str());
     WString uniqueName(fullFileName);
     auto pdir = m_converter.GetParams().GetInputRootDir();
     if (!pdir.empty() && (pdir.size() < fullFileName.size()) && pdir.EqualsI(fullFileName.substr(0, pdir.size())))
@@ -2247,4 +2242,117 @@ BeSQLite::DbResult SyncInfo::UpdateImageryFile(DgnElementId modeledElementId, ui
     return stmt.Step();
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getUrnFromFirstSource(Utf8String& urn, BeXmlNodeP file)
+    {
+    for (BeXmlNodeP sources = file->GetFirstChild(); sources != nullptr; sources = sources->GetNextSibling())
+        {
+        if (0 != strcmp(sources->GetName(), "Sources"))
+            continue;
+
+        for (BeXmlNodeP source = sources->GetFirstChild(); source != nullptr; source = source->GetNextSibling())
+            {
+            if (0 != strcmp(source->GetName(), "Source"))
+                continue;
+
+            Utf8String refId;
+            if (BeXmlStatus::BEXML_Success == source->GetAttributeStringValue(refId, "RefId"))
+                continue;
+
+            Utf8String content;
+            source->GetContent(content);
+            if (iModelBridge::IsPwUrn(content))
+                {
+                urn = content;
+                return BSISUCCESS;       // <<== we only want the first source
+                }
+            }
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getUrnFromLastTarget(Utf8String& urn, BeXmlNodeP file)
+    {
+    bool foundAny = false;
+    for (BeXmlNodeP target = file->GetFirstChild(); target != nullptr; target = target->GetNextSibling())
+        {
+        if (0 == strcmp(target->GetName(), "Target"))
+            {
+            Utf8String content;
+            target->GetContent(content);
+            if (iModelBridge::IsPwUrn(content))
+                {
+                urn = content;
+                // keep looking. we want the last target
+                }
+            }
+        }
+    return foundAny? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String getPwUrn(Bentley::DgnPlatform::ProvenanceBlobR blob)
+    {
+    Utf8String urn;
+
+    WCharCP provData = (WCharCP)blob.GetData();
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, provData);
+    if (xmlDom == nullptr)
+        return urn;
+
+    // First, get doc urns from *sources*
+    BeXmlNodeP root = xmlDom->GetRootElement();
+    for (BeXmlNodeP files = root->GetFirstChild(); files != nullptr; files = files->GetNextSibling())
+        {
+        if (0 != strcmp(files->GetName(), "Files"))
+            continue;
+        for (BeXmlNodeP file = files->GetFirstChild(); file != nullptr; file = file->GetNextSibling())
+            {
+            if (0 != strcmp(file->GetName(), "File"))
+                continue;
+
+            getUrnFromFirstSource(urn, file);
+            getUrnFromLastTarget(urn, file);
+            }
+        }
+
+    return urn;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::GetPwUrnFromFileProvenance(DgnV8FileCR file)
+    {
+    auto provData = const_cast<DgnV8FileR>(file).ReadFileProvenance();
+    return getPwUrn(*provData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::GetDocumentURNforFile(DgnV8FileCR file)
+    {
+    auto const& moniker = file.GetDocument().GetMoniker();  
+    Utf8String urn(moniker.ResolveURI().c_str());
+    if (iModelBridge::IsPwUrn(urn))
+        return urn;
+
+    urn = GetParams().QueryDocumentURN(BeFileName(file.GetFileName().c_str()));
+
+    if (iModelBridge::IsPwUrn(urn))
+        return urn;
+
+    return Converter::GetPwUrnFromFileProvenance(file);
+    }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE

@@ -1119,6 +1119,10 @@ public:
     //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
     void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
+    DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
+
+    DGNDBSYNC_EXPORT Utf8String GetDocumentURNforFile(DgnV8FileCR);
+
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
     DgnElementId WriteRepositoryLink(DgnV8FileR file);
 

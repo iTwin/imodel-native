@@ -151,9 +151,12 @@ StableIdPolicy Converter::GetIdPolicyFromAppData(DgnV8FileCR file)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8StringR uri, DgnV8FileR file)
     {
-    auto const& moniker = file.GetDocument().GetMoniker();
-
-    uri = Utf8String(moniker.ResolveURI().c_str());
+    uri = GetDocumentURNforFile(file);
+    if (iModelBridge::IsPwUrn(uri))
+        {
+        code = uri;
+        return;
+        }
 
     char let;
     Utf8String urilwr = uri.ToLower();

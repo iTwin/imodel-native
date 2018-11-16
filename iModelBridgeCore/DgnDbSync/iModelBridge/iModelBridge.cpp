@@ -676,6 +676,41 @@ BeSQLite::BeGuid iModelBridge::Params::QueryDocumentGuid(BeFileNameCR localFileN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String iModelBridge::Params::QueryDocumentURN(BeFileNameCR localFileName) const
+    {
+    if (nullptr == m_documentPropertiesAccessor)
+        return "";
+
+    iModelBridgeDocumentProperties docProps;
+    m_documentPropertiesAccessor->_GetDocumentProperties(docProps, localFileName); 
+    return docProps.m_desktopURN;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::ParseDocGuidFromPwUri(BeGuid& guid, Utf8StringCR pwUrl)
+    {
+    if (!pwUrl.StartsWith("pw://"))
+        return BSIERROR;
+
+    auto startDguid = pwUrl.find("/D{");
+    if (Utf8String::npos == startDguid)
+        startDguid = pwUrl.find("/d{");
+
+    auto endDguid = pwUrl.find("}", startDguid);
+    if (Utf8String::npos == startDguid || Utf8String::npos == endDguid)
+        return BSIERROR;
+
+    auto startGuid = startDguid + 3;
+    auto guidLen = endDguid - startGuid;
+
+    return guid.FromString(pwUrl.substr(startGuid, guidLen).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 SHA1 iModelBridge::ComputeRepositoryLinkHash(RepositoryLinkCR el)
     {
     SHA1 sha1;
@@ -692,21 +727,34 @@ SHA1 iModelBridge::ComputeRepositoryLinkHash(RepositoryLinkCR el)
 void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
                                                 BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel)
     {
-    Utf8String codeStr(defaultCode);
-    docProps.m_desktopURN = defaultURN;
-
-    // Prefer to get the properties assigned by ProjectWise, if possible.
     if (nullptr != params.GetDocumentPropertiesAccessor())
         params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
 
-    if (!docProps.m_docGuid.empty())
-        codeStr = docProps.m_docGuid; // Use the GUID as the code, if we have it.
+    // URN. Prefer a PW URN from the document properties. Fall back on the supplied default.
+    if (docProps.m_desktopURN.empty() || (!IsPwUrn(docProps.m_desktopURN) && !defaultURN.empty()))
+        {
+        docProps.m_desktopURN = defaultURN; // fall back on supplied default
+        }
 
+    // GUID. This will go into the RepositoryLink element's RepositoryGUID property.
+    if (docProps.m_docGuid.empty())
+        {
+        BeGuid guid;
+        if (BSISUCCESS == ParseDocGuidFromPwUri(guid, docProps.m_desktopURN))
+            docProps.m_docGuid = guid.ToString();
+        }
+
+    // Code. Prefer a PW URN. Fall back on the supplied default.
+    Utf8String codeStr(docProps.m_desktopURN);
     if (codeStr.empty())
-        codeStr = Utf8String(localFileName);
+        {
+        codeStr = defaultCode;
+        if (codeStr.empty())
+            codeStr = Utf8String(localFileName);
+        }
 
     if (docProps.m_desktopURN.empty())
-        docProps.m_desktopURN = Utf8String(localFileName);
+        docProps.m_desktopURN = Utf8String(localFileName);      // We get here only if there is no URN
 
     code = RepositoryLink::CreateCode(lmodel, codeStr.c_str());
     }
