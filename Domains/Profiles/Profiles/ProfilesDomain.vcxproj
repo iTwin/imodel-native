@@ -130,9 +130,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb re ProfilesDLL -b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb re ProfilesDLL -b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb re ProfilesDLL -b -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>bb re ProfilesDomainDLL -b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb re ProfilesDomainDLL -b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb re ProfilesDomainDLL -b -c</NMakeCleanCommandLine>
     <IncludePath>$(SRCROOT)DgnDomains\Profiles;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\VendorAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
