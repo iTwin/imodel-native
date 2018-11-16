@@ -169,8 +169,9 @@ BentleyStatus   DwgImporter::_OnUpdateGroup (DwgSyncInfo::Group const& oldProven
 
     auto groupId = oldProvenance.GetDgnElementId ();
     auto& detector = this->_GetChangeDetector ();
+    auto addMembers = this->_ShouldSyncGroupWithMembers ();
 
-    DwgSyncInfo::Group  newProvenance(groupId, DwgSyncInfo::DwgFileId::GetFrom(*dwg), this->GetCurrentIdPolicy(), dwgGroup);
+    DwgSyncInfo::Group  newProvenance(groupId, DwgSyncInfo::DwgFileId::GetFrom(*dwg), this->GetCurrentIdPolicy(), dwgGroup, addMembers);
     if (!newProvenance.IsValid())
         return  BSIERROR;
 
@@ -282,8 +283,10 @@ BentleyStatus   DwgImporter::_ImportGroups (DwgDbDatabaseCR dwg)
                 auto inserted = dgnGroup->Insert ();
                 groupId = inserted->GetElementId ();
                 }
-            // insert group into the sync info and record it as a seen group:
-            syncInfo.InsertGroup (groupId, *group);
+            // insert group into the sync info if not inserted by _ImportGroup, and record it as a seen group:
+            DwgSyncInfo::Group  prov;
+            if (!this->IsUpdating() || !syncInfo.FindGroup(prov, group->GetObjectId()))
+                syncInfo.InsertGroup (groupId, *group);
             detector._OnGroupSeen (*this, groupId);
             }
         }

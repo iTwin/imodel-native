@@ -640,7 +640,7 @@ struct DwgSyncInfo
         DwgObjectHash       m_hash;
         
         DWG_EXPORT explicit Group () { m_id.Invalidate(); }
-        DWG_EXPORT explicit Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy, DwgDbGroupCR group);
+        DWG_EXPORT explicit Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy, DwgDbGroupCR group, bool addMembers = false);
         DWG_EXPORT BeSQLite::DbResult Insert (BeSQLite::Db&) const;
         DWG_EXPORT BeSQLite::DbResult Update (BeSQLite::Db&) const;
         DWG_EXPORT DgnElementId GetDgnElementId () const { return m_id; }
@@ -888,6 +888,9 @@ public:
     //! @param[out] out The sync info about the requested group
     //! @param[in] groupId The input DWG group object ID for which a sync info is queried
     DWG_EXPORT bool FindGroup (DwgSyncInfo::Group& out, DwgDbObjectIdCR groupId);
+    //! Insert group into the syncInfo
+    //! @param[in] id The ID of the DgnElement converted for the DWG group object
+    //! @param[in] group DWG group object
     DWG_EXPORT Group InsertGroup (DgnElementId id, DwgDbGroupCR group);
     DWG_EXPORT BentleyStatus UpdateGroup (DwgSyncInfo::Group& syncGroup);
     DWG_EXPORT BentleyStatus DeleteGroup (DgnElementId id);
