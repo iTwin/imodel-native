@@ -21,8 +21,32 @@ struct CShapeProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_CShapeProfile, ParametricProfile);
     friend struct CShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(CShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, double flangeWidth, double depth, double flangeThickness, double webThickness,
+            double filletRadius = 0.0, double edgeRadius = 0.0, double flangeSlope = 0.0);
+
+    public:
+        //! Required properties
+        double flangeWidth = 0.0;
+        double depth = 0.0;
+        double flangeThickness = 0.0;
+        double webThickness = 0.0;
+
+        //! Optional properties
+        double filletRadius = 0.0;
+        double edgeRadius = 0.0;
+        double flangeSlope = 0.0;
+        };
+
 protected:
-    explicit CShapeProfile (CreateParams const& params) : T_Super (params) {}
+    explicit CShapeProfile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CShapeProfile)

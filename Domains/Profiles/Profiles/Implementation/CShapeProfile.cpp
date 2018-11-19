@@ -14,7 +14,47 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (CShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model)
+    : T_Super (model, QueryClassId (model.GetDgnDb()))
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,  double flangeWidth, double depth, double flangeThickness,
+    double webThickness, double filletRadius, double edgeRadius, double flangeSlope)
+    : T_Super (model, QueryClassId (model.GetDgnDb()))
+    , flangeWidth (flangeWidth)
+    , depth (depth)
+    , flangeThickness (flangeThickness)
+    , webThickness (webThickness)
+    , filletRadius (filletRadius)
+    , edgeRadius (edgeRadius)
+    , flangeSlope (flangeSlope)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CShapeProfile::CShapeProfile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetFlangeWidth (params.flangeWidth);
+    SetDepth (params.depth);
+    SetFlangeThickness (params.flangeThickness);
+    SetWebThickness (params.webThickness);
+    SetFilletRadius (params.filletRadius);
+    SetEdgeRadius (params.edgeRadius);
+    SetFlangeSlope (params.flangeSlope);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CShapeProfile::GetFlangeWidth() const
     {
