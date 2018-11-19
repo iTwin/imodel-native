@@ -2089,26 +2089,6 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 m_glyphDeferralManager.DeferGlyph(glyph);
                 continue;
                 }
-
-#if 0
-            DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
-            bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
-
-            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
-            if (options.WantPreserveOrder())
-                key.SetOrder(order++);
-
-            MeshBuilderR meshBuilder = builderMap[key];
-
-            auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
-            meshBuilder.BeginPolyface(*polyface, edgeOptions);
-
-            uint32_t fillColor = displayParams->GetFillColor();
-            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), nullptr);
-
-            meshBuilder.EndPolyface();
-#endif
             }
 
         if (!options.WantSurfacesOnly())
@@ -2135,60 +2115,6 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
         }
 
     m_glyphDeferralManager.AddDeferredGlyphsToBuilderMap(builderMap, *context.GetRenderSystem(), context.GetDgnDb(), options);
-
-#if 0
-    GlyphDeferralManager* dManager = &m_glyphDeferralManager;
-    dManager->AddDeferredGlyphs();
-    void AddDeferredGlyphs(MeshBuilderMap& builderMap, Render::System& renderSystem, DgnDb& db, GeometryOptionsCR options);
-
-    uint32_t numGlyphs = static_cast<uint32_t>(dManager->m_deferredGlyphs.size());
-    if (numGlyphs > 0)
-    {
-    GlyphAtlasManager atlasManager(static_cast<uint32_t>(dManager->m_uniqueGlyphKeys.size()));
-    for (auto& deferredGlyph : dManager->m_deferredGlyphs)
-        atlasManager.AddGlyph(deferredGlyph);
-
-    // add the polyfaces with appropriate UV coordinates
-    for (auto& deferredGlyph : dManager->m_deferredGlyphs)
-        {
-        GlyphLocation loc;
-        GlyphAtlas& atlas = atlasManager.GetAtlasAndLocationForGlyph(deferredGlyph, loc);
-
-        // override texture
-        TexturePtr tex = atlas.GetTexture(*context.GetRenderSystem(), &context.GetDgnDb());
-        deferredGlyph.m_polyface.m_displayParams = deferredGlyph.m_polyface.m_displayParams->CloneForRasterText(*tex);
-
-        // override uvs
-        DPoint2d uvs[2];
-        atlas.GetUVCoords(deferredGlyph.m_polyface.m_glyphImage, loc, uvs);
-        auto& params = deferredGlyph.m_polyface.m_polyface->Param();
-        BeAssert(params.size() >= 4);
-        for (auto& param : params)
-            {
-            param.y = param.y < 0.5 ? uvs[0].x : uvs[1].x;
-            param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
-            }
-
-        DisplayParamsCPtr displayParams = deferredGlyph.m_polyface.m_displayParams;
-        bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
-
-        MeshBuilderMap::Key key(*displayParams, nullptr != deferredGlyph.m_polyface.m_polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, deferredGlyph.m_polyface.m_isPlanar);
-        if (options.WantPreserveOrder())
-            key.SetOrder(order++);
-
-        MeshBuilderR meshBuilder = builderMap[key];
-
-        auto edgeOptions = (options.WantEdges() && deferredGlyph.m_polyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
-        meshBuilder.BeginPolyface(*deferredGlyph.m_polyface.m_polyface, edgeOptions);
-
-        uint32_t fillColor = displayParams->GetFillColor();
-        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*deferredGlyph.m_polyface.m_polyface); visitor->AdvanceToNextFace(); /**/)
-            meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), deferredGlyph.m_geom->GetFeature(), hasTexture, fillColor, nullptr != deferredGlyph.m_polyface.m_polyface->GetNormalCP(), nullptr);
-
-        meshBuilder.EndPolyface();
-        }
-    }
-#endif
 
     return builderMap;
     }
