@@ -2626,6 +2626,7 @@ IBriefcaseManager::Response BulkUpdateBriefcaseManager::_EndBulkOperation()
     if (0 != --m_inBulkUpdate)
         return Response(RequestPurpose::Acquire, ResponseOptions::None, RepositoryStatus::Success);
 
+    m_req.SetOptions(ResponseOptions::All); // Get details when requests such as code reservations fail.
     auto resp = T_Super::_ProcessRequest(m_req, RequestPurpose::Acquire);
     
     if (RepositoryStatus::Success != resp.Result())
