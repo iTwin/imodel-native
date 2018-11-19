@@ -2089,6 +2089,23 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 m_glyphDeferralManager.DeferGlyph(glyph);
                 continue;
                 }
+            DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
+            bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
+
+            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            if (options.WantPreserveOrder())
+                key.SetOrder(order++);
+
+            MeshBuilderR meshBuilder = builderMap[key];
+
+            auto edgeOptions = (options.WantEdges() && tilePolyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+            meshBuilder.BeginPolyface(*polyface, edgeOptions);
+
+            uint32_t fillColor = displayParams->GetFillColor();
+            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), nullptr);
+
+            meshBuilder.EndPolyface();
             }
 
         if (!options.WantSurfacesOnly())
