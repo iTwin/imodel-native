@@ -20,8 +20,21 @@ struct Profile : Dgn::DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_Profile, Dgn::DefinitionElement);
     friend struct ProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(Profile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        explicit CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId);
+
+    public:
+        Utf8String name;
+        };
+
 protected:
-    explicit Profile (CreateParams const& params) : T_Super (params) {}
+    explicit Profile (CreateParams const& params);
 
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (Profile)

@@ -13,9 +13,29 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (ProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Profile::CreateParams::CreateParams (Dgn::DgnModel const& model, Dgn::DgnClassId const& classId)
+    : T_Super (model.GetDgnDb(), model.GetModelId(), classId)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Profile::Profile (CreateParams const& params)
+    : T_Super (params)
+    {
+    if (params.m_isLoadingElement)
+        return;
+
+    SetName (params.name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Profile::GetName() const 
+Utf8String Profile::GetName() const
     {
     return GetPropertyValueString (PRF_PROP_Profile_Name);
     }
