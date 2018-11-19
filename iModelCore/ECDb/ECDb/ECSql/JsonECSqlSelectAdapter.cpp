@@ -61,10 +61,19 @@ public:
             JsonCpp() = Json::Value(Json::arrayValue);
         }
 
-    JsonRef AddMember(Utf8StringCR memberName, bool makeCopy = true)
+    // If a member with that name already exists, it will be returned.
+    // Otherwise a new member will be created and returned.
+    // @param makeCopy if true, a copy of @p memberName will be added to the JSON. If false, a reference to @p memberName 
+    // will used in the JSON -> caller must make sure the lifetime of @p memberName is longer than the JSON.
+    JsonRef GetOrAddMember(Utf8StringCR memberName, bool makeCopy = true)
         {
         if (IsRapidJson())
             {
+            // reuse an already existing member
+            auto it = RapidJson().FindMember(memberName.c_str());
+            if (it != RapidJson().MemberEnd())
+                return JsonRef(it->value, Allocator());
+
             rapidjson::Value memberNameVal = makeCopy ? rapidjson::Value(memberName.c_str(), (rapidjson::SizeType) memberName.size(), Allocator()) : rapidjson::Value(rapidjson::StringRef(memberName.c_str(), memberName.size()));
             RapidJson().AddMember(memberNameVal.Move(), rapidjson::Value().Move(), Allocator());
             return JsonRef(RapidJson()[memberName.c_str()], Allocator());
@@ -285,7 +294,7 @@ BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bool appendToJson, ECSqlSt
         // GetRow needs to use the unique member names where name collisions in the select clause were resolved 
         // E.g. SELECT e.ECInstanceId, f.ECInstanceId FROM ... becomes { "id":..., "id_1":...}
         Utf8StringCR memberName = GetUniqueMemberName(memberNames, (size_t) columnIndex);
-        JsonRef memberJson = rowJson.AddMember(memberName);
+        JsonRef memberJson = rowJson.GetOrAddMember(memberName);
         if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
             return ERROR;
         }
@@ -327,9 +336,9 @@ BentleyStatus AdapterHelper::GetRowInstance(JsonRef& rowJson, ECClassId classId,
 
         BeAssert(colInfo.GetProperty() != nullptr);
         ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
-        // for GetRowInstance we never have member name collisions as we only use props from one class.
         Utf8StringCR memberName = GetMemberName(memberNames, (size_t) columnIndex);
-        JsonRef memberJson = rowJson.AddMember(memberName);
+
+        JsonRef memberJson = rowJson.GetOrAddMember(memberName);
         if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
             return ERROR;
         }
@@ -514,14 +523,14 @@ BentleyStatus AdapterHelper::NavigationToJson(JsonRef& jsonValue, IECSqlValue co
         }
 
     jsonValue.SetObject();
-    JsonRef navIdJson = jsonValue.AddMember(ECJsonSystemNames::Navigation::Id());
+    JsonRef navIdJson = jsonValue.GetOrAddMember(ECJsonSystemNames::Navigation::Id());
     if (SUCCESS != navIdJson.FromId(navId))
         return ERROR;
 
     if (relClass == nullptr)
         return SUCCESS;
 
-    JsonRef relClassNameJson = jsonValue.AddMember(ECJsonSystemNames::Navigation::RelClassName());
+    JsonRef relClassNameJson = jsonValue.GetOrAddMember(ECJsonSystemNames::Navigation::RelClassName());
     relClassNameJson.FromClass(*relClass);
     return SUCCESS;
     }
@@ -543,10 +552,10 @@ BentleyStatus AdapterHelper::StructToJson(JsonRef& jsonValue, IECSqlValue const&
             {
             Utf8String memberPropName(memberProp->GetName());
             FormatMemberName(memberPropName, formatOptions.GetMemberCasingMode());
-            memberJson = jsonValue.AddMember(memberPropName);
+            memberJson = jsonValue.GetOrAddMember(memberPropName);
             }
         else
-            memberJson = jsonValue.AddMember(memberProp->GetName());
+            memberJson = jsonValue.GetOrAddMember(memberProp->GetName());
 
         BeAssert(memberJson.IsValid());
 

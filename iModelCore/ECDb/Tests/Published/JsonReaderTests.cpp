@@ -404,6 +404,148 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                11/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonECSqlSelectAdapterTests, GetRowInstanceAndDuplicateMemberNames)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_GetRowInstanceAndDuplicateMemberNames.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT s.ECInstanceId, c.ECInstanceId, c.Schema.Id id, c.Name, s.ECClassId, s.Name, s.ECClassId FROM meta.ECSchemaDef s JOIN meta.ECClassDef c ON c.Schema.Id=s.ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ECClassId schemaDefId = m_ecdb.Schemas().GetClassId("ECDbMeta", "ECSchemaDef");
+    ASSERT_TRUE(schemaDefId.IsValid());
+    ECClassId classDefId = m_ecdb.Schemas().GetClassId("ECDbMeta", "ECClassDef");
+    ASSERT_TRUE(classDefId.IsValid());
+
+    JsonECSqlSelectAdapter adapter(stmt);
+    ASSERT_TRUE(adapter.IsValid()) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    JsonDoc rowJson, classJson, schemaJson;
+    ASSERT_EQ(SUCCESS, adapter.GetRow(rowJson.RapidJson(), rowJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter.GetRow(rowJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(classJson.RapidJson(), classDefId, classJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(classJson.JsonCpp(), classDefId));
+    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(schemaJson.RapidJson(), schemaDefId, schemaJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter.GetRowInstance(schemaJson.JsonCpp(), schemaDefId));
+
+    ASSERT_TRUE_NULLABLE(rowJson.HasMember("id")) << rowJson.ToString();
+    EXPECT_STREQ(stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str(), rowJson["id"].GetString()) << rowJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(rowJson.HasMember("id_1")) << rowJson.ToString();
+    EXPECT_STREQ(stmt.GetValueId<ECInstanceId>(1).ToHexStr().c_str(), rowJson["id_1"].GetString()) << rowJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(rowJson.HasMember("id_2")) << rowJson.ToString();
+    EXPECT_STREQ(stmt.GetValueId<BeInt64Id>(2).ToString().c_str(), rowJson["id_2"].GetString()) << rowJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(rowJson.HasMember("Name")) << rowJson.ToString();
+    EXPECT_STREQ(stmt.GetValueText(3), rowJson["Name"].GetString()) << rowJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(rowJson.HasMember("className")) << rowJson.ToString();
+    EXPECT_STREQ("ECDbMeta.ECSchemaDef", rowJson["className"].GetString()) << rowJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(rowJson.HasMember("Name_1")) << rowJson.ToString();
+    EXPECT_STREQ(stmt.GetValueText(5), rowJson["Name_1"].GetString()) << rowJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(rowJson.HasMember("className_1")) << rowJson.ToString();
+    EXPECT_STREQ("ECDbMeta.ECSchemaDef", rowJson["className_1"].GetString()) << rowJson.ToString();
+
+    // ECSchemaDef instance
+    ASSERT_EQ_NULLABLE(3, schemaJson.MemberCount()) << schemaJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(schemaJson.HasMember("id")) << schemaJson.ToString();
+    EXPECT_STREQ(stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str(), schemaJson["id"].GetString()) << schemaJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(schemaJson.HasMember("className")) << schemaJson.ToString();
+    EXPECT_STREQ("ECDbMeta.ECSchemaDef", schemaJson["className"].GetString()) << schemaJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(schemaJson.HasMember("Name")) << schemaJson.ToString();
+    EXPECT_STREQ(stmt.GetValueText(5), schemaJson["Name"].GetString()) << schemaJson.ToString();
+
+    // ECClassDef instance
+    ASSERT_EQ_NULLABLE(2, classJson.MemberCount()) << classJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(classJson.HasMember("id")) << classJson.ToString();
+    EXPECT_STREQ(stmt.GetValueId<ECInstanceId>(1).ToHexStr().c_str(), classJson["id"].GetString()) << classJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(classJson.HasMember("Name")) << classJson.ToString();
+    EXPECT_STREQ(stmt.GetValueText(3), classJson["Name"].GetString()) << classJson.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                11/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_AppendToJson.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name, Type, Modifier FROM meta.ECClassDef LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    JsonECSqlSelectAdapter adapter(stmt);
+    ASSERT_TRUE(adapter.IsValid());
+    {
+    Json::Value json;
+    ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON null";
+    json = Json::Value(Json::arrayValue);
+    ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON array";
+    json = Json::Value(10);
+    ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON number";
+    json = Json::Value("12313");
+    ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON string";
+    }
+    {
+    rapidjson::Document json;
+    ASSERT_EQ(ERROR, adapter.GetRow(json, json.GetAllocator(), true)) << "Cannot append to JSON null";
+    json.SetArray();
+    ASSERT_EQ(ERROR, adapter.GetRow(json, json.GetAllocator(), true)) << "Cannot append to JSON array";
+    json.SetInt(10);
+    ASSERT_EQ(ERROR, adapter.GetRow(json, json.GetAllocator(), true)) << "Cannot append to JSON number";
+    json.SetString("12313");
+    ASSERT_EQ(ERROR, adapter.GetRow(json, json.GetAllocator(), true)) << "Cannot append to JSON string";
+    }
+
+    Utf8PrintfString expectedJsonCore(R"json("id":"%s", "Name": "%s", "Type": %d, "Modifier": %d)json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str(),
+                                      stmt.GetValueText(1), stmt.GetValueInt(2), stmt.GetValueInt(3));
+    {
+    Json::Value json(Json::objectValue);
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json, true)) << "Append to empty JSON object";
+    EXPECT_EQ(4, (int) json.size()) << json.ToString();
+    EXPECT_EQ(JsonValue(Utf8PrintfString("{%s}", expectedJsonCore.c_str())), JsonValue(json)) << json.ToString();
+
+    json = Json::Value(Json::objectValue);
+    json["MyNumber"] = Json::Value(54321);
+    json["MyArray"] = Json::Value(Json::arrayValue);
+    json["MyArray"].append(Json::Value(5));
+    json["MyArray"].append(Json::Value(4));
+    json["MyObj"]["FirstName"] = Json::Value("Gustav");
+    json["MyObj"]["LastName"] = Json::Value("Mueller");
+
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json, true)) << "Append to non-empty JSON object";
+    EXPECT_EQ(7, (int) json.size()) << json.ToString();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyNumber":54321,"MyArray":[5,4],"MyObj":{"FirstName":"Gustav","LastName":"Mueller"},%s})json", expectedJsonCore.c_str())), JsonValue(json)) << json.ToString();
+    }
+    {
+    rapidjson::Document json;
+    json.SetObject();
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json, json.GetAllocator(), true)) << "Append to empty JSON object";
+    EXPECT_EQ(4, (int) json.MemberCount()) << TestUtilities::ToString(json);
+    EXPECT_EQ(JsonValue(Utf8PrintfString("{%s}", expectedJsonCore.c_str())), JsonValue(TestUtilities::ToString(json))) << TestUtilities::ToString(json);
+
+    json.SetNull();
+    json.SetObject();
+    json.AddMember(rapidjson::StringRef("MyNumber"), rapidjson::Value(54321).Move(), json.GetAllocator());
+    json.AddMember(rapidjson::StringRef("MyArray"), rapidjson::Value().SetArray().PushBack(5, json.GetAllocator()).PushBack(4, json.GetAllocator()).Move(), json.GetAllocator());
+    json.AddMember(rapidjson::StringRef("MyObj"), rapidjson::Value().SetObject().AddMember(rapidjson::StringRef("FirstName"), rapidjson::Value("Gustav"), json.GetAllocator()).AddMember(rapidjson::StringRef("LastName"), rapidjson::Value("Mueller"), json.GetAllocator()), json.GetAllocator());
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json, json.GetAllocator(), true)) << "Append to non-empty JSON object";
+    EXPECT_EQ(7, (int) json.MemberCount()) << TestUtilities::ToString(json);
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyNumber":54321,"MyArray":[5,4],"MyObj":{"FirstName":"Gustav","LastName":"Mueller"},%s})json", expectedJsonCore.c_str())), JsonValue(TestUtilities::ToString(json))) << TestUtilities::ToString(json);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                09/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
