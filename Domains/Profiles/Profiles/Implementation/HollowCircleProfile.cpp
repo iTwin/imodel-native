@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (HollowCircleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowCircleProfilePtr HollowCircleProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new HollowCircleProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double HollowCircleProfile::GetRadius() const
     {
     return GetPropertyValueDouble (PRF_PROP_HollowCircleProfile_Radius);

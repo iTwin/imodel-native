@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (ZShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (ZShapeProfile)
 
-    PROFILES_EXPORT static ZShapeProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static ZShapeProfilePtr Create (CreateParams const& params) { return new ZShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;

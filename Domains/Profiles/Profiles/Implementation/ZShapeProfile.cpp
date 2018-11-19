@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (ZShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZShapeProfilePtr ZShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new ZShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double ZShapeProfile::GetFlangeWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_ZShapeProfile_FlangeWidth);

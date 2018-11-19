@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (HollowRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (HollowRectangleProfile)
 
-    PROFILES_EXPORT static HollowRectangleProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static HollowRectangleProfilePtr Create (CreateParams const& params) { return new HollowRectangleProfile (params); }
 
 public:
     PROFILES_EXPORT double GetWidth() const;

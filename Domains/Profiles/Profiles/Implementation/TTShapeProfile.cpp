@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (TTShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TTShapeProfilePtr TTShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new TTShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double TTShapeProfile::GetWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_TTShapeProfile_Width);

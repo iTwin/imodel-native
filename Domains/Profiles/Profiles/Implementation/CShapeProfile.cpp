@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (CShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CShapeProfilePtr CShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new CShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double CShapeProfile::GetFlangeWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_CShapeProfile_FlangeWidth);

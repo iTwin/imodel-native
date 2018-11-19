@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (IShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-IShapeProfilePtr IShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new IShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double IShapeProfile::GetFlangeWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_IShapeProfile_FlangeWidth);

@@ -15,14 +15,6 @@ HANDLER_DEFINE_MEMBERS (SchifflerizedLShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchifflerizedLShapeProfilePtr SchifflerizedLShapeProfile::Create (/*TODO: args*/)
-    {
-    return nullptr; // TODO: Not Implemented
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetLegLength() const
     {
     return GetPropertyValueDouble (PRF_PROP_SchifflerizedLShapeProfile_LegLength);

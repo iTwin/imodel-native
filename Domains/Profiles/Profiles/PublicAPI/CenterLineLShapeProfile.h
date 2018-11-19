@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CenterLineLShapeProfile)
 
-    PROFILES_EXPORT static CenterLineLShapeProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CenterLineLShapeProfilePtr Create (CreateParams const& params) { return new CenterLineLShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetWidth() const;

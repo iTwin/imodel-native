@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (BentPlateProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentPlateProfilePtr BentPlateProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new BentPlateProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double BentPlateProfile::GetWidth() const 
     {
     return GetPropertyValueDouble (PRF_PROP_BentPlateProfile_Width);

@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (CircleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CircleProfilePtr CircleProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new CircleProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double CircleProfile::GetRadius() const
     {
     return GetPropertyValueDouble (PRF_PROP_CircleProfile_Radius);

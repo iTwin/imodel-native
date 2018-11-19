@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (HollowRectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowRectangleProfilePtr HollowRectangleProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new HollowRectangleProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double HollowRectangleProfile::GetWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_HollowRectangleProfile_Width);

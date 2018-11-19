@@ -29,7 +29,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (HollowCircleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (HollowCircleProfile)
 
-    PROFILES_EXPORT static HollowCircleProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static HollowCircleProfilePtr Create (CreateParams const& params) { return new HollowCircleProfile (params); }
 
     PROFILES_EXPORT double GetRadius() const;
     PROFILES_EXPORT void SetRadius (double val);

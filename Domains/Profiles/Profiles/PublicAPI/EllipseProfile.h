@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (EllipseProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (EllipseProfile)
 
-    PROFILES_EXPORT static EllipseProfilePtr Create (/*TODO: args*/);
+    PROFILES_EXPORT static EllipseProfilePtr Create (CreateParams const& params) { return new EllipseProfile (params); }
 
 public:
     PROFILES_EXPORT double GetXRadius() const;

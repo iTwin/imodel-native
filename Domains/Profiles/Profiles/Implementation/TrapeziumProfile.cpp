@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (TrapeziumProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TrapeziumProfilePtr TrapeziumProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new TrapeziumProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double TrapeziumProfile::GetTopWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_TrapeziumProfile_TopWidth);

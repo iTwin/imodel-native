@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CShapeProfile)
 
-    PROFILES_EXPORT static CShapeProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CShapeProfilePtr Create (CreateParams const& params) { return new CShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;

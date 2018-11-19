@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CircleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CircleProfile)
 
-    PROFILES_EXPORT static CircleProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CircleProfilePtr Create (CreateParams const& params) { return new CircleProfile (params); }
 
     PROFILES_EXPORT double GetRadius() const;
     PROFILES_EXPORT void SetRadius (double val);

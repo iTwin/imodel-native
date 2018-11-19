@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (CenterLineLShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CenterLineLShapeProfilePtr CenterLineLShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new CenterLineLShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double CenterLineLShapeProfile::GetWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_CenterLineLShapeProfile_Width);

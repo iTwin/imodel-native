@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RoundedRectangleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (RoundedRectangleProfile)
 
-    PROFILES_EXPORT static RoundedRectangleProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static RoundedRectangleProfilePtr Create (CreateParams const& params) { return new RoundedRectangleProfile (params); }
 
 public:
     PROFILES_EXPORT double GetWidth() const;

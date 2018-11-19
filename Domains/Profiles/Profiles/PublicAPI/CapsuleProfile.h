@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CapsuleProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CapsuleProfile)
 
-    PROFILES_EXPORT static CapsuleProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CapsuleProfilePtr Create (CreateParams const& params) { return new CapsuleProfile (params); }
 
     PROFILES_EXPORT double GetWidth() const;
     PROFILES_EXPORT void SetWidth (double val);

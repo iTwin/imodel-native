@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (CapsuleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CapsuleProfilePtr CapsuleProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new CapsuleProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double CapsuleProfile::GetWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_CapsuleProfile_Width);

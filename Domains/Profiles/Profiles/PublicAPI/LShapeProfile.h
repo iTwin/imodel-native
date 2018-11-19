@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (LShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (LShapeProfile)
 
-    PROFILES_EXPORT static LShapeProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static LShapeProfilePtr Create (CreateParams const& params) { return new LShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetWidth() const;

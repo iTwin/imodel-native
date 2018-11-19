@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (RoundedRectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoundedRectangleProfilePtr RoundedRectangleProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new RoundedRectangleProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double RoundedRectangleProfile::GetWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_RoundedRectangleProfile_Width);

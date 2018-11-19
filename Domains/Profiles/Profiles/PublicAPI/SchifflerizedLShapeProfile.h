@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (SchifflerizedLShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (SchifflerizedLShapeProfile)
 
-    PROFILES_EXPORT static SchifflerizedLShapeProfilePtr Create (/*TODO: args*/);
+    PROFILES_EXPORT static SchifflerizedLShapeProfilePtr Create (CreateParams const& params) { return new SchifflerizedLShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetLegLength() const;

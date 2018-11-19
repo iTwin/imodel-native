@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (RegularPolygonProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (RegularPolygonProfile)
 
-    PROFILES_EXPORT static RegularPolygonProfilePtr Create (/*TODO: args*/);
+    PROFILES_EXPORT static RegularPolygonProfilePtr Create (CreateParams const& params) { return new RegularPolygonProfile (params); }
 
     PROFILES_EXPORT double GetSideCount() const;
     PROFILES_EXPORT void SetSideCount (double val);

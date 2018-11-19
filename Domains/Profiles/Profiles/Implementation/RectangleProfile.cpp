@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (RectangleProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RectangleProfilePtr RectangleProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new RectangleProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double RectangleProfile::GetWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_RectangleProfile_Width);

@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (TShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TShapeProfilePtr TShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new TShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetFlangeWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_TShapeProfile_FlangeWidth);

@@ -15,14 +15,6 @@ HANDLER_DEFINE_MEMBERS (EllipseProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-EllipseProfilePtr EllipseProfile::Create (/*TODO: args*/)
-    {
-    return nullptr; // TODO: Not Implemented
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     11/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double EllipseProfile::GetXRadius() const
     {
     return GetPropertyValueDouble (PRF_PROP_EllipseProfile_XRadius);

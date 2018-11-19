@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (AsymmetricIShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsymmetricIShapeProfilePtr AsymmetricIShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new AsymmetricIShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double AsymmetricIShapeProfile::GetTopFlangeWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_AsymmetricIShapeProfile_TopFlangeWidth);

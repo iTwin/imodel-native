@@ -16,15 +16,6 @@ HANDLER_DEFINE_MEMBERS (LShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LShapeProfilePtr LShapeProfile::Create (DgnModelCR model)
-    {
-    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
-    return new LShapeProfile (params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetWidth() const
     {
     return GetPropertyValueDouble (PRF_PROP_LShapeProfile_Width);

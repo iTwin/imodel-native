@@ -28,7 +28,7 @@ public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (IShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (IShapeProfile)
 
-    PROFILES_EXPORT static IShapeProfilePtr Create (Dgn::DgnModelCR model);
+    PROFILES_EXPORT static IShapeProfilePtr Create (CreateParams const& params) { return new IShapeProfile (params); }
 
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;

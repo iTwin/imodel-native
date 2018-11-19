@@ -15,14 +15,6 @@ HANDLER_DEFINE_MEMBERS (RegularPolygonProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegularPolygonProfilePtr RegularPolygonProfile::Create (/*TODO: args*/)
-    {
-    return nullptr; // TODO: Not Implemented
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 double RegularPolygonProfile::GetSideCount() const
     {
     return GetPropertyValueDouble (PRF_PROP_RegularPolygonProfile_SideCount);
