@@ -2929,4 +2929,101 @@ TEST_F(ECDbAdapterTests, GetInstanceKeyFromJsonInstance_ValidRapidJson_ReturnCor
     EXPECT_EQ(instanceKey, result);
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, GetInstanceKeyFromJsonInstance_EmptyJsonValue_ReturnInvalidECInstanceKey)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+        </ECSchema>)xml");
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    auto ecClassA = adapter.GetECClass("TestSchema.A");
+    ECInstanceKey instanceKey;
+    INSERT_INSTANCE(*db, ecClassA, instanceKey);
+
+    Json::Value jsonValue;
+
+    auto result = adapter.GetInstanceKeyFromJsonInstance(jsonValue);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, GetInstanceKeyFromJsonInstance_EmptyRapidJson_ReturnsException)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+        </ECSchema>)xml");
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    auto ecClassA = adapter.GetECClass("TestSchema.A");
+    ECInstanceKey instanceKey;
+    INSERT_INSTANCE(*db, ecClassA, instanceKey);
+
+    rapidjson::Document document(rapidjson::kObjectType);
+    EXPECT_DEATH(adapter.GetInstanceKeyFromJsonInstance(document),"");
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, GetInstanceKeyFromJsonInstance_JsonValueWithInvalidClass_ReturnInvalidECInstanceKey)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+        </ECSchema>)xml");
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    auto ecClassA = adapter.GetECClass("TestSchema.A");
+    ECInstanceKey instanceKey;
+    INSERT_INSTANCE(*db, ecClassA, instanceKey);
+
+    Json::Value jsonValue;
+    jsonValue[ECJsonUtilities::json_className()] = "TestSchema.B";
+    Utf8String idString;
+    idString.Sprintf("%" PRIu64, instanceKey.GetInstanceId().GetValue());
+    jsonValue[ECJsonUtilities::json_id()] = idString;
+
+    auto result = adapter.GetInstanceKeyFromJsonInstance(jsonValue);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, GetInstanceKeyFromJsonInstance_RapidJsonWithInvalidECInstanceKey_ReturnInvalidECInstanceKey)
+    {
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+        </ECSchema>)xml");
+    auto db = CreateTestDb(schema);
+    ECDbAdapter adapter(*db);
+
+    auto ecClassA = adapter.GetECClass("TestSchema.A");
+    ECInstanceKey instanceKey;
+    INSERT_INSTANCE(*db, ecClassA, instanceKey);
+
+    rapidjson::Document document(rapidjson::kObjectType);
+    document.AddMember(rapidjson::Value(ECJsonUtilities::json_className().c_str(), document.GetAllocator()).Move(), "TestSchema.B", document.GetAllocator());
+    Utf8String idString;
+    idString.Sprintf("%" PRIu64, instanceKey.GetInstanceId().GetValue());
+
+    rapidjson::Value name(ECJsonUtilities::json_id().c_str(), document.GetAllocator());
+    rapidjson::Value value(idString.c_str(), document.GetAllocator());
+    document.AddMember(name, value, document.GetAllocator());
+
+    auto result = adapter.GetInstanceKeyFromJsonInstance(document);
+    EXPECT_FALSE(result.IsValid());
+    }
+
 #endif
