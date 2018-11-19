@@ -29,6 +29,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define HEADER_MasFileAccessUrlType        "Mas-File-Access-Url-Type"
 #define HEADER_MasRequestId                "Mas-Request-Id"
 #define HEADER_XCorrelationId              "X-Correlation-Id"
+#define HEADER_XMsClientRequestId          "x-ms-client-request-id"
 #define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
 #define HEADER_Location                    "Location"
 
@@ -2998,9 +2999,11 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV27AndAzureRedirectA
                 {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
                 {HEADER_MasUploadConfirmationId, "TestUploadId"}});
         });
-    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
+    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
         {
-        // TODO: It's Http Request to AzureBlobStorage. ActivityId should be set to header "x-ms-client-request-id"
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_XMsClientRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
         return StubHttpResponse(HttpStatus::Created);
         });
     GetHandler().ForRequest(4, [=, &requestIds] (Http::RequestCR request)
