@@ -1131,7 +1131,7 @@ ICancellationTokenPtr ct
         }
 
     auto finalResult = std::make_shared<WSUpdateFileResult>();
-    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult) mutable
+    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, nullptr, ct)->Then([=] (AzureResult azureResult) mutable
         {
         if (!azureResult.IsSuccess())
             {
