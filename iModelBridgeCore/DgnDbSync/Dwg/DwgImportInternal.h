@@ -51,6 +51,7 @@
 #include <Dwg/ProtocalExtensions.h>
 #include <Dwg/DwgL10N.h>
 
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include <Logging/BentleyLogging.h>
 
 #define LOG             DwgImportLogging::GetLogger (DwgImportLogging::Namespace::General)
@@ -432,6 +433,8 @@ private:
     void            Validate2dTransform (TransformR transform) const;
     void            ApplyPartScale (TransformR transform, double scale, bool invert) const;
     bool            NeedsSeparateElement (DgnCategoryId id) const;
+    DgnGeometryPartId CreateGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, Utf8StringCR partTag, DwgImporter::GeometryEntry const& geomEntry);
+    BentleyStatus   GetGeometryPart (DRange3dR range, double& partScale, TransformR geomToLocal, DgnGeometryPartId partId, DwgImporter::GeometryEntry const& geomEntry);
     BentleyStatus   GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
     BentleyStatus   CreateEmptyElement ();
     BentleyStatus   CreateIndividualElements ();

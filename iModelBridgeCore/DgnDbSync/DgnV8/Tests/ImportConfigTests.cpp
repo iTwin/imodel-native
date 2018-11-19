@@ -35,7 +35,7 @@ void ImportConfigTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::B
 
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
-    params.m_keepHostAliveForUnitTests = true;
+    params.SetKeepHostAlive(true);
     params.SetInputFileName(input);
     params.SetBridgeRegSubKey(RootModelConverter::GetRegistrySubKey());
 

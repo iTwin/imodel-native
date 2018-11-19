@@ -182,6 +182,12 @@ BentleyStatus DwgSyncInfo::CreateTables()
 
     MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Discards) "DwgIdx ON " SYNC_TABLE_Discards "(DwgModelSyncInfoId,DwgObjectId)"));
 
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_GeometryPart),
+                    "PartId INT NOT NULL,"
+                    "PartTag TEXT");
+
+    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_GeometryPart) "PartTagIdx ON " SYNC_TABLE_GeometryPart "(PartTag)");
+
     m_dgndb->SaveChanges();
     return BSISUCCESS;
     }
@@ -2024,7 +2030,7 @@ DwgSyncInfo::Material   DwgSyncInfo::InsertMaterial (RenderMaterialId id, DwgDbM
         {
         prov.m_id = RenderMaterialId ();
         m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, IssueCategory::Sync(), Issue::MaterialError(),
-                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
+                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id.GetValue()).c_str());
         }
 
     return prov;
@@ -2177,14 +2183,15 @@ DwgSyncInfo::Group   DwgSyncInfo::InsertGroup (DgnElementId id, DwgDbGroupCR gro
     {
     auto dwg = group.GetDatabase ();
     auto fileId = DwgFileId::GetFrom (dwg.IsNull() ? m_dwgImporter.GetDwgDb() : *dwg);
+    auto addMembers = m_dwgImporter._ShouldSyncGroupWithMembers ();
 
-    Group   prov (id, fileId, m_dwgImporter.GetCurrentIdPolicy(), group);
+    Group   prov (id, fileId, m_dwgImporter.GetCurrentIdPolicy(), group, addMembers);
 
     if (BE_SQLITE_DONE != prov.Insert(*m_dgndb))
         {
         prov.m_id = DgnElementId ();
         m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, IssueCategory::Sync(), Issue::GroupError(),
-                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
+                                  Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id.GetValue()).c_str());
         }
 
     return prov;
@@ -2212,7 +2219,7 @@ DbResult DwgSyncInfo::Group::Insert (BeSQLite::Db& db) const
     else
         stmt.BindNull (col++);
     stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No); // DWG group name
-    stmt.BindBlob (col++, &m_hash, sizeof(m_hash), Statement::MakeCopy::No);
+    stmt.BindBlob (col++, &m_hash, sizeof(m_hash), Statement::MakeCopy::No);  // DWG group (optionally members included) hash
 
     return stmt.Step();
     }
@@ -2220,7 +2227,7 @@ DbResult DwgSyncInfo::Group::Insert (BeSQLite::Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgSyncInfo::Group::Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy, DwgDbGroupCR group)
+DwgSyncInfo::Group::Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy, DwgDbGroupCR group, bool addMembers)
     {
     m_id = id;
     m_fileId = fid;
@@ -2228,15 +2235,29 @@ DwgSyncInfo::Group::Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy
     m_objectId = group.GetObjectId().ToUInt64 ();
     m_name.Assign (group.GetName().c_str());
 
-    memset (&m_hash, 0, sizeof(m_hash));
+    ::memset (&m_hash, 0, sizeof(m_hash));
     m_hasher.Reset ();
 
     DwgObjectHash::HashFiler filer(m_hasher, *DwgDbObject::Cast(&group));
     if (filer.IsValid())
-        {
         group.DxfOut (filer);
-        m_hash = m_hasher.GetHashVal ();
+
+    DwgDbObjectIdArray  memberIds;
+    if (addMembers && group.GetAllEntityIds(memberIds) > 0)
+        {
+        for (auto memberId : memberIds)
+            {
+            DwgDbObjectPtr  obj(memberId, DwgDbOpenMode::ForRead);
+            if (obj.OpenStatus() == DwgDbStatus::Success)
+                {
+                DwgObjectHash::HashFiler memberFiler(m_hasher, *obj);
+                if (memberFiler.IsValid())
+                    obj->DxfOut (memberFiler);
+                }
+            }
         }
+
+    m_hash = m_hasher.GetHashVal ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2340,6 +2361,106 @@ BentleyStatus DwgSyncInfo::DeleteDiscardedDwgObject (DwgDbObjectIdCR dwgid, DwgM
     stmt->BindInt64 (col++, modelSyncId.GetValue());
     stmt->BindInt64 (col++, dwgid.ToUInt64());
     return stmt->Step() == BE_SQLITE_DONE? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult DwgSyncInfo::GeomPart::Insert (BeSQLite::Db& db) const
+    {
+    Statement stmt;
+    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_GeometryPart) "(PartId,PartTag) VALUES (?,?)");
+    int col = 1;
+    stmt.BindId (col++, m_id);
+    stmt.BindText (col++, m_tag, Statement::MakeCopy::No);
+    return stmt.Step ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String  DwgSyncInfo::GeomPart::GetSelectSql ()
+    {
+    return "SELECT PartId,PartTag FROM " SYNCINFO_ATTACH(SYNC_TABLE_GeometryPart);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgSyncInfo::GeomPart::FromSelect (BeSQLite::Statement& selected)
+    {
+    int col = 0;
+    m_id = selected.GetValueId <DgnGeometryPartId> (col++);
+    m_tag = selected.GetValueText (col++);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::GeomPartIterator::GeomPartIterator (DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
+    {
+    m_params.SetWhere (where);
+    auto sql = this->MakeSqlString (GeomPart::GetSelectSql().c_str());
+    m_db->GetCachedStatement (m_stmt, sql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::GeomPart DwgSyncInfo::GeomPartIterator::GeomPartIterator::Entry::Get ()
+    {
+    DwgSyncInfo::GeomPart   part;
+    part.FromSelect (*m_sql);
+    return part;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::GeomPartIterator::Entry DwgSyncInfo::GeomPartIterator::begin () const
+    {
+    m_stmt->Reset ();
+    return Entry (m_stmt.get(), m_stmt->Step() == BE_SQLITE_ROW);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::GeomPart::FindById (GeomPart& part, DgnDbCR db, DgnGeometryPartId id)
+    {
+    if (db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeometryPart)))
+        {
+        GeomPartIterator iter (db, "PartId=?");
+        iter.GetStatement()->BindId (1, id);
+
+        auto found = iter.begin ();
+        if (found != iter.end())
+            {
+            part.FromSelect (*iter.GetStatement());
+            return  BSISUCCESS;
+            }
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::GeomPart::FindByTag (GeomPart& part, DgnDbCR db, Utf8CP tag)
+    {
+    if (!Utf8String::IsNullOrEmpty(tag) && db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeometryPart)))
+        {
+        GeomPartIterator iter (db, "PartTag=?");
+        iter.GetStatement()->BindText (1, tag, Statement::MakeCopy::No);
+
+        auto found = iter.begin ();
+        if (found != iter.end())
+            {
+            part.FromSelect (*iter.GetStatement());
+            return BSISUCCESS;
+            }
+        }
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

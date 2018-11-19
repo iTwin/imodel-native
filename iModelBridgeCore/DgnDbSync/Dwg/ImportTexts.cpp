@@ -534,7 +534,7 @@ void    DwgImporter::_EmbedFonts ()
                 continue;
 
             if (BSISUCCESS != DgnFontPersistence::Db::Embed(m_dgndb->Fonts().DbFaceData(), *workingFont))
-                ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontType, fontName);
+                ReportIssueV(IssueSeverity::Warning, IssueCategory::MissingData(), Issue::CannotEmbedFont(), nullptr, (int)fontType, fontName.c_str());
 
             Progress();
             }

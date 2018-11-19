@@ -15,6 +15,7 @@
 #include <Logging/bentleylogging.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+#include <WebServices/Connect/IConnectTokenProvider.h>
 
 BEGIN_BENTLEY_LOGGING_NAMESPACE
 namespace Provider //Forward declaration for logging provider;
@@ -100,7 +101,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BentleyStatus IModelHub_DoCreatedRepository();
     BentleyStatus IModelHub_DoNewBriefcaseNeedsLocks();
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
-
+    BentleyStatus GetSchemaLock();
+    BentleyStatus ImportDgnProvenance(bool& madeChanges);
+    BentleyStatus ImportElementAspectSchema(bool& madeChanges);
+    
     enum class SyncState
         {
         Initial = 0,                // Initial state: we may or may not have server revisions to pull or local Txns to push
@@ -132,7 +136,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_inputFileName;
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
-
+        Utf8String m_jobSubjectName;
+        bool       m_storeElementIdsInBIM {};
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
@@ -193,6 +198,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BentleyStatus Validate(int argc, WCharCP argv[]);
         static void PrintUsage();
         bool ParsedAny() const {return m_parsedAny;}
+        WebServices::IConnectTokenProviderPtr m_tokenProvider;
         };
 
     struct DmsServerArgs
@@ -254,6 +260,7 @@ protected:
             IModelHubArgs* m_iModelHubArgs;
             IModelBankArgs* m_iModelBankArgs;
             };
+        
         };
     Utf8String m_briefcaseBasename;
     int m_maxRetryCount;
@@ -346,6 +353,8 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
+
+    IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 
