@@ -951,9 +951,9 @@ public:
 struct GlyphDeferralManager
 {
 private:
-public:
     DeferredGlyphList m_deferredGlyphs;
     std::set<void*> m_uniqueGlyphKeys;
+public:
     GlyphDeferralManager() {}
 
     void DeferGlyph(DeferredGlyph& glyph);
