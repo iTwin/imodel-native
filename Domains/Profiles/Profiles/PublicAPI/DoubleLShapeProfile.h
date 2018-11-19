@@ -18,24 +18,24 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct DoubleLShapeProfile : CompositeProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleLShapeProfile, CompositeProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_DoubleLShapeProfile, CompositeProfile);
     friend struct DoubleLShapeProfileHandler;
 
 protected:
-    explicit DoubleLShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit DoubleLShapeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(DoubleLShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(DoubleLShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleLShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (DoubleLShapeProfile)
 
-    PROFILES_EXPORT static DoubleLShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static DoubleLShapeProfilePtr Create (/*TODO: args*/);
 
 public:
     PROFILES_EXPORT double GetSpacing() const;
-    PROFILES_EXPORT void SetSpacing(double val);
+    PROFILES_EXPORT void SetSpacing (double val);
 
     PROFILES_EXPORT int GetType() const;
-    PROFILES_EXPORT void SetType(int val);
+    PROFILES_EXPORT void SetType (int val);
 
     }; // DoubleLShapeProfile
 
@@ -46,7 +46,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DoubleLShapeProfileHandler : CompositeProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleLShapeProfile, DoubleLShapeProfile, DoubleLShapeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_DoubleLShapeProfile, DoubleLShapeProfile, DoubleLShapeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
 
     }; // DoubleLShapeProfileHandler
 

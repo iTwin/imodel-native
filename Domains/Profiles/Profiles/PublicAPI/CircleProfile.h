@@ -18,20 +18,20 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct CircleProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CircleProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_CircleProfile, ParametricProfile);
     friend struct CircleProfileHandler;
 
 protected:
-    explicit CircleProfile(CreateParams const& params) : T_Super(params) {}
+    explicit CircleProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(CircleProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CircleProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (CircleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (CircleProfile)
 
-    PROFILES_EXPORT static CircleProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CircleProfilePtr Create (Dgn::DgnModelCR model);
 
     PROFILES_EXPORT double GetRadius() const;
-    PROFILES_EXPORT void SetRadius(double val);
+    PROFILES_EXPORT void SetRadius (double val);
 
     }; // CircleProfile
 
@@ -42,7 +42,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CircleProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CircleProfile, CircleProfile, CircleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_CircleProfile, CircleProfile, CircleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // CircleProfileHandler
 

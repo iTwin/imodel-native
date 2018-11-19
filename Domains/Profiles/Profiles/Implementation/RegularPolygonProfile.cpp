@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(RegularPolygonProfileHandler)
+HANDLER_DEFINE_MEMBERS (RegularPolygonProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RegularPolygonProfilePtr RegularPolygonProfile::Create(/*TODO: args*/)
+RegularPolygonProfilePtr RegularPolygonProfile::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }
@@ -25,15 +25,15 @@ RegularPolygonProfilePtr RegularPolygonProfile::Create(/*TODO: args*/)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RegularPolygonProfile::GetSideCount() const
     {
-    return GetPropertyValueDouble(PRF_PROP_RegularPolygonProfile_SideCount);
+    return GetPropertyValueDouble (PRF_PROP_RegularPolygonProfile_SideCount);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegularPolygonProfile::SetSideCount(double val)
+void RegularPolygonProfile::SetSideCount (double val)
     {
-    SetPropertyValue(PRF_PROP_RegularPolygonProfile_SideCount, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_RegularPolygonProfile_SideCount, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,15 +41,15 @@ void RegularPolygonProfile::SetSideCount(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RegularPolygonProfile::GetSideLength() const
     {
-    return GetPropertyValueDouble(PRF_PROP_RegularPolygonProfile_SideLength);
+    return GetPropertyValueDouble (PRF_PROP_RegularPolygonProfile_SideLength);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegularPolygonProfile::SetSideLength(double val)
+void RegularPolygonProfile::SetSideLength (double val)
     {
-    SetPropertyValue(PRF_PROP_RegularPolygonProfile_SideLength, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_RegularPolygonProfile_SideLength, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

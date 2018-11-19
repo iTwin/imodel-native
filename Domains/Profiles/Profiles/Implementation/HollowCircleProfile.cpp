@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(HollowCircleProfileHandler)
+HANDLER_DEFINE_MEMBERS (HollowCircleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowCircleProfilePtr HollowCircleProfile::Create(DgnModelCR model)
+HollowCircleProfilePtr HollowCircleProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new HollowCircleProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new HollowCircleProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ HollowCircleProfilePtr HollowCircleProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double HollowCircleProfile::GetRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_HollowCircleProfile_Radius);
+    return GetPropertyValueDouble (PRF_PROP_HollowCircleProfile_Radius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowCircleProfile::SetRadius(double val)
+void HollowCircleProfile::SetRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_HollowCircleProfile_Radius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_HollowCircleProfile_Radius, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(RoundedRectangleProfileHandler)
+HANDLER_DEFINE_MEMBERS (RoundedRectangleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoundedRectangleProfilePtr RoundedRectangleProfile::Create(DgnModelCR model)
+RoundedRectangleProfilePtr RoundedRectangleProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new RoundedRectangleProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new RoundedRectangleProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ RoundedRectangleProfilePtr RoundedRectangleProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RoundedRectangleProfile::GetWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_Width);
+    return GetPropertyValueDouble (PRF_PROP_RoundedRectangleProfile_Width);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoundedRectangleProfile::SetWidth(double val)
+void RoundedRectangleProfile::SetWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_RoundedRectangleProfile_Width, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_Width, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void RoundedRectangleProfile::SetWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RoundedRectangleProfile::GetDepth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_Depth);
+    return GetPropertyValueDouble (PRF_PROP_RoundedRectangleProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoundedRectangleProfile::SetDepth(double val)
+void RoundedRectangleProfile::SetDepth (double val)
     {
-    SetPropertyValue(PRF_PROP_RoundedRectangleProfile_Depth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_Depth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,15 +59,15 @@ void RoundedRectangleProfile::SetDepth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RoundedRectangleProfile::GetRoundingRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_RoundedRectangleProfile_RoundingRadius);
+    return GetPropertyValueDouble (PRF_PROP_RoundedRectangleProfile_RoundingRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoundedRectangleProfile::SetRoundingRadius(double val)
+void RoundedRectangleProfile::SetRoundingRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_RoundedRectangleProfile_RoundingRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_RoundedRectangleProfile_RoundingRadius, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

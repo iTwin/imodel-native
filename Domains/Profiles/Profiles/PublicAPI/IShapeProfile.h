@@ -18,39 +18,39 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct IShapeProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_IShapeProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_IShapeProfile, ParametricProfile);
     friend struct IShapeProfileHandler;
 
 protected:
-    explicit IShapeProfile(T_Super::CreateParams const& params) : T_Super(params) {}
+    explicit IShapeProfile (T_Super::CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(IShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(IShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (IShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (IShapeProfile)
 
-    PROFILES_EXPORT static IShapeProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static IShapeProfilePtr Create (Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;
-    PROFILES_EXPORT void SetFlangeWidth(double val);
+    PROFILES_EXPORT void SetFlangeWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     PROFILES_EXPORT double GetFlangeThickness() const;
-    PROFILES_EXPORT void SetFlangeThickness(double val);
+    PROFILES_EXPORT void SetFlangeThickness (double val);
 
     PROFILES_EXPORT double GetWebThickness() const;
-    PROFILES_EXPORT void SetWebThickness(double val);
+    PROFILES_EXPORT void SetWebThickness (double val);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius(double val);
+    PROFILES_EXPORT void SetFilletRadius (double val);
 
     PROFILES_EXPORT double GetFlangeEdgeRadius() const;
-    PROFILES_EXPORT void SetFlangeEdgeRadius(double val);
+    PROFILES_EXPORT void SetFlangeEdgeRadius (double val);
 
     PROFILES_EXPORT double GetFlangeSlope() const;
-    PROFILES_EXPORT void SetFlangeSlope(double val);
+    PROFILES_EXPORT void SetFlangeSlope (double val);
 
     }; // IShapeProfile
 
@@ -61,7 +61,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_IShapeProfile, IShapeProfile, IShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_IShapeProfile, IShapeProfile, IShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // IShapeProfileHandler
 

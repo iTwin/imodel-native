@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(RectangleProfileHandler)
+HANDLER_DEFINE_MEMBERS (RectangleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RectangleProfilePtr RectangleProfile::Create(DgnModelCR model)
+RectangleProfilePtr RectangleProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new RectangleProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new RectangleProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ RectangleProfilePtr RectangleProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RectangleProfile::GetWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_RectangleProfile_Width);
+    return GetPropertyValueDouble (PRF_PROP_RectangleProfile_Width);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RectangleProfile::SetWidth(double val)
+void RectangleProfile::SetWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_RectangleProfile_Width, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_RectangleProfile_Width, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void RectangleProfile::SetWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double RectangleProfile::GetDepth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_RectangleProfile_Depth);
+    return GetPropertyValueDouble (PRF_PROP_RectangleProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RectangleProfile::SetDepth(double val)
+void RectangleProfile::SetDepth (double val)
     {
-    SetPropertyValue(PRF_PROP_RectangleProfile_Depth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_RectangleProfile_Depth, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

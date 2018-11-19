@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(DoubleCShapeProfileHandler)
+HANDLER_DEFINE_MEMBERS (DoubleCShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleCShapeProfilePtr DoubleCShapeProfile::Create(/*TODO: args*/)
+DoubleCShapeProfilePtr DoubleCShapeProfile::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }
@@ -25,15 +25,15 @@ DoubleCShapeProfilePtr DoubleCShapeProfile::Create(/*TODO: args*/)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DoubleCShapeProfile::GetSpacing() const
     {
-    return GetPropertyValueDouble(PRF_PROP_DoubleCShapeProfile_Spacing);
+    return GetPropertyValueDouble (PRF_PROP_DoubleCShapeProfile_Spacing);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleCShapeProfile::SetSpacing(double val)
+void DoubleCShapeProfile::SetSpacing (double val)
     {
-    SetPropertyValue(PRF_PROP_DoubleCShapeProfile_Spacing, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_DoubleCShapeProfile_Spacing, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

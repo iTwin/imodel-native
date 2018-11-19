@@ -19,27 +19,27 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct HollowRectangleProfile : ParametricProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_HollowRectangleProfile, ParametricProfile);
     friend struct HollowRectangleProfileHandler;
 
 protected:
-    explicit HollowRectangleProfile(CreateParams const& params) : T_Super(params) {}
+    explicit HollowRectangleProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(HollowRectangleProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowRectangleProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (HollowRectangleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (HollowRectangleProfile)
 
-    PROFILES_EXPORT static HollowRectangleProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static HollowRectangleProfilePtr Create (Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
+    PROFILES_EXPORT void SetWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius(double val);
+    PROFILES_EXPORT void SetFilletRadius (double val);
 
     }; // HollowRectangleProfile
 
@@ -50,7 +50,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE HollowRectangleProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowRectangleProfile, HollowRectangleProfile, HollowRectangleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_HollowRectangleProfile, HollowRectangleProfile, HollowRectangleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // HollowRectangleProfileHandler
 

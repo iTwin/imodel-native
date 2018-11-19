@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(LShapeProfileHandler)
+HANDLER_DEFINE_MEMBERS (LShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LShapeProfilePtr LShapeProfile::Create(DgnModelCR model)
+LShapeProfilePtr LShapeProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new LShapeProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new LShapeProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ LShapeProfilePtr LShapeProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Width);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_Width);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetWidth(double val)
+void LShapeProfile::SetWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_LShapeProfile_Width, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_Width, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void LShapeProfile::SetWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetDepth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Depth);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetDepth(double val)
+void LShapeProfile::SetDepth (double val)
     {
-    SetPropertyValue(PRF_PROP_LShapeProfile_Depth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_Depth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,15 +59,15 @@ void LShapeProfile::SetDepth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetThickness() const
     {
-    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_Thickness);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_Thickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetThickness(double val)
+void LShapeProfile::SetThickness (double val)
     {
-    SetPropertyValue(PRF_PROP_LShapeProfile_Thickness, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_Thickness, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,15 +75,15 @@ void LShapeProfile::SetThickness(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetFilletRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_FilletRadius);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_FilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetFilletRadius(double val)
+void LShapeProfile::SetFilletRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_LShapeProfile_FilletRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_FilletRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,15 +91,15 @@ void LShapeProfile::SetFilletRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetEdgeRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_EdgeRadius);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_EdgeRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetEdgeRadius(double val)
+void LShapeProfile::SetEdgeRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_LShapeProfile_EdgeRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_EdgeRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,15 +107,15 @@ void LShapeProfile::SetEdgeRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetHorizontalLegSlope() const
     {
-    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_HorizontalLegSlope);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_HorizontalLegSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetHorizontalLegSlope(double val)
+void LShapeProfile::SetHorizontalLegSlope (double val)
     {
-    SetPropertyValue(PRF_PROP_LShapeProfile_HorizontalLegSlope, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_HorizontalLegSlope, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -123,15 +123,15 @@ void LShapeProfile::SetHorizontalLegSlope(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LShapeProfile::GetVerticalLegSlope() const
     {
-    return GetPropertyValueDouble(PRF_PROP_LShapeProfile_VerticalLegSlope);
+    return GetPropertyValueDouble (PRF_PROP_LShapeProfile_VerticalLegSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LShapeProfile::SetVerticalLegSlope(double val)
+void LShapeProfile::SetVerticalLegSlope (double val)
     {
-    SetPropertyValue(PRF_PROP_LShapeProfile_VerticalLegSlope, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_LShapeProfile_VerticalLegSlope, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

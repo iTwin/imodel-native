@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(ArbitraryCompositeProfileHandler)
+HANDLER_DEFINE_MEMBERS (ArbitraryCompositeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryCompositeProfilePtr ArbitraryCompositeProfile::Create(/*TODO: args*/)
+ArbitraryCompositeProfilePtr ArbitraryCompositeProfile::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }

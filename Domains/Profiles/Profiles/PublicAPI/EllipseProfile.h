@@ -18,24 +18,24 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct EllipseProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_EllipseProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_EllipseProfile, ParametricProfile);
     friend struct EllipseProfileHandler;
 
 protected:
-    explicit EllipseProfile(CreateParams const& params) : T_Super(params) {}
+    explicit EllipseProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(EllipseProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(EllipseProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (EllipseProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (EllipseProfile)
 
-    PROFILES_EXPORT static EllipseProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static EllipseProfilePtr Create (/*TODO: args*/);
 
 public:
     PROFILES_EXPORT double GetXRadius() const;
-    PROFILES_EXPORT void SetXRadius(double val);
+    PROFILES_EXPORT void SetXRadius (double val);
 
     PROFILES_EXPORT double GetYRadius() const;
-    PROFILES_EXPORT void SetYRadius(double val);
+    PROFILES_EXPORT void SetYRadius (double val);
 
     }; // EllipseProfile
 
@@ -46,7 +46,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE EllipseProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_EllipseProfile, EllipseProfile, EllipseProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_EllipseProfile, EllipseProfile, EllipseProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // EllipseProfileHandler
 

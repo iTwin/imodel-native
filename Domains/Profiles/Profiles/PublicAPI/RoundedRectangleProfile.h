@@ -18,27 +18,27 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct RoundedRectangleProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RoundedRectangleProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_RoundedRectangleProfile, ParametricProfile);
     friend struct RoundedRectangleProfileHandler;
 
 protected:
-    explicit RoundedRectangleProfile(CreateParams const& params) : T_Super(params) {}
+    explicit RoundedRectangleProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(RoundedRectangleProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(RoundedRectangleProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (RoundedRectangleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (RoundedRectangleProfile)
 
-    PROFILES_EXPORT static RoundedRectangleProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static RoundedRectangleProfilePtr Create (Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
+    PROFILES_EXPORT void SetWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     PROFILES_EXPORT double GetRoundingRadius() const;
-    PROFILES_EXPORT void SetRoundingRadius(double val);
+    PROFILES_EXPORT void SetRoundingRadius (double val);
 
     }; // RoundedRectangleProfile
 
@@ -49,7 +49,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoundedRectangleProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RoundedRectangleProfile, RoundedRectangleProfile, RoundedRectangleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_RoundedRectangleProfile, RoundedRectangleProfile, RoundedRectangleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // RoundedRectangleProfileHandler
 

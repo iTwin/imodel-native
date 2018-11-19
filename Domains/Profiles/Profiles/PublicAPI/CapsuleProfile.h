@@ -18,23 +18,23 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct CapsuleProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CapsuleProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_CapsuleProfile, ParametricProfile);
     friend struct CapsuleProfileHandler;
 
 protected:
-    explicit CapsuleProfile(CreateParams const& params) : T_Super(params) {}
+    explicit CapsuleProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(CapsuleProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CapsuleProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (CapsuleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (CapsuleProfile)
 
-    PROFILES_EXPORT static CapsuleProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CapsuleProfilePtr Create (Dgn::DgnModelCR model);
 
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
+    PROFILES_EXPORT void SetWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     }; // CapsuleProfile
 
@@ -45,7 +45,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CapsuleProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CapsuleProfile, CapsuleProfile, CapsuleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_CapsuleProfile, CapsuleProfile, CapsuleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // CapsuleProfileHandler
 

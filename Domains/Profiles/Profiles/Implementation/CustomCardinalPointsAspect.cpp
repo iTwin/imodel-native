@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(CustomCardinalPointsAspectHandler)
+HANDLER_DEFINE_MEMBERS (CustomCardinalPointsAspectHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomCardinalPointsAspectPtr CustomCardinalPointsAspect::Create(/*TODO: args*/)
+CustomCardinalPointsAspectPtr CustomCardinalPointsAspect::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }

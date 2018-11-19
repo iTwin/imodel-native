@@ -18,15 +18,15 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct CompositeProfile : Profile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CompositeProfile, Profile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_CompositeProfile, Profile);
     friend struct CompositeProfileHandler;
 
 protected:
-    explicit CompositeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit CompositeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(CompositeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(CompositeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (CompositeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (CompositeProfile)
 
     }; // CompositeProfile
 
@@ -38,7 +38,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CompositeProfileHandler : ProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CompositeProfile, CompositeProfile, CompositeProfileHandler, ProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_CompositeProfile, CompositeProfile, CompositeProfileHandler, ProfileHandler, PROFILES_EXPORT)
 
     }; // CompositeProfileHandler
 

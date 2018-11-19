@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(CircleProfileHandler)
+HANDLER_DEFINE_MEMBERS (CircleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CircleProfilePtr CircleProfile::Create(DgnModelCR model)
+CircleProfilePtr CircleProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new CircleProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new CircleProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ CircleProfilePtr CircleProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CircleProfile::GetRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_CircleProfile_Radius);
+    return GetPropertyValueDouble (PRF_PROP_CircleProfile_Radius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CircleProfile::SetRadius(double val)
+void CircleProfile::SetRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_CircleProfile_Radius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_CircleProfile_Radius, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -19,30 +19,30 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct CenterLineLShapeProfile : ParametricProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_CenterLineLShapeProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_CenterLineLShapeProfile, ParametricProfile);
     friend struct CenterLineLShapeProfileHandler;
 
 protected:
-    explicit CenterLineLShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit CenterLineLShapeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(CenterLineLShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(CenterLineLShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (CenterLineLShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (CenterLineLShapeProfile)
 
-    PROFILES_EXPORT static CenterLineLShapeProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static CenterLineLShapeProfilePtr Create (Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
+    PROFILES_EXPORT void SetWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius(double val);
+    PROFILES_EXPORT void SetFilletRadius (double val);
 
     PROFILES_EXPORT double GetGirth() const;
-    PROFILES_EXPORT void SetGirth(double val);
+    PROFILES_EXPORT void SetGirth (double val);
 
     }; // CenterLineLShapeProfile
 
@@ -53,7 +53,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CenterLineLShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_CenterLineLShapeProfile, CenterLineLShapeProfile, CenterLineLShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_CenterLineLShapeProfile, CenterLineLShapeProfile, CenterLineLShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // CenterLineLShapeProfileHandler
 

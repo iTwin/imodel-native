@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(BentPlateProfileHandler)
+HANDLER_DEFINE_MEMBERS (BentPlateProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentPlateProfilePtr BentPlateProfile::Create(DgnModelCR model)
+BentPlateProfilePtr BentPlateProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new BentPlateProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new BentPlateProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ BentPlateProfilePtr BentPlateProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double BentPlateProfile::GetWidth() const 
     {
-    return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_Width);
+    return GetPropertyValueDouble (PRF_PROP_BentPlateProfile_Width);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetWidth(double val)
+void BentPlateProfile::SetWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_BentPlateProfile_Width, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_Width, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void BentPlateProfile::SetWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double BentPlateProfile::GetBendAngle() const 
     {
-    return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_BendAngle);
+    return GetPropertyValueDouble (PRF_PROP_BentPlateProfile_BendAngle);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetBendAngle(double val)
+void BentPlateProfile::SetBendAngle (double val)
     {
-    SetPropertyValue(PRF_PROP_BentPlateProfile_BendAngle, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_BendAngle, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,15 +59,15 @@ void BentPlateProfile::SetBendAngle(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double BentPlateProfile::GetBendRadius() const 
     {
-    return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_BendRadius);
+    return GetPropertyValueDouble (PRF_PROP_BentPlateProfile_BendRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetBendRadius(double val)
+void BentPlateProfile::SetBendRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_BentPlateProfile_BendRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_BendRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,15 +75,15 @@ void BentPlateProfile::SetBendRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double BentPlateProfile::GetBendOffset() const 
     {
-    return GetPropertyValueDouble(PRF_PROP_BentPlateProfile_BendOffset);
+    return GetPropertyValueDouble (PRF_PROP_BentPlateProfile_BendOffset);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentPlateProfile::SetBendOffset(double val)
+void BentPlateProfile::SetBendOffset (double val)
     {
-    SetPropertyValue(PRF_PROP_BentPlateProfile_BendOffset, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_BentPlateProfile_BendOffset, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

@@ -17,7 +17,7 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct ProfilesDomain : Dgn::DgnDomain
     {
-DOMAIN_DECLARE_MEMBERS(ProfilesDomain, PROFILES_EXPORT)
+DOMAIN_DECLARE_MEMBERS (ProfilesDomain, PROFILES_EXPORT)
 
 public:
     //! @private

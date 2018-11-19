@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(TShapeProfileHandler)
+HANDLER_DEFINE_MEMBERS (TShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TShapeProfilePtr TShapeProfile::Create(DgnModelCR model)
+TShapeProfilePtr TShapeProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new TShapeProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new TShapeProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ TShapeProfilePtr TShapeProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetFlangeWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeWidth);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_FlangeWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetFlangeWidth(double val)
+void TShapeProfile::SetFlangeWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_FlangeWidth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_FlangeWidth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void TShapeProfile::SetFlangeWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetDepth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_Depth);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetDepth(double val)
+void TShapeProfile::SetDepth (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_Depth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_Depth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,15 +59,15 @@ void TShapeProfile::SetDepth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetFlangeThickness() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeThickness);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_FlangeThickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetFlangeThickness(double val)
+void TShapeProfile::SetFlangeThickness (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_FlangeThickness, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_FlangeThickness, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,15 +75,15 @@ void TShapeProfile::SetFlangeThickness(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetWebThickness() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebThickness);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_WebThickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetWebThickness(double val)
+void TShapeProfile::SetWebThickness (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_WebThickness, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_WebThickness, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,15 +91,15 @@ void TShapeProfile::SetWebThickness(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetFilletRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FilletRadius);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_FilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetFilletRadius(double val)
+void TShapeProfile::SetFilletRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_FilletRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_FilletRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,15 +107,15 @@ void TShapeProfile::SetFilletRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetFlangeEdgeRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeEdgeRadius);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_FlangeEdgeRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetFlangeEdgeRadius(double val)
+void TShapeProfile::SetFlangeEdgeRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_FlangeEdgeRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_FlangeEdgeRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -123,15 +123,15 @@ void TShapeProfile::SetFlangeEdgeRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetFlangeSlope() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_FlangeSlope);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_FlangeSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetFlangeSlope(double val)
+void TShapeProfile::SetFlangeSlope (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_FlangeSlope, val);
+    SetPropertyValue (PRF_PROP_TShapeProfile_FlangeSlope, val);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -139,15 +139,15 @@ void TShapeProfile::SetFlangeSlope(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetWebEdgeRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebEdgeRadius);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_WebEdgeRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetWebEdgeRadius(double val)
+void TShapeProfile::SetWebEdgeRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_WebEdgeRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_WebEdgeRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -155,15 +155,15 @@ void TShapeProfile::SetWebEdgeRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TShapeProfile::GetWebSlope() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TShapeProfile_WebSlope);
+    return GetPropertyValueDouble (PRF_PROP_TShapeProfile_WebSlope);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TShapeProfile::SetWebSlope(double val)
+void TShapeProfile::SetWebSlope (double val)
     {
-    SetPropertyValue(PRF_PROP_TShapeProfile_WebSlope, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TShapeProfile_WebSlope, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

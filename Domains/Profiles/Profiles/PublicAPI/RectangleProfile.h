@@ -18,23 +18,23 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct RectangleProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RectangleProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_RectangleProfile, ParametricProfile);
     friend struct RectangleProfileHandler;
 
 protected:
-    explicit RectangleProfile(CreateParams const& params) : T_Super(params) {}
+    explicit RectangleProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(RectangleProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(RectangleProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (RectangleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (RectangleProfile)
 
-    PROFILES_EXPORT static RectangleProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static RectangleProfilePtr Create (Dgn::DgnModelCR model);
 
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
+    PROFILES_EXPORT void SetWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     }; // RectangleProfile
 
@@ -45,7 +45,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RectangleProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RectangleProfile, RectangleProfile, RectangleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_RectangleProfile, RectangleProfile, RectangleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // RectangleProfileHandler
 

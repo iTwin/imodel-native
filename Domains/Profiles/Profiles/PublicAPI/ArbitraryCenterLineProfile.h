@@ -19,17 +19,17 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct ArbitraryCenterLineProfile : ArbitraryShapeProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryShapeProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryShapeProfile);
     friend struct ArbitraryCenterLineProfileHandler;
 
 protected:
-    explicit ArbitraryCenterLineProfile(CreateParams const& params) : T_Super(params) {}
+    explicit ArbitraryCenterLineProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(ArbitraryCenterLineProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(ArbitraryCenterLineProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryCenterLineProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (ArbitraryCenterLineProfile)
 
-    PROFILES_EXPORT static ArbitraryCenterLineProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static ArbitraryCenterLineProfilePtr Create (/*TODO: args*/);
 
     }; // ArbitraryCenterLineProfile
 
@@ -40,7 +40,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryCenterLineProfileHandler : ArbitraryShapeProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryCenterLineProfile, ArbitraryCenterLineProfileHandler, ArbitraryShapeProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_ArbitraryCenterLineProfile, ArbitraryCenterLineProfile, ArbitraryCenterLineProfileHandler, ArbitraryShapeProfileHandler, PROFILES_EXPORT)
 
     }; // ArbitraryCenterLineProfileHandler
 

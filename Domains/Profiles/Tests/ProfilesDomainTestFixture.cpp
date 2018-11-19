@@ -15,27 +15,27 @@ BeFileName ProfilesDomainTestsFixture::s_baseDbPath;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ConverterNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
     {
-    virtual BentleyApi::StatusInt _OutputMessage(NotifyMessageDetails const& msg) override
+    virtual BentleyApi::StatusInt _OutputMessage (NotifyMessageDetails const& msg) override
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGE: %s %s\n", msg.GetBriefMsg().c_str(), msg.GetDetailedMsg().c_str());
+        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"NOTIFICATION-ADMIN")->warningv ("MESSAGE: %s %s\n", msg.GetBriefMsg().c_str(), msg.GetDetailedMsg().c_str());
         return BentleyApi::SUCCESS;
         }
 
-    virtual NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType t, BentleyApi::Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
+    virtual NotificationManager::MessageBoxValue _OpenMessageBox (NotificationManager::MessageBoxType t, BentleyApi::Utf8CP msg, NotificationManager::MessageBoxIconType iconType) override
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGEBOX: %s\n", msg);
-        printf("<<NOTIFICATION MessageBox: %s >>\n", msg);
+        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"NOTIFICATION-ADMIN")->warningv ("MESSAGEBOX: %s\n", msg);
+        printf ("<<NOTIFICATION MessageBox: %s >>\n", msg);
         return NotificationManager::MESSAGEBOX_VALUE_Ok;
         }
 
-    virtual void _OutputPrompt(BentleyApi::Utf8CP msg) override
+    virtual void _OutputPrompt (BentleyApi::Utf8CP msg) override
         { // Log this as an error because we cannot prompt while running a unit test!
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->errorv("PROMPT (IGNORED): %s\n", msg);
+        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"NOTIFICATION-ADMIN")->errorv ("PROMPT (IGNORED): %s\n", msg);
         }
 
     virtual bool _GetLogSQLiteErrors() override
         {
-        return BentleyApi::NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(BentleyApi::NativeLogging::LOG_INFO);
+        return BentleyApi::NativeLogging::LoggingManager::GetLogger ("BeSQLite")->isSeverityEnabled (BentleyApi::NativeLogging::LOG_INFO);
         }
     };
 
@@ -52,9 +52,9 @@ struct ConverterViewManager : ViewManager
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProfilesDomainTestsHost::_SupplyProductName(BentleyApi::Utf8StringR name)
+void ProfilesDomainTestsHost::_SupplyProductName (BentleyApi::Utf8StringR name)
     {
-    name.assign("ProfilesDomainTests");
+    name.assign ("ProfilesDomainTests");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,11 +78,11 @@ ViewManager& ProfilesDomainTestsHost::_SupplyViewManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 L10N::SqlangFiles ProfilesDomainTestsHost::_SupplySqlangFiles()
     {
-    BentleyApi::BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    sqlangFile.AppendToPath(L"sqlang/ProfilesTests_en-US.sqlang.db3");
-    BeAssert(sqlangFile.DoesPathExist());
+    BentleyApi::BeFileName sqlangFile (GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    sqlangFile.AppendToPath (L"sqlang/ProfilesTests_en-US.sqlang.db3");
+    BeAssert (sqlangFile.DoesPathExist());
 
-    return L10N::SqlangFiles(sqlangFile);
+    return L10N::SqlangFiles (sqlangFile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,7 +105,7 @@ ProfilesDomainTestsFixture::ProfilesDomainTestsFixture()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbR ProfilesDomainTestsFixture::GetDb()
     {
-    BeAssert(m_dbPtr.IsValid());
+    BeAssert (m_dbPtr.IsValid());
     return *m_dbPtr;
     }
 
@@ -114,7 +114,7 @@ DgnDbR ProfilesDomainTestsFixture::GetDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelR ProfilesDomainTestsFixture::GetModel()
     {
-    BeAssert(m_modelPtr.IsValid());
+    BeAssert (m_modelPtr.IsValid());
     return *m_modelPtr;
     }
 
@@ -124,11 +124,11 @@ DgnModelR ProfilesDomainTestsFixture::GetModel()
 static BeFileName getOutputDirectory()
     {
     BeFileName outputDirectory;
-    BeTest::GetHost().GetTempDir(outputDirectory);
-    outputDirectory.AppendToPath(L"ProfilesTests");
+    BeTest::GetHost().GetTempDir (outputDirectory);
+    outputDirectory.AppendToPath (L"ProfilesTests");
 
-    if (!BeFileName::DoesPathExist(outputDirectory.c_str()))
-        BeFileName::CreateNewDirectory(outputDirectory.c_str());
+    if (!BeFileName::DoesPathExist (outputDirectory.c_str()))
+        BeFileName::CreateNewDirectory (outputDirectory.c_str());
 
     return outputDirectory;
     }
@@ -136,7 +136,7 @@ static BeFileName getOutputDirectory()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName getWorkingDbPath(BeFileName const& baseDbPath)
+static BeFileName getWorkingDbPath (BeFileName const& baseDbPath)
     {
     WString directory = baseDbPath.GetDirectoryName();
     WString name = baseDbPath.GetFileNameWithoutExtension();
@@ -148,16 +148,16 @@ static BeFileName getWorkingDbPath(BeFileName const& baseDbPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Arturas.Mizaras          11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbPtr createDgnDb(BeFileName const& bimFilename)
+static DgnDbPtr createDgnDb (BeFileName const& bimFilename)
     {
     CreateDgnDbParams createProjectParams;
-    createProjectParams.SetOverwriteExisting(true);
-    createProjectParams.SetRootSubjectName("ProfilesTest");
-    createProjectParams.SetRootSubjectDescription("Tests for Profiles domain handlers");
+    createProjectParams.SetOverwriteExisting (true);
+    createProjectParams.SetRootSubjectName ("ProfilesTest");
+    createProjectParams.SetRootSubjectDescription ("Tests for Profiles domain handlers");
 
     DbResult status = BeSQLite::DbResult::BE_SQLITE_ERROR;
-    DgnDbPtr db = DgnDb::CreateDgnDb(&status, bimFilename, createProjectParams);
-    BeAssert(status == BE_SQLITE_OK);
+    DgnDbPtr db = DgnDb::CreateDgnDb (&status, bimFilename, createProjectParams);
+    BeAssert (status == BE_SQLITE_OK);
 
     return db;
     }
@@ -169,26 +169,26 @@ static DgnDbPtr createDgnDb(BeFileName const& bimFilename)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUp()
     {
-    BeFileName workingDbPath = getWorkingDbPath(s_baseDbPath);
-    BeFileNameStatus fileCopyStatus = BeFileName::BeCopyFile(s_baseDbPath, workingDbPath);
-    BeAssert(fileCopyStatus == BeFileNameStatus::Success);
+    BeFileName workingDbPath = getWorkingDbPath (s_baseDbPath);
+    BeFileNameStatus fileCopyStatus = BeFileName::BeCopyFile (s_baseDbPath, workingDbPath);
+    BeAssert (fileCopyStatus == BeFileNameStatus::Success);
 
-    DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
+    DgnDb::OpenParams openParams (BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
     BeSQLite::DbResult openStatus;
-    m_dbPtr = DgnDb::OpenDgnDb(&openStatus, workingDbPath, openParams);
-    BeAssert(m_dbPtr.IsValid());
+    m_dbPtr = DgnDb::OpenDgnDb (&openStatus, workingDbPath, openParams);
+    BeAssert (m_dbPtr.IsValid());
 
     SubjectCPtr rootSubjectPtr = m_dbPtr->Elements().GetRootSubject();
-    DefinitionPartitionPtr partitionPtr = DefinitionPartition::Create(*rootSubjectPtr, "TestPartition");
-    m_dbPtr->BriefcaseManager().AcquireForElementInsert(*partitionPtr);
+    DefinitionPartitionPtr partitionPtr = DefinitionPartition::Create (*rootSubjectPtr, "TestPartition");
+    m_dbPtr->BriefcaseManager().AcquireForElementInsert (*partitionPtr);
 
     DgnDbStatus status;
-    m_dbPtr->Elements().Insert<DefinitionPartition>(*partitionPtr, &status);
-    BeAssert(status == DgnDbStatus::Success);
+    m_dbPtr->Elements().Insert<DefinitionPartition> (*partitionPtr, &status);
+    BeAssert (status == DgnDbStatus::Success);
 
-    m_modelPtr = DefinitionModel::Create(*partitionPtr);
+    m_modelPtr = DefinitionModel::Create (*partitionPtr);
     status = m_modelPtr->Insert();
-    BeAssert(status == DgnDbStatus::Success);
+    BeAssert (status == DgnDbStatus::Success);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,13 +207,13 @@ void ProfilesDomainTestsFixture::TearDown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::SetUpTestCase()
     {
-    DgnViewLib::Initialize(s_host, true); // this initializes the DgnDb libraries
+    DgnViewLib::Initialize (s_host, true); // this initializes the DgnDb libraries
 
-    BentleyStatus registrationStatus = DgnDomains::RegisterDomain(Profiles::ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    BeAssert(BentleyStatus::SUCCESS == registrationStatus);
+    BentleyStatus registrationStatus = DgnDomains::RegisterDomain (Profiles::ProfilesDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    BeAssert (BentleyStatus::SUCCESS == registrationStatus);
 
-    DgnDbPtr dbPtr = createDgnDb (getOutputDirectory().AppendToPath(L"ProfilesTests"));
-    BeAssert(dbPtr.IsValid());
+    DgnDbPtr dbPtr = createDgnDb (getOutputDirectory().AppendToPath (L"ProfilesTests"));
+    BeAssert (dbPtr.IsValid());
 
     // Get fully qualified path (including db extension)
     s_baseDbPath = dbPtr->GetFileName();
@@ -226,5 +226,5 @@ void ProfilesDomainTestsFixture::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProfilesDomainTestsFixture::TearDownTestCase()
     {
-    s_host.Terminate(false);
+    s_host.Terminate (false);
     }

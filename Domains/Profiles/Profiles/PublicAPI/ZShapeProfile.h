@@ -18,39 +18,39 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct ZShapeProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ZShapeProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_ZShapeProfile, ParametricProfile);
     friend struct ZShapeProfileHandler;
 
 protected:
-    explicit ZShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit ZShapeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(ZShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(ZShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (ZShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (ZShapeProfile)
 
-    PROFILES_EXPORT static ZShapeProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static ZShapeProfilePtr Create (Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetFlangeWidth() const;
-    PROFILES_EXPORT void SetFlangeWidth(double val);
+    PROFILES_EXPORT void SetFlangeWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     PROFILES_EXPORT double GetFlangeThickness() const;
-    PROFILES_EXPORT void SetFlangeThickness(double val);
+    PROFILES_EXPORT void SetFlangeThickness (double val);
 
     PROFILES_EXPORT double GetWebThickness() const;
-    PROFILES_EXPORT void SetWebThickness(double val);
+    PROFILES_EXPORT void SetWebThickness (double val);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius(double val);
+    PROFILES_EXPORT void SetFilletRadius (double val);
 
     PROFILES_EXPORT double GetFlangeEdgeRadius() const;
-    PROFILES_EXPORT void SetFlangeEdgeRadius(double val);
+    PROFILES_EXPORT void SetFlangeEdgeRadius (double val);
 
     PROFILES_EXPORT double GetFlangeSlope() const;
-    PROFILES_EXPORT void SetFlangeSlope(double val);
+    PROFILES_EXPORT void SetFlangeSlope (double val);
 
     }; // ZShapeProfile
 
@@ -61,7 +61,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ZShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ZShapeProfile, ZShapeProfile, ZShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_ZShapeProfile, ZShapeProfile, ZShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // ZShapeProfileHandler
 

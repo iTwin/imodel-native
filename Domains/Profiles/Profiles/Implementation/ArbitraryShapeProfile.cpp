@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(ArbitraryShapeProfileHandler)
+HANDLER_DEFINE_MEMBERS (ArbitraryShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ArbitraryShapeProfilePtr ArbitraryShapeProfile::Create(/*TODO: args*/)
+ArbitraryShapeProfilePtr ArbitraryShapeProfile::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }

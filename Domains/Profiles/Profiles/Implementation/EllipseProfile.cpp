@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(EllipseProfileHandler)
+HANDLER_DEFINE_MEMBERS (EllipseProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-EllipseProfilePtr EllipseProfile::Create(/*TODO: args*/)
+EllipseProfilePtr EllipseProfile::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }
@@ -25,15 +25,15 @@ EllipseProfilePtr EllipseProfile::Create(/*TODO: args*/)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double EllipseProfile::GetXRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_EllipseProfile_XRadius);
+    return GetPropertyValueDouble (PRF_PROP_EllipseProfile_XRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void EllipseProfile::SetXRadius(double val)
+void EllipseProfile::SetXRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_EllipseProfile_XRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_EllipseProfile_XRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,15 +41,15 @@ void EllipseProfile::SetXRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double EllipseProfile::GetYRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_EllipseProfile_YRadius);
+    return GetPropertyValueDouble (PRF_PROP_EllipseProfile_YRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void EllipseProfile::SetYRadius(double val)
+void EllipseProfile::SetYRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_EllipseProfile_YRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_EllipseProfile_YRadius, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

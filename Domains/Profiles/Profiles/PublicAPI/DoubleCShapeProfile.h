@@ -18,21 +18,21 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct DoubleCShapeProfile : CompositeProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DoubleCShapeProfile, CompositeProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_DoubleCShapeProfile, CompositeProfile);
     friend struct DoubleCShapeProfileHandler;
 
 protected:
-    explicit DoubleCShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit DoubleCShapeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(DoubleCShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(DoubleCShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (DoubleCShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (DoubleCShapeProfile)
 
-    PROFILES_EXPORT static DoubleCShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static DoubleCShapeProfilePtr Create (/*TODO: args*/);
 
 public:
     PROFILES_EXPORT double GetSpacing() const;
-    PROFILES_EXPORT void SetSpacing(double val);
+    PROFILES_EXPORT void SetSpacing (double val);
 
     }; // DoubleCShapeProfile
 
@@ -43,7 +43,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DoubleCShapeProfileHandler : CompositeProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DoubleCShapeProfile, DoubleCShapeProfile, DoubleCShapeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_DoubleCShapeProfile, DoubleCShapeProfile, DoubleCShapeProfileHandler, CompositeProfileHandler, PROFILES_EXPORT)
 
     }; // DoubleCShapeProfileHandler
 

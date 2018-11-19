@@ -18,23 +18,23 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct RegularPolygonProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_RegularPolygonProfile, ParametricProfile);
     friend struct RegularPolygonProfileHandler;
 
 protected:
-    explicit RegularPolygonProfile(CreateParams const& params) : T_Super(params) {}
+    explicit RegularPolygonProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(RegularPolygonProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(RegularPolygonProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (RegularPolygonProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (RegularPolygonProfile)
 
-    PROFILES_EXPORT static RegularPolygonProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static RegularPolygonProfilePtr Create (/*TODO: args*/);
 
     PROFILES_EXPORT double GetSideCount() const;
-    PROFILES_EXPORT void SetSideCount(double val);
+    PROFILES_EXPORT void SetSideCount (double val);
 
     PROFILES_EXPORT double GetSideLength() const;
-    PROFILES_EXPORT void SetSideLength(double val);
+    PROFILES_EXPORT void SetSideLength (double val);
 
     }; // RegularPolygonProfile
 
@@ -45,7 +45,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RegularPolygonProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_RegularPolygonProfile, RegularPolygonProfile, RegularPolygonProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_RegularPolygonProfile, RegularPolygonProfile, RegularPolygonProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // RegularPolygonProfileHandler
 

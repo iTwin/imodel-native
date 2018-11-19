@@ -18,17 +18,17 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct ArbitraryShapeProfile : SinglePerimeterProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ArbitraryShapeProfile, SinglePerimeterProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_ArbitraryShapeProfile, SinglePerimeterProfile);
     friend struct ArbitraryShapeProfileHandler;
 
 protected:
-    explicit ArbitraryShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit ArbitraryShapeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(ArbitraryShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(ArbitraryShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (ArbitraryShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (ArbitraryShapeProfile)
 
-    PROFILES_EXPORT static ArbitraryShapeProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static ArbitraryShapeProfilePtr Create (/*TODO: args*/);
 
     }; // ArbitraryShapeProfile
 
@@ -39,7 +39,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ArbitraryShapeProfileHandler : SinglePerimeterProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ArbitraryShapeProfile, ArbitraryShapeProfile, ArbitraryShapeProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_ArbitraryShapeProfile, ArbitraryShapeProfile, ArbitraryShapeProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
 
     }; // ArbitraryShapeProfileHandler
 

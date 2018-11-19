@@ -213,86 +213,86 @@ END_BENTLEY_PROFILES_NAMESPACE
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
 #define DECLARE_PROFILES_QUERYCLASS_METHODS(__name__) \
-static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(PRF_SCHEMA_NAME, PRF_CLASS_##__name__)); } \
-static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetClass(PRF_SCHEMA_NAME, PRF_CLASS_##__name__)); }
+static Dgn::DgnClassId QueryClassId (Dgn::DgnDbCR db) { return Dgn::DgnClassId (db.Schemas().GetClassId (PRF_SCHEMA_NAME, PRF_CLASS_##__name__)); } \
+static ECN::ECClassCP QueryClass (Dgn::DgnDbCR db) { return (db.Schemas().GetClass (PRF_SCHEMA_NAME, PRF_CLASS_##__name__)); }
 
 
 //-----------------------------------------------------------------------------------------
 // Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
 //-----------------------------------------------------------------------------------------
 #define DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(__name__) \
-PROFILES_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
-PROFILES_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); }
+PROFILES_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ > (id); } \
+PROFILES_EXPORT static __name__##Ptr  GetForEdit (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ > (id); }
 
 #define DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(__name__) \
-DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(__name__) \
-PROFILES_EXPORT        __name__##CPtr Update(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Update< __name__ >(*this, stat); }
+DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (__name__) \
+PROFILES_EXPORT        __name__##CPtr Update (Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Update< __name__ > (*this, stat); }
 
 #define DECLARE_PROFILES_ELEMENT_BASE_METHODS(__name__) \
-DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS(__name__) \
-PROFILES_EXPORT        __name__##CPtr Insert(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Insert< __name__ >(*this, stat); }
+DECLARE_PROFILES_ELEMENT_BASE_GET_UPDATE_METHODS (__name__) \
+PROFILES_EXPORT        __name__##CPtr Insert (Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Insert< __name__ > (*this, stat); }
 
 
 //-----------------------------------------------------------------------------------------
 // Define standard typedefs (P, CP, R, CR) in the Profiles namespace
 //-----------------------------------------------------------------------------------------
 #define PROFILES_TYPEDEFS(_name_) \
-BEGIN_BENTLEY_PROFILES_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_PROFILES_NAMESPACE
+BEGIN_BENTLEY_PROFILES_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_) END_BENTLEY_PROFILES_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
 // Define RefCountedPtr and CPtr types
 //-----------------------------------------------------------------------------------------
 #define PROFILES_REFCOUNTED_PTR(_name_) \
-BEGIN_BENTLEY_PROFILES_NAMESPACE struct _name_; DEFINE_REF_COUNTED_PTR(_name_) END_BENTLEY_PROFILES_NAMESPACE
+BEGIN_BENTLEY_PROFILES_NAMESPACE struct _name_; DEFINE_REF_COUNTED_PTR (_name_) END_BENTLEY_PROFILES_NAMESPACE
 
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------
 #define PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(_name_) \
 BEGIN_BENTLEY_PROFILES_NAMESPACE \
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) \
-    DEFINE_REF_COUNTED_PTR(_name_) \
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (_name_) \
+    DEFINE_REF_COUNTED_PTR (_name_) \
 END_BENTLEY_PROFILES_NAMESPACE
 
 
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the Profiles namespace
 //-----------------------------------------------------------------------------------------
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(AsymmetricIShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(BentPlateProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CapsuleProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CenterLineCShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CenterLineLShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CenterLineZShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ParametricProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CompositeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ArbitraryCenterLineProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ArbitraryCompositeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ArbitraryShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DerivedProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleCShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(DoubleLShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(EllipseProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CircleProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowCircleProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(HollowRectangleProfile)
-PROFILES_TYPEDEFS(ICenterLineProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(IShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(LShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(Profile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(RectangleProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(RegularPolygonProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(RoundedRectangleProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(SchifflerizedLShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(SinglePerimeterProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(StandardProfileAspect)
-PROFILES_TYPEDEFS(CustomCardinalPoint)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(CustomCardinalPointsAspect)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(TShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(TTShapeProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(TrapeziumProfile)
-PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS(ZShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (AsymmetricIShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (BentPlateProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CapsuleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CenterLineCShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CenterLineLShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CenterLineZShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ParametricProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CompositeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ArbitraryCenterLineProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ArbitraryCompositeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ArbitraryShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (DerivedProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (DoubleCShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (DoubleLShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (EllipseProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CircleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (HollowCircleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (HollowRectangleProfile)
+PROFILES_TYPEDEFS (ICenterLineProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (IShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (LShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (Profile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RectangleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RegularPolygonProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (RoundedRectangleProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (SchifflerizedLShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (SinglePerimeterProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (StandardProfileAspect)
+PROFILES_TYPEDEFS (CustomCardinalPoint)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (CustomCardinalPointsAspect)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TTShapeProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (TrapeziumProfile)
+PROFILES_REFCOUNTED_PTR_AND_TYPEDEFS (ZShapeProfile)
 
 
 //-----------------------------------------------------------------------------------------

@@ -18,30 +18,30 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct DerivedProfile : SinglePerimeterProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_DerivedProfile, SinglePerimeterProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_DerivedProfile, SinglePerimeterProfile);
     friend struct DerivedProfileHandler;
 
 protected:
-    explicit DerivedProfile(CreateParams const& params) : T_Super(params) {}
+    explicit DerivedProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(DerivedProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(DerivedProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (DerivedProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (DerivedProfile)
 
-    PROFILES_EXPORT static DerivedProfilePtr Create(/*TODO: args*/);
+    PROFILES_EXPORT static DerivedProfilePtr Create (/*TODO: args*/);
 
 public:
     PROFILES_EXPORT bool GetMirrorProfileAboutYAxis() const;
-    PROFILES_EXPORT void SetMirrorProfileAboutYAxis(bool val);
+    PROFILES_EXPORT void SetMirrorProfileAboutYAxis (bool val);
 
     PROFILES_EXPORT DPoint2d GetOffset() const;
-    PROFILES_EXPORT void SetOffset(DPoint2dCR val);
+    PROFILES_EXPORT void SetOffset (DPoint2dCR val);
 
     PROFILES_EXPORT DPoint2d GetRotation() const;
-    PROFILES_EXPORT void SetRotation(DPoint2dCR val);
+    PROFILES_EXPORT void SetRotation (DPoint2dCR val);
 
     PROFILES_EXPORT DPoint2d GetScale() const;
-    PROFILES_EXPORT void SetScale(DPoint2dCR val);
+    PROFILES_EXPORT void SetScale (DPoint2dCR val);
 
     }; // DerivedProfile
 
@@ -52,7 +52,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DerivedProfileHandler : SinglePerimeterProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_DerivedProfile, DerivedProfile, DerivedProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_DerivedProfile, DerivedProfile, DerivedProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
 
     }; // DerivedProfileHandler
 

@@ -19,20 +19,20 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct HollowCircleProfile : ParametricProfile, ICenterLineProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_HollowCircleProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_HollowCircleProfile, ParametricProfile);
     friend struct HollowCircleProfileHandler;
 
 protected:
-    explicit HollowCircleProfile(CreateParams const& params) : T_Super(params) {}
+    explicit HollowCircleProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(HollowCircleProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(HollowCircleProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (HollowCircleProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (HollowCircleProfile)
 
-    PROFILES_EXPORT static HollowCircleProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static HollowCircleProfilePtr Create (Dgn::DgnModelCR model);
 
     PROFILES_EXPORT double GetRadius() const;
-    PROFILES_EXPORT void SetRadius(double val);
+    PROFILES_EXPORT void SetRadius (double val);
 
     }; // HollowCircleProfile
 
@@ -43,7 +43,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE HollowCircleProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_HollowCircleProfile, HollowCircleProfile, HollowCircleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_HollowCircleProfile, HollowCircleProfile, HollowCircleProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // HollowCircleProfileHandler
 

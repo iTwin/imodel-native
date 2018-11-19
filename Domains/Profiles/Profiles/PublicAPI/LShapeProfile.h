@@ -18,39 +18,39 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct LShapeProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_LShapeProfile, ParametricProfile);
     friend struct LShapeProfileHandler;
 
 protected:
-    explicit LShapeProfile(CreateParams const& params) : T_Super(params) {}
+    explicit LShapeProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(LShapeProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(LShapeProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (LShapeProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (LShapeProfile)
 
-    PROFILES_EXPORT static LShapeProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static LShapeProfilePtr Create (Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetWidth() const;
-    PROFILES_EXPORT void SetWidth(double val);
+    PROFILES_EXPORT void SetWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     PROFILES_EXPORT double GetThickness() const;
-    PROFILES_EXPORT void SetThickness(double val);
+    PROFILES_EXPORT void SetThickness (double val);
 
     PROFILES_EXPORT double GetFilletRadius() const;
-    PROFILES_EXPORT void SetFilletRadius(double val);
+    PROFILES_EXPORT void SetFilletRadius (double val);
 
     PROFILES_EXPORT double GetEdgeRadius() const;
-    PROFILES_EXPORT void SetEdgeRadius(double val);
+    PROFILES_EXPORT void SetEdgeRadius (double val);
 
     PROFILES_EXPORT double GetHorizontalLegSlope() const;
-    PROFILES_EXPORT void SetHorizontalLegSlope(double val);
+    PROFILES_EXPORT void SetHorizontalLegSlope (double val);
 
     PROFILES_EXPORT double GetVerticalLegSlope() const;
-    PROFILES_EXPORT void SetVerticalLegSlope(double val);
+    PROFILES_EXPORT void SetVerticalLegSlope (double val);
 
     }; // LShapeProfile
 
@@ -61,7 +61,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LShapeProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_LShapeProfile, LShapeProfile, LShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_LShapeProfile, LShapeProfile, LShapeProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // LShapeProfileHandler
 

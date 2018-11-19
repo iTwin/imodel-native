@@ -12,7 +12,7 @@
 struct ProfilesDomainTestsHost : Dgn::DgnViewLib::Host
     {
     protected:
-        virtual void _SupplyProductName(BentleyApi::Utf8StringR name) override;
+        virtual void _SupplyProductName (BentleyApi::Utf8StringR name) override;
         virtual NotificationAdmin& _SupplyNotificationAdmin() override;
         virtual Dgn::ViewManager& _SupplyViewManager() override;
         virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;

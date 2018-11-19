@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(CapsuleProfileHandler)
+HANDLER_DEFINE_MEMBERS (CapsuleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CapsuleProfilePtr CapsuleProfile::Create(DgnModelCR model)
+CapsuleProfilePtr CapsuleProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new CapsuleProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new CapsuleProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ CapsuleProfilePtr CapsuleProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CapsuleProfile::GetWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_CapsuleProfile_Width);
+    return GetPropertyValueDouble (PRF_PROP_CapsuleProfile_Width);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CapsuleProfile::SetWidth(double val)
+void CapsuleProfile::SetWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_CapsuleProfile_Width, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_CapsuleProfile_Width, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void CapsuleProfile::SetWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CapsuleProfile::GetDepth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_CapsuleProfile_Depth);
+    return GetPropertyValueDouble (PRF_PROP_CapsuleProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CapsuleProfile::SetDepth(double val)
+void CapsuleProfile::SetDepth (double val)
     {
-    SetPropertyValue(PRF_PROP_CapsuleProfile_Depth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_CapsuleProfile_Depth, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

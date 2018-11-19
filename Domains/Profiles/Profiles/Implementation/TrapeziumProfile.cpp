@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(TrapeziumProfileHandler)
+HANDLER_DEFINE_MEMBERS (TrapeziumProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TrapeziumProfilePtr TrapeziumProfile::Create(DgnModelCR model)
+TrapeziumProfilePtr TrapeziumProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new TrapeziumProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new TrapeziumProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ TrapeziumProfilePtr TrapeziumProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TrapeziumProfile::GetTopWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_TopWidth);
+    return GetPropertyValueDouble (PRF_PROP_TrapeziumProfile_TopWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetTopWidth(double val)
+void TrapeziumProfile::SetTopWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_TrapeziumProfile_TopWidth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_TopWidth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void TrapeziumProfile::SetTopWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TrapeziumProfile::GetBottomWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_BottomWidth);
+    return GetPropertyValueDouble (PRF_PROP_TrapeziumProfile_BottomWidth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetBottomWidth(double val)
+void TrapeziumProfile::SetBottomWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_TrapeziumProfile_BottomWidth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_BottomWidth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,15 +59,15 @@ void TrapeziumProfile::SetBottomWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TrapeziumProfile::GetDepth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_Depth);
+    return GetPropertyValueDouble (PRF_PROP_TrapeziumProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetDepth(double val)
+void TrapeziumProfile::SetDepth (double val)
     {
-    SetPropertyValue(PRF_PROP_TrapeziumProfile_Depth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_Depth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,15 +75,15 @@ void TrapeziumProfile::SetDepth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double TrapeziumProfile::GetTopOffset() const
     {
-    return GetPropertyValueDouble(PRF_PROP_TrapeziumProfile_TopOffset);
+    return GetPropertyValueDouble (PRF_PROP_TrapeziumProfile_TopOffset);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TrapeziumProfile::SetTopOffset(double val)
+void TrapeziumProfile::SetTopOffset (double val)
     {
-    SetPropertyValue(PRF_PROP_TrapeziumProfile_TopOffset, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_TrapeziumProfile_TopOffset, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

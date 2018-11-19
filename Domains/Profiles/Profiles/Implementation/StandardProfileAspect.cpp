@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(StandardProfileAspectHandler)
+HANDLER_DEFINE_MEMBERS (StandardProfileAspectHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandardProfileAspectPtr StandardProfileAspect::Create(/*TODO: args*/)
+StandardProfileAspectPtr StandardProfileAspect::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }

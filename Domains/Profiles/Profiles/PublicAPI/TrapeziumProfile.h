@@ -18,30 +18,30 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct TrapeziumProfile : ParametricProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, ParametricProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_TrapeziumProfile, ParametricProfile);
     friend struct TrapeziumProfileHandler;
 
 protected:
-    explicit TrapeziumProfile(CreateParams const& params) : T_Super(params) {}
+    explicit TrapeziumProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(TrapeziumProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_METHODS(TrapeziumProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (TrapeziumProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_METHODS (TrapeziumProfile)
 
-    PROFILES_EXPORT static TrapeziumProfilePtr Create(Dgn::DgnModelCR model);
+    PROFILES_EXPORT static TrapeziumProfilePtr Create (Dgn::DgnModelCR model);
 
 public:
     PROFILES_EXPORT double GetTopWidth() const;
-    PROFILES_EXPORT void SetTopWidth(double val);
+    PROFILES_EXPORT void SetTopWidth (double val);
 
     PROFILES_EXPORT double GetBottomWidth() const;
-    PROFILES_EXPORT void SetBottomWidth(double val);
+    PROFILES_EXPORT void SetBottomWidth (double val);
 
     PROFILES_EXPORT double GetDepth() const;
-    PROFILES_EXPORT void SetDepth(double val);
+    PROFILES_EXPORT void SetDepth (double val);
 
     PROFILES_EXPORT double GetTopOffset() const;
-    PROFILES_EXPORT void SetTopOffset(double val);
+    PROFILES_EXPORT void SetTopOffset (double val);
 
     }; // TrapeziumProfile
 
@@ -52,7 +52,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TrapeziumProfileHandler : ParametricProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_TrapeziumProfile, TrapeziumProfile, TrapeziumProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_TrapeziumProfile, TrapeziumProfile, TrapeziumProfileHandler, ParametricProfileHandler, PROFILES_EXPORT)
 
     }; // TrapeziumProfileHandler
 

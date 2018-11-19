@@ -10,12 +10,12 @@
 
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(SchifflerizedLShapeProfileHandler)
+HANDLER_DEFINE_MEMBERS (SchifflerizedLShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchifflerizedLShapeProfilePtr SchifflerizedLShapeProfile::Create(/*TODO: args*/)
+SchifflerizedLShapeProfilePtr SchifflerizedLShapeProfile::Create (/*TODO: args*/)
     {
     return nullptr; // TODO: Not Implemented
     }
@@ -25,15 +25,15 @@ SchifflerizedLShapeProfilePtr SchifflerizedLShapeProfile::Create(/*TODO: args*/)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetLegLength() const
     {
-    return GetPropertyValueDouble(PRF_PROP_SchifflerizedLShapeProfile_LegLength);
+    return GetPropertyValueDouble (PRF_PROP_SchifflerizedLShapeProfile_LegLength);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchifflerizedLShapeProfile::SetLegLength(double val)
+void SchifflerizedLShapeProfile::SetLegLength (double val)
     {
-    SetPropertyValue(PRF_PROP_SchifflerizedLShapeProfile_LegLength, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_LegLength, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,15 +41,15 @@ void SchifflerizedLShapeProfile::SetLegLength(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetThickness() const
     {
-    return GetPropertyValueDouble(PRF_PROP_SchifflerizedLShapeProfile_Thickness);
+    return GetPropertyValueDouble (PRF_PROP_SchifflerizedLShapeProfile_Thickness);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchifflerizedLShapeProfile::SetThickness(double val)
+void SchifflerizedLShapeProfile::SetThickness (double val)
     {
-    SetPropertyValue(PRF_PROP_SchifflerizedLShapeProfile_Thickness, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_Thickness, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -57,15 +57,15 @@ void SchifflerizedLShapeProfile::SetThickness(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetFilletRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_SchifflerizedLShapeProfile_FilletRadius);
+    return GetPropertyValueDouble (PRF_PROP_SchifflerizedLShapeProfile_FilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchifflerizedLShapeProfile::SetFilletRadius(double val)
+void SchifflerizedLShapeProfile::SetFilletRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_SchifflerizedLShapeProfile_FilletRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_FilletRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -73,15 +73,15 @@ void SchifflerizedLShapeProfile::SetFilletRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetEdgeRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius);
+    return GetPropertyValueDouble (PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchifflerizedLShapeProfile::SetEdgeRadius(double val)
+void SchifflerizedLShapeProfile::SetEdgeRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_EdgeRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -89,15 +89,15 @@ void SchifflerizedLShapeProfile::SetEdgeRadius(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetLegSlope() const
     {
-    return GetPropertyValueDouble(PRF_PROP_SchifflerizedLShapeProfile_LegSlope);
+    return GetPropertyValueDouble (PRF_PROP_SchifflerizedLShapeProfile_LegSlope);
     }
 
-void SchifflerizedLShapeProfile::SetLegSlope(double val)
+void SchifflerizedLShapeProfile::SetLegSlope (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
     {
-    SetPropertyValue(PRF_PROP_SchifflerizedLShapeProfile_LegSlope, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_LegSlope, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,15 +105,15 @@ void SchifflerizedLShapeProfile::SetLegSlope(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double SchifflerizedLShapeProfile::GetAngle() const
     {
-    return GetPropertyValueDouble(PRF_PROP_SchifflerizedLShapeProfile_Angle);
+    return GetPropertyValueDouble (PRF_PROP_SchifflerizedLShapeProfile_Angle);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchifflerizedLShapeProfile::SetAngle(double val)
+void SchifflerizedLShapeProfile::SetAngle (double val)
     {
-    SetPropertyValue(PRF_PROP_SchifflerizedLShapeProfile_Angle, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_SchifflerizedLShapeProfile_Angle, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE

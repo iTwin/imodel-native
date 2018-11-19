@@ -18,15 +18,15 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 //=======================================================================================
 struct ParametricProfile : SinglePerimeterProfile
     {
-    DGNELEMENT_DECLARE_MEMBERS(PRF_CLASS_ParametricProfile, SinglePerimeterProfile);
+    DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_ParametricProfile, SinglePerimeterProfile);
     friend struct ParametricProfileHandler;
 
 protected:
-    explicit ParametricProfile(CreateParams const& params) : T_Super(params) {}
+    explicit ParametricProfile (CreateParams const& params) : T_Super (params) {}
 
 public:
-    DECLARE_PROFILES_QUERYCLASS_METHODS(ParametricProfile)
-    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS(ParametricProfile)
+    DECLARE_PROFILES_QUERYCLASS_METHODS (ParametricProfile)
+    DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (ParametricProfile)
 
     }; // ParametricProfile
 
@@ -37,7 +37,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ParametricProfileHandler : SinglePerimeterProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(PRF_CLASS_ParametricProfile, ParametricProfile, ParametricProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_ParametricProfile, ParametricProfile, ParametricProfileHandler, SinglePerimeterProfileHandler, PROFILES_EXPORT)
 
     }; // ParametricProfileHandler
 

@@ -11,15 +11,15 @@
 USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(HollowRectangleProfileHandler)
+HANDLER_DEFINE_MEMBERS (HollowRectangleProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-HollowRectangleProfilePtr HollowRectangleProfile::Create(DgnModelCR model)
+HollowRectangleProfilePtr HollowRectangleProfile::Create (DgnModelCR model)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new HollowRectangleProfile(params);
+    CreateParams params (model.GetDgnDb(), model.GetModelId(), QueryClassId (model.GetDgnDb()));
+    return new HollowRectangleProfile (params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -27,15 +27,15 @@ HollowRectangleProfilePtr HollowRectangleProfile::Create(DgnModelCR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double HollowRectangleProfile::GetWidth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_Width);
+    return GetPropertyValueDouble (PRF_PROP_HollowRectangleProfile_Width);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowRectangleProfile::SetWidth(double val)
+void HollowRectangleProfile::SetWidth (double val)
     {
-    SetPropertyValue(PRF_PROP_HollowRectangleProfile_Width, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_HollowRectangleProfile_Width, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -43,15 +43,15 @@ void HollowRectangleProfile::SetWidth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double HollowRectangleProfile::GetDepth() const
     {
-    return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_Depth);
+    return GetPropertyValueDouble (PRF_PROP_HollowRectangleProfile_Depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowRectangleProfile::SetDepth(double val)
+void HollowRectangleProfile::SetDepth (double val)
     {
-    SetPropertyValue(PRF_PROP_HollowRectangleProfile_Depth, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_HollowRectangleProfile_Depth, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,15 +59,15 @@ void HollowRectangleProfile::SetDepth(double val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double HollowRectangleProfile::GetFilletRadius() const
     {
-    return GetPropertyValueDouble(PRF_PROP_HollowRectangleProfile_FilletRadius);
+    return GetPropertyValueDouble (PRF_PROP_HollowRectangleProfile_FilletRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HollowRectangleProfile::SetFilletRadius(double val)
+void HollowRectangleProfile::SetFilletRadius (double val)
     {
-    SetPropertyValue(PRF_PROP_HollowRectangleProfile_FilletRadius, ECN::ECValue(val));
+    SetPropertyValue (PRF_PROP_HollowRectangleProfile_FilletRadius, ECN::ECValue (val));
     }
 
 END_BENTLEY_PROFILES_NAMESPACE
