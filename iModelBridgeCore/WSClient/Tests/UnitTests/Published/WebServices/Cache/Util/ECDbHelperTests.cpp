@@ -150,6 +150,26 @@ TEST_F(ECDbHelperTests, ECInstanceIdFromJsonInstance_ValidRapidJsonInstance_Retu
 /*--------------------------------------------------------------------------------------+
 * @bsitest                              Petras.Sukys                     11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonInstance_EmptyJsonInstance_ReturnsInvalidECInstanceId)
+    {
+    Json::Value value;
+    auto result = ECDbHelper::ECInstanceIdFromJsonInstance(value);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonInstance_EmptyRapidJsonInstance_ReturnsInvalidECInstanceId)
+    {
+    rapidjson::Document document(rapidjson::kObjectType);
+    auto result = ECDbHelper::ECInstanceIdFromJsonInstance(document);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbHelperTests, ECInstanceIdFromJsonValue_ValidJsonValue_ReturnsCorrectECInstanceId)
     {
     Json::Value value("32");
@@ -165,4 +185,24 @@ TEST_F(ECDbHelperTests, ECInstanceIdFromJsonValue_ValidRapidJsonValue_ReturnsCor
     rapidjson::Value value("32");
     auto result = ECDbHelper::ECInstanceIdFromJsonValue(value);
     EXPECT_EQ(32, result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonValue_IntegerJsonValue_ReturnsInvalidECInstanceId)
+    {
+    Json::Value value(32);
+    auto result = ECDbHelper::ECInstanceIdFromJsonValue(value);
+    EXPECT_FALSE(result.IsValid());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                              Petras.Sukys                     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbHelperTests, ECInstanceIdFromJsonValue_IntegerRapidJsonValue_ReturnsInvalidECInstanceId)
+    {
+    rapidjson::Value value(32);
+    auto result = ECDbHelper::ECInstanceIdFromJsonValue(value);
+    EXPECT_FALSE(result.IsValid());
     }
