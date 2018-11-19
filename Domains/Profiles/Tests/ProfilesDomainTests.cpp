@@ -42,9 +42,10 @@ TEST_F (ProfilesDomainTestsFixture, ValidateSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesDomainTestsFixture, InsertAndUpdateIShapeProfile)
+TEST_F (ProfilesDomainTestsFixture, InsertAndUpdateCShapeProfile)
     {
-    IShapeProfilePtr profilePtr = IShapeProfile::Create (GetModel());
+    CShapeProfile::CreateParams createParams (GetModel());
+    CShapeProfilePtr profilePtr = CShapeProfile::Create (createParams);
     ASSERT_TRUE (profilePtr.IsValid());
 
     DgnDbStatus status;
