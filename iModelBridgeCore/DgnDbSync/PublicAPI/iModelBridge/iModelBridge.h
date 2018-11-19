@@ -661,6 +661,7 @@ struct iModelBridge
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
     static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
+
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
     //! @param[in] db The BIM to be updated
@@ -882,10 +883,13 @@ public:
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
                                                 BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel);
     // @private
-    IMODEL_BRIDGE_EXPORT static BentleyStatus ParseDocGuidFromPwUri(BeSQLite::BeGuid& guid, Utf8StringCR pwUrl);
+    IMODEL_BRIDGE_EXPORT static BeSQLite::BeGuid ParseDocGuidFromPwUri(Utf8StringCR pwUrl);
 
     // @private
     static bool IsPwUrn(Utf8StringCR urn) {return urn.StartsWith("pw://");}
+
+    // @private
+    static bool IsNonFileURN(Utf8StringCR urn) {return (urn.find("://") != Utf8String::npos) && !urn.StartsWith("file://");}
 
     // @private
     IMODEL_BRIDGE_EXPORT static SHA1 ComputeRepositoryLinkHash(RepositoryLinkCR);

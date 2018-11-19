@@ -1127,6 +1127,7 @@ public:
     DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
 
     DGNDBSYNC_EXPORT Utf8String GetDocumentURNforFile(DgnV8FileCR);
+    DGNDBSYNC_EXPORT BeSQLite::BeGuid GetDocumentGUIDforFile(DgnV8FileCR);
 
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
     DgnElementId WriteRepositoryLink(DgnV8FileR file);

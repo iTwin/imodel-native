@@ -325,14 +325,6 @@ BentleyStatus SyncInfo::DiskFileInfo::GetInfo(BeFileNameCR fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isNonFileURN(Utf8StringCR urn)
-    {
-    return (urn.find("://") != Utf8String::npos) && !urn.StartsWith("file://");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     {
     //  The unique name is the key into the syncinfo_file table. 
@@ -344,7 +336,7 @@ Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     Utf8String urn = GetConverter().GetDocumentURNforFile(file);
     if (!urn.empty())
         {
-        if (isNonFileURN(urn))
+        if (iModelBridge::IsNonFileURN(urn))
             return urn;
 
         // I would rather use the doc GUID than a file:// URL or a file path.
@@ -2388,6 +2380,32 @@ Utf8String Converter::GetDocumentURNforFile(DgnV8FileCR file)
     return !monikerURN.empty()? monikerURN:
            !docURN.empty()?     docURN:
                                 provURN;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid Converter::GetDocumentGUIDforFile(DgnV8FileCR file)
+    {
+    auto const& moniker = file.GetDocument().GetMoniker();  
+    Utf8String monikerURN(moniker.ResolveURI().c_str());
+    if (iModelBridge::IsPwUrn(monikerURN))
+        return iModelBridge::ParseDocGuidFromPwUri(monikerURN);
+
+    iModelBridgeDocumentProperties docProps;
+    GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str()));
+    if (!docProps.m_docGuid.empty())
+        {
+        BeGuid guid;
+        if (BSISUCCESS == guid.FromString(docProps.m_docGuid.c_str()))
+            return guid;
+        }
+
+    auto provURN = Converter::GetPwUrnFromFileProvenance(file);
+    if (iModelBridge::IsPwUrn(provURN))
+        return iModelBridge::ParseDocGuidFromPwUri(provURN);
+
+    return BeGuid();
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

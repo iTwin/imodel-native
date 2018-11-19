@@ -655,10 +655,12 @@ Utf8String iModelBridge::Params::QueryDocumentURN(BeFileNameCR localFileName) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::ParseDocGuidFromPwUri(BeGuid& guid, Utf8StringCR pwUrl)
+BeGuid iModelBridge::ParseDocGuidFromPwUri(Utf8StringCR pwUrl)
     {
+    BeGuid guid;
+
     if (!pwUrl.StartsWith("pw://"))
-        return BSIERROR;
+        return guid;
 
     auto startDguid = pwUrl.find("/D{");
     if (Utf8String::npos == startDguid)
@@ -666,12 +668,13 @@ BentleyStatus iModelBridge::ParseDocGuidFromPwUri(BeGuid& guid, Utf8StringCR pwU
 
     auto endDguid = pwUrl.find("}", startDguid);
     if (Utf8String::npos == startDguid || Utf8String::npos == endDguid)
-        return BSIERROR;
+        return guid;
 
     auto startGuid = startDguid + 3;
     auto guidLen = endDguid - startGuid;
 
-    return guid.FromString(pwUrl.substr(startGuid, guidLen).c_str());
+    guid.FromString(pwUrl.substr(startGuid, guidLen).c_str());
+    return guid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -705,8 +708,8 @@ void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProp
     // GUID. This will go into the RepositoryLink element's RepositoryGUID property.
     if (docProps.m_docGuid.empty())
         {
-        BeGuid guid;
-        if (BSISUCCESS == ParseDocGuidFromPwUri(guid, docProps.m_desktopURN))
+        BeGuid guid = ParseDocGuidFromPwUri(docProps.m_desktopURN);
+        if (guid.IsValid())
             docProps.m_docGuid = guid.ToString();
         }
 
