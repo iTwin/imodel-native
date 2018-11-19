@@ -120,6 +120,13 @@ struct TestUtilities final
 
         static BentleyStatus ParseJson(Json::Value& json, Utf8StringCR jsonStr) { return Json::Reader::Parse(jsonStr, json) ? SUCCESS : ERROR; }
         static BentleyStatus ParseJson(rapidjson::Document& json, Utf8StringCR jsonStr) { return json.Parse<0>(jsonStr.c_str()).HasParseError() ? ERROR : SUCCESS; }
+        static Utf8String ToString(rapidjson::Value const& json)
+            {
+            rapidjson::StringBuffer jsonStrBuf;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
+            json.Accept(writer);
+            return jsonStrBuf.GetString();
+            }
 
         static Json::Value DbValueToJson(DbValue const& v)
             {

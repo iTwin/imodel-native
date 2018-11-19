@@ -11,7 +11,274 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//=======================================================================================    
+// @bsiclass                                                 Krischan.Eberle     11/2018
+//=======================================================================================    
+struct IJson
+    {
+    private:
+        virtual RapidJsonValueCR _RapidJson() const = 0;
+        virtual JsonValueCR _JsonCpp() const = 0;
+
+    protected:
+        IJson() {}
+
+    public:
+        virtual ~IJson() {}
+
+        Nullable<bool> Equals(IJson const& rhs) const
+            {
+            const bool rapidJsonEquals = _RapidJson() == rhs._RapidJson();
+            const bool jsonCppEquals = _JsonCpp() == rhs._JsonCpp();
+
+            if (rapidJsonEquals != jsonCppEquals)
+                return nullptr;
+
+            return rapidJsonEquals;
+            }
+
+        Nullable<bool> IsNull() const
+            {
+            const bool result = _RapidJson().IsNull();
+            if (result != _JsonCpp().isNull())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<bool> GetBool() const
+            {
+            const bool result = _RapidJson().GetBool();
+            if (result != _JsonCpp().asBool())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<int> GetInt() const
+            {
+            int result = 0;
+            if (_RapidJson().IsInt())
+                result = _RapidJson().GetInt();
+            else if (_RapidJson().IsUint())
+                result = _RapidJson().GetUint();
+            else
+                return nullptr;
+
+            if (result != _JsonCpp().asInt())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<int64_t> GetInt64() const
+            {
+            int64_t result = 0;
+            if (_RapidJson().IsInt() || _RapidJson().IsInt64())
+                result = _RapidJson().GetInt64();
+            else if (_RapidJson().IsUint() || _RapidJson().IsUint64())
+                result = _RapidJson().GetUint64();
+            else
+                return nullptr;
+
+            if (result != _JsonCpp().asInt64())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<double> GetDouble() const
+            {
+            if (!_RapidJson().IsNumber())
+                return nullptr;
+
+            const double result = _RapidJson().GetDouble();
+            if (result != _JsonCpp().asDouble())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<bool> IsString() const
+            {
+            const bool result = _RapidJson().IsString();
+            if (result != _JsonCpp().isString())
+                return nullptr;
+
+            return result;
+            }
+
+        Utf8CP GetString() const
+            {
+            Utf8CP result = _RapidJson().GetString();
+            if (strcmp(result, _JsonCpp().asCString()) != 0)
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<bool> IsArray() const
+            {
+            const bool result = _RapidJson().IsArray();
+            if (result != _JsonCpp().isArray())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<int> ArraySize() const
+            {
+            const int result = (int) _RapidJson().Size();
+            if (result != (int) _JsonCpp().size())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<bool> IsObject() const
+            {
+            const bool result = _RapidJson().IsObject();
+            if (result != _JsonCpp().isObject())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<int> MemberCount() const
+            {
+            const int result = (int) _RapidJson().MemberCount();
+            if (result != (int) _JsonCpp().size())
+                return nullptr;
+
+            return result;
+            }
+
+        Nullable<bool> HasMember(Utf8StringCR memberName) const { return HasMember(memberName.c_str()); }
+        Nullable<bool> HasMember(Utf8CP memberName) const
+            {
+            const bool result = _RapidJson().HasMember(memberName);
+            if (result != _JsonCpp().isMember(memberName))
+                return nullptr;
+
+            return result;
+            }
+        
+
+        Utf8String ToString() const
+            {
+            return Utf8PrintfString("[rapidjson: %s | jsoncpp: %s]", TestUtilities::ToString(_RapidJson()).c_str(), _JsonCpp().ToString().c_str());
+            }
+
+        RapidJsonValueCR RapidJson() const { return _RapidJson(); }
+        JsonValueCR JsonCpp() const { return _JsonCpp(); }
+
+    };
+
+//=======================================================================================    
+// @bsiclass                                                 Krischan.Eberle     11/2018
+//=======================================================================================    
+struct JsonRef : IJson
+    {
+    private:
+        rapidjson::Value const& m_rapidjson;
+        Json::Value const& m_jsoncpp;
+
+        RapidJsonValueCR _RapidJson() const override { return m_rapidjson; }
+        JsonValueCR _JsonCpp() const override { return m_jsoncpp; }
+
+    public:
+        JsonRef(rapidjson::Value const& rapidjson, Json::Value const& jsoncpp) : m_rapidjson(rapidjson), m_jsoncpp(jsoncpp) {}
+
+        JsonRef operator[](Utf8StringCR memberName) const { return operator[](memberName.c_str()); }
+        JsonRef operator[](Utf8CP memberName) const
+            {
+            BeAssert(HasMember(memberName) == true);
+            return JsonRef(_RapidJson()[memberName], _JsonCpp()[memberName]);
+            }
+
+        JsonRef operator[](int arrayIndex) const
+            {
+            BeAssert(ArraySize() != nullptr && ArraySize().Value() > arrayIndex);
+            return JsonRef(_RapidJson()[(rapidjson::SizeType) arrayIndex], _JsonCpp()[(Json::ArrayIndex) arrayIndex]);
+            }
+
+    };
+
+//=======================================================================================    
+// @bsiclass                                                 Krischan.Eberle     11/2018
+//=======================================================================================    
+struct JsonDoc final : IJson
+    {
+    private:
+        rapidjson::Document m_rapidjson;
+        Json::Value m_jsoncpp;
+
+        RapidJsonValueCR _RapidJson() const override { return m_rapidjson;  }
+        JsonValueCR _JsonCpp() const override { return m_jsoncpp; }
+
+    public:
+        JsonDoc() : IJson(){}
+        ~JsonDoc() {}
+
+        void Clear()
+            {
+            m_rapidjson.SetNull();
+            m_jsoncpp = Json::Value(Json::nullValue);
+            }
+
+        Json::Value& JsonCpp() { return m_jsoncpp; }
+        rapidjson::Document& RapidJson() { return m_rapidjson; }
+        rapidjson::MemoryPoolAllocator<>& Allocator() { return m_rapidjson.GetAllocator(); }
+
+        JsonRef operator[](Utf8StringCR memberName) const { return operator[](memberName.c_str()); }
+        JsonRef operator[](Utf8CP memberName) const
+            {
+            BeAssert(HasMember(memberName) == true);
+            return JsonRef(_RapidJson()[memberName], _JsonCpp()[memberName]);
+            }
+
+        JsonRef operator[](int arrayIndex) const
+            {
+            BeAssert(ArraySize() != nullptr && ArraySize().Value() > arrayIndex);
+            return JsonRef(_RapidJson()[(rapidjson::SizeType) arrayIndex], _JsonCpp()[(Json::ArrayIndex) arrayIndex]);
+            }
+
+    };
+
+
+//=======================================================================================    
+// @bsiclass                                                 Krischan.Eberle     11/2018
+//=======================================================================================    
 struct JsonECSqlSelectAdapterTests : public ECDbTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                09/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("RepreparedStatements.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    JsonECSqlSelectAdapter adapter(stmt);
+    ASSERT_TRUE(adapter.IsValid()) << stmt.GetECSql();
+
+    stmt.Finalize();
+    ASSERT_FALSE(adapter.IsValid()) << stmt.GetECSql();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_TRUE(adapter.IsValid()) << stmt.GetECSql();
+
+    stmt.Finalize();
+    ASSERT_FALSE(adapter.IsValid()) << stmt.GetECSql();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId MyId FROM meta.ECSchemaDef"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_FALSE(adapter.IsValid()) << "statement reprepared with different ECSQL | " << stmt.GetECSql();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                09/17
@@ -41,92 +308,98 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     Utf8String expectedNavIdStr = pKey.GetInstanceId().ToString();
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    Json::Value defaultJson;
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
+    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
+    JsonDoc defaultJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
 
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    Json::Value javaScriptJson;
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
+    JsonDoc javaScriptJson;
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
 
     {
-    ASSERT_TRUE(defaultJson.isMember(ECJsonUtilities::json_id())) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedIdStr.c_str(), defaultJson[ECJsonUtilities::json_id()].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(ECJsonSystemNames::Id())) << defaultJson.ToString();
+    EXPECT_STRCASEEQ(expectedIdStr.c_str(), defaultJson[ECJsonSystemNames::Id()].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember(ECJsonUtilities::json_id())) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedIdStr.c_str(), javaScriptJson[ECJsonUtilities::json_id()].asCString()) << javaScriptJson.ToString().c_str();
+
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(ECJsonSystemNames::Id())) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ(expectedIdStr.c_str(), javaScriptJson[ECJsonSystemNames::Id()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    Utf8String id1Member(ECJsonUtilities::json_id());
+    Utf8String id1Member(ECJsonSystemNames::Id());
     id1Member.append("_1");
-    ASSERT_TRUE(defaultJson.isMember(id1Member.c_str())) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedIdStr.c_str(), defaultJson[id1Member.c_str()].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(id1Member)) << defaultJson.ToString();
+    EXPECT_STRCASEEQ(expectedIdStr.c_str(), defaultJson[id1Member.c_str()].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember(id1Member.c_str())) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedIdStr.c_str(), javaScriptJson[id1Member.c_str()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(id1Member)) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ(expectedIdStr.c_str(), javaScriptJson[id1Member.c_str()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember(ECJsonUtilities::json_className())) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ("ECSqlTest.PSA", defaultJson[ECJsonUtilities::json_className()].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(ECJsonSystemNames::ClassName())) << defaultJson.ToString();
+    EXPECT_STRCASEEQ("ECSqlTest.PSA", defaultJson[ECJsonSystemNames::ClassName()].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember(ECJsonUtilities::json_className())) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ("ECSqlTest.PSA", javaScriptJson[ECJsonUtilities::json_className()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(ECJsonSystemNames::ClassName())) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ("ECSqlTest.PSA", javaScriptJson[ECJsonSystemNames::ClassName()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    Utf8String className1Member(ECJsonUtilities::json_className());
+    Utf8String className1Member(ECJsonSystemNames::ClassName());
     className1Member.append("_1");
 
-    ASSERT_TRUE(defaultJson.isMember(className1Member.c_str())) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ("ECSqlTest.PSA", defaultJson[className1Member.c_str()].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(className1Member.c_str())) << defaultJson.ToString();
+    EXPECT_STRCASEEQ("ECSqlTest.PSA", defaultJson[className1Member.c_str()].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember(className1Member.c_str())) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ("ECSqlTest.PSA", javaScriptJson[className1Member.c_str()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(className1Member.c_str())) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ("ECSqlTest.PSA", javaScriptJson[className1Member.c_str()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("I")) << defaultJson.ToString().c_str();
-    EXPECT_EQ(10, defaultJson["I"].asInt()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("I")) << defaultJson.ToString();
+    EXPECT_EQ(Nullable<int>(10), defaultJson["I"].GetInt()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("i")) << javaScriptJson.ToString().c_str();
-    EXPECT_EQ(10, javaScriptJson["i"].asInt()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("i")) << javaScriptJson.ToString();
+    EXPECT_EQ(Nullable<int>(10), javaScriptJson["i"].GetInt()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("I_1")) << defaultJson.ToString().c_str();
-    EXPECT_EQ(10, defaultJson["I_1"].asInt()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("I_1")) << defaultJson.ToString();
+    EXPECT_EQ(Nullable<int>(10), defaultJson["I_1"].GetInt()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("i_1")) << javaScriptJson.ToString().c_str();
-    EXPECT_EQ(10, javaScriptJson["i_1"].asInt()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("i_1")) << javaScriptJson.ToString();
+    EXPECT_EQ(Nullable<int>(10), javaScriptJson["i_1"].GetInt()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("P") && defaultJson["P"].isObject()) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedNavIdHexStr.c_str(), defaultJson["P"][ECJsonUtilities::json_navId()].asCString()) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ("ECSqlTest.PSAHasP_N1", defaultJson["P"][ECJsonUtilities::json_navRelClassName()].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P")) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(defaultJson["P"].IsObject()) << defaultJson.ToString();
+    EXPECT_STRCASEEQ(expectedNavIdHexStr.c_str(), defaultJson["P"][ECJsonSystemNames::Navigation::Id()].GetString()) << defaultJson.ToString();
+    EXPECT_STRCASEEQ("ECSqlTest.PSAHasP_N1", defaultJson["P"][ECJsonSystemNames::Navigation::RelClassName()].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("p") && javaScriptJson["p"].isObject()) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedNavIdHexStr.c_str(), javaScriptJson["p"][ECJsonUtilities::json_navId()].asCString()) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ("ECSqlTest.PSAHasP_N1", javaScriptJson["p"][ECJsonUtilities::json_navRelClassName()].asCString()) << javaScriptJson.ToString().c_str();
-
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p")) << javaScriptJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p")) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ(expectedNavIdHexStr.c_str(), javaScriptJson["p"][ECJsonSystemNames::Navigation::Id()].GetString()) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ("ECSqlTest.PSAHasP_N1", javaScriptJson["p"][ECJsonSystemNames::Navigation::RelClassName()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("P.Id")) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedNavIdStr.c_str(), defaultJson["P.Id"].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P.Id")) << defaultJson.ToString();
+    EXPECT_STRCASEEQ(expectedNavIdStr.c_str(), defaultJson["P.Id"].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("p.Id")) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ(expectedNavIdStr.c_str(), javaScriptJson["p.Id"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p.Id")) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ(expectedNavIdStr.c_str(), javaScriptJson["p.Id"].GetString()) << javaScriptJson.ToString();
     }
 
     {
     //RelECClassId is not converted to relClassName if explicitly specified in select clause.
-    ASSERT_TRUE(defaultJson.isMember("P.RelECClassId")) << defaultJson.ToString().c_str();
-    EXPECT_STRCASEEQ(relClassId.ToString().c_str(), defaultJson["P.RelECClassId"].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P.RelECClassId")) << defaultJson.ToString();
+    EXPECT_STRCASEEQ(relClassId.ToString().c_str(), defaultJson["P.RelECClassId"].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("p.RelECClassId")) << javaScriptJson.ToString().c_str();
-    EXPECT_STRCASEEQ(relClassId.ToString().c_str(), javaScriptJson["p.RelECClassId"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p.RelECClassId")) << javaScriptJson.ToString();
+    EXPECT_STRCASEEQ(relClassId.ToString().c_str(), javaScriptJson["p.RelECClassId"].GetString()) << javaScriptJson.ToString();
     }
     }
 
@@ -149,218 +422,269 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Foo(IntProp,PtProp.X,PtProp.Y,PtProp.Z,StructProp.SomeNumber) VALUES (1000,1000,1000,1000,1000)"));
-    
+
+    {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NULL, NULL As MyNull FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
+    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    Json::Value defaultJson, javaScriptJson;
-
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
+    
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(0, defaultJson.size()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(0, javaScriptJson.size()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(0, defaultJson.MemberCount()) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(0, javaScriptJson.MemberCount()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_FALSE(defaultJson.isMember("NULL") && defaultJson.isMember("nULL")) << "NULL literal results in null which is ignored by adapter. " << defaultJson.ToString().c_str();
-    ASSERT_FALSE(defaultJson.isMember("MyNull")) << "NULL literal even if it has an alias results in null which is ignored by adapter. " << defaultJson.ToString().c_str();
+    ASSERT_FALSE_NULLABLE(defaultJson.HasMember("NULL")) << "NULL literal results in null which is ignored by adapter. " << defaultJson.ToString();
+    ASSERT_FALSE_NULLABLE(defaultJson.HasMember("nULL")) << "NULL literal results in null which is ignored by adapter. " << defaultJson.ToString();
 
-    ASSERT_FALSE(javaScriptJson.isMember("nULL") && javaScriptJson.isMember("NULL")) << "NULL literal results in null which is ignored by adapter. " << javaScriptJson.ToString().c_str();
-    ASSERT_FALSE(javaScriptJson.isMember("myNull")) << "NULL literal even if it has an alias results in null which is ignored by adapter. " << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_FALSE_NULLABLE(javaScriptJson.HasMember("nULL")) << "NULL literal results in null which is ignored by adapter. " << javaScriptJson.ToString();
+    ASSERT_FALSE_NULLABLE(javaScriptJson.HasMember("NULL")) << "NULL literal results in null which is ignored by adapter. " << javaScriptJson.ToString();
+    ASSERT_FALSE_NULLABLE(javaScriptJson.HasMember("myNull")) << "NULL literal results in null which is ignored by adapter. " << javaScriptJson.ToString();
+    }
     }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 123, 123, 123 AS MyNumber, 123 * 3, 123 * 3 AS MyProduct FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
 
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) defaultJson.size()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(stmt.GetColumnCount(), defaultJson.MemberCount()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) javaScriptJson.size()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(stmt.GetColumnCount(), javaScriptJson.MemberCount()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("123")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(123, defaultJson["123"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("123")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(defaultJson["123"].IsString()) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_STREQ("123", defaultJson["123"].GetString()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("123")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(123, javaScriptJson["123"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("123")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson["123"].IsString()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_STREQ("123", javaScriptJson["123"].GetString()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("123_1")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(123, defaultJson["123_1"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("123_1")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(defaultJson["123_1"].IsString()) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_STREQ("123", defaultJson["123_1"].GetString()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("123_1")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(123, javaScriptJson["123_1"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("123_1")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson["123_1"].IsString()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_STREQ("123", javaScriptJson["123_1"].GetString()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("MyNumber")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(123, defaultJson["MyNumber"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("MyNumber")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(defaultJson["MyNumber"].IsString()) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_STREQ("123", defaultJson["MyNumber"].GetString()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("myNumber")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(123, javaScriptJson["myNumber"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("myNumber")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson["myNumber"].IsString()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_STREQ("123", javaScriptJson["myNumber"].GetString()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("123 * 3")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(369, defaultJson["123 * 3"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("123 * 3")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(369, defaultJson["123 * 3"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("123 * 3")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(369, javaScriptJson["123 * 3"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("123 * 3")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(369, javaScriptJson["123 * 3"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("MyProduct")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(369, defaultJson["MyProduct"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("MyProduct")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(369, defaultJson["MyProduct"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("myProduct")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(369, javaScriptJson["myProduct"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("myProduct")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(369, javaScriptJson["myProduct"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    }
     }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IntProp, IntProp As DupIntProp, IntProp, IntProp, IntProp + 10, IntProp + 10 IntPlus10, IntProp + IntProp, IntProp + IntProp [IntProp plus IntProp] FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
+
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) defaultJson.size()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(stmt.GetColumnCount(), defaultJson.MemberCount()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) javaScriptJson.size()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(stmt.GetColumnCount(), javaScriptJson.MemberCount()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("IntProp")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(1000, defaultJson["IntProp"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("IntProp")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, defaultJson["IntProp"].GetInt()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("intProp")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(1000, javaScriptJson["intProp"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("intProp")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, javaScriptJson["intProp"].GetInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("DupIntProp")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(1000, defaultJson["DupIntProp"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("DupIntProp")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, defaultJson["DupIntProp"].GetInt()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("dupIntProp")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(1000, javaScriptJson["dupIntProp"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("dupIntProp")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, javaScriptJson["dupIntProp"].GetInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("IntProp_1")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(1000, defaultJson["IntProp_1"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("IntProp_1")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, defaultJson["IntProp_1"].GetInt()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("intProp_1")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(1000, javaScriptJson["intProp_1"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("intProp_1")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, javaScriptJson["intProp_1"].GetInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("IntProp_2")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(1000, defaultJson["IntProp_2"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("IntProp_2")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, defaultJson["IntProp_2"].GetInt()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("intProp_2")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(1000, javaScriptJson["intProp_2"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("intProp_2")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(1000, javaScriptJson["intProp_2"].GetInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("[IntProp] + 10")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(1010, defaultJson["[IntProp] + 10"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("[IntProp] + 10")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1010, defaultJson["[IntProp] + 10"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("[IntProp] + 10")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(1010, javaScriptJson["[IntProp] + 10"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("[IntProp] + 10")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1010, javaScriptJson["[IntProp] + 10"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("IntPlus10")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(1010, defaultJson["IntPlus10"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("IntPlus10")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1010, defaultJson["IntPlus10"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("intPlus10")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(1010, javaScriptJson["intPlus10"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("intPlus10")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1010, javaScriptJson["intPlus10"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("[IntProp] + [IntProp]")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(2000, defaultJson["[IntProp] + [IntProp]"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("[IntProp] + [IntProp]")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(2000, defaultJson["[IntProp] + [IntProp]"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("[IntProp] + [IntProp]")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(2000, javaScriptJson["[IntProp] + [IntProp]"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("[IntProp] + [IntProp]")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(2000, javaScriptJson["[IntProp] + [IntProp]"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("IntProp plus IntProp")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(2000, defaultJson["IntProp plus IntProp"].asInt()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("IntProp plus IntProp")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(2000, defaultJson["IntProp plus IntProp"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("intProp plus IntProp")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(2000, javaScriptJson["intProp plus IntProp"].asInt()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("intProp plus IntProp")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(2000, javaScriptJson["intProp plus IntProp"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    }
     }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT PtProp.X, PtProp.Y, PtProp.Z FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
+
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) defaultJson.size()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(stmt.GetColumnCount(), defaultJson.MemberCount()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) javaScriptJson.size()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(stmt.GetColumnCount(), javaScriptJson.MemberCount()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("PtProp.X")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_DOUBLE_EQ(1000.0, defaultJson["PtProp.X"].asDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_TRUE(defaultJson.isMember("PtProp.Y")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_DOUBLE_EQ(1000.0, defaultJson["PtProp.Y"].asDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_TRUE(defaultJson.isMember("PtProp.Z")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_DOUBLE_EQ(1000.0, defaultJson["PtProp.Z"].asDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("PtProp.X")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, defaultJson["PtProp.X"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("PtProp.Y")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, defaultJson["PtProp.Y"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("PtProp.Z")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, defaultJson["PtProp.Z"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("ptProp.X")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_DOUBLE_EQ(1000.0, javaScriptJson["ptProp.X"].asDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("ptProp.Y")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_DOUBLE_EQ(1000.0, javaScriptJson["ptProp.Y"].asDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("ptProp.Z")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_DOUBLE_EQ(1000.0, javaScriptJson["ptProp.Z"].asDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("ptProp.X")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, javaScriptJson["ptProp.X"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("ptProp.Y")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, javaScriptJson["ptProp.Y"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("ptProp.Z")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, javaScriptJson["ptProp.Z"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    }
     }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT StructProp.SomeNumber FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
+
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) defaultJson.size()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(stmt.GetColumnCount(), defaultJson.MemberCount()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(stmt.GetColumnCount(), (int) javaScriptJson.size()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(stmt.GetColumnCount(), javaScriptJson.MemberCount()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("StructProp.SomeNumber")) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
-    ASSERT_EQ(1000, defaultJson["StructProp.SomeNumber"].asDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("StructProp.SomeNumber")) << stmt.GetECSql() << " - " << defaultJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, defaultJson["StructProp.SomeNumber"].GetDouble()) << stmt.GetECSql() << " - " << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember("structProp.SomeNumber")) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(1000, javaScriptJson["structProp.SomeNumber"].asDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("structProp.SomeNumber")) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    ASSERT_DOUBLE_EQ_NULLABLE(1000.0, javaScriptJson["structProp.SomeNumber"].GetDouble()) << stmt.GetECSql() << " - " << javaScriptJson.ToString();
+    }
     }
     }
 
@@ -386,227 +710,265 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(relKey, Utf8PrintfString("INSERT INTO ts.Rel(SourceECInstanceId, TargetECInstanceId, sourceClassName, targetClassName) VALUES(%s,%s,'source','target')",
                                                                                       fooKey.GetInstanceId().ToString().c_str(), fooKey.GetInstanceId().ToString().c_str()).c_str()));
 
+    {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, className FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    Json::Value defaultJson, javaScriptJson;
-
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(2, defaultJson.size()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(2, javaScriptJson.size()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(2, defaultJson.MemberCount()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(2, javaScriptJson.MemberCount()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember(ECJsonUtilities::json_className())) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_className()].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(ECJsonSystemNames::ClassName())) << defaultJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonSystemNames::ClassName()].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember(ECJsonUtilities::json_className())) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_className()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(ECJsonSystemNames::ClassName())) << javaScriptJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonSystemNames::ClassName()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    Utf8String className1(ECJsonUtilities::json_className());
+    Utf8String className1(ECJsonSystemNames::ClassName());
     className1.append("_1");
-    ASSERT_TRUE(defaultJson.isMember(className1)) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("Foo class", defaultJson[className1].asCString()) << defaultJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(className1)) << defaultJson.ToString();
+    ASSERT_STREQ("Foo class", defaultJson[className1].GetString()) << defaultJson.ToString();
 
-    ASSERT_TRUE(javaScriptJson.isMember(className1)) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("Foo class", javaScriptJson[className1].asCString()) << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(className1)) << javaScriptJson.ToString();
+    ASSERT_STREQ("Foo class", javaScriptJson[className1].GetString()) << javaScriptJson.ToString();
     }
-
+    }
+    {
     //now using aliases to avoid collision
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId AS SystemClassName, className FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(2, defaultJson.size()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(2, javaScriptJson.size()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(2, defaultJson.MemberCount()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(2, javaScriptJson.MemberCount()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("SystemClassName")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), defaultJson["SystemClassName"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("systemClassName")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), javaScriptJson["systemClassName"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("SystemClassName")) << defaultJson.ToString();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), defaultJson["SystemClassName"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("systemClassName")) << javaScriptJson.ToString();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), javaScriptJson["systemClassName"].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("className")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("Foo class", defaultJson["className"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("className")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("Foo class", javaScriptJson["className"].asCString()) << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("className")) << defaultJson.ToString();
+    ASSERT_STREQ("Foo class", defaultJson["className"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("className")) << javaScriptJson.ToString();
+    ASSERT_STREQ("Foo class", javaScriptJson["className"].GetString()) << javaScriptJson.ToString();
+    }
     }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, className AS UserClassName FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(2, defaultJson.size()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(2, javaScriptJson.size()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(2, defaultJson.MemberCount()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(2, javaScriptJson.MemberCount()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("className")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", defaultJson["className"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("className")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", javaScriptJson["className"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("className")) << defaultJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", defaultJson["className"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("className")) << javaScriptJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", javaScriptJson["className"].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("UserClassName")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("Foo class", defaultJson["UserClassName"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("userClassName")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("Foo class", javaScriptJson["userClassName"].asCString()) << javaScriptJson.ToString().c_str();
-    stmt.Finalize();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("UserClassName")) << defaultJson.ToString();
+    ASSERT_STREQ("Foo class", defaultJson["UserClassName"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("userClassName")) << javaScriptJson.ToString();
+    ASSERT_STREQ("Foo class", javaScriptJson["userClassName"].GetString()) << javaScriptJson.ToString();
+    }
     }
 
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECClassId, sourceClassName, TargetECClassId, targetClassName FROM ts.Rel"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(4, defaultJson.size()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(4, javaScriptJson.size()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(4, defaultJson.MemberCount()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(4, javaScriptJson.MemberCount()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember(ECJsonUtilities::json_sourceClassName())) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_sourceClassName()].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember(ECJsonUtilities::json_sourceClassName())) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_sourceClassName()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(ECJsonUtilities::json_sourceClassName())) << defaultJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_sourceClassName()].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(ECJsonUtilities::json_sourceClassName())) << javaScriptJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_sourceClassName()].GetString()) << javaScriptJson.ToString();
     }
 
     {
     Utf8String sourceClassName1(ECJsonUtilities::json_sourceClassName());
     sourceClassName1.append("_1");
-    ASSERT_TRUE(defaultJson.isMember(sourceClassName1)) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("source", defaultJson[sourceClassName1].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember(sourceClassName1)) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("source", javaScriptJson[sourceClassName1].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(sourceClassName1)) << defaultJson.ToString();
+    ASSERT_STREQ("source", defaultJson[sourceClassName1].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(sourceClassName1)) << javaScriptJson.ToString();
+    ASSERT_STREQ("source", javaScriptJson[sourceClassName1].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember(ECJsonUtilities::json_targetClassName())) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_targetClassName()].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember(ECJsonUtilities::json_targetClassName())) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_targetClassName()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(ECJsonUtilities::json_targetClassName())) << defaultJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_targetClassName()].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(ECJsonUtilities::json_targetClassName())) << javaScriptJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_targetClassName()].GetString()) << javaScriptJson.ToString();
     }
 
     {
     Utf8String targetClassName1(ECJsonUtilities::json_targetClassName());
     targetClassName1.append("_1");
-    ASSERT_TRUE(defaultJson.isMember(targetClassName1)) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("target", defaultJson[targetClassName1].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember(targetClassName1)) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("target", javaScriptJson[targetClassName1].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(targetClassName1)) << defaultJson.ToString();
+    ASSERT_STREQ("target", defaultJson[targetClassName1].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(targetClassName1)) << javaScriptJson.ToString();
+    ASSERT_STREQ("target", javaScriptJson[targetClassName1].GetString()) << javaScriptJson.ToString();
     }
-    stmt.Finalize();
+    }
 
+    {
     //now using aliases to avoid collision
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECClassId SystemSourceClassName, sourceClassName, TargetECClassId SystemTargetClassName, targetClassName FROM ts.Rel"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(4, defaultJson.size()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(4, javaScriptJson.size()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(4, defaultJson.MemberCount()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(4, javaScriptJson.MemberCount()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("SystemSourceClassName")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), defaultJson["SystemSourceClassName"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("systemSourceClassName")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), javaScriptJson["systemSourceClassName"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("SystemSourceClassName")) << defaultJson.ToString();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), defaultJson["SystemSourceClassName"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("systemSourceClassName")) << javaScriptJson.ToString();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), javaScriptJson["systemSourceClassName"].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("sourceClassName")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("source", defaultJson["sourceClassName"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("sourceClassName")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("source", javaScriptJson["sourceClassName"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("sourceClassName")) << defaultJson.ToString();
+    ASSERT_STREQ("source", defaultJson["sourceClassName"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("sourceClassName")) << javaScriptJson.ToString();
+    ASSERT_STREQ("source", javaScriptJson["sourceClassName"].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("SystemTargetClassName")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), defaultJson["SystemTargetClassName"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("systemTargetClassName")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), javaScriptJson["systemTargetClassName"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("SystemTargetClassName")) << defaultJson.ToString();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), defaultJson["SystemTargetClassName"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("systemTargetClassName")) << javaScriptJson.ToString();
+    ASSERT_STREQ(fooKey.GetClassId().ToString().c_str(), javaScriptJson["systemTargetClassName"].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("targetClassName")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("target", defaultJson["targetClassName"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("targetClassName")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("target", javaScriptJson["targetClassName"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("targetClassName")) << defaultJson.ToString();
+    ASSERT_STREQ("target", defaultJson["targetClassName"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("targetClassName")) << javaScriptJson.ToString();
+    ASSERT_STREQ("target", javaScriptJson["targetClassName"].GetString()) << javaScriptJson.ToString();
+    }
     }
 
-    stmt.Finalize();
-
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECClassId, sourceClassName UserSourceClass, TargetECClassId, targetClassName UserTargetClass FROM ts.Rel"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+
+    JsonECSqlSelectAdapter defaultAdapter(stmt);
+    JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
+    JsonDoc defaultJson, javaScriptJson;
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
 
     {
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_EQ(4, defaultJson.size()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
-    ASSERT_EQ(4, javaScriptJson.size()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_EQ_NULLABLE(4, defaultJson.MemberCount()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
+    ASSERT_EQ_NULLABLE(4, javaScriptJson.MemberCount()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember(ECJsonUtilities::json_sourceClassName())) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_sourceClassName()].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember(ECJsonUtilities::json_sourceClassName())) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_sourceClassName()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(ECJsonUtilities::json_sourceClassName())) << defaultJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_sourceClassName()].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(ECJsonUtilities::json_sourceClassName())) << javaScriptJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_sourceClassName()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("UserSourceClass")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("source", defaultJson["UserSourceClass"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("userSourceClass")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("source", javaScriptJson["userSourceClass"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("UserSourceClass")) << defaultJson.ToString();
+    ASSERT_STREQ("source", defaultJson["UserSourceClass"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("userSourceClass")) << javaScriptJson.ToString();
+    ASSERT_STREQ("source", javaScriptJson["userSourceClass"].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember(ECJsonUtilities::json_targetClassName())) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_targetClassName()].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember(ECJsonUtilities::json_targetClassName())) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_targetClassName()].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember(ECJsonUtilities::json_targetClassName())) << defaultJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", defaultJson[ECJsonUtilities::json_targetClassName()].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember(ECJsonUtilities::json_targetClassName())) << javaScriptJson.ToString();
+    ASSERT_STREQ("TestSchema.Foo", javaScriptJson[ECJsonUtilities::json_targetClassName()].GetString()) << javaScriptJson.ToString();
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("UserTargetClass")) << defaultJson.ToString().c_str();
-    ASSERT_STREQ("target", defaultJson["UserTargetClass"].asCString()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isMember("userTargetClass")) << javaScriptJson.ToString().c_str();
-    ASSERT_STREQ("target", javaScriptJson["userTargetClass"].asCString()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("UserTargetClass")) << defaultJson.ToString();
+    ASSERT_STREQ("target", defaultJson["UserTargetClass"].GetString()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("userTargetClass")) << javaScriptJson.ToString();
+    ASSERT_STREQ("target", javaScriptJson["userTargetClass"].GetString()) << javaScriptJson.ToString();
     }
-    stmt.Finalize();
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -626,7 +988,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
                                                                                 <ECProperty propertyName="D" typeName="double" />
                                                                                 <ECProperty propertyName="Dt" typeName="dateTime" />
                                                                                 <ECProperty propertyName="G" typeName="Bentley.Geometry.Common.IGeometry" />
-                                                                                <ECProperty propertyName="I" typeName="integer" />
+                                                                                <ECProperty propertyName="I" typeName="int" />
                                                                                 <ECProperty propertyName="L" typeName="long" />
                                                                                 <ECProperty propertyName="P2D" typeName="Point2d" />
                                                                                 <ECProperty propertyName="P3D" typeName="Point3d" />
@@ -697,112 +1059,120 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
     }
 
+    {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, B,Bi,D,Dt,G,I,L,P2D,P3D,S,Struct,D_Array,Struct_Array,Parent FROM ts.Foo WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,ECClassId,B,Bi,D,Dt,G,I,L,P2D,P3D,S,Struct,D_Array,Struct_Array,Parent FROM ts.Foo WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter adapter(stmt);
-    Json::Value actualJson;
-    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson));
-    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
-    ASSERT_EQ(16, actualJson.size()) << actualJson.ToString().c_str();
+    JsonDoc actualJson;
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter.GetRow(actualJson.JsonCpp()));
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_id())) << actualJson.ToString().c_str();
-    EXPECT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_id()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
+    ASSERT_EQ_NULLABLE(16, actualJson.MemberCount()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
-    EXPECT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::Id())) << actualJson.ToString();
+    EXPECT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonSystemNames::Id()].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("B")) << actualJson.ToString().c_str();
-    EXPECT_EQ(boolVal, actualJson["B"].asBool()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::ClassName())) << actualJson.ToString();
+    EXPECT_STREQ("TestSchema.Foo", actualJson[ECJsonSystemNames::ClassName()].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("Bi")) << actualJson.ToString().c_str();
-    EXPECT_STREQ(blobValBase64Str.c_str(), actualJson["Bi"].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("B")) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(boolVal, actualJson["B"].GetBool()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("D")) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(doubleVal, actualJson["D"].asDouble()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("Bi")) << actualJson.ToString();
+    EXPECT_STREQ(blobValBase64Str.c_str(), actualJson["Bi"].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("Dt")) << actualJson.ToString().c_str();
-    EXPECT_STREQ(dtVal.ToString().c_str(), actualJson["Dt"].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("D")) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(doubleVal, actualJson["D"].GetDouble()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("G")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["G"].isObject()) << actualJson.ToString().c_str();
-    EXPECT_STREQ("{\"LineSegment\":{\"endPoint\":[1.0,1.0,1.0],\"startPoint\":[0.0,0.0,0.0]}}", actualJson["G"].ToString().c_str()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("Dt")) << actualJson.ToString();
+    EXPECT_STREQ(dtVal.ToString().c_str(), actualJson["Dt"].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("I")) << actualJson.ToString().c_str();
-    EXPECT_EQ(intVal, actualJson["I"].asInt()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("G")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["G"].IsObject()) << actualJson.ToString();
+    EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1.0,1.0,1.0],\"startPoint\":[0.0,0.0,0.0]}}"), JsonValue(actualJson["G"].JsonCpp())) << actualJson.ToString();
+    EXPECT_EQ(JsonValue("{\"LineSegment\":{\"endPoint\":[1.0,1.0,1.0],\"startPoint\":[0.0,0.0,0.0]}}"), JsonValue(TestUtilities::ToString(actualJson["G"].RapidJson()))) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("L")) << actualJson.ToString().c_str();
-    EXPECT_STREQ(int64Str.c_str(), actualJson["L"].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("I")) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(intVal, actualJson["I"].GetInt()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("P2D")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["P2D"].isObject()) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(p2dVal.x, actualJson["P2D"]["x"].asDouble()) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(p2dVal.y, actualJson["P2D"]["y"].asDouble()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("L")) << actualJson.ToString();
+    EXPECT_STREQ(int64Str.c_str(), actualJson["L"].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("P3D")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["P3D"].isObject()) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(p3dVal.x, actualJson["P3D"]["x"].asDouble()) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(p3dVal.y, actualJson["P3D"]["y"].asDouble()) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(p3dVal.z, actualJson["P3D"]["z"].asDouble()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("P2D")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["P2D"].IsObject()) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(p2dVal.x, actualJson["P2D"]["x"].GetDouble()) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(p2dVal.y, actualJson["P2D"]["y"].GetDouble()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("S")) << actualJson.ToString().c_str();
-    EXPECT_STREQ(stringVal, actualJson["S"].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("P3D")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["P3D"].IsObject()) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(p3dVal.x, actualJson["P3D"]["x"].GetDouble()) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(p3dVal.y, actualJson["P3D"]["y"].GetDouble()) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(p3dVal.z, actualJson["P3D"]["z"].GetDouble()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("Struct")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["Struct"].isObject()) << actualJson.ToString().c_str();
-    EXPECT_STREQ(personName, actualJson["Struct"]["Name"].asCString()) << actualJson.ToString().c_str();
-    EXPECT_EQ(personAge, actualJson["Struct"]["Age"].asInt()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("S")) << actualJson.ToString();
+    EXPECT_STREQ(stringVal, actualJson["S"].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("D_Array")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["D_Array"].isArray()) << actualJson.ToString().c_str();
-    ASSERT_EQ(2, actualJson["D_Array"].size()) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(doubleVal, actualJson["D_Array"][0].asDouble()) << actualJson.ToString().c_str();
-    EXPECT_DOUBLE_EQ(doubleVal, actualJson["D_Array"][1].asDouble()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("Struct")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["Struct"].IsObject()) << actualJson.ToString();
+    EXPECT_STREQ(personName, actualJson["Struct"]["Name"].GetString()) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(personAge, actualJson["Struct"]["Age"].GetInt()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("Struct_Array")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["Struct_Array"].isArray()) << actualJson.ToString().c_str();
-    ASSERT_EQ(2, actualJson["Struct_Array"].size()) << actualJson.ToString().c_str();
-    EXPECT_STREQ(personName, actualJson["Struct_Array"][0]["Name"].asCString()) << actualJson.ToString().c_str();
-    EXPECT_FALSE(actualJson["Struct_Array"][0]["Age"]) << actualJson.ToString().c_str();
-    EXPECT_STREQ(personName, actualJson["Struct_Array"][1]["Name"].asCString()) << actualJson.ToString().c_str();
-    EXPECT_FALSE(actualJson["Struct_Array"][1]["Age"]) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("D_Array")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["D_Array"].IsArray()) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(2, actualJson["D_Array"].ArraySize()) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(doubleVal, actualJson["D_Array"][0].GetDouble()) << actualJson.ToString();
+    EXPECT_DOUBLE_EQ_NULLABLE(doubleVal, actualJson["D_Array"][1].GetDouble()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("Parent")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["Parent"].isObject()) << actualJson.ToString().c_str();
-    EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), actualJson["Parent"][ECJsonUtilities::json_navId()].asCString()) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["Parent"].isMember(ECJsonUtilities::json_navRelClassName())) << actualJson.ToString().c_str();
-    EXPECT_STREQ("TestSchema.ParentHasFoo", actualJson["Parent"][ECJsonUtilities::json_navRelClassName()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("Struct_Array")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["Struct_Array"].IsArray()) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(2, actualJson["Struct_Array"].ArraySize()) << actualJson.ToString();
+    EXPECT_STREQ(personName, actualJson["Struct_Array"][0]["Name"].GetString()) << actualJson.ToString();
+    EXPECT_FALSE_NULLABLE(actualJson["Struct_Array"][0].HasMember("Age")) << actualJson.ToString();
+    EXPECT_STREQ(personName, actualJson["Struct_Array"][1]["Name"].GetString()) << actualJson.ToString();
+    EXPECT_FALSE_NULLABLE(actualJson["Struct_Array"][1].HasMember("Age")) << actualJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("Parent")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["Parent"].IsObject()) << actualJson.ToString();
+    EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), actualJson["Parent"][ECJsonSystemNames::Navigation::Id()].GetString()) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["Parent"].HasMember(ECJsonSystemNames::Navigation::RelClassName())) << actualJson.ToString();
+    EXPECT_STREQ("TestSchema.ParentHasFoo", actualJson["Parent"][ECJsonSystemNames::Navigation::RelClassName()].GetString()) << actualJson.ToString();
+    }
 
     //SELECT FROM relationship
-    stmt.Finalize();
+    {
+    ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ParentHasFoo WHERE TargetECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter relAdapter(stmt);
+    JsonDoc actualJson;
+    ASSERT_EQ(SUCCESS, relAdapter.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
+    ASSERT_EQ(SUCCESS, relAdapter.GetRow(actualJson.JsonCpp()));
 
-    actualJson;
-    ASSERT_EQ(SUCCESS, relAdapter.GetRow(actualJson));
-    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
-    ASSERT_EQ(6, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(6, actualJson.MemberCount()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_id())) << actualJson.ToString().c_str();
-    EXPECT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_id()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::Id())) << actualJson.ToString();
+    EXPECT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonSystemNames::Id()].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_className())) << actualJson.ToString().c_str();
-    EXPECT_STREQ("TestSchema.ParentHasFoo", actualJson[ECJsonUtilities::json_className()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::ClassName())) << actualJson.ToString();
+    EXPECT_STREQ("TestSchema.ParentHasFoo", actualJson[ECJsonSystemNames::ClassName()].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_sourceId())) << actualJson.ToString().c_str();
-    EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_sourceId()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::SourceId())) << actualJson.ToString();
+    EXPECT_STREQ(parentKey.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonSystemNames::SourceId()].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_sourceClassName())) << actualJson.ToString().c_str();
-    EXPECT_STREQ("TestSchema.Parent", actualJson[ECJsonUtilities::json_sourceClassName()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::SourceClassName())) << actualJson.ToString();
+    EXPECT_STREQ("TestSchema.Parent", actualJson[ECJsonSystemNames::SourceClassName()].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_targetId())) << actualJson.ToString().c_str();
-    EXPECT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonUtilities::json_targetId()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::TargetId())) << actualJson.ToString();
+    EXPECT_STREQ(key.GetInstanceId().ToHexStr().c_str(), actualJson[ECJsonSystemNames::TargetId()].GetString()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember(ECJsonUtilities::json_targetClassName())) << actualJson.ToString().c_str();
-    EXPECT_STREQ("TestSchema.Foo", actualJson[ECJsonUtilities::json_targetClassName()].asCString()) << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember(ECJsonSystemNames::TargetClassName())) << actualJson.ToString();
+    EXPECT_STREQ("TestSchema.Foo", actualJson[ECJsonSystemNames::TargetClassName()].GetString()) << actualJson.ToString();
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -826,34 +1196,41 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter adapter1(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-    Json::Value actualJson;
-    ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson));
-    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
-    ASSERT_EQ(1, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(adapter1.IsValid());
+    JsonDoc actualJson;
+    ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson.JsonCpp()));
 
-    ASSERT_TRUE(actualJson.isMember("L")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["L"].isIntegral()) << actualJson.ToString().c_str();
-    ASSERT_EQ(1234567890, actualJson["L"].asInt64()) << "ECJsonInt64Format::AsNumber " << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(1, actualJson.MemberCount()) << actualJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("L")) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(INT64_C(1234567890), actualJson["L"].GetInt64()) << "ECJsonInt64Format::AsNumber " << actualJson.ToString();
 
     JsonECSqlSelectAdapter adapter2(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsDecimalString));
-    actualJson.clear();
-    ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson));
-    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
-    ASSERT_EQ(1, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(adapter2.IsValid());
+    actualJson.Clear();
+    ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson.JsonCpp()));
 
-    ASSERT_TRUE(actualJson.isMember("L")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["L"].isString()) << actualJson.ToString().c_str();
-    ASSERT_STREQ("1234567890", actualJson["L"].asCString()) << "ECJsonInt64Format::AsDecimalString " << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(1, actualJson.MemberCount()) << actualJson.ToString();
+
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("L")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["L"].IsString()) << actualJson.ToString();
+    ASSERT_STREQ("1234567890", actualJson["L"].GetString()) << "ECJsonInt64Format::AsDecimalString " << actualJson.ToString();
 
     JsonECSqlSelectAdapter adapter3(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsHexadecimalString));
-    actualJson.clear();
-    ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson));
-    ASSERT_TRUE(actualJson.isObject()) << actualJson.ToString().c_str();
-    ASSERT_EQ(1, actualJson.size()) << actualJson.ToString().c_str();
+    ASSERT_TRUE(adapter3.IsValid());
+    actualJson.Clear();
+    ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
+    ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson.JsonCpp()));
+    ASSERT_TRUE_NULLABLE(actualJson.IsObject()) << actualJson.ToString();
+    EXPECT_EQ_NULLABLE(1, actualJson.MemberCount()) << actualJson.ToString();
 
-    ASSERT_TRUE(actualJson.isMember("L")) << actualJson.ToString().c_str();
-    ASSERT_TRUE(actualJson["L"].isString()) << actualJson.ToString().c_str();
-    ASSERT_STREQ(BeInt64Id(1234567890).ToHexStr().c_str(), actualJson["L"].asCString()) << "ECJsonInt64Format::AsHexadecimalString " << actualJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(actualJson.HasMember("L")) << actualJson.ToString();
+    ASSERT_TRUE_NULLABLE(actualJson["L"].IsString()) << actualJson.ToString();
+    ASSERT_STREQ(BeInt64Id(1234567890).ToHexStr().c_str(), actualJson["L"].GetString()) << "ECJsonInt64Format::AsHexadecimalString " << actualJson.ToString();
     }
 
 //---------------------------------------------------------------------------------------
@@ -900,35 +1277,44 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT ECInstanceId,ECClassId,StructProp,DoubleArray,StructArray FROM ONLY ts.Foo LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
 
-    Json::Value actualDefaultJson, actualJavaScriptJson;
+    JsonDoc actualDefaultJson, actualJavaScriptJson;
 
     JsonECSqlSelectAdapter defaultAdapter(statement);
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(actualDefaultJson));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(actualDefaultJson.RapidJson(), actualDefaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(actualDefaultJson.JsonCpp()));
 
     JsonECSqlSelectAdapter jsAdapter(statement, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    ASSERT_EQ(SUCCESS, jsAdapter.GetRow(actualJavaScriptJson));
+    ASSERT_EQ(SUCCESS, jsAdapter.GetRow(actualJavaScriptJson.RapidJson(), actualJavaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, jsAdapter.GetRow(actualJavaScriptJson.JsonCpp()));
 
     statement.Finalize();
 
-    Json::Value expectedDefaultJson, expectedJavaScriptJson;
-    ASSERT_TRUE(Json::Reader::Parse(R"json({
+    Utf8CP expectedDefaultJsonStr = R"json({
       "id" : "0x1",
       "className" : "TestSchema.Foo",
       "StructProp" : { "Alpha" : 100, "Beta" : 1.5 },
       "DoubleArray" : [ 1.5, 2.5],
       "StructArray" : [ {"Alpha" : 100, "Beta" : 1.5}, {"Alpha" : 200, "Beta" : 2.5}]
-      })json", expectedDefaultJson));
+      })json";
 
-    ASSERT_TRUE(Json::Reader::Parse(R"json({
+    Utf8CP expectedJavaScriptJsonStr = R"json({
       "id" : "0x1",
       "className" : "TestSchema.Foo",
       "structProp" : { "alpha" : 100, "beta" : 1.5 },
       "doubleArray" : [ 1.5, 2.5],
       "structArray" : [ {"alpha" : 100, "beta" : 1.5}, {"alpha" : 200, "beta" : 2.5}]
-      })json", expectedJavaScriptJson));
+      })json";
 
-    ASSERT_EQ(0, expectedDefaultJson.compare(actualDefaultJson)) << "Expected: " << expectedDefaultJson.ToString() << " | Actual: " << actualDefaultJson.ToString().c_str();
-    ASSERT_EQ(0, expectedJavaScriptJson.compare(actualJavaScriptJson)) << "Expected: " << expectedJavaScriptJson.ToString() << " | Actual: " << actualJavaScriptJson.ToString().c_str();
+    JsonDoc expectedDefaultJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.RapidJson(), expectedDefaultJsonStr));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedDefaultJson.JsonCpp(), expectedDefaultJsonStr));
+
+    JsonDoc expectedJavaScriptJson;
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.RapidJson(), expectedJavaScriptJsonStr));
+    ASSERT_EQ(SUCCESS, TestUtilities::ParseJson(expectedJavaScriptJson.JsonCpp(), expectedJavaScriptJsonStr));
+
+    ASSERT_TRUE_NULLABLE(expectedDefaultJson.Equals(actualDefaultJson)) << "Expected: " << expectedDefaultJson.ToString() << " | Actual: " << actualDefaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(expectedJavaScriptJson.Equals(actualJavaScriptJson)) << "Expected: " << expectedDefaultJson.ToString() << " | Actual: " << actualDefaultJson.ToString();
     }
 
 struct JsonReaderTests : public ECDbTestFixture {};
@@ -953,123 +1339,128 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
 
-    Json::Value defaultJson, javaScriptJson;
+    JsonDoc defaultJson, javaScriptJson;
     JsonECSqlSelectAdapter defaultAdapter(selStmt);
     JsonECSqlSelectAdapter javaScriptAdapter(selStmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
 
-    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson));
-    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
+    ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
+
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
+    ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
     selStmt.Finalize();
 
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
 
     //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
     {
-    ASSERT_TRUE(defaultJson.isMember("P2D"));
-    ASSERT_TRUE(defaultJson["P2D"].isObject());
-    ASSERT_DOUBLE_EQ(1, defaultJson["P2D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0, defaultJson["P2D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P2D"));
+    ASSERT_TRUE_NULLABLE(defaultJson["P2D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(1.0, defaultJson["P2D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P2D"][ECJsonSystemNames::Point::Y()].GetDouble());
 
-    ASSERT_TRUE(javaScriptJson.isMember("p2D"));
-    ASSERT_TRUE(javaScriptJson["p2D"].isObject());
-    ASSERT_DOUBLE_EQ(1, javaScriptJson["p2D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0, javaScriptJson["p2D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p2D"));
+    ASSERT_TRUE_NULLABLE(javaScriptJson["p2D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(1.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::Y()].GetDouble());
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("P3D"));
-    ASSERT_TRUE(defaultJson["P3D"].isObject());
-    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(2, defaultJson["P3D"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_z()].asDouble());
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P3D"));
+    ASSERT_TRUE_NULLABLE(defaultJson["P3D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0, defaultJson["P3D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(2, defaultJson["P3D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0, defaultJson["P3D"][ECJsonSystemNames::Point::Z()].GetDouble());
 
-    ASSERT_TRUE(javaScriptJson.isMember("p3D"));
-    ASSERT_TRUE(javaScriptJson["p3D"].isObject());
-    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(2, javaScriptJson["p3D"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_z()].asDouble());
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p3D"));
+    ASSERT_TRUE_NULLABLE(javaScriptJson["p3D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0, javaScriptJson["p3D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(2, javaScriptJson["p3D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Z()].GetDouble());
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("PStructProp.p2d"));
-    ASSERT_TRUE(defaultJson["PStructProp.p2d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp.p2d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, defaultJson["PStructProp.p2d"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("PStructProp.p2d"));
+    ASSERT_TRUE_NULLABLE(defaultJson["PStructProp.p2d"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p2d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(3.0, defaultJson["PStructProp.p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
 
-    ASSERT_TRUE(javaScriptJson.isMember("pStructProp.p2d"));
-    ASSERT_TRUE(javaScriptJson["pStructProp.p2d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp.p2d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, javaScriptJson["pStructProp.p2d"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("pStructProp.p2d"));
+    ASSERT_TRUE_NULLABLE(javaScriptJson["pStructProp.p2d"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p2d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(3.0, javaScriptJson["pStructProp.p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
     }
 
     {
-    ASSERT_TRUE(defaultJson["PStructProp.p3d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp.p3d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp.p3d"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, defaultJson["PStructProp.p3d"][ECJsonUtilities::json_z()].asDouble());
+    ASSERT_TRUE_NULLABLE(defaultJson["PStructProp.p3d"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(4.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
 
-    ASSERT_TRUE(javaScriptJson["pStructProp.p3d"].isObject());
-    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp.p3d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp.p3d"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, javaScriptJson["pStructProp.p3d"][ECJsonUtilities::json_z()].asDouble());
+    ASSERT_TRUE_NULLABLE(javaScriptJson["pStructProp.p3d"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(4.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
     }
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
     JsonReader defaultReader(m_ecdb, *testClass);
     ASSERT_TRUE(defaultReader.IsValid());
-    ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson, key.GetInstanceId()));
+    ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson.JsonCpp(), key.GetInstanceId()));
+    ASSERT_EQ(SUCCESS, defaultReader.Read(defaultJson.RapidJson(), key.GetInstanceId(), defaultJson.Allocator()));
 
     JsonReader javaScriptReader(m_ecdb, *testClass, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
     ASSERT_TRUE(javaScriptReader.IsValid());
-    ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson, key.GetInstanceId()));
+    ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson.JsonCpp(), key.GetInstanceId()));
+    ASSERT_EQ(SUCCESS, javaScriptReader.Read(javaScriptJson.RapidJson(), key.GetInstanceId(), javaScriptJson.Allocator()));
 
-    ASSERT_TRUE(defaultJson.isObject()) << defaultJson.ToString().c_str();
-    ASSERT_TRUE(javaScriptJson.isObject()) << javaScriptJson.ToString().c_str();
+    ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
+    ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
 
     {
-    ASSERT_TRUE(defaultJson.isMember("P2D"));
-    ASSERT_TRUE(defaultJson["P2D"].isObject());
-    ASSERT_DOUBLE_EQ(1, defaultJson["P2D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0, defaultJson["P2D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P2D"));
+    ASSERT_TRUE_NULLABLE(defaultJson["P2D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(1.0, defaultJson["P2D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P2D"][ECJsonSystemNames::Point::Y()].GetDouble());
 
-    ASSERT_TRUE(javaScriptJson.isMember("p2D"));
-    ASSERT_TRUE(javaScriptJson["p2D"].isObject());
-    ASSERT_DOUBLE_EQ(1, javaScriptJson["p2D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0, javaScriptJson["p2D"][ECJsonUtilities::json_y()].asDouble());
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p2D"));
+    ASSERT_TRUE_NULLABLE(javaScriptJson["p2D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(1.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::Y()].GetDouble());
     }
 
     {
-    ASSERT_TRUE(defaultJson.isMember("P3D"));
-    ASSERT_TRUE(defaultJson["P3D"].isObject());
-    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(2, defaultJson["P3D"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(0, defaultJson["P3D"][ECJsonUtilities::json_z()].asDouble());
+    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P3D"));
+    ASSERT_TRUE_NULLABLE(defaultJson["P3D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P3D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(2.0, defaultJson["P3D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P3D"][ECJsonSystemNames::Point::Z()].GetDouble());
 
-    ASSERT_TRUE(javaScriptJson.isMember("p3D"));
-    ASSERT_TRUE(javaScriptJson["p3D"].isObject());
-    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(2, javaScriptJson["p3D"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(0, javaScriptJson["p3D"][ECJsonUtilities::json_z()].asDouble());
+    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p3D"));
+    ASSERT_TRUE_NULLABLE(javaScriptJson["p3D"].IsObject());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(2.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Z()].GetDouble());
     }
 
     {
-    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp"]["p2d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, defaultJson["PStructProp"]["p2d"][ECJsonUtilities::json_y()].asDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p2d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(3.0, defaultJson["PStructProp"]["p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
 
-    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp"]["p2d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(3.0, javaScriptJson["pStructProp"]["p2d"][ECJsonUtilities::json_y()].asDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p2d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(3.0, javaScriptJson["pStructProp"]["p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
     }
 
     {
-    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp"]["p3d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, defaultJson["PStructProp"]["p3d"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, defaultJson["PStructProp"]["p3d"][ECJsonUtilities::json_z()].asDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(4.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
 
-    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonUtilities::json_x()].asDouble());
-    ASSERT_DOUBLE_EQ(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonUtilities::json_y()].asDouble());
-    ASSERT_DOUBLE_EQ(4.0, javaScriptJson["pStructProp"]["p3d"][ECJsonUtilities::json_z()].asDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::X()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_DOUBLE_EQ_NULLABLE(4.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
     }
     }
 
@@ -1180,15 +1571,24 @@ TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
         JsonReader reader(m_ecdb, psaKey.GetClassId(), formatOption);
         ASSERT_TRUE(reader.IsValid());
 
-        Json::Value actualJson;
-        ASSERT_EQ(SUCCESS, reader.Read(actualJson, psaKey.GetInstanceId()));
+        JsonDoc actualJson;
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson.RapidJson(), psaKey.GetInstanceId(), actualJson.Allocator()));
+        ASSERT_EQ(SUCCESS, reader.Read(actualJson.JsonCpp(), psaKey.GetInstanceId()));
 
-        actualJson.removeMember(ECJsonUtilities::json_id());
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson)) << "Insert after removing id member from read JSON ";
+        actualJson.JsonCpp().removeMember(ECJsonUtilities::json_id());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.JsonCpp())) << "Insert after removing id member from read JSON ";
         validate(newKey.GetInstanceId());
 
-        actualJson.removeMember(ECJsonUtilities::json_className());
-        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson)) << "Insert after removing id and className member from read JSON";
+        actualJson.JsonCpp().removeMember(ECJsonUtilities::json_className());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.JsonCpp())) << "Insert after removing id and className member from read JSON";
+        validate(newKey.GetInstanceId());
+
+        actualJson.RapidJson().RemoveMember(ECJsonSystemNames::Id());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.RapidJson())) << "Insert after removing id member from read JSON ";
+        validate(newKey.GetInstanceId());
+
+        actualJson.RapidJson().RemoveMember(ECJsonSystemNames::ClassName());
+        ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, actualJson.RapidJson())) << "Insert after removing id and className member from read JSON";
         validate(newKey.GetInstanceId());
         }
     }

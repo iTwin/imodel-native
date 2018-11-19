@@ -15,94 +15,227 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
+// @bsiclass                                               Krischan.Eberle      11/2018
+//+===============+===============+===============+===============+===============+======
+struct JsonRef final
+    {
+public:
+    enum class Type
+        {
+        JsonCpp,
+        RapidJson
+        };
+private:
+    Json::Value* m_jsonCpp = nullptr;
+    rapidjson::Value* m_rapidJson = nullptr;
+    rapidjson::MemoryPoolAllocator<>* m_allocator = nullptr;
+
+public:
+    JsonRef() {}
+    explicit JsonRef(JsonValueR json): m_jsonCpp(&json) {}
+    JsonRef(RapidJsonValueR json, rapidjson::MemoryPoolAllocator<>& allocator) : m_rapidJson(&json), m_allocator(&allocator) {}
+
+    bool IsValid() const { return m_jsonCpp != nullptr || m_rapidJson != nullptr;  }
+    Type GetType() const { return IsRapidJson() ? Type::RapidJson : Type::JsonCpp; }
+    bool IsRapidJson() const { BeAssert(IsValid()); return m_rapidJson != nullptr; }
+
+    JsonValueR JsonCpp() const { BeAssert(!IsRapidJson()); return *m_jsonCpp; }
+    RapidJsonValueR RapidJson() const { BeAssert(IsRapidJson()); return *m_rapidJson; }
+    rapidjson::MemoryPoolAllocator<>& Allocator() const { BeAssert(IsRapidJson()); return *m_allocator; }
+
+    bool IsNull() const { return IsRapidJson() ? RapidJson().IsNull() : JsonCpp().isNull(); }
+    bool IsObject() const { return IsRapidJson() ? RapidJson().IsObject() : JsonCpp().isObject(); }
+    void SetObject()
+        { 
+        if (IsRapidJson())
+            RapidJson().SetObject();
+        else
+            JsonCpp() = Json::Value(Json::objectValue);
+        }
+
+    void SetArray()
+        {
+        if (IsRapidJson())
+            RapidJson().SetArray();
+        else
+            JsonCpp() = Json::Value(Json::arrayValue);
+        }
+
+    JsonRef AddMember(Utf8StringCR memberName, bool makeCopy = true)
+        {
+        if (IsRapidJson())
+            {
+            rapidjson::Value memberNameVal = makeCopy ? rapidjson::Value(memberName.c_str(), (rapidjson::SizeType) memberName.size(), Allocator()) : rapidjson::Value(rapidjson::StringRef(memberName.c_str(), memberName.size()));
+            RapidJson().AddMember(memberNameVal.Move(), rapidjson::Value().Move(), Allocator());
+            return JsonRef(RapidJson()[memberName.c_str()], Allocator());
+            }
+
+        if (makeCopy)
+            return JsonRef(JsonCpp()[memberName]);
+
+        return JsonRef(JsonCpp()[Json::StaticString(memberName.c_str())]);
+        }
+
+    JsonRef Pushback()
+        {
+        if (IsRapidJson())
+            {
+            RapidJson().PushBack(rapidjson::Value().Move(), Allocator());
+            return JsonRef(RapidJson()[RapidJson().Size() - 1], Allocator());
+            }
+
+        return JsonRef(JsonCpp().append(Json::Value()));
+        }
+
+    BentleyStatus FromId(BeInt64Id id) { return IsRapidJson() ? ECJsonUtilities::IdToJson(RapidJson(), id, Allocator()) : ECJsonUtilities::IdToJson(JsonCpp(), id); }
+
+    void FromClass(ECN::ECClassCR ecClass)
+        {
+        if (IsRapidJson())
+            ECJsonUtilities::ClassToJson(RapidJson(), ecClass, Allocator());
+        else
+            ECJsonUtilities::ClassNameToJson(JsonCpp(), ecClass);
+        }
+
+    };
+
+//=======================================================================================
 //! Helper class for the JsonECSqlSelectAdapter
 // @bsiclass                                                Ramanujam.Raman      10/2012
 //+===============+===============+===============+===============+===============+======
-struct ECSqlToJsonConverter final
+struct AdapterHelper final
     {
     private:
-        ECSqlStatement const& m_stmt;
-        JsonECSqlSelectAdapter::FormatOptions const& m_formatOptions;
+        //static
+        AdapterHelper() = delete;
+        ~AdapterHelper() = delete;
 
-        //not copyable
-        ECSqlToJsonConverter(ECSqlToJsonConverter const&) = delete;
-        ECSqlToJsonConverter& operator=(ECSqlToJsonConverter const&) = delete;
+        static BentleyStatus SelectClauseItemToJson(JsonRef&, IECSqlValue const&, ECSqlSystemPropertyInfo const&, SchemaManager const&, JsonECSqlSelectAdapter::FormatOptions const&);
+        static BentleyStatus PropertyValueToJson(JsonRef&, IECSqlValue const&, SchemaManager const&, JsonECSqlSelectAdapter::FormatOptions const&);
+        static BentleyStatus NavigationToJson(JsonRef&, IECSqlValue const&, SchemaManager const&);
+        static BentleyStatus StructToJson(JsonRef&, IECSqlValue const&, SchemaManager const&, JsonECSqlSelectAdapter::FormatOptions const&);
+        static BentleyStatus PrimitiveArrayToJson(JsonRef&, IECSqlValue const&, ECN::PrimitiveType, ECN::ECJsonInt64Format);
+        static BentleyStatus StructArrayToJson(JsonRef&, IECSqlValue const&, SchemaManager const&, JsonECSqlSelectAdapter::FormatOptions const&);
+        static BentleyStatus PrimitiveToJson(JsonRef&, IECSqlValue const&, ECN::PrimitiveType, ECN::ECJsonInt64Format);
 
-        BentleyStatus PropertyValueToJson(JsonValueR, IECSqlValue const&) const;
-        BentleyStatus PrimitiveToJson(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
-        BentleyStatus NavigationToJson(JsonValueR, IECSqlValue const&) const;
-        BentleyStatus StructToJson(JsonValueR, IECSqlValue const&) const;
-        BentleyStatus PrimitiveArrayToJson(JsonValueR, IECSqlValue const&, ECN::PrimitiveType) const;
-        BentleyStatus StructArrayToJson(JsonValueR, IECSqlValue const&) const;
+        static BentleyStatus ValidatePreconditions(ECSqlStatement const&);
+
+        static ECSqlSystemPropertyInfo const& DetermineTopLevelSystemPropertyInfo(SchemaManager const&, ECSqlColumnInfoCR);
+        static Utf8String MemberNameFromSelectClauseItem(ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&, JsonECSqlSelectAdapter::MemberNameCasing);
 
         static void FormatMemberName(Utf8String&, JsonECSqlSelectAdapter::MemberNameCasing);
         static bool NeedsMemberNameReformatting(JsonECSqlSelectAdapter::MemberNameCasing);
+
+        static Utf8StringCR GetMemberName(bvector<bpair<Utf8String, Utf8String>> const& memberNames, size_t colIndex)
+            {
+            BeAssert(colIndex < memberNames.size());
+            return memberNames[colIndex].first;
+            }
+
+        static Utf8StringCR GetUniqueMemberName(bvector<bpair<Utf8String, Utf8String>> const& memberNames, size_t colIndex)
+            {
+            BeAssert(colIndex < memberNames.size());
+            bpair<Utf8String, Utf8String> const& memberName = memberNames[colIndex];
+            if (memberName.second.empty())
+                return memberName.first;
+
+            return memberName.second;
+            }
     public:
-        ECSqlToJsonConverter(ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions const& options) : m_stmt(stmt), m_formatOptions(options) {}
-
-        BentleyStatus ValidatePreconditions() const;
-        ECSqlSystemPropertyInfo const& DetermineTopLevelSystemPropertyInfo(ECSqlColumnInfoCR colInfo);
-        BentleyStatus SelectClauseItemToJson(JsonValueR, IECSqlValue const&, ECSqlSystemPropertyInfo const& sysPropInfo) const;
-
-        Utf8String MemberNameFromSelectClauseItem(ECSqlColumnInfoCR, ECSqlSystemPropertyInfo const&) const;
+        static BentleyStatus InitializeAdapter(bvector<bpair<Utf8String, Utf8String>>& memberNames, ECSqlStatement const&, JsonECSqlSelectAdapter::MemberNameCasing);
+        static BentleyStatus GetRow(JsonRef&, bool appendToRow, ECSqlStatement const&, JsonECSqlSelectAdapter::FormatOptions const&, bvector<bpair<Utf8String, Utf8String>> const& memberNames);
+        static BentleyStatus GetRowInstance(JsonRef&, ECN::ECClassId, ECSqlStatement const&, JsonECSqlSelectAdapter::FormatOptions const&, bvector<bpair<Utf8String, Utf8String>> const& memberNames);
     };
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                   06/2018
+// @bsimethod                                    Krischan.Eberle            11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonECSqlSelectAdapter::SetStatement(ECSqlStatementCR ecsqlStatement) const
+JsonECSqlSelectAdapter::JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_ecsqlHash(ecsqlStatement.GetHashCode())
     {
-    BeAssert(m_ecsqlStatement != nullptr);
-    BeAssert(m_hashCode != 0u);
-    BeAssert(ecsqlStatement.GetHashCode() != 0u);
-    BeAssert(ecsqlStatement.IsPrepared());
-    if (!ecsqlStatement.IsPrepared())
-        return ERROR;
-
-    if (ecsqlStatement.GetHashCode() != m_hashCode)
-        {
-        m_members = nullptr;
-        m_hashCode = ecsqlStatement.GetHashCode();
-        }
-
-    if (m_ecsqlStatement != &ecsqlStatement)
-        m_ecsqlStatement = &ecsqlStatement;
-
-    return SUCCESS;
+    if (SUCCESS != AdapterHelper::InitializeAdapter(m_memberNames, m_ecsqlStatement, m_formatOptions.GetMemberCasingMode()))
+        m_memberNames.clear();
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                   06/2018
+// @bsimethod                                    Ramanujam.Raman                 10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonECSqlSelectAdapter::Init() const
+BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJson) const
     {
-    if (SetStatement(*m_ecsqlStatement) != SUCCESS)
+    if (!IsValid())
         return ERROR;
 
-    if (m_members != nullptr)
-        return SUCCESS;
-    
-    m_members = std::unique_ptr<bvector<Utf8String>>(new bvector<Utf8String>());
-    
-    ECSqlToJsonConverter converter(*m_ecsqlStatement, m_formatOptions);
-    if (SUCCESS != converter.ValidatePreconditions())
+    JsonRef json(rowJson);
+    return AdapterHelper::GetRow(json, appendToJson, m_ecsqlStatement, m_formatOptions, m_memberNames);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                11/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonECSqlSelectAdapter::GetRow(RapidJsonValueR rowJson, rapidjson::MemoryPoolAllocator<>& allocator, bool appendToJson) const
+    {
+    if (!IsValid())
         return ERROR;
 
-    const int count = m_ecsqlStatement->GetColumnCount();
+    JsonRef json(rowJson, allocator);
+    return AdapterHelper::GetRow(json, appendToJson, m_ecsqlStatement, m_formatOptions, m_memberNames);
+
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Ramanujam.Raman                 03/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(JsonValueR rowJson, ECClassId classId) const
+    {
+    if (!IsValid())
+        return ERROR;
+
+    JsonRef json(rowJson);
+    return AdapterHelper::GetRowInstance(json, classId, m_ecsqlStatement, m_formatOptions, m_memberNames);
+    }
+
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                11/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(RapidJsonValueR rowJson, ECClassId classId, rapidjson::MemoryPoolAllocator<>& allocator) const
+    {
+    if (!IsValid())
+        return ERROR;
+
+    JsonRef json(rowJson, allocator);
+    return AdapterHelper::GetRowInstance(json, classId, m_ecsqlStatement, m_formatOptions, m_memberNames);
+    }
+
+//******************************************************************************************
+// AdapterHelper
+//******************************************************************************************
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle            11/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus AdapterHelper::InitializeAdapter(bvector<bpair<Utf8String, Utf8String>>& memberNames, ECSqlStatement const& stmt, JsonECSqlSelectAdapter::MemberNameCasing casing)
+    {
+    if (SUCCESS != ValidatePreconditions(stmt))
+        return ERROR;
+
+    const int count = stmt.GetColumnCount();
     bmap<Utf8String, int> columnNameCollisions;
+    SchemaManager const& schemaManager = stmt.GetECDb()->Schemas();
     for (int columnIndex = 0; columnIndex < count; columnIndex++)
         {
-        IECSqlValue const& ecsqlValue = m_ecsqlStatement->GetValue(columnIndex);       
+        IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
         ECSqlColumnInfoCR colInfo = ecsqlValue.GetColumnInfo();
         if (colInfo.GetPropertyPath().GetLeafEntry().GetKind() == ECSqlPropertyPath::Entry::Kind::ArrayIndex)
             {
-            LOG.errorv("JsonECSqlSelectAdapter does not support array accessors in an ECSQL select clause: %s", m_ecsqlStatement->GetECSql());
+            LOG.errorv("JsonECSqlSelectAdapter does not support array accessors in an ECSQL select clause: %s", stmt.GetECSql());
             return ERROR;
             }
 
         BeAssert(colInfo.GetProperty() != nullptr);
-        ECSqlSystemPropertyInfo const& sysPropInfo = converter.DetermineTopLevelSystemPropertyInfo(colInfo);
-        Utf8String memberName = converter.MemberNameFromSelectClauseItem(colInfo, sysPropInfo);
+        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
+        memberNames.push_back(bpair<Utf8String, Utf8String>());
+        bpair<Utf8String, Utf8String>& memberNamePair = memberNames.back();
+        memberNamePair.first = MemberNameFromSelectClauseItem(colInfo, sysPropInfo, casing);
+        Utf8StringCR memberName = memberNamePair.first;
         if (memberName.empty())
             return ERROR;
 
@@ -116,58 +249,45 @@ BentleyStatus JsonECSqlSelectAdapter::Init() const
         columnNameCollisions[memberName] = occurrenceCount;
 
         if (occurrenceCount > 1)
-            {
-            Utf8String suffix;
-            suffix.Sprintf("_%d", occurrenceCount - 1);
-            memberName.append(suffix);
-            }
-        
-        m_members->push_back(memberName);
+            memberNamePair.second.assign(Utf8PrintfString("%s_%d", memberName.c_str(), occurrenceCount - 1));
         }
 
     return SUCCESS;
     }
-
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Ramanujam.Raman                 10/2012
+// @bsimethod                                 Krischan.Eberle                 11/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJson) const
+//static
+BentleyStatus AdapterHelper::GetRow(JsonRef& rowJson, bool appendToJson, ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, bvector<bpair<Utf8String, Utf8String>> const& memberNames)
     {
-    if (Init() != SUCCESS)
-        return ERROR;
-
-    ECSqlToJsonConverter converter(*m_ecsqlStatement, m_formatOptions);
-    if (SUCCESS != converter.ValidatePreconditions())
+    if (memberNames.empty())
         return ERROR;
 
     if (appendToJson)
         {
-        if (rowJson.isNull() || !rowJson.isObject()) //explicit null check is necessary, as isObject returns true for null as well
+        if (rowJson.IsNull() || !rowJson.IsObject())
             return ERROR;
         }
     else
-        rowJson = Json::Value(Json::objectValue);
+        rowJson.SetObject();
 
-    const int count = m_ecsqlStatement->GetColumnCount();   
+    const int count = stmt.GetColumnCount();
+    BeAssert(count == (int) memberNames.size());
+    SchemaManager const& schemaManager = stmt.GetECDb()->Schemas();
     for (int columnIndex = 0; columnIndex < count; columnIndex++)
         {
-        IECSqlValue const& ecsqlValue = m_ecsqlStatement->GetValue(columnIndex);
+        IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
         if (ecsqlValue.IsNull())
             continue;
 
         ECSqlColumnInfoCR colInfo = ecsqlValue.GetColumnInfo();
-        ECSqlSystemPropertyInfo const& sysPropInfo = converter.DetermineTopLevelSystemPropertyInfo(colInfo);
-        Utf8StringCR memberName = m_members->at(columnIndex);
-        if (m_thisAdaptorCached)
-            {
-            if (SUCCESS != converter.SelectClauseItemToJson(rowJson[Json::StaticString(memberName.c_str())], ecsqlValue, sysPropInfo))
-                return ERROR;
-            }
-        else
-            {
-            if (SUCCESS != converter.SelectClauseItemToJson(rowJson[memberName], ecsqlValue, sysPropInfo))
-                return ERROR;
-            }
+        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
+        // GetRow needs to use the unique member names where name collisions in the select clause were resolved 
+        // E.g. SELECT e.ECInstanceId, f.ECInstanceId FROM ... becomes { "id":..., "id_1":...}
+        Utf8StringCR memberName = GetUniqueMemberName(memberNames, (size_t) columnIndex);
+        JsonRef memberJson = rowJson.AddMember(memberName);
+        if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
+            return ERROR;
         }
 
     return SUCCESS;
@@ -176,19 +296,19 @@ BentleyStatus JsonECSqlSelectAdapter::GetRow(JsonValueR rowJson, bool appendToJs
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 03/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(JsonValueR rowJson, ECClassId classId) const
+BentleyStatus AdapterHelper::GetRowInstance(JsonRef& rowJson, ECClassId classId, ECSqlStatement const& stmt, JsonECSqlSelectAdapter::FormatOptions const& formatOptions, bvector<bpair<Utf8String, Utf8String>> const& memberNames)
     {
-    ECSqlToJsonConverter converter(*m_ecsqlStatement, m_formatOptions);
-    if (SUCCESS != converter.ValidatePreconditions() || !classId.IsValid())
+    if (memberNames.empty() || !classId.IsValid())
         return ERROR;
 
-    rowJson = Json::Value(Json::objectValue);
+    rowJson.SetObject();
 
+    SchemaManager const& schemaManager = stmt.GetECDb()->Schemas();
     bool foundMatchingSelectClauseItems = false;
-    const int count = m_ecsqlStatement->GetColumnCount();
+    const int count = stmt.GetColumnCount();
     for (int columnIndex = 0; columnIndex < count; columnIndex++)
         {
-        IECSqlValue const& ecsqlValue = m_ecsqlStatement->GetValue(columnIndex);
+        IECSqlValue const& ecsqlValue = stmt.GetValue(columnIndex);
         if (ecsqlValue.IsNull())
             continue;
 
@@ -199,47 +319,43 @@ BentleyStatus JsonECSqlSelectAdapter::GetRowInstance(JsonValueR rowJson, ECClass
 
         if (colInfo.GetPropertyPath().GetLeafEntry().GetKind() == ECSqlPropertyPath::Entry::Kind::ArrayIndex)
             {
-            LOG.errorv("JsonECSqlSelectAdapter does not support array accessors in an ECSQL select clause: %s", m_ecsqlStatement->GetECSql());
+            LOG.errorv("JsonECSqlSelectAdapter does not support array accessors in an ECSQL select clause: %s", stmt.GetECSql());
             return ERROR;
             }
 
         foundMatchingSelectClauseItems = true;
 
         BeAssert(colInfo.GetProperty() != nullptr);
-        ECSqlSystemPropertyInfo const& sysPropInfo = converter.DetermineTopLevelSystemPropertyInfo(colInfo);
-        Utf8String memberName = converter.MemberNameFromSelectClauseItem(colInfo, sysPropInfo);
-
-        if (SUCCESS != converter.SelectClauseItemToJson(rowJson[memberName.c_str()], ecsqlValue, sysPropInfo))
+        ECSqlSystemPropertyInfo const& sysPropInfo = DetermineTopLevelSystemPropertyInfo(schemaManager, colInfo);
+        // for GetRowInstance we never have member name collisions as we only use props from one class.
+        Utf8StringCR memberName = GetMemberName(memberNames, (size_t) columnIndex);
+        JsonRef memberJson = rowJson.AddMember(memberName);
+        if (SUCCESS != SelectClauseItemToJson(memberJson, ecsqlValue, sysPropInfo, schemaManager, formatOptions))
             return ERROR;
         }
 
     if (!foundMatchingSelectClauseItems)
         {
-        LOG.errorv("No properties of ECClass with Id '%s' found in ECSqlStatement '%s' passed to JsonECSqlSelectAdapter.", classId.ToString().c_str(), m_ecsqlStatement->GetECSql());
+        LOG.errorv("No properties of ECClass with Id '%s' found in ECSqlStatement '%s' passed to JsonECSqlSelectAdapter.", classId.ToString().c_str(), stmt.GetECSql());
         return ERROR;
         }
 
     return SUCCESS;
     }
-
-
-//******************************************************************************************
-// ECSqlToJsonConverter
-//******************************************************************************************
 //--------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::ValidatePreconditions() const
+BentleyStatus AdapterHelper::ValidatePreconditions(ECSqlStatement const& stmt)
     {
-    if (!m_stmt.IsPrepared())
+    if (!stmt.IsPrepared())
         {
         LOG.error("ECSqlStatement passed to JsonECSqlSelectAdapter is not prepared yet.");
         return ERROR;
         }
 
-    if (m_stmt.GetColumnCount() == 0)
+    if (stmt.GetColumnCount() == 0)
         {
-        LOG.errorv("ECSqlStatement '%s' passed to JsonECSqlSelectAdapter has no SELECT clause.", m_stmt.GetECSql());
+        LOG.errorv("ECSqlStatement '%s' passed to JsonECSqlSelectAdapter has no SELECT clause.", stmt.GetECSql());
         return ERROR;
         }
 
@@ -249,12 +365,12 @@ BentleyStatus ECSqlToJsonConverter::ValidatePreconditions() const
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::SelectClauseItemToJson(JsonValueR json, IECSqlValue const& ecsqlValue, ECSqlSystemPropertyInfo const& sysPropInfo) const
+BentleyStatus AdapterHelper::SelectClauseItemToJson(JsonRef& json, IECSqlValue const& ecsqlValue, ECSqlSystemPropertyInfo const& sysPropInfo, SchemaManager const& schemaManager, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
     BeAssert(!ecsqlValue.IsNull() && "Should have been caught before");
 
     if (!sysPropInfo.IsSystemProperty())
-        return PropertyValueToJson(json, ecsqlValue);
+        return PropertyValueToJson(json, ecsqlValue, schemaManager, formatOptions);
 
     BeAssert(ecsqlValue.GetId<BeInt64Id>().IsValid());
 
@@ -263,15 +379,15 @@ BentleyStatus ECSqlToJsonConverter::SelectClauseItemToJson(JsonValueR json, IECS
         switch (sysPropInfo.GetClass())
             {
                 case ECSqlSystemPropertyInfo::Class::ECInstanceId:
-                    return ECJsonUtilities::IdToJson(json, ecsqlValue.GetId<BeInt64Id>());
+                    return json.FromId(ecsqlValue.GetId<BeInt64Id>());
 
                 case ECSqlSystemPropertyInfo::Class::ECClassId:
                 {
-                ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
+                ECClassCP cls = schemaManager.GetClass(ecsqlValue.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
                 if (cls == nullptr)
                     return ERROR;
 
-                ECJsonUtilities::ClassNameToJson(json, *cls);
+                json.FromClass(*cls);
                 return SUCCESS;
                 }
 
@@ -287,16 +403,16 @@ BentleyStatus ECSqlToJsonConverter::SelectClauseItemToJson(JsonValueR json, IECS
             {
                 case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
                 case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
-                    return ECJsonUtilities::IdToJson(json, ecsqlValue.GetId<BeInt64Id>());
+                    return json.FromId(ecsqlValue.GetId<BeInt64Id>());
 
                 case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
                 case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
                 {
-                ECClassCP cls = m_stmt.GetECDb()->Schemas().GetClass(ecsqlValue.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
+                ECClassCP cls = schemaManager.GetClass(ecsqlValue.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
                 if (cls == nullptr)
                     return ERROR;
 
-                ECJsonUtilities::ClassNameToJson(json, *cls);
+                json.FromClass(*cls);
                 return SUCCESS;
                 }
 
@@ -313,7 +429,7 @@ BentleyStatus ECSqlToJsonConverter::SelectClauseItemToJson(JsonValueR json, IECS
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::PropertyValueToJson(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus AdapterHelper::PropertyValueToJson(JsonRef& jsonValue, IECSqlValue const& ecsqlValue, SchemaManager const& schemaManager, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
     BeAssert(!ecsqlValue.IsNull() && "Should have been caught before to avoid that a null JSON value is created");
 
@@ -321,19 +437,19 @@ BentleyStatus ECSqlToJsonConverter::PropertyValueToJson(JsonValueR jsonValue, IE
     BeAssert(prop != nullptr);
 
     if (prop->GetIsPrimitive())
-        return PrimitiveToJson(jsonValue, ecsqlValue, prop->GetAsPrimitiveProperty()->GetType());
+        return PrimitiveToJson(jsonValue, ecsqlValue, prop->GetAsPrimitiveProperty()->GetType(), formatOptions.GetInt64Format());
 
     if (prop->GetIsStruct())
-        return StructToJson(jsonValue, ecsqlValue);
+        return StructToJson(jsonValue, ecsqlValue, schemaManager, formatOptions);
 
     if (prop->GetIsNavigation())
-        return NavigationToJson(jsonValue, ecsqlValue);
+        return NavigationToJson(jsonValue, ecsqlValue, schemaManager);
 
     if (prop->GetIsPrimitiveArray())
-        return PrimitiveArrayToJson(jsonValue, ecsqlValue, prop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType());
+        return PrimitiveArrayToJson(jsonValue, ecsqlValue, prop->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType(), formatOptions.GetInt64Format());
 
     if (prop->GetIsStructArray())
-        return StructArrayToJson(jsonValue, ecsqlValue);
+        return StructArrayToJson(jsonValue, ecsqlValue, schemaManager, formatOptions);
 
     BeAssert(false && "Unhandled ECProperty type. Adjust the code for this new ECProperty type");
     return ERROR;
@@ -342,19 +458,17 @@ BentleyStatus ECSqlToJsonConverter::PropertyValueToJson(JsonValueR jsonValue, IE
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::PrimitiveArrayToJson(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, PrimitiveType arrayElementType) const
+BentleyStatus AdapterHelper::PrimitiveArrayToJson(JsonRef& jsonValue, IECSqlValue const& ecsqlValue, PrimitiveType arrayElementType, ECN::ECJsonInt64Format int64Format)
     {
-    int i = 0;
-    jsonValue = Json::Value(Json::arrayValue);
+    jsonValue.SetArray();
     for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
         if (arrayElementValue.IsNull())
             continue;
 
-        if (SUCCESS != PrimitiveToJson(jsonValue[i], arrayElementValue, arrayElementType))
+        JsonRef arrayElementJson = jsonValue.Pushback();
+        if (SUCCESS != PrimitiveToJson(arrayElementJson, arrayElementValue, arrayElementType, int64Format))
             return ERROR;
-
-        i++;
         }
 
     return SUCCESS;
@@ -363,73 +477,80 @@ BentleyStatus ECSqlToJsonConverter::PrimitiveArrayToJson(JsonValueR jsonValue, I
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::StructArrayToJson(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus AdapterHelper::StructArrayToJson(JsonRef& jsonValue, IECSqlValue const& ecsqlValue, SchemaManager const& schemaManager, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
-    int i = 0;
-    Json::Value temp(Json::arrayValue);
+    jsonValue.SetArray();
     for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
         if (arrayElementValue.IsNull())
             continue;
 
-        if (SUCCESS != StructToJson(temp[i], arrayElementValue))
+        JsonRef arrayElementJson = jsonValue.Pushback();
+        if (SUCCESS != StructToJson(arrayElementJson, arrayElementValue, schemaManager, formatOptions))
             return ERROR;
-
-        i++;
         }
 
-    jsonValue = temp;
     return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle               06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::NavigationToJson(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus AdapterHelper::NavigationToJson(JsonRef& jsonValue, IECSqlValue const& ecsqlValue, SchemaManager const& schemaManager)
     {
     IECSqlValue const& navIdVal = ecsqlValue[ECDBSYS_PROP_NavPropId];
     if (navIdVal.IsNull())
         return SUCCESS;
 
-    jsonValue = Json::Value(Json::objectValue);
-    if (SUCCESS != ECJsonUtilities::IdToJson(jsonValue[ECJsonUtilities::json_navId()], navIdVal.GetId<ECInstanceId>()))
+    const ECInstanceId navId = navIdVal.GetId<ECInstanceId>();
+
+    ECClassCP relClass = nullptr;
+    IECSqlValue const& relClassIdVal = ecsqlValue[ECDBSYS_PROP_NavPropRelECClassId];
+    if (!relClassIdVal.IsNull())
+        {
+        relClass = schemaManager.GetClass(relClassIdVal.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
+        if (relClass == nullptr)
+            return ERROR;
+        }
+
+    jsonValue.SetObject();
+    JsonRef navIdJson = jsonValue.AddMember(ECJsonSystemNames::Navigation::Id());
+    if (SUCCESS != navIdJson.FromId(navId))
         return ERROR;
 
-    IECSqlValue const& relClassIdVal = ecsqlValue[ECDBSYS_PROP_NavPropRelECClassId];
-    if (relClassIdVal.IsNull())
+    if (relClass == nullptr)
         return SUCCESS;
 
-    ECClassCP relClass = m_stmt.GetECDb()->Schemas().GetClass(relClassIdVal.GetId<ECClassId>(), ecsqlValue.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
-    if (relClass == nullptr)
-        return ERROR;
-
-    ECJsonUtilities::ClassNameToJson(jsonValue[ECJsonUtilities::json_navRelClassName()], *relClass);
+    JsonRef relClassNameJson = jsonValue.AddMember(ECJsonSystemNames::Navigation::RelClassName());
+    relClassNameJson.FromClass(*relClass);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::StructToJson(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+BentleyStatus AdapterHelper::StructToJson(JsonRef& jsonValue, IECSqlValue const& ecsqlValue, SchemaManager const& schemaManager, JsonECSqlSelectAdapter::FormatOptions const& formatOptions)
     {
+    jsonValue.SetObject();
     for (IECSqlValue const& structMemberValue : ecsqlValue.GetStructIterable())
         {
         if (structMemberValue.IsNull())
             continue;
 
         ECPropertyCP memberProp = structMemberValue.GetColumnInfo().GetProperty();
-        Json::Value* memberJson = nullptr;
-        if (NeedsMemberNameReformatting(m_formatOptions.GetMemberCasingMode()))
+        JsonRef memberJson;
+        if (NeedsMemberNameReformatting(formatOptions.GetMemberCasingMode()))
             {
             Utf8String memberPropName(memberProp->GetName());
-            FormatMemberName(memberPropName, m_formatOptions.GetMemberCasingMode());
-            memberJson = &jsonValue[memberPropName.c_str()];
+            FormatMemberName(memberPropName, formatOptions.GetMemberCasingMode());
+            memberJson = jsonValue.AddMember(memberPropName);
             }
         else
-            memberJson = &jsonValue[memberProp->GetName().c_str()];
+            memberJson = jsonValue.AddMember(memberProp->GetName());
 
-        BeAssert(memberJson != nullptr);
-        if (SUCCESS != PropertyValueToJson(*memberJson, structMemberValue))
+        BeAssert(memberJson.IsValid());
+
+        if (SUCCESS != PropertyValueToJson(memberJson, structMemberValue, schemaManager, formatOptions))
             return ERROR;
         }
 
@@ -439,7 +560,7 @@ BentleyStatus ECSqlToJsonConverter::StructToJson(JsonValueR jsonValue, IECSqlVal
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 10/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlToJsonConverter::PrimitiveToJson(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECN::PrimitiveType primType) const
+BentleyStatus AdapterHelper::PrimitiveToJson(JsonRef& jsonValue, IECSqlValue const& ecsqlValue, ECN::PrimitiveType primType, ECJsonInt64Format int64Format)
     {
     BeAssert(!ecsqlValue.IsNull());
     switch (primType)
@@ -448,43 +569,88 @@ BentleyStatus ECSqlToJsonConverter::PrimitiveToJson(JsonValueR jsonValue, IECSql
             {
             int size = 0;
             Byte const* data = (Byte const*) ecsqlValue.GetBlob(&size);
-            ECJsonUtilities::BinaryToJson(jsonValue, data, (size_t) size);
-            return SUCCESS;
+            if (jsonValue.IsRapidJson())
+                return ECJsonUtilities::BinaryToJson(jsonValue.RapidJson(), data, (size_t) size, jsonValue.Allocator());
+
+            return ECJsonUtilities::BinaryToJson(jsonValue.JsonCpp(), data, (size_t) size);
             }
             case PRIMITIVETYPE_Boolean:
             {
-            jsonValue = ecsqlValue.GetBoolean();
+            const bool val = ecsqlValue.GetBoolean();
+            if (jsonValue.IsRapidJson())
+                jsonValue.RapidJson().SetBool(val);
+            else
+                jsonValue.JsonCpp() = val;
+
             return SUCCESS;
             }
 
             case PRIMITIVETYPE_DateTime:
             {
-            ECJsonUtilities::DateTimeToJson(jsonValue, ecsqlValue.GetDateTime());
+            DateTime dt = ecsqlValue.GetDateTime();
+            if (jsonValue.IsRapidJson())
+                ECJsonUtilities::DateTimeToJson(jsonValue.RapidJson(), dt, jsonValue.Allocator());
+            else
+                ECJsonUtilities::DateTimeToJson(jsonValue.JsonCpp(), dt);
+
             return SUCCESS;
             }
             case PRIMITIVETYPE_Double:
             {
-            jsonValue = ecsqlValue.GetDouble();
+            const double val = ecsqlValue.GetDouble();
+            if (jsonValue.IsRapidJson())
+                jsonValue.RapidJson().SetDouble(val);
+            else
+                jsonValue.JsonCpp() = val;
+
             return SUCCESS;
             }
             case PRIMITIVETYPE_Integer:
             {
-            jsonValue = ecsqlValue.GetInt();
+            const int val = ecsqlValue.GetInt();
+            if (jsonValue.IsRapidJson())
+                jsonValue.RapidJson().SetInt(val);
+            else
+                jsonValue.JsonCpp() = val;
+
             return SUCCESS;
             }
             case PRIMITIVETYPE_Long:
-                ECJsonUtilities::Int64ToJson(jsonValue, ecsqlValue.GetInt64(), m_formatOptions.GetInt64Format());
-                return SUCCESS;
+            {
+            const int64_t val = ecsqlValue.GetInt64();
+            if (jsonValue.IsRapidJson())
+                ECJsonUtilities::Int64ToJson(jsonValue.RapidJson(), val, jsonValue.Allocator(), int64Format);
+            else
+                ECJsonUtilities::Int64ToJson(jsonValue.JsonCpp(), val, int64Format);
 
+            return SUCCESS;
+            }
             case PRIMITIVETYPE_Point2d:
-                return ECJsonUtilities::Point2dToJson(jsonValue, ecsqlValue.GetPoint2d());
+            {                
+            const DPoint2d val = ecsqlValue.GetPoint2d();
+            if (jsonValue.IsRapidJson())
+                return ECJsonUtilities::Point2dToJson(jsonValue.RapidJson(), val, jsonValue.Allocator());
+
+            return ECJsonUtilities::Point2dToJson(jsonValue.JsonCpp(), val);
+            }
 
             case PRIMITIVETYPE_Point3d:
-                return ECJsonUtilities::Point3dToJson(jsonValue, ecsqlValue.GetPoint3d());
+            {
+            const DPoint3d val = ecsqlValue.GetPoint3d();
+            if (jsonValue.IsRapidJson())
+                return ECJsonUtilities::Point3dToJson(jsonValue.RapidJson(), val, jsonValue.Allocator());
+
+            return ECJsonUtilities::Point3dToJson(jsonValue.JsonCpp(), val);
+            }
 
             case PRIMITIVETYPE_String:
             {
-            jsonValue = ecsqlValue.GetText();
+            Utf8CP val = ecsqlValue.GetText();
+            if (jsonValue.IsRapidJson())
+                jsonValue.RapidJson().SetString(val, jsonValue.Allocator()); // copy the string into the json as the original string gets released after the next Step().
+            else
+                jsonValue.JsonCpp() = val;
+
             return SUCCESS;
             }
 
@@ -494,7 +660,10 @@ BentleyStatus ECSqlToJsonConverter::PrimitiveToJson(JsonValueR jsonValue, IECSql
             if (geom == nullptr)
                 return ERROR;
 
-            return ECJsonUtilities::IGeometryToJson(jsonValue, *geom);
+            if (jsonValue.IsRapidJson())
+                return ECJsonUtilities::IGeometryToJson(jsonValue.RapidJson(), *geom, jsonValue.Allocator());
+
+            return ECJsonUtilities::IGeometryToJson(jsonValue.JsonCpp(), *geom);
             }
             default:
                 BeAssert(false && "Unknown type");
@@ -506,13 +675,14 @@ BentleyStatus ECSqlToJsonConverter::PrimitiveToJson(JsonValueR jsonValue, IECSql
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlSystemPropertyInfo const& ECSqlToJsonConverter::DetermineTopLevelSystemPropertyInfo(ECSqlColumnInfoCR colInfo)
+//static
+ECSqlSystemPropertyInfo const& AdapterHelper::DetermineTopLevelSystemPropertyInfo(SchemaManager const& schemaManager, ECSqlColumnInfoCR colInfo)
     {
     if (colInfo.IsGeneratedProperty())
         return ECSqlSystemPropertyInfo::NoSystemProperty();
 
     BeAssert(colInfo.GetProperty() != nullptr && "Must be checked before");
-    ECSqlSystemPropertyInfo const& sysPropInfo = m_stmt.GetECDb()->Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*colInfo.GetProperty());
+    ECSqlSystemPropertyInfo const& sysPropInfo = schemaManager.Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*colInfo.GetProperty());
     if (sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Class || sysPropInfo.GetType() == ECSqlSystemPropertyInfo::Type::Relationship)
         return sysPropInfo;
 
@@ -522,7 +692,7 @@ ECSqlSystemPropertyInfo const& ECSqlToJsonConverter::DetermineTopLevelSystemProp
 //---------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo) const
+Utf8String AdapterHelper::MemberNameFromSelectClauseItem(ECSqlColumnInfo const& colInfo, ECSqlSystemPropertyInfo const& sysPropInfo, JsonECSqlSelectAdapter::MemberNameCasing casing)
     {
     //if property is generated, the display label contains the select clause item as is.
     //The property name in contrast would have encoded special characters of the select clause item.
@@ -533,7 +703,7 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
         if (name.empty())
             name.assign(colInfo.GetProperty()->GetName());
 
-        FormatMemberName(name, m_formatOptions.GetMemberCasingMode());
+        FormatMemberName(name, casing);
         return name;
         }
 
@@ -541,7 +711,7 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
         {
         Utf8String name(colInfo.GetPropertyPath().ToString());
         BeAssert(!name.empty());
-        FormatMemberName(name, m_formatOptions.GetMemberCasingMode());
+        FormatMemberName(name, casing);
         return name;
         }
 
@@ -591,7 +761,7 @@ Utf8String ECSqlToJsonConverter::MemberNameFromSelectClauseItem(ECSqlColumnInfo 
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-bool ECSqlToJsonConverter::NeedsMemberNameReformatting(JsonECSqlSelectAdapter::MemberNameCasing casingMode)
+bool AdapterHelper::NeedsMemberNameReformatting(JsonECSqlSelectAdapter::MemberNameCasing casingMode)
     {
     switch (casingMode)
         {
@@ -611,7 +781,7 @@ bool ECSqlToJsonConverter::NeedsMemberNameReformatting(JsonECSqlSelectAdapter::M
 // @bsimethod                                    Krischan.Eberle                 09/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-void ECSqlToJsonConverter::FormatMemberName(Utf8String& memberName, JsonECSqlSelectAdapter::MemberNameCasing casingMode)
+void AdapterHelper::FormatMemberName(Utf8String& memberName, JsonECSqlSelectAdapter::MemberNameCasing casingMode)
     {
     switch (casingMode)
         {
