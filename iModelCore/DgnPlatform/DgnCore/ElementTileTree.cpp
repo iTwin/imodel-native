@@ -2012,91 +2012,13 @@ struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
     StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
 };
 
-struct GlyphAtlas;
-struct DeferredGlyph
-{
-    Polyface m_polyface;
-    GeometryPtr m_geom;
-    double m_rangePixels;
-    bool m_isContained;
-    bool m_paramsFixed = false;
-
-    DeferredGlyph(Polyface& polyface, Geometry& geom, double rangePixels, bool isContained) : m_polyface(polyface), m_geom(&geom), m_rangePixels(rangePixels), m_isContained(isContained) {}
-    void* GetKey();
-};
-
-typedef bvector<DeferredGlyph> DeferredGlyphList;
-
-struct GlyphLocation
-{
-    uint32_t m_atlasNdx; // which atlas within the manager contains this glyph?
-    uint32_t m_atlasSlotX; // what slot within that atlas has the glyph?
-    uint32_t m_atlasSlotY;
-};
-
-struct GlyphAtlas
-{
-private:
-    static const uint32_t m_glyphSizeInPixels = 48;
-    static const uint32_t m_glyphPaddingInPixels = 16;
-    static const uint32_t m_glyphHalfPaddingInPixels = m_glyphPaddingInPixels / 2;
-    static const uint32_t m_glyphTotalSizeInPixels = m_glyphSizeInPixels + m_glyphPaddingInPixels;
-    static const uint32_t m_maxAtlasGlyphsDim = 64; // 64 glyphs * 64 pixels = 4096 pixels
-
-    uint32_t m_index;
-    uint32_t m_numGlyphs;
-    uint32_t m_numGlyphsInX;
-    uint32_t m_numGlyphsInY;
-    uint32_t m_numPixelsInX;
-    uint32_t m_numPixelsInY;
-    uint32_t m_availGlyphSlotX = 0;
-    uint32_t m_availGlyphSlotY = 0;
-
-    ByteStream m_atlasBytes;
-    TexturePtr m_atlasTexture;
-
-    static bool IsPowerOfTwo(uint32_t num) { return 0 == (num & (num - 1)); }
-    static uint32_t NextHighestPowerOfTwo(uint32_t num)
-        {
-        --num;
-        for (int i = 1; i < 32; i <<= 1)
-            num = num | num >> i;
-        return num + 1;
-        }
-
-    void CalculateSize();
-public:
-    GlyphAtlas(uint32_t index, uint32_t numGlyphs);
-    GlyphAtlas(GlyphAtlas&&);
-    GlyphAtlas& operator=(GlyphAtlas&& other);
-
-    bool AddGlyph(DeferredGlyph& glyph, GlyphLocation& loc);
-    void GetUVCoords(Render::Image* image, const GlyphLocation& loc, DPoint2d uvs[2]);
-    TexturePtr GetTexture(Render::System& renderSystem, DgnDbP db);
-
-    static uint32_t GetMaxGlyphsInAtlas() { return m_maxAtlasGlyphsDim * m_maxAtlasGlyphsDim; }
-};
-
-struct GlyphAtlasManager
-{
-private:
-    bvector<GlyphAtlas> m_atlases;
-    uint32_t m_numGlyphs;
-    uint32_t m_numAtlases;
-    uint32_t m_curAtlasNdx;
-    std::map<void*, GlyphLocation> m_glyphLocations;
-public:
-    GlyphAtlasManager(uint32_t numGlyphs);
-
-    void AddGlyph(DeferredGlyph& glyph);
-    GlyphAtlas& GetAtlasAndLocationForGlyph(DeferredGlyph& glyph, GlyphLocation &loc);
-};
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
 struct MeshGenerator : ViewContext
 {
+    friend struct GlyphDeferralManager;
+
 private:
     TileCR                  m_tile;
     GeometryOptions         m_options;
@@ -2109,8 +2031,7 @@ private:
     bool                    m_maxGeometryCountExceeded = false;
     bool                    m_didDecimate = false;
     ThematicMeshBuilderPtr  m_thematicMeshBuilder;
-    DeferredGlyphList       m_deferredGlyphs;
-    std::set<void*>         m_uniqueGlyphKeys;
+    GlyphDeferralManager    m_glyphDeferralManager;
 
     // ###TODO: Revisit...lots of small polyfaces can produce excessive vertices...
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
@@ -2150,7 +2071,7 @@ public:
     void AddMeshes(GeometryList const& geometries, bool doRangeTest);
     void AddMeshes(GeometryR geom, bool doRangeTest);
     void AddMeshes(GeomPartR part, bvector<GeometryCP> const& instances);
-    void AddDeferredGlyphMeshes(Render::System& renderSystem);
+    void AddDeferredGlyphMeshes();
 
     // Return a list of all meshes currently in the builder map
     MeshList GetMeshes(bool isPartialTile);
@@ -2409,9 +2330,20 @@ GlyphAtlas& GlyphAtlasManager::GetAtlasAndLocationForGlyph(DeferredGlyph& glyph,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mark.Schlosser  09/2018
+* @bsimethod                                                    Mark.Schlosser  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
+void GlyphDeferralManager::DeferGlyph(DeferredGlyph& glyph)
+    {
+    m_deferredGlyphs.push_back(glyph);
+    void* key = m_deferredGlyphs.back().GetKey();
+    if (m_uniqueGlyphKeys.find(key) == m_uniqueGlyphKeys.end())
+        m_uniqueGlyphKeys.insert(key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphDeferralManager::AddDeferredGlyphsToContext(ViewContext* context)
     {
     uint32_t numGlyphs = static_cast<uint32_t>(m_deferredGlyphs.size());
     if (0 == numGlyphs)
@@ -2428,26 +2360,84 @@ void MeshGenerator::AddDeferredGlyphMeshes(Render::System& renderSystem)
         GlyphAtlas& atlas = atlasManager.GetAtlasAndLocationForGlyph(deferredGlyph, loc);
 
         // override texture
-        TexturePtr tex = atlas.GetTexture(renderSystem, m_dgndb);
+        TexturePtr tex = atlas.GetTexture(*context->GetRenderSystem(), &context->GetDgnDb());
         deferredGlyph.m_polyface.m_displayParams = deferredGlyph.m_polyface.m_displayParams->CloneForRasterText(*tex);
 
-        if (!deferredGlyph.m_paramsFixed)
+        // override uvs
+        DPoint2d uvs[2];
+        atlas.GetUVCoords(deferredGlyph.m_polyface.m_glyphImage, loc, uvs);
+        auto& params = deferredGlyph.m_polyface.m_polyface->Param();
+        BeAssert(params.size() >= 4);
+        for (auto& param : params)
             {
-            // override uvs
-            DPoint2d uvs[2];
-            atlas.GetUVCoords(deferredGlyph.m_polyface.m_glyphImage, loc, uvs);
-            auto& params = deferredGlyph.m_polyface.m_polyface->Param();
-            BeAssert(params.size() >= 4);
-            for (auto& param : params)
-                {
-                param.y = param.y < 0.5 ? uvs[0].x : uvs[1].x;
-                param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
-                }
-            deferredGlyph.m_paramsFixed = true;
+            param.y = param.y < 0.5 ? uvs[0].x : uvs[1].x;
+            param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
             }
 
-        AddPolyface(deferredGlyph.m_polyface, *deferredGlyph.m_geom, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
+        dynamic_cast<MeshGenerator*>(context)->AddPolyface(deferredGlyph.m_polyface, *deferredGlyph.m_geom, deferredGlyph.m_rangePixels, deferredGlyph.m_isContained, false);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void GlyphDeferralManager::AddDeferredGlyphsToBuilderMap(MeshBuilderMap& builderMap, Render::System& renderSystem, DgnDb& db, GeometryOptionsCR options)
+    {
+    uint32_t numGlyphs = static_cast<uint32_t>(m_deferredGlyphs.size());
+    if (0 == numGlyphs)
+        return;
+
+    GlyphAtlasManager atlasManager(static_cast<uint32_t>(m_uniqueGlyphKeys.size()));
+    for (auto& deferredGlyph : m_deferredGlyphs)
+        atlasManager.AddGlyph(deferredGlyph);
+
+    // add the polyfaces with appropriate UV coordinates
+    for (auto& deferredGlyph : m_deferredGlyphs)
+        {
+        GlyphLocation loc;
+        GlyphAtlas& atlas = atlasManager.GetAtlasAndLocationForGlyph(deferredGlyph, loc);
+
+        // override texture
+        TexturePtr tex = atlas.GetTexture(renderSystem, &db);
+        deferredGlyph.m_polyface.m_displayParams = deferredGlyph.m_polyface.m_displayParams->CloneForRasterText(*tex);
+
+        // override uvs
+        DPoint2d uvs[2];
+        atlas.GetUVCoords(deferredGlyph.m_polyface.m_glyphImage, loc, uvs);
+        auto& params = deferredGlyph.m_polyface.m_polyface->Param();
+        BeAssert(params.size() >= 4);
+        for (auto& param : params)
+            {
+            param.y = param.y < 0.5 ? uvs[0].x : uvs[1].x;
+            param.x = param.x < 0.5 ? uvs[0].y : uvs[1].y;
+            }
+
+        DisplayParamsCPtr displayParams = deferredGlyph.m_polyface.m_displayParams;
+        bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
+
+        MeshBuilderMap::Key key(*displayParams, nullptr != deferredGlyph.m_polyface.m_polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, deferredGlyph.m_polyface.m_isPlanar);
+        if (options.WantPreserveOrder())
+            key.SetOrder(deferredGlyph.m_order);
+
+        MeshBuilderR meshBuilder = builderMap[key];
+
+        auto edgeOptions = (options.WantEdges() && deferredGlyph.m_polyface.m_displayEdges) ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges;
+        meshBuilder.BeginPolyface(*deferredGlyph.m_polyface.m_polyface, edgeOptions);
+
+        uint32_t fillColor = displayParams->GetFillColor();
+        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*deferredGlyph.m_polyface.m_polyface); visitor->AdvanceToNextFace(); /**/)
+            meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), db, deferredGlyph.m_geom->GetFeature(), hasTexture, fillColor, nullptr != deferredGlyph.m_polyface.m_polyface->GetNormalCP(), nullptr);
+
+        meshBuilder.EndPolyface();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::AddDeferredGlyphMeshes()
+    {
+    m_glyphDeferralManager.AddDeferredGlyphsToContext(this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2557,10 +2547,9 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     {
     if (nullptr != tilePolyface.m_glyphImage && doDefer)
         {
-        m_deferredGlyphs.push_back(DeferredGlyph(tilePolyface, geom, rangePixels, isContained)); // defer processing these until we are finished so we can make texture atlas of glyphs
-        void* key = m_deferredGlyphs.back().GetKey();
-        if (m_uniqueGlyphKeys.find(key) == m_uniqueGlyphKeys.end())
-            m_uniqueGlyphKeys.insert(key);
+        // defer processing these until we are finished so we can make texture atlas of glyphs
+        DeferredGlyph glyph(tilePolyface, geom, rangePixels, isContained);
+        m_glyphDeferralManager.DeferGlyph(glyph);
         return;
         }
 
@@ -3003,7 +2992,7 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         }
 
     if (!isPartialTile)
-        m_meshGenerator.AddDeferredGlyphMeshes(*loadContext.GetRenderSystem());
+        m_meshGenerator.AddDeferredGlyphMeshes();
 
     // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;

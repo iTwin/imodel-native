@@ -2074,11 +2074,21 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     for (auto const& geom : m_geometries)                                                                        
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
-        for (auto const& tilePolyface : polyfaces)
+        for (auto& tilePolyface : polyfaces)
             {
             PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
             if (polyface.IsNull() || 0 == polyface->GetPointCount())
                 continue;
+
+            if (nullptr != tilePolyface.m_glyphImage)
+                {
+                // defer processing these until we are finished so we can make texture atlas of glyphs
+                if (options.WantPreserveOrder())
+                    order++;
+                DeferredGlyph glyph(tilePolyface, *geom, 0.0, false, order);
+                m_glyphDeferralManager.DeferGlyph(glyph);
+                continue;
+                }
 
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
@@ -2121,6 +2131,8 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 }
             }
         }
+
+    m_glyphDeferralManager.AddDeferredGlyphsToBuilderMap(builderMap, *context.GetRenderSystem(), context.GetDgnDb(), options);
 
     return builderMap;
     }
