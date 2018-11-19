@@ -851,6 +851,116 @@ public:
     void MarkCurved()               { m_curved = true; }
 };
 
+
+struct GlyphAtlas;
+
+//=======================================================================================
+// @bsistruct                                                   Mark.Schlosser  11/2018
+//=======================================================================================
+struct DeferredGlyph
+{
+    Polyface m_polyface;
+    GeometryPtr m_geom;
+    double m_rangePixels;
+    bool m_isContained;
+    uint16_t m_order;
+
+    DeferredGlyph(Polyface& polyface, Geometry& geom, double rangePixels, bool isContained, uint16_t order=0) : m_polyface(polyface), m_geom(&geom), m_rangePixels(rangePixels), m_isContained(isContained), m_order(order) {}
+    void* GetKey();
+};
+
+typedef bvector<DeferredGlyph> DeferredGlyphList;
+
+//=======================================================================================
+// @bsistruct                                                   Mark.Schlosser  11/2018
+//=======================================================================================
+struct GlyphLocation
+{
+    uint32_t m_atlasNdx; // which atlas within the manager contains this glyph?
+    uint32_t m_atlasSlotX; // what slot within that atlas has the glyph?
+    uint32_t m_atlasSlotY;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Mark.Schlosser  11/2018
+//=======================================================================================
+struct GlyphAtlas
+{
+private:
+    static const uint32_t m_glyphSizeInPixels = 48;
+    static const uint32_t m_glyphPaddingInPixels = 16;
+    static const uint32_t m_glyphHalfPaddingInPixels = m_glyphPaddingInPixels / 2;
+    static const uint32_t m_glyphTotalSizeInPixels = m_glyphSizeInPixels + m_glyphPaddingInPixels;
+    static const uint32_t m_maxAtlasGlyphsDim = 64; // 64 glyphs * 64 pixels = 4096 pixels
+
+    uint32_t m_index;
+    uint32_t m_numGlyphs;
+    uint32_t m_numGlyphsInX;
+    uint32_t m_numGlyphsInY;
+    uint32_t m_numPixelsInX;
+    uint32_t m_numPixelsInY;
+    uint32_t m_availGlyphSlotX = 0;
+    uint32_t m_availGlyphSlotY = 0;
+
+    ByteStream m_atlasBytes;
+    TexturePtr m_atlasTexture;
+
+    static bool IsPowerOfTwo(uint32_t num) { return 0 == (num & (num - 1)); }
+    static uint32_t NextHighestPowerOfTwo(uint32_t num)
+        {
+        --num;
+        for (int i = 1; i < 32; i <<= 1)
+            num = num | num >> i;
+        return num + 1;
+        }
+
+    void CalculateSize();
+public:
+    GlyphAtlas(uint32_t index, uint32_t numGlyphs);
+    GlyphAtlas(GlyphAtlas&&);
+    GlyphAtlas& operator=(GlyphAtlas&& other);
+
+    bool AddGlyph(DeferredGlyph& glyph, GlyphLocation& loc);
+    void GetUVCoords(Render::Image* image, const GlyphLocation& loc, DPoint2d uvs[2]);
+    TexturePtr GetTexture(Render::System& renderSystem, DgnDbP db);
+
+    static uint32_t GetMaxGlyphsInAtlas() { return m_maxAtlasGlyphsDim * m_maxAtlasGlyphsDim; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Mark.Schlosser  11/2018
+//=======================================================================================
+struct GlyphAtlasManager
+{
+private:
+    bvector<GlyphAtlas> m_atlases;
+    uint32_t m_numGlyphs;
+    uint32_t m_numAtlases;
+    uint32_t m_curAtlasNdx;
+    std::map<void*, GlyphLocation> m_glyphLocations;
+public:
+    GlyphAtlasManager(uint32_t numGlyphs);
+
+    void AddGlyph(DeferredGlyph& glyph);
+    GlyphAtlas& GetAtlasAndLocationForGlyph(DeferredGlyph& glyph, GlyphLocation &loc);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Mark.Schlosser  11/2018
+//=======================================================================================
+struct GlyphDeferralManager
+{
+private:
+public:
+    DeferredGlyphList m_deferredGlyphs;
+    std::set<void*> m_uniqueGlyphKeys;
+    GlyphDeferralManager() {}
+
+    void DeferGlyph(DeferredGlyph& glyph);
+    void AddDeferredGlyphsToContext(ViewContext* context);
+    void AddDeferredGlyphsToBuilderMap(MeshBuilderMap& builderMap, Render::System& renderSystem, DgnDb& db, GeometryOptionsCR options);
+};
+
 //=======================================================================================
 //! Accumulates a list of Geometry objects from a set of high-level graphics primitives.
 //! The various Add() methods take ownership of the input object, which may later be
@@ -860,15 +970,16 @@ public:
 struct GeometryAccumulator
 {
 private:
-    GeometryList                m_geometries;
-    Transform                   m_transform;
-    DgnElementId                m_elementId;
-    mutable DisplayParamsCache  m_displayParamsCache;
-    bool                        m_surfacesOnly;
-    bool                        m_haveTransform;
-    bool                        m_checkGlyphBoxes = false;
-    bool                        m_addingCurved = false;
-    DRange3d                    m_tileRange;
+    GeometryList                 m_geometries;
+    Transform                    m_transform;
+    DgnElementId                 m_elementId;
+    mutable DisplayParamsCache   m_displayParamsCache;
+    bool                         m_surfacesOnly;
+    bool                         m_haveTransform;
+    bool                         m_checkGlyphBoxes = false;
+    bool                         m_addingCurved = false;
+    DRange3d                     m_tileRange;
+    mutable GlyphDeferralManager m_glyphDeferralManager;
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, DRange3dCR range, bool disjoint);
