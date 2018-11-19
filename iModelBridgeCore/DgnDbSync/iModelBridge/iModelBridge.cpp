@@ -696,10 +696,10 @@ void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProp
     if (nullptr != params.GetDocumentPropertiesAccessor())
         params.GetDocumentPropertiesAccessor()->_GetDocumentProperties(docProps, localFileName); 
 
-    // URN. Prefer a PW URN from the document properties. Fall back on the supplied default.
-    if (docProps.m_desktopURN.empty() || (!IsPwUrn(docProps.m_desktopURN) && !defaultURN.empty()))
+    // URN. The preferred outcome to get a PW URN from document properties.
+    if (docProps.m_desktopURN.empty() || (!IsPwUrn(docProps.m_desktopURN) && IsPwUrn(defaultURN)))
         {
-        docProps.m_desktopURN = defaultURN; // fall back on supplied default
+        docProps.m_desktopURN = defaultURN;
         }
 
     // GUID. This will go into the RepositoryLink element's RepositoryGUID property.
@@ -710,13 +710,15 @@ void iModelBridge::GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProp
             docProps.m_docGuid = guid.ToString();
         }
 
-    // Code. Prefer a PW URN. Fall back on the supplied default.
-    Utf8String codeStr(docProps.m_desktopURN);
+    // Code. Prefer the document GUID (that's how this was originally coded, and now clients, such as iModelBridgeSyncInfoFile, depend on this behavior).
+    Utf8String codeStr(docProps.m_docGuid);
     if (codeStr.empty())
         {
-        codeStr = defaultCode;
-        if (codeStr.empty())
-            codeStr = Utf8String(localFileName);
+        if ((codeStr = defaultCode).empty())
+            {
+            if ((codeStr = docProps.m_desktopURN).empty())
+                codeStr = Utf8String(localFileName);
+            }
         }
 
     if (docProps.m_desktopURN.empty())

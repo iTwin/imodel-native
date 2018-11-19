@@ -325,6 +325,14 @@ BentleyStatus SyncInfo::DiskFileInfo::GetInfo(BeFileNameCR fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool isNonFileURN(Utf8StringCR urn)
+    {
+    return (urn.find("://") != Utf8String::npos) && !urn.StartsWith("file://");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     {
     //  The unique name is the key into the syncinfo_file table. 
@@ -335,9 +343,20 @@ Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     // If we have a DMS URN for the document corresponding to this file, that is the unique name.
     Utf8String urn = GetConverter().GetDocumentURNforFile(file);
     if (!urn.empty())
-        return urn;
+        {
+        if (isNonFileURN(urn))
+            return urn;
 
-    // If we do not have a DMS URN, we try to compute a stable unique name from the filename.
+        // I would rather use the doc GUID than a file:// URL or a file path.
+        iModelBridgeDocumentProperties docProps;
+        GetConverter().GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str()));
+        if (!docProps.m_docGuid.empty())
+            return docProps.m_docGuid;
+
+        return urn;
+        }
+
+    // If we do not have a DMS URN or a doc GUID, we try to compute a stable unique name from the filename.
     // The full path should be unique already. To get something that is stable, we use only as much of 
     // the full path as we need to distinguish between like-named files in different directories.
     BeFileName fullFileName(file.GetFileName().c_str());
@@ -2340,6 +2359,8 @@ static Utf8String getPwUrn(Bentley::DgnPlatform::ProvenanceBlobR blob)
 Utf8String Converter::GetPwUrnFromFileProvenance(DgnV8FileCR file)
     {
     auto provData = const_cast<DgnV8FileR>(file).ReadFileProvenance();
+    if (!provData.IsValid())
+        return "";
     return getPwUrn(*provData);
     }
 
@@ -2348,17 +2369,25 @@ Utf8String Converter::GetPwUrnFromFileProvenance(DgnV8FileCR file)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::GetDocumentURNforFile(DgnV8FileCR file)
     {
+    // We prefer a PW URN. 
+
     auto const& moniker = file.GetDocument().GetMoniker();  
-    Utf8String urn(moniker.ResolveURI().c_str());
-    if (iModelBridge::IsPwUrn(urn))
-        return urn;
+    Utf8String monikerURN(moniker.ResolveURI().c_str());
+    if (iModelBridge::IsPwUrn(monikerURN))
+        return monikerURN;
 
-    urn = GetParams().QueryDocumentURN(BeFileName(file.GetFileName().c_str()));
+    Utf8String docURN(GetParams().QueryDocumentURN(BeFileName(file.GetFileName().c_str())));
+    if (iModelBridge::IsPwUrn(docURN))
+        return docURN;
 
-    if (iModelBridge::IsPwUrn(urn))
-        return urn;
+    auto provURN = Converter::GetPwUrnFromFileProvenance(file);
+    if (iModelBridge::IsPwUrn(provURN))
+        return provURN;
 
-    return Converter::GetPwUrnFromFileProvenance(file);
+    // We fall back on the first URN that is available.
+    return !monikerURN.empty()? monikerURN:
+           !docURN.empty()?     docURN:
+                                provURN;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
