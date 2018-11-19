@@ -11,7 +11,9 @@
 Headers =
 Headers + $(SourceDir)DateHelper.h
 Headers + $(SourceDir)FreeApplicationPolicyHelper.h
+Headers + $(SourceDir)ClientInterface.h
 Headers + $(SourceDir)ClientImpl.h
+Headers + $(SourceDir)ClientFreeImpl.h
 Headers + $(SourceDir)GenerateSID.h
 Headers + $(SourceDir)Policy.h
 Headers + $(SourceDir)UsageDb.h
@@ -34,6 +36,8 @@ Headers + $(PublicApiDir)Utils/UrlSafeBase64Utilities.h
 $(o)Client$(oext)                    : $(SourceDir)Client.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)ClientImpl$(oext)                : $(SourceDir)ClientImpl.cpp $(Headers) ${MultiCompileDepends}
+
+$(o)ClientFreeImpl$(oext)            : $(SourceDir)ClientFreeImpl.cpp $(Headers) ${MultiCompileDepends}
 
 $(o)UsageDb$(oext)                   : $(SourceDir)UsageDb.cpp $(Headers) ${MultiCompileDepends}
 

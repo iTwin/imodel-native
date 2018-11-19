@@ -29,7 +29,7 @@ typedef std::shared_ptr<struct Client> ClientPtr;
 struct Client
 {
 private:
-    std::unique_ptr<struct ClientImpl> m_impl;
+    std::unique_ptr<struct ClientInterface> m_impl;
 
     Client
         (
@@ -42,6 +42,17 @@ private:
         Utf8String featureString,
         IHttpHandlerPtr httpHandler
         );
+
+	Client
+		(
+		Utf8String username,
+		ClientInfoPtr clientInfo,
+		BeFileNameCR dbPath,
+		bool offlineMode,
+		Utf8String projectId,
+		Utf8String featureString,
+		IHttpHandlerPtr httpHandler
+		);
 
 public:
 	//! Client Creator
@@ -62,6 +73,17 @@ public:
         IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
         );
 
+	LICENSING_EXPORT static ClientPtr CreateFree
+	(
+		Utf8String username, /** Username */
+		ClientInfoPtr clientInfo, /** A ClientInfoPtr */
+		BeFileNameCR dbPath, /** Path for LicenseClient database */
+		bool offlineMode, /** If offline, pushes usage in discrete intervals. If not offline, pushes usage continuously via stream */
+		Utf8String projectId = "", /** ProjectID string, defaults to an empty string */
+		Utf8String featureString = "", /** FeatureString, defaults to an empty string */
+		IHttpHandlerPtr customHttpHandler = nullptr /** CustomHttpHandler, defaults to a nullptr */
+	);
+
 	//! StartApplication performs actions and creates threads required for usage posting and policy requests, returns LicenseStatus
     // TODO: Return more than BentleyStatus to indicate to the app if the user has rights to use this app or it's crippled etc...
 	/*!
@@ -71,8 +93,6 @@ public:
 	* Otherwise, threads are created for policy requests and usage posting and then the license status is returned.
 	*/
     LICENSING_EXPORT LicenseStatus StartApplication();
-
-    LICENSING_EXPORT LicenseStatus StartFreeApplication();
 
 	//! StopApplication signals background threads to stop and cleans up resources.
 	/*!

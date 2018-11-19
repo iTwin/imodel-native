@@ -11,6 +11,7 @@
 
 #include <Licensing/Client.h>
 #include "../../../Licensing/ClientImpl.h"
+#include "../../../Licensing/ClientFreeImpl.h"
 #include "../../../Licensing/UsageDb.h"
 #include "../../../Licensing/DateHelper.h"
 #include "../../../PublicAPI/Licensing/Utils/SCVWritter.h"
@@ -112,10 +113,38 @@ ClientImplPtr CreateTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRet
         proxy);
     }
 
+ClientImplPtr CreateFreeTestClient(bool signIn, uint64_t heartbeatInterval, ITimeRetrieverPtr timeRetriever, IDelayedExecutorPtr delayedExecutor, UrlProvider::Environment env, Utf8StringCR productId)
+{
+	InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
+	UrlProvider::Initialize(env, UrlProvider::DefaultTimeout, localState);
+
+	auto clientInfo = std::make_shared<ClientInfo>("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", productId);
+
+	auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+	BeFileName dbPath = GetUsageDbPath();
+
+	return std::make_shared<ClientFreeImpl>(
+		"qa2_devuser2",
+		clientInfo,
+		dbPath,
+		true,
+		"",
+		"",
+		proxy);
+}
+
+
+
 ClientImplPtr CreateTestClient(bool signIn)
     {
     return CreateTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
     }
+
+ClientImplPtr CreateFreeTestClient(bool signIn)
+{
+	return CreateFreeTestClient(signIn, 1000, TimeRetriever::Get(), DelayedExecutor::Get(), UrlProvider::Environment::Qa, TEST_PRODUCT_ID);
+}
 
 ClientImplPtr CreateTestClient(bool signIn, UrlProvider::Environment env)
     {
@@ -155,8 +184,8 @@ TEST_F(ClientTests, StartApplication_Success)
 
 TEST_F(ClientTests, StartFreeApplication_Success)
 	{
-	auto client = CreateTestClient(true);
-	EXPECT_NE((int)client->StartFreeApplication(), (int)LicenseStatus::Error);
+	auto client = CreateFreeTestClient(true);
+	EXPECT_NE((int)client->StartApplication(), (int)LicenseStatus::Error);
 	client->StopApplication();
 	}
 

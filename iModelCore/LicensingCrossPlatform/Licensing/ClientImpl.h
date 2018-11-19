@@ -11,6 +11,7 @@
 #include <Licensing/Licensing.h>
 #include <Licensing/LicenseStatus.h>
 
+#include "ClientInterface.h"
 #include "UsageDb.h"
 #include "Policy.h"
 
@@ -39,9 +40,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ClientImpl> ClientImplPtr;
 
-struct ClientImpl
+struct ClientImpl : ClientInterface
 {
-private:
+protected:
     enum LogPostingSource { RealTime, Offline, Checkout };
 
     struct Feature
@@ -87,6 +88,8 @@ private:
     Utf8String GetLoggingPostSource(LogPostingSource lps) const;
 
 public:
+	LICENSING_EXPORT ClientImpl() {};
+
     LICENSING_EXPORT ClientImpl
         (
 		const ConnectSignInManager::UserInfo& userInfo,
@@ -101,7 +104,6 @@ public:
 
     // Usages
     LICENSING_EXPORT LicenseStatus StartApplication(); 
-    LICENSING_EXPORT LicenseStatus StartFreeApplication();
     LICENSING_EXPORT BentleyStatus StopApplication();
     LICENSING_EXPORT folly::Future<folly::Unit> SendUsage(BeFileNameCR usageCSV, Utf8StringCR ultId);
 

@@ -122,31 +122,6 @@ LicenseStatus ClientImpl::StartApplication()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus ClientImpl::StartFreeApplication()
-{
-	if (SUCCESS != m_usageDb->OpenOrCreate(m_dbPath))
-		return LicenseStatus::Error;
-
-	// Create dummy policy for free application usage
-	m_policy = FreeApplicationPolicyHelper::CreatePolicy();
-
-	if (ERROR == RecordUsage())
-		return LicenseStatus::Error;
-
-	// Begin heartbeats
-	int64_t currentTimeUnixMs = m_timeRetriever->GetCurrentTimeAsUnixMillis();
-	UsageHeartbeat(currentTimeUnixMs);
-	LogPostingHeartbeat(currentTimeUnixMs);
-
-	// This is only a logging example
-	LOG.trace("StartFreeApplication");
-
-	return LicenseStatus::Ok;
-}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ClientImpl::UsageHeartbeat(int64_t currentTime)
     {
     LOG.trace("UsageHeartbeat");

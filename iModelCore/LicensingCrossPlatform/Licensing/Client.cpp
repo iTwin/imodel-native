@@ -7,8 +7,26 @@
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
 #include "ClientImpl.h"
+#include "ClientFreeImpl.h"
 
 USING_NAMESPACE_BENTLEY_LICENSING
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Client::Client
+(
+	Utf8String username,
+	ClientInfoPtr clientInfo,
+	BeFileNameCR dbPath,
+	bool offlineMode,
+	Utf8String projectId,
+	Utf8String featureString,
+	IHttpHandlerPtr httpHandler
+)
+{
+	m_impl = std::make_unique<ClientFreeImpl>(username, clientInfo, dbPath, offlineMode, projectId, featureString, httpHandler);
+}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -28,6 +46,8 @@ IHttpHandlerPtr httpHandler
     m_impl = std::make_unique<ClientImpl>(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler);
     }
 
+
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -45,7 +65,24 @@ IHttpHandlerPtr httpHandler
     {
     return std::shared_ptr<Client>(new Client(userInfo, clientInfo, authenticationProvider, dbPath, offlineMode, projectId, featureString, httpHandler));
     }
-   
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ClientPtr Client::CreateFree
+(
+	Utf8String username,
+	ClientInfoPtr clientInfo,
+	BeFileNameCR dbPath,
+	bool offlineMode,
+	Utf8String projectId,
+	Utf8String featureString,
+	IHttpHandlerPtr customHttpHandler
+)
+	{
+	return std::shared_ptr<Client>(new Client(username, clientInfo, dbPath, offlineMode, projectId, featureString, customHttpHandler));
+	}
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,14 +98,6 @@ BentleyStatus Client::StopApplication()
     {
     return m_impl->StopApplication();
     }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-LicenseStatus Client::StartFreeApplication()
-     {
-     return m_impl->StartFreeApplication();
-     }
 
  /*--------------------------------------------------------------------------------------+
  * @bsimethod
