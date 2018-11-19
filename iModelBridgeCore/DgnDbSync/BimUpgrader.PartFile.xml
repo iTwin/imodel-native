@@ -19,7 +19,7 @@
         <Bindings>
             <Directory SourceName="Delivery/DgnDbLibs" ProductDirectoryName="DgnDb06Libs" SubPartDirectory="DgnDbLibs" Required="false"/>
             <Directory SourceName="Delivery/DgnDbPlatformAssets" ProductDirectoryName="DgnDb06PlatformAssets" SubPartDirectory="DgnDbPlatformAssets" Required="false"/>
-            <Libs Required="false">Delivery/$(libprefix)DgnDb_1_6_ForUpgrader$(libext)</Libs>
+            <Libs IfNotPresent="Continue" Required="false">Delivery/$(libprefix)DgnDb_1_6_ForUpgrader$(libext)</Libs>
             <VendorAPI Domain="DgnDb06Api"/>
         </Bindings>
     </Part>
