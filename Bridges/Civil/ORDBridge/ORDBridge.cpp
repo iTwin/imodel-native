@@ -328,7 +328,7 @@ BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ORDBridge::_OnCloseBim(BentleyStatus)
+void ORDBridge::_OnCloseBim(BentleyStatus, ClosePurpose)
     {
     m_converter.reset(nullptr); // this also has the side effect of closing the source files
     }
