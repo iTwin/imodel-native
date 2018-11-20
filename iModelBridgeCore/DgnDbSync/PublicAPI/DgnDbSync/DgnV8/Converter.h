@@ -1006,7 +1006,7 @@ protected:
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
     bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;
-    bool                m_haveCreatedThumbnails;
+    bool                m_haveCreatedThumbnails = false;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
