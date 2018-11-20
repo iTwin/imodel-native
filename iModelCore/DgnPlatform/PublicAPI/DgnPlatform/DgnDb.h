@@ -245,7 +245,7 @@ protected:
 public:
     Napi::ObjectReference m_jsIModelDb; // holds a reference to the JavaScript IModelDb object paired with this DgnDb. May be nullptr.
 
-    Napi::Object GetJsTnxs(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
+    Napi::Object GetJsTxns(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
     Napi::String ToJsString(Utf8CP val, size_t len) { return Napi::String::New(m_jsIModelDb.Env(), val, len); }
     Napi::String ToJsString(Utf8CP val) { return ToJsString(val, std::strlen(val)); }
     Napi::String ToJsString(Utf8StringCR str) { return ToJsString(str.c_str(), str.length()); }

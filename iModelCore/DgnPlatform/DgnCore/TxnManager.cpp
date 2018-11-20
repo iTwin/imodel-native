@@ -54,7 +54,7 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::CallJsMonitors(Utf8CP eventName, int* arg)
     {
-    Napi::Object jsTxns = m_dgndb.GetJsTnxs();
+    Napi::Object jsTxns = m_dgndb.GetJsTxns();
     if (jsTxns == nullptr) 
         return;
 
@@ -554,12 +554,12 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
     for (auto table :  m_tables)
         {
         table->_PropagateChanges();
-        if (HasFatalErrors())
+        if (HasFatalError())
             break;
         }
     tracker.SetMode(Mode::Direct);
 
-    return HasFatalErrors() ? BSIERROR : BSISUCCESS;
+    return HasFatalError() ? BSIERROR : BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -670,9 +670,12 @@ void TxnManager::OnChangesApplied(BeSQLite::IChangeSet& changeSet, bool invert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnBeginValidate()
     {
+    m_fatalValidationError = false;
+    m_txnErrors = 0;
     m_action = TxnAction::Commit;
     for (auto table : m_tables)
         table->_OnValidate();
+    CallJsTxnManager("_onBeginValidate");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -681,10 +684,12 @@ void TxnManager::OnBeginValidate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnEndValidate()
     {
+    CallJsTxnManager("_onEndValidate");
     for (auto table : m_tables)
         table->_OnValidated();
 
-    m_validationErrors.clear();
+    m_fatalValidationError = false;
+    m_txnErrors = 0;
     m_action = TxnAction::None;
     }
 
@@ -1021,37 +1026,27 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
             return status;
         }
 
-    status = MergeDataChangesInRevision(revision, changeStream, containsSchemaChanges);
-    if (RevisionStatus::Success != status)
-        return status;
-
-    return RevisionStatus::Success;
+    return MergeDataChangesInRevision(revision, changeStream, containsSchemaChanges);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
+ @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReportError(ValidationError& e)
-    {
-    m_validationErrors.push_back(e);
-
-    auto sev = (e.GetSeverity() == ValidationError::Severity::Fatal) ? "Fatal" : "Warning";
-    LOG.errorv("Validation error. Severity:%s Class:[%s] Description:[%s]", sev, typeid(e).name(), e.GetDescription());
+void TxnManager::ReportError(bool fatal, Utf8CP errorType, Utf8CP msg)  {
+    auto jsTxns = m_dgndb.GetJsTxns();
+    if (nullptr == jsTxns) {
+        m_fatalValidationError |= fatal;
+        return;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::HasFatalErrors() const
-    {
-    for (auto const& e : m_validationErrors)
-        {
-        if (e.GetSeverity() == ValidationError::Severity::Fatal)
-            return true;
-        }
-
-    return false;
-    }
+    // Note: see IModelDb.ts [[ValidationError]]
+    auto env = jsTxns.Env();
+    auto error = Napi::Object::New(env);
+    error["fatal"] = Napi::Boolean::New(env, fatal);
+    error["errorType"] = Napi::String::New(env, errorType);
+    error["message"] = Napi::String::New(env, msg);
+    DgnDb::CallJsFunction(jsTxns, "reportError", {error});
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Add all changes to the TxnSummary. TxnTables store information about the changes in their own state
