@@ -105,6 +105,8 @@ TEST_F(CustomNodesProviderTests, ReturnsValidNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+// Random crash on MacOS
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     {
     TestNavNodePtr parent = TestNodesHelper::CreateCustomNode(*m_connection, "parent_type", "parent_label", "parent_descr");
@@ -121,6 +123,7 @@ TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     ASSERT_TRUE(node.IsValid());
     EXPECT_EQ(0, node->GetParentNodeId());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
