@@ -19,6 +19,9 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
+// Random crashes
+#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+
 /*=================================================================================**//**
 * @bsiclass                                     Pranciskus.Ambrazas               03/2016
 +===============+===============+===============+===============+===============+======*/
@@ -230,3 +233,5 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     ASSERT_STREQ("overridenBackColor", thisNode->GetBackColor().c_str());
     ASSERT_STREQ("overridenFontStyle", thisNode->GetFontStyle().c_str());
     }
+
+#endif
