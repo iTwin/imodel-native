@@ -676,11 +676,11 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
         
         viewDependentQueryParams = IScalableMeshViewDependentMeshQueryParams::CreateParams();
 
-        DMatrix4d localToView(args.m_context.GetWorldToView().M0);
+        DMatrix4d localToView(args.GetContext().GetWorldToView().M0);
 
         ClipVectorPtr clipVector;
         //clip = args.m_context.GetTransformClipStack().GetClip();
-        Render::FrustumPlanes frustumPlanes(args.m_context.GetFrustumPlanes());
+        Render::FrustumPlanes frustumPlanes(args.GetContext().GetFrustumPlanes());
 
         ConvexClipPlaneSet convexClipPlaneSet(&frustumPlanes.m_planes[0], 6);
 
