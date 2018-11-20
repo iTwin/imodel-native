@@ -199,22 +199,6 @@ struct TxnManager : BeSQLite::ChangeTracker
     friend struct RevisionManager;
     friend struct DynamicChangeTracker;
 
-    //! Indicates an error when propagating changes for a Txn.
-    struct ValidationError
-    {
-        enum class Severity
-        {
-            Fatal,   //!< Validation could not be completed, and the transaction should be rolled back.
-            Warning, //!< Validation was completed. Consistency checks may have failed. The results should be reviewed.
-        };
-
-        Utf8String  m_description;
-        Severity    m_severity;
-        ValidationError(Severity sev, Utf8CP desc) : m_severity(sev), m_description(desc) {}
-        Severity GetSeverity() const {return m_severity;} //!< Return the severity of the error
-        Utf8CP GetDescription() const {return m_description.c_str();}//!< A human-readable, localized description of the error
-    };
-
     //=======================================================================================
     //! An identifier stored in the high 4 bytes of a TxnId. All TxnIds for a given session will have the same SessionId.
     //! Every time the TxnManager is initialized against a DgnDb, the SessionId is incremented to be one greater than the
@@ -297,7 +281,8 @@ private:
     BeSQLite::StatementCache m_stmts;
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
-    bvector<ValidationError> m_validationErrors;
+    int m_txnErrors = 0;
+    bool m_fatalValidationError;
     TxnRelationshipLinkTables m_rlt;
     bool m_initTableHandlers;
     bool m_enableNotifyTxnMonitors;
@@ -346,6 +331,7 @@ private:
 
 public:
     void CallJsMonitors(Utf8CP eventName, int* arg = nullptr);
+    void CallJsTxnManager(Utf8CP methodName) {DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
     DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
     DgnDbStatus DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private
@@ -360,21 +346,10 @@ public:
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
 
-    //! @name Validation Errors
-    //@{
-    //! Query if any Fatal validation errors were reported during change propagation.
-    //! @note this method may only be called from within TxnMonitor::_OnCommit methods.
-    DGNPLATFORM_EXPORT bool HasFatalErrors() const;
-
-    //! Query the validation errors that were reported during change propagation
-    //! @note this method may only be called from within TxnMonitor::_OnCommit methods.
-    bvector<ValidationError> const& GetErrors() const {return m_validationErrors;}
-
-    //! TxnTable methods may call this to report a validation error.
-    //! If the severity of the validation error is set to ValidationError::Severity::Fatal, the transaction will cancel
-    //! rather than commit.
-    DGNPLATFORM_EXPORT void ReportError(ValidationError&);
-    //@}
+    bool HasFatalError() {return m_fatalValidationError;}
+    int NumValidationErrors() {return m_txnErrors;}
+    void LogError(bool fatal) { ++m_txnErrors; m_fatalValidationError |= fatal;}
+    void ReportError(bool fatal, Utf8CP errorType, Utf8CP msg);
 
     //! Get the dgn_TxnTable::Element TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::Element& Elements() const;

@@ -816,7 +816,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     void SetIModelDb(Napi::CallbackInfo const& info) {
         Napi::Value obj = info[0];
-        if(obj.IsObject() && m_dgndb.IsValid())
+        if (obj.IsObject() && m_dgndb.IsValid())
             m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>());
     }
 
@@ -971,38 +971,36 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return toJsString(Env(), TxnIdToString(startTxnId));
         }
 
-    Napi::Value QueryNextTxnId(Napi::CallbackInfo const& info)
-        {
+    Napi::Value QueryNextTxnId(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
         auto next = m_dgndb->Txns().QueryNextTxnId(TxnIdFromString(txnIdHexStr));
         return toJsString(Env(), TxnIdToString(next));
-        }
-
-    Napi::Value QueryPreviousTxnId(Napi::CallbackInfo const& info)
-        {
+    }
+    Napi::Value QueryPreviousTxnId(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
         auto next = m_dgndb->Txns().QueryPreviousTxnId(TxnIdFromString(txnIdHexStr));
         return toJsString(Env(), TxnIdToString(next));
-        }
-
-    Napi::Value GetTxnDescription(Napi::CallbackInfo const& info)
-        {
+    }
+    Napi::Value GetTxnDescription(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
         return toJsString(Env(), m_dgndb->Txns().GetTxnDescription(TxnIdFromString(txnIdHexStr)));
-        }
-
-    Napi::Value IsTxnIdValid(Napi::CallbackInfo const& info)
-        {
+    }
+    Napi::Value IsTxnIdValid(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
         return Napi::Boolean::New(Env(), TxnIdFromString(txnIdHexStr).IsValid());
-        }
-
+    }
+    Napi::Value HasFatalTxnError(Napi::CallbackInfo const& info) { return Napi::Boolean::New(Env(), m_dgndb->Txns().HasFatalError()); }
+    void LogTxnError(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_BOOL(0, fatal, );
+        m_dgndb->Txns().LogError(fatal);
+    }
     void EnableTxnTesting(Napi::CallbackInfo const& info) {
         m_dgndb->Txns().EnableTracking(true);
         m_dgndb->Txns().InitializeTableHandlers();
     }
     Napi::Value BeginMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().BeginMultiTxnOperation());}
     Napi::Value EndMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().EndMultiTxnOperation());}
+    Napi::Value GetMultiTxnOperationDepth(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().GetMultiTxnOperationDepth());}
     Napi::Value GetUndoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetUndoString());}
     Napi::Value GetRedoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetRedoString());}
     Napi::Value HasUnsavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());}
@@ -1796,6 +1794,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
             InstanceMethod("getModel", &NativeDgnDb::GetModel),
+            InstanceMethod("getMultiTxnOperationDepth", &NativeDgnDb::GetMultiTxnOperationDepth),
             InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
             InstanceMethod("getPendingChangeSets", &NativeDgnDb::GetPendingChangeSets),
             InstanceMethod("getRedoString", &NativeDgnDb::GetRedoString),
@@ -1806,6 +1805,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTxnDescription", &NativeDgnDb::GetTxnDescription),
             InstanceMethod("getUndoString", &NativeDgnDb::GetUndoString),
+            InstanceMethod("hasFatalTxnError", &NativeDgnDb::HasFatalTxnError),
             InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
             InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
@@ -1818,8 +1818,9 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("isRedoPossible", &NativeDgnDb::IsRedoPossible),
             InstanceMethod("isTxnIdValid", &NativeDgnDb::IsTxnIdValid),
-            InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
+            InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
+            InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),

@@ -53,7 +53,7 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Napi::Object DgnDb::GetJsTnxs() 
+Napi::Object DgnDb::GetJsTxns() 
     {
     return  m_jsIModelDb == nullptr ? Napi::Object() : m_jsIModelDb.Get("txns").As<Napi::Object>();  // should have a member object named "txns"
     }
@@ -72,6 +72,9 @@ Napi::String DgnDb::GetJsClassName(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args) 
     {
+    if (obj == nullptr)
+        return;
+
     auto func = obj.Get(methodName);
     if (!func.IsFunction()) {
         Utf8String err("method not found: ");
@@ -87,6 +90,9 @@ void DgnDb::CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_value> const& args) 
     {
+    if (obj == nullptr)
+        return;
+
     auto event = obj.Get(eventName);
     if (!event.IsObject()) {
         Utf8String err("BeEvent object not found: ");

@@ -82,39 +82,6 @@ struct DgnElementDependencyGraph
     struct TableApi;
     struct ElementDrivesElement;
 
-    //! Cycles were detected in the ElementDependencyGraph.
-    //! This means that the constraints imposed on Elements by the current set of ECRelationships and their dependency handlers cannot be satisfied. Some
-    //! ECRelationships must be removed. 
-    //! This error is always fatal. The application should cancel the current transaction.
-    struct CyclesDetectedError : TxnManager::ValidationError
-        {
-        CyclesDetectedError(Utf8CP path) : TxnManager::ValidationError(Severity::Fatal, path) {}
-        };
-
-    //! An Element dependency was triggered, but the handler for it was not registered.
-    //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
-    //! This error should be reported to the user for follow up.
-    struct MissingHandlerError : TxnManager::ValidationError
-        {
-        MissingHandlerError(Utf8CP handlerId) : TxnManager::ValidationError(Severity::Warning, handlerId) {}
-        };
-    
-    //! The requirements of an Element dependency were violated by the actions taken by another dependency handler.
-    //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
-    //! This error should be reported to the user for follow up.
-    struct DependencyValidationError : TxnManager::ValidationError
-        {
-        DependencyValidationError(Utf8CP details) : TxnManager::ValidationError(Severity::Warning, details) {}
-        };
-    
-    //! A dependency attempted to propagate changes from a dependent model to a root model. 
-    //! This is illegal, and this dependency must be removed.
-    //! This error is always fatal. The application should cancel the current transaction.
-    struct DirectionValidationError : TxnManager::ValidationError
-        {
-        DirectionValidationError(Utf8CP details) : TxnManager::ValidationError(Severity::Fatal, details) {}
-        };
-
     //! Indicates if changes have been propagated through an ECRelationship successfully or not.
     //! These are bits. The Deferred status and the Satisfied/Deferred status may be changed independently of each other.
     enum EdgeStatus 
@@ -204,10 +171,11 @@ private:
     // working with handlers
     void InvokeHandler(Edge const& rh, size_t indentLevel);
     void InvokeHandlerForValidation(Edge const& rh);
-    void ReportValidationError (TxnManager::ValidationError&, Edge const*);
+    //void ReportValidationError (TxnManager::ValidationError&, Edge const*);
 
     void DiscoverEdges();
 
+    Napi::Object EdgeToRelProps(Edge const& edge);
     void VerifyOverlappingDependencies();
     void InvokeHandlersInTopologicalOrder();
     void InvokeHandlersInTopologicalOrder_OneGraph(Edge const&, bvector<Edge> const& pathToSupplier);
