@@ -220,8 +220,10 @@ BentleyStatus Converter::GenerateThumbnails()
         if (nullptr != mainViewGroup)
             {
             AddTasks(DgnV8Api::MAX_VIEWS);
+
             for (int iView=0; iView<DgnV8Api::MAX_VIEWS; ++iView)
                 {
+                ReportProgress();
                 DgnViewId viewId;
                 double lmt;
                 Utf8String v8ViewName;
@@ -233,7 +235,6 @@ BentleyStatus Converter::GenerateThumbnails()
 
                 GenerateThumbnail(*view);
 
-                ReportProgress();
                 if (WasAborted())
                     break;
                 }
@@ -246,6 +247,7 @@ BentleyStatus Converter::GenerateThumbnails()
     
         for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
             {
+            ReportProgress();
             auto view = ViewDefinition::Get(*m_dgndb, entry.GetId());
             if (!view.IsValid() || view->IsPrivate())
                 continue;
@@ -255,7 +257,6 @@ BentleyStatus Converter::GenerateThumbnails()
     
             GenerateThumbnail(*view);
 
-            ReportProgress();
             if (WasAborted())
                 break;
             }
