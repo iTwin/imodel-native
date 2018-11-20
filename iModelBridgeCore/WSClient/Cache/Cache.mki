@@ -108,18 +108,21 @@ ClientMkiHeaders =                                                          \
 #----------------------------------------------------------------------
 #   Create precompiled headers
 #----------------------------------------------------------------------
-PchCompiland        = $(CacheMkiSourceDir)CacheInternal.cpp
-PchOutputDir        = $(o)
-PchExtraOptions     = -Zm160
+%if $(TARGET_PLATFORM) != "WinRT"
+    PchCompiland        = $(CacheMkiSourceDir)CacheInternal.cpp
+    PchOutputDir        = $(o)
+    PchExtraOptions     = -Zm160
 
-%include $(SharedMki)PreCompileHeader.mki
+    %include $(SharedMki)PreCompileHeader.mki
 
-CCCompOpts + -FICacheInternal.h
-CCPchOpts = $(UsePrecompiledHeaderOptions)
-CPchOpts  = $(UsePrecompiledHeaderOptions)
+    CCCompOpts + -FICacheInternal.h
+    CCPchOpts = $(UsePrecompiledHeaderOptions)
+    CPchOpts  = $(UsePrecompiledHeaderOptions)
+    DLM_OBJECT_PCH = $(o)CacheInternal$(oext) 
 
-MultiCompileDepends=$(_MakeFileSpec)
-%include MultiCppCompileRule.mki
+    MultiCompileDepends=$(_MakeFileSpec)
+    %include MultiCppCompileRule.mki
+%endif
 
 #----------------------------------------------------------------------------------------
 #   Compile

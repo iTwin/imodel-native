@@ -38,22 +38,24 @@ BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/WebServices/UnitTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
-# Create precompiled headers
-PchCompiland        = $(baseDir)$(TestDir)/WSClientUnitTestsPch.cpp
-PchOutputDir        = $(o)
+%if $(TARGET_PLATFORM) != "WinRT"
+    # Create precompiled headers
+    PchCompiland        = $(baseDir)$(TestDir)/WSClientUnitTestsPch.cpp
+    PchOutputDir        = $(o)
 
-# Export bmake macros to make them accessible during precompiled headers compilation.
-always:
-    ~putenv CCompPDBName=$(BEGTEST_NAME)
-    ~putenv UsePublishedApi=$(UsePublishedApi)
+    # Export bmake macros to make them accessible during precompiled headers compilation.
+    always:
+        ~putenv CCompPDBName=$(BEGTEST_NAME)
+        ~putenv UsePublishedApi=$(UsePublishedApi)
 
-%include $(SharedMki)PreCompileHeader.mki
+    %include $(SharedMki)PreCompileHeader.mki
 
-CCPchOpts = $(UsePrecompiledHeaderOptions)
-CPchOpts  = $(UsePrecompiledHeaderOptions)
+    CCPchOpts = $(UsePrecompiledHeaderOptions)
+    CPchOpts  = $(UsePrecompiledHeaderOptions)
 
-# Force the precompiled headers to be included at the top of each .cpp file.
-CCCompOpts + -FIWSClientUnitTestsPch.h
+    # Force the precompiled headers to be included at the top of each .cpp file.
+    CCCompOpts + -FIWSClientUnitTestsPch.h
+%endif
 
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 

@@ -30,7 +30,6 @@ WSCacheObjectList = $(MultiCompileObjectList)
 DLM_NAME                    = WebServicesCache
 DLM_OBJECT_FILES            = $(WSCacheObjectList)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_PCH              = $(o)CacheInternal$(oext) 
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
