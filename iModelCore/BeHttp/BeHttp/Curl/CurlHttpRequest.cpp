@@ -582,6 +582,9 @@ BentleyStatus CurlHttpRequest::SetupCurl ()
     // Timeout for connecting to server
     curl_easy_setopt(m_curl, CURLOPT_CONNECTTIMEOUT, (long) m_httpRequest.GetConnectionTimeoutSeconds());
 
+    // TLS versions before v1.1 are deprecated.
+    curl_easy_setopt(m_curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+
     if (m_httpRequest.GetValidateCertificate())
         {
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 1L);

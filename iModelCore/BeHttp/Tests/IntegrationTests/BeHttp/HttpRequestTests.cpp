@@ -63,7 +63,7 @@ struct HttpRequestTests : ::testing::Test
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
         HttpClient::Initialize(path);
 
-        // Enable routing tests trough Fiddler for addtional tests. Note that addtional proxy might change behaviour.
+        // Enable routing tests trough Fiddler for addtional tests. Note that additional proxy might change behaviour.
         // s_proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
         }
     void Reset()
@@ -82,7 +82,9 @@ struct HttpRequestTests : ::testing::Test
         Backdoor::InitStartBackgroundTask([] (Utf8CP name, std::function<void()> task, std::function<void()> onExpired) {});
         Backdoor::CallOnApplicationSentToForeground();
 
-        HttpProxy::SetDefaultProxy(HttpProxy());
+        if (HttpProxy::GetDefaultProxy().IsValid())
+            HttpProxy::SetDefaultProxy(HttpProxy());
+
         // Enable routing tests trough Fiddler for addtional tests. Note that addtional proxy might change behaviour.
         // HttpProxy::SetDefaultProxy(HttpProxy("http://127.0.0.1:8888"));
         }
@@ -689,7 +691,7 @@ TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
         EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
         }
 
-    BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
+    BeDebugLog(Utf8PrintfString("Setting up requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -734,7 +736,7 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
         EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
         }
 
-    BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
+    BeDebugLog(Utf8PrintfString("Setting up requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1660,9 +1662,8 @@ TEST_P(HttpRequestTestsTls, PerformAsync_TlsServerConnectionRequest_GetsExpected
     EXPECT_EQ(tslRequestSettings.expectedConnectionStatus, response.GetConnectionStatus());
     }
 
-// Disabling until a curl fix is applied
 INSTANTIATE_TEST_CASE_P(, HttpRequestTestsTls, Values(
-     //TlsRequestSettings {TlsVersion::v1_0, ConnectionStatus::CertificateError},
+     TlsRequestSettings {TlsVersion::v1_0, ConnectionStatus::CertificateError},
      TlsRequestSettings {TlsVersion::v1_1, ConnectionStatus::OK},
      TlsRequestSettings {TlsVersion::v1_2, ConnectionStatus::OK}
 ));
@@ -1807,4 +1808,3 @@ TEST_P(HttpRequestTestsMethods, Reinitialize_AfterUninitialize_RequestsPass)
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
-
