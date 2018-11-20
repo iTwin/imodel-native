@@ -547,7 +547,6 @@ void DgnElementDependencyGraph::InvokeHandlerForValidation(Edge const& edge)
         return;
 
     int errorCount = m_txnMgr.NumValidationErrors();
-
     DgnDb::CallJsFunction(m_jsTxns, "_onValidateOutput", { EdgeToRelProps(edge) });
     SetFailedEdgeStatusInDb(edge, (m_txnMgr.NumValidationErrors() > errorCount));
     }
@@ -1196,11 +1195,4 @@ DgnElementDependencyGraph::Edge DgnElementDependencyGraph::QueryEdgeByRelationsh
     ElementDrivesElement deprel(*this);
     deprel.SelectEdgeByRelId(edge, relid);
     return edge;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementDependencyGraph::~DgnElementDependencyGraph() 
-    {
     }
