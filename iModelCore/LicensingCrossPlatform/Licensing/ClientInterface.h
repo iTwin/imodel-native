@@ -19,6 +19,7 @@ public:
 	virtual LicenseStatus StartApplication() = 0;
 	virtual BentleyStatus StopApplication() = 0;
 	virtual BentleyStatus MarkFeature(Utf8String featureId, FeatureUserDataMap* featureUserData) = 0;
+    virtual ~ClientInterface() = 0;
 };
 
 
