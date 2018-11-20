@@ -65,10 +65,6 @@ $(o)V8FileEditor.obj            : $(BEGTEST_INPUT)V8FileEditor.cpp              
 
 $(o)FakeRegistry.obj            : $(BEGTEST_INPUT)FakeRegistry.cpp              $(TestsHeaders) ${MultiCompileDepends}
 
-$(o)OidcToken.obj               : $(BEGTEST_INPUT)OidcToken.cpp                 $(TestsHeaders) ${MultiCompileDepends}
-
-$(o)OidcTokenProvider.obj       : $(BEGTEST_INPUT)OidcTokenProvider.cpp         $(TestsHeaders) ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts

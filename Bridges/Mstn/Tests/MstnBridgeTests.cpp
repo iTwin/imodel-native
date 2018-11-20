@@ -10,7 +10,6 @@
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
-#include "OidcTokenProvider.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -632,7 +631,7 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MstnBridgeTests, OidcTest)
+TEST_F(MstnBridgeTests, DISABLED_OidcTest)
     {
     auto testDir = getiModelBridgeTestsOutputDir(L"OidcTest");
 
@@ -657,12 +656,6 @@ TEST_F(MstnBridgeTests, OidcTest)
     wchar_t const** argv = argptrs.data();
 
     ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
-
-    Http::Credentials credentials("abeesh.basheer@bentley.com", "hJ*54z43xTrewq");
-
-    std::shared_ptr< OidcTokenProvider> provider = std::make_shared<OidcTokenProvider>(credentials);
-    
-    fwk.SetTokenProvider(provider);
 
     ASSERT_EQ(0, fwk.Run(argc, argv));
 
