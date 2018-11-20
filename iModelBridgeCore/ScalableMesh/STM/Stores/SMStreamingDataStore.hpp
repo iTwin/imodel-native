@@ -2289,8 +2289,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             }
 #ifndef LINUX_SCALABLEMESH_BUILD
 
-        WString url (m_dataSourceURL.c_str());
-        url.append((L"p_" + std::to_wstring(blockID.m_integerID) + extension).c_str());
+        BeFileName url (m_dataSourceURL.c_str());
+        url.AppendToPath((L"p_" + std::to_wstring(blockID.m_integerID) + extension).c_str());
 
         BeFile file;
         BeFileStatus status = file.Open(url.c_str(), BeFileAccess::Write);
