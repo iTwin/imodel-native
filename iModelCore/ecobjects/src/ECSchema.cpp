@@ -1470,51 +1470,51 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
         return ECObjectsStatus::NamedItemAlreadyExists;
 
     ECObjectsStatus status = ECObjectsStatus::Success;
-    ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
-    ECStructClassCP sourceAsStructClass = sourceClass.GetStructClassCP();
-    ECCustomAttributeClassCP sourceAsCAClass = sourceClass.GetCustomAttributeClassCP();
-    if (nullptr != sourceAsRelationshipClass)
+    switch (sourceClass.GetClassType())
         {
-        ECRelationshipClassP newRelationshipClass;
-        status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
-        newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
+        case ECClassType::Relationship:
+            { // Brackets are needed to get around compiler error, C2360, where the initializer of an identifier cannot be skipped by any case
+            // since the variable lives through the entire switch/case statement. Need to put in a scope block to make it explicit.
+            ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
+            ECRelationshipClassP newRelationshipClass;
+            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
+            if (ECObjectsStatus::Success != status)
+                return status;
+            newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
+            newRelationshipClass->SetStrengthDirection(sourceAsRelationshipClass->GetStrengthDirection());
 
-        sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences);
-        sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
-        targetClass = newRelationshipClass;
-        }
-    else if (nullptr != sourceAsStructClass)
-        {
-        ECStructClassP newStructClass;
-        status = this->CreateStructClass(newStructClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        targetClass = newStructClass;
-        }
-    else if (nullptr != sourceAsCAClass)
-        {
-        ECCustomAttributeClassP newCAClass;
-        status = this->CreateCustomAttributeClass(newCAClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        newCAClass->SetContainerType(sourceAsCAClass->GetContainerType());
-        targetClass = newCAClass;
-        }
-    else
-        {
-        ECEntityClassP newEntityClass;
-        status = CreateEntityClass(newEntityClass, targetClassName);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        targetClass = newEntityClass;
+            sourceAsRelationshipClass->GetSource().CopyTo(newRelationshipClass->GetSource(), copyReferences);
+            sourceAsRelationshipClass->GetTarget().CopyTo(newRelationshipClass->GetTarget(), copyReferences);
+            targetClass = newRelationshipClass;
+            break;
+            }
+        case ECClassType::Struct:
+            ECStructClassP newStructClass;
+            status = CreateStructClass(newStructClass, targetClassName);
+            if (ECObjectsStatus::Success != status)
+                return status;
+            targetClass = newStructClass;
+            break;
+        case ECClassType::CustomAttribute:
+            ECCustomAttributeClassP newCAClass;
+            status = CreateCustomAttributeClass(newCAClass, targetClassName);
+            if (ECObjectsStatus::Success != status)
+                return status;
+            newCAClass->SetContainerType(sourceClass.GetCustomAttributeClassCP()->GetContainerType());
+            targetClass = newCAClass;
+            break;
+        case ECClassType::Entity:
+            ECEntityClassP newEntityClass;
+            status = CreateEntityClass(newEntityClass, targetClassName);
+            if (ECObjectsStatus::Success != status)
+                return status;
+            targetClass = newEntityClass;
+            break;
         }
 
     if (sourceClass.GetIsDisplayLabelDefined())
-        targetClass->SetDisplayLabel(sourceClass.GetInvariantDisplayLabel());
-    targetClass->SetDescription(sourceClass.GetInvariantDescription());
+        targetClass->SetDisplayLabel(sourceClass.GetInvariantDisplayLabel().c_str());
+    targetClass->SetDescription(sourceClass.GetInvariantDescription().c_str());
     targetClass->SetClassModifier(sourceClass.GetClassModifier());
 
     // Set the base classes on the target class from the source class
@@ -1586,12 +1586,14 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP& targetEnumeration, ECE
         {
         ECEnumeratorP targetEnumerator;
         if (PrimitiveType::PRIMITIVETYPE_Integer == targetEnumeration->GetType())
-            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetName(), sourceEnumerator->GetInteger());
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetName().c_str(), sourceEnumerator->GetInteger());
         else
-            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetName(), sourceEnumerator->GetString().c_str());
+            targetEnumeration->CreateEnumerator(targetEnumerator, sourceEnumerator->GetName().c_str(), sourceEnumerator->GetString().c_str());
 
         if (sourceEnumerator->GetIsDisplayLabelDefined())
             targetEnumerator->SetDisplayLabel(sourceEnumerator->GetInvariantDisplayLabel().c_str());
+
+        targetEnumerator->SetDescription(sourceEnumerator->GetInvariantDescription().c_str());
         }
 
     return ECObjectsStatus::Success;
@@ -1615,16 +1617,18 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
     targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
     targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
+    // Need to get non-const reference to be able to add as a reference if needed
     ECSchemaR copyFromSchema = sourceKOQ.GetSchemaR();
 
     ECUnitCP persistUnit = sourceKOQ.GetPersistenceUnit();
     if (nullptr != persistUnit)
         {
         ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
-        SchemaKey key = SchemaKey(persistUnitSchema.GetName().c_str(), persistUnitSchema.GetVersionRead(), persistUnitSchema.GetVersionWrite(), persistUnitSchema.GetVersionMinor());
         if (!this->GetSchemaKey().Matches(persistUnitSchema.GetSchemaKey(), SchemaMatchType::Exact))
-            { 
-            ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+            {
+            // TODO: I don't like how this attempts to add the schema as a reference again. There are two scenarios; this method is called from CopySchema, which takes care of
+            // copying the references, or it is called from the public API, and in that case it should fail to Copy if the appropriate schemas aren't referenced? Make it an option, possibly only in public API?
+            ECSchemaP foundSchema = copyFromSchema.FindSchemaP(persistUnitSchema.GetSchemaKey(), SchemaMatchType::Exact);
             if (nullptr != foundSchema)
                 AddReferencedSchema(*foundSchema);
             }
@@ -1641,10 +1645,9 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
             ECFormatCP parentFormat = format.GetParentFormat();
 
             ECSchemaCR formatSchema = parentFormat->GetSchema();
-            SchemaKey key = SchemaKey(formatSchema.GetName().c_str(), formatSchema.GetVersionRead(), formatSchema.GetVersionWrite(), formatSchema.GetVersionMinor());
             if (!this->GetSchemaKey().Matches(formatSchema.GetSchemaKey(), SchemaMatchType::Exact))
                 {
-                ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+                ECSchemaP foundSchema = copyFromSchema.FindSchemaP(formatSchema.GetSchemaKey(), SchemaMatchType::Exact);
                 if (nullptr != foundSchema)
                     AddReferencedSchema(*foundSchema);
                 }
@@ -1807,9 +1810,9 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
     if (ECObjectsStatus::Success != status)
         return status;
     if (sourceFormat.GetIsDisplayLabelDefined())
-        targetFormat->SetDisplayLabel(sourceFormat.GetInvariantDisplayLabel());
+        targetFormat->SetDisplayLabel(sourceFormat.GetInvariantDisplayLabel().c_str());
     if (sourceFormat.GetIsDescriptionDefined())
-        targetFormat->SetDescription(sourceFormat.GetInvariantDescription());
+        targetFormat->SetDescription(sourceFormat.GetInvariantDescription().c_str());
     if (sourceFormat.HasNumeric())
         targetFormat->SetNumericSpec(*sourceFormat.GetNumericSpec());
     if (sourceFormat.HasComposite())
@@ -1857,13 +1860,13 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
-    status = CreateSchema(schemaOut,  GetName(), GetAlias(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
+    status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
     if (ECObjectsStatus::Success != status)
         return status;
 
-    schemaOut->SetDescription(m_description);
+    schemaOut->SetDescription(GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        schemaOut->SetDisplayLabel(GetInvariantDisplayLabel());
+        schemaOut->SetDisplayLabel(GetInvariantDisplayLabel().c_str());
 
     ECSchemaReferenceListCR referencedSchemas = GetReferencedSchemas();
     for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
