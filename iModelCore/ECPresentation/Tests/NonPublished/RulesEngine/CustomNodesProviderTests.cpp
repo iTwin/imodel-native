@@ -124,7 +124,6 @@ TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     ASSERT_TRUE(node.IsValid());
     EXPECT_EQ(0, node->GetParentNodeId());
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                07/2015
