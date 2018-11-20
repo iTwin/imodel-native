@@ -38,7 +38,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CompositeProfileHandler : ProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_CompositeProfile, CompositeProfile, CompositeProfileHandler, ProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT (PRF_CLASS_CompositeProfile, CompositeProfile, CompositeProfileHandler, ProfileHandler, PROFILES_EXPORT)
 
     }; // CompositeProfileHandler
 

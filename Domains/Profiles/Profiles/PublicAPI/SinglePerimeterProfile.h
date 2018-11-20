@@ -37,7 +37,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SinglePerimeterProfileHandler : ProfileHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS (PRF_CLASS_SinglePerimeterProfile, SinglePerimeterProfile, SinglePerimeterProfileHandler, ProfileHandler, PROFILES_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS_ABSTRACT (PRF_CLASS_SinglePerimeterProfile, SinglePerimeterProfile, SinglePerimeterProfileHandler, ProfileHandler, PROFILES_EXPORT)
 
     }; // SinglePerimeterProfileHandler
 
