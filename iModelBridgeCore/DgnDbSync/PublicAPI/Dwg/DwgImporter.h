@@ -711,8 +711,10 @@ public:
         DgnGeometryPartId           m_partId;
         Render::GeometryParams      m_display;
         DRange3d                    m_partRange;
+        double                      m_partScale;
         Transform                   m_geometryToPart;
     public:
+        SharedPartEntry () : m_partScale(0.0) { m_partId.Invalidate(); m_partRange.Init(); m_geometryToPart.InitIdentity(); }
         bool        IsValid () const { return m_partId.IsValid(); }
         DgnGeometryPartId GetPartId () const { return m_partId; }
         void        SetPartId (DgnGeometryPartId id) { m_partId = id; }
@@ -722,6 +724,8 @@ public:
         void        SetPartRange (DRange3dCR range) { m_partRange = range; }
         TransformCR GetTransform () const { return m_geometryToPart; }
         void        SetTransform (TransformCR trans) { m_geometryToPart = trans; }
+        double      GetPartScale () const { return m_partScale; }
+        void        SetPartScale (double scale) { m_partScale = scale; }
         };  // SharedPartEntry
     typedef bvector<SharedPartEntry>                    T_SharedPartList;
 
@@ -730,16 +734,16 @@ public:
         {
     private:
         DwgDbObjectId               m_blockId;
-        double                      m_partScale;
+        double                      m_basePartScale;
     public:
-        SharedPartKey (DwgDbObjectIdCR id, double scale) : m_blockId(id), m_partScale(scale) {}
-        SharedPartKey () : m_partScale(0.0) { m_blockId.SetNull(); }
+        SharedPartKey (DwgDbObjectIdCR id, double scale) : m_blockId(id), m_basePartScale(scale) {}
+        SharedPartKey () : m_basePartScale(0.0) { m_blockId.SetNull(); }
 
         DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
         void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
-        double  GetPartScale () const { return m_partScale; }
-        void    SetPartScale (double scale) { m_partScale = scale; }
-        bool    IsMirrored () const { return m_partScale < -1.0e-5; }
+        double  GetBasePartScale () const { return m_basePartScale; }
+        void    SetBasePartScale (double scale) { m_basePartScale = scale; }
+        bool    IsMirrored () const { return m_basePartScale < -1.0e-5; }
         //! The left-hand operand of the key
         bool operator < (SharedPartKey const& rho) const;
         };  // SharedPartKey
@@ -1206,6 +1210,9 @@ protected:
     //! @param[in] dwgGroup Input object of the DWG group dictionary.
     //! @note When a change is detected for a DWG group, _UpdateGroup will be called; otherwise _ImportGroup will be called, by the default implementation.
     DWG_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSyncInfo::Group const& prov, DwgDbGroupCR dwgGroup);
+    //! Tell DwgSyncInfo how to sync groups: group object alone or members included?
+    //! @return True to include members - needed when members are not made persistent elements; False to sync group object only - members are tracked by entity mappings.
+    DWG_EXPORT virtual bool _ShouldSyncGroupWithMembers () const { return false; }
 
     //! @name Options and configs
     //! @{

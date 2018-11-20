@@ -1711,7 +1711,7 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
         if (!flatCustomAttributeSchema.IsValid())
             {
             Utf8String error;
-            error.Sprintf("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            error.Sprintf("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", instance->GetClass().GetFullName());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
@@ -1719,7 +1719,7 @@ BentleyStatus DynamicSchemaGenerator::CopyFlatCustomAttributes(ECN::IECCustomAtt
         if (!copiedCA.IsValid())
             {
             Utf8String error;
-            error.Sprintf("Failed to copy custom attribute '%s'. Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            error.Sprintf("Failed to copy custom attribute '%s'. Skipping custom attribute.", instance->GetClass().GetFullName());
             ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
@@ -3024,7 +3024,8 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
     Utf8String schemaName(schemaKey.GetName().c_str());
     ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
-    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
+    
+    if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), SyncInfo::V8FileSyncInfoId()))
         {
         //ECSchema with same name already found in other model. Now check whether we need to overwrite the existing one or not
         //and also check whether the existing one and the new one are compatible.
@@ -3075,7 +3076,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                             return BSISUCCESS;
                             }
                         }
-                    else
+                    else if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str(), Converter::GetV8FileSyncInfoIdFromAppData(*v8Model.GetDgnFileP())))
                         return BSISUCCESS;
                     }
                 }
@@ -3140,7 +3141,9 @@ bool DynamicSchemaGenerator::IsWellKnownDynamicSchema(Bentley::Utf8StringCR sche
     return BeStringUtilities::Strnicmp(schemaName.c_str(), "PFLModule", 9) == 0 ||
         schemaName.EqualsI("CivilSchema_iModel") ||
         schemaName.EqualsI("BuildingDataGroup") ||
-        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0;
+        schemaName.Equals("V8TagSetDefinitions") ||
+        BeStringUtilities::Strnicmp(schemaName.c_str(), "Ifc", 3) == 0 ||
+        schemaName.StartsWith("DgnCustomItemTypes_");
     }
 
 //---------------------------------------------------------------------------------------
@@ -3275,7 +3278,8 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
 
     for (auto& v8SchemaInfo : v8SchemaInfos)
         {
-        if (ECN::ECSchema::IsStandardSchema(Utf8String(v8SchemaInfo.GetSchemaName())))
+        Utf8String v8SchemaName(v8SchemaInfo.GetSchemaName());
+        if (ECN::ECSchema::IsStandardSchema(v8SchemaName))
             continue;
 
         bmap<Utf8String, uint32_t>::const_iterator syncEntry = syncInfoChecksums.find(Utf8String(v8SchemaInfo.GetSchemaName()));
@@ -3286,8 +3290,12 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             continue;
             }
 
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        if (found != s_dgnV8DeliveredSchemas.end())
+            continue;
+
         // It is possible we scanned the schema previously, but didn't import it.  Make sure it is actually in the db
-        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(Utf8String(v8SchemaInfo.GetSchemaName())))
+        if (!m_converter.GetDgnDb().Schemas().ContainsSchema(v8SchemaName))
             {
             m_needReimportSchemas = true;
             continue;
@@ -3300,7 +3308,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             auto stat = dgnv8EC.LocateSchemaXmlInModel(schemaXmlW, v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact, v8Model, modelScopeOption);
             if (stat != BentleyApi::SUCCESS)
                 {
-                Utf8PrintfString msg("Could not read v8 ECSchema XML for '%s'.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
+                Utf8PrintfString msg("Could not read v8 ECSchema XML for '%s'.", v8SchemaName.c_str());
                 ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::MissingData());
                 return;
@@ -3319,14 +3327,14 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             auto externalSchema = dgnv8EC.LocateExternalSchema(v8SchemaInfo, ECObjectsV8::SCHEMAMATCHTYPE_Exact);
             if (externalSchema == nullptr)
                 {
-                Utf8PrintfString msg("Could not locate external v8 ECSchema '%s'", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
+                Utf8PrintfString msg("Could not locate external v8 ECSchema '%s'", v8SchemaName.c_str());
                 ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::MissingData(), Converter::Issue::Error(), msg.c_str());
                 OnFatalError(Converter::IssueCategory::MissingData());
                 return;
                 }
             if (ECObjectsV8::SCHEMA_WRITE_STATUS_Success != externalSchema->WriteToXmlString(schemaXml))
                 {
-                Utf8PrintfString msg("Could not serialize external v8 ECSchema '%s'", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
+                Utf8PrintfString msg("Could not serialize external v8 ECSchema '%s'", v8SchemaName.c_str());
                 ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::CorruptData(), Converter::Issue::Error(), "Could not serialize external v8 ECSchema.");
                 OnFatalError(Converter::IssueCategory::CorruptData());
                 return;
@@ -3339,7 +3347,7 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             ECN::ECSchemaCP bimSchema = m_converter.GetDgnDb().Schemas().GetSchema(Utf8String(newSchemaKey.GetName().c_str()).c_str(), false);
             ECN::SchemaKey bimSchemaKey = bimSchema->GetSchemaKey();
             if (newSchemaKey.GetVersionMajor() == bimSchemaKey.GetVersionRead() && newSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor() && 
-                !IsDynamicSchema(Utf8String(v8SchemaInfo.GetSchemaName()).c_str(), schemaXml))
+                !IsDynamicSchema(v8SchemaName.c_str(), schemaXml))
                 {
                 Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
                 ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
@@ -3495,8 +3503,8 @@ void SpatialConverterBase::CreateProvenanceTables()
         DgnV8FileProvenance::CreateTable(*m_dgndb);
     if (!m_dgndb->TableExists(DGN_TABLE_ProvenanceModel) && _WantModelProvenanceInBim())
         DgnV8ModelProvenance::CreateTable(*m_dgndb);
-    if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
-        DgnV8ElementProvenance::CreateTable(*m_dgndb);
+    // if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceElement))
+    //     DgnV8ElementProvenance::CreateTable(*m_dgndb);
     
     }
 

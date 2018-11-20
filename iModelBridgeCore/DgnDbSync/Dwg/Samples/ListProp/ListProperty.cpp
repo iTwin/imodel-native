@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Samples/ListProp/ListProperty.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "ListProperty.h"
@@ -208,7 +208,7 @@ BentleyStatus   ListProperty::_ImportEntity (ElementImportResults& results, Elem
     if (className.StartsWithI(L"AcDb"))
         return  status;
 
-    LOG.tracev ("DgnElement %s(ID=%lld) has been created from a custom object, trying LIST command...", dgnElement->GetDisplayLabel().c_str(), dgnElement->GetElementId());
+    LOG.tracev ("DgnElement %s(ID=%lld) has been created from a custom object, trying LIST command...", dgnElement->GetDisplayLabel().c_str(), dgnElement->GetElementId().GetValue());
 
     // Create Adhoc properties from the LIST "properties" of a custom object:
     status = ListEntityProperties (*dgnElement, inputs.GetEntity());

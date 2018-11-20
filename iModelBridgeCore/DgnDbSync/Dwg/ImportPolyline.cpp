@@ -31,6 +31,7 @@ PolylineFactory::PolylineFactory ()
     m_hasWidths = false;
     m_isClosed = false;
     m_ecs.InitIdentity ();
+    m_boundaryType = CurveVector::BOUNDARY_TYPE_None;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -60,6 +61,7 @@ PolylineFactory::PolylineFactory (DwgDbPolylineCR polyline, bool allowClosed)
 
     m_elevation = polyline.GetElevation ();
     m_thickness = polyline.GetThickness ();
+    m_boundaryType = CurveVector::BOUNDARY_TYPE_None;
 
     polyline.GetEcs (m_ecs);
     }
@@ -79,9 +81,18 @@ PolylineFactory::PolylineFactory (size_t nPoints, DPoint3dCP points, bool closed
     m_elevation = 0.0;
     m_thickness = 0.0;
     m_ecs.InitIdentity ();
+    m_boundaryType = CurveVector::BOUNDARY_TYPE_None;
 
     for (size_t i = 0; i < m_numPoints; i++)
         m_points.push_back (points[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void  PolylineFactory::SetBoundaryType (CurveVector::BoundaryType type)
+    {
+    m_boundaryType = type;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -95,9 +106,13 @@ CurveVectorPtr  PolylineFactory::CreateCurveVector (bool useElevation)
     else if (m_numPoints < 3)
         m_isClosed = false;
 
+    // if boundary type is not set, default to outer for closed polyline or open otherwise:
+    if (m_boundaryType == CurveVector::BOUNDARY_TYPE_None)
+        m_boundaryType = m_isClosed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open;
+
     size_t          numSegments = m_isClosed ? m_numPoints : m_numPoints - 1;
 
-    CurveVectorPtr  curves = CurveVector::Create (m_isClosed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+    CurveVectorPtr  curves = CurveVector::Create (m_boundaryType);
     if (!curves.IsValid())
         return  curves;
 

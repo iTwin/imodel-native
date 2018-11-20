@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/TiledConverterApp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbSync/DgnV8/ConverterApp.h>
@@ -31,10 +31,10 @@ private:
     BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     Dgn::SubjectCPtr _InitializeJob() override;
     BentleyStatus _OnOpenBim(DgnDbR db) override;
-    void _OnCloseBim(BentleyStatus) override;
+    void _OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose) override;
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
-    void _CloseSource(BentleyStatus) override;
+    void _CloseSource(BentleyStatus, iModelBridge::ClosePurpose) override;
     BentleyStatus _DetectDeletedDocuments() override;
 
 public:
@@ -96,7 +96,7 @@ BentleyStatus TiledConverterApp::_OpenSource()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TiledConverterApp::_CloseSource(BentleyStatus)
+void TiledConverterApp::_CloseSource(BentleyStatus, iModelBridge::ClosePurpose)
     {
     }
 
@@ -114,9 +114,18 @@ BentleyStatus TiledConverterApp::_OnOpenBim(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TiledConverterApp::_OnCloseBim(BentleyStatus)
+void TiledConverterApp::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose)
     {
+    bool keepHostAliveOriginal = false;
+    if (NULL != m_converter.get())
+        {
+        bool keepHostAlive = m_converter->GetParams().GetKeepHostAlive();
+        keepHostAliveOriginal = keepHostAlive;
+        keepHostAlive |= purpose == iModelBridge::ClosePurpose::SchemaUpgrade;
+        m_converter->SetKeepHostAlive(keepHostAlive);
+        }
     m_converter.reset(nullptr);
+	m_params.SetKeepHostAlive(keepHostAliveOriginal);
     }
 
 /*---------------------------------------------------------------------------------**//**

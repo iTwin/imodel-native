@@ -243,6 +243,7 @@
         <ProductDirectory Name="Assets"                     Path="Assets" LibType="static"  RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="ConfigDir"                  Deliver="false" />
         <ProductDirectory Name="DgnV8Dlls"                  Deliver="false" />
+        <ProductDirectory Name="DgnV8DummyUstation"         Deliver="false" />
     </ProductDirectoryList>
 
 

@@ -13,6 +13,9 @@
             <If name="Design Model">
                 <Then newName="%file"/>
             </If>
+            <If name="DesignModel">
+                <Then newName="%file"/>
+            </If>
             <If name="Default">
                 <Then newName="%file"/>
             </If>

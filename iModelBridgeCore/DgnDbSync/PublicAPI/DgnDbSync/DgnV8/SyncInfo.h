@@ -39,6 +39,7 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
 #define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
 #define SYNC_TABLE_Imagery      SYNCINFO_TABLE("Imagery")
+#define SYNC_TABLE_GeomPart     SYNCINFO_TABLE("GeomPart")
 
 struct Converter;
 struct SyncInfo;
@@ -155,18 +156,19 @@ struct SyncInfo
     //! There should be 1 File entry in syncinfo for each v8 file processed by the converter.
     struct V8FileProvenance : FileInfo
         {
-        SyncInfo&   m_syncInfo;
+        friend SyncInfo;
+        SyncInfo*           m_syncInfo;
         V8FileSyncInfoId    m_syncId;
 
-        V8FileProvenance(DgnV8FileCR, SyncInfo&, StableIdPolicy);
-        DGNDBSYNC_EXPORT V8FileProvenance(BentleyApi::BeFileNameCR, SyncInfo&, StableIdPolicy);
-
+        private:
         BeSQLite::DbResult Insert();
-        BeSQLite::DbResult Update();
-        DGNDBSYNC_EXPORT bool FindByName(bool fillLastModData);
-        bool IsValid() const {return m_syncId.IsValid();}
+        BeSQLite::DbResult Update(V8FileSyncInfoId, FileInfo const&);
 
-        DGNDBSYNC_EXPORT static V8FileProvenance GetById(V8FileSyncInfoId, SyncInfo&);
+        V8FileProvenance(SyncInfo& s) : m_syncInfo(&s) {} 
+        V8FileProvenance(DgnV8FileCR, SyncInfo&, StableIdPolicy);
+
+        public:
+        bool IsValid() const {return m_syncId.IsValid();}
         };
 
     struct FileIterator : BeSQLite::DbTableIterator
@@ -186,6 +188,7 @@ struct SyncInfo
             DGNDBSYNC_EXPORT uint64_t GetFileSize();
             DGNDBSYNC_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
             Entry const& operator* () const {return *this;}
+            V8FileProvenance GetV8FileProvenance(SyncInfo& si);
         };
 
         typedef Entry const_iterator;
@@ -508,7 +511,7 @@ struct SyncInfo
 
         BeSQLite::DbResult Insert (BeSQLite::Db&) const;
         BeSQLite::DbResult Update (BeSQLite::Db&) const;
-        static BentleyStatus FindById(ImportJob&, DgnDbCR&, SyncInfo::V8ModelSyncInfoId);
+        static BentleyStatus FindById(ImportJob&, DgnDbCR, SyncInfo::V8ModelSyncInfoId);
         static void CreateTable(BeSQLite::Db&);
 
         SyncInfo::V8ModelSyncInfoId GetV8ModelSyncInfoId() const { return m_v8RootModel; }
@@ -535,6 +538,45 @@ struct SyncInfo
 
             public:
             DGNDBSYNC_EXPORT ImportJob GetimportJob();
+            Entry const& operator* () const {return *this;}
+            };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNDBSYNC_EXPORT const_iterator begin() const;
+        const_iterator end() const {return Entry (NULL, false);}
+        };
+
+    //! GeomPart with a converter-generated tag
+    struct GeomPart
+        {
+        DgnGeometryPartId m_id;
+        Utf8String m_tag;
+
+        GeomPart() {}
+        GeomPart(DgnGeometryPartId i, Utf8StringCR t) : m_id(i), m_tag(t) {}
+
+        static Utf8String GetSelectSql();
+        void FromSelect(BeSQLite::Statement&);
+
+        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        static BentleyStatus FindByTag(GeomPart&, DgnDbCR, Utf8CP tag);
+        static BentleyStatus FindById(GeomPart&, DgnDbCR db, DgnGeometryPartId);
+        static void CreateTable(BeSQLite::Db&);
+        };
+
+    struct GeomPartIterator : BeSQLite::DbTableIterator
+        {
+        DGNDBSYNC_EXPORT GeomPartIterator(DgnDbCR db, Utf8CP where);
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+            friend struct GeomPartIterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
+
+            public:
+            DGNDBSYNC_EXPORT GeomPart GetGeomPart();
             Entry const& operator* () const {return *this;}
             };
 
@@ -617,8 +659,6 @@ protected:
     //! Optimized for fast look-up
     BentleyStatus FindFirstSubCategory (DgnSubCategoryId&, BeSQLite::Db&, V8ModelSource, uint32_t flid, Level::Type ltype);
 
-    DGNDBSYNC_EXPORT BeSQLite::DbResult InsertFile(V8FileProvenance&, FileInfo const&);
-
     BentleyStatus PerformVersionChecks();
 
 public:
@@ -670,7 +710,7 @@ public:
     //! @{
 
     //! Get a name for the specified file that not used by any other file registered in SyncInfo
-    Utf8String GetUniqueName(WStringCR fullname);
+    Utf8String GetUniqueNameForFile(DgnV8FileCR file);
 
     //! Query if the specified file appears to have changed, compared to save data in syncinfo
     //! @return true if the file is not found in syncinfo or if it is found and its last-save time is different
@@ -681,6 +721,13 @@ public:
     //! @param[in] uniqueName       the key that identifies the file in sync info
     DGNDBSYNC_EXPORT bool HasDiskFileChanged(BeFileNameCR v8FileName);
 
+    DGNDBSYNC_EXPORT V8FileProvenance InsertFile(BeSQLite::DbResult*, DgnV8FileCR, StableIdPolicy);
+    DGNDBSYNC_EXPORT V8FileProvenance UpdateFile(BeSQLite::DbResult*, DgnV8FileCR);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFileById(V8FileSyncInfoId);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFile(DgnV8FileCR);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFileByFileName(BeFileNameCR);
+    DGNDBSYNC_EXPORT V8FileProvenance FindFileByUniqueName(Utf8StringCR);
+    
     //! @private
     BentleyStatus DeleteFile(V8FileSyncInfoId);
 
@@ -755,7 +802,7 @@ public:
     //! @name ECSchemas
     //! @{
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
-    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName) const;
+    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName, V8FileSyncInfoId fileId) const;
     DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
     DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const;
     //! @}

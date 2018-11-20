@@ -151,9 +151,12 @@ StableIdPolicy Converter::GetIdPolicyFromAppData(DgnV8FileCR file)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ComputeRepositoryLinkCodeValueAndUri(Utf8StringR code, Utf8StringR uri, DgnV8FileR file)
     {
-    auto const& moniker = file.GetDocument().GetMoniker();
-
-    uri = Utf8String(moniker.ResolveURI().c_str());
+    uri = GetDocumentURNforFile(file);
+    if (iModelBridge::IsPwUrn(uri))
+        {
+        code = uri;
+        return;
+        }
 
     char let;
     Utf8String urilwr = uri.ToLower();
@@ -245,15 +248,35 @@ void Converter::SetRepositoryLinkInAppData(DgnV8FileCR file, DgnElementId rlinkI
 SyncInfo::V8FileProvenance Converter::_GetV8FileIntoSyncInfo(DgnV8FileR file, StableIdPolicy policy)
     {
     //  Make sure the file is registered in syncinfo
-    SyncInfo::V8FileProvenance provenance(file, m_syncInfo, policy);
-    if (!provenance.FindByName(true))
+    SyncInfo::V8FileProvenance provenance = m_syncInfo.FindFile(file);
+    if (!provenance.IsValid())
         {
-        provenance.Insert();
-        BeSQLite::BeGuid guid;
-        bool insertProvenance = _WantModelProvenanceInBim() && (SUCCESS == guid.FromString(provenance.m_uniqueName.c_str()));
-            
-        if (insertProvenance && SUCCESS != DgnV8FileProvenance::FindFirst(NULL, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
-            DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
+        DbResult rc;
+        provenance = m_syncInfo.InsertFile(&rc, file, policy);
+        if (!provenance.IsValid())
+            {
+            LOG.errorv("+ %s -> syncinfo failed with error %x", Bentley::Utf8String(file.GetFileName()).c_str(), rc);
+            OnFatalError();
+            return provenance;
+            }
+
+        if (_WantModelProvenanceInBim())
+            {
+            BeSQLite::BeGuid guid = GetDocumentGUIDforFile(file);
+            if (guid.IsValid())
+                {
+                if (BSISUCCESS != DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
+                    {
+                    LOG.infov("DgnV8FileProvenance::Insert %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
+                    DgnV8FileProvenance::Insert(guid, provenance.m_v8Name, provenance.m_uniqueName, GetDgnDb());
+                    }
+                else
+                    {
+                    LOG.infov("DgnV8FileProvenance already has %s (%s)", Bentley::Utf8String(file.GetFileName()).c_str(), guid.ToString().c_str());
+                    }
+                }
+            }
+
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
             LOG.tracev("+ %s => %lld", Bentley::Utf8String(file.GetFileName()).c_str(), provenance.m_syncId.GetValue());
 
@@ -286,8 +309,11 @@ SyncInfo::V8FileSyncInfoId Converter::GetV8FileSyncInfoId(DgnV8FileR file)
 SyncInfo::V8FileProvenance RootModelConverter::_GetV8FileIntoSyncInfo(DgnV8FileR file, StableIdPolicy policy)
     {
     auto prov = T_Super::_GetV8FileIntoSyncInfo(file, policy);
-    m_v8Files.push_back(&file);
-    _KeepFileAlive(file);
+    if (std::find(m_v8Files.begin(), m_v8Files.end(), &file) == m_v8Files.end())
+        {
+        m_v8Files.push_back(&file);
+        _KeepFileAlive(file);
+        }
     return prov;
     }
 
@@ -1632,7 +1658,7 @@ void Converter::OnCreateComplete()
     //  ensureAUserView
 
     StopWatch timer(true);
-    GenerateThumbnails();
+    GenerateThumbnailsWithExceptionHandling();
     ConverterLogging::LogPerformance(timer, "Creating thumbnails");
 
     timer.Start();
@@ -1649,7 +1675,7 @@ void Converter::OnUpdateComplete()
     {
     // *** WIP_UPDATER - update thumbnails for views with modified models
     if (m_elementsConverted != 0)
-        GenerateThumbnails();
+        GenerateThumbnailsWithExceptionHandling();
     if (m_modelsRequiringRealityTiles.size() != 0)
         GenerateRealityModelTilesets();
 
@@ -1860,7 +1886,7 @@ DefinitionModelPtr Converter::GetJobDefinitionModel()
         return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
 
     SubjectCR job = GetJobSubject();
-    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel());
+    Utf8PrintfString partitionName("Definition Model For %s", job.GetDisplayLabel().c_str());
     DgnCode partitionCode = DefinitionPartition::CreateCode(job, partitionName);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
@@ -2074,6 +2100,26 @@ static bool wouldBe3dMismatch(ElementConversionResults const& results, ResolvedM
     return gs->Is3d() != v8mm.GetDgnModel().Is3dModel();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ BentleyStatus  Converter::AddElementSourceInfo(ElementConversionResults& results, DgnV8EhCR v8eh)
+    {
+    ECN::ECClassCP aspectClass = GetDgnDb().Schemas().GetClass(SOURCEINFO_ECSCHEMA_NAME, SOURCEINFO_CLASS_SoureElementInfo);
+    if (NULL == aspectClass)
+        return ERROR;
+
+    ECN::IECInstanceCP aspect = DgnElement::GenericMultiAspect::GetAspect(*results.m_element, *aspectClass, BeSQLite::EC::ECInstanceId());
+    if (NULL != aspect)
+        return SUCCESS;//Assuming dgnv8 element mapping is n->1. So no need to update the element id.
+
+    auto aspectInstance = aspectClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    Utf8PrintfString elementId("%lld", v8eh.GetElementId());
+    aspectInstance->SetValue("SourceId", ECN::ECValue(elementId.c_str()));
+
+    return DgnElement::GenericMultiAspect::AddAspect(*results.m_element, *aspectInstance) == DgnDbStatus::Success ? BSISUCCESS : BSIERROR;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   10/2014
 //---------------------------------------------------------------------------------------
@@ -2222,6 +2268,10 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
             return BSIERROR;
         }
 
+    if (SUCCESS != AddElementSourceInfo(results, v8eh))
+        {
+        //TODO Log error
+        }
     return BentleyApi::SUCCESS;
     }
 
@@ -2937,14 +2987,19 @@ Transform Converter::ComputeUnitsScaleTransform(DgnV8ModelCR v8Model)
 * Find this V8Model/trans combination from a previously converted Syncinfo. This is only valid for updaters.
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8Model, TransformCR trans)
+ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8ModelRef, TransformCR trans)
     {
-    SyncInfo::V8ModelSource source(*v8Model.GetDgnModelP());
+    DgnV8ModelP v8Model = v8ModelRef.GetDgnModelP();
+    if (nullptr == v8Model)
+        {
+        BeAssert(false);
+        return ResolvedModelMapping();
+        }
+    SyncInfo::V8ModelSource source(*v8Model);
 
-    Bentley::DgnPlatform::ModelId modelId = v8Model.GetDgnModelP()->GetModelId();
     SyncInfo::ModelIterator it(*m_dgndb, "V8FileSyncInfoId=? AND V8Id=?");
     it.GetStatement()->BindInt(1, source.GetV8FileSyncInfoId().GetValue());
-    it.GetStatement()->BindInt(2, modelId);
+    it.GetStatement()->BindInt(2, v8Model->GetModelId());
 
     for (auto entry=it.begin(); entry!=it.end(); ++entry)
         {
@@ -2953,48 +3008,66 @@ ResolvedModelMapping Converter::GetModelFromSyncInfo(DgnV8ModelRefCR v8Model, Tr
             auto model = m_dgndb->Models().GetModel(entry.GetModelId());
             if (!model.IsValid())
                 continue;
-            return ResolvedModelMapping(*model, *v8Model.GetDgnModelP(), entry.GetMapping(), v8Model.AsDgnAttachmentCP());
+            return ResolvedModelMapping(*model, *v8Model, entry.GetMapping(), v8ModelRef.AsDgnAttachmentCP());
             }
         }
 
     //Now search in the files syncinfo
-
-    DgnV8FileP file = v8Model.GetDgnFileP();
-    SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
-    BeSQLite::BeGuid guid;
-    if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+    DgnV8ModelProvenance::ModelProvenanceEntry entryFound;
+    if (BSISUCCESS == FindModelProvenanceEntry(entryFound, *v8Model, trans))
         {
-        bvector <DgnV8ModelProvenance::ModelProvenanceEntry> entries;
-        DgnV8ModelProvenance::FindAll(entries, guid, GetDgnDb());
-
-        for (auto& entry : entries)
+        auto model = m_dgndb->Models().GetModel(entryFound.m_modelId);
+        if (model.IsValid())
             {
-            if (entry.m_dgnv8ModelId != modelId)
-                continue;
-
-            if (!Converter::IsTransformEqualWithTolerance(entry.m_trans, trans))
-                continue;
-
-            auto model = m_dgndb->Models().GetModel(entry.m_modelId);
-            if (!model.IsValid())
-                continue;
-
             //We found a matching model and transform.
             SyncInfo::V8ModelMapping mapping;
-            auto rc = m_syncInfo.InsertModel(mapping, entry.m_modelId, *v8Model.GetDgnModelP(), trans);
+            auto rc = m_syncInfo.InsertModel(mapping, entryFound.m_modelId, *v8Model, trans);
             if (SUCCESS != rc)
                 {
                 BeAssert(false);
-                ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(*v8Model.GetDgnModelP()).c_str());
+                ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), IssueReporter::FmtModel(*v8Model).c_str());
                 OnFatalError();
                 return ResolvedModelMapping();
                 }
 
-            return ResolvedModelMapping(*model, *v8Model.GetDgnModelP(), mapping, v8Model.AsDgnAttachmentCP());
+            return ResolvedModelMapping(*model, *v8Model, mapping, v8ModelRef.AsDgnAttachmentCP());
             }
         }
 
     return ResolvedModelMapping();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      10/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::FindModelProvenanceEntry(DgnV8ModelProvenance::ModelProvenanceEntry& entryFound, DgnV8ModelR v8Model, TransformCR trans)
+    {
+    DgnV8FileP file = v8Model.GetDgnFileP();
+    BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
+    if (BSISUCCESS != DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
+        {
+        LOG.infov("DgnV8FileProvenance does not have %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.IsValid()? guid.ToString().c_str(): "no guid");
+        return BSIERROR;
+        }
+
+    LOG.infov("DgnV8FileProvenance has %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.ToString().c_str());
+
+    bvector <DgnV8ModelProvenance::ModelProvenanceEntry> entries;
+    DgnV8ModelProvenance::FindAll(entries, guid, GetDgnDb());
+
+    for (auto& entry : entries)
+        {
+        if (entry.m_dgnv8ModelId != v8Model.GetModelId())
+            continue;
+
+        if (!Converter::IsTransformEqualWithTolerance(entry.m_trans, trans))
+            continue;
+
+        entryFound = entry;
+        return BSISUCCESS;
+        }
+
+    return BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3207,10 +3280,11 @@ ResolvedModelMapping RootModelConverter::_GetModelForDgnV8Model(DgnV8ModelRefCR 
     if (_WantModelProvenanceInBim())
         {
         DgnV8FileP file = v8Model.GetDgnFileP();
-        SyncInfo::V8FileProvenance provenance(BeFileName(file->GetFileName().c_str()), m_syncInfo, _GetIdPolicy(*file));
-        BeSQLite::BeGuid guid;
-        if (SUCCESS == DgnV8FileProvenance::FindFirst(&guid, provenance.m_uniqueName.c_str(), true, GetDgnDb()))
+        BeSQLite::BeGuid guid = GetDocumentGUIDforFile(*file);
+
+        if (guid.IsValid() && BSISUCCESS == DgnV8FileProvenance::Find(nullptr, nullptr, guid, GetDgnDb()))
             {
+            LOG.infov("DgnV8FileProvenance has %s (%s)", Bentley::Utf8String(file->GetFileName()).c_str(), guid.ToString().c_str());
             DgnV8ModelProvenance::ModelProvenanceEntry entry;
             entry.m_dgnv8ModelId = mapping.GetV8ModelId().GetValue();
             entry.m_modelId = modelId;
@@ -3377,11 +3451,14 @@ void Converter::PopulateRangePartIdMap()
         if (!geomPart.IsValid())
             continue;
 
-        Utf8CP codeValue = geomPart->GetCode().GetValueUtf8CP();
-        if (nullptr == codeValue)
+        Utf8String codeValue = geomPart->GetCode().GetValueUtf8CP();
+        if (codeValue.empty())
+            codeValue = QueryGeometryPartTag(geomPart->GetId());
+
+        if (codeValue.empty())
             continue; //Null codes are valid.
 
-        if (nullptr == strstr(codeValue, "CvtV8"))
+        if (nullptr == strstr(codeValue.c_str(), "CvtV8"))
             continue;
 
         GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), geomPart->GetId()));
@@ -3786,5 +3863,6 @@ bool Converter::_WantModelProvenanceInBim()
 
     return iModelBridge::WantModelProvenanceInBim(*m_dgndb);
     }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

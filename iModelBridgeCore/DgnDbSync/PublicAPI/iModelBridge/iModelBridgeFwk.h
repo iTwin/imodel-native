@@ -15,6 +15,7 @@
 #include <Logging/bentleylogging.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+#include <WebServices/Connect/IConnectTokenProvider.h>
 
 BEGIN_BENTLEY_LOGGING_NAMESPACE
 namespace Provider //Forward declaration for logging provider;
@@ -22,6 +23,8 @@ namespace Provider //Forward declaration for logging provider;
     class Log4cxxProvider;
     }
 END_BENTLEY_LOGGING_NAMESPACE
+
+DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManagerForBridges)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -42,6 +45,8 @@ BENTLEY_TRANSLATABLE_STRINGS_END
 //=======================================================================================
 struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 {
+    friend struct IBriefcaseManagerForBridges;
+
     enum class EffectiveServerError
         {
         Unknown = 1,
@@ -96,7 +101,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     BentleyStatus IModelHub_DoCreatedRepository();
     BentleyStatus IModelHub_DoNewBriefcaseNeedsLocks();
     BentleyStatus BootstrapBriefcase(bool& createdNewRepo);
-
+    BentleyStatus GetSchemaLock();
+    BentleyStatus ImportDgnProvenance(bool& madeChanges);
+    BentleyStatus ImportElementAspectSchema(bool& madeChanges);
+    
     enum class SyncState
         {
         Initial = 0,                // Initial state: we may or may not have server revisions to pull or local Txns to push
@@ -128,7 +136,8 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_inputFileName;
         Utf8String m_jobRunCorrelationId;
         Utf8String m_jobRequestId;
-
+        Utf8String m_jobSubjectName;
+        bool       m_storeElementIdsInBIM {};
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
@@ -189,6 +198,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BentleyStatus Validate(int argc, WCharCP argv[]);
         static void PrintUsage();
         bool ParsedAny() const {return m_parsedAny;}
+        WebServices::IConnectTokenProviderPtr m_tokenProvider;
         };
 
     struct DmsServerArgs
@@ -239,6 +249,7 @@ protected:
     BeFileName m_stderrFileName;
     IModelClientForBridges* m_client;
     EffectiveServerError m_lastServerError;
+    iModelBridge::IBriefcaseManager::PushStatus m_lastBridgePushStatus;
     bvector<DgnModelId> m_modelsInserted;
     iModelBridge* m_bridge;
     bvector<WCharCP> m_bargptrs;        // bridge command-line arguments
@@ -249,6 +260,7 @@ protected:
             IModelHubArgs* m_iModelHubArgs;
             IModelBankArgs* m_iModelBankArgs;
             };
+        
         };
     Utf8String m_briefcaseBasename;
     int m_maxRetryCount;
@@ -256,6 +268,8 @@ protected:
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
     NativeLogging::Provider::Log4cxxProvider* m_logProvider;
+    IBriefcaseManagerForBridgesPtr m_bcMgrForBridges;
+
     BeSQLite::DbResult OpenOrCreateStateDb();
     void PrintUsage(WCharCP programName);
     void RedirectStderr();
@@ -283,13 +297,14 @@ protected:
     void Briefcase_MakeBriefcaseName(); // Sets m_outputName
     BentleyStatus Briefcase_AcquireBriefcase();
     BentleyStatus Briefcase_AcquireExclusiveLocks();
-    BentleyStatus Briefcase_PullMergePush(Utf8CP);
+    BentleyStatus Briefcase_Push(Utf8CP);
+    BentleyStatus Briefcase_PullMergePush(Utf8CP, bool doPullAndMerge = true, bool doPush = true);
     BentleyStatus Briefcase_ReleaseAllPublicLocks();
     //! @}
 
     BentleyStatus ParseDocProps();
 
-    WString GetMutexName();
+    void GetMutexName(wchar_t* buf, size_t bufLen);
     int RunExclusive(int argc, WCharCP argv[]);
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();
@@ -338,6 +353,8 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
+
+    IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 

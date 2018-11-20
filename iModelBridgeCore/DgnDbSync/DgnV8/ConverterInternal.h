@@ -58,6 +58,9 @@
 #include <VersionedDgnV8Api/DgnPlatform/ClipUtil.h>
 #include <VersionedDgnV8Api/DgnPlatform/DgnPlatform.r.h>
 #include <VersionedDgnV8Api/DgnPlatform/CIF/PersistentAppIDs.h>
+#include <VersionedDgnV8Api/DgnPlatform/Provenance.h>
+
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 
 #define NO_USING_NAMESPACE_BENTLEY 1
 

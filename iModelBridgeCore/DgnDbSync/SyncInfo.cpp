@@ -83,6 +83,7 @@ BentleyStatus SyncInfo::CreateTables()
         {
         CreateECTables();
         ImportJob::CreateTable(*m_dgndb);
+        GeomPart::CreateTable(*m_dgndb);
         m_dgndb->SaveChanges();
         return BSISUCCESS;
         }
@@ -176,6 +177,7 @@ BentleyStatus SyncInfo::CreateTables()
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Imagery) "ElementIdx ON "  SYNC_TABLE_Imagery "(ElementId)");
 
     ImportJob::CreateTable(*m_dgndb);
+    GeomPart::CreateTable(*m_dgndb);
 
     //need a unique index to ensure uniqueness for schemas based on checksum
     Utf8String ddl;
@@ -323,25 +325,33 @@ BentleyStatus SyncInfo::DiskFileInfo::GetInfo(BeFileNameCR fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SyncInfo::GetUniqueName(WStringCR fullFileName)
+Utf8String SyncInfo::GetUniqueNameForFile(DgnV8FileCR file)
     {
     //  The unique name is the key into the syncinfo_file table. 
     //  Therefore, we must distinguish between like-named files in different directories.
     //  The unique name must also be stable. If the whole project is moved to a new directory or machine, 
     //  the unique names of the files must be unaffected.
 
-    // If we have a DMS GUID for the document corresponding to this file, that is the unique name.
-    BeGuid docGuid = GetConverter().GetParams().QueryDocumentGuid(BeFileName(fullFileName));
-    if (docGuid.IsValid())
+    // If we have a DMS URN for the document corresponding to this file, that is the unique name.
+    Utf8String urn = GetConverter().GetDocumentURNforFile(file);
+    if (!urn.empty())
         {
-        Utf8String lguid = docGuid.ToString();
-        lguid.ToLower();
-        return lguid;
+        if (iModelBridge::IsNonFileURN(urn))
+            return urn;
+
+        // I would rather use the doc GUID than a file:// URL or a file path.
+        iModelBridgeDocumentProperties docProps;
+        GetConverter().GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str()));
+        if (!docProps.m_docGuid.empty())
+            return docProps.m_docGuid;
+
+        return urn;
         }
 
-    // If we do not have a GUID, we try to compute a stable unique name from the filename.
+    // If we do not have a DMS URN or a doc GUID, we try to compute a stable unique name from the filename.
     // The full path should be unique already. To get something that is stable, we use only as much of 
     // the full path as we need to distinguish between like-named files in different directories.
+    BeFileName fullFileName(file.GetFileName().c_str());
     WString uniqueName(fullFileName);
     auto pdir = m_converter.GetParams().GetInputRootDir();
     if (!pdir.empty() && (pdir.size() < fullFileName.size()) && pdir.EqualsI(fullFileName.substr(0, pdir.size())))
@@ -484,11 +494,11 @@ BentleyStatus SyncInfo::FindImportJobByV8RootModelId(ImportJob& importJob, SyncI
 +---------------+---------------+---------------+---------------+---------------+------*/
 ResolvedImportJob Converter::FindSoleImportJobForFile(DgnV8FileR rootFile)
     {
-    SyncInfo::V8FileProvenance provenance(rootFile, m_syncInfo, _GetIdPolicy(rootFile));
-    if (!provenance.FindByName(true))
+    SyncInfo::V8FileProvenance provenance = m_syncInfo.FindFile(rootFile);
+    if (!provenance.IsValid())
         return ResolvedImportJob();
 
-    auto fsid = GetV8FileSyncInfoId(rootFile);
+    auto fsid = GetV8FileSyncInfoId(rootFile); // (makes sure that syncinfo is cached in file's appdata)
     if (!fsid.IsValid())
         return ResolvedImportJob();
 
@@ -543,6 +553,118 @@ ResolvedImportJob Converter::FindImportJobForModel(DgnV8ModelR rootModel)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::GeomPart::CreateTable (BeSQLite::Db& db)
+    {
+    if (db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
+        return;
+    db.CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart),
+                         "Id INTEGER PRIMARY KEY,"
+                         "Tag TEXT"
+                         );
+    db.ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart) "TagIdx ON "  SYNC_TABLE_GeomPart "(Tag)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult SyncInfo::GeomPart::Insert (BeSQLite::Db& db) const
+    {
+    Statement stmt;
+    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart) "(Id,Tag) VALUES (?,?)");
+    int col = 1;
+    stmt.BindId(col++, m_id);
+    stmt.BindText(col++, m_tag, Statement::MakeCopy::No);
+    auto res = stmt.Step();
+    return res;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SyncInfo::GeomPart::GetSelectSql()
+    {
+    return "SELECT Id,Tag FROM " SYNCINFO_ATTACH(SYNC_TABLE_GeomPart);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncInfo::GeomPart::FromSelect(BeSQLite::Statement& stmt)
+    {
+    int col = 0;
+    m_id = stmt.GetValueId<DgnGeometryPartId>(col++);
+    m_tag = stmt.GetValueText(col++);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartIterator::GeomPartIterator(DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
+    {
+    m_params.SetWhere(where);
+    Utf8String sqlString = MakeSqlString(GeomPart::GetSelectSql().c_str());
+    m_db->GetCachedStatement(m_stmt, sqlString.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPart SyncInfo::GeomPartIterator::GeomPartIterator::Entry::GetGeomPart()
+    {
+    SyncInfo::GeomPart GeomPart;
+    GeomPart.FromSelect(*m_sql);
+    return GeomPart;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::GeomPartIterator::Entry SyncInfo::GeomPartIterator::begin() const
+    {
+    m_stmt->Reset();
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::GeomPart::FindByTag(GeomPart& GeomPart, DgnDbCR db, Utf8CP tag)
+    {
+    if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
+        return BSIERROR;
+
+    if (Utf8String::IsNullOrEmpty(tag))
+        return BSIERROR;
+
+    GeomPartIterator iter(db, "Tag=?");
+    iter.GetStatement()->BindText(1, tag, Statement::MakeCopy::No);
+    auto i = iter.begin();
+    if (i == iter.end())
+        return BSIERROR;
+    GeomPart.FromSelect(*iter.GetStatement());
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::GeomPart::FindById(GeomPart& GeomPart, DgnDbCR db, DgnGeometryPartId partId)
+    {
+    if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_GeomPart)))
+        return BSIERROR;
+
+    GeomPartIterator iter(db, "Id=?");
+    iter.GetStatement()->BindId(1, partId);
+    auto i = iter.begin();
+    if (i == iter.end())
+        return BSIERROR;
+    GeomPart.FromSelect(*iter.GetStatement());
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnV8Api::ModelId SyncInfo::GetV8ModelIdFromV8ModelSyncInfoId(V8ModelSyncInfoId msiid)
@@ -571,7 +693,7 @@ BentleyStatus SyncInfo::UpdateImportJob(ImportJob const& importJob)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance::V8FileProvenance(DgnV8FileCR file, SyncInfo& sync, StableIdPolicy policy) : m_syncInfo(sync)
+SyncInfo::V8FileProvenance::V8FileProvenance(DgnV8FileCR file, SyncInfo& sync, StableIdPolicy policy) : m_syncInfo(&sync)
     {
     if (!file.IsEmbeddedFile())
         {
@@ -582,16 +704,7 @@ SyncInfo::V8FileProvenance::V8FileProvenance(DgnV8FileCR file, SyncInfo& sync, S
     m_idPolicy = policy;
     WString fullFileName(file.GetFileName().c_str());
     m_v8Name = Utf8String(fullFileName);
-    m_uniqueName = sync.GetUniqueName(fullFileName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SyncInfo::V8FileProvenance::V8FileProvenance(BeFileNameCR name, SyncInfo& sync, StableIdPolicy policy) : m_syncInfo(sync)
-    {
-    m_idPolicy = policy;
-    m_uniqueName = sync.GetUniqueName(name);
+    m_uniqueName = sync.GetUniqueNameForFile(file);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,7 +713,7 @@ SyncInfo::V8FileProvenance::V8FileProvenance(BeFileNameCR name, SyncInfo& sync, 
 DbResult SyncInfo::V8FileProvenance::Insert()
     {
     Statement stmt;
-    stmt.Prepare(*m_syncInfo.m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_File) "(UniqueName,V8Name,LastSaveTime,LastModified,FileSize,UseHash) VALUES (?,?,?,?,?,?)");
+    stmt.Prepare(*m_syncInfo->m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_File) "(UniqueName,V8Name,LastSaveTime,LastModified,FileSize,UseHash) VALUES (?,?,?,?,?,?)");
 
     int col = 1;
     stmt.BindText(col++, m_uniqueName, Statement::MakeCopy::No);
@@ -613,7 +726,7 @@ DbResult SyncInfo::V8FileProvenance::Insert()
     DbResult rc = stmt.Step();
     BeAssert(rc == BE_SQLITE_DONE);
 
-    auto rowid = m_syncInfo.m_dgndb->GetLastInsertRowId();
+    auto rowid = m_syncInfo->m_dgndb->GetLastInsertRowId();
     BeAssert(rowid <= UINT32_MAX);
     m_syncId = V8FileSyncInfoId((uint32_t) rowid);
 
@@ -623,50 +736,125 @@ DbResult SyncInfo::V8FileProvenance::Insert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult SyncInfo::V8FileProvenance::Update()
+SyncInfo::V8FileProvenance SyncInfo::InsertFile(DbResult* err, DgnV8FileCR file, StableIdPolicy policy)
     {
-    if (!FindByName(false))
-        return BE_SQLITE_ERROR;
+    V8FileProvenance prov(file, *this, policy);
+    auto rc = prov.Insert();
+    if (rc == BE_SQLITE_DONE)
+        return prov;
+    if (nullptr != err)
+        *err = rc;
+    return V8FileProvenance(*this);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8FileProvenance SyncInfo::UpdateFile(DbResult* err, DgnV8FileCR file)
+    {
+    V8FileProvenance prov = FindFile(file);
+    if (!prov.IsValid())
+        {
+        if (err)
+            *err = BE_SQLITE_NOTFOUND;
+        return prov;
+        }
+
+    V8FileProvenance currentStats(file, *this, prov.m_idPolicy); // Get the current time, etc.
+
+    auto rc = prov.Update(prov.m_syncId, currentStats);
+    if (rc == BE_SQLITE_DONE)
+        return prov;
+    if (nullptr != err)
+        *err = rc;
+    return V8FileProvenance(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult SyncInfo::V8FileProvenance::Update(V8FileSyncInfoId id, FileInfo const& latest)
+    {
     Statement stmt;
-    stmt.Prepare(*m_syncInfo.m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_File) " SET LastSaveTime=?,LastModified=?,FileSize=? WHERE Id=?");
+    stmt.Prepare(*m_syncInfo->m_dgndb, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_File) " SET LastSaveTime=?,LastModified=?,FileSize=? WHERE Id=?");
     int col = 1;
-    stmt.BindDouble(col++, m_lastSaveTime);
-    stmt.BindInt64(col++, m_lastModifiedTime);
-    stmt.BindInt64(col++, m_fileSize);
-    stmt.BindInt(col++, m_syncId.GetValue());
+    stmt.BindDouble(col++, latest.m_lastSaveTime);
+    stmt.BindInt64(col++, latest.m_lastModifiedTime);
+    stmt.BindInt64(col++, latest.m_fileSize);
+    stmt.BindInt(col++, id.GetValue());
     return stmt.Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SyncInfo::V8FileProvenance::FindByName(bool fillLastMod)
+SyncInfo::V8FileProvenance SyncInfo::FindFileByUniqueName(Utf8StringCR uname)
     {
-    CachedStatementPtr stmt;
-    m_syncInfo.m_dgndb->GetCachedStatement(stmt, "SELECT Id,UniqueName,V8Name,UseHash,LastSaveTime,LastModified,FileSize FROM " SYNCINFO_ATTACH(SYNC_TABLE_File) " WHERE UniqueName=?");
-    stmt->BindText(1, m_uniqueName, Statement::MakeCopy::No);
+    FileIterator files(GetConverter().GetDgnDb(), "UniqueName=?");
+    files.GetStatement()->BindText(1, uname, Statement::MakeCopy::No);
+    SyncInfo::FileIterator::Entry entry = files.begin();
+    return (entry == files.end())? V8FileProvenance(*this): entry.GetV8FileProvenance(*this);
+    }
 
-    auto result = stmt->Step();
-    if (BE_SQLITE_ROW != result)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8FileProvenance SyncInfo::FindFile(DgnV8FileCR file)
+    {
+    return FindFileByUniqueName(GetUniqueNameForFile(file));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+SyncInfo::V8FileProvenance SyncInfo::FindFileByFileName(BeFileNameCR fullFileName)
+    {
+    // Make the worst-case assumption that the local files have been moved to a new directory.
+    // Consider only the relative path of the file.
+    auto dirPrefix = m_converter.GetParams().GetInputRootDir();
+    size_t prefixLen = dirPrefix.size();
+    if (!fullFileName.StartsWithI(dirPrefix.c_str())) // ??!
+        prefixLen = 0;
+
+    Utf8String searchName(fullFileName.substr(prefixLen));
+    
+    FileIterator files(GetConverter().GetDgnDb(), "V8Name LIKE ?");
+    files.GetStatement()->BindText(1, searchName, Statement::MakeCopy::Yes);
+    for (auto entry : files)
         {
-        m_syncId = V8FileSyncInfoId();
-        return false;
+        if (entry.GetV8Name().EndsWithI(searchName.c_str()))
+            return entry.GetV8FileProvenance(*this);
         }
+    return V8FileProvenance(*this);;
+    }
 
-    int col = 0;
-    m_syncId = V8FileSyncInfoId(stmt->GetValueInt(col++));   // Id
-    m_uniqueName = stmt->GetValueText(col++);    // UniqueName
-    m_v8Name = stmt->GetValueText(col++);    // V8Name
-    m_idPolicy = stmt->GetValueInt(col++) == 1 ? StableIdPolicy::ByHash : StableIdPolicy::ById;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::FileIterator::Entry::GetV8FileProvenance(SyncInfo& si)
+    {
+    V8FileProvenance fp(si);
+    fp.m_syncId = GetV8FileSyncInfoId();
+    fp.m_uniqueName = GetUniqueName();
+    fp.m_v8Name = GetV8Name();
+    fp.m_idPolicy = GetCannotUseElementIds()? StableIdPolicy::ByHash : StableIdPolicy::ById;
+    fp.m_lastSaveTime = GetLastSaveTime();
+    fp.m_lastModifiedTime = GetLastModifiedTime();
+    fp.m_fileSize = GetFileSize();
+    return fp;
+    }
 
-    if (fillLastMod)
-        {
-        m_lastSaveTime = stmt->GetValueDouble(col++);    // LastSaveTime
-        m_lastModifiedTime = stmt->GetValueInt64(col++);    // LastModified
-        m_fileSize = stmt->GetValueInt64(col++);    // FileSize
-        }
-    return true;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::FindFileById(V8FileSyncInfoId sid)
+    {
+    if (!sid.IsValid())
+        return V8FileProvenance(*this);
+    FileIterator files(GetConverter().GetDgnDb(), "Id=?");
+    files.GetStatement()->BindInt(1, sid.GetValue());
+    SyncInfo::FileIterator::Entry entry = files.begin();
+    return (entry == files.end())? V8FileProvenance(*this): entry.GetV8FileProvenance(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -674,11 +862,8 @@ bool SyncInfo::V8FileProvenance::FindByName(bool fillLastMod)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SyncInfo::HasDiskFileChanged(BeFileNameCR fileName)
     {
-    SyncInfo::DiskFileInfo df;
-    df.GetInfo(fileName);
-
-    V8FileProvenance prov(fileName, *this, StableIdPolicy::ById);
-    if (!prov.FindByName(true))
+    V8FileProvenance prov = FindFileByFileName(fileName);
+    if (!prov.IsValid())
         return true;
 
     // This is an attempt to tell if a file has *not* changed, looking only at the file's time and size.
@@ -686,6 +871,8 @@ bool SyncInfo::HasDiskFileChanged(BeFileNameCR fileName)
     // the odds of a mistake by:
     // 1. using times measured in hectonanoseconds (on Windows, at least),
     // 2. also using file size
+    SyncInfo::DiskFileInfo df;
+    df.GetInfo(fileName);
     return df.m_lastModifiedTime != prov.m_lastModifiedTime || df.m_fileSize != prov.m_fileSize;
     }
 
@@ -697,8 +884,8 @@ bool SyncInfo::HasLastSaveTimeChanged(DgnV8FileCR v8File)
     if (v8File.IsEmbeddedFile())
         return false;
 
-    V8FileProvenance previous(v8File, *this, StableIdPolicy::ById);
-    if (!previous.FindByName(true))
+    V8FileProvenance previous = FindFile(v8File);
+    if (!previous.IsValid())
         return true;
 
     auto lastSaveTime = ((DgnV8FileR) v8File).GetLastSaveTime ();
@@ -900,8 +1087,8 @@ BentleyStatus SyncInfo::GetModelBySyncInfoId(V8ModelMapping& mapping, V8ModelSyn
 BentleyStatus SyncInfo::FindModel(V8ModelMapping* mapping, DgnV8ModelCR v8Model, TransformCP modelTrans, StableIdPolicy idPolicy)
     {
     // Note: We can't call Converter::GetModelFromSyncInfo at this stage, because it hasn't set up the m_v8Files array yet
-    SyncInfo::V8FileProvenance provenance(*v8Model.GetDgnFileP(), *this, idPolicy);
-    if (!provenance.FindByName(false))
+    SyncInfo::V8FileProvenance provenance = FindFile(*v8Model.GetDgnFileP());
+    if (!provenance.IsValid())
         return BSIERROR;
 
     SyncInfo::ModelIterator it(*GetDgnDb(), "V8FileSyncInfoId=? AND V8Id=?");
@@ -1597,19 +1784,25 @@ DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName) const
+bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName, V8FileSyncInfoId fileId) const
     {
     //first check whether we need to capture this schema or not
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT V8VersionMajor, V8VersionMinor, Digest, MappingType FROM "
-                                                    SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
-                                                    " WHERE V8Name=?"))
+    Utf8String sql("SELECT V8VersionMajor, V8VersionMinor, Digest, MappingType FROM "
+                  SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
+                  " WHERE V8Name=?");
+    if (fileId.IsValid())
+        sql.append("and V8FileSyncInfoId = ? ");
+
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, sql.c_str()))
         {
         BeAssert(false);
         return false;
         }
 
     stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
+    if (fileId.IsValid())
+        stmt->BindInt(2, fileId.GetValue());
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
 
@@ -1820,7 +2013,7 @@ BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewIn
         return BeSQLite::DbResult::BE_SQLITE_ERROR_FileNotFound;
 
     stmt.BindInt(col++, v8FileId.GetValue());
-    stmt.BindInt(col++, viewElemRef->GetElementId());
+    stmt.BindInt64(col++, viewElemRef->GetElementId());
     stmt.BindText(col++, viewName, Statement::MakeCopy::Yes);
     stmt.BindDouble(col++, viewElemRef->GetLastModified());
     auto res = stmt.Step();
@@ -1963,7 +2156,7 @@ void SyncInfo::GetCurrentImageryInfo(Utf8StringCR fileName, uint64_t& currentLas
         if (BeFileName::GetFileSize(tempFileSize, beFile) != BeFileNameStatus::Success
             || BeFileName::GetFileTime(nullptr, nullptr, &mtime, beFile) != BeFileNameStatus::Success)
             {
-            Utf8PrintfString msg("Unable to get file info for '%s'", fileName);
+            Utf8PrintfString msg("Unable to get file info for '%s'", fileName.c_str());
             //ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
             }
         currentLastModifiedTime = mtime;
@@ -2066,4 +2259,153 @@ BeSQLite::DbResult SyncInfo::UpdateImageryFile(DgnElementId modeledElementId, ui
     return stmt.Step();
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getUrnFromFirstSource(Utf8String& urn, BeXmlNodeP file)
+    {
+    for (BeXmlNodeP sources = file->GetFirstChild(); sources != nullptr; sources = sources->GetNextSibling())
+        {
+        if (0 != strcmp(sources->GetName(), "Sources"))
+            continue;
+
+        for (BeXmlNodeP source = sources->GetFirstChild(); source != nullptr; source = source->GetNextSibling())
+            {
+            if (0 != strcmp(source->GetName(), "Source"))
+                continue;
+
+            Utf8String refId;
+            if (BeXmlStatus::BEXML_Success == source->GetAttributeStringValue(refId, "RefId"))
+                continue;
+
+            Utf8String content;
+            source->GetContent(content);
+            if (iModelBridge::IsPwUrn(content))
+                {
+                urn = content;
+                return BSISUCCESS;       // <<== we only want the first source
+                }
+            }
+        }
+    return BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getUrnFromLastTarget(Utf8String& urn, BeXmlNodeP file)
+    {
+    bool foundAny = false;
+    for (BeXmlNodeP target = file->GetFirstChild(); target != nullptr; target = target->GetNextSibling())
+        {
+        if (0 == strcmp(target->GetName(), "Target"))
+            {
+            Utf8String content;
+            target->GetContent(content);
+            if (iModelBridge::IsPwUrn(content))
+                {
+                urn = content;
+                // keep looking. we want the last target
+                }
+            }
+        }
+    return foundAny? BSISUCCESS: BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String getPwUrn(Bentley::DgnPlatform::ProvenanceBlobR blob)
+    {
+    Utf8String urn;
+
+    WCharCP provData = (WCharCP)blob.GetData();
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, provData);
+    if (xmlDom == nullptr)
+        return urn;
+
+    // First, get doc urns from *sources*
+    BeXmlNodeP root = xmlDom->GetRootElement();
+    for (BeXmlNodeP files = root->GetFirstChild(); files != nullptr; files = files->GetNextSibling())
+        {
+        if (0 != strcmp(files->GetName(), "Files"))
+            continue;
+        for (BeXmlNodeP file = files->GetFirstChild(); file != nullptr; file = file->GetNextSibling())
+            {
+            if (0 != strcmp(file->GetName(), "File"))
+                continue;
+
+            getUrnFromFirstSource(urn, file);
+            getUrnFromLastTarget(urn, file);
+            }
+        }
+
+    return urn;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::GetPwUrnFromFileProvenance(DgnV8FileCR file)
+    {
+    auto provData = const_cast<DgnV8FileR>(file).ReadFileProvenance();
+    if (!provData.IsValid())
+        return "";
+    return getPwUrn(*provData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::GetDocumentURNforFile(DgnV8FileCR file)
+    {
+    // We prefer a PW URN. 
+
+    auto const& moniker = file.GetDocument().GetMoniker();  
+    Utf8String monikerURN(moniker.ResolveURI().c_str());
+    if (iModelBridge::IsPwUrn(monikerURN))
+        return monikerURN;
+
+    Utf8String docURN(GetParams().QueryDocumentURN(BeFileName(file.GetFileName().c_str())));
+    if (iModelBridge::IsPwUrn(docURN))
+        return docURN;
+
+    auto provURN = Converter::GetPwUrnFromFileProvenance(file);
+    if (iModelBridge::IsPwUrn(provURN))
+        return provURN;
+
+    // We fall back on the first URN that is available.
+    return !monikerURN.empty()? monikerURN:
+           !docURN.empty()?     docURN:
+                                provURN;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid Converter::GetDocumentGUIDforFile(DgnV8FileCR file)
+    {
+    auto const& moniker = file.GetDocument().GetMoniker();  
+    Utf8String monikerURN(moniker.ResolveURI().c_str());
+    if (iModelBridge::IsPwUrn(monikerURN))
+        return iModelBridge::ParseDocGuidFromPwUri(monikerURN);
+
+    iModelBridgeDocumentProperties docProps;
+    GetDocumentProperties(docProps, BeFileName(file.GetFileName().c_str()));
+    if (!docProps.m_docGuid.empty())
+        {
+        BeGuid guid;
+        if (BSISUCCESS == guid.FromString(docProps.m_docGuid.c_str()))
+            return guid;
+        }
+
+    auto provURN = Converter::GetPwUrnFromFileProvenance(file);
+    if (iModelBridge::IsPwUrn(provURN))
+        return iModelBridge::ParseDocGuidFromPwUri(provURN);
+
+    return BeGuid();
+    }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE

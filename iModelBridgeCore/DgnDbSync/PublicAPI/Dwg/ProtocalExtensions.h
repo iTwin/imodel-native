@@ -17,8 +17,8 @@ BEGIN_DWG_NAMESPACE
 #ifdef DWGTOOLKIT_OpenDwg
 
 #define DWG_PROTOCALEXT_DECLARE_MEMBERS(_className_)                                    \
-    DWG_EXPORT static void            _className_::RxInit ();                           \
-    DWG_EXPORT static OdRxObjectPtr   _className_::CreateObject();
+    DWG_EXPORT static void            RxInit ();                                        \
+    DWG_EXPORT static OdRxObjectPtr   CreateObject();
 
 #define DWG_PROTOCALEXT_DEFINE_MEMBERS(_className_)                                     \
     void            _className_::RxInit () { _className_::rxInit(); }                   \
@@ -28,8 +28,8 @@ BEGIN_DWG_NAMESPACE
 #elif DWGTOOLKIT_RealDwg
 
 #define DWG_PROTOCALEXT_DECLARE_MEMBERS(_className_)                                    \
-    DWG_EXPORT static void            _className_::RxInit () {;}                        \
-    DWG_EXPORT static DwgRxObjectP    _className_::CreateObject();
+    DWG_EXPORT static void            RxInit () {;}                                     \
+    DWG_EXPORT static DwgRxObjectP    CreateObject();
 
 #define DWG_PROTOCALEXT_DEFINE_MEMBERS(_className_)                                     \
     DwgRxObjectP        _className_::CreateObject() { return new _className_(); }       \
@@ -215,6 +215,7 @@ private:
     mutable ProtocalExtensionContext*   m_toBimContext;
     mutable DwgImporter*                m_importer;
     mutable DwgDbEntityCP               m_entity;
+    mutable DPoint3d                    m_placementPoint;
 
     BentleyStatus   CreateElement (GeometricPrimitiveR geometry, DwgImporter::ElementCreateParams& params);
     ColorDef    GetEffectiveColor () const;
@@ -224,6 +225,7 @@ private:
     void        FreeBrep (PK_BODY_create_topology_2_r_t& brep) const;
 #endif
     GeometricPrimitivePtr CreateGeometry (DwgDbPlaneSurfaceP planeSurface);
+    BentleyStatus   SetPlacementPoint (TransformR transform) const;
     };  // DwgBrep
 
 

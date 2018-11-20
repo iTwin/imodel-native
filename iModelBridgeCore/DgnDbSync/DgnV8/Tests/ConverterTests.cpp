@@ -872,7 +872,7 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
 
     //  Initialize the ConverterLibrary helper object. Do all this initialization once, before converting any elements.
     RootModelConverter::RootModelSpatialParams params;
-    params.m_keepHostAliveForUnitTests = true;
+    params.SetKeepHostAlive(true);
     // Call params.AddDrawingOrSheetFile to add files to be processed by ConvertAllDrawingsAndSheets
     ConverterLibrary cvt(outputBim, params);
 
@@ -1101,6 +1101,64 @@ TEST_F(ConverterTests, XDomainTest)
         }
 
     XDomain::UnRegister(testXdomain);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyApi::bvector<DgnModelCPtr> getModelsByName(DgnDbR db, Utf8CP modelName)
+    {
+    BentleyApi::bvector<DgnModelCPtr> models;
+
+    auto stmt = db.GetPreparedECSqlStatement("select el.ecinstanceid from bis.element el, bis.model m WHERE (el.ecinstanceid = m.ecinstanceid) AND (el.CodeValue = ?)");
+    stmt->BindText(1, modelName, EC::IECSqlBinder::MakeCopy::No);
+    while (BentleyApi::BeSQLite::BE_SQLITE_ROW == stmt->Step())
+        {
+        auto modelId = stmt->GetValueId<DgnModelId>(0);
+        models.push_back(db.Models().GetModel(modelId));
+        }
+    return models;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, DISABLED_CommonReferences)
+    {
+    const Utf8CP s_master1Name = "master 1 package";
+    const Utf8CP s_master2Name = "master2 package";
+    const Utf8CP s_refName = "ref";
+    BentleyApi::BeFileName masterPackageFile1(L"d:\\tmp\\master 1 package.i.dgn");
+    BentleyApi::BeFileName masterPackageFile2(L"d:\\tmp\\master2 package.i.dgn");
+
+    m_dgnDbFileName = GetOutputFileName(L"CommonReferences.bim");
+    DeleteExistingDgnDb(m_dgnDbFileName);
+    MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
+    auto syncFile(SyncInfo::GetDbFileName(m_seedDgnDbFileName));
+    BentleyApi::BeFileName outSyncFile;
+    MakeWritableCopyOf(outSyncFile, syncFile, SyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
+
+    m_v8FileName = masterPackageFile1;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        }
+
+    m_v8FileName = masterPackageFile2;
+    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        }
     }
 
 //========================================================================================

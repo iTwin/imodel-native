@@ -144,6 +144,8 @@ GeometricPrimitivePtr DwgBrepExt::CreateGeometry (PK_BODY_create_topology_2_r_t&
             if (nullptr != m_toBimContext)
                 transform.InitProduct (m_toBimContext->GetTransform(), transform);
 
+            this->SetPlacementPoint (transform);
+
             auto psEntity = PSolidUtil::CreateNewEntity (brep.body, transform, false);
             if (psEntity.IsValid())
                 geometry = GeometricPrimitive::Create (psEntity);
@@ -221,7 +223,7 @@ BentleyStatus   DwgBrepExt::CreateElement (GeometricPrimitiveR geometry, DwgImpo
     if (m_toBimContext == nullptr)
         return  BSIERROR;
 
-    auto builder = GeometryBuilder::Create (params.GetModelR(), params.GetCategoryId(), DPoint3d::FromZero());
+    auto builder = GeometryBuilder::Create (params.GetModelR(), params.GetCategoryId(), m_placementPoint);
     if (!builder.IsValid())
         return  BSIERROR;
 
@@ -254,37 +256,66 @@ GeometricPrimitivePtr DwgBrepExt::CreateGeometry (DwgDbPlaneSurfaceP planeSurfac
     if (status != DwgDbStatus::Success || regions.empty())
         return  nullptr;
 
-    CurveVectorPtr  shape;
-
-    // explode the region to lines, expecting only one region:
-    for (auto& region : regions)
+    CurveVectorPtr  shapes;
+    if (regions.size() == 1)
         {
-        if (!shape.IsValid())
+        // a single shape
+        shapes = DwgHelper::CreateCurveVectorFrom (*regions.front());
+        ::free (regions.front());
+        }
+    else
+        {
+        // unite multiple shapes
+        shapes = CurveVector::Create (CurveVector::BOUNDARY_TYPE_UnionRegion);
+        for (auto& region : regions)
             {
-            DwgDbObjectPArray   entities;
-            status = region->Explode (entities);
-            if (status != DwgDbStatus::Success || entities.empty())
-                return  nullptr;
-
-            auto numPoints = entities.size ();
-            DPoint3dArray   points(numPoints);
-
-            for (int i = 0; i < numPoints; i++)
-                {
-                auto line = DwgDbLine::Cast (entities[i]);
-                if (nullptr != line)
-                    points[i] = line->GetStartPoint ();
-
-                ::free (entities[i]);
-                }
-
-            // create a shape
-            PolylineFactory plineFactory(numPoints, &points.front(), true);
-            shape = plineFactory.CreateCurveVector (false);
+            auto shape = DwgHelper::CreateCurveVectorFrom (*region, CurveVector::BOUNDARY_TYPE_Outer);
+            if (shape.IsValid())
+                shapes->Add (shape);
+            ::free (region);
             }
-        
-        ::free (region);
         }
 
-    return GeometricPrimitive::Create(shape);
+    // for a model element, get a placement point and move the shape in reverse:
+    if (shapes.IsValid() && nullptr != m_toBimContext)
+        {
+        Transform   moveToOrigin;
+        if (nullptr == m_toBimContext)
+            moveToOrigin.InitIdentity ();
+        else
+            moveToOrigin = m_toBimContext->GetTransform ();
+
+        this->SetPlacementPoint (moveToOrigin);
+        shapes->TransformInPlace (moveToOrigin);
+        }
+
+    return GeometricPrimitive::Create(shapes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          07/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgBrepExt::SetPlacementPoint (TransformR transform) const
+    {
+    // don't bother calculating the placement point when we only create geometry and no element
+    if (nullptr == m_toBimContext)
+        return  BSISUCCESS;
+
+    // use the placement point from the first grip point, in model coordinates:
+    DPoint3dArray   gripPoints;
+    if (DwgDbStatus::Success != m_entity->GetGripPoints(gripPoints))
+        {
+        BeAssert (false && "Unexpected failue finding Brep's origin!");
+        return  BSIERROR;
+        }
+    m_toBimContext->GetTransform().Multiply (m_placementPoint, gripPoints.front());
+
+    // move the body in model to compensate the placement point:
+    DPoint3d    translation;
+    transform.GetTranslation (translation);
+
+    translation.Subtract (m_placementPoint);
+    transform.SetTranslation (translation);
+
+    return  BSISUCCESS;
     }
