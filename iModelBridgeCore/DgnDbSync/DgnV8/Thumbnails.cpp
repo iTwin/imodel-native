@@ -9,7 +9,7 @@
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
-enum class DgnViewType {None=0, Physical=1<<0, Drawing=1<<1 };
+enum class DgnViewType {None=0, Physical=1<<0, Drawing=1<<1, Root=1<<2, };
 
 ENUM_IS_FLAGS(DgnViewType);
 
@@ -50,6 +50,8 @@ DgnViewType ThumbnailConfig::GetViewTypeFromString(Utf8StringCR viewStr)
             dgnViewType |= (int)DgnViewType::Physical;
         else if (0 == strcmp("Drawing", tokenP))
             dgnViewType |= (int)DgnViewType::Drawing;
+        else if (0 == strcmp("Root", tokenP))
+            dgnViewType |= (int)DgnViewType::Root;
         tokenP = ::strtok(NULL, " \t\n");
         }
 
@@ -172,6 +174,28 @@ void Converter::GenerateThumbnailsWithExceptionHandling()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::GenerateThumbnail(ViewDefinition const& view)
+    {
+    if (IsUpdating() && !ThumbnailUpdateRequired (view))
+        return BSISUCCESS;
+
+    ThumbnailConfig thumbnailConfig(m_config);
+
+    BeDuration timeout = BeDuration::FromSeconds(m_config.GetOptionValueDouble("ThumbnailTimeout", 30));
+    if (_GetParams().GetThumbnailTimeout() != 0)
+        timeout = _GetParams().GetThumbnailTimeout();
+
+    SetTaskName(ProgressMessage::TASK_CREATING_THUMBNAIL(), view.GetCode().GetValueUtf8CP());
+    Render::RenderMode mode = thumbnailConfig.GetRenderModeOverride();
+    Point2d size = {thumbnailConfig.GetResolution(), thumbnailConfig.GetResolution()};
+
+    view.RenderAndSaveThumbnail(size, thumbnailConfig.GetUseRenderModeOverride() ? &mode : nullptr, timeout);
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   01/13
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateThumbnails()
     {
 #define ELEMENT_TILE_GENERATE_THUMBNAILS
@@ -181,39 +205,62 @@ BentleyStatus Converter::GenerateThumbnails()
     if ((DgnViewType::None == thumbnailConfig.GetViewTypes()) || !_GetParams().WantThumbnails() || m_haveCreatedThumbnails)
         return BSISUCCESS;
 
+    bool wantRoot    = DgnViewType::Root     == (thumbnailConfig.GetViewTypes() & DgnViewType::Root);
+    bool wantSpatial = DgnViewType::Physical == (thumbnailConfig.GetViewTypes() & DgnViewType::Physical);
+    bool wantDrawing = DgnViewType::Drawing  == (thumbnailConfig.GetViewTypes() & DgnViewType::Drawing);
+
     SetStepName(ProgressMessage::STEP_CREATE_THUMBNAILS());
-    AddTasks((int32_t)ViewDefinition::QueryCount(*m_dgndb));
 
     // Initalize the graphics subsystem, to produce thumbnails.
     DgnViewLib::GetHost().GetViewManager().Startup();
 
-    bool wantSpatial = DgnViewType::Physical == (thumbnailConfig.GetViewTypes() & DgnViewType::Physical);
-    bool wantDrawing = DgnViewType::Drawing == (thumbnailConfig.GetViewTypes() & DgnViewType::Drawing);
-    for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
+    if (wantRoot)
         {
-        auto view = ViewDefinition::Get(*m_dgndb, entry.GetId());
-        if (!view.IsValid() || view->IsPrivate())
-            continue;
+        auto mainViewGroup =_GetMainViewGroup();
+        if (nullptr != mainViewGroup)
+            {
+            AddTasks(DgnV8Api::MAX_VIEWS);
+            for (int iView=0; iView<DgnV8Api::MAX_VIEWS; ++iView)
+                {
+                DgnViewId viewId;
+                double lmt;
+                Utf8String v8ViewName;
+                if (!GetSyncInfo().TryFindView(viewId, lmt, v8ViewName, mainViewGroup->GetViewInfo(iView)))
+                    continue;
+                auto view = ViewDefinition::Get(*m_dgndb, viewId);
+                if (!view.IsValid())
+                    continue;
 
-        if ((!wantSpatial && view->IsSpatialView()) || (!wantDrawing && view->IsDrawingView()))
-            continue;
-    
-        if (IsUpdating() && !ThumbnailUpdateRequired (*view))
-            continue;
+                GenerateThumbnail(*view);
 
-        BeDuration timeout = BeDuration::FromSeconds(m_config.GetOptionValueDouble("ThumbnailTimeout", 30));
-        if (_GetParams().GetThumbnailTimeout() != 0)
-            timeout = _GetParams().GetThumbnailTimeout();
-
-        SetTaskName(ProgressMessage::TASK_CREATING_THUMBNAIL(), entry.GetName());
-        Render::RenderMode mode = thumbnailConfig.GetRenderModeOverride();
-        Point2d size = {thumbnailConfig.GetResolution(), thumbnailConfig.GetResolution()};
-
-        view->RenderAndSaveThumbnail(size, thumbnailConfig.GetUseRenderModeOverride() ? &mode : nullptr, timeout);
-        ReportProgress();
-        if (WasAborted())
-            break;
+                ReportProgress();
+                if (WasAborted())
+                    break;
+                }
+            }
         }
+
+    if (wantSpatial || wantDrawing)
+        {
+        AddTasks((int32_t)ViewDefinition::QueryCount(*m_dgndb));
+    
+        for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
+            {
+            auto view = ViewDefinition::Get(*m_dgndb, entry.GetId());
+            if (!view.IsValid() || view->IsPrivate())
+                continue;
+
+            if ((!wantSpatial && view->IsSpatialView()) || (!wantDrawing && view->IsDrawingView()))
+                continue;
+    
+            GenerateThumbnail(*view);
+
+            ReportProgress();
+            if (WasAborted())
+                break;
+            }
+        }
+
     m_haveCreatedThumbnails = true;
 #endif
 

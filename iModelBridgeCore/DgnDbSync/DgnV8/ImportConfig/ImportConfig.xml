@@ -31,7 +31,7 @@
     <Raster importAttachments="true" exportNonPortableFormats="false"/>
     <PointCloud importAttachments="true"/>
 
-    <Thumbnails viewTypes="Physical Drawing" pixelResolution="768" renderModeOverride="None"/>
+    <Thumbnails viewTypes="Root" pixelResolution="768" renderModeOverride="None"/>
     
     <Fonts searchPaths="$(AppRoot)$(v8SdkDir)/Fonts/;$(V8WorkspaceFontPaths)">
         <!--

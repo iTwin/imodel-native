@@ -258,6 +258,13 @@
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:enumeration>
+                                            <xs:enumeration value="Root">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        The open views in the root file's default view group.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:enumeration>
                                         </xs:restriction>
                                     </xs:simpleType>
                                 </xs:list>
