@@ -9,7 +9,7 @@
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="M02">
         <SubPart PartName="iModelDmsSupport" Repository="imodel02" PartFile="iModelBridgeCore/dmssupport/iModelDmsSupport"/>
         <SubPart PartName="DgnPlatformDLL" Repository="imodel02" PartFile="iModelCore/DgnPlatform/DgnPlatform" />
-        <SubPart PartName="WebServicesClient" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02" />
+        <SubPart PartName="iModelHubClient" PartFile="iModelBridgeCore/WSClient/WSClient" Repository="imodel02" />
         <SubPart PartName="PublicAPI" />
       
       <Bindings>
