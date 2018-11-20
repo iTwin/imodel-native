@@ -416,7 +416,7 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this, true);
     visitor->SetNumWrap (1);    // force closure.  All count checks have to watch this !!!
     PolyfaceHeaderPtr indices = PolyfaceHeader::CreateVariableSizeIndexed ();
-    bvector<int>    newIndices;
+    bvector<int>    newIndices, auxIndices;
     ::Transform localToWorld, worldToLocal, extentSystem;
     bvector<DPoint3d> &facePoints = visitor->Point ();
     //bvector<int> &outputIndices = indices->PointIndex ();
@@ -524,6 +524,8 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                     indices->m_colorIndex.push_back (0);
                 if (m_faceIndex.Active ())
                     indices->m_faceIndex.push_back (0);
+                if (m_auxData.IsValid())
+                    auxIndices.push_back(0);
                 }
             else
                 {
@@ -558,6 +560,10 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                     }
                 if (m_faceIndex.Active ())
                     indices->m_faceIndex.push_back (1 + visitor->ClientFaceIndex() [k0]);
+                
+                if (m_auxData.IsValid() && nullptr != visitor->GetClientAuxIndexCP())
+                    auxIndices.push_back(1 + visitor->GetClientAuxIndexCP()[k0]);
+                    
                 }
             }
         }
@@ -571,7 +577,8 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
         m_colorIndex.CopyVectorFrom (indices->m_colorIndex);
     if (m_faceIndex.Active ())
         m_faceIndex.CopyVectorFrom (indices->m_faceIndex);
-
+    if (m_auxData.IsValid())
+        m_auxData->GetIndices() = std::move(auxIndices);
 
     SetNumPerFace (0);
     SetNumPerRow (0);
