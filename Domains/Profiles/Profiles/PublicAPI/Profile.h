@@ -36,6 +36,10 @@ public:
 protected:
     explicit Profile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+    PROFILES_EXPORT virtual Dgn::DgnDbStatus _OnUpdate (Dgn::DgnElement const& original) override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (Profile)
     DECLARE_PROFILES_ELEMENT_BASE_GET_METHODS (Profile)

@@ -8,6 +8,7 @@
 #include "ProfilesInternal.h"
 #include <Profiles\Profile.h>
 
+USING_NAMESPACE_BENTLEY_DGN
 BEGIN_BENTLEY_PROFILES_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS (ProfileHandler)
@@ -30,6 +31,40 @@ Profile::Profile (CreateParams const& params)
         return;
 
     SetName (params.name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Profile::_Validate() const
+    {
+    Utf8String name = GetName();
+    if (Utf8String::IsNullOrEmpty (name.c_str()))
+        return BSIERROR;
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::_OnInsert()
+    {
+    if (_Validate() != BSISUCCESS)
+        return DgnDbStatus::ValidationFailed;
+
+    return T_Super::_OnInsert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Profile::_OnUpdate (DgnElement const& original)
+    {
+    if (_Validate() != BSISUCCESS)
+        return DgnDbStatus::ValidationFailed;
+
+    return T_Super::_OnUpdate (original);
     }
 
 /*---------------------------------------------------------------------------------**//**
