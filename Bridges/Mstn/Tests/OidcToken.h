@@ -7,18 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../../Common.h"
 #include <Bentley\WString.h>
 #include <WebServices\Connect\ISecurityToken.h>
-
-BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas    08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct OidcToken> OidcTokenPtr;
-struct OidcToken : public ISecurityToken
+struct OidcToken : public WebServices::ISecurityToken
     {
     private:
         Utf8String m_token;
@@ -36,5 +32,3 @@ struct OidcToken : public ISecurityToken
         //! Compare contents of two tokens for equality
         bool operator==(ISecurityToken const& other) const override;
     };
-
-END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

@@ -6,14 +6,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include  <OidcNativeClient/OidcNative.h>
-#include "OidcSignInManager.h"
-
+#include <WebServices/Configuration/UrlProvider.h>
+#include "OidcTokenProvider.h"
+USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 using namespace OidcInterop;
 
-#define IMODELHUB_ClientId            "imodel-hub-integration-tests-2485"
-#define IMODELHUB_Scope               "openid profile email imodelhub"
+#define IMODELHUB_ClientId            "imodel-bridge-framework-2664"
+#define IMODELHUB_Scope               "openid imodelhub"
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
@@ -27,7 +27,7 @@ OidcTokenProvider::OidcTokenProvider(Credentials credentials):
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<ISecurityTokenPtr> OidcTokenProvider::UpdateToken()
     {
-    auto token = OIDCNative::IssueToken(m_credentials.GetUsername().c_str(), m_credentials.GetPassword().c_str(), UrlProvider::Urls::IMSOpenID.Get().c_str(), IMODELHUB_ClientId, IMODELHUB_Scope);
+    auto token = OIDCNative::IssueToken(m_credentials.GetUsername().c_str(), m_credentials.GetPassword().c_str(), "http://localhost:32664/signin-oidc", IMODELHUB_ClientId, IMODELHUB_Scope);
     m_token = std::make_shared<OidcToken>(token);
     m_tokenValidUntil = BeTimePoint::FromNow(BeDuration::FromSeconds(60 * 55));
 

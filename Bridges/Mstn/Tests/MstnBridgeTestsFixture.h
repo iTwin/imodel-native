@@ -32,7 +32,7 @@ struct MstnBridgeTestsFixture : ::testing::Test
 
     void MakeCopyOfFile(BentleyApi::BeFileNameR outFile, BentleyApi::WCharCP filename, BentleyApi::WCharCP suffix);
 
-    void SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir = nullptr, WCharCP bridgeRegSubkey = nullptr);
+    void SetUpBridgeProcessingArgs(BentleyApi::bvector<BentleyApi::WString>& args, WCharCP stagingDir = nullptr, WCharCP bridgeRegSubkey = nullptr, bool setCredentials = true);
 
     void AddAttachment(BentleyApi::BeFileName& inputFile, BentleyApi::BeFileNameR refV8File, int32_t num, bool useOffsetForElement);
 

@@ -80,16 +80,22 @@
             <Files ProductDirectoryName="DgnV8ConverterTestsExe">Delivery/MstnBridgeTests.logging.config.xml</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/MstnBridgeTests_en-US.sqlang.db3</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="Ignore">Delivery/ignore_list.txt</Files>
+            
             <Directory SourceName="Delivery/MstnBridgeTestData" SubPartDirectory="TestData" ProductDirectoryName="DgnDbSync_TestData"/>
         </Bindings>
     </Part>
 
+    <ProductDirectoryList ListName="OiDCClientDirs">
+        <ProductDirectory Name="Gtest-NativeAssemblies"  Path=""         RelativeTo="Assemblies"/>
+    </ProductDirectoryList>
+    
     <Product Name="MstnBridgeTests">
         <SubPart PartName="MstnBridgeTestsExe"/>
         <SubPart PartName="StaticAppData" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList" PartFile="DgnDbSync" Repository="DgnDbSync"/>
         <Directories DirectoryListName="DgnV8ConverterDirList"  PartFile="DgnDbSync" Repository="DgnDbSync"/>
         <Directories DirectoryListName="Tests" PartFile="DgnDbSync" Repository="DgnDbSync"/>
+        <Directories DirectoryListName="OiDCClientDirs" />
     </Product>
 
     <Part Name="RunMstnBridgeTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=MstnBridgeTests -dGTEST_NAME=MstnBridgeTests">

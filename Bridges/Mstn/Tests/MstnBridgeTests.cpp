@@ -10,6 +10,7 @@
 #include <iModelBridge/iModelBridgeFwk.h>
 #include <iModelBridge/FakeRegistry.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+#include "OidcTokenProvider.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -29,17 +30,13 @@ struct MstnBridgeTests : public MstnBridgeTestsFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     {
-    auto bridgeRegSubKey = L"iModelBridgeForMstn";
-
     auto testDir = getiModelBridgeTestsOutputDir(L"ConvertLinesUsingBridgeFwk");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
     bvector<WString> args;
-    SetUpBridgeProcessingArgs(args);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
-    args.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
-
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
+    
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
 
@@ -51,8 +48,6 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(L"test1Assignments.db");
     
     BentleyApi::BeFileName dbFile(testDir);
     dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
@@ -93,16 +88,13 @@ TEST_F(MstnBridgeTests, ConvertLinesUsingBridgeFwk)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     {
-    auto bridgeRegSubKey = L"iModelBridgeForMstn";
-
     auto testDir = getiModelBridgeTestsOutputDir(L"TestSourceElementIdAspect");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
     bvector<WString> args;
-    SetUpBridgeProcessingArgs(args);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
-    args.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
+    
     args.push_back(L"--fwk-storeElementIdsInBIM");
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
@@ -115,8 +107,6 @@ TEST_F(MstnBridgeTests, TestSourceElementIdAspect)
     iModelBridgeFwk::SetIModelClientForBridgesForTesting(testIModelHubClientForBridges);
 
     testIModelHubClientForBridges.CreateRepository("iModelBridgeTests_Test1", GetSeedFile());
-    BentleyApi::BeFileName assignDbName(testDir);
-    assignDbName.AppendToPath(L"test1Assignments.db");
 
     BentleyApi::BeFileName dbFile(testDir);
     dbFile.AppendToPath(L"iModelBridgeTests_Test1.bim");
@@ -144,16 +134,12 @@ extern "C"
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
     {
-    auto bridgeRegSubKey = L"iModelBridgeForMstn";
-
     auto testDir = getiModelBridgeTestsOutputDir(L"ConvertAttachmentSingleBridge");
 
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
     bvector<WString> args;
-    SetUpBridgeProcessingArgs(args);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
-    args.push_back(L"--fwk-bridge-regsubkey=iModelBridgeForMstn");
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
     
     BentleyApi::BeFileName inputFile;
     MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
@@ -178,7 +164,7 @@ TEST_F(MstnBridgeTests, ConvertAttachmentSingleBridge)
     assignDbName.AppendToPath(L"iModelBridgeTests_Test1.fwk-registry.db");
     FakeRegistry testRegistry(testDir, assignDbName);
     testRegistry.WriteAssignments();
-    testRegistry.AddBridge(bridgeRegSubKey, iModelBridge_getAffinity);
+    testRegistry.AddBridge(MSTN_BRIDGE_REG_SUB_KEY, iModelBridge_getAffinity);
 
     BentleyApi::BeSQLite::BeGuid guid, refGuid;
     guid.Create();
@@ -227,8 +213,8 @@ TEST_F(MstnBridgeTests, ConvertAttachmentMultiBridge)
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
 
     bvector<WString> args;
-    SetUpBridgeProcessingArgs(args);
-    args.push_back(BentleyApi::WPrintfString(L"--fwk-staging-dir=\"%ls\"", testDir.c_str()));
+    SetUpBridgeProcessingArgs(args, testDir.c_str());
+    
 
     // Register our mock of the iModelHubClient API that fwk should use when trying to communicate with iModelHub
     TestIModelHubClientForBridges testIModelHubClientForBridges(testDir);
@@ -510,7 +496,6 @@ TEST_F(MstnBridgeTests, DISABLED_PushAfterEachModel)
 
     // Set up to process a master file and two reference files, all mapped to MstnBridge
     bvector<WString> args;
-    SetUpBridgeProcessingArgs(args);
     SetUpBridgeProcessingArgs(args, testDir, MSTN_BRIDGE_REG_SUB_KEY);
 
     BentleyApi::BeFileName assignDbName(testDir);
@@ -642,4 +627,43 @@ TEST_F(MstnBridgeTests, PushAfterEachFile)
         EXPECT_TRUE(containsSubstr(revstats.descriptions, "-Ref-1")) << "first ref should have been pushed in its own revision";
         EXPECT_TRUE(containsSubstr(revstats.descriptions, "-Ref-2")) << "second ref should have been pushed in its own revision";
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MstnBridgeTests, OidcTest)
+    {
+    auto testDir = getiModelBridgeTestsOutputDir(L"OidcTest");
+
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(testDir));
+
+    bvector<WString> args;
+    SetUpBridgeProcessingArgs(args, testDir.c_str(), MSTN_BRIDGE_REG_SUB_KEY);
+    
+    BentleyApi::BeFileName inputFile;
+    MakeCopyOfFile(inputFile, L"Test3d.dgn", NULL);
+
+    args.push_back(WPrintfString(L"--fwk-input=\"%ls\"", inputFile.c_str()));
+    args.push_back(L"--fwk-skip-assignment-check");
+    
+    iModelBridgeFwk fwk;
+    bvector<WCharCP> argptrs;
+
+    for (auto& arg : args)
+        argptrs.push_back(arg.c_str());
+
+    int argc = (int) argptrs.size(); 
+    wchar_t const** argv = argptrs.data();
+
+    ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
+
+    Http::Credentials credentials("abeesh.basheer@bentley.com", "hJ*54z43xTrewq");
+
+    std::shared_ptr< OidcTokenProvider> provider = std::make_shared<OidcTokenProvider>(credentials);
+    
+    fwk.SetTokenProvider(provider);
+
+    ASSERT_EQ(0, fwk.Run(argc, argv));
+
     }
