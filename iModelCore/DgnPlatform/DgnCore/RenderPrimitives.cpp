@@ -288,7 +288,6 @@ private:
         {
             Image       m_image;
             Utf8String  m_name;
-            TexturePtr  m_texture;
 
             Raster() { } // for bmap...
             Raster(DgnGlyphCR glyph, DgnFontCR font)
@@ -308,34 +307,14 @@ private:
 
             void DebugPrintImage() const;
             void DebugSaveImage() const;
-            bool IsValid() const { return m_texture.IsValid() || m_image.IsValid(); }
-            TexturePtr GetTexture(SystemR system, DgnDbR db)
-                {
-                if (m_texture.IsNull() && m_image.IsValid())
-                    {
-                    TextureKey key(m_name);
-                    m_texture = system._FindTexture(key, db);
-                    if (m_texture.IsNull())
-                        {
-                        Texture::CreateParams params(key);
-                        params.m_isGlyph = true;
-                        m_texture = system._CreateTexture(m_image, db, params);
-                        }
-
-                    m_image.Invalidate();
-                    BeAssert(m_texture.IsValid());
-                    }
-
-                return m_texture;
-                }
+            bool IsValid() const { return m_image.IsValid(); }
         };
 
     struct RasterPolyface
     {
         PolyfaceHeaderPtr   m_polyface;
-        TexturePtr          m_texture;
 
-        bool IsValid() const { return m_polyface.IsValid() && m_texture.IsValid(); }
+        bool IsValid() const { return m_polyface.IsValid(); }
     };
 
     private:
@@ -367,6 +346,7 @@ private:
         bool IsStrokes() const { return m_isStrokes; }
         bool IsCurved() const { return m_isCurved; }
         bool HasRaster() const { return m_raster.IsValid(); }
+        Raster* GetRaster() { return m_raster.IsValid() ? &m_raster : nullptr; }
         bool GetRange(DRange3dR cRange) const { if (IsValid()) { return m_curves->GetRange(cRange); }  return false; } 
 
         Strokes::PointLists GetStrokes(IFacetOptionsR facetOptions)
@@ -393,7 +373,7 @@ private:
             RasterPolyface polyface;
             GetGeometry(facetOptions, true,
                     [&](Geom& geom) { geom.InitRasterPolyface(*m_curves, facetOptions); },
-                    [&](Geom& geom) { polyface.m_polyface = geom.GetRasterPolyface(); polyface.m_texture = m_raster.GetTexture(system, db); });
+                    [&](Geom& geom) { polyface.m_polyface = geom.GetRasterPolyface(); });
             return polyface;
             }
 
@@ -424,7 +404,7 @@ private:
 
     static Key const& GetKey() { static Key s_key; return s_key; }
 
-    using Map = bmap<DgnGlyphCP, Glyph>;
+    using Map = std::map<DgnGlyphCP, Glyph>;
 
     Map m_map;
 
@@ -1733,7 +1713,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
         polyface = FixPolyface(*polyface, facetOptions);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
-        return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface, true, false, facetOptions.GetChordTolerance()));
+        return PolyfaceList (1, Polyface(GetDisplayParams(), *polyface, true, false, nullptr, facetOptions.GetChordTolerance()));
         }
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
@@ -2094,11 +2074,21 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     for (auto const& geom : m_geometries)                                                                        
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
-        for (auto const& tilePolyface : polyfaces)
+        for (auto& tilePolyface : polyfaces)
             {
             PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
             if (polyface.IsNull() || 0 == polyface->GetPointCount())
                 continue;
+
+            if (nullptr != tilePolyface.m_glyphImage)
+                {
+                // defer processing these until we are finished so we can make texture atlas of glyphs
+                if (options.WantPreserveOrder())
+                    order++;
+                DeferredGlyph glyph(tilePolyface, *geom, 0.0, false, order);
+                m_glyphDeferralManager.DeferGlyph(glyph);
+                continue;
+                }
 
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
@@ -2141,6 +2131,8 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 }
             }
         }
+
+    m_glyphDeferralManager.AddDeferredGlyphsToBuilderMap(builderMap, *context.GetRenderSystem(), context.GetDgnDb(), options);
 
     return builderMap;
     }
@@ -2476,12 +2468,12 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             DisplayParamsCPtr displayParams(&geom.GetDisplayParams());
             PolyfaceHeaderPtr polyface;
 
+            Image* rasterImage = nullptr;
             if (doTextAsRasterIfPossible)
                 {
+                rasterImage = glyph->GetRaster() ? &glyph->GetRaster()->m_image : nullptr; // save the raster image to put into texture atlas
                 Glyph::RasterPolyface raster = glyph->GetRasterPolyface(*facetOptions, *context.GetRenderSystem(), context.GetDgnDb());
-                polyface = raster.m_polyface;
-                if (raster.IsValid())
-                    displayParams = displayParams->CloneForRasterText(*raster.m_texture);
+                polyface = raster.m_polyface->Clone();
                 }
             else
                 {
@@ -2491,7 +2483,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             if (polyface.IsValid() && polyface->HasFacets())
                 {
                 polyface->Transform(glyphTransform);
-                polyfaces->push_back(Polyface(*displayParams, *polyface, false, true));
+                polyfaces->push_back(Polyface(*displayParams, *polyface, false, true, rasterImage));
                 }
             }
         }
@@ -2511,7 +2503,7 @@ GlyphCache::Glyph* GlyphCache::FindOrInsert(DgnGlyphCR glyph, DgnFontCR font)
     {
     auto iter = m_map.find(&glyph);
     if (m_map.end() == iter)
-        iter = m_map.Insert(&glyph, Glyph(glyph, font)).first;
+        iter = m_map.insert(std::make_pair(&glyph, Glyph(glyph, font))).first;
 
     return &iter->second;
     }

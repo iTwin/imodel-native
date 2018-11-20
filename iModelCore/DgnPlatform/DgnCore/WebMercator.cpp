@@ -771,7 +771,7 @@ static AttributionAppData::Key    s_attributionAppDataKey;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BingImageryProvider::_OnSelectTiles (bvector<TileCPtr>& selected, DrawArgsR args) const
     {
-    ViewController& viewController = args.m_context.GetViewportR().GetViewControllerR();
+    ViewController& viewController = args.GetContext().GetViewportR().GetViewControllerR();
 
     // get our AppData from the viewController.
     bool                newView = false;
@@ -1311,3 +1311,20 @@ TileTree::RootPtr WebMercatorDisplayHandler::_GetTileTree(SceneContextR sceneCon
     m_provider->_FetchTemplateUrl();
     return nullptr;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WebMercatorDisplayHandler::_GetDisplayPlane(DPlane3dR plane)
+    {
+    if (m_provider.IsNull())
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    double z = m_settings[WebMercatorModel::json_groundBias()].asDouble(-1.0);
+    plane.InitFromOriginAndNormal(0.0, 0.0, z, 0.0, 0.0, 1.0);
+    return true;
+    }
+

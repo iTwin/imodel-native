@@ -925,6 +925,10 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     DgnDb::VerifyClientThread();
 
     _ValidateChildren();
+
+    if (IsNotFound())
+        return SelectParent::Yes;
+
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
@@ -949,14 +953,21 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
         {
         m_childrenLastUsed = args.m_now;
         bool drawParent = false;
+        bool loadParent = false;
         size_t initialSize = selected.size();
 
         for (auto const& child : *children)
             {
             if (SelectParent::Yes == child->_SelectTiles(selected, args))
                 {
-                drawParent = true;
                 // NB: We must continue iterating children so that they can be requested if missing...
+                drawParent = true;
+
+                // This occurs with e.g. map tiles when we get back 'missing tile data' from the imagery provider.
+                // Want to load the parent to draw in its place.
+                // Note it's possible some children are not found and others are fine - load parent if any children are not found.
+                if (child->IsNotFound())
+                    loadParent = true;
                 }
             }
 
@@ -967,6 +978,9 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
             }
 
         selected.resize(initialSize);
+
+        if (loadParent && !ready)
+            args.InsertMissing(*this);
         }
 
     if (!tooCoarse)
@@ -1009,7 +1023,7 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
     Frustum worldBox = box.TransformBy(args.GetLocation());
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(worldBox);
+    bool isOutside = FrustumPlanes::Contained::Outside == args.GetFrustumPlanes().Contains(worldBox);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
     }
@@ -1057,9 +1071,9 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 
 #if defined(LIMIT_MIN_PIXEL_SIZE)
     constexpr double s_minPixelSizeAtPoint = 1.0E-7;
-    double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
+    double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.GetPixelSizeAtPoint(&center));
 #else
-    double pixelSizeAtPt = args.m_context.GetPixelSizeAtPoint(&center);
+    double pixelSizeAtPt = args.GetPixelSizeAtPoint(&center);
     double pixelSize = 0.0 != pixelSizeAtPt ? radius / pixelSizeAtPt : 1.0E-3;
 #endif
 
@@ -1618,7 +1632,8 @@ void OctTree::Tile::_ValidateChildren() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MissingNodes::Insert(TileCR tile, bool prioritize)
     {
-    m_set.insert(Node(tile, prioritize));
+    if (tile._IsPartial() || tile.IsNotLoaded())
+        m_set.insert(Node(tile, prioritize));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1708,6 +1723,24 @@ void DrawArgs::InvalidateCopyrightInfo()
         view->InvalidateCopyrightInfo();
         vp.InvalidateDecorations();
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::FrustumPlanes const& DrawArgs::GetFrustumPlanes() const
+    {
+    // ###TODO: handle expanded frustum
+    return m_context.GetFrustumPlanes();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double DrawArgs::GetPixelSizeAtPoint(DPoint3dCP origin) const
+    {
+    // ###TODO: handle expanded frustum
+    return m_context.GetPixelSizeAtPoint(origin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1954,7 +1987,7 @@ DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTi
     : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan),
     m_viewFlagsOverrides(root._GetViewFlagsOverrides())
     {
-    //
+    m_graphics.m_isBackgroundImagery = root._IsBackgroundImagery();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2320,7 +2353,7 @@ void Tile::AddDebugRangeGraphics(DrawArgsR args) const
     GraphicParams params;
     params.SetLineColor(ColorDef::Red());
 
-    auto graphic = args.m_context.CreateSceneGraphic();
+    auto graphic = args.GetContext().CreateSceneGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddRangeBox(m_range);
     args.m_graphics.Add(*graphic->Finish());

@@ -1001,12 +1001,12 @@ TileTree::RootP ViewController2d::GetRoot(SceneContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus createScene(TileTree::DrawArgsR args)
     {
-    auto const& plan = args.m_context.GetUpdatePlan();
+    auto const& plan = args.GetContext().GetUpdatePlan();
     if (plan.WantWait())
         {
         BeDuration timeLimit = plan.HasQuitTime() && plan.GetQuitTime().IsInFuture() ? plan.GetQuitTime() - BeTimePoint::Now() : BeDuration();
         args.m_root.SelectTiles(args);
-        args.m_context.m_requests.RequestMissing(timeLimit);
+        args.GetContext().m_requests.RequestMissing(timeLimit);
         if (plan.HasQuitTime())
             {
             args.m_root.WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count());

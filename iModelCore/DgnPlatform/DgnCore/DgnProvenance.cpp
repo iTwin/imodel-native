@@ -79,6 +79,9 @@ BentleyStatus DgnV8FileProvenance::Find(Utf8StringP v8Name, Utf8StringP v8Unique
     if (!dgndb.TableExists(DGN_TABLE_ProvenanceFile))
         return ERROR; // Provenance not supported
 
+    if (!v8FileId.IsValid())
+        return ERROR;
+
     CachedStatementPtr stmt;
     dgndb.GetCachedStatement(stmt, "SELECT V8Name,V8UniqueName FROM " DGN_TABLE_ProvenanceFile " WHERE V8FileId=?");
     Utf8String guidString = v8FileId.ToString();

@@ -504,6 +504,8 @@ void SpatialViewController::SynchBackgroundMapDisplay()
         m_roots.erase(rootIter);
 
     m_allRootsLoaded = false;
+    if (nullptr != m_vp)
+        m_vp->InvalidateScene();
     }
 
 /*---------------------------------------------------------------------------------**//**

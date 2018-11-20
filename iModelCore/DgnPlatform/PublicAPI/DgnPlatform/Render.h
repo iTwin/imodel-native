@@ -3392,6 +3392,7 @@ struct GraphicBranch
     ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
     FeatureSymbologyOverridesCPtr m_symbologyOverrides;
+    bool m_isBackgroundImagery = false;
 
     void Add(Graphic& graphic) {m_entries.push_back(&graphic);BeAssert(m_entries.back().IsValid());}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
@@ -3593,30 +3594,14 @@ struct PixelData
         NonPlanar, //!< Non-planar geometry
     };
 
-    //! Bit-mask by which callers of DgnViewport::ReadPixels() specify which aspects are of interest.
-    //! Aspects not specified will be omitted from the returned data.
-    enum class Selector : uint8_t
-    {
-        None = 0,
-        ElementId = 1 << 0, //!< Select element IDs
-        Distance = 1 << 1, //!< Select distances from near plane
-        Geometry = 1 << 2, //!< Select geometry type and planarity
-
-        GeometryAndDistance = Geometry | Distance, //!< Select geometry type/planarity and distance from near plane
-        All = GeometryAndDistance | ElementId, //!< Select all aspects
-    };
 private:
-    DgnElementId    m_elementId;
     double          m_distanceFraction;
     GeometryType    m_type;
     Planarity       m_planarity;
 public:
-    PixelData() : m_distanceFraction(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
-    PixelData(DgnElementId id, double distanceFraction, GeometryType geomType, Planarity planarity)
-        : m_elementId(id), m_distanceFraction(distanceFraction), m_type(geomType), m_planarity(planarity) { }
+    PixelData() : PixelData(-1.0, GeometryType::Unknown, Planarity::Unknown) { }
+    PixelData(double distanceFraction, GeometryType geomType, Planarity planarity) : m_distanceFraction(distanceFraction), m_type(geomType), m_planarity(planarity) { }
 
-    //! Returns the ID of the foremost element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
-    DgnElementId GetElementId() const { return m_elementId; }
     //! Returns the fraction between the far and near clip planes (0 = far, 1.0 = near)
     double GetDistanceFraction() const { return m_distanceFraction; }
     //! Returns the foremost type of geometry that produced this pixel, or Unknown if geometry was not selected
@@ -3624,12 +3609,9 @@ public:
     //! Returns the planarity of the foremost geometry that produced this pixel, or Unknown if geometry was not selected
     Planarity GetPlanarity() const { return m_planarity; }
 
-    void SetElementId(DgnElementId elemId) { m_elementId=elemId; }
     void SetDistanceFraction(double fraction) { m_distanceFraction = fraction; }
     void SetGeometry(GeometryType type, Planarity planarity) { m_type=type; m_planarity=planarity; }
 };
-
-ENUM_IS_FLAGS(PixelData::Selector);
 
 //=======================================================================================
 //! A rectangular array of pixels as read from a Target's render buffers.
@@ -3690,7 +3672,7 @@ public:
     virtual void _SetFlashed(DgnElementId, double) = 0;
     virtual void _SetViewRect(BSIRect rect, bool temporary=false) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
-    virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
+    virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();
     virtual int _SetGatherFrameTimings(bool gather) {return 0;}
     virtual void _GetFrameTimings(double* timings) {}

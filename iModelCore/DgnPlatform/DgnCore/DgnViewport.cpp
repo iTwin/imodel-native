@@ -383,6 +383,8 @@ void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
     if (extents.IsEmpty())
         return;
 
+    ExtendRangeForBackgroundMap(extents);
+
     // convert viewed extents in world coordinates to min/max in view aligned coordinates
     Transform viewTransform;
     viewTransform.InitFrom(m_rotMatrix);
@@ -417,6 +419,63 @@ void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
     // if part of the viewed extents are behind the eye, don't include that.
     if (delta.z > eyeOrg.z)
         delta.z = eyeOrg.z;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::ExtendRangeForBackgroundMap(DRange3dR extents) const
+    {
+    DPlane3d plane;
+    if (!m_viewController->GetViewDefinitionR().GetDisplayStyle().GetBackgroundMapDisplayPlane(plane))
+        return;
+
+    DVec3dCR planeNormal = plane.normal;
+    DVec3d viewZ;
+    m_rotMatrix.GetRow(viewZ, 2);
+    DVec3d onPlane = DVec3d::FromCrossProduct(viewZ, planeNormal); // vector on display plane.
+    if (onPlane.Magnitude() > 1.0E-8)
+        {
+        DMap4d worldToNpc;
+        double unused;
+        RootToNpcFromViewDef(worldToNpc, unused, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix);
+
+        Frustum frustum;
+        memcpy(frustum.m_pts, s_NpcCorners, sizeof (DPoint3d) * NPC_CORNER_COUNT);
+        worldToNpc.M1.MultiplyAndRenormalize(frustum.m_pts, frustum.m_pts, 8);
+
+        bool includeHorizon = false;
+        for (auto i = 0; i < 4; i++)
+            {
+            DRay3d ray = DRay3d::FromOriginAndTarget(frustum.m_pts[i + 4], frustum.m_pts[i]);
+            double intersectDistance;
+            DPoint3d intersect;
+            if (ray.Intersect(intersect, intersectDistance, plane) && (!IsCameraOn() || intersectDistance > 0.0))
+                extents.Extend(intersect);
+            else
+                includeHorizon = true;
+            }
+
+        if (includeHorizon)
+            {
+            static constexpr double horizonDistance = 10000;
+            DPoint3d rangeCenter = DPoint3d::FromInterpolate(extents.low, 0.5, extents.high);
+            DVec3d normal = DVec3d::FromNormalizedCrossProduct(onPlane, planeNormal);
+            extents.Extend(DPoint3d::FromSumOf(rangeCenter, normal, horizonDistance));
+            }
+
+        if (IsCameraOn())
+            {
+            static constexpr double minimumEyeDistance = 10.0;
+            extents.Extend(DPoint3d::FromSumOf(m_camera.GetEyePoint(), viewZ, -minimumEyeDistance));
+            }
+        }
+    else
+        {
+        // display plane parallel to view....
+        extents.Extend(DPoint3d::FromSumOf(plane.origin, planeNormal, -1.0));
+        extents.Extend(DPoint3d::FromSumOf(plane.origin, planeNormal, 1.0));
+        }
     }
 
 struct ViewChangedCaller
@@ -1276,20 +1335,19 @@ void DecorationAnimator::_OnInterrupted(DgnViewportR vp)
 struct ReadPixelsTask : Render::SceneTask
 {
     BSIRect m_rect;
-    Render::PixelData::Selector m_selector;
     Render::IPixelDataBufferCPtr m_buffer;
 
-    ReadPixelsTask(Render::Target& target, Priority priority, BSIRectCR rect, Render::PixelData::Selector selector)
-        : SceneTask(&target, Operation::ReadPixels, priority), m_rect(rect), m_selector(selector) { }
+    ReadPixelsTask(Render::Target& target, Priority priority, BSIRectCR rect)
+        : SceneTask(&target, Operation::ReadPixels, priority), m_rect(rect) { }
 
     Utf8CP _GetName() const override { return "Read Pixels"; }
-    Outcome _Process(StopWatch&) override { m_buffer = m_target->_ReadPixels(m_rect, m_selector); return Outcome::Finished; }
+    Outcome _Process(StopWatch&) override { m_buffer = m_target->_ReadPixels(m_rect); return Outcome::Finished; }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect, Render::PixelData::Selector selector)
+Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect)
     {
     if (!IsActive())
         return nullptr;
@@ -1299,7 +1357,7 @@ Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect, Render::Pix
     if (!rect.IsContained(&viewRect))
         return nullptr;
 
-    RefCountedPtr<ReadPixelsTask> task = new ReadPixelsTask(*m_renderTarget, Task::Priority::Highest(), rect, selector);
+    RefCountedPtr<ReadPixelsTask> task = new ReadPixelsTask(*m_renderTarget, Task::Priority::Highest(), rect);
     RenderQueue().AddTask(*task);
     RenderQueue().WaitForIdle();
 
@@ -1343,7 +1401,7 @@ bool DgnViewport::GetPixelDataWorldPoint(DPoint3dR world, IPixelDataBufferCR pix
 StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP inViewRect)
     {
     BSIRect                 viewRect = GetViewRect();
-    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect);
 
     lowNpc  = 1.0;
     highNpc = 0.0;
@@ -1377,7 +1435,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& hig
 StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP inViewRect)
     {
     BSIRect                 viewRect = GetViewRect();
-    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect);
     size_t                  pixelCount = 0;
 
     if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
@@ -1421,7 +1479,7 @@ StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, 
     if (!pickRect.Overlap(&overlapRect, &viewRect))
         return ERROR;
     
-    IPixelDataBufferCPtr    pixels = ReadPixels(overlapRect, PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(overlapRect);
 
     for (int testRadius=0; testRadius<radiusPixels; testRadius++)
         {
