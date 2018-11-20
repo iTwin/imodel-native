@@ -172,6 +172,7 @@ struct PolyfaceAuxData : RefCountedBase
     public:
 
     bvector<int32_t> const&                 GetIndices() const          { return m_indices; }          //! Return the indices for all channels of the PolyfaceAuxData.
+    bvector<int32_t>&                       GetIndices()                { return m_indices; }          //! Return the indices for all channels of the PolyfaceAuxData.
     ChannelsCR                              GetChannels() const         { return m_channels; }         //! Return constant reference to the channels.
     ChannelsR                               GetChannels()               { return m_channels; }         //! return refernce to the channels.         
     GEOMDLLIMPEXP PolyfaceAuxChannelCPtr    GetChannel(Utf8CP name) const;

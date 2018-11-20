@@ -28,7 +28,7 @@
         <SubPart PartName="PsolidShim_MacOSx64"/>
         <SubPart PartName="PsolidShim_x64"/>
     </Part>
-    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64" WipPartEnable="ParasolidIos">
+    <Part Name="PsolidShim_iOSArm64" OnlyPlatforms="iOSARM64">
         <SubPart PartName="psolid" PartFile="psolid" Repository="Thirdparty-psolid_30_1_168_iOSArm64"/>
     </Part>
     <Part Name="PsolidShim_LinuxX64" OnlyPlatforms="LinuxX64">

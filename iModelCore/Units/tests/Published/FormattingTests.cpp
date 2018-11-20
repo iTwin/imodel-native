@@ -1181,7 +1181,7 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ ("2,828.450", fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    #ifndef BENTLEYCONFIG_OS_ANDROID
+    #if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE)
 
         #ifdef BENTLEYCONFIG_OS_UNIX
             fmtP.ImbueLocale("de_DE");

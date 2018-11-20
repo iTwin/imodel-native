@@ -20,7 +20,7 @@ struct LocaleTests : public ::testing::Test {};
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-#ifndef BENTLEYCONFIG_OS_ANDROID
+#if !defined(BENTLEYCONFIG_OS_ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE)
 
     TEST_F(LocaleTests, BasicTest)
         {
