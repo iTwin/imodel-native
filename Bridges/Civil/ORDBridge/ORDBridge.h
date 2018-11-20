@@ -43,7 +43,7 @@ public:
     virtual WString _SupplySqlangRelPath() override {return L"sqlang/DgnV8Converter_en-US.sqlang.db3";}
     virtual BentleyStatus _Initialize(int argc, WCharCP argv[]) override;
     virtual BentleyStatus _OpenSource() override;
-    virtual void _CloseSource(BentleyStatus) override { }
+    virtual void _CloseSource(BentleyStatus, ClosePurpose) override { }
     virtual BentleyStatus _ConvertToBim(Dgn::SubjectCR jobSubject) override;
     virtual Dgn::SubjectCPtr _InitializeJob() override;
     virtual Dgn::SubjectCPtr _FindJob() override;
@@ -52,7 +52,7 @@ public:
 
     virtual BentleyStatus _MakeSchemaChanges() override;
     virtual BentleyStatus _OnOpenBim(Dgn::DgnDbR db) override;
-    void _OnCloseBim(BentleyStatus) override;
+    void _OnCloseBim(BentleyStatus, ClosePurpose) override;
     virtual BentleyStatus _DetectDeletedDocuments() override;
 
     static WCharCP GetRegistrySubKey() { return L"OpenRoadsDesignerBridge"; }
