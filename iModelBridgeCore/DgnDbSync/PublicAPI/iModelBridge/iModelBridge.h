@@ -628,6 +628,11 @@ struct iModelBridge
 	    //! @return the document GUID, if available.
 	    IMODEL_BRIDGE_EXPORT BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const;
 
+	    //! Get the document URN for the specified file, if available.
+	    //! @param localFileName    The filename of the source file.
+	    //! @return the document URN, if available.
+	    IMODEL_BRIDGE_EXPORT Utf8String QueryDocumentURN(BeFileNameCR localFileName) const;
+
         //!Get/Set the client info when talking to iModelHub or other services. 
         //!Individual bridges are supposed to set it up in its constructor so that when briefcase creation is called, appropriate ids are passed along.
         IMODEL_BRIDGE_EXPORT WebServices::ClientInfoPtr GetClientInfo() const;
@@ -656,6 +661,7 @@ struct iModelBridge
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
     static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
+
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
     //! @param[in] db The BIM to be updated
@@ -876,6 +882,15 @@ public:
     // @private
     IMODEL_BRIDGE_EXPORT static void GetRepositoryLinkInfo(DgnCode& code, iModelBridgeDocumentProperties& docProps, DgnDbR db, Params const& params, 
                                                 BeFileNameCR localFileName, Utf8StringCR defaultCode, Utf8StringCR defaultURN, InformationModelR lmodel);
+    // @private
+    IMODEL_BRIDGE_EXPORT static BeSQLite::BeGuid ParseDocGuidFromPwUri(Utf8StringCR pwUrl);
+
+    // @private
+    static bool IsPwUrn(Utf8StringCR urn) {return urn.StartsWith("pw://");}
+
+    // @private
+    static bool IsNonFileURN(Utf8StringCR urn) {return (urn.find("://") != Utf8String::npos) && !urn.StartsWith("file://");}
+
     // @private
     IMODEL_BRIDGE_EXPORT static SHA1 ComputeRepositoryLinkHash(RepositoryLinkCR);
 

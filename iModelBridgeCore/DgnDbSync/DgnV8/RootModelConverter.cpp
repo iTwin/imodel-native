@@ -1455,8 +1455,7 @@ void RootModelConverter::_FinishConversion()
             {
             if (!IsFileAssignedToBridge(*v8File))
                 continue;
-            SyncInfo::V8FileProvenance prov(*v8File, GetSyncInfo(), GetCurrentIdPolicy());
-            prov.Update();
+            GetSyncInfo().UpdateFile(nullptr, *v8File);
             }
         }
 
