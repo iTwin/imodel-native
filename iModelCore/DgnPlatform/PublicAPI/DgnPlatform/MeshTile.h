@@ -1149,7 +1149,7 @@ struct IGetPublishedTilesetInfo
 //=======================================================================================
 struct ICustomTilesetPublisher
     {
-    virtual void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& transform) = 0;
+    virtual void _DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& tileToECEF, const Transform& dbToTile) = 0;
     };
 
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
