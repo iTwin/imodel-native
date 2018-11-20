@@ -190,7 +190,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT DgnElementDependencyGraph(TxnManager&);
-    DGNPLATFORM_EXPORT ~DgnElementDependencyGraph();
+    ~DgnElementDependencyGraph() {}
 
     DgnDbR GetDgnDb() const {return m_txnMgr.GetDgnDb();}
 
