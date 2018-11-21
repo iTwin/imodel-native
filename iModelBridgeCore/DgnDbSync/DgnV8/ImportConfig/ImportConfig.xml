@@ -32,6 +32,8 @@
     <PointCloud importAttachments="true"/>
 
     <Thumbnails viewTypes="Root" pixelResolution="768" renderModeOverride="None"/>
+
+    <Views viewTypes="RootViewGroup"/>
     
     <Fonts searchPaths="$(AppRoot)$(v8SdkDir)/Fonts/;$(V8WorkspaceFontPaths)">
         <!--

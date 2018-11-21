@@ -305,6 +305,46 @@
                     </xs:complexType>
                 </xs:element>
 
+                <xs:element name="Views" minOccurs="1" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This configuration controls which view definitions are converted.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:attribute name="viewTypes">
+                            <xs:simpleType>
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        This is a space separated list of the view types that should be converted.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:list>
+                                    <xs:simpleType>
+                                        <xs:restriction base="xs:token">
+                                            <xs:enumeration value="None"/>
+                                            <xs:enumeration value="RootViewGroup">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Views from the default ViewGroup of the root file.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:enumeration>
+                                            <xs:enumeration value="RootSavedViews">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Saved views from the root file.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:enumeration>
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:list>
+                            </xs:simpleType>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+                
                 <xs:element name="Options" minOccurs="0" maxOccurs="1">
                     <xs:complexType>
                         <xs:sequence>
