@@ -262,22 +262,25 @@ TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
+    Json::Value json;
     JsonECSqlSelectAdapter adapter(stmt);
-    ASSERT_TRUE(adapter.IsValid()) << stmt.GetECSql();
-
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json)) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"id":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str())), JsonValue(json)) << stmt.GetECSql();
     stmt.Finalize();
-    ASSERT_FALSE(adapter.IsValid()) << stmt.GetECSql();
+    ASSERT_EQ(ERROR, adapter.GetRow(json)) << stmt.GetECSql();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_TRUE(adapter.IsValid()) << stmt.GetECSql();
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json)) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"id":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToHexStr().c_str())), JsonValue(json)) << stmt.GetECSql();
 
     stmt.Finalize();
-    ASSERT_FALSE(adapter.IsValid()) << stmt.GetECSql();
+    ASSERT_EQ(ERROR, adapter.GetRow(json)) << stmt.GetECSql();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId MyId FROM meta.ECSchemaDef"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_FALSE(adapter.IsValid()) << "statement reprepared with different ECSQL | " << stmt.GetECSql();
+    ASSERT_EQ(SUCCESS, adapter.GetRow(json)) << stmt.GetECSql();
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json({"MyId":"%s"})json", stmt.GetValueId<ECInstanceId>(0).ToString().c_str())), JsonValue(json)) << stmt.GetECSql();
     }
 
 //---------------------------------------------------------------------------------------
@@ -308,13 +311,11 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     Utf8String expectedNavIdStr = pKey.GetInstanceId().ToString();
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
     JsonDoc defaultJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.JsonCpp()));
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
 
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
     JsonDoc javaScriptJson;
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.JsonCpp()));
     ASSERT_EQ(SUCCESS, javaScriptAdapter.GetRow(javaScriptJson.RapidJson(), javaScriptJson.Allocator()));
@@ -420,7 +421,6 @@ TEST_F(JsonECSqlSelectAdapterTests, GetRowInstanceAndDuplicateMemberNames)
     ASSERT_TRUE(classDefId.IsValid());
 
     JsonECSqlSelectAdapter adapter(stmt);
-    ASSERT_TRUE(adapter.IsValid()) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonDoc rowJson, classJson, schemaJson;
     ASSERT_EQ(SUCCESS, adapter.GetRow(rowJson.RapidJson(), rowJson.Allocator()));
@@ -485,7 +485,6 @@ TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter adapter(stmt);
-    ASSERT_TRUE(adapter.IsValid());
     {
     Json::Value json;
     ASSERT_EQ(ERROR, adapter.GetRow(json, true)) << "Cannot append to JSON null";
@@ -571,9 +570,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
     
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
@@ -603,9 +600,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 123, 123, 123 AS MyNumber, 123 * 3, 123 * 3 AS MyProduct FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
@@ -674,9 +669,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
@@ -762,9 +755,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT PtProp.X, PtProp.Y, PtProp.Z FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
@@ -802,9 +793,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT StructProp.SomeNumber FROM ts.Foo"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     JsonECSqlSelectAdapter defaultAdapter(stmt);
-    ASSERT_TRUE(defaultAdapter.IsValid()) << stmt.GetECSql();
     JsonECSqlSelectAdapter javaScriptAdapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsDecimalString));
-    ASSERT_TRUE(javaScriptAdapter.IsValid()) << stmt.GetECSql();
 
     JsonDoc defaultJson, javaScriptJson;
     ASSERT_EQ(SUCCESS, defaultAdapter.GetRow(defaultJson.RapidJson(), defaultJson.Allocator()));
@@ -1338,7 +1327,6 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     JsonECSqlSelectAdapter adapter1(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
-    ASSERT_TRUE(adapter1.IsValid());
     JsonDoc actualJson;
     ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
     ASSERT_EQ(SUCCESS, adapter1.GetRow(actualJson.JsonCpp()));
@@ -1350,7 +1338,6 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     EXPECT_EQ_NULLABLE(INT64_C(1234567890), actualJson["L"].GetInt64()) << "ECJsonInt64Format::AsNumber " << actualJson.ToString();
 
     JsonECSqlSelectAdapter adapter2(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsDecimalString));
-    ASSERT_TRUE(adapter2.IsValid());
     actualJson.Clear();
     ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
     ASSERT_EQ(SUCCESS, adapter2.GetRow(actualJson.JsonCpp()));
@@ -1363,7 +1350,6 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     ASSERT_STREQ("1234567890", actualJson["L"].GetString()) << "ECJsonInt64Format::AsDecimalString " << actualJson.ToString();
 
     JsonECSqlSelectAdapter adapter3(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsHexadecimalString));
-    ASSERT_TRUE(adapter3.IsValid());
     actualJson.Clear();
     ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson.RapidJson(), actualJson.Allocator()));
     ASSERT_EQ(SUCCESS, adapter3.GetRow(actualJson.JsonCpp()));

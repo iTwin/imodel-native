@@ -168,7 +168,8 @@ struct JsonECSqlSelectAdapter final
         ECSqlStatement const& m_ecsqlStatement;
         uint64_t m_ecsqlHash;
         FormatOptions m_formatOptions;
-        bvector<bpair<Utf8String, Utf8String>> m_memberNames;
+        mutable bvector<Utf8String> m_memberNames;
+        mutable bvector<Utf8String> m_uniqueMemberNames;
         //not copyable
         JsonECSqlSelectAdapter(JsonECSqlSelectAdapter const&) = delete;
         JsonECSqlSelectAdapter& operator=(JsonECSqlSelectAdapter const&) = delete;
@@ -178,13 +179,8 @@ struct JsonECSqlSelectAdapter final
         //! @param[in] ecsqlStatement Prepared ECSqlStatement
         //! @param[in] formatOptions Options to control the output. 
         //! @see ECSqlStatement
-        ECDB_EXPORT JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions());
+        JsonECSqlSelectAdapter(ECSqlStatement const& ecsqlStatement, FormatOptions const& formatOptions = FormatOptions()): m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_ecsqlHash(ecsqlStatement.GetHashCode()) {}
         ~JsonECSqlSelectAdapter() {}
-
-        //! Indicates whether this JsonECSqlSelectAdapter is valid and can be used to retrieve rows.
-        //! For example, it is not valid, if the adapter was created with an unprepared ECSqlStatement or
-        //! if the statement was re-prepared (using Finalize) with another ECSQL.
-        bool IsValid() const { return !m_memberNames.empty() && m_ecsqlHash == m_ecsqlStatement.GetHashCode(); }
 
         //! Gets the current row as JSON object with pairs of property name value for each
         //! item in the ECSQL select clause.
