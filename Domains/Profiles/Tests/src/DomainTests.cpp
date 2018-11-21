@@ -1,4 +1,4 @@
-#include "ProfilesTest.h"
+#include "ProfilesTestCase.h"
 #include <Profiles/ProfilesApi.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -8,7 +8,7 @@ USING_NAMESPACE_BENTLEY_PROFILES
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTest, EnsureDomainsAreRegistered)
+TEST_F (ProfilesTestCase, EnsureDomainsAreRegistered)
     {
     BentleyStatus registrationStatus = DgnDomains::RegisterDomain (ProfilesDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     ASSERT_TRUE (BentleyStatus::SUCCESS == registrationStatus);
@@ -17,7 +17,7 @@ TEST_F (ProfilesTest, EnsureDomainsAreRegistered)
 /*---------------------------------------------------------------------------------**//**
 * @bssimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTest, EnsureBimCanBeCreated)
+TEST_F (ProfilesTestCase, EnsureBimCanBeCreated)
     {
     DgnDomainCP profilesDomain = GetDb().Domains().FindDomain (ProfilesDomain::GetDomain().GetDomainName());
     ASSERT_TRUE (NULL != profilesDomain);
@@ -26,7 +26,7 @@ TEST_F (ProfilesTest, EnsureBimCanBeCreated)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTest, ValidateSchema)
+TEST_F (ProfilesTestCase, ValidateSchema)
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext (true, true);
     context->AddSchemaLocater (GetDb().GetSchemaLocater());
@@ -42,7 +42,7 @@ TEST_F (ProfilesTest, ValidateSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTest, InsertAndUpdateCShapeProfile)
+TEST_F (ProfilesTestCase, InsertAndUpdateCShapeProfile)
     {
     CShapeProfile::CreateParams createParams (GetModel());
     createParams.name = "CProfile";

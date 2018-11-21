@@ -5,15 +5,15 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Arturas.Mizaras                 11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-class ProfilesTest : public testing::Test
+class ProfilesTestCase : public testing::Test
     {
     private:
         Dgn::DgnDbPtr m_dbPtr;
         Dgn::DgnModelPtr m_modelPtr;
 
     public:
-        ProfilesTest();
-        virtual ~ProfilesTest();
+        ProfilesTestCase();
+        virtual ~ProfilesTestCase();
 
         Dgn::DgnDb& GetDb();
         Dgn::DgnModel& GetModel();

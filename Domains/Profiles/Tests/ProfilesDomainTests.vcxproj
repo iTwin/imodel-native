@@ -54,13 +54,13 @@
     <None Include="tests.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\ProfilesTest.cpp" />
+    <ClCompile Include="src\ProfilesTestCase.cpp" />
     <ClCompile Include="src\DomainTests.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\TestHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ProfilesTest.h" />
+    <ClInclude Include="src\ProfilesTestCase.h" />
     <ClInclude Include="src\TestHost.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

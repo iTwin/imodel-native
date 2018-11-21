@@ -36,7 +36,7 @@ $(o)Main.obj                    : $(BEGTEST_INPUT)Main.cpp ${MultiCompileDepends
 
 $(o)TestHost.obj                : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends}
 
-$(o)ProfilesTest.obj            : $(BEGTEST_INPUT)ProfilesTest.cpp ${MultiCompileDepends}
+$(o)ProfilesTestCase.obj        : $(BEGTEST_INPUT)ProfilesTestCase.cpp ${MultiCompileDepends}
 
 $(o)DomainTests.obj             : $(BEGTEST_INPUT)DomainTests.cpp ${MultiCompileDepends}
 

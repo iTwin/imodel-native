@@ -26,18 +26,18 @@
     <ClCompile Include="src\Main.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="src\ProfilesTest.cpp">
-      <Filter>Src</Filter>
-    </ClCompile>
     <ClCompile Include="src\DomainTests.cpp">
       <Filter>Src\Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ProfilesTestCase.cpp">
+      <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">
       <Filter>Src</Filter>
     </ClInclude>
-    <ClInclude Include="src\ProfilesTest.h">
+    <ClInclude Include="src\ProfilesTestCase.h">
       <Filter>Src</Filter>
     </ClInclude>
   </ItemGroup>

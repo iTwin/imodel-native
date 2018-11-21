@@ -1,4 +1,4 @@
-#include "ProfilesTest.h"
+#include "ProfilesTestCase.h"
 #include "TestHost.h"
 
 
@@ -20,7 +20,7 @@ static BeFileName getWorkingDbPath (BeFileName const& baseDbPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProfilesTest::ProfilesTest()
+ProfilesTestCase::ProfilesTestCase()
     : m_dbPtr (nullptr)
     , m_modelPtr (nullptr)
     {
@@ -51,7 +51,7 @@ ProfilesTest::ProfilesTest()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProfilesTest::~ProfilesTest()
+ProfilesTestCase::~ProfilesTestCase()
     {
     m_dbPtr->CloseDb();
     }
@@ -59,7 +59,7 @@ ProfilesTest::~ProfilesTest()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDb& ProfilesTest::GetDb()
+DgnDb& ProfilesTestCase::GetDb()
     {
     BeAssert (m_dbPtr.IsValid());
     return *m_dbPtr;
@@ -68,7 +68,7 @@ DgnDb& ProfilesTest::GetDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel& ProfilesTest::GetModel()
+DgnModel& ProfilesTestCase::GetModel()
     {
     BeAssert (m_modelPtr.IsValid());
     return *m_modelPtr;
