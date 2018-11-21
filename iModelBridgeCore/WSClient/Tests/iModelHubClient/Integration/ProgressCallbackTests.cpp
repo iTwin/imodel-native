@@ -79,7 +79,7 @@ TEST_F(ProgressCallbackTests, ContinuousBriefcaseAcquireProgress)
     ContinuousProgressCallback callback;
     BriefcaseInfoResult acquireResult = s_client->AcquireBriefcaseToDir(*s_info, outputRoot, true, Client::DefaultFileNameCallback, callback.Get())->GetResult();
     ASSERT_SUCCESS(acquireResult);
-    callback.VerifyCount(23);
+    callback.VerifyCount(20);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -98,5 +98,5 @@ TEST_F(ProgressCallbackTests, ContinuousStandaloneDownloadProgress)
         return filePath;
         }, callback.Get())->GetResult();
     ASSERT_SUCCESS(downloadResult);
-    callback.VerifyCount(23);
+    callback.VerifyCount(20);
     }
