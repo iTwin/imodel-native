@@ -59,7 +59,7 @@ TEST_F(ThumbnailsTests, GetiModelThumbnail)
     for (Thumbnail::Size size : s_thumbnailSizes)
         {
         ThumbnailImageResult result;
-        int retryCount = 5;
+        int retryCount = 30;
         for (int i = 0; i <= retryCount; i++)
             {
             result = s_client->GetiModelThumbnail(s_projectId, s_info->GetId(), size)->GetResult();
@@ -113,7 +113,7 @@ TEST_F(ThumbnailsTests, GetThumbnailsByVersionId)
         for (Utf8String versionId : s_versionIds)
             {
             ThumbnailImageResult result;
-            int retryCount = 5;
+            int retryCount = 30;
             for (int i = 0; i <= retryCount; i++)
                 {
                 result = thumbnailsManager.GetThumbnailByVersionId(versionId, size)->GetResult();
