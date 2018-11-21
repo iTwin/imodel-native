@@ -32,6 +32,9 @@
     <ClCompile Include="src\ProfilesTestCase.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="src\CShapeProfileTests.cpp">
+      <Filter>Src\Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\TestHost.h">

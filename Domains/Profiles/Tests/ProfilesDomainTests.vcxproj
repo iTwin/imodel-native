@@ -54,6 +54,7 @@
     <None Include="tests.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\CShapeProfileTests.cpp" />
     <ClCompile Include="src\ProfilesTestCase.cpp" />
     <ClCompile Include="src\DomainTests.cpp" />
     <ClCompile Include="src\Main.cpp" />
