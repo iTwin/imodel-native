@@ -48,6 +48,8 @@ public:
 protected:
     explicit CShapeProfile (CreateParams const& params);
 
+    virtual BentleyStatus _Validate() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (CShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (CShapeProfile)
