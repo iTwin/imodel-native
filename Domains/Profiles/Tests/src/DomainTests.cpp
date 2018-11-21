@@ -1,4 +1,4 @@
-#include "ProfilesDomainTestFixture.h"
+#include "ProfilesTest.h"
 #include <Profiles/ProfilesApi.h>
 
 USING_NAMESPACE_BENTLEY_DGN

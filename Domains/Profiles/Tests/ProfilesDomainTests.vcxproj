@@ -54,14 +54,14 @@
     <None Include="tests.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ProfilesDomainTestFixture.cpp" />
-    <ClCompile Include="ProfilesDomainTests.cpp" />
-    <ClCompile Include="ProfilesDomainTestsMain.cpp" />
-    <ClCompile Include="TestHost.cpp" />
+    <ClCompile Include="src\ProfilesTest.cpp" />
+    <ClCompile Include="src\DomainTests.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\TestHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ProfilesDomainTestFixture.h" />
-    <ClInclude Include="TestHost.h" />
+    <ClInclude Include="src\ProfilesTest.h" />
+    <ClInclude Include="src\TestHost.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

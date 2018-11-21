@@ -8,7 +8,7 @@
 programName = ProfilesTests
 baseDir =   $(_MakeFilePath)
 
-BEGTEST_INPUT=$(baseDir)
+BEGTEST_INPUT=$(baseDir)src\\
 
 %include mdl.mki
 
@@ -32,13 +32,13 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
 
-$(o)ProfilesDomainTestFixture.obj       : $(BEGTEST_INPUT)ProfilesDomainTestFixture.cpp ${MultiCompileDepends}
+$(o)Main.obj                    : $(BEGTEST_INPUT)Main.cpp ${MultiCompileDepends}
 
-$(o)ProfilesDomainTestsMain.obj         : $(BEGTEST_INPUT)ProfilesDomainTestsMain.cpp ${MultiCompileDepends}
+$(o)TestHost.obj                : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends}
 
-$(o)ProfilesDomainTests.obj             : $(BEGTEST_INPUT)ProfilesDomainTests.cpp ${MultiCompileDepends}
+$(o)ProfilesTest.obj            : $(BEGTEST_INPUT)ProfilesTest.cpp ${MultiCompileDepends}
 
-$(o)TestHost.obj                        : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends}
+$(o)DomainTests.obj             : $(BEGTEST_INPUT)DomainTests.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

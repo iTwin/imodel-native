@@ -1,4 +1,4 @@
-#include "ProfilesDomainTestFixture.h"
+#include "ProfilesTest.h"
 #include "TestHost.h"
 
 

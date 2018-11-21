@@ -7,6 +7,9 @@
     <Filter Include="Src">
       <UniqueIdentifier>{d6bf2911-23e3-4e18-bff2-ef2f6b581b4a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\Tests">
+      <UniqueIdentifier>{56615e67-0f53-4987-b755-bbb418fe47b0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="tests.mke">
@@ -17,24 +20,24 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ProfilesDomainTestFixture.cpp">
+    <ClCompile Include="src\TestHost.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="ProfilesDomainTestsMain.cpp">
+    <ClCompile Include="src\Main.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="TestHost.cpp">
+    <ClCompile Include="src\ProfilesTest.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="ProfilesDomainTests.cpp">
-      <Filter>Src</Filter>
+    <ClCompile Include="src\DomainTests.cpp">
+      <Filter>Src\Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ProfilesDomainTestFixture.h">
+    <ClInclude Include="src\TestHost.h">
       <Filter>Src</Filter>
     </ClInclude>
-    <ClInclude Include="TestHost.h">
+    <ClInclude Include="src\ProfilesTest.h">
       <Filter>Src</Filter>
     </ClInclude>
   </ItemGroup>
