@@ -1020,6 +1020,7 @@ protected:
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
+    virtual DgnV8Api::ViewGroup* _GetMainViewGroup() {return nullptr;}
 
     bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
 
@@ -1124,6 +1125,11 @@ public:
     //! Compute the code value and URI that should be used for a RepositoryLink to the specified file
     void ComputeRepositoryLinkCodeValueAndUri(Utf8StringR Code, Utf8StringR uri, DgnV8FileR file);
     
+    DGNDBSYNC_EXPORT static Utf8String GetPwUrnFromFileProvenance(DgnV8FileCR);
+
+    DGNDBSYNC_EXPORT Utf8String GetDocumentURNforFile(DgnV8FileCR);
+    DGNDBSYNC_EXPORT BeSQLite::BeGuid GetDocumentGUIDforFile(DgnV8FileCR);
+
     //! Create a RepositoryLink to represent this file in the BIM and cache it in memory
     DgnElementId WriteRepositoryLink(DgnV8FileR file);
 
@@ -1206,6 +1212,7 @@ public:
 
     //! @name DgnDb properties
     //! @{
+    BentleyStatus GenerateThumbnail(ViewDefinition const& view);
     BentleyStatus GenerateThumbnails();
     void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
@@ -2544,6 +2551,8 @@ protected:
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
     DGNDBSYNC_EXPORT void _SetChangeDetector(bool isUpdate) override;
+
+    DgnV8Api::ViewGroup* _GetMainViewGroup() override {return m_viewGroup.get();}
 
     //! @name Params
     //! @{

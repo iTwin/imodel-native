@@ -1103,6 +1103,64 @@ TEST_F(ConverterTests, XDomainTest)
     XDomain::UnRegister(testXdomain);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyApi::bvector<DgnModelCPtr> getModelsByName(DgnDbR db, Utf8CP modelName)
+    {
+    BentleyApi::bvector<DgnModelCPtr> models;
+
+    auto stmt = db.GetPreparedECSqlStatement("select el.ecinstanceid from bis.element el, bis.model m WHERE (el.ecinstanceid = m.ecinstanceid) AND (el.CodeValue = ?)");
+    stmt->BindText(1, modelName, EC::IECSqlBinder::MakeCopy::No);
+    while (BentleyApi::BeSQLite::BE_SQLITE_ROW == stmt->Step())
+        {
+        auto modelId = stmt->GetValueId<DgnModelId>(0);
+        models.push_back(db.Models().GetModel(modelId));
+        }
+    return models;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConverterTests, CommonReferences)
+    {
+    const Utf8CP s_master1Name = "master3d1 Package";
+    const Utf8CP s_master2Name = "master3d2 Package";
+    const Utf8CP s_refName = "ref3d";
+    BentleyApi::BeFileName masterPackageFile1 = GetInputFileName(L"master3d1 Package.i.dgn");
+    BentleyApi::BeFileName masterPackageFile2 = GetInputFileName(L"master3d2 Package.i.dgn");
+
+    m_dgnDbFileName = GetOutputFileName(L"CommonReferences.bim");
+    DeleteExistingDgnDb(m_dgnDbFileName);
+    MakeWritableCopyOf(m_dgnDbFileName, m_seedDgnDbFileName, m_dgnDbFileName.GetFileNameAndExtension().c_str());
+    auto syncFile(SyncInfo::GetDbFileName(m_seedDgnDbFileName));
+    BentleyApi::BeFileName outSyncFile;
+    MakeWritableCopyOf(outSyncFile, syncFile, SyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
+
+    m_v8FileName = masterPackageFile1;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(0, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        }
+
+    m_v8FileName = masterPackageFile2;
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    if (true)
+        {
+        auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+        ASSERT_TRUE(db.IsValid());
+        ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same ref3d, there should be only one copy of ref3d in the iModel";
+        }
+    }
+
 //========================================================================================
 // @bsiclass                                    Sam.Wilson          11/17
 //========================================================================================
