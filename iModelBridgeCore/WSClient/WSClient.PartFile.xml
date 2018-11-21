@@ -271,6 +271,7 @@
     <Part Name="iModelHubPrewireForIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-Assets">Delivery/iModelHubNativeTests/iModelHubIntegrationTests.logging.config.xml</Files>
         </Bindings>
     </Part>
 
@@ -385,6 +386,7 @@
         <ProductDirectory Name="UnitTests-Objects"         Path="Objects" Deliver="true"/>
         <ProductDirectory Name="UnitTests-Objects"         Deliver="false" LibType="Static"/>
         
+        <ProductDirectory Name="PublisherLoggingConfigXml"      Deliver="false" />
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
         <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" />

@@ -82,7 +82,7 @@ TEST_F(ThumbnailsTests, GetThumbnailsById)
         {
         ThumbnailsManagerCR thumbnailsManager = s_connection->GetThumbnailsManager();
         bvector<Utf8String> thumbnailsIds;
-        int retryCount = 10;
+        int retryCount = 30;
         for (int i = 0; i <= retryCount; i++)
             {
             thumbnailsIds = thumbnailsManager.GetAllThumbnailsIds(size)->GetResult().GetValue();

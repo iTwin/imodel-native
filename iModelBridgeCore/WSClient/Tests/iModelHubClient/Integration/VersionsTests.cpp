@@ -400,7 +400,7 @@ TEST_F(VersionsTests, GetVersionsWithThumbnails)
 
     // Wait until Thumbnails will be rendered.
     bvector<Utf8String> versionsWithoutThumbnails = { s_version5->GetId(), s_version10->GetId(), s_version15->GetId() };
-    for (int i = 0; i <= 6; i++)
+    for (int i = 0; i <= 20; i++)
         {
         bvector<Utf8String> versionIds = versionsWithoutThumbnails;
         for (Utf8String versionId : versionIds)
