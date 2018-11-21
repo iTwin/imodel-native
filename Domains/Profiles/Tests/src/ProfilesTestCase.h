@@ -11,8 +11,10 @@ class ProfilesTestCase : public testing::Test
         Dgn::DgnDbPtr m_dbPtr;
         Dgn::DgnModelPtr m_modelPtr;
 
-    public:
+    protected:
         ProfilesTestCase();
+
+    public:
         virtual ~ProfilesTestCase();
 
         Dgn::DgnDb& GetDb();

@@ -4,11 +4,17 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_PROFILES
 
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                                     10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DomainTestCase : ProfilesTestCase
+    {
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTestCase, EnsureDomainsAreRegistered)
+TEST_F (DomainTestCase, EnsureDomainsAreRegistered)
     {
     BentleyStatus registrationStatus = DgnDomains::RegisterDomain (ProfilesDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     ASSERT_TRUE (BentleyStatus::SUCCESS == registrationStatus);
@@ -17,7 +23,7 @@ TEST_F (ProfilesTestCase, EnsureDomainsAreRegistered)
 /*---------------------------------------------------------------------------------**//**
 * @bssimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTestCase, EnsureBimCanBeCreated)
+TEST_F (DomainTestCase, EnsureProfilesDomainIsPresentInBim)
     {
     DgnDomainCP profilesDomain = GetDb().Domains().FindDomain (ProfilesDomain::GetDomain().GetDomainName());
     ASSERT_TRUE (NULL != profilesDomain);
@@ -26,7 +32,7 @@ TEST_F (ProfilesTestCase, EnsureBimCanBeCreated)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTestCase, ValidateSchema)
+TEST_F (DomainTestCase, ValidateSchema)
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext (true, true);
     context->AddSchemaLocater (GetDb().GetSchemaLocater());
@@ -37,27 +43,4 @@ TEST_F (ProfilesTestCase, ValidateSchema)
     ASSERT_TRUE (refSchema.IsValid());
 
     ASSERT_TRUE (refSchema->Validate());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                     10/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesTestCase, InsertAndUpdateCShapeProfile)
-    {
-    CShapeProfile::CreateParams createParams (GetModel());
-    createParams.name = "CProfile";
-
-    CShapeProfilePtr profilePtr = CShapeProfile::Create (createParams);
-    ASSERT_TRUE (profilePtr.IsValid());
-
-    DgnDbStatus status;
-    profilePtr->Insert (&status);
-    ASSERT_TRUE (status == DgnDbStatus::Success) << "Failed to create CShape profile instance!";
-
-    profilePtr->SetDepth (1.0);
-    double depth = profilePtr->GetDepth();
-    ASSERT_TRUE (depth == 1.0);
-
-    profilePtr->Update (&status);
-    ASSERT_TRUE (status == DgnDbStatus::Success);
     }
