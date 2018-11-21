@@ -1372,6 +1372,8 @@ Converter::Converter(Params const& params)
     m_lineStyleConverter = LineStyleConverter::Create(*this);
     m_currIdPolicy = StableIdPolicy::ById;
 
+    m_haveCreatedThumbnails = false;
+
     m_rootTrans.InitIdentity();
     m_rootTransChange.InitIdentity();
 

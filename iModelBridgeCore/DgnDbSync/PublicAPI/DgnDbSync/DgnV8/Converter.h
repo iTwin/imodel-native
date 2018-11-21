@@ -1020,6 +1020,7 @@ protected:
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
+    virtual DgnV8Api::ViewGroup* _GetMainViewGroup() {return nullptr;}
 
     bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
 
@@ -1211,6 +1212,7 @@ public:
 
     //! @name DgnDb properties
     //! @{
+    BentleyStatus GenerateThumbnail(ViewDefinition const& view);
     BentleyStatus GenerateThumbnails();
     void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
@@ -2549,6 +2551,8 @@ protected:
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
     DGNDBSYNC_EXPORT void _SetChangeDetector(bool isUpdate) override;
+
+    DgnV8Api::ViewGroup* _GetMainViewGroup() override {return m_viewGroup.get();}
 
     //! @name Params
     //! @{

@@ -1123,13 +1123,13 @@ static BentleyApi::bvector<DgnModelCPtr> getModelsByName(DgnDbR db, Utf8CP model
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConverterTests, DISABLED_CommonReferences)
+TEST_F(ConverterTests, CommonReferences)
     {
-    const Utf8CP s_master1Name = "master 1 package";
-    const Utf8CP s_master2Name = "master2 package";
-    const Utf8CP s_refName = "ref";
-    BentleyApi::BeFileName masterPackageFile1(L"d:\\tmp\\master 1 package.i.dgn");
-    BentleyApi::BeFileName masterPackageFile2(L"d:\\tmp\\master2 package.i.dgn");
+    const Utf8CP s_master1Name = "master3d1 Package";
+    const Utf8CP s_master2Name = "master3d2 Package";
+    const Utf8CP s_refName = "ref3d";
+    BentleyApi::BeFileName masterPackageFile1 = GetInputFileName(L"master3d1 Package.i.dgn");
+    BentleyApi::BeFileName masterPackageFile2 = GetInputFileName(L"master3d2 Package.i.dgn");
 
     m_dgnDbFileName = GetOutputFileName(L"CommonReferences.bim");
     DeleteExistingDgnDb(m_dgnDbFileName);
@@ -1150,14 +1150,14 @@ TEST_F(ConverterTests, DISABLED_CommonReferences)
         }
 
     m_v8FileName = masterPackageFile2;
-    DoUpdate(m_dgnDbFileName, m_v8FileName);
+    DoConvert(m_dgnDbFileName, m_v8FileName);
     if (true)
         {
         auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
         ASSERT_TRUE(db.IsValid());
         ASSERT_EQ(1, getModelsByName(*db, s_master1Name).size());
         ASSERT_EQ(1, getModelsByName(*db, s_master2Name).size());
-        ASSERT_EQ(1, getModelsByName(*db, s_refName).size());
+        ASSERT_EQ(1, getModelsByName(*db, s_refName).size()) << "Since both master files reference the same ref3d, there should be only one copy of ref3d in the iModel";
         }
     }
 

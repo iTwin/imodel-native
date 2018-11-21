@@ -21,26 +21,40 @@ void RootModelConverter::_ConvertSpatialViews()
     if (!IsFileAssignedToBridge(*GetRootV8File()))
         return;
 
-    if (!m_viewGroup.IsValid())
-        m_viewGroup = m_rootFile->GetViewGroupsR().FindByModelId(GetRootModelP()->GetModelId(), true, -1);
-    if (!m_viewGroup.IsValid())
-        {
-        DgnV8Api::ViewGroupStatus vgStatus;
-        if (DgnV8Api::VG_Success != (vgStatus = DgnV8Api::ViewGroup::Create(m_viewGroup, *GetRootModelP(), true, NULL, true)))
-            return;
-        }
+    auto viewTypes = m_config.GetXPathString("/ImportConfig/Views/@viewTypes", "rootviewgroup rootsavedviews");
+    viewTypes.ToLower();
+    bool wantViewGroups = viewTypes.find("rootviewgroup") != Utf8String::npos;
+    bool wantSavedViews = viewTypes.find("rootsavedviews") != Utf8String::npos;
+
+    if (!wantViewGroups && !wantSavedViews)
+        return;
 
     SpatialViewFactory vf(*this);
 
-    DgnViewId firstView;
-    ConvertViewGroup(firstView, *m_viewGroup, m_rootTrans, vf);
+    if (wantViewGroups)
+        {
+        if (!m_viewGroup.IsValid())
+            m_viewGroup = m_rootFile->GetViewGroupsR().FindByModelId(GetRootModelP()->GetModelId(), true, -1);
+        if (!m_viewGroup.IsValid())
+            {
+            DgnV8Api::ViewGroupStatus vgStatus;
+            if (DgnV8Api::VG_Success != (vgStatus = DgnV8Api::ViewGroup::Create(m_viewGroup, *GetRootModelP(), true, NULL, true)))
+                return;
+            }
 
-    if (firstView.IsValid() && !m_defaultViewId.IsValid())
-        m_defaultViewId = firstView;
+        DgnViewId firstView;
+        ConvertViewGroup(firstView, *m_viewGroup, m_rootTrans, vf);
 
-    NamedViewCollectionCR namedViews = GetRootV8File()->GetNamedViews();
-    for (DgnV8Api::NamedViewPtr namedView : namedViews)
-        ConvertNamedView(*namedView, m_rootTrans, vf);
+        if (firstView.IsValid() && !m_defaultViewId.IsValid())
+            m_defaultViewId = firstView;
+        }
+
+    if (wantSavedViews)
+        {
+        NamedViewCollectionCR namedViews = GetRootV8File()->GetNamedViews();
+        for (DgnV8Api::NamedViewPtr namedView : namedViews)
+            ConvertNamedView(*namedView, m_rootTrans, vf);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
