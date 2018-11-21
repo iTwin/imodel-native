@@ -36,7 +36,6 @@ class OpenSSLMutexes
 
 class DataSourceAccountCURL : public DataSourceAccountCached
 {
-
 protected:
 
     struct CURLHandle
@@ -119,6 +118,7 @@ protected:
 
     void setupProxyToCurl(CURL* curl);
     void setupCertificateAuthorities(CURL* curl);
+	bool IsResponseOK(const CURLHandle::CURLDataResponseHeader& response);
 
 public:
                                             DataSourceAccountCURL               (void) {}
