@@ -485,6 +485,20 @@ ECInstanceKey ECDbAdapter::GetInstanceKeyFromJsonInstance(JsonValueCR ecInstance
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKey ECDbAdapter::GetInstanceKeyFromJsonInstance(const rapidjson::Value& ecInstanceJson)
+    {
+    ECClassCP ecClass = GetECClass(ecInstanceJson[ECJsonUtilities::json_className().c_str()].GetString());
+    if (nullptr == ecClass)
+        {
+        return ECInstanceKey();
+        }
+    ECInstanceId ecId = ECDbHelper::ECInstanceIdFromJsonInstance(ecInstanceJson);
+    return ECInstanceKey(ecClass->GetId(), ecId);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstancesArrayOut, ICancellationTokenPtr ct)

@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECDbHelper.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,7 +34,9 @@ struct ECDbHelper
         WSCACHE_EXPORT static ECInstanceId ECInstanceIdFromECInstance(IECInstanceCR ecInstance);
         WSCACHE_EXPORT static ECInstanceId ECInstanceIdFromString(Utf8CP ecIdString);
         WSCACHE_EXPORT static ECInstanceId ECInstanceIdFromJsonInstance(JsonValueCR jsonInstance);
+        WSCACHE_EXPORT static ECInstanceId ECInstanceIdFromJsonInstance(const rapidjson::Value& jsonInstance);
         WSCACHE_EXPORT static ECInstanceId ECInstanceIdFromJsonValue(JsonValueCR jsonValue);
+        WSCACHE_EXPORT static ECInstanceId ECInstanceIdFromJsonValue(const rapidjson::Value& jsonValue);
         WSCACHE_EXPORT static Utf8String StringFromECInstanceId(ECInstanceId ecInstanceId);
 
         WSCACHE_EXPORT static Utf8String ECClassKeyFromClass(ECClassCR ecClass);

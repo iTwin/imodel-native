@@ -114,6 +114,8 @@ struct CachedResponseManager : public IECDbAdapter::DeleteListener
         BentleyStatus DeleteResponses(Utf8StringCR responseName);
         //! Delete responses that starts with a given prefix
         BentleyStatus DeleteResponsesByPrefix(Utf8StringCR responsePrefix);
+        //! Delete responses that start with a given prefix that have not been accessed since specified date
+        BentleyStatus DeleteResponsesByPrefix(Utf8StringCR responsePrefix, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& nodesToLeave);
         //! Save query info
         BentleyStatus SaveInfo(CachedResponseInfoR info);
         //! Insert query info and update page cache date
