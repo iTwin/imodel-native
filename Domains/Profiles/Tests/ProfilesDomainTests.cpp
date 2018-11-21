@@ -1,14 +1,14 @@
 #include "ProfilesDomainTestFixture.h"
 #include <Profiles/ProfilesApi.h>
 
-using namespace Dgn;
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_PROFILES
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesDomainTestsFixture, EnsureDomainsAreRegistered)
+TEST_F (ProfilesTest, EnsureDomainsAreRegistered)
     {
     BentleyStatus registrationStatus = DgnDomains::RegisterDomain (ProfilesDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
     ASSERT_TRUE (BentleyStatus::SUCCESS == registrationStatus);
@@ -17,7 +17,7 @@ TEST_F (ProfilesDomainTestsFixture, EnsureDomainsAreRegistered)
 /*---------------------------------------------------------------------------------**//**
 * @bssimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesDomainTestsFixture, EnsureBimCanBeCreated)
+TEST_F (ProfilesTest, EnsureBimCanBeCreated)
     {
     DgnDomainCP profilesDomain = GetDb().Domains().FindDomain (ProfilesDomain::GetDomain().GetDomainName());
     ASSERT_TRUE (NULL != profilesDomain);
@@ -26,7 +26,7 @@ TEST_F (ProfilesDomainTestsFixture, EnsureBimCanBeCreated)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesDomainTestsFixture, ValidateSchema)
+TEST_F (ProfilesTest, ValidateSchema)
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext (true, true);
     context->AddSchemaLocater (GetDb().GetSchemaLocater());
@@ -42,15 +42,17 @@ TEST_F (ProfilesDomainTestsFixture, ValidateSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ProfilesDomainTestsFixture, InsertAndUpdateCShapeProfile)
+TEST_F (ProfilesTest, InsertAndUpdateCShapeProfile)
     {
     CShapeProfile::CreateParams createParams (GetModel());
+    createParams.name = "CProfile";
+
     CShapeProfilePtr profilePtr = CShapeProfile::Create (createParams);
     ASSERT_TRUE (profilePtr.IsValid());
 
     DgnDbStatus status;
     profilePtr->Insert (&status);
-    ASSERT_TRUE (status == DgnDbStatus::Success);
+    ASSERT_TRUE (status == DgnDbStatus::Success) << "Failed to create CShape profile instance!";
 
     profilePtr->SetDepth (1.0);
     double depth = profilePtr->GetDepth();

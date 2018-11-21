@@ -20,15 +20,21 @@
     <ClCompile Include="ProfilesDomainTestFixture.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="ProfilesDomainTests.cpp">
+    <ClCompile Include="ProfilesDomainTestsMain.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="ProfilesDomainTestsMain.cpp">
+    <ClCompile Include="TestHost.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfilesDomainTests.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProfilesDomainTestFixture.h">
+      <Filter>Src</Filter>
+    </ClInclude>
+    <ClInclude Include="TestHost.h">
       <Filter>Src</Filter>
     </ClInclude>
   </ItemGroup>

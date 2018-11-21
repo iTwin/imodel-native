@@ -57,9 +57,11 @@
     <ClCompile Include="ProfilesDomainTestFixture.cpp" />
     <ClCompile Include="ProfilesDomainTests.cpp" />
     <ClCompile Include="ProfilesDomainTestsMain.cpp" />
+    <ClCompile Include="TestHost.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProfilesDomainTestFixture.h" />
+    <ClInclude Include="TestHost.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

@@ -38,6 +38,8 @@ $(o)ProfilesDomainTestsMain.obj         : $(BEGTEST_INPUT)ProfilesDomainTestsMai
 
 $(o)ProfilesDomainTests.obj             : $(BEGTEST_INPUT)ProfilesDomainTests.cpp ${MultiCompileDepends}
 
+$(o)TestHost.obj                        : $(BEGTEST_INPUT)TestHost.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts
