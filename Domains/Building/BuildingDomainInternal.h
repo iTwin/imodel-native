@@ -9,7 +9,7 @@
 #include <AecUnits\AecUnitsApi.h>
 #include <Grids/GridsApi.h>
 #include <StructuralDomain/StructuralDomainApi.h>
-#include <ProfilesDomain/ProfilesDomainApi.h>
+#include <Profiles/ProfilesApi.h>
 #include <FormsDomain/FormsDomainApi.h>
 
 

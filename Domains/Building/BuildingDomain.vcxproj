@@ -69,7 +69,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SRCROOT)DgnDomains\Building;$(OUTROOT)Winx64\BuildContexts\buildingDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\buildingDomains\VendorAPI;$(IncludePath)</IncludePath>
+    <IncludePath>$(SRCROOT)DgnDomains\Building;$(OUTROOT)Winx64\BuildContexts\buildingDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\buildingDomains\VendorAPI;$(OUTROOT)Winx64\BuildContexts\ProfilesDomain\PublicAPI;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

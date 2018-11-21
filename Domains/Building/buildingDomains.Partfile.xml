@@ -49,7 +49,17 @@
         </Bindings>
     </Part>
 
+  <Part Name="ProfilesPublicAPI" BentleyBuildMakeFile="Profiles.prewire.mke" ApiNumber="B02">
+    <Bindings>
+      <PublicAPI Domain="ProfilesDomain"/>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+        ECSchemas/Domain/Profiles.ecschema.xml
+      </Files>
 
+      <Directory SourceName="PublicApi/ProfilesDomain" ProductDirectoryName="ProfilesDomainIncludes" />
+    </Bindings>
+  </Part>
+  
     <Part Name="BuildingDomainTestsExe" DeferType="BuildingDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
         <SubPart PartName="google_gtest_lib"           PartFile="gtest"                 Repository="util-gtest"  />
         <SubPart PartName="DgnView"                    PartFile="DgnDisplay"            Repository="DgnDisplay"  />
