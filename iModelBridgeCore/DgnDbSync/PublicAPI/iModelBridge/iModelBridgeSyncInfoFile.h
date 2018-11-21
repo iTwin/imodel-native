@@ -648,7 +648,7 @@ public:
     //! Attaches syncinfo to the BIM
     IMODEL_BRIDGE_EXPORT BentleyStatus _OnOpenBim(DgnDbR db) override;
     //! Detaches syncinfo from the BIM
-    IMODEL_BRIDGE_EXPORT void _OnCloseBim(BentleyStatus) override;
+    IMODEL_BRIDGE_EXPORT void _OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose) override;
 
     void _Terminate(BentleyStatus) override {}
 

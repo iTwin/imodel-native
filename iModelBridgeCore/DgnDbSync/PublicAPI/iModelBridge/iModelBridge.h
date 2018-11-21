@@ -40,6 +40,9 @@
 //! @brief Eneds a table of translatable strings contained in an iModelBridge.
 #define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
 
+#define SOURCEINFO_ECSCHEMA_NAME            "SourceInfo"
+#define SOURCEINFO_CLASS_SoureElementInfo   "SourceElementInfo"
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct iModelBridgeFwk;
@@ -458,11 +461,27 @@ struct iModelBridge
         virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
         };
 
+    //! Interface to enable bridges to perform briefcase operations, such as push while they run.
+    struct IBriefcaseManager
+        {
+        enum PushStatus {Success = 0, PullIsRequired, UnknownError};
+
+        //! Pull and merge recent changesets from the iModel server.
+        virtual BentleyStatus _PullAndMerge() = 0;
+
+        //! Push all changes. 
+        //! @param revisionComment the summary comment for the revision.
+        //! @return non-zero status if the push failed.
+        virtual PushStatus _Push(Utf8CP revisionComment) = 0;
+        };
+
     //! Parameters that are common to all bridges.
     //! These parameters are set up by the iModelBridgeFwk based on job definition parameters and other sources.
     //! In a standalone converter, they are set from the command line.
     struct Params
         {
+        enum PushIntermediateRevisions {None=0, ByModel=1, ByFile=2};
+
       protected:
         friend struct iModelBridge;
         friend struct iModelBridgeFwk;
@@ -472,6 +491,7 @@ struct iModelBridge
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
+        PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
         bvector<BeFileName> m_drawingAndSheetFiles;
@@ -488,6 +508,7 @@ struct iModelBridge
         WebServices::ClientInfoPtr m_clientInfo;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
         IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
+        IBriefcaseManager* m_briefcaseManager = nullptr;
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
@@ -584,6 +605,9 @@ struct iModelBridge
         void SetDocumentPropertiesAccessor(IDocumentPropertiesAccessor& c) {m_documentPropertiesAccessor = &c;}
         void ClearDocumentPropertiesAccessor() {m_documentPropertiesAccessor = nullptr;}
         IDocumentPropertiesAccessor* GetDocumentPropertiesAccessor() const {return m_documentPropertiesAccessor;}
+        void SetPushIntermediateRevisions(PushIntermediateRevisions v) {m_pushIntermediateRevisions = v;}
+        PushIntermediateRevisions GetPushIntermediateRevisions() const {return m_pushIntermediateRevisions;}
+        void SetBriefcaseManager(IBriefcaseManager& c) {m_briefcaseManager = &c;}
         void SetSpatialDataTransform(Transform const& t) {m_spatialDataTransform = t;} //!< Optional. The transform that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data.
         TransformCR GetSpatialDataTransform() const {return m_spatialDataTransform;} //!< The transform, if any, that the bridge job should pre-multiply to the normal transform that is applied to all converted spatial data. See iModelBridge::GetJobTransform
         void SetJobSubjectId(DgnElementId eid) {m_jobSubjectId = eid;}  //!< @private called by framework
@@ -730,21 +754,28 @@ public:
     //! @see _OnCloseBim
     virtual BentleyStatus _OnOpenBim(DgnDbR db) = 0;
 
+    enum ClosePurpose
+        {
+        Finished,
+        SchemaUpgrade
+        };
+
     //! When this function is called, the bridge must let go of any pointer it may be holding to the briefcase, and it must detach
     //! syncinfo from the briefcase. 
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
     //! @note _OnOpenBim and _OnCloseBim may be called more than once during a conversion.
-    virtual void _OnCloseBim(BentleyStatus updateStatus) = 0;
+    virtual void _OnCloseBim(BentleyStatus updateStatus, ClosePurpose) = 0;
 
     //! Open the data source and be prepared to do the conversion
     //! @return non-zero error status if the bridge cannot open the source. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @see _CloseSource
     virtual BentleyStatus _OpenSource() {return BSISUCCESS;}
 
+
     //! The bridge can close its source data files, because the conversion is finished. It may have been terminated abnormally.
     //! This function will not be called if _OpenSource returned a non-zero error status.
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
-    virtual void _CloseSource(BentleyStatus updateStatus) {}
+    virtual void _CloseSource(BentleyStatus updateStatus, ClosePurpose) {}
     
     //! By overriding this function, the bridge may make changes to schemas in the briefcase.
     //! This function is called after _OnOpenBim and _OpenSource but before _ConvertToBim.
@@ -889,6 +920,15 @@ public:
     //! @param commitComment Optional description of changes made. May be included in final ChangeSet comment.
     IMODEL_BRIDGE_EXPORT static BentleyStatus SaveChanges(DgnDbR db, Utf8CP commitComment = nullptr);
 
+    //! Push all local changes to the iModel server
+    //! @param db The briefcase Db
+    //! @param params The bridge just params
+    //! @param commitComment The summary description of the ChangeSet
+    //! @return the outcome of the attempt to push
+    IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment);
+
+    IMODEL_BRIDGE_EXPORT virtual Utf8String _FormatPushComment(DgnDbR db, Utf8CP commitComment);
+
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);
     IMODEL_BRIDGE_EXPORT static Utf8String GetArgValue (WCharCP arg);
 
@@ -944,7 +984,7 @@ public:
     BentleyStatus _OnOpenBim(DgnDbR db) override {m_db = &db; return BSISUCCESS;}
 
     //! Release the reference to the BIM when the conversion is over.
-    void _OnCloseBim(BentleyStatus) override {m_db = nullptr;}
+    void _OnCloseBim(BentleyStatus, ClosePurpose purpose) override {m_db = nullptr;}
 
     void _Terminate(BentleyStatus) override {}
 

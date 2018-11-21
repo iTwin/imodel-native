@@ -50,9 +50,9 @@ protected:
     //! Default implementation walks through DWG block section and create the DwgAttributeDefinitions schema.
     DWG_EXPORT BentleyStatus  _MakeSchemaChanges () override;
     DWG_EXPORT BentleyStatus  _OnOpenBim (DgnDbR db) override;
-    DWG_EXPORT void           _OnCloseBim (BentleyStatus) override;
+    DWG_EXPORT void           _OnCloseBim (BentleyStatus, iModelBridge::ClosePurpose purpose) override;
     DWG_EXPORT BentleyStatus  _OpenSource () override;
-    DWG_EXPORT void           _CloseSource (BentleyStatus) override;
+    DWG_EXPORT void           _CloseSource (BentleyStatus,iModelBridge::ClosePurpose) override;
     DWG_EXPORT void           _DeleteSyncInfo () override;
     DWG_EXPORT BentleyStatus  _DetectDeletedDocuments() override;
     DWG_EXPORT void           _PrintUsage () override;

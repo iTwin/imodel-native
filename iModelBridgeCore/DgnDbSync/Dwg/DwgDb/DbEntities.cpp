@@ -740,10 +740,14 @@ double     DwgDbEllipse::GetMinorRadius () const { return DWGDB_CALLSDKMETHOD(T_
 DVec3d     DwgDbEllipse::GetMinorAxis () const { return Util::DVec3dFrom(T_Super::minorAxis()); }
 DVec3d     DwgDbEllipse::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 double     DwgDbEllipse::GetStartAngle () const { return T_Super::startAngle(); }
+double     DwgDbEllipse::GetStartParam () const { double p=0.0; T_Super::getStartParam(p); return p; }
 double     DwgDbEllipse::GetEndAngle () const { return T_Super::endAngle(); }
+double     DwgDbEllipse::GetEndParam () const { double p=0.0; T_Super::getEndParam(p); return p; }
 DwgDbStatus DwgDbEllipse::SetCenter (DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setCenter(Util::GePoint3dFrom(p))); }
 DwgDbStatus DwgDbEllipse::SetStartAngle (double a) { RETURNVOIDORSTATUS(T_Super::setStartAngle(a)); }
+DwgDbStatus DwgDbEllipse::SetStartParam (double a) { RETURNVOIDORSTATUS(T_Super::setStartParam(a)); }
 DwgDbStatus DwgDbEllipse::SetEndAngle (double a) { RETURNVOIDORSTATUS(T_Super::setEndAngle(a)); }
+DwgDbStatus DwgDbEllipse::SetEndParam (double a) { RETURNVOIDORSTATUS(T_Super::setEndParam(a)); }
 DwgDbStatus DwgDbEllipse::Set (DPoint3dCR c, DVec3dCR n, DVec3dCR m, double r, double a1, double a2) { RETURNVOIDORSTATUS(T_Super::set(Util::GePoint3dFrom(c), Util::GeVector3dFrom(n), Util::GeVector3dFrom(m), r, a1, a2)); }
 DwgDbStatus DwgDbEllipse::ReverseCurve () { RETURNVOIDORSTATUS(T_Super::reverseCurve()); }
 DwgDbStatus DwgDbEllipse::SetMajorRadius (double radius)

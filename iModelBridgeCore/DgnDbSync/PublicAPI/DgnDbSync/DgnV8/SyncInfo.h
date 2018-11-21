@@ -159,6 +159,7 @@ struct SyncInfo
         SyncInfo&   m_syncInfo;
         V8FileSyncInfoId    m_syncId;
 
+        V8FileProvenance(SyncInfo& s) : m_syncInfo(s) {} 
         V8FileProvenance(DgnV8FileCR, SyncInfo&, StableIdPolicy);
         DGNDBSYNC_EXPORT V8FileProvenance(BentleyApi::BeFileNameCR, SyncInfo&, StableIdPolicy);
 
@@ -187,6 +188,7 @@ struct SyncInfo
             DGNDBSYNC_EXPORT uint64_t GetFileSize();
             DGNDBSYNC_EXPORT double GetLastSaveTime(); // (Unix time in seconds)
             Entry const& operator* () const {return *this;}
+            V8FileProvenance GetV8FileSyncInfoId(SyncInfo& si);
         };
 
         typedef Entry const_iterator;
@@ -795,7 +797,7 @@ public:
     //! @name ECSchemas
     //! @{
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertECSchema(ECN::ECSchemaId&, DgnV8FileR, Utf8CP v8SchemaName, uint32_t v8SchemaVersionMajor, uint32_t v8SchemaVersionMinor, bool isDynamic, uint32_t checksum) const;
-    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName) const;
+    DGNDBSYNC_EXPORT bool TryGetECSchema(ECObjectsV8::SchemaKey&, ECSchemaMappingType&, Utf8CP v8SchemaName, V8FileSyncInfoId fileId) const;
     DGNDBSYNC_EXPORT bool ContainsECSchema(Utf8CP v8SchemaName) const;
     DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums, V8FileSyncInfoId fileId) const;
     //! @}

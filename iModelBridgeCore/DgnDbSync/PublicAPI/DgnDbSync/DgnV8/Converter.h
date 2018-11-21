@@ -612,7 +612,8 @@ struct Converter
         Utf8String m_pwUser;
         Utf8String m_pwPassword;
         Utf8String m_pwDataSource;
-
+        //!private
+        bool m_keepHostAlive {};
     public:
         Params() : m_v8sdkRelativeDir(L"DgnV8") // it's relative to the library's directory
             {
@@ -648,7 +649,8 @@ struct Converter
         void SetProjectWiseDataSource(Utf8CP pwDataSource) {m_pwDataSource = pwDataSource;}
         void SetProcessAffected(bool processAffected) { m_processAffected = processAffected; }
         void SetConvertViewsOfAllDrawings(bool b) { m_convertViewsOfAllDrawings = b;}
-
+        void SetKeepHostAlive(bool b) { m_keepHostAlive = b; }
+        bool GetKeepHostAlive() const { return m_keepHostAlive; }
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
         BeFileNameCR GetConfigFile2() const {return m_configFile2;}
@@ -878,10 +880,15 @@ struct Converter
 
     //! Other arbitrary strings required by the conversion process
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ConverterDataStrings,dgnv8_converterDataStrings)
-        L10N_STRING(V8StyleNone) // =="V8 Default Style"==
-        L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
-        L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
-        L10N_STRING(RDS_Description) // =="Reality Model Tileset for %s"==
+        L10N_STRING(V8StyleNone)                        // =="V8 Default Style"==
+        L10N_STRING(V8StyleNoneDescription)             // =="Created from V8 active settings to handle Style (none)"==
+        L10N_STRING(LinkModelDefaultName)               // =="Default Link Model"==
+        L10N_STRING(RDS_Description)                    // =="Reality Model Tileset for %s"==
+        L10N_STRING(ResourcesViewsAndModels)            // =="Categories, Styles, Views, and Models"==
+        L10N_STRING(Sheets)                             // =="Sheets and drawings"==
+        L10N_STRING(Drawings)                           // =="Drawings"==
+        L10N_STRING(GlobalProperties)                   // =="Global properties"==
+        L10N_STRING(SpatialData)                        // =="Spatial data"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues
@@ -999,7 +1006,7 @@ protected:
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
     bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;
-    bool                m_haveCreatedThumbnails;
+    bool                m_haveCreatedThumbnails = false;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
@@ -1014,6 +1021,8 @@ public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
 
+    bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
+
     bool SkipECContent() const {return m_skipECContent;}
     void SetSkipEContent(bool val) {m_skipECContent = val;}
     //! Add a callback to be invoked by RetrieveV8ECSchemas
@@ -1024,6 +1033,8 @@ public:
     bool ShouldImportSchema(Utf8StringCR fullSchemaName, DgnV8ModelR v8Model);
     //! @}
 
+    //!Allows a bridge to store element provenance in an iModel
+    BentleyStatus  AddElementSourceInfo(ElementConversionResults& results, DgnV8EhCR v8eh);
     //! This returns false if the V8 file should not be converted by the bridge.
     DGNDBSYNC_EXPORT bool IsFileAssignedToBridge(DgnV8FileCR v8File) const;
 
@@ -1036,6 +1047,7 @@ public:
     bool HasRootTransChanged() const {return m_rootTransHasChanged;}
 
     void SetIsUpdating(bool b) {_GetParamsR().SetIsUpdating(b);}
+    void SetKeepHostAlive(bool b) { _GetParamsR().SetKeepHostAlive(b); }
 
     static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME)
         {
@@ -2311,6 +2323,10 @@ protected:
 public:
     virtual SpatialParams const& _GetSpatialParams() const = 0;
 
+    void PushChangesForFile(DgnV8FileR, BentleyApi::Utf8StringCR whatData);
+    void PushChangesForFile(DgnV8FileR, ConverterDataStrings::StringId);
+    void PushChangesForModel(DgnV8ModelRefCR);
+
     //! Sets the Params BridgeJobName property
     DGNDBSYNC_EXPORT void ComputeDefaultImportJobName();
 
@@ -2504,8 +2520,6 @@ struct RootModelConverter : SpatialConverterBase
         RootModelChoice const& GetRootModelChoice() const {return m_rootModelChoice;}
         void AddDrawingOrSheetFile(BeFileNameCR fn) {m_drawingAndSheetFiles.push_back(fn);}
 
-        //!private
-        bool m_keepHostAliveForUnitTests {};
         DGNDBSYNC_EXPORT void Legacy_Converter_Init(BeFileNameCR bcName);
 
     };

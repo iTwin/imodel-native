@@ -783,6 +783,33 @@ bool SyncInfo::V8FileProvenance::FindByName(bool fillLastMod)
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::FileIterator::Entry::GetV8FileSyncInfoId(SyncInfo& si)
+    {
+    V8FileProvenance fp(si);
+    fp.m_syncId = GetV8FileSyncInfoId();
+    fp.m_uniqueName = GetUniqueName();
+    fp.m_v8Name = GetV8Name();
+    fp.m_idPolicy = GetCannotUseElementIds()? StableIdPolicy::ByHash : StableIdPolicy::ById;
+    fp.m_lastSaveTime = GetLastSaveTime();
+    fp.m_lastModifiedTime = GetLastModifiedTime();
+    fp.m_fileSize = GetFileSize();
+    return fp;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Sam.Wilson                      07/14
+//---------------------------------------------------------------------------------------
+SyncInfo::V8FileProvenance SyncInfo::V8FileProvenance::GetById(V8FileSyncInfoId sid, SyncInfo& syncInfo)
+    {
+    FileIterator files(syncInfo.GetConverter().GetDgnDb(), "Id=?");
+    files.GetStatement()->BindInt(1, sid.GetValue());
+    SyncInfo::FileIterator::Entry entry = files.begin();
+    return (entry != files.end())? entry.GetV8FileSyncInfoId(syncInfo): V8FileProvenance(syncInfo);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1711,19 +1738,25 @@ DbResult SyncInfo::InsertECSchema(BentleyApi::ECN::ECSchemaId& insertedSchemaId,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName) const
+bool SyncInfo::TryGetECSchema(ECObjectsV8::SchemaKey& schemaKey, ECSchemaMappingType& mappingType, Utf8CP v8SchemaName, V8FileSyncInfoId fileId) const
     {
     //first check whether we need to capture this schema or not
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, "SELECT V8VersionMajor, V8VersionMinor, Digest, MappingType FROM "
-                                                    SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
-                                                    " WHERE V8Name=?"))
+    Utf8String sql("SELECT V8VersionMajor, V8VersionMinor, Digest, MappingType FROM "
+                  SYNCINFO_ATTACH(SYNC_TABLE_ECSchema)
+                  " WHERE V8Name=?");
+    if (fileId.IsValid())
+        sql.append("and V8FileSyncInfoId = ? ");
+
+    if (BE_SQLITE_OK != m_dgndb->GetCachedStatement(stmt, sql.c_str()))
         {
         BeAssert(false);
         return false;
         }
 
     stmt->BindText(1, v8SchemaName, Statement::MakeCopy::No);
+    if (fileId.IsValid())
+        stmt->BindInt(2, fileId.GetValue());
     if (BE_SQLITE_ROW != stmt->Step())
         return false;
 
@@ -1934,7 +1967,7 @@ BeSQLite::DbResult SyncInfo::InsertView(DgnViewId viewId, DgnV8ViewInfoCR viewIn
         return BeSQLite::DbResult::BE_SQLITE_ERROR_FileNotFound;
 
     stmt.BindInt(col++, v8FileId.GetValue());
-    stmt.BindInt(col++, viewElemRef->GetElementId());
+    stmt.BindInt64(col++, viewElemRef->GetElementId());
     stmt.BindText(col++, viewName, Statement::MakeCopy::Yes);
     stmt.BindDouble(col++, viewElemRef->GetLastModified());
     auto res = stmt.Step();

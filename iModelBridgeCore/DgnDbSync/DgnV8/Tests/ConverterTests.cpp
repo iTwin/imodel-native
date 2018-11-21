@@ -872,7 +872,7 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bent
 
     //  Initialize the ConverterLibrary helper object. Do all this initialization once, before converting any elements.
     RootModelConverter::RootModelSpatialParams params;
-    params.m_keepHostAliveForUnitTests = true;
+    params.SetKeepHostAlive(true);
     // Call params.AddDrawingOrSheetFile to add files to be processed by ConvertAllDrawingsAndSheets
     ConverterLibrary cvt(outputBim, params);
 
