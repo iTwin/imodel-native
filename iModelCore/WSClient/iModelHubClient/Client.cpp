@@ -380,29 +380,9 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR projectId, Utf8StringCR 
             return;
             }
 
-        WSQuery iModelQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
-        Utf8String filter;
-        filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, iModelName.c_str());
-        iModelQuery.SetFilter(filter);
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Querying iModel by name %s.", iModelName.c_str());
-        client->SendQueryRequest(iModelQuery, nullptr, nullptr, cancellationToken)->Then([=](WSObjectsResult const& queryResult)
+        GetiModelByName(projectId, iModelName)->Then([=] (iModelResultCR queryResult)
             {
-            if (!queryResult.IsSuccess())
-                {
-                finalResult->SetError(queryResult.GetError());
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, queryResult.GetError().GetMessage().c_str());
-                return;
-                }
-
-            if (queryResult.GetValue().GetRapidJsonDocument().IsNull())
-                {
-                finalResult->SetError(error);
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, error.GetMessage().c_str());
-                return;
-                }
-
-            finalResult->SetSuccess(iModelInfo::Parse(*queryResult.GetValue().GetInstances().begin(), m_serverUrl));
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+            queryResult.IsSuccess() ? finalResult->SetSuccess(queryResult.GetValue()) : finalResult->SetError(queryResult.GetError());
             });
 
         })->Then<iModelResult>([=]()
