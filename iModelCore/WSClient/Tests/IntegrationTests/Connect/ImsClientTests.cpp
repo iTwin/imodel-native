@@ -6,12 +6,14 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "ImsClientTests.h"
+#include <WebServicesTestsHelper.h>
 
 #include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <curl/curl.h>
+
+struct ImsClientTests : public WSClientBaseTest {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15

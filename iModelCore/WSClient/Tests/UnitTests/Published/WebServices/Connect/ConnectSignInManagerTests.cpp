@@ -924,7 +924,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_SignedInWithTokenAndGetTokenC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenRequestFailsDueToAuthentication_CallsExpirationHandlerAndReturnsNull)
+TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenRequestFailsWithUnauthorized_CallsExpirationHandlerAndReturnsNull)
     {
     auto imsClient = std::make_shared<MockImsClient>();
     auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
@@ -946,6 +946,36 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenReq
     auto provider = manager->GetTokenProvider("https://foo.com");
 
     HttpError error(ConnectionStatus::OK, HttpStatus::Unauthorized);
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(2).WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(error))));
+    EXPECT_EQ(nullptr, provider->UpdateToken()->GetResult());
+    EXPECT_EQ(1, count);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, GetTokenProvider_DelegationAndIdentityTokenRequestFailsWithForbidden_CallsExpirationHandlerAndReturnsNull)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    SamlTokenPtr signInToken = StubSamlToken();
+    SamlTokenPtr identityToken = StubSamlToken();
+    SamlTokenPtr delegationToken = StubSamlToken();
+
+    EXPECT_CALL(*imsClient, RequestToken(*signInToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
+    ASSERT_TRUE(manager->SignInWithToken(signInToken)->GetResult().IsSuccess());
+
+    int count = 0;
+    manager->SetTokenExpiredHandler([&] { count++; });
+
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserTokenExpired()).Times(1);
+    manager->RegisterListener(&listener);
+
+    auto provider = manager->GetTokenProvider("https://foo.com");
+
+    HttpError error(ConnectionStatus::OK, HttpStatus::Forbidden);
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(2).WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(error))));
     EXPECT_EQ(nullptr, provider->UpdateToken()->GetResult());
     EXPECT_EQ(1, count);
@@ -984,7 +1014,7 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenRequestFailsDueToConnect
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsButIdentityTokenRenewalSucceeds_GetsNewDelegationToken)
+TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsWithUnauthorizedButIdentityTokenRenewalSucceeds_GetsNewDelegationToken)
     {
     auto imsClient = std::make_shared<MockImsClient>();
     auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
@@ -1008,6 +1038,41 @@ TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsButIdenti
     auto provider = manager->GetTokenProvider("https://foo.com");
 
     HttpError error(ConnectionStatus::OK, HttpStatus::Unauthorized);
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, Not(Utf8String()), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(error))));
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, Utf8String(), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(newIdentityToken))));
+    EXPECT_CALL(*imsClient, RequestToken(*newIdentityToken, Not(Utf8String()), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
+
+    EXPECT_EQ(delegationToken, provider->UpdateToken()->GetResult());
+    EXPECT_EQ(0, count);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectSignInManagerTests, GetTokenProvider_TokenDelegationFailsWithForbiddenButIdentityTokenRenewalSucceeds_GetsNewDelegationToken)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    SamlTokenPtr signInToken = StubSamlToken();
+    SamlTokenPtr identityToken = StubSamlToken();
+    SamlTokenPtr newIdentityToken = StubSamlToken();
+    SamlTokenPtr delegationToken = StubSamlToken();
+
+    InSequence seq;
+    EXPECT_CALL(*imsClient, RequestToken(*signInToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
+    ASSERT_TRUE(manager->SignInWithToken(signInToken)->GetResult().IsSuccess());
+
+    int count = 0;
+    manager->SetTokenExpiredHandler([&] { count++; });
+
+    NiceMock<MockConnectSignInManagerListener> listener;
+    EXPECT_CALL(listener, _OnUserTokenExpired()).Times(0);
+    manager->RegisterListener(&listener);
+
+    auto provider = manager->GetTokenProvider("https://foo.com");
+
+    HttpError error(ConnectionStatus::OK, HttpStatus::Forbidden);
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, Not(Utf8String()), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Error(error))));
     EXPECT_CALL(*imsClient, RequestToken(*identityToken, Utf8String(), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(newIdentityToken))));
     EXPECT_CALL(*imsClient, RequestToken(*newIdentityToken, Not(Utf8String()), _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
