@@ -11,7 +11,7 @@ static wchar_t const* s_configFileName = L"ProfilesTestFixtureTests.logging.conf
 
 /*---------------------------------------------------------------------------------**//**
 * This class knows how data files are linked into the Product/ECObjectsXXXTests directory structure.
-* @bsiclass                                     Arturas.Mizaras          11/17
+* @bsiclass                                                                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct BeGTestHost : RefCounted<BeTest::Host>
     {
@@ -75,7 +75,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus getEnv (BeFileName& fn, WCharCP envname)
     {
@@ -87,7 +87,7 @@ static BentleyStatus getEnv (BeFileName& fn, WCharCP envname)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus getLogConfigurationFilename (BeFileName& configFile, char const* argv0)
     {
@@ -113,7 +113,7 @@ static BentleyStatus getLogConfigurationFilename (BeFileName& configFile, char c
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void initLogging (char const* argv0)
     {
@@ -133,7 +133,7 @@ static void initLogging (char const* argv0)
 
 /*---------------------------------------------------------------------------------**//**
 * This is the TestListener that can act on certain events
-* @bsiclass                                     Arturas.Mizaras          11/17
+* @bsiclass                                                                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 class BeGTestListener : public ::testing::EmptyTestEventListener
     {
@@ -147,7 +147,7 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GtestFailureHandler : BeTest::IFailureHandler
     {
@@ -157,7 +157,7 @@ struct GtestFailureHandler : BeTest::IFailureHandler
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 extern "C" int main (int argc, char **argv)
     {

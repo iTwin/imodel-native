@@ -9,7 +9,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BeFileName ProfilesTestHost::s_baseDbPath;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Arturas.Mizaras          11/17
+* @bsiclass                                                                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ConverterNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
     {
@@ -38,7 +38,7 @@ struct ConverterNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Arturas.Mizaras          11/17
+* @bsiclass                                                                      11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ConverterViewManager : ViewManager
     {
@@ -65,7 +65,7 @@ static BeFileName getOutputDirectory()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnDbPtr createDgnDb (BeFileName const& bimFilename)
     {
@@ -125,7 +125,7 @@ void ProfilesTestHost::_SupplyProductName (BentleyApi::Utf8StringR name)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewLib::Host::NotificationAdmin& ProfilesTestHost::_SupplyNotificationAdmin()
     {
@@ -133,7 +133,7 @@ DgnViewLib::Host::NotificationAdmin& ProfilesTestHost::_SupplyNotificationAdmin(
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewManager& ProfilesTestHost::_SupplyViewManager()
     {
@@ -141,7 +141,7 @@ ViewManager& ProfilesTestHost::_SupplyViewManager()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 L10N::SqlangFiles ProfilesTestHost::_SupplySqlangFiles()
     {
@@ -153,7 +153,7 @@ L10N::SqlangFiles ProfilesTestHost::_SupplySqlangFiles()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Arturas.Mizaras          11/17
+* @bsimethod                                                                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewLib::Host::IKnownLocationsAdmin& ProfilesTestHost::_SupplyIKnownLocationsAdmin()
     {
