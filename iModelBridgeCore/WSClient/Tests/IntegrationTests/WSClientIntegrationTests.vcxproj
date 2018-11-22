@@ -79,6 +79,8 @@
     <ClCompile Include="Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Configuration\UrlProviderTests.cpp" />
     <ClCompile Include="ConnectC\ConnectWebServicesClientCTests.cpp" />
+    <ClCompile Include="Connect\DelegationTokenProviderTests.cpp" />
+    <ClCompile Include="Connect\IdentityTokenProviderTests.cpp" />
     <ClCompile Include="Examples\ExampleTests.cpp" />
     <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
     <ClCompile Include="Repository\Extensions\NavigationTests.cpp" />
@@ -110,7 +112,6 @@
     <ClInclude Include="Repository\WorkspaceTests.h" />
     <ClInclude Include="Repository\WorkspaceUpgradeTests.h" />
     <ClInclude Include="Repository\ConnectWorkspaceManagerTests.h" />
-    <ClInclude Include="Connect\ImsClientTests.h" />
     <ClInclude Include="Client\WSClientTests.h" />
     <ClInclude Include="Client\WSRepositoryClientTests.h" />
     <ClInclude Include="Ims\SolrClientTests.h" />

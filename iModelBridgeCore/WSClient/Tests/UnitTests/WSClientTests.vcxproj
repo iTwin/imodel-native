@@ -107,6 +107,7 @@
     <ClInclude Include="Published\WebServices\Connect\MockImsClient.h" />
     <ClInclude Include="Published\WebServices\Connect\MockLocalState.h" />
     <ClInclude Include="Published\Connect\PasswordPersistenceTests.h" />
+    <ClInclude Include="Published\WebServices\Connect\MockTokenStore.h" />
     <ClInclude Include="Published\WebServices\Connect\SamlTokenTests.h" />
     <ClInclude Include="Published\Connect\SecureStoreTests.h" />
     <ClInclude Include="Published\WebServices\Connect\SecurityTokenTests.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="Published\Utils\Web\WebTestsHelper.h" />
     <ClInclude Include="Published\WebServices\Client\ChunkedUploadRequestTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
+    <ClInclude Include="Published\WebServices\Connect\StubTokenStore.h" />
     <ClInclude Include="Published\WebServices\Licensing\UsageTrackingDataTests.h" />
     <ClInclude Include="Published\WebServices\Client\MockServerInfoListener.h" />
     <ClInclude Include="Published\WebServices\Client\MockWSClient.h" />
@@ -176,6 +178,7 @@
     <ClInclude Include="Published\WebServices\Client\WSRepositoryClientTests.h" />
     <ClInclude Include="Published\WebServices\Ims\SolrQueryTests.h" />
     <ClInclude Include="Published\WebServices\Ims\SolrClientTests.h" />
+    <ClInclude Include="Published\WSClientUnitTestsPch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp" />
@@ -315,9 +318,11 @@
     <ClCompile Include="Published\WebServices\Client\WSRepositoryClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Ims\SolrQueryTests.cpp" />
     <ClCompile Include="Published\WebServices\Ims\SolrClientTests.cpp" />
+    <ClCompile Include="Published\WSClientUnitTestsPch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
+    <None Include="CompileOptions.mki" />
     <None Include="Prewire.mke" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\10.zip" />
     <None Include="Published\WebServices\Cache\Upgrade\UpgradeSeeds\11.zip" />
