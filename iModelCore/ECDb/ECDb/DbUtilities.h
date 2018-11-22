@@ -29,7 +29,8 @@ struct DbTableSpace final
         Utf8String m_name;
         Utf8String m_filePath;
 
-        static DbTableSpace s_main;
+        // Bentley coding guideline: don't free static non-POD members
+        static DbTableSpace const* s_main;
 
     public:
         explicit DbTableSpace(Utf8CP name, Utf8CP filePath = nullptr);
@@ -49,10 +50,10 @@ struct DbTableSpace final
         static bool IsAttachedECDbFile(ECDbCR, Utf8CP tableSpace);
         static bool Exists(ECDbCR, Utf8CP tableSpace);
         
-        static DbTableSpace const& Main() { return s_main; }
+        static DbTableSpace const& Main() { return *s_main; }
 
         static bool IsAny(Utf8CP tableSpace) { return Utf8String::IsNullOrEmpty(tableSpace); }
-        static bool IsMain(Utf8CP tableSpace) { return Main().GetName().EqualsIAscii(tableSpace); }
+        static bool IsMain(Utf8CP tableSpace);
         static bool IsTemp(Utf8CP tableSpace);
     };
 

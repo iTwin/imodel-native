@@ -9,8 +9,23 @@
 
 #include <ECDb/ECDbApi.h>
 #include <Bentley/BeTest.h>
+#include <Bentley/Nullable.h>
 #include <Logging/bentleylogging.h>
 #include <ostream>
+
+// Macros to test actual values which can be nullable against their non-nullable counterpart type
+// Example:
+// Nullable<int> actualHeight = ...;
+// ASSERT_EQ_NULLABLE(10, actualHeight);
+#define ASSERT_EQ_NULLABLE(expectedNonNullable,actualNullable)  ASSERT_TRUE((actualNullable) != nullptr && (expectedNonNullable) == (actualNullable).Value())
+#define ASSERT_DOUBLE_EQ_NULLABLE(expectedNonNullable,actualNullable)  ASSERT_TRUE((actualNullable) != nullptr && TestUtilities::Equals((expectedNonNullable),(actualNullable).Value()))
+#define EXPECT_EQ_NULLABLE(expectedNonNullable,actualNullable)  EXPECT_TRUE((actualNullable) != nullptr && (expectedNonNullable) == (actualNullable).Value())
+#define EXPECT_DOUBLE_EQ_NULLABLE(expectedNonNullable,actualNullable)  EXPECT_TRUE((actualNullable) != nullptr && TestUtilities::Equals((expectedNonNullable),(actualNullable).Value()))
+
+#define ASSERT_TRUE_NULLABLE(actualNullable)                    ASSERT_EQ_NULLABLE(true,actualNullable)
+#define EXPECT_TRUE_NULLABLE(actualNullable)                    EXPECT_EQ_NULLABLE(true,actualNullable)
+#define ASSERT_FALSE_NULLABLE(actualNullable)                   ASSERT_EQ_NULLABLE(false,actualNullable)
+#define EXPECT_FALSE_NULLABLE(actualNullable)                   EXPECT_EQ_NULLABLE(false,actualNullable)
 
 #define BEGIN_ECDBUNITTESTS_NAMESPACE BEGIN_BENTLEY_SQLITE_EC_NAMESPACE namespace Tests {
 #define END_ECDBUNITTESTS_NAMESPACE } END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -16,8 +16,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle       11/2017
 //---------------------------------------------------------------------------------------
+// Bentley coding guideline: don't free static non-POD members
 //static
-DbTableSpace DbTableSpace::s_main(TABLESPACE_Main);
+DbTableSpace const* DbTableSpace::s_main = new DbTableSpace(TABLESPACE_Main);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle       11/2017
@@ -39,6 +40,12 @@ DbTableSpace::DbTableSpace(Utf8CP name, Utf8CP filePath) : m_name(name), m_fileP
     else
         m_type = Type::Attached;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle       11/2018
+//---------------------------------------------------------------------------------------
+//static
+bool DbTableSpace::IsMain(Utf8CP tableSpace) { return BeStringUtilities::StricmpAscii(tableSpace, TABLESPACE_Main) == 0; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle       11/2017
