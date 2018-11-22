@@ -911,14 +911,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ContentFieldEditor const* m_fieldEditor;
         KindOfQuantityCP m_koq;
     public:
-        ECPropertiesFieldKey() : m_property(nullptr), m_propertyClass(nullptr), m_fieldEditor(nullptr) {}
+        ECPropertiesFieldKey() 
+            : m_property(nullptr), m_propertyClass(nullptr), m_fieldEditor(nullptr), m_valueKind(VALUEKIND_Uninitialized), m_koq(nullptr)
+            {}
         ECPropertiesFieldKey(ECPropertyCR property, ECClassCR propertyClass, RelatedClassPathCR path, ContentFieldEditor const* editor)
             : m_property(&property), m_propertyClass(&propertyClass), m_relatedClassPath(path), m_fieldEditor(editor)
             {
             m_valueKind = m_property->GetIsPrimitive() ? VALUEKIND_Primitive 
                 : m_property->GetIsNavigation() ? VALUEKIND_Navigation
                 : m_property->GetIsArray() ? VALUEKIND_Array 
-                : m_property->GetIsStruct() ? VALUEKIND_Navigation 
+                : m_property->GetIsStruct() ? VALUEKIND_Struct
                 : VALUEKIND_Uninitialized;
             m_type = m_property->GetTypeName();
             m_koq = m_property->GetKindOfQuantity();

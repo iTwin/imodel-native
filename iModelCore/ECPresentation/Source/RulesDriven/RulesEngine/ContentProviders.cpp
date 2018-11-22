@@ -366,9 +366,9 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                     {
                     // if detected different values during merge, stop
                     if (item.GetValues().HasMember(fieldName))
-                        item.GetValues()[fieldName].Swap(contentValues);
+                        item.GetValues()[fieldName].CopyFrom(contentValues, item.GetValues().GetAllocator());
                     if (item.GetDisplayValues().HasMember(fieldName))
-                        item.GetDisplayValues()[fieldName].Swap(contentDisplayValues);
+                        item.GetDisplayValues()[fieldName].CopyFrom(contentDisplayValues, item.GetDisplayValues().GetAllocator());
                     item.GetMergedFieldNames().push_back(fieldName);
                     break;
                     }
