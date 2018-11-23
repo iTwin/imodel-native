@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ClassRefExp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -34,22 +34,20 @@ Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassNameExp::_CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+void ClassNameExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
     if (m_info == nullptr)
         {
         BeAssert(false);
-        return ERROR;
+        return;
         }
 
     ClassMap const& classMap = m_info->GetMap();
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
         std::unique_ptr<PropertyNameExp> exp = std::make_unique<PropertyNameExp>(ctx, propertyMap->GetAccessString(), *this, classMap);
-        addDelegate(exp);
+        expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(exp), nullptr));
         }
-
-    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------

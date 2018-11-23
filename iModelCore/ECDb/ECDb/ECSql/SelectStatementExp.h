@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/SelectStatementExp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -411,7 +411,7 @@ struct SubqueryRefExp final : RangeClassRefExp
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
         bool _ContainsProperty(Utf8StringCR propertyName) const override { return GetSubquery()->GetQuery()->FindProperty(propertyName.c_str()) != nullptr; }
-        BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 

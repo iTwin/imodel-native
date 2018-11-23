@@ -242,6 +242,33 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
             generatedPropertyP = structArrayProp;
             break;
             }
+            case ECSqlTypeInfo::Kind::Navigation:
+            {
+            if (typeInfo.GetPropertyMap() == nullptr)
+                {
+                BeAssert(false);
+                return ECSqlStatus::Error;
+                }
+
+            BeAssert(typeInfo.GetPropertyMap()->GetProperty().GetIsNavigation());
+            BeAssert(typeInfo.GetPropertyMap()->GetProperty().GetAsNavigationProperty() != nullptr);
+            BeAssert(typeInfo.GetPropertyMap()->GetProperty().GetAsNavigationProperty()->GetRelationshipClass() != nullptr);
+            NavigationECProperty const* navProp = typeInfo.GetPropertyMap()->GetProperty().GetAsNavigationProperty();
+            if (navProp == nullptr || navProp->GetRelationshipClass() == nullptr)
+                return ECSqlStatus::Error;
+
+            ECRelationshipClassCR relClass = *navProp->GetRelationshipClass();
+            ECSqlStatus stat = AddReferenceToPropertyTypeSchema(relClass.GetSchema());
+            if (!stat.IsSuccess())
+                return stat;
+
+            NavigationECPropertyP newNavProp = nullptr;
+            if (ECObjectsStatus::Success != GetClass().CreateNavigationProperty(newNavProp, encodedPropName, relClass, navProp->GetDirection(), false))
+                return ECSqlStatus::Error;
+
+            generatedPropertyP = newNavProp;
+            break;
+            }
             default:
                 BeAssert("Adding dynamic select clause property failed because of unexpected and unhandled property type.");
                 return ECSqlStatus::Error;
