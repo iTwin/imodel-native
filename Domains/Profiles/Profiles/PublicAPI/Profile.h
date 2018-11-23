@@ -49,7 +49,9 @@ public:
     PROFILES_EXPORT void SetName (Utf8String val);
 
     PROFILES_EXPORT IGeometryPtr GetShape() const;
-    PROFILES_EXPORT void SetShape (IGeometryPtr val);
+
+private:
+    void SetShape (IGeometryPtr val);
 
     }; // Profile
 
