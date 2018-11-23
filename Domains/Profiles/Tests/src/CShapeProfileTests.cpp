@@ -17,7 +17,7 @@ struct CShapeProfileTestCase : ProfilesTestCase
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CShapeProfileTestCase, Insert_EmptyCreateParams_FailToInsert)
     {
-    CShapeProfile::CreateParams createParams (GetModel());
+    CShapeProfile::CreateParams createParams (GetModel(), "C");
 
     CShapeProfilePtr profilePtr = CShapeProfile::Create (createParams);
     ASSERT_TRUE (profilePtr.IsValid());
