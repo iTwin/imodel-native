@@ -10,6 +10,7 @@
 #include <Bentley/Bentley.h>
 #include <folly/futures/Future.h>
 #include <folly/Executor.h>
+#include <folly/Unit.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <ECDb/ECDbApi.h>
 
