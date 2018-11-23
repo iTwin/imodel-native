@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ClassRefExp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,7 @@ public:
     };
 
 
-struct PropertyNameExp;
+struct DerivedPropertyExp;
 
 //********* ClassRefExp subclasses ***************************
 
@@ -40,7 +40,7 @@ private:
 
     virtual Utf8StringCR _GetId() const = 0;
     virtual bool _ContainsProperty(Utf8StringCR propertyName) const = 0;
-    virtual BentleyStatus _CreatePropertyNameExpList (ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
+    virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const = 0;
 
 protected:
     explicit RangeClassRefExp (Type type, bool isPolymorphic) : ClassRefExp (type), m_isPolymorphic(isPolymorphic) {}
@@ -52,7 +52,7 @@ public:
     Utf8StringCR GetAlias() const { return m_alias;}
     bool IsPolymorphic() const { return m_isPolymorphic;}
 
-    BentleyStatus CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const { return _CreatePropertyNameExpList(ctx, addDelegate); }
+    void ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const { _ExpandSelectAsterisk(expandedSelectClauseItemList, ctx); }
     bool ContainsProperty(Utf8StringCR propertyName) const { return _ContainsProperty(propertyName); }
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
@@ -115,7 +115,7 @@ private:
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
     bool _ContainsProperty(Utf8StringCR propertyName) const override;
-    BentleyStatus _CreatePropertyNameExpList(ECSqlParseContext const&, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const override;
+    void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
     void _ToECSql(ECSqlRenderContext&) const override;
     Utf8String _ToString () const override;
 

@@ -604,14 +604,9 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus SelectClauseExp::ReplaceAsteriskExpression(ECSqlParseContext const& ctx, DerivedPropertyExp const& asteriskExp, std::vector<RangeClassInfo> const& rangeClassRefs)
     {
-    std::vector<std::unique_ptr<Exp>> derivedPropExpList;
-    auto addDelegate = [&derivedPropExpList] (std::unique_ptr<PropertyNameExp>& propNameExp)
-        {
-        derivedPropExpList.push_back(std::unique_ptr<Exp>(new DerivedPropertyExp(std::move(propNameExp), nullptr)));
-        };
-
+    std::vector<std::unique_ptr<DerivedPropertyExp>> derivedPropExpList;
     for (RangeClassInfo const& classRef : rangeClassRefs)
-        classRef.GetExp().CreatePropertyNameExpList(ctx, addDelegate);
+        classRef.GetExp().ExpandSelectAsterisk(derivedPropExpList, ctx);
 
     if (!GetChildrenR().Replace(asteriskExp, derivedPropExpList))
         {
@@ -857,16 +852,14 @@ SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP ali
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SubqueryRefExp::_CreatePropertyNameExpList(ECSqlParseContext const& ctx, std::function<void(std::unique_ptr<PropertyNameExp>&)> addDelegate) const
+void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-        std::unique_ptr<PropertyNameExp> propNameExp(new PropertyNameExp(ctx, *this, selectClauseItemExp));
-        addDelegate(propNameExp);
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+        expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
-
-    return SUCCESS;
     }
 
 
