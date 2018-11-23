@@ -13,9 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
-// Random crash on MacOS
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
-
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
@@ -111,7 +108,7 @@ TEST_F(CustomNodesProviderTests, ReturnsValidNode)
 TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     {
     TestNavNodePtr parent = TestNodesHelper::CreateCustomNode(*m_connection, "parent_type", "parent_label", "parent_descr");
-    m_nodesCache.Cache(*parent, DataSourceInfo(), 0, true);
+    Cache(*parent);
 
     ChildNodeRule rule;
     m_context->SetChildNodeContext(&rule, *parent);
@@ -225,5 +222,3 @@ TEST_F(CustomNodesProviderTests, HasNodesReturnsTrueWhenSpecificationIsValid)
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->HasNodes());
     }
-
-#endif

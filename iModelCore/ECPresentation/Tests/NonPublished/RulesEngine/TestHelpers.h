@@ -273,6 +273,7 @@ private:
             if (entry.first.GetId() == dsInfo.GetHierarchyLevelId())
                 return entry.first;
             }
+        ADD_FAILURE();
         return HierarchyLevelInfo();
         }
     bvector<JsonNavNode*> GetFullHierarchyLevel(bvector<DataSourceInfo> const& partialInfos) const
