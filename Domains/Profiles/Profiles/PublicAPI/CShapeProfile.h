@@ -28,9 +28,9 @@ public:
         explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
 
     public:
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model);
-        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, double flangeWidth, double depth, double flangeThickness, double webThickness,
-            double filletRadius = 0.0, double edgeRadius = 0.0, double flangeSlope = 0.0);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
+            double webThickness, double filletRadius = 0.0, double edgeRadius = 0.0, double flangeSlope = 0.0);
 
     public:
         //! Required properties

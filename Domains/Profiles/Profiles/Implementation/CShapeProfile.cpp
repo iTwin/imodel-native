@@ -16,16 +16,16 @@ HANDLER_DEFINE_MEMBERS (CShapeProfileHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model)
-    : T_Super (model, QueryClassId (model.GetDgnDb()))
+CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model,  double flangeWidth, double depth, double flangeThickness,
+CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
     double webThickness, double filletRadius, double edgeRadius, double flangeSlope)
-    : T_Super (model, QueryClassId (model.GetDgnDb()))
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , flangeWidth (flangeWidth)
     , depth (depth)
     , flangeThickness (flangeThickness)
