@@ -51,4 +51,6 @@ struct NodesProviderTests : ECPresentationTest, IProviderIndexAllocator
     virtual void TearDown() override;
     
     virtual uint64_t _AllocateIndex() override {return m_providerIndex++;}
+    
+    void Cache(JsonNavNodeR node);
     };
