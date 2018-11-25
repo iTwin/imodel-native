@@ -142,24 +142,24 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
         sourceToWorld = *params.m_sourceToWorldP;
     else
         {
-        // Find resolved file name for the raster
-        BeFileName fileName;
-        BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_link->GetUrl(), params.m_dgndb);
-        if (status != SUCCESS)
-            return nullptr;
+        // // Find resolved file name for the raster
+        // BeFileName fileName;
+        // BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, params.m_link->GetUrl(), params.m_dgndb);
+        // if (status != SUCCESS)
+        //     return nullptr;
             
-        // Open raster 
-        //&&MM &&ep We must restructure that Create so rasterFilePtr is not lost but somehow reuse as input parameter to RasterFileModel.  
-        // Otherwise the raster file is opened twice and this might be slow for network connection.
-        RasterFilePtr rasterFilePtr = RasterFile::Create(fileName.GetNameUtf8());
-        if (rasterFilePtr == nullptr)
-            {
-            // Can't create model; probably that file name is invalid.
-            return nullptr;
-            }
+        // // Open raster 
+        // //&&MM &&ep We must restructure that Create so rasterFilePtr is not lost but somehow reuse as input parameter to RasterFileModel.  
+        // // Otherwise the raster file is opened twice and this might be slow for network connection.
+        // RasterFilePtr rasterFilePtr = RasterFile::Create(fileName.GetNameUtf8());
+        // if (rasterFilePtr == nullptr)
+        //     {
+        //     // Can't create model; probably that file name is invalid.
+        //     return nullptr;
+        //     }
 
-        if (SUCCESS != ComputeGeoLocationFromFile(sourceToWorld, *rasterFilePtr, params.m_dgndb))
-            return nullptr;
+        // if (SUCCESS != ComputeGeoLocationFromFile(sourceToWorld, *rasterFilePtr, params.m_dgndb))
+        //     return nullptr;
         }
     
     // Create model in DgnDb
@@ -209,20 +209,20 @@ Dgn::Cesium::RootPtr RasterFileModel::_CreateCesiumTileTree(Dgn::Cesium::OutputR
         return nullptr;
         }
 
-    // Resolve raster name
-    BeFileName fileName;
-    BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, pLink->GetUrl(), GetDgnDb());
-    if (status != SUCCESS)
-        {
-        m_loadFileFailed = true;
-        return nullptr;
-        }
+    // // Resolve raster name
+    // BeFileName fileName;
+    // BentleyStatus status = T_HOST.GetRasterAttachmentAdmin()._ResolveFileUri(fileName, pLink->GetUrl(), GetDgnDb());
+    // if (status != SUCCESS)
+    //     {
+    //     m_loadFileFailed = true;
+    //     return nullptr;
+    //     }
 
-    RasterRootPtr rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this));
-    if (rasterRoot.IsNull())
-        m_loadFileFailed = true;
+    // RasterRootPtr rasterRoot = RasterFileSource::Create(fileName.GetNameUtf8(), const_cast<RasterFileModel&>(*this));
+    // if (rasterRoot.IsNull())
+    //     m_loadFileFailed = true;
          
-    return rasterRoot.get();
+    return nullptr;
     }
 
 //----------------------------------------------------------------------------------------
