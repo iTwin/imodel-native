@@ -12,7 +12,6 @@
 #include "DgnPlatform.h"
 #include "Render.h"
 #include "ColorUtil.h"
-#include "NotificationManager.h"
 #include "TxnManager.h"
 #include "SolidKernel.h"
 #include "DgnViewport.h"
@@ -59,10 +58,8 @@ public:
     {
     private:
         void InitializeCrtHeap();
-        void InitializeDgnCore();
+        void Initialize();
         void TerminateDgnCore(bool onProgramExit);
-        void InitializeDgnHandlers();
-        void LoadResources();
 
         friend class DgnPlatformLib;
 
@@ -144,12 +141,12 @@ public:
             virtual bool _OnPromptReverseAll() {return true;}
             virtual void _RestartTool() {}
             virtual void _OnNothingToUndo() {}
-            DGNPLATFORM_EXPORT virtual void _OnPrepareForUndoRedo();
             virtual void _OnNothingToRedo() {}
             virtual void _OnGraphicElementAdded(DgnDbR, DgnElementId) {}
             virtual void _OnGraphicElementModified(DgnDbR, DgnElementId) {}
             virtual void _OnGraphicElementDeleted(DgnDbR, DgnElementId) {}
             virtual void _OnAppliedModelDelete(DgnModelR) {}
+            DGNPLATFORM_EXPORT virtual void _OnPrepareForUndoRedo(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnCommitted(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnAppliedChanges(TxnManager&);
@@ -246,33 +243,6 @@ public:
             virtual bool _GetSettingsValue(LineStyleAdmin::Settings name, bool defaultValue) {return defaultValue;}
             };
 
-        //! Supervise the processing of Raster Attachments
-        struct RasterAttachmentAdmin : IHostObject
-            {
-            //Control if raster are displayed or not
-            virtual bool _IsDisplayEnable() const {return true;}
-
-            //Control if raster locate logic can locate raster by its interior or by its border only.
-            virtual bool _IsIgnoreInterior() const {return false;}
-
-            //! Create a portable file URI, to be used with _ResolveFileUri. The default behavior strips the path from fileName and keeps only the file name.
-            //! The host application can override this method to handle particular schemes or create URIs for specific locations.
-            //! @param[out]     fileUri         A portable URI. This should be a name relative to the Bim file or a name with a known scheme ("bim://", ...)
-            //! @param[in]      fileName        File name. The host application can override this method to handle names with a specific scheme. 
-            //! @return SUCCESS if the fileUri could be created. ERROR otherwise. 
-            DGNPLATFORM_EXPORT virtual BentleyStatus _CreateFileUri(Utf8StringR fileUri, Utf8StringCR fileName) const;
-
-            //! Resolve the URI defined by fileUri. The output fileName should define a full path that can be used by RasterFileModelHandler to open the raster file.
-            //! The default behavior assumes that fileUri defines a path relative to the Bim file.
-            //! The host application can override this method to resolve specific file schemes. The host application should call the default _ResolveFileUri
-            //! implementation if its own implementation fails.
-            //! @param[out]     fileName        Resolved file name. 
-            //! @param[in]      fileUri         File URI that needs to be resolved.
-            //! @param[in]      db              The current DgnDb file
-            //! @return SUCCESS if the URI was resolved. ERROR otherwise. 
-            DGNPLATFORM_EXPORT virtual BentleyStatus _ResolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR db) const;
-            };
-
         //! Admin for PointCloud services
         //! Supervise the processing of Point Cloud Attachments
         struct PointCloudAdmin : IHostObject
@@ -352,25 +322,6 @@ public:
             DGNPLATFORM_EXPORT virtual BentleyStatus _ResolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR db) const;
             };
 
-        //! Receives messages sent to NotificationManager. Hosts can implement this interface to communicate issues to the user.
-        struct NotificationAdmin : IHostObject
-            {
-            //! Implement this method to display messages from NotificationManager::OutputMessage.
-            virtual StatusInt _OutputMessage(NotifyMessageDetails const&) {return SUCCESS;}
-
-            //! Return true if you want SQLite to log errors. Should be used only for limited debugging purposes.
-            virtual bool _GetLogSQLiteErrors() {return false;}
-
-            //! Set up for activity messages.
-            virtual StatusInt _SetupActivityMessage(ActivityMessageDetails* details) {return SUCCESS;}
-
-            //! Output an activity message to the user.
-            virtual StatusInt _OutputActivityMessage(Utf8CP messageText, int32_t percentComplete) {return SUCCESS;}
-
-            //! End an activity message.
-            virtual StatusInt _EndActivityMessage(ActivityMessageEndReason reason) {return SUCCESS;}
-            };
-
         //! Supervises the processing of GeoCoordination
         struct GeoCoordinationAdmin : IHostObject
             {
@@ -409,9 +360,7 @@ public:
         DgnProgressMeterP       m_progressMeter;
         FontAdmin*              m_fontAdmin;
         LineStyleAdmin*         m_lineStyleAdmin;
-        RasterAttachmentAdmin*  m_rasterAttachmentAdmin;
         PointCloudAdmin*        m_pointCloudAdmin;
-        NotificationAdmin*      m_notificationAdmin;
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
@@ -436,14 +385,8 @@ public:
         //! This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual TxnAdmin& _SupplyTxnAdmin();
 
-        //! Supply the RasterAttachmentAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
-        DGNPLATFORM_EXPORT virtual RasterAttachmentAdmin& _SupplyRasterAttachmentAdmin();
-
         //! Supply the PointCloudAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual PointCloudAdmin& _SupplyPointCloudAdmin();
-
-        //! Supply the NotificationAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again.
-        DGNPLATFORM_EXPORT virtual NotificationAdmin& _SupplyNotificationAdmin();
 
         //! Supply the GeoCoordinationStateAdmin for this session. This method is guaranteed to be called once per thread from DgnPlatformLib::Host::Initialize and never again..
         DGNPLATFORM_EXPORT virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
@@ -468,9 +411,7 @@ public:
             m_progressMeter = nullptr;
             m_fontAdmin = nullptr;
             m_lineStyleAdmin = nullptr;
-            m_rasterAttachmentAdmin = nullptr;
             m_pointCloudAdmin = nullptr;
-            m_notificationAdmin = nullptr;
             m_geoCoordAdmin = nullptr;
             m_txnAdmin = nullptr;
             m_repositoryAdmin = nullptr;
@@ -482,18 +423,13 @@ public:
         ExceptionHandler&       GetExceptionHandler()      {return *m_exceptionHandler;}
         FontAdmin&              GetFontAdmin()             {return *m_fontAdmin;}
         LineStyleAdmin&         GetLineStyleAdmin()        {return *m_lineStyleAdmin;}
-        RasterAttachmentAdmin&  GetRasterAttachmentAdmin() {return *m_rasterAttachmentAdmin;}
         PointCloudAdmin&        GetPointCloudAdmin()       {return *m_pointCloudAdmin;}
-        NotificationAdmin&      GetNotificationAdmin()     {return *m_notificationAdmin;}
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
-
         DgnProgressMeterP GetProgressMeter() {return m_progressMeter;}
         void SetProgressMeter(DgnProgressMeterP meter) {m_progressMeter=meter;}
-
-        void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
 
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized() {return 0 != m_fontAdmin;}
@@ -509,8 +445,7 @@ public:
 public:
     //! Must be called before DgnPlatform services can be used.
     //! @param host The host to associate with this process.
-    //! @param loadResources You may pass false for this only if you know your application will never require any fonts or linestyles.
-    DGNPLATFORM_EXPORT static void Initialize(Host& host, bool loadResources);
+    DGNPLATFORM_EXPORT static void Initialize(Host& host);
 
     //! Query whether Initialize has been called.
     //! @return nullptr if not Host is associated with the current process. Otherwise, a pointer to the Host object.

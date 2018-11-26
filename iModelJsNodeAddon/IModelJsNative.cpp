@@ -136,6 +136,11 @@ USING_NAMESPACE_BENTLEY_EC
 
 namespace IModelJsNative {
 
+Napi::String toJsString(Napi::Env env, Utf8CP val, size_t len) { return Napi::String::New(env, val, len); }
+Napi::String toJsString(Napi::Env env, Utf8CP val) { return toJsString(env, val, std::strlen(val)); }
+Napi::String toJsString(Napi::Env env, Utf8StringCR str) { return toJsString(env, str.c_str(), str.length()); }
+Napi::String toJsString(Napi::Env env, BeInt64Id id) { return toJsString(env, id.ToHexStr()); }
+
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -690,7 +695,7 @@ struct NativeBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NativeBriefcase
         {
         Json::Value json(Json::objectValue);
         m_req.ToJson(json);
-        return Napi::String::New(Env(), json.ToString().c_str());
+        return toJsString(Env(), json.ToString());
         }
 
 };
@@ -721,27 +726,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
     };
 
-    struct NativeAppData : Db::AppData
-        {
-        NativeDgnDb& m_addonDb;
-
-        static Key const& GetKey()
-            {
-            static Key s_key;
-            return s_key;
-            }
-
-        NativeAppData(NativeDgnDb& adb) : m_addonDb(adb) {}
-        static NativeAppData* Find(DgnDbR db) {return (NativeAppData*) db.FindAppData(GetKey()).get();}
-        static void Add(NativeDgnDb& adb)
-            {
-            BeAssert(nullptr == Find(adb.GetDgnDb()));
-            adb.GetDgnDb().AddAppData(GetKey(), new NativeAppData(adb));
-            }
-
-        static void Remove(DgnDbR db) {db.DropAppData(GetKey());}
-        };
-
     static Napi::FunctionReference s_constructor;
 
     Dgn::DgnDbPtr m_dgndb;
@@ -765,7 +749,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
         JsInterop::CloseDgnDb(*m_dgndb);
-        NativeAppData::Remove(GetDgnDb());
         m_dgndb = nullptr;
         }
 
@@ -776,17 +759,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb = &dgndb;
 
         SetupPresentationManager();
-        NativeAppData::Add(*this);
+        // NativeAppData::Add(*this);
         m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
 
         m_cancellationToken = std::make_shared<CancellationToken>();
-        }
-
-    static NativeDgnDb* From(DgnDbR db)
-        {
-        auto appdata = NativeAppData::Find(db);
-        return appdata? &appdata->m_addonDb: nullptr;
         }
 
     //  Check if val is really a NativeDgnDb peer object
@@ -836,6 +813,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     Napi::Object CreateBentleyReturnObject(STATUSTYPE errCode) {return CreateBentleyReturnObject(errCode, Env().Undefined());}
 
     bool IsOpen() const {return m_dgndb.IsValid();}
+
+    void SetIModelDb(Napi::CallbackInfo const& info) {
+        Napi::Value obj = info[0];
+        if (obj.IsObject() && m_dgndb.IsValid())
+            m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>());
+    }
 
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
         {
@@ -907,7 +890,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value modelJson; // output
         DgnDbStatus status = JsInterop::GetModel(modelJson, GetDgnDb(), opts);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), modelJson.ToString().c_str()));
+        return CreateBentleyReturnObject(status, toJsString(Env(), modelJson.ToString()));
         }
 
     Napi::Value QueryModelExtents(Napi::CallbackInfo const& info)
@@ -917,7 +900,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value options = Json::Value::From(optionsJsonStr);
         Json::Value extentsJson; // output
         DgnDbStatus status = JsInterop::QueryModelExtents(extentsJson, GetDgnDb(), options);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), extentsJson.ToString().c_str()));
+        return CreateBentleyReturnObject(status, toJsString(Env(), extentsJson.ToString()));
         }
 
     Napi::Value DumpChangeSet(Napi::CallbackInfo const& info)
@@ -974,73 +957,75 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)status);
         }
 
-    static TxnManager::TxnId TxnIdFromString(Utf8StringCR str)
+    static TxnManager::TxnId TxnIdFromString(Utf8StringCR str) {return TxnManager::TxnId(BeInt64Id::FromString(str.c_str()).GetValue());}
+    static Utf8String TxnIdToString(TxnManager::TxnId txnId) {return BeInt64Id(txnId.GetValue()).ToHexStr();}
+
+    Napi::Value GetCurrentTxnId(Napi::CallbackInfo const& info)
         {
-        BeInt64Id fakeId;
-        BeInt64Id::FromString(fakeId, str.c_str());
-        return TxnManager::TxnId(fakeId.GetValue());
+        return toJsString(Env(), TxnIdToString(m_dgndb->Txns().GetCurrentTxnId()));
         }
 
-    static Utf8String TxnIdToString(TxnManager::TxnId txnId)
+    Napi::Value QueryFirstTxnId(Napi::CallbackInfo const& info)
         {
-        BeInt64Id fakeId(txnId.GetValue());
-        return fakeId.ToHexStr();
-        }
-
-    Napi::Value TxnManagerGetCurrentTxnId(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN
-        return Napi::String::New(Env(), TxnIdToString(m_dgndb->Txns().GetCurrentTxnId()).c_str());
-        }
-
-    Napi::Value TxnManagerQueryFirstTxnId(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_DB_TO_BE_OPEN
         TxnManager::TxnId startTxnId = m_dgndb->Txns().QueryNextTxnId(TxnManager::TxnId(0));
-        return Napi::String::New(Env(), TxnIdToString(startTxnId).c_str());
+        return toJsString(Env(), TxnIdToString(startTxnId));
         }
 
-    Napi::Value TxnManagerQueryNextTxnId(Napi::CallbackInfo const& info)
-        {
+    Napi::Value QueryNextTxnId(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
-        REQUIRE_DB_TO_BE_OPEN
         auto next = m_dgndb->Txns().QueryNextTxnId(TxnIdFromString(txnIdHexStr));
-        return Napi::String::New(Env(), TxnIdToString(next).c_str());
-        }
-
-    Napi::Value TxnManagerQueryPreviousTxnId(Napi::CallbackInfo const& info)
-        {
+        return toJsString(Env(), TxnIdToString(next));
+    }
+    Napi::Value QueryPreviousTxnId(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
-        REQUIRE_DB_TO_BE_OPEN
         auto next = m_dgndb->Txns().QueryPreviousTxnId(TxnIdFromString(txnIdHexStr));
-        return Napi::String::New(Env(), TxnIdToString(next).c_str());
-        }
-
-    Napi::Value TxnManagerGetTxnDescription(Napi::CallbackInfo const& info)
-        {
+        return toJsString(Env(), TxnIdToString(next));
+    }
+    Napi::Value GetTxnDescription(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
-        REQUIRE_DB_TO_BE_OPEN
-
-        return Napi::String::New(Env(), m_dgndb->Txns().GetTxnDescription(TxnIdFromString(txnIdHexStr)).c_str());
-        }
-
-    Napi::Value TxnManagerIsTxnIdValid(Napi::CallbackInfo const& info)
-        {
+        return toJsString(Env(), m_dgndb->Txns().GetTxnDescription(TxnIdFromString(txnIdHexStr)));
+    }
+    Napi::Value IsTxnIdValid(Napi::CallbackInfo const& info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
         return Napi::Boolean::New(Env(), TxnIdFromString(txnIdHexStr).IsValid());
-        }
-
-    Napi::Value TxnManagerHasUnsavedChanges(Napi::CallbackInfo const& info)
-        {
-        return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());
-        }
+    }
+    Napi::Value HasFatalTxnError(Napi::CallbackInfo const& info) { return Napi::Boolean::New(Env(), m_dgndb->Txns().HasFatalError()); }
+    void LogTxnError(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_BOOL(0, fatal, );
+        m_dgndb->Txns().LogError(fatal);
+    }
+    void EnableTxnTesting(Napi::CallbackInfo const& info) {
+        m_dgndb->Txns().EnableTracking(true);
+        m_dgndb->Txns().InitializeTableHandlers();
+    }
+    Napi::Value BeginMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().BeginMultiTxnOperation());}
+    Napi::Value EndMultiTxnOperation(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().EndMultiTxnOperation());}
+    Napi::Value GetMultiTxnOperationDepth(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().GetMultiTxnOperationDepth());}
+    Napi::Value GetUndoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetUndoString());}
+    Napi::Value GetRedoString(Napi::CallbackInfo const& info) {return toJsString(Env(), m_dgndb->Txns().GetRedoString());}
+    Napi::Value HasUnsavedChanges(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());}
+    Napi::Value IsRedoPossible(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsRedoPossible());}
+    Napi::Value IsUndoPossible(Napi::CallbackInfo const& info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsUndoPossible());}
+    Napi::Value ReinstateTxn(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReinstateTxn());}
+    Napi::Value ReverseAll(Napi::CallbackInfo const& info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseAll(false));}
+    Napi::Value ReverseTo(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
+        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTo(TxnIdFromString(txnIdHexStr)));
+    }
+    Napi::Value CancelTo(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_STRING(0, txnIdHexStr, Env().Undefined());
+        return Napi::Number::New(Env(), (int) m_dgndb->Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
+    }
+    Napi::Value ReverseTxns(Napi::CallbackInfo const& info) {
+        REQUIRE_ARGUMENT_NUMBER(0, numTxns , Env().Undefined());
+        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTxns(numTxns));
+    }
 
     Napi::Value StartCreateChangeSet(Napi::CallbackInfo const& info)
         {
-        REQUIRE_DB_TO_BE_OPEN
         Json::Value changeSetInfo;
         RevisionStatus status = JsInterop::StartCreateChangeSet(changeSetInfo, *m_dgndb);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), changeSetInfo.ToString().c_str()));
+        return CreateBentleyReturnObject(status, toJsString(Env(), changeSetInfo.ToString()));
         }
 
     Napi::Value FinishCreateChangeSet(Napi::CallbackInfo const& info)
@@ -1062,7 +1047,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         Json::Value codes;
         DbResult result = JsInterop::ExtractCodes(codes, *m_dgndb);
-        return CreateBentleyReturnObject(result, Napi::String::New(Env(), codes.ToString().c_str()));
+        return CreateBentleyReturnObject(result, toJsString(Env(), codes.ToString()));
         }
 
     Napi::Value ExtractCodesFromFile(Napi::CallbackInfo const& info)
@@ -1072,7 +1057,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value jsonChangeSetToken = Json::Value::From(changeSetToken);
         Json::Value codes;
         DbResult result = JsInterop::ExtractCodesFromFile(codes, *m_dgndb, jsonChangeSetToken);
-        return CreateBentleyReturnObject(result, Napi::String::New(Env(), codes.ToString().c_str()));
+        return CreateBentleyReturnObject(result, toJsString(Env(), codes.ToString()));
         }
 
     Napi::Value GetPendingChangeSets(Napi::CallbackInfo const& info)
@@ -1080,7 +1065,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         Json::Value changeSets;
         DbResult result = JsInterop::GetPendingChangeSets(changeSets, *m_dgndb);
-        return CreateBentleyReturnObject(result, Napi::String::New(Env(), changeSets.ToString().c_str()));
+        return CreateBentleyReturnObject(result, toJsString(Env(), changeSets.ToString()));
         }
 
     Napi::Value AddPendingChangeSet(Napi::CallbackInfo const& info)
@@ -1104,7 +1089,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         Json::Value props;
         JsInterop::GetIModelProps(props, *m_dgndb);
-        return Napi::String::New(Env(), props.ToString().c_str());
+        return toJsString(Env(), props.ToString());
         }
 
     Napi::Value InsertElement(Napi::CallbackInfo const& info)
@@ -1114,7 +1099,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         Json::Value elemIdJsonObj;
         auto status = JsInterop::InsertElement(elemIdJsonObj, GetDgnDb(), elemProps);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
+        return CreateBentleyReturnObject(status, toJsString(Env(), elemIdJsonObj.ToString()));
         }
 
     Napi::Value UpdateElement(Napi::CallbackInfo const& info)
@@ -1176,7 +1161,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value props = Json::Value::From(propsJsonStr);
         Json::Value idJsonObj;
         auto status = JsInterop::InsertLinkTableRelationship(idJsonObj, GetDgnDb(), props);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), idJsonObj.asCString()));
+        return CreateBentleyReturnObject(status, toJsString(Env(), idJsonObj.asCString()));
         }
 
     Napi::Value UpdateLinkTableRelationship(Napi::CallbackInfo const& info)
@@ -1213,7 +1198,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
         Utf8String idStr;
         DgnDbStatus status = JsInterop::InsertCodeSpec(idStr, GetDgnDb(), name, (CodeScopeSpec::Type)specType, (CodeScopeSpec::ScopeRequirement)scopeReq);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), idStr.c_str()));
+        return CreateBentleyReturnObject(status, toJsString(Env(), idStr));
         }
 
     Napi::Value InsertModel(Napi::CallbackInfo const& info)
@@ -1223,7 +1208,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value modelProps = Json::Value::From(modelPropsJson);
         Json::Value modelIdProps;
         auto status = JsInterop::InsertModel(modelIdProps, GetDgnDb(), modelProps);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), modelIdProps.ToString().c_str()));
+        return CreateBentleyReturnObject(status, toJsString(Env(), modelIdProps.ToString()));
         }
 
     Napi::Value UpdateModel(Napi::CallbackInfo const& info)
@@ -1285,7 +1270,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         content->AsJson().Accept(writer);
         exportedJson = buffer.GetString();
 
-        return CreateBentleyReturnSuccessObject(Napi::String::New(Env(), exportedJson.c_str()));
+        return CreateBentleyReturnSuccessObject(toJsString(Env(), exportedJson));
         };
 
     //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
@@ -1377,7 +1362,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR, Utf8PrintfString("Failed to extract ChangeSummary for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
         PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
-        return CreateBentleyReturnSuccessObject(Napi::String::New(Env(), changeSummaryKey.GetInstanceId().ToHexStr().c_str()));
+        return CreateBentleyReturnSuccessObject(toJsString(Env(), changeSummaryKey.GetInstanceId()));
         }
 
     Napi::Value SetBriefcaseId(Napi::CallbackInfo const& info)
@@ -1413,7 +1398,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         {
         REQUIRE_DB_TO_BE_OPEN
         Utf8String parentRevId = m_dgndb->Revisions().GetParentRevisionId();
-        return Napi::String::New(Env(), parentRevId.c_str());
+        return toJsString(Env(), parentRevId);
         }
 
     Napi::Value GetReversedChangeSetId(Napi::CallbackInfo const& info)
@@ -1422,14 +1407,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (!m_dgndb->Revisions().HasReversedRevisions())
             return Env().Undefined();
         Utf8String reversedRevId = m_dgndb->Revisions().GetReversedRevisionId();
-        return Napi::String::New(Env(), reversedRevId.c_str());
+        return toJsString(Env(), reversedRevId);
         }
 
     Napi::Value GetDbGuid(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
         BeGuid beGuid = m_dgndb->GetDbGuid();
-        return Napi::String::New(Env(), beGuid.ToString().c_str());
+        return toJsString(Env(), beGuid.ToString());
         }
 
     Napi::Value SetDbGuid(Napi::CallbackInfo const& info)
@@ -1591,7 +1576,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             }
         Json::Value fonts;
         fonts[DgnFonts::json_fonts()] = fontList;
-        return Napi::String::New(Env(), fonts.ToString().c_str());
+        return toJsString(Env(), fonts.ToString());
         }
 
     Napi::Value EmbedFont(Napi::CallbackInfo const& info)
@@ -1650,7 +1635,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         thisFont[DgnFonts::json_id()] = (int)fontId.GetValue();
         thisFont[DgnFonts::json_type()] = (int)fontType;
         thisFont[DgnFonts::json_name()] = fontName;
-        return Napi::String::New(Env(), thisFont.ToString().c_str());
+        return toJsString(Env(), thisFont.ToString());
         }
 
     // query a property from the be_prop table.
@@ -1674,7 +1659,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             {
             Utf8String strVal;
             auto stat = db.QueryProperty(strVal, spec, id, subId);
-            return (stat != BE_SQLITE_ROW) ?  Env().Undefined() :  Napi::String::New(Env(), strVal.c_str());
+            return (stat != BE_SQLITE_ROW) ?  Env().Undefined() :  toJsString(Env(), strVal);
             }
 
         uint32_t size;
@@ -1762,7 +1747,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         REQUIRE_ARGUMENT_STRING(0, testName, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, params, Env().Undefined());
-        return Napi::String::New(Env(), JsInterop::ExecuteTest(GetDgnDb(), testName, params).ToString().c_str());
+        return toJsString(Env(), JsInterop::ExecuteTest(GetDgnDb(), testName, params).ToString());
         }
 
     //  Create projections
@@ -1776,10 +1761,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
             InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
+            InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
             InstanceMethod("briefcaseManagerStartBulkOperation", &NativeDgnDb::BriefcaseManagerStartBulkOperation),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
+            InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("closeIModel", &NativeDgnDb::CloseDgnDb),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
@@ -1790,6 +1777,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
             InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
+            InstanceMethod("enableTxnTesting", &NativeDgnDb::EnableTxnTesting),
+            InstanceMethod("endMultiTxnOperation", &NativeDgnDb::EndMultiTxnOperation),
             InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
             InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
@@ -1798,20 +1787,27 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("extractCodesFromFile", &NativeDgnDb::ExtractCodesFromFile),
             InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
+            InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
             InstanceMethod("getModel", &NativeDgnDb::GetModel),
+            InstanceMethod("getMultiTxnOperationDepth", &NativeDgnDb::GetMultiTxnOperationDepth),
             InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
             InstanceMethod("getPendingChangeSets", &NativeDgnDb::GetPendingChangeSets),
+            InstanceMethod("getRedoString", &NativeDgnDb::GetRedoString),
             InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
             InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
-            InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
             InstanceMethod("getTileContent", &NativeDgnDb::GetTileContent),
-	    InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
+            InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
+            InstanceMethod("getTxnDescription", &NativeDgnDb::GetTxnDescription),
+            InstanceMethod("getUndoString", &NativeDgnDb::GetUndoString),
+            InstanceMethod("hasFatalTxnError", &NativeDgnDb::HasFatalTxnError),
+            InstanceMethod("hasUnsavedChanges", &NativeDgnDb::HasUnsavedChanges),
+            InstanceMethod("importFunctionalSchema", &NativeDgnDb::ImportFunctionalSchema),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
             InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
@@ -1820,12 +1816,23 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
+            InstanceMethod("isRedoPossible", &NativeDgnDb::IsRedoPossible),
+            InstanceMethod("isTxnIdValid", &NativeDgnDb::IsTxnIdValid),
+            InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
+            InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
+            InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
+            InstanceMethod("queryNextTxnId", &NativeDgnDb::QueryNextTxnId),
+            InstanceMethod("queryPreviousTxnId", &NativeDgnDb::QueryPreviousTxnId),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
+            InstanceMethod("reinstateTxn", &NativeDgnDb::ReinstateTxn),
             InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),
+            InstanceMethod("reverseAll", &NativeDgnDb::ReverseAll),
+            InstanceMethod("reverseTo", &NativeDgnDb::ReverseTo),
+            InstanceMethod("reverseTxns", &NativeDgnDb::ReverseTxns),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
             InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
@@ -1833,14 +1840,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
             InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
+            InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
-            InstanceMethod("txnManagerGetCurrentTxnId", &NativeDgnDb::TxnManagerGetCurrentTxnId),
-            InstanceMethod("txnManagerGetTxnDescription", &NativeDgnDb::TxnManagerGetTxnDescription),
-            InstanceMethod("txnManagerHasUnsavedChanges", &NativeDgnDb::TxnManagerHasUnsavedChanges),
-            InstanceMethod("txnManagerIsTxnIdValid", &NativeDgnDb::TxnManagerIsTxnIdValid),
-            InstanceMethod("txnManagerQueryFirstTxnId", &NativeDgnDb::TxnManagerQueryFirstTxnId),
-            InstanceMethod("txnManagerQueryNextTxnId", &NativeDgnDb::TxnManagerQueryNextTxnId),
-            InstanceMethod("txnManagerQueryPreviousTxnId", &NativeDgnDb::TxnManagerQueryPreviousTxnId),
             InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
             InstanceMethod("updateIModelProps", &NativeDgnDb::UpdateIModelProps),
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
@@ -2365,7 +2366,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             if (prop == nullptr)
                 THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlColumnInfo does not represent a property.", Env().Undefined());
 
-            return Napi::String::New(Env(), prop->GetName().c_str());
+            return toJsString(Env(), prop->GetName());
             }
 
         Napi::Value GetAccessString(Napi::CallbackInfo const& info)
@@ -2383,10 +2384,10 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
                 if (prop == nullptr)
                     THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlColumnInfo's Property must not be null for a generated property.", Env().Undefined());
 
-                return Napi::String::New(Env(), prop->GetDisplayLabel().c_str());
+                return toJsString(Env(), prop->GetDisplayLabel());
                 }
 
-            return Napi::String::New(Env(), m_colInfo->GetPropertyPath().ToString().c_str());
+            return toJsString(Env(), m_colInfo->GetPropertyPath().ToString());
             }
 
         Napi::Value IsSystemProperty(Napi::CallbackInfo const& info)
@@ -2410,7 +2411,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             if (m_colInfo == nullptr)
                 THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
 
-            return Napi::String::New(Env(), m_colInfo->GetRootClass().GetTableSpace().c_str());
+            return toJsString(Env(), m_colInfo->GetRootClass().GetTableSpace());
             }
 
         Napi::Value GetRootClassName(Napi::CallbackInfo const& info)
@@ -2418,7 +2419,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             if (m_colInfo == nullptr)
                 THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
 
-            return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(m_colInfo->GetRootClass().GetClass()).c_str());
+            return toJsString(Env(), ECJsonUtilities::FormatClassName(m_colInfo->GetRootClass().GetClass()));
             }
 
         Napi::Value GetRootClassAlias(Napi::CallbackInfo const& info)
@@ -2426,7 +2427,7 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
             if (m_colInfo == nullptr)
                 THROW_TYPE_EXCEPTION_AND_RETURN("NativeECSqlColumnInfo is not initialized.", Env().Undefined());
 
-            return Napi::String::New(Env(), m_colInfo->GetRootClass().GetAlias().c_str());
+            return toJsString(Env(), m_colInfo->GetRootClass().GetAlias());
             }
     };
 
@@ -2548,7 +2549,7 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
         DateTime dt = m_ecsqlValue->GetDateTime();
-        return Napi::String::New(Env(), dt.ToString().c_str());
+        return toJsString(Env(), dt.ToString());
         }
 
     Napi::Value GetDouble(Napi::CallbackInfo const& info)
@@ -2569,7 +2570,7 @@ public:
         if (SUCCESS != ECJsonUtilities::IGeometryToJson(json, *geom))
             THROW_TYPE_EXCEPTION_AND_RETURN("Could not convert IGeometry to JSON.", Env().Undefined());
 
-        return Napi::String::New(Env(), json.ToString().c_str());
+        return toJsString(Env(), json.ToString());
         }
 
     Napi::Value GetGuid(Napi::CallbackInfo const& info)
@@ -2581,7 +2582,7 @@ public:
         if (!guid.IsValid())
             return Env().Undefined();
 
-        return Napi::String::New(Env(), guid.ToString().c_str());
+        return toJsString(Env(), guid.ToString());
         }
 
     Napi::Value GetId(Napi::CallbackInfo const& info)
@@ -2593,7 +2594,7 @@ public:
         if (!id.IsValid())
             return Env().Undefined();
 
-        return Napi::String::New(Env(), id.ToHexStr().c_str());
+        return toJsString(Env(), id);
         }
 
     Napi::Value GetClassNameForClassId(Napi::CallbackInfo const& info)
@@ -2614,7 +2615,7 @@ public:
             THROW_TYPE_EXCEPTION_AND_RETURN(err.c_str(), Env().Undefined());
             }
 
-        return Napi::String::New(Env(), ECJsonUtilities::FormatClassName(*ecClass).c_str());
+        return toJsString(Env(), ECJsonUtilities::FormatClassName(*ecClass));
         }
 
     Napi::Value GetInt(Napi::CallbackInfo const& info)
@@ -2663,7 +2664,7 @@ public:
         if (m_ecsqlValue == nullptr)
             THROW_TYPE_EXCEPTION_AND_RETURN("ECSqlValue is not initialized", Env().Undefined());
 
-        return Napi::String::New(Env(), m_ecsqlValue->GetText());
+        return toJsString(Env(), m_ecsqlValue->GetText());
         }
 
     Napi::Value GetNavigation(Napi::CallbackInfo const& info)
@@ -2958,7 +2959,7 @@ public:
         Napi::Object ret = Napi::Object::New(Env());
         ret.Set(Napi::String::New(Env(), "status"), Napi::Number::New(Env(), (int) status));
         if (BE_SQLITE_DONE == status)
-            ret.Set(Napi::String::New(Env(), "id"), Napi::String::New(Env(), key.GetInstanceId().ToHexStr().c_str()));
+            ret.Set(toJsString(Env(), "id"), toJsString(Env(), key.GetInstanceId()));
 
         return ret;
         }
@@ -3327,7 +3328,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
                 THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
 
             REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
-            return Napi::String::New(Env(), m_stmt->GetColumnName(colIndex));
+            return toJsString(Env(), m_stmt->GetColumnName(colIndex));
             }
 
         Napi::Value IsValueNull(Napi::CallbackInfo const& info)
@@ -3377,7 +3378,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
                 THROW_TYPE_EXCEPTION_AND_RETURN("NativeSqliteStatement is not prepared.", Env().Undefined());
 
             REQUIRE_ARGUMENT_INTEGER(0, colIndex, Env().Undefined());
-            return Napi::String::New(Env(), m_stmt->GetValueText(colIndex));
+            return toJsString(Env(), m_stmt->GetValueText(colIndex));
             }
 
         Napi::Value GetValueId(Napi::CallbackInfo const& info)
@@ -3391,7 +3392,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             if (!id.IsValid())
                 return Env().Undefined();
 
-            return Napi::String::New(Env(), id.ToHexStr().c_str());
+            return toJsString(Env(), id);
             }
 
         Napi::Value GetValueGuid(Napi::CallbackInfo const& info)
@@ -3405,7 +3406,7 @@ struct NativeSqliteStatement : Napi::ObjectWrap<NativeSqliteStatement>
             if (!guid.IsValid())
                 return Env().Undefined();
 
-            return Napi::String::New(Env(), guid.ToString().c_str());
+            return toJsString(Env(), guid.ToString());
             }
 
         Napi::Value Reset(Napi::CallbackInfo const& info)
@@ -3860,7 +3861,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         if (result.IsJsonCppResponse())
             {
             if (serializeResponse)
-                return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(env, result.GetJsonCppSuccessResponse().ToString().c_str()), env);
+                return NapiUtils::CreateBentleyReturnSuccessObject(toJsString(env, result.GetJsonCppSuccessResponse().ToString().c_str()), env);
             return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(env, result.GetJsonCppSuccessResponse()), env);
             }
 
@@ -3870,7 +3871,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             rapidjson::StringBuffer buffer;
             rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
             result.GetSuccessResponse().Accept(writer);
-            return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(env, buffer.GetString()), env);
+            return NapiUtils::CreateBentleyReturnSuccessObject(toJsString(env, buffer.GetString()), env);
             }
         return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(env, result.GetSuccessResponse()), env);
         }
@@ -4116,8 +4117,8 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
         return;
         }
 
-    auto catJS = Napi::String::New(env, category);
-    auto msgJS = Napi::String::New(env, msg);
+    auto catJS = toJsString(env, category);
+    auto msgJS = toJsString(env, msg);
 
     method({catJS, msgJS});
     }
@@ -4137,7 +4138,7 @@ static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev
         return true;
         }
 
-    auto catJS = Napi::String::New(env, category);
+    auto catJS = toJsString(env, category);
 
     int llevel = (sev <= NativeLogging::LOG_TRACE)?   0:
                  (sev <= NativeLogging::LOG_DEBUG)?   0:        // Logger does not distinguish between trace and debug

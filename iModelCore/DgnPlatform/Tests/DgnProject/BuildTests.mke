@@ -34,6 +34,9 @@ o = $(PartBuildDir)
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/DgnProject/
 %endif
 
+dirToSearch = $(OutputRootDir)BuildContexts/DgnPlatform/VendorAPI
+%include cincapnd.mki
+
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 

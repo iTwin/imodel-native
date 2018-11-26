@@ -16,6 +16,8 @@
 #include <Bentley/BeFileName.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include <unordered_map>
+#include <node-addon-api/napi.h>
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
@@ -239,7 +241,19 @@ protected:
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult SaveDgnDbProfileVersion(DgnDbProfileVersion version=DgnDbProfileVersion::GetCurrent()); //!< @private
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
+
 public:
+    Napi::ObjectReference m_jsIModelDb; // holds a reference to the JavaScript IModelDb object paired with this DgnDb. May be nullptr.
+
+    Napi::Object GetJsTxns(); // get the "IModelDb.txns" JavaScript object of this DgnDb (or nullptr)
+    Napi::String ToJsString(Utf8CP val, size_t len) { return Napi::String::New(m_jsIModelDb.Env(), val, len); }
+    Napi::String ToJsString(Utf8CP val) { return ToJsString(val, std::strlen(val)); }
+    Napi::String ToJsString(Utf8StringCR str) { return ToJsString(str.c_str(), str.length()); }
+    Napi::String ToJsString(BeInt64Id id) { return ToJsString(id.ToHexStr()); }
+    Napi::String GetJsClassName(DgnElementId id);
+    static void CallJsFunction(Napi::Object obj, Utf8CP methodName, std::vector<napi_value> const& args);
+    static void RaiseJsEvent(Napi::Object obj, Utf8CP eventName, std::vector<napi_value> const& args);
+
     DgnDb();
     virtual ~DgnDb();
 
@@ -268,7 +282,7 @@ public:
     //! If the error status is BE_SQLITE_ERROR_SchemaUpgradeRequired, it may be possible to 
     //! upgrade (or import) the schemas in the DgnDb. This is done by opening the DgnDb with setting the option request upgrade of 
     //! domain schemas (See @ref DgnDb::OpenParams). These domain schema validation errors can also be avoided by restricting the 
-    //! specific checks made to validate the domain schemas by by setting the appopriate @ref SchemaUpgradeOptions::DomainUpgradeOptions
+    //! specific checks made to validate the domain schemas by by setting the appropriate @ref SchemaUpgradeOptions::DomainUpgradeOptions
     //! in @ref DgnDb::OpenParams.
     //! <pre>
     //! Sample schema compatibility validation results for an ECSchema in the BIM with Version 2.2.2 (Read.Write.Minor)

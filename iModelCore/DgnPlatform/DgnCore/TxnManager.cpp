@@ -50,6 +50,22 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
     }
 
 /*---------------------------------------------------------------------------------**//**
+ @bsimethod                                    Keith.Bentley                    11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::CallJsMonitors(Utf8CP eventName, int* arg)
+    {
+    Napi::Object jsTxns = m_dgndb.GetJsTxns();
+    if (jsTxns == nullptr) 
+        return;
+
+    std::vector<napi_value> args;
+    if (nullptr != arg)
+        args.push_back(Napi::Number::New(jsTxns.Env(), *arg));
+
+    m_dgndb.RaiseJsEvent(jsTxns, eventName, args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * We keep a statement cache just for TxnManager statements
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -272,10 +288,8 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
 DbResult TxnManager::InitializeTableHandlers()
     {
     BeAssert(m_isTracking && "Tracking must be enabled before initializing table handlers");
-    BeAssert(m_dgndb.IsBriefcase() && "No need to initialize table handlers in the master copy");
-    BeAssert(!m_dgndb.IsReadonly() && "No need to initialize table handlers in a Readonly DgnDb");
 
-    if (m_initTableHandlers)
+    if (m_initTableHandlers || m_dgndb.IsReadonly())
         return BE_SQLITE_OK;
 
     for (auto table : m_tables)
@@ -540,12 +554,12 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker)
     for (auto table :  m_tables)
         {
         table->_PropagateChanges();
-        if (HasFatalErrors())
+        if (HasFatalError())
             break;
         }
     tracker.SetMode(Mode::Direct);
 
-    return HasFatalErrors() ? BSIERROR : BSISUCCESS;
+    return HasFatalError() ? BSIERROR : BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -656,9 +670,12 @@ void TxnManager::OnChangesApplied(BeSQLite::IChangeSet& changeSet, bool invert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnBeginValidate()
     {
+    m_fatalValidationError = false;
+    m_txnErrors = 0;
     m_action = TxnAction::Commit;
     for (auto table : m_tables)
         table->_OnValidate();
+    CallJsTxnManager("_onBeginValidate");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -667,10 +684,12 @@ void TxnManager::OnBeginValidate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnEndValidate()
     {
+    CallJsTxnManager("_onEndValidate");
     for (auto table : m_tables)
         table->_OnValidated();
 
-    m_validationErrors.clear();
+    m_fatalValidationError = false;
+    m_txnErrors = 0;
     m_action = TxnAction::None;
     }
 
@@ -711,6 +730,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             Restart();
         if (GetDgnDb().BriefcaseManager().IsBulkOperation() && (RepositoryStatus::Success != GetDgnDb().BriefcaseManager().EndBulkOperation().Result()))
             return OnCommitStatus::Abort;
+
         return OnCommitStatus::Continue;
         }
 
@@ -722,10 +742,12 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     Restart();  // Clear the change tracker since we have copied any changes to change sets
 
-    DeleteReversedTxns(); // these Txns are no longer reachable
-
     if (!isCommit)
         return CancelChanges(dataChangeSet);
+
+    // NOTE: you can't delete reversed Txns for CancelChanges because the database gets rolled back and they come back! That's OK,
+    // just leave them reversed and they'll get thrown away on the next commit (or reinstated.)
+    DeleteReversedTxns(); // these Txns are no longer reachable. 
 
     if (!dataChangeSet.IsEmpty())
         {
@@ -769,13 +791,14 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         DbResult result = SaveDataChanges(dataChangeSet, operation); // save changeSet into DgnDb itself, along with the description of the operation we're performing
         if (result != BE_SQLITE_DONE)
             return OnCommitStatus::Abort;
-
-        // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-        if (m_enableNotifyTxnMonitors)
-            T_HOST.GetTxnAdmin()._OnCommit(*this);
-
-        OnEndValidate();
         }
+
+    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
+    if (m_enableNotifyTxnMonitors)
+        T_HOST.GetTxnAdmin()._OnCommit(*this);
+
+    if (!dataChangeSet.IsEmpty())
+        OnEndValidate();
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
@@ -1003,37 +1026,27 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
             return status;
         }
 
-    status = MergeDataChangesInRevision(revision, changeStream, containsSchemaChanges);
-    if (RevisionStatus::Success != status)
-        return status;
-
-    return RevisionStatus::Success;
+    return MergeDataChangesInRevision(revision, changeStream, containsSchemaChanges);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
+ @bsimethod                                    Keith.Bentley                    11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReportError(ValidationError& e)
-    {
-    m_validationErrors.push_back(e);
-
-    auto sev = (e.GetSeverity() == ValidationError::Severity::Fatal) ? "Fatal" : "Warning";
-    LOG.errorv("Validation error. Severity:%s Class:[%s] Description:[%s]", sev, typeid(e).name(), e.GetDescription());
+void TxnManager::ReportError(bool fatal, Utf8CP errorType, Utf8CP msg)  {
+    auto jsTxns = m_dgndb.GetJsTxns();
+    if (nullptr == jsTxns) {
+        m_fatalValidationError |= fatal;
+        return;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::HasFatalErrors() const
-    {
-    for (auto const& e : m_validationErrors)
-        {
-        if (e.GetSeverity() == ValidationError::Severity::Fatal)
-            return true;
-        }
-
-    return false;
-    }
+    // Note: see IModelDb.ts [[ValidationError]]
+    auto env = jsTxns.Env();
+    auto error = Napi::Object::New(env);
+    error["fatal"] = Napi::Boolean::New(env, fatal);
+    error["errorType"] = Napi::String::New(env, errorType);
+    error["message"] = Napi::String::New(env, msg);
+    DgnDb::CallJsFunction(jsTxns, "reportError", {error});
+}
 
 /*---------------------------------------------------------------------------------**//**
 * Add all changes to the TxnSummary. TxnTables store information about the changes in their own state
@@ -1307,7 +1320,7 @@ DgnDbStatus TxnManager::ReverseTo(TxnId pos, AllowCrossSessions allowCrossSessio
     if (lastUndoableId >= lastId || pos < lastUndoableId)
         return DgnDbStatus::CannotUndo;
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
 
     TxnRange range(pos, lastId);
     return ReverseActions(range, false);
@@ -1337,9 +1350,6 @@ DgnDbStatus TxnManager::ReverseActions(TxnRange& txnRange, bool showMsg)
         EndMultiTxnOperation();
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reverse);
-
-    if (showMsg)
-        NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, undoStr.c_str()));
 
     return DgnDbStatus::Success;
     }
@@ -1377,7 +1387,7 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowCros
         return DgnDbStatus::NothingToUndo;
         }
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
 
     TxnRange range(firstId, lastId);
     return ReverseActions(range, true);
@@ -1404,7 +1414,7 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
         return DgnDbStatus::NothingToUndo;
         }
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
 
     TxnRange range(lastUndoableId, GetCurrentTxnId());
     return ReverseActions(range, true);
@@ -1448,7 +1458,6 @@ DgnDbStatus TxnManager::ReinstateActions(TxnRange& revTxn)
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reinstate);
 
-    NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, redoStr.c_str()));
     return DgnDbStatus::Success;
     }
 
@@ -1463,7 +1472,7 @@ DgnDbStatus TxnManager::ReinstateTxn()
         return DgnDbStatus::NothingToRedo;
         }
 
-    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
+    T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo(*this);
     TxnRange*  revTxn = &m_reversedTxn.back();
     return  ReinstateActions(*revTxn);
     }
@@ -2243,17 +2252,19 @@ struct TxnCommittedCaller
 //=======================================================================================
 struct PrepareForUndoRedoCaller
     {
-    void operator() (TxnMonitorR handler) const {handler._OnPrepareForUndoRedo();}
+    TxnManagerR m_mgr;
+    PrepareForUndoRedoCaller(TxnManagerR mgr) : m_mgr(mgr) {}
+    void operator() (TxnMonitorR handler) const {handler._OnPrepareForUndoRedo(m_mgr);}
     };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/13
 //=======================================================================================
-struct UndoRedoFinishedCaller
+struct UndoRedoCaller
     {
     TxnManagerR m_mgr;
     TxnAction m_action;
-    UndoRedoFinishedCaller(TxnManager& mgr, TxnAction action) : m_mgr(mgr), m_action(action) {}
+    UndoRedoCaller(TxnManager& mgr, TxnAction action) : m_mgr(mgr), m_action(action) {}
     void operator()(TxnMonitorR handler) const {handler._OnUndoRedo(m_mgr, m_action);}
     };
 
@@ -2262,6 +2273,7 @@ struct UndoRedoFinishedCaller
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
     {
+    mgr.CallJsMonitors("onCommit");
     CallMonitors(TxnCommitCaller(mgr));
     }
 
@@ -2270,23 +2282,26 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnCommitted(TxnManagerR mgr)
     {
+    mgr.CallJsMonitors("onCommitted");
     CallMonitors(TxnCommittedCaller(mgr));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR summary)
+void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR mgr)
     {
-    CallMonitors(TxnAppliedCaller(summary));
+    mgr.CallJsMonitors("onChangesApplied");
+    CallMonitors(TxnAppliedCaller(mgr));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Karolis.Zukauskas               11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo()
+void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo(TxnManagerR mgr)
     {
-    CallMonitors(PrepareForUndoRedoCaller());
+    mgr.CallJsMonitors("onBeforeUndoRedo");
+    CallMonitors(PrepareForUndoRedoCaller(mgr));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2294,7 +2309,9 @@ void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedo(TxnManager& mgr, TxnAction action)
     {
-    CallMonitors(UndoRedoFinishedCaller(mgr, action));
+    int jsAction = (int) action;
+    mgr.CallJsMonitors("onAfterUndoRedo", &jsAction);
+    CallMonitors(UndoRedoCaller(mgr, action));
     }
 
 /*---------------------------------------------------------------------------------**//**

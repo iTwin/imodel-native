@@ -130,27 +130,23 @@ struct NativeLoggingShim : NativeLogging::Provider::ILogProvider
 
 using namespace IModelJsNative;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                              Krischan.Eberle                07/17
-//---------------------------------------------------------------------------------------
-//static
 intptr_t JsInterop::s_mainThreadId;
-Napi::Env* JsInterop::s_env = nullptr;
+Napi::Env JsInterop::s_env(nullptr);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env, BeFileNameCR tempDir)
+void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env env, BeFileNameCR tempDir)
     {
-    s_env = new Napi::Env(env);
+    s_env = env;
     s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
     s_addonDllDir = addonDllDir;
     s_tempDir = tempDir;
+
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
     // Include this location for delay load of pskernel...
     WString newPath;
     newPath = L"PATH=" + addonDllDir + L";";
-
     newPath.append(::_wgetenv(L"PATH"));
     _wputenv(newPath.c_str());
 #endif
@@ -158,7 +154,7 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, Napi::Env& env, BeFileNameC
     static std::once_flag s_initFlag;
     std::call_once(s_initFlag, []() 
         {
-        DgnPlatformLib::Initialize(*new DgnPlatformHost, true);
+        DgnPlatformLib::Initialize(*new DgnPlatformHost);
         RegisterOptionalDomains();
         InitLogging();
         InitializeParasolid();

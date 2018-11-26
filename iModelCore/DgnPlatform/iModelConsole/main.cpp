@@ -85,7 +85,7 @@ int wmain(int argc, WCharCP argv[])
 
     // C++ programs start-up with the "C" locale in effect by default, and the "C" locale does not support conversions of any characters outside 
     // the "basic character set". ... The call to setlocale() says "I want to use the user's default narrow string encoding". This encoding is 
-    //based on the Posix-locale for Posix environments. In Windows, this encoding is the ACP, which is based on the system-locale. 
+    // based on the Posix-locale for Posix environments. In Windows, this encoding is the ACP, which is based on the system-locale. 
     // However, the success of this code is dependent on two things: 
     //      1) The narrow encoding must support the wide character being converted. 
     //      2) The font/gui must support the rendering of that character. 
@@ -96,7 +96,7 @@ int wmain(int argc, WCharCP argv[])
     //set customized assert handler as default handler causes exception which makes iModelConsole crash.
     BeAssertFunctions::SetBeAssertHandler(IModelConsoleBeAssertHandler);
 
-    Dgn::DgnPlatformLib::Initialize(IModelConsole::Singleton(), false);
+    Dgn::DgnPlatformLib::Initialize(IModelConsole::Singleton());
     return IModelConsole::Singleton().Run(argc, argv);
     }
 

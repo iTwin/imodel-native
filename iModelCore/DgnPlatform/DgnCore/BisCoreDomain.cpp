@@ -9,9 +9,6 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
-#if defined (NEEDSWORK_DIMENSION)
-#include <DgnPlatform/Dimension/Dimension.h>
-#endif
 #include <DgnPlatform/VolumeElement.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -107,8 +104,7 @@ DOMAIN_DEFINE_MEMBERS(BisCoreDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain", 1) 
     {
-    // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
-    RegisterHandler(DgnElementDependencyHandler::GetHandler());
+    // Note: Handlers must be registered in class heirarchy order (base classes before subclasses)
     RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
     RegisterHandler(dgn_AspectHandler::TextAnnotationDataHandler::GetHandler());
 

@@ -51,7 +51,7 @@ struct JsInterop
     BE_JSON_NAME(value)
 
 private:
-    static Napi::Env* s_env;
+    static Napi::Env s_env;
     static intptr_t s_mainThreadId;
 
     static RevisionStatus ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken);
@@ -63,7 +63,7 @@ public:
     static ECN::ECClassCP GetClassFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
-    static void Initialize(BeFileNameCR, Napi::Env&, BeFileNameCR);
+    static void Initialize(BeFileNameCR, Napi::Env, BeFileNameCR);
     static DgnDbPtr CreateIModel(DbResult& db, Utf8StringCR name, JsonValueCR, Napi::Env);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
     static void CloseDgnDb(DgnDbR dgndb);
@@ -132,7 +132,7 @@ public:
     static void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg);
     static bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev);
 
-    static Napi::Env& Env() { BeAssert(s_env != nullptr); return *s_env; }
+    static Napi::Env Env() { return s_env; }
     static bool IsMainThread() { return BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId; }
 
     static Tile::TreePtr FindTileTree(GeometricModelR, Tile::Tree::Id const&);

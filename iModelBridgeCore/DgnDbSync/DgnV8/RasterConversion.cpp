@@ -207,6 +207,46 @@ static void modelNameFromID (WCharP modelName, size_t maxname, Int32 modelID)
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         9/2016
+//-----------------------------------------------------------------------------------------
+static BentleyStatus createFileUri(Utf8StringR fileUri, Utf8StringCR fileName)
+    {
+    BeFileName beFileName(fileName);
+
+    WString fileNameAndExt (beFileName.GetFileNameAndExtension());
+    if (WString::IsNullOrEmpty(fileNameAndExt.c_str()))
+        {
+        // Leave input file name unchanged
+        fileUri = fileName;
+        }
+    else
+        {
+        Utf8String fileNameAndExtUtf8(fileNameAndExt);
+        fileUri = fileNameAndExtUtf8;
+        }
+
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         9/2016
+//-----------------------------------------------------------------------------------------
+ BentleyStatus resolveFileUri(BeFileNameR fileName, Utf8StringCR fileUri, DgnDbCR db)
+    {
+    BeFileName dbFileName(db.GetDbFileName());
+    BeFileName dbPath(dbFileName.GetDirectoryName());
+
+    // Here, we expect that fileUri is a relative file name (relative to the DgnDb)
+    BeFileName relativeName(fileUri.c_str()); 
+    dbPath.AppendToPath(relativeName.c_str());
+
+    fileName = dbPath;
+
+    return SUCCESS;
+    }
+
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         1/2016
 //-----------------------------------------------------------------------------------------
 BentleyStatus ExtractEmbeddedRaster(BeFileNameR outFilename, DgnV8EhCR v8eh, BeFileNameCR embedFileName, DgnDbR db, BeFileNameCR rootFileName, SpatialConverterBase& converter)
@@ -409,7 +449,7 @@ Raster::RasterFileModelPtr CreateRasterFileModel(DgnDbR       db,
     {
     // Create the URI that will be used for the RasterFileModel creation
     Utf8String fileUri;
-    if (T_HOST.GetRasterAttachmentAdmin()._CreateFileUri(fileUri, fileName) != SUCCESS)
+    if (createFileUri(fileUri, fileName) != SUCCESS)
         return nullptr;
 
     // Create model name

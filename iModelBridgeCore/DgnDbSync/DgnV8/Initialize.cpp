@@ -93,11 +93,7 @@ protected:
         {
         virtual StatusInt _OutputMessage(DgnV8Api::NotifyMessageDetails const& v8Details) override 
             {
-            NotifyMessageDetails details(
-                (OutputMessagePriority)v8Details.GetPriority(), 
-                Utf8String(v8Details.GetBriefMsg().c_str()).c_str(), 
-                Utf8String(v8Details.GetDetailedMsg().c_str()).c_str());
-            return T_HOST.GetNotificationAdmin()._OutputMessage(details);
+            return SUCCESS;
             }
         }; 
 

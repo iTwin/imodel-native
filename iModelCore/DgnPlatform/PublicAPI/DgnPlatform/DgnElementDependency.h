@@ -15,50 +15,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnElementDependencyGraph;
 
-//=======================================================================================
-//! Base class for dependency handlers for the dgn.ElementDrivesElement ECRelationship class. See DgnElementDependencyGraph.
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElementDependencyHandler : DgnDomain::Handler
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(BIS_REL_ElementDrivesElement, DgnElementDependencyHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
-
-protected:
-    friend struct DgnElementDependencyGraph;
-
-    //! Called by DgnElementDependencyGraph after the ElementDrivesElement ECRelationship itself is created and then whenever the
-    //! source or target DgnElement is changed directly or by an upstream dependency.
-    //! This base class implementation of _OnRootChanged calls Txns::ReportValidationError to indicate a missing handler.
-    //! @note This callback is \em not invoked when the source or target element is deleted. See _ProcessDeletedDependency
-    //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
-    //! @param[in] relationshipId       The ECRelationship instance ID
-    //! @param[in] source               The ECRelationship's Source DgnElement
-    //! @param[in] target               The ECRelationship's Target DgnElement
-    //! Call Txns::ReportValidationError to reject an invalid change. The reported error can be classified as fatal or just a warning.
-    DGNPLATFORM_EXPORT virtual void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target);
-
-    //! Called by DgnElementDependencyGraph after the specified dependency is deleted.
-    //! @note A dependency relationship is automatically deleted when its source or target element is deleted.
-    //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
-    //! @param[in] relData              The relationship's data (as of the point just before it was deleted)
-    virtual void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) {;}
-
-    //! Called by DgnElementDependencyGraph after all _OnRootChanged have been invoked, in the case where the output of this dependency is also the output of other dependencies.
-    //! The dependency handler should check that its requirements is still enforced. 
-    //! Call Txns::ReportValidationError to report a validation error. The ElementDependencyGraph::DependencyValidationError error should normally be used. The reported error can be classified as fatal or just a warning.
-    //! @note The dependency handler should *not* modify the target element.
-    //! @param[in] db                   The DgnDb in which the handler and ECRelationship reside. 
-    //! @param[in] relationshipId       The ECRelationship instance ID
-    //! @param[in] source               The ECRelationship's Source DgnElement
-    //! @param[in] target               The ECRelationship's Target DgnElement
-    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target) {}
-
-public:
-    //! Looks up a registered DgnElementDependencyHandler by its ECRelationship class ID.
-    //! @param[in] db               The DgnDb in which the handler and ECRelationship reside. 
-    //! @param[out] classId         The ID of the particular ElementDrivesElement ECRelationshipClass
-    //! @return The dependency handler that is registered for this ID or NULL if none is registered.
-    DGNPLATFORM_EXPORT static DgnElementDependencyHandler* FindHandler(DgnDbR db, DgnClassId classId);
-};
 
 //=======================================================================================
 //! Interface for element nodes in the dependency graph.
@@ -80,15 +36,15 @@ struct IDependencyGraphNode
     };
 
 //=======================================================================================
-//! Element dependency graph calls DgnElementDependencyHandler in the correct order when a transaction is "validated".
+//! Element dependency graph calls JavaScript handers in the correct order when a transaction is "validated".
 //! Called by Txns::CheckTxnBoundary.
 //! 
 //! <h3>Only ElementDrivesElement ECRelationships can have Dependency Handlers</h3>
 //! Only an ECRelationship derived from dgn.ElementDrivesElement can have a dependency handler.
 //! A domain can associate its own dependency handler with a kind of ElementDrivesElement relationship by 
 //! 1) defining a subclass of dgn.ElementDrivesElement in its ECSchema, 
-//! 2) defining a C++ subclass of DgnElementDependencyHandler that is associated with that ECSchema subclass, and 
-//! 3) registering the C++ Handler subclass.
+//! 2) defining a JavaScript hander that is associated with that ECSchema subclass, and 
+//! 3) registering the JavaScript Handler.
 //!
 //! <h3>Dependency Graph</h3>
 //! When you create an ElementDrivesElement ECRelationship, you create a dependency: the target DgnElement depends on the source DgnElement.
@@ -125,39 +81,6 @@ struct DgnElementDependencyGraph
     struct Nodes;
     struct TableApi;
     struct ElementDrivesElement;
-
-    //! Cycles were detected in the ElementDependencyGraph.
-    //! This means that the constraints imposed on Elements by the current set of ECRelationships and their dependency handlers cannot be satisfied. Some
-    //! ECRelationships must be removed. 
-    //! This error is always fatal. The application should cancel the current transaction.
-    struct CyclesDetectedError : TxnManager::ValidationError
-        {
-        CyclesDetectedError(Utf8CP path) : TxnManager::ValidationError(Severity::Fatal, path) {}
-        };
-
-    //! An Element dependency was triggered, but the handler for it was not registered.
-    //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
-    //! This error should be reported to the user for follow up.
-    struct MissingHandlerError : TxnManager::ValidationError
-        {
-        MissingHandlerError(Utf8CP handlerId) : TxnManager::ValidationError(Severity::Warning, handlerId) {}
-        };
-    
-    //! The requirements of an Element dependency were violated by the actions taken by another dependency handler.
-    //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
-    //! This error should be reported to the user for follow up.
-    struct DependencyValidationError : TxnManager::ValidationError
-        {
-        DependencyValidationError(Utf8CP details) : TxnManager::ValidationError(Severity::Warning, details) {}
-        };
-    
-    //! A dependency attempted to propagate changes from a dependent model to a root model. 
-    //! This is illegal, and this dependency must be removed.
-    //! This error is always fatal. The application should cancel the current transaction.
-    struct DirectionValidationError : TxnManager::ValidationError
-        {
-        DirectionValidationError(Utf8CP details) : TxnManager::ValidationError(Severity::Fatal, details) {}
-        };
 
     //! Indicates if changes have been propagated through an ECRelationship successfully or not.
     //! These are bits. The Deferred status and the Satisfied/Deferred status may be changed independently of each other.
@@ -206,9 +129,7 @@ struct DgnElementDependencyGraph
         //! Get the ID of the ECRelationship instance that is represented by this edge
         BeSQLite::EC::ECInstanceId GetECRelationshipId() const {return m_relId;}
         //! Get the ID of the ECRelationshipClass for this edge
-        ECN::ECClassId GetECRelationshipClassId() const {return m_relClassId;}
-        //! Get the ID of the DependencyHandler for this edge
-        DgnClassId GetHandlerId() const {return DgnClassId(m_relClassId);}
+        ECN::ECClassId GetRelClassId() const {return m_relClassId;}
         //! Get the priority of this dependency, relative to other dependencies in the same ECRelationshipClass
         //! @see DgnElementDependencyGraph::SetElementDrivesElementPriority
         int64_t GetPriority() const {return m_priority;}
@@ -225,30 +146,14 @@ struct DgnElementDependencyGraph
     friend struct Edge;
     friend struct EdgeQueue;
 
-    //! Called to process edges in the graph
-    struct IEdgeProcessor
-        {
-        //! Invoked on an edge in the graph
-        virtual void _ProcessEdge(Edge const& edge, DgnElementDependencyHandler* handler) = 0;
-
-        //! Invoked on a deleted dependency
-        virtual void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) {;}
-
-        //! Invoked on an edge in the graph for a validation callback
-        virtual void _ProcessEdgeForValidation(Edge const& edge, DgnElementDependencyHandler* handler) = 0;
-
-        //! Invoked when a validation error such as a cycle is detected.
-        virtual void _OnValidationError(TxnManager::ValidationError const& error, Edge const* edge) = 0;
-        };
-
 private:
     enum class EdgeColor {White, Gray, Black};  // NB: White must be the default (0) value
 
-    TxnManager&             m_txnMgr;
-    ElementDrivesElement*   m_elementDrivesElement;
-    EdgeQueue*              m_edgeQueue;
-    Nodes*                  m_nodes;
-    IEdgeProcessor*         m_processor;
+    TxnManager& m_txnMgr;
+    ElementDrivesElement* m_elementDrivesElement;
+    EdgeQueue* m_edgeQueue;
+    Nodes* m_nodes;
+    Napi::Object m_jsTxns;
 
     void Init();
 
@@ -261,16 +166,16 @@ private:
     Utf8String FmtElement(DgnElementId eid);
     Utf8String FmtElementPath(Utf8CP epath);
     Utf8String FmtRel(Edge const&);
-    Utf8String FmtHandler(DgnClassId);
     void LogDependencyFound(BeSQLite::Statement&, Edge const&);
 
     // working with handlers
     void InvokeHandler(Edge const& rh, size_t indentLevel);
     void InvokeHandlerForValidation(Edge const& rh);
-    void ReportValidationError (TxnManager::ValidationError&, Edge const*);
+    //void ReportValidationError (TxnManager::ValidationError&, Edge const*);
 
     void DiscoverEdges();
 
+    Napi::Object EdgeToRelProps(Edge const& edge);
     void VerifyOverlappingDependencies();
     void InvokeHandlersInTopologicalOrder();
     void InvokeHandlersInTopologicalOrder_OneGraph(Edge const&, bvector<Edge> const& pathToSupplier);
@@ -285,7 +190,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT DgnElementDependencyGraph(TxnManager&);
-    DGNPLATFORM_EXPORT ~DgnElementDependencyGraph();
+    ~DgnElementDependencyGraph() {}
 
     DgnDbR GetDgnDb() const {return m_txnMgr.GetDgnDb();}
 
@@ -312,7 +217,7 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus SetEdgeDeferred(Edge& edge, bool isDeferred);
 
     //! Get a list of the dependencies, in order, that would be evaluated if the specified element and/or ElementDrivesElement relationship were directly changed
-    DGNPLATFORM_EXPORT BentleyStatus WhatIfChanged(IEdgeProcessor& processor, bvector<DgnElementId> const& directlyChangedEntities, bvector<BeSQLite::EC::ECInstanceId> const& directlyChangedDepRels);
+    DGNPLATFORM_EXPORT BentleyStatus WhatIfChanged(bvector<DgnElementId> const& directlyChangedEntities, bvector<BeSQLite::EC::ECInstanceId> const& directlyChangedDepRels);
     };
 
 END_BENTLEY_DGN_NAMESPACE

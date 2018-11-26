@@ -1335,7 +1335,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
     Dgn::iModelBridgeBimHost host(m_repoAdmin, fwkAssetsDir, fwkDb3, Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str());
-    DgnPlatformLib::Initialize(host, true);
+    DgnPlatformLib::Initialize(host);
 
     //  Initialize the bridge-specific L10N
     BeFileName bridgeSqlangPath(params.GetAssetsDir());
