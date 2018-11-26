@@ -564,6 +564,15 @@ void Converter::ReportFailedModelConversion(ResolvedModelMapping const& v8mm)
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     11/1
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl)
+    {
+    ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::FailedToConvertDrawingElement(), IssueReporter::FmtElement(inEl).c_str());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/1
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ReportFailedThumbnails()

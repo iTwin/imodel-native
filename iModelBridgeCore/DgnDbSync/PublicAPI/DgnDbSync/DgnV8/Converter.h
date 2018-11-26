@@ -837,6 +837,7 @@ struct Converter
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
         L10N_STRING(FailedToConvertModel)       // =="Failed to convert model"==
+        L10N_STRING(FailedToConvertDrawingElement)       // =="Failed to convert model"==
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
@@ -2010,6 +2011,7 @@ public:
     DGNDBSYNC_EXPORT void ReportSyncInfoIssue(IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
 
     DGNDBSYNC_EXPORT void ReportFailedModelConversion(ResolvedModelMapping const& v8mm);
+    DGNDBSYNC_EXPORT void ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl);
     DGNDBSYNC_EXPORT void ReportFailedThumbnails();
 
     //! Signal a fatal error
