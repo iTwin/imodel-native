@@ -1607,6 +1607,39 @@ DbResult DwgSyncInfo::Layer::Insert(Db& db) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::LayerIterator::LayerIterator (DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
+    {
+    m_params.SetWhere (where);
+    auto sql = this->MakeSqlString ("SELECT Id,DwgFile,DwgModel,DwgObjectId,DwgName FROM " SYNCINFO_ATTACH(SYNC_TABLE_Layer));
+    m_db->GetCachedStatement (m_stmt, sql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::Layer DwgSyncInfo::LayerIterator::LayerIterator::Entry::Get ()
+    {
+    DwgSyncInfo::Layer  layer;
+    int col = 0;
+    layer.m_id = m_sql->GetValueId <DgnSubCategoryId> (col++);
+    layer.m_fm = DwgSyncInfo::DwgModelSource (DwgSyncInfo::DwgFileId(m_sql->GetValueInt(col++)), DwgSyncInfo::DwgModelId(m_sql->GetValueInt64(col++)));
+    layer.m_dwgId = m_sql->GetValueInt64 (col++);
+    layer.m_dwgName = m_sql->GetValueText (col++);
+    return layer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::LayerIterator::Entry DwgSyncInfo::LayerIterator::begin () const
+    {
+    m_stmt->Reset ();
+    return Entry (m_stmt.get(), m_stmt->Step() == BE_SQLITE_ROW);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgSyncInfo::FindFirstSubCategory(DgnSubCategoryId& glid, DwgModelSource fm, uint64_t flid)
@@ -1928,6 +1961,39 @@ DbResult DwgSyncInfo::View::Update (BeSQLite::Db& db) const
     stmt.BindId (col++, m_id);
 
     return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::ViewIterator::ViewIterator (DgnDbCR db, Utf8CP where) : BeSQLite::DbTableIterator(db)
+    {
+    m_params.SetWhere (where);
+    auto sql = this->MakeSqlString ("SELECT Id,DwgObjectId,ViewportType,DwgName FROM " SYNCINFO_ATTACH(SYNC_TABLE_View));
+    m_db->GetCachedStatement (m_stmt, sql.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::View DwgSyncInfo::ViewIterator::ViewIterator::Entry::Get ()
+    {
+    DwgSyncInfo::View  view;
+    int col = 0;
+    view.m_id = m_sql->GetValueId <DgnViewId> (col++);
+    view.m_dwgId = m_sql->GetValueInt64 (col++);
+    view.m_type = static_cast<DwgSyncInfo::View::Type> (m_sql->GetValueInt(col++));
+    view.m_name = m_sql->GetValueText (col++);
+    return view;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::ViewIterator::Entry DwgSyncInfo::ViewIterator::begin () const
+    {
+    m_stmt->Reset ();
+    return Entry (m_stmt.get(), m_stmt->Step() == BE_SQLITE_ROW);
     }
 
 /*---------------------------------------------------------------------------------**//**

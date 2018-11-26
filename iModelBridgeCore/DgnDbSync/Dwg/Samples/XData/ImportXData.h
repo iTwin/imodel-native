@@ -118,7 +118,7 @@ public:
     //
     // Override _UpdateGroup to update existing DgnDb group element from a DWG group
     //
-    // This method goes parallel with _ImportGroup. A difference that it only gets called during
+    // This method goes parallel with _ImportGroup. A difference is that it only gets called during
     // an updating job run.  During such an incremental process, _ImportGroups consults DwgSyncInfo
     // about the incoming DWG groups.  When a previously imported group is found, _OnUpdateGroup 
     // is called.  If a change of the DWG group has been detected, _UpdateGroup gets called and both

@@ -225,6 +225,8 @@ private:
     void        FreeBrep (PK_BODY_create_topology_2_r_t& brep) const;
 #endif
     GeometricPrimitivePtr CreateGeometry (DwgDbPlaneSurfaceP planeSurface);
+    GeometricPrimitivePtr CreateGeometry (DwgDbRegionP region);
+    GeometricPrimitivePtr PlaceGeometry (CurveVectorPtr& shapes);
     BentleyStatus   SetPlacementPoint (TransformR transform) const;
     };  // DwgBrep
 
