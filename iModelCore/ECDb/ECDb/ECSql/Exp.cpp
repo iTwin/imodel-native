@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Exp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -141,38 +141,6 @@ bool Exp::TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& par
 
     return false;
     }
-
-
-//************************* Exp::Collection *******************************************
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool Exp::Collection::Replace(ExpCR replacee, std::vector<std::unique_ptr<Exp>>& replaceWith)
-    {
-    std::vector<std::unique_ptr<Exp>> copiedCollection = move(m_collection);
-    BeAssert(m_collection.empty());
-
-    bool found = false;
-    for (size_t i = 0; i < copiedCollection.size(); i++)
-        {
-        auto& expr = copiedCollection[i];
-        if (expr.get() != &replacee)
-            m_collection.push_back(move(expr));
-        else
-            {
-            for (auto& newExp : replaceWith)
-                {
-                m_collection.push_back(move(newExp));
-                }
-
-            found = true;
-            }
-        }
-
-    return found;
-    }
-
 
 //****************************** PropertyPath *****************************************
 //-----------------------------------------------------------------------------------------

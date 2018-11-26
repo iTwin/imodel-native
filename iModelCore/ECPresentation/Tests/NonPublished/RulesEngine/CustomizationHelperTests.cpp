@@ -19,9 +19,6 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
-// Random crashes
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
-
 /*=================================================================================**//**
 * @bsiclass                                     Pranciskus.Ambrazas               03/2016
 +===============+===============+===============+===============+===============+======*/
@@ -82,6 +79,27 @@ struct CustomizationHelperTests : ECPresentationTest
         JsonNavNodePtr node = m_nodesFactory.CreateCustomNode(m_connection->GetId(), label, description, imageId, type);
         node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, bvector<Utf8String>()));
         return node;
+        }
+
+    void Cache(JsonNavNodeR node)
+        {
+        NavNodeExtendedData extendedData(node);
+        uint64_t virtualParentId = extendedData.HasVirtualParentId() ? extendedData.GetVirtualParentId() : 0;
+        HierarchyLevelInfo hlInfo = m_nodesCache.FindHierarchyLevel(extendedData.GetConnectionId(), 
+            extendedData.GetRulesetId(), extendedData.GetLocale(), extendedData.HasVirtualParentId() ? &virtualParentId : nullptr);
+        if (!hlInfo.IsValid())
+            {
+            hlInfo = HierarchyLevelInfo(extendedData.GetConnectionId(), extendedData.GetRulesetId(), 
+                extendedData.GetLocale(), node.GetParentNodeId(), virtualParentId);
+            m_nodesCache.Cache(hlInfo);
+            }
+        DataSourceInfo dsInfo = m_nodesCache.FindDataSource(hlInfo.GetId(), 0);
+        if (!dsInfo.IsValid())
+            {
+            dsInfo = DataSourceInfo(hlInfo.GetId(), 0);
+            m_nodesCache.Cache(dsInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+            }
+        m_nodesCache.Cache(node, dsInfo, 0, false);
         }
 };
 ECDbTestProject* CustomizationHelperTests::s_project = nullptr;
@@ -212,7 +230,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
 TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSymbols)
     {
     JsonNavNodePtr parentNode = CreateNode("Parent", "description", "imageId", "ParentType");
-    m_nodesCache.Cache(*parentNode, DataSourceInfo(), 0, false);
+    Cache(*parentNode);
     uint64_t parentNodeId = parentNode->GetNodeId();
 
     ChildNodeRule rule("", 1, false, RuleTargetTree::TargetTree_Both);
@@ -233,5 +251,3 @@ TEST_F (CustomizationHelperTests, CustomizationExpressionContextHasParentNodeSym
     ASSERT_STREQ("overridenBackColor", thisNode->GetBackColor().c_str());
     ASSERT_STREQ("overridenFontStyle", thisNode->GetFontStyle().c_str());
     }
-
-#endif

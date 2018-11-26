@@ -560,8 +560,9 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
         if (isEC32AvailableInFile)
             {
             Utf8StringCR enumValueName = enumValue->GetName();
-            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Name, rapidjson::Value(enumValueName.c_str(), (rapidjson::SizeType) enumValueName.size(), jsonAllocator).Move(),
-                                    jsonAllocator);
+            //don't copy the string into the rapidjson as the json will not outlive the string (it is persisted in the DB before the ECSchema
+            //containing the enum name string is released
+            enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Name, rapidjson::Value(rapidjson::StringRef(enumValueName.c_str(), enumValueName.size())).Move(), jsonAllocator);
             }
         else
             {
@@ -573,9 +574,10 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
         else if (enumValue->IsString())
             {
             Utf8StringCR enumValueStr = enumValue->GetString();
+            //don't copy the string into the rapidjson as the json will not outlive the string (it is persisted in the DB before the ECSchema
+            //containing the enum value string is released
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_StringValue,
-                                    rapidjson::Value(enumValueStr.c_str(), (rapidjson::SizeType) enumValueStr.size(), jsonAllocator).Move(), 
-                                    jsonAllocator);
+                                    rapidjson::Value(rapidjson::StringRef(enumValueStr.c_str(), enumValueStr.size())).Move(), jsonAllocator);
             }
         else
             {
@@ -587,17 +589,19 @@ BentleyStatus SchemaPersistenceHelper::SerializeEnumerationValues(Utf8StringR js
         if (enumValue->GetIsDisplayLabelDefined())
             {
             Utf8StringCR displayLabel = enumValue->GetInvariantDisplayLabel();
+            //don't copy the string into the rapidjson as the json will not outlive the string (it is persisted in the DB before the ECSchema
+            //containing the display label string is released
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_DisplayLabel,
-                                    rapidjson::Value(displayLabel.c_str(), (rapidjson::SizeType) displayLabel.size(), jsonAllocator).Move(),
-                                    jsonAllocator);
+                                    rapidjson::Value(rapidjson::StringRef(displayLabel.c_str(), displayLabel.size())).Move(), jsonAllocator);
             }
 
         if (!enumValue->GetInvariantDescription().empty())
             {
             Utf8StringCR description = enumValue->GetInvariantDescription();
+            //don't copy the string into the rapidjson as the json will not outlive the string (it is persisted in the DB before the ECSchema
+            //containing the display label string is released
             enumValueJson.AddMember(ECDBMETA_PROP_ECEnumerator_Description,
-                                    rapidjson::Value(description.c_str(), (rapidjson::SizeType) description.size(), jsonAllocator).Move(),
-                                    jsonAllocator);
+                                    rapidjson::Value(rapidjson::StringRef(description.c_str(), description.size())).Move(), jsonAllocator);
 
             }
 

@@ -11,7 +11,7 @@
         },
         {
             "name": "iModelJsNodeAddon",
-            "archs": "x64+linuxx64",
+            "archs": "x64+linuxx64+macosx64",
             "augments": "BuildAll",
             "version_env": "VER_IMODELJSNODEADDON",
             "version_file": "$SRCROOT/iModel02/iModelJsNodeAddon/package_version.txt"

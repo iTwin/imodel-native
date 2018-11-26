@@ -56,17 +56,23 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
             PropertyNameListExp* propNameListExp = GetPropertyNameListExpP();
             if (IsOriginalPropertyNameListUnset())
                 {
-                auto addDelegate = [&propNameListExp] (std::unique_ptr<PropertyNameExp>& propNameExp)
+                if (!classNameExp->HasMetaInfo())
                     {
-                    //ECInstanceId is treated separately
-                    const PropertyMap::Type propMapKind = propNameExp->GetPropertyMap().GetType();
-                    if (propMapKind != PropertyMap::Type::ECInstanceId && propMapKind != PropertyMap::Type::ECClassId)
-                        propNameListExp->AddPropertyNameExp(propNameExp);
-                    };
-
-                if (SUCCESS != classNameExp->CreatePropertyNameExpList(ctx, addDelegate))
+                    BeAssert(false && "ClassNameExp has not been assigned the ClassMap yet.");
                     return FinalizeParseStatus::Error;
+                    }
 
+                ClassMap const& classMap = classNameExp->GetInfo().GetMap();
+                for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
+                    {
+                    //ECInstanceId, ECClassId are treated separately
+                    const PropertyMap::Type propMapKind = propertyMap->GetType();
+                    if (propMapKind == PropertyMap::Type::ECInstanceId || propMapKind == PropertyMap::Type::ECClassId)
+                        continue;
+
+                    std::unique_ptr<PropertyNameExp> exp = std::make_unique<PropertyNameExp>(ctx, propertyMap->GetAccessString(), *classNameExp, classMap);
+                    propNameListExp->AddPropertyNameExp(exp);
+                    }
                 }
 
             return FinalizeParseStatus::NotCompleted;

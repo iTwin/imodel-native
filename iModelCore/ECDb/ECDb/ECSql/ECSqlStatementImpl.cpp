@@ -100,7 +100,7 @@ uint64_t ECSqlStatement::Impl::GetHashCode() const
         if (m_preparedStatement != nullptr && m_preparedStatement->GetECSql() != nullptr)
             m_hash64 = basic_fnv_1a()(m_preparedStatement->GetECSql());
         else
-            m_hash64 = static_cast<uint64_t>(0);
+            m_hash64 = UINT64_C(0);
         } 
 
     return m_hash64.Value();

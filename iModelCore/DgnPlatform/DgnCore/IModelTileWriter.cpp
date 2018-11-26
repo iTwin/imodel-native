@@ -84,7 +84,7 @@ protected:
         }
     template<typename T> static uint32_t GetFeatureIndex(T const& args, uint32_t idx)
         {
-        return args.m_features.IsNonUniform() ? args.m_features.m_featureIDs[idx] : 0;
+        return args.m_features.IsNonUniform() ? args.m_features.m_featureIDs[idx] : args.m_features.m_featureID;
         }
 
     LUTVertex(QPoint3dCR pos, uint16_t colorIndexOrNormal, uint32_t feature) : m_position(pos), m_colorIndexOrNormal(colorIndexOrNormal), m_featureIndex(feature) { }

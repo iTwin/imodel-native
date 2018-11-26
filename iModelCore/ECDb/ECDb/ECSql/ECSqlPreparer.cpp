@@ -18,7 +18,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& context, Exp const& exp)
     {
-    ECSqlStatus status = ECSqlStatus::Error;
     if (&context.GetDataSourceConnection() != &context.GetECDb() && Exp::Type::Select != exp.GetType())
         {
         context.Issues().Report("Only SELECT queries can be executed against a separate data source connection.");
@@ -29,7 +28,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
         {
             case Exp::Type::Select:
             {
-            status = ECSqlSelectPreparer::Prepare(context, exp.GetAs<SelectStatementExp>());
+            ECSqlStatus status = ECSqlSelectPreparer::Prepare(context, exp.GetAs<SelectStatementExp>());
             if (!status.IsSuccess())
                 return status;
 
@@ -38,7 +37,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Insert:
             {
-            status = ECSqlInsertPreparer::Prepare(context, exp.GetAs<InsertStatementExp>());
+            ECSqlStatus status = ECSqlInsertPreparer::Prepare(context, exp.GetAs<InsertStatementExp>());
             if (!status.IsSuccess())
                 return status;
 
@@ -47,7 +46,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Update:
             {
-            status = ECSqlUpdatePreparer::Prepare(context, exp.GetAs<UpdateStatementExp>());
+            ECSqlStatus status = ECSqlUpdatePreparer::Prepare(context, exp.GetAs<UpdateStatementExp>());
             if (!status.IsSuccess())
                 return status;
 
@@ -56,7 +55,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 
             case Exp::Type::Delete:
             {
-            status = ECSqlDeletePreparer::Prepare(context, exp.GetAs<DeleteStatementExp>());
+            ECSqlStatus status = ECSqlDeletePreparer::Prepare(context, exp.GetAs<DeleteStatementExp>());
             if (!status.IsSuccess())
                 return status;
 

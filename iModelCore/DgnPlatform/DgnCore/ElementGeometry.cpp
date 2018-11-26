@@ -4248,7 +4248,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
             case GeometryStreamIO::OpCode::BasicSymbology:
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
-                Json::Value value;
+                Json::Value value(Json::objectValue);
 
                 DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
 

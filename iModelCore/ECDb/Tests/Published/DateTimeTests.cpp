@@ -372,4 +372,66 @@ TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
     ASSERT_EQ(testDataset.size(), rowCount);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                  11/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DateTimeTestFixture, TimeOfDay)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("TimeOfDay.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="CoreCustomAttributes" version="01.00.01" alias="CoreCA"/>
+            <ECEntityClass typeName="CalendarEntry" modifier="None">
+                <ECProperty propertyName="Day" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                            <DateTimeComponent>Date</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="StartTime" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                            <DateTimeComponent>TimeOfDay</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
+                <ECProperty propertyName="EndTime" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="CoreCustomAttributes.01.00.01">
+                            <DateTimeComponent>TimeOfDay</DateTimeComponent>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
+
+                <ECProperty propertyName="Stamp" typeName="dateTime"/>
+
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey calenderEntryKey, timestampOnOtherDayKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(calenderEntryKey, "INSERT INTO ts.CalendarEntry(Day,StartTime,EndTime,Stamp) VALUES(DATE '2018-11-09', TIME '08:00', TIME '08:30',TIMESTAMP '2000-01-01T08:00:00Z')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(timestampOnOtherDayKey, "INSERT INTO ts.CalendarEntry(Day,StartTime,EndTime,Stamp) VALUES(DATE '2018-11-09', TIME '08:00', TIME '08:30',TIMESTAMP '2018-11-01T08:00:00Z')"));
+
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.CalendarEntry WHERE StartTime = TIMESTAMP '2018-04-30T08:10:00'"));
+    stmt.Finalize();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.CalendarEntry WHERE StartTime = DATE '2018-04-30'"));
+    stmt.Finalize();
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.CalendarEntry WHERE StartTime = Day"));
+    stmt.Finalize();
+
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.CalendarEntry WHERE StartTime = Stamp ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(calenderEntryKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ts.CalendarEntry WHERE StartTime <= TIME '08:10:00' AND EndTime >= TIME '08:10:00' ORDER BY ECInstanceId"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(calenderEntryKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(timestampOnOtherDayKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

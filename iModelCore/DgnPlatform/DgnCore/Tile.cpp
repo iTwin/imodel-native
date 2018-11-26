@@ -1124,7 +1124,8 @@ Utf8CP Cache::GetCurrentVersion()
     // 1: Packed feature table
     // 2: Texture atlas for rastter text
     // 3: Re-enable polyface decimation
-    return "3";
+    // 4: Constrain tile tree ranges to intersection of model extents + project extents; embed uniform feature index into vertex tables.
+    return "4";
     }
 
 /*---------------------------------------------------------------------------------**//**
