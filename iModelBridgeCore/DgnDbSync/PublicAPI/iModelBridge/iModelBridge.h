@@ -491,6 +491,7 @@ struct iModelBridge
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
+        bool m_mergeLevels = true;  // WIP make this default to false
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
@@ -597,6 +598,8 @@ struct iModelBridge
         BeDuration GetThumbnailTimeout() const {return m_thumbnailTimeout;}
         void SetWantThumbnails(bool b) {m_wantThumbnails = b;}
         bool WantThumbnails() const {return m_wantThumbnails;}
+        void SetMergeLevels(bool b) {m_mergeLevels = b;}
+        bool GetMergeLevels() const {return m_mergeLevels;}
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}

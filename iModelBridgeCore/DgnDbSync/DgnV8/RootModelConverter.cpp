@@ -1355,6 +1355,10 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationshipsInModel(DgnV8ModelR v
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_BeginConversion()
     {
+    if (m_beginConversionCalled)
+        return;
+    m_beginConversionCalled = true;
+
     if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != SyncInfo::ImportJob::Type::RootModels))
         {
         OnFatalError();
@@ -1540,9 +1544,29 @@ struct ConvertModelACSTraverser : DgnV8Api::IACSTraversalHandler
 
     }; // ConvertModelACSTraverser
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                    Keith.Bentley                   02/15
-    +---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::MakeDefinitionChanges()
+    {
+    if (!m_isRootModelSpatial)
+        return BSISUCCESS;
+
+    _OnConversionStart();
+    _BeginConversion();
+    _ConvertLineStyles();
+    for (auto& modelMapping : m_v8ModelMappings)
+        {
+        if (IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
+            ConvertModelMaterials(modelMapping.GetV8Model());
+        }
+    _ConvertSpatialLevels();
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/15
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus  RootModelConverter::Process()
     {
     AddSteps(9);

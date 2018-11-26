@@ -964,6 +964,8 @@ protected:
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
     bool                 m_hadAnyChanges = false;
+    bool                 m_onConversionStartCalled = false;
+    bool                 m_beginConversionCalled = false;
     uint32_t             m_elementsConverted = 0;
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
@@ -2323,6 +2325,7 @@ protected:
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
     BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
+
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2619,6 +2622,8 @@ protected:
     
     //! override this to control how drawing and sheet models are found
     DGNDBSYNC_EXPORT virtual void _ImportDrawingAndSheetModels(ResolvedModelMapping& rootModelMapping);
+
+    DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
 
     //! @}
 

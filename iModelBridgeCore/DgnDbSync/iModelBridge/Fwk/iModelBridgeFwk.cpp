@@ -1455,9 +1455,12 @@ int iModelBridgeFwk::ProcessSchemaChange()
     GetLogger().infov("bridge:%s iModel:%s - Processing schema change.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
 
     //  Push the pending schema change to iModelHub in its own changeset
-    m_briefcaseDgnDb->SaveChanges();
+    if (BeSQLite::BE_SQLITE_OK != m_briefcaseDgnDb->SaveChanges())
+        return RETURN_STATUS_SERVER_ERROR; // (probably a failure to obtain locks or reserve codes) 
+
     if (BSISUCCESS != Briefcase_PullMergePush("schema changes"))
         return RETURN_STATUS_SERVER_ERROR;
+
     Briefcase_ReleaseAllPublicLocks();
 
     // >------> pullmergepush *may* have pulled schema changes -- close and re-open the briefcase in order to merge them in <-----------<

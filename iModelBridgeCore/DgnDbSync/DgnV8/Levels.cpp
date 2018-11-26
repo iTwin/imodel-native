@@ -211,7 +211,7 @@ DgnCategoryId Converter::ConvertLevelToCategory(DgnV8Api::LevelHandle const& lev
     dbCategoryName.insert(0, _GetNamePrefix().c_str());
     DgnDbTable::ReplaceInvalidCharacters(dbCategoryName, DgnCategory::GetIllegalCharacters(), '_');
 
-    DefinitionModelPtr definitionModel = GetJobDefinitionModel();
+    DefinitionModelPtr definitionModel = _GetParams().GetMergeLevels()? &m_dgndb->GetDictionaryModel(): GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         return DgnCategoryId();
 

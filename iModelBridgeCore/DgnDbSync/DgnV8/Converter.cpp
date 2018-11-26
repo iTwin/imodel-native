@@ -1776,6 +1776,10 @@ void Converter::GetOrCreateJobPartitions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_OnConversionStart()
     {
+    if (m_onConversionStartCalled)
+        return;
+    m_onConversionStartCalled = true;
+
     BeAssert(_GetParams().GetAssetsDir().DoesPathExist());
 
     SetV8ProgressMeter();
