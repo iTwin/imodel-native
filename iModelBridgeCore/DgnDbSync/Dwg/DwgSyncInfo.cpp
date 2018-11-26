@@ -2306,7 +2306,10 @@ DwgSyncInfo::Group::Group (DgnElementId id, DwgFileId fid, StableIdPolicy policy
 
     DwgObjectHash::HashFiler filer(m_hasher, *DwgDbObject::Cast(&group));
     if (filer.IsValid())
+        {
         group.DxfOut (filer);
+        m_hasher.Add (m_name.c_str(), m_name.size());
+        }
 
     DwgDbObjectIdArray  memberIds;
     if (addMembers && group.GetAllEntityIds(memberIds) > 0)

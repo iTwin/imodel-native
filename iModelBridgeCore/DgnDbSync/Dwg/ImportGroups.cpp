@@ -46,6 +46,15 @@ DgnElementIdSet GroupFactory::FindAllElements (DwgDbObjectIdCR objectId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+void    GroupFactory::SetGroupName (GenericGroupR genericGroup) const
+    {
+    Utf8String  name(m_dwgGroup.GetName().c_str());
+    genericGroup.SetUserLabel (name.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/18
++---------------+---------------+---------------+---------------+---------------+------*/
 GenericGroupPtr GroupFactory::CreateAndInsert () const
     {
     GenericGroupPtr genericGroup;
@@ -62,12 +71,12 @@ GenericGroupPtr GroupFactory::CreateAndInsert () const
         return  genericGroup;
 
     // set the group name as the user label
-    Utf8String  name(m_dwgGroup.GetName().c_str());
-    genericGroup->SetUserLabel (name.c_str());
+    this->SetGroupName (*genericGroup);
 
     // insert GenericGroup to bim now, as AddMember needs source & target element IDs.
     if (genericGroup->Insert().IsNull())
         {
+        Utf8String  name(m_dwgGroup.GetName().c_str());
         m_importer.ReportError (IssueCategory::UnexpectedData(), Issue::Message(), Utf8PrintfString("Failed inserting group %lls!", name.c_str()).c_str());
         genericGroup = nullptr;
         }
@@ -112,6 +121,9 @@ BentleyStatus   GroupFactory::Update (GenericGroupR genericGroup) const
         if (member.IsValid())
             genericGroup.RemoveMember (*member);
         }
+
+    // update the group name
+    this->SetGroupName (genericGroup);
 
     return  BSISUCCESS;
     }
