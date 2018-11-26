@@ -85,8 +85,8 @@ LONG WINAPI vectoredExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
             return EXCEPTION_CONTINUE_SEARCH;
         }
 
-    LOG.fatalv("Unhandled exception %lx", code);
-    LOG.fatal(iModelBridgeErrorHandling::GetStackTraceDescription(20, 4).c_str());
+    LOG.errorv("Exception %lx", code);
+    LOG.error(iModelBridgeErrorHandling::GetStackTraceDescription(20, 4).c_str());
     return EXCEPTION_CONTINUE_SEARCH;
     }
 
@@ -137,5 +137,5 @@ void iModelBridgeErrorHandling::GetStackTraceDescriptionFixed(char* buf, size_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeErrorHandling::LogStackTrace()
     {
-    // LOG.fatal(GetStackTraceDescription(20, 1).c_str());
+    // LOG.error(GetStackTraceDescription(20, 1).c_str());
     }
