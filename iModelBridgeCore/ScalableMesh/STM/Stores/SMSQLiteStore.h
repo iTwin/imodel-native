@@ -122,6 +122,8 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
 
         HPMBlockID StoreTexture(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID);
 
+        HPMBlockID StoreTextureCompressed(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID);
+
         bool IsCompressedType();
 
     public:      
@@ -139,6 +141,8 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
 
         virtual size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
+
+        virtual HPMBlockID StoreCompressedBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;         
 

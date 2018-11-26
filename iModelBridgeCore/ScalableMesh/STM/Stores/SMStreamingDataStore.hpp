@@ -2289,32 +2289,22 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             }
 #ifndef LINUX_SCALABLEMESH_BUILD
 
-        DataSourceURL url (m_dataSourceURL);
-        url.append(L"p_" + std::to_wstring(blockID.m_integerID) + extension);
+        BeFileName url (m_dataSourceURL.c_str());
+        url.AppendToPath((L"p_" + std::to_wstring(blockID.m_integerID) + extension).c_str());
 
-        DataSource      *   dataSource = nullptr;
-        DataSourceStatus    status;
-
-        try
+        BeFile file;
+        BeFileStatus status = file.Open(url.c_str(), BeFileAccess::Write);
+        if (BeFileStatus::Success != status)
             {
-            if ((dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceSessionName())) == nullptr)
-                throw DataSourceStatus::Status_Error;
-
-            if ((status = dataSource->open(url, DataSourceMode_Write)).isFailed())
-                throw status;
-
-            if ((status = dataSource->write(dataToWrite, sizeToWrite)).isFailed())
-                throw status; // problem writing a DataSource
-
-            if ((status = dataSource->close()).isFailed())
-                throw status;
+            status = file.Create(url.c_str());
             }
-        catch (DataSourceStatus)
+        if (BeFileStatus::Success == status)
+            file.Write(nullptr, dataToWrite, sizeToWrite);
+        else
             {
-            assert(false);
+            LOG.errorv("Failed to open or create b3dm file [BeFileStatus(%d)] : %ls", (uint32_t)status, url.c_str());
             }
 
-        DataSourceManager::Get()->destroyDataSource(dataSource);
 #endif
         if (mustCleanup)
             {

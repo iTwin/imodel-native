@@ -120,6 +120,13 @@ private:
     bvector<Convert3MXBNode> m_nodeArray;            // Array of information collected about each node of the 3MXB file
     bvector<int64_t> m_textureIDArray;                // Array of texture IDs used in the 3MXB file
 
+	static bvector<Byte> s_rgb;
+
+	static bvector<Byte>& GetRGBBuffer()
+	{
+		return s_rgb;
+	}
+
 
 #ifndef VANCOUVER_API // The virtual functions below are called while reading a 3MXB file        
     virtual void  _PushNode(const ThreeMxSchema::S3NodeInfo& nodeInfo)
@@ -171,6 +178,21 @@ private:
         m_nodeArray.push_back(std::move(node));
     }
 
+    void _DecodeJpegMetaData(Byte const* data, size_t dataSize, int& width, int& height)
+    {
+        FIMEMORY*       memory = FreeImage_OpenMemory(const_cast <byte*> (data), (DWORD)dataSize);
+        FIBITMAP*       bitmap;
+
+        if (NULL != (bitmap = FreeImage_LoadFromMemory(FIF_JPEG, memory, JPEG_ACCURATE)))
+        {
+            width = FreeImage_GetWidth(bitmap);
+            height = FreeImage_GetHeight(bitmap);
+            FreeImage_Unload(bitmap);
+        }
+
+        FreeImage_CloseMemory(memory);
+    }
+
     void _DecodeJpegData(Byte const* data, size_t dataSize, bvector<Byte>& rgb, int& width, int& height)
     {
         // Decode the JPEG buffer using freeimage
@@ -209,14 +231,17 @@ private:
         if (m_convertStatus != SMFrom3MXStatus::Success)
             return;
 
+        //bvector<Byte>& rgb = GetRGBBuffer();
         bvector<Byte> rgb;
         int w;
         int h;
 
-        _DecodeJpegData(data, dataSize, rgb, w, h);
+        //_DecodeJpegData(data, dataSize, rgb, w, h);
 
         // Add the texture to the Scalable Mesh and record its id
-        int64_t texID = m_scMesh->AddTexture(w, h, 3, rgb.data());
+        //int64_t texID = m_scMesh->AddTexture(w, h, 3, rgb.data());
+        _DecodeJpegMetaData(data, dataSize, w, h);
+            int64_t texID = m_scMesh->AddTextureCompressed(w, h, 3, data, dataSize);
         m_textureIDArray.push_back(texID);
     }
 
@@ -761,5 +786,7 @@ SMFrom3MXStatus createScalableMeshFrom3MX
     ScalableMeshFrom3MXDefaultGCSHandler gcsHandler(outputGCS);
     return createScalableMeshFrom3MX(input3MXPath, output3SMPath, gcsHandler, progressHandler, warnings);
 }
+
+bvector<Byte> Convert3MXBFile::s_rgb;
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

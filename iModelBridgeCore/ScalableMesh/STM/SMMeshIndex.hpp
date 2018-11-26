@@ -71,6 +71,8 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
 
     this->m_nodeHeader.m_textureID = ISMStore::GetNullNodeID();
     this->m_nodeHeader.m_ptsIndiceID[0] = this->GetBlockID();
+
+    this->m_updateClipTimestamp = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->m_nodeInstanciationClipTimestamp;
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(uint64_t nodeID,
@@ -377,7 +379,38 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
     if (!this->m_destroyed)
         {
              
-        
+        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
+        if (diffsetPtr.IsValid())
+        {
+            uint64_t myTs = LastClippingStateUpdateTimestamp();
+            if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
+            {
+                uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->LastClippingStateUpdateTimestamp();
+                if (childTs < myTs)
+                {
+                    bset<uint64_t> collectedClips;
+                    CollectClipIds(collectedClips);
+                    dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->SyncWithClipSets(collectedClips);
+                }
+            }
+            else if (this->m_nodeHeader.m_numberOfSubNodesOnSplit > 1 && this->m_apSubNodes[0] != nullptr)
+            {
+                for (size_t indexNodes = 0; indexNodes < this->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
+                {
+                    if (this->m_apSubNodes[indexNodes] != nullptr)
+                    {
+                        uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->LastClippingStateUpdateTimestamp();
+                        if (childTs < myTs)
+                        {
+                            bset<uint64_t> collectedClips;
+                            CollectClipIds(collectedClips);
+                            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->SyncWithClipSets(collectedClips);
+                        }
+                    }
+                }
+            }
+        }
+
         RemoveNonDisplayPoolData();
        
         GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, this->GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t) this->m_SMIndex);
@@ -428,9 +461,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     std::lock_guard<std::mutex> lock(m_headerMutex);
     if (this->IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
-
-    //GetDiffSetPtr();
-    
+        
     //assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     //assert(this->m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     //assert(m_triUvIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
@@ -2574,10 +2605,83 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
     linearFeaturesPtr->clear();
 
     }
+
+template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr)
+{
+    bvector<uint64_t> clipList;
+    bvector<DRange3d> clipRanges;
+    bvector<bool> withSkirts;
+
+    for (uint64_t clip : clips)
+    {
+        bool hasSkirt = this->GetClipRegistry()->HasSkirt(clip);
+
+        bvector<DPoint3d> polyPts;
+        GetClipRegistry()->GetClip(clip, polyPts);
+        DRange3d extPts = DRange3d::From(polyPts);
+        clipList.push_back(clip);
+        withSkirts.push_back(hasSkirt);
+        clipRanges.push_back(extPts);
+    }
+
+    return this->SyncWithClipSets(clipList, withSkirts, clipRanges, tr);
+}
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 10/18
+//=======================================================================================
+template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, const IScalableMesh* meshP)
+{
+   return SyncWithClipSets(clips, meshP->GetReprojectionTransform());
+}
+
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 10/18
+//=======================================================================================
+template<class POINT, class EXTENT>  void  SMMeshIndexNode<POINT, EXTENT>::CollectClipIds(bset<uint64_t>& clipIds) const
+{
+    RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffset = GetDiffSetPtr();
+
+    if (diffset == nullptr)
+        {
+        return;
+        }
+
+    for (const auto& diff : *diffset)
+        if (diff.clientID != -1 && diff.clientID != 0)
+            clipIds.insert(diff.clientID);
+}
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 10/18
+//=======================================================================================
+template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr)
+{
+    if (!this->IsLoaded()) this->Load();
+
+    bool hasSynced = false;
+    if (/*size() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3*/this->m_nodeHeader.m_totalCount == 0) return false;
+    for (size_t i =0; i < clipIds.size(); ++i)
+    {
+        uint64_t clipId = clipIds[i];
+        const DRange3d& extent = clipExtents[i];
+
+        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_contentExtent),
+            ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_contentExtent));
+        if (!this->m_SMIndex->IsFromCesium() && !extent.IntersectsWith(nodeRange, 2) && !HasClip(clipId)) continue;
+
+        if (this->m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
+        {
+            if (!extent.IntersectsWith(nodeRange) && !HasClip(clipId)) continue;
+        }
+        if (ModifyClip(clipId, false, hasSkirts[i], tr))
+            hasSynced = true;
+    }
+    return hasSynced;
+}
+
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 02/16
 //=======================================================================================
-template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipActionRecursive(ClipAction action, uint64_t clipId, DRange3d& extent,bool setToggledWhenIdIsOn, Transform tr)
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipActionRecursive(ClipAction action, uint64_t clipId, DRange3d& extent, size_t& nOfNodesTouched, bool setToggledWhenIdIsOn, Transform tr)
     {
     if (!this->IsLoaded()) Load();
     if (this->m_nodeHeader.m_totalCountDefined ? this->m_nodeHeader.m_totalCount == 0 : this->GetNbPoints() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3) return;
@@ -2593,6 +2697,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
         if (!extent.IntersectsWith(nodeRange)) return;
         }
     bool clipApplied = true;
+    uint64_t myTs = LastClippingStateUpdateTimestamp();
     switch (action)
         {
         case ClipAction::ACTION_ADD:
@@ -2606,17 +2711,38 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipAc
             break;
         }
     if (!clipApplied) return;
+    else
+        nOfNodesTouched++;
+
+    if (nOfNodesTouched >= 5000 && action != ClipAction::ACTION_DELETE)
+        return;
     if (this->m_pSubNodeNoSplit != NULL && !this->m_pSubNodeNoSplit->IsVirtualNode())
         {
-        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->ClipActionRecursive(action, clipId, extent, setToggledWhenIdIsOn, tr);
+        uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->LastClippingStateUpdateTimestamp();
+        if (childTs < myTs)
+        {
+            bset<uint64_t> collectedClips;
+            CollectClipIds(collectedClips);
+            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->SyncWithClipSets(collectedClips, tr);
+        }
+        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pSubNodeNoSplit)->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
         }
     else if (this->m_nodeHeader.m_numberOfSubNodesOnSplit > 1 && this->m_apSubNodes[0] != nullptr)
         {
         for (size_t indexNodes = 0; indexNodes < this->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
             {
             if (this->m_apSubNodes[indexNodes] != nullptr)
-                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->ClipActionRecursive(action, clipId, extent, setToggledWhenIdIsOn, tr);
-            }
+                {
+                uint64_t childTs = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->LastClippingStateUpdateTimestamp();
+                if (childTs < myTs)
+                {
+                    bset<uint64_t> collectedClips;
+                    CollectClipIds(collectedClips);
+                    dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->SyncWithClipSets(collectedClips, tr);
+                }
+                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_apSubNodes[indexNodes])->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIdIsOn, tr);
+                }
+             }
         }
     }
 
@@ -3752,9 +3878,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreMe
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> SMMeshIndexNode<POINT, EXTENT>::GetDiffSetPtr() const
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
-
-    if (!GetClipRegistry()->IsClipDefinitionFileExist())
-        return nullptr;
+    
+    if (GetClipRegistry() == nullptr || !GetClipRegistry()->IsClipDefinitionFileExist())
+        return poolMemItemPtr;
 
    //if (this->m_SMIndex->IsTerrain() == false) 
     //   return poolMemItemPtr;
@@ -4456,11 +4582,22 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasCli
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::IsClippingUpToDate()
     {
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
+
+    if (!diffsetPtr.IsValid()) return false;
+
     for (const auto& diffSet : *diffsetPtr)
         {
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return true;
         }
     return false;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 11/18
+//=======================================================================================
+template<class POINT, class EXTENT>  uint64_t SMMeshIndexNode<POINT, EXTENT>::LastClippingStateUpdateTimestamp() const
+    {
+    return m_updateClipTimestamp;
     }
 
 //=======================================================================================
@@ -4482,7 +4619,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
         }
     //std::cout << "Merging clips for " << this->GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
-
+   
     if (this->m_SMIndex->IsFromCesium() && tr.IsIdentity())
         assert(!"ECEF datasets must define a transform to apply any clipping");
 
@@ -4515,6 +4652,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     //DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
     bool polyInclusion = false;
     bset<uint64_t> addedPolyIds;
+    double minEdgeLength = DBL_MAX;
+   // size_t indexOfBiggestPoly = 0;
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
    // size_t indexOfBiggestPoly = 0;
     bvector<size_t> useVolumeClips;
     bvector<bool> isMask;
@@ -4540,31 +4680,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
             if (type == SMNonDestructiveClipType::Boundary) polyInclusion = true;
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
-            /*if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
-                {
-                extentOfBiggestPoly = polyExtent;
-                indexOfBiggestPoly = polys.size() - 1;
-                }
-            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly))
-                {
-                bool allInPoly = true;
-                for (auto&pt : polys.back())
-                    {
-                    if (!polyExtent.IsContainedXY(pt)) allInPoly = false;
-                    }
-                if (allInPoly)
-                    {
-                    auto curvePtr = ICurvePrimitive::CreateLineString(polys.back());
-                    auto curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
 
-                    auto outerCurvePtr = ICurvePrimitive::CreateLineString(polys[indexOfBiggestPoly]);
-                    auto outerCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, outerCurvePtr);
-
-                    const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *outerCurveVectorPtr);
-                    if (!intersection.IsNull())
-                        polyInclusion = true;
-                    }
-                }*/
 
             if (geom != SMClipGeometryType::BoundedVolume && !polyExtent.IntersectsWith(nodeRange, 2))
                 {
@@ -4572,6 +4688,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
                 clipIds.resize(clipIds.size() - 1);
                 continue;
                 }
+
+            if (s_simplifyOverviewClips && this->m_nodeHeader.m_level <= 1 && polys.back().size() >= this->m_nodeHeader.m_nodeCount)
+            {
+                if (minEdgeLength == DBL_MAX)
+                    minEdgeLength = ComputeMinEdgeLength(&points[0], pointsPtr->size(), &(*ptIndices)[0], ptIndices->size());
+                SimplifyPolygonToMinEdge(minEdgeLength / 2.0, polys.back());
+            }
 
             int nOfLoops = 0;
             if (geom == SMClipGeometryType::ComplexPolygon)
@@ -4653,7 +4776,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
    
             
-    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
 
     if (ptIndices->size() == 0)
         {
@@ -4740,7 +4862,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             for (auto&clip : clips)
             {
                 for (size_t i =0; i < clip->size(); ++i)
-                    isMaskPrimitive.push_back(isMask[&clip - clips.data()]);
+                    isMaskPrimitive.push_back(true/*isMask[&clip - clips.data()]*/);
                 clipComplete->Append(*clip);
             }
             bvector<size_t> polyfaceIndices;
@@ -4994,8 +5116,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 09/15
 //=======================================================================================
-    template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn, Transform tr)
+template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn, Transform tr)
     {
+    this->m_updateClipTimestamp = std::chrono::system_clock::now().time_since_epoch().count();
 
     if (this->m_nodeHeader.m_nodeCount == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3) return true;
 
@@ -5011,8 +5134,12 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         if (ClipIntersectsBox(clipId, this->m_nodeHeader.m_contentExtent, tr, !setToggledWhenIdIsOn)) //m_nodeExtent
 
             {
-                    bool clipFound = false;
+            bool clipFound = false;
+
         RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+        if (!diffSetPtr.IsValid()) return false;
+
         for (const auto& diffSet : *diffSetPtr) if (diffSet.clientID == clipId && diffSet.toggledForID == setToggledWhenIdIsOn) clipFound = true;
         if (clipFound) return true; //clip already added
            // RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->GetPointsPtr());
@@ -5064,6 +5191,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
     bool found = false;
     bvector<size_t> indices;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+    if (!diffSetPtr.IsValid()) return false;
+
     for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
         {
         if (it->clientID == clipId && it->toggledForID == setToggledWhenIdIsOn)
@@ -5104,10 +5234,14 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
     {
     //RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(this->GetPointsPtr());
 
+    this->m_updateClipTimestamp = std::chrono::system_clock::now().time_since_epoch().count();
     if (this->m_nodeHeader.m_nodeCount == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3) return true;
 
     bool found = false;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+    if (!diffSetPtr.IsValid()) return false;
+
     for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
         {
         if (it->clientID == clipId && it->toggledForID == setToggledWhenIdIsOn)
@@ -5603,7 +5737,8 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn, Transform tr)
     {
-    if (this->m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pRootNode)->ClipActionRecursive(action, clipId, extent, setToggledWhenIDIsOn, tr);
+    size_t nOfNodesTouched = 0;
+    if (this->m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pRootNode)->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIDIsOn, tr);
     }
    
 //#ifdef WIP_MESH_IMPORT
@@ -5804,6 +5939,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::SaveGro
         this->ComputeMergedClips();
         if (clipId == 0 || this->HasClip(clipId))
             {
+            if (!this->GetDiffSetPtr().IsValid()) return false;
+
             for (const auto& diffSet : *this->GetDiffSetPtr())
                 {
                 if (diffSet.clientID == clipId && diffSet.IsEmpty())
@@ -5840,6 +5977,8 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     bool isClipBoundary = false;
     if (coverageID != -2 && coverageID != -1)
         {
+        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(this->GetRootNode().GetPtr())->GetDiffSetPtr().IsValid()) return ERROR;
+
         for (const auto& diffSet : *static_cast<SMMeshIndexNode<POINT, EXTENT>*>(this->GetRootNode().GetPtr())->GetDiffSetPtr())
             {
             if (diffSet.clientID == coverageID)

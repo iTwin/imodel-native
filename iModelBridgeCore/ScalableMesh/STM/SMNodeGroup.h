@@ -42,6 +42,8 @@ class DataSourceSessionName;
 
 #define OPEN_OR_CREATE_FILE(beFile, pathStr, accessMode) BeFileStatus::Success == OPEN_FILE(beFile, pathStr, accessMode) || BeFileStatus::Success == beFile.Create(pathStr)
 
+#define LOG (*NativeLogging::LoggingManager::GetLogger(L"SMPublisher"))
+
 //#ifndef NDEBUG
 //#define DEBUG_GROUPS
 //#define DEBUG_AZURE
@@ -809,6 +811,13 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             m_totalSize = 2 * sizeof(size_t);
 
             m_isRoot = m_ParentGroup == nullptr;
+
+            BeFileName outDir(m_outputDirPath.c_str());
+            if (!outDir.IsDirectory())
+                {
+                BeFileNameStatus status = BeFileName::CreateNewDirectory(m_outputDirPath.c_str());
+                BeAssert(BeFileNameStatus::Success == status);
+                }
             }
 
 #ifndef LINUX_SCALABLEMESH_BUILD
@@ -1386,9 +1395,27 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     std::wstring group_filename(buffer);
 
     BeFile file;
-    if (OPEN_OR_CREATE_FILE(file, group_filename.c_str(), BeFileAccess::Write))
+    BeFileStatus status;
+    int numRetries = 0;
+    while (numRetries < 10 && BeFileStatus::FileNotFoundError != (status = file.Open(group_filename.c_str(), BeFileAccess::Write)))
         {
+        BeThreadUtilities::BeSleep(100);
+        ++numRetries;
+        }
+    if (BeFileStatus::FileNotFoundError != status)
+        {
+        LOG.errorv("File still open after 10 retries (shouldn't exist) [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
+        }
+    if (BeFileStatus::Success != status)
+        {
+        //LOG.errorv("Failed to Open [BeFileStatus(%d)]... try to create it: %ls", (uint32_t)status, group_filename.c_str());
+        status = file.Create(group_filename.c_str());
+        }
+    if (BeFileStatus::Success == status)
         file.Write(nullptr, utf8TileTree.c_str(), (uint32_t)utf8TileTree.size());
+    else
+        {
+        LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
 #endif
     }
