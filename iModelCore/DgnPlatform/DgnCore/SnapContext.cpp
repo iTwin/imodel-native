@@ -25,8 +25,6 @@ DVec3d                  m_snapNormal = DVec3d::FromZero();
 SnapHeat                m_heat = SNAP_HEAT_None;
 HitGeomType             m_geomType = HitGeomType::None;
 HitParentGeomType       m_parentGeomType = HitParentGeomType::None;
-DgnCategoryId           m_categoryId;
-DgnSubCategoryId        m_subCategoryId;
 IGeometryPtr            m_geomPtr;
 IGeometryPtr            m_intersectGeomPtr;
 DgnElementId            m_intersectId;
@@ -137,8 +135,6 @@ bool UpdateIfBetter(SnapData const& other, DPoint3dCR testPoint, DMatrix4dCR wor
     m_viewDistance = other.m_viewDistance;
     m_geomType = other.m_geomType;
     m_parentGeomType = other.m_parentGeomType;
-    m_categoryId = other.m_categoryId;
-    m_subCategoryId = other.m_subCategoryId;
     m_localToWorld = other.m_localToWorld;
     m_geomPtr = other.m_geomPtr;
     m_intersectGeomPtr = other.m_intersectGeomPtr;
@@ -164,12 +160,6 @@ void ToResponse(SnapContext::Response& output) const
     output.SetHeat(m_heat);
     output.SetGeomType(m_geomType);
     output.SetParentGeomType(m_parentGeomType);
-
-    if (m_categoryId.IsValid() && m_subCategoryId.IsValid())
-        {
-        output.SetCategory(m_categoryId.ToHexStr());
-        output.SetSubCategory(m_subCategoryId.ToHexStr());
-        }
 
     if (!m_hitPoint.IsDisconnect())
         output.SetHitPoint(m_hitPoint);
@@ -1872,44 +1862,20 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, bool isPart, ViewFlagsCP viewFlags, DgnElementIdSet const* offSubCategories, bool checkRange)
+bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, bool isPart, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, bool checkRange)
     {
     GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
 
     if (snapElemEntryId.IsValid())
         return (snapElemEntryId != elemEntryId);
 
-    if (nullptr != viewFlags || nullptr != offSubCategories)
-        {
-        GeometryParamsCR params = iter.GetGeometryParams();
+    GeometryParamsCR params = iter.GetGeometryParams();
 
-        if (nullptr != viewFlags)
-            {
-            switch (params.GetGeometryClass())
-                {
-                case DgnGeometryClass::Construction:
-                    if (!viewFlags->ShowConstructions())
-                        return true;
-                    break;
+    if (nullptr != subCategoryId && params.GetSubCategoryId() != *subCategoryId)
+        return true;
 
-                case DgnGeometryClass::Dimension:
-                    if (!viewFlags->ShowDimensions())
-                        return true;
-                    break;
-
-                case DgnGeometryClass::Pattern:
-                    if (!viewFlags->ShowPatterns())
-                        return true;
-                    break;
-                }
-            }
-
-        if (nullptr != offSubCategories)
-            {
-            if (offSubCategories->end() != offSubCategories->find(params.GetSubCategoryId()))
-                return true;
-            }
-        }
+    if (nullptr != geomClass && params.GetGeometryClass() != *geomClass)
+        return true;
 
     if (!checkRange)
         return false;
@@ -1934,7 +1900,7 @@ bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element, ViewFlagsCP viewFlags, DgnElementIdSet const* offSubCategories, CheckStop* stopTester)
+SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, CheckStop* stopTester)
     {
     GeometryStreamEntryId  snapElemEntryId = m_hitEntryId;
     GeometryStreamEntryId  snapPartEntryId = m_hitEntryId;
@@ -1945,7 +1911,7 @@ SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element,
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...
-        if (SkipEntry(iter, snapElemEntryId, false, viewFlags, offSubCategories, nullptr != element))
+        if (SkipEntry(iter, snapElemEntryId, false, subCategoryId, geomClass, nullptr != element))
             continue;
 
         if (GeometryCollection::Iterator::EntryType::GeometryPart != iter.GetEntryType())
@@ -1971,7 +1937,7 @@ SnapStatus GetClosestCurve(GeometryCollection& collection, DgnElementCP element,
         for (auto partIter : partCollection)
             {
             // Quick exclude of geometry that didn't generate the hit...
-            if (SkipEntry(partIter, snapPartEntryId, true, viewFlags, offSubCategories, true))
+            if (SkipEntry(partIter, snapPartEntryId, true, subCategoryId, geomClass, true))
                 continue;
 
             if (ProcessEntry(partIter, snapPartEntryId.IsValid(), geomPart.get()))
@@ -2162,17 +2128,17 @@ bool ComputeSnapLocation(SnapMode snapMode, bool findArcCenters) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus GetClosestCurve(GeometrySourceCR source, ViewFlagsCP viewFlags = nullptr, DgnElementIdSet const* offSubCategories = nullptr, CheckStop* stopTester = nullptr)
+SnapStatus GetClosestCurve(GeometrySourceCR source, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, CheckStop* stopTester)
     {
     GeometryCollection collection(source);
 
-    return GetClosestCurve(collection, source.ToElement(), viewFlags, offSubCategories, stopTester);
+    return GetClosestCurve(collection, source.ToElement(), subCategoryId, geomClass, stopTester);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus GetClosestCurve(JsonValueCR input, DgnDbR db, ViewFlagsCP viewFlags = nullptr, DgnElementIdSet const* offSubCategories = nullptr, CheckStop* stopTester = nullptr)
+SnapStatus GetClosestCurve(JsonValueCR input, DgnDbR db, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, CheckStop* stopTester)
     {
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(db, true); // I don't expect pickable decorations to reference GeometryParts...
 
@@ -2186,7 +2152,7 @@ SnapStatus GetClosestCurve(JsonValueCR input, DgnDbR db, ViewFlagsCP viewFlags =
 
     GeometryCollection collection(stream, db);
 
-    return GetClosestCurve(collection, nullptr, viewFlags, offSubCategories, stopTester);
+    return GetClosestCurve(collection, nullptr, subCategoryId, geomClass, stopTester);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2254,7 +2220,11 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
         snapModes.erase(SnapMode::Intersection);
 
     ViewFlags viewFlags = input.GetViewFlags();
-    DgnElementIdSet offSubCategories = input.GetOffSubCategories();
+    DgnSubCategoryId subCategoryId;
+    uint32_t geomClassInt;
+    bool haveSubCategory = input.GetSubCategoryId(subCategoryId);
+    bool haveGeomClass = input.GetGeometryClass(geomClassInt);
+    DgnGeometryClass geomClass = haveGeomClass ? (DgnGeometryClass) geomClassInt : DgnGeometryClass::Primary;
 
     if (!snapModes.empty())
         {
@@ -2262,9 +2232,9 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
         SnapStatus status = SnapStatus::NoSnapPossible;
 
         if (nullptr != source)
-            status = helper.GetClosestCurve(*source, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+            status = helper.GetClosestCurve(*source, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
         else
-            status = helper.GetClosestCurve(foundNonElemGeom->second, db, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+            status = helper.GetClosestCurve(foundNonElemGeom->second, db, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
 
         if (SnapStatus::Success != status)
             {
@@ -2288,8 +2258,6 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             currentSnap.m_heat = SnapGeometryHelper::GetHeat(currentSnap.m_snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode, &currentSnap.m_viewDistance);
             currentSnap.m_geomType = helper.GetSnapGeomType();
             currentSnap.m_parentGeomType = helper.GetHitParentGeomType();
-            currentSnap.m_categoryId = helper.GetHitGeometryParams().GetCategoryId();
-            currentSnap.m_subCategoryId = helper.GetHitGeometryParams().GetSubCategoryId();
             currentSnap.m_interiorWasPickable = (RenderMode::Wireframe != viewFlags.GetRenderMode() || (FillDisplay::ByView == helper.GetHitGeometryParams().GetFillDisplay() && viewFlags.ShowFill()) || FillDisplay::ByView < helper.GetHitGeometryParams().GetFillDisplay());
 
             if (helper.IsSnapNormalValid())
@@ -2320,12 +2288,6 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
 
         originSnap.m_heat = SnapGeometryHelper::GetHeat(originSnap.m_snapPoint, closePoint, worldToViewMap.M0, snapAperture, true, &originSnap.m_viewDistance);
 
-        if (nullptr != source)
-            {
-            originSnap.m_categoryId = source->GetCategoryId();
-            originSnap.m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(originSnap.m_categoryId);
-            }
-
         bestSnap.UpdateIfBetter(originSnap, testPoint, worldToViewMap.M0, snapAperture);
         }
 
@@ -2349,9 +2311,9 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             SnapStatus status = SnapStatus::NoSnapPossible;
 
             if (nullptr != candidateSource)
-                status = helper.GetClosestCurve(*candidateSource, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+                status = helper.GetClosestCurve(*candidateSource, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
             else
-                status = helper.GetClosestCurve(foundCandidateNonElemGeom->second, db, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, &checkstop);
+                status = helper.GetClosestCurve(foundCandidateNonElemGeom->second, db, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
 
             if (SnapStatus::Aborted == status)
                 break;

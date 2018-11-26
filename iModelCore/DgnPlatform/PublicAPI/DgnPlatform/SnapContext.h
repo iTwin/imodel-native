@@ -86,7 +86,8 @@ namespace SnapContext
         BE_JSON_NAME(snapModes)
         BE_JSON_NAME(snapAperture)
         BE_JSON_NAME(snapDivisor)
-        BE_JSON_NAME(offSubCategories)
+        BE_JSON_NAME(subCategoryId)
+        BE_JSON_NAME(geometryClass)
         BE_JSON_NAME(intersectCandidates)
         BE_JSON_NAME(decorationGeometry)
         BE_JSON_NAME(geometryStream)
@@ -98,6 +99,8 @@ namespace SnapContext
         Render::ViewFlags GetViewFlags() const {Render::ViewFlags viewFlags; if (isMember(json_viewFlags())) viewFlags.FromJson((*this)[json_viewFlags()]); return viewFlags;}
         double GetSnapAperture() const {return (*this)[json_snapAperture()].asDouble(12.0);}
         int GetSnapDivisor() const {return (*this)[json_snapDivisor()].asUInt(2);}
+        bool GetSubCategoryId(DgnElementId& subCategoryId) const {auto& value = (*this)[json_subCategoryId()]; if (value.isNull()) return false; subCategoryId.FromJson(value); return true;}
+        bool GetGeometryClass(uint32_t& geomClass) const {auto& value = (*this)[json_geometryClass()]; if (value.isNull()) return false; geomClass = value.asUInt(); return true;}
 
         bset<SnapMode> GetSnapModes() const {
             bset<SnapMode> snapModes;
@@ -122,20 +125,6 @@ namespace SnapContext
                 }
             }
         return snapModes;
-        }
-
-        DgnElementIdSet GetOffSubCategories() const {
-            DgnElementIdSet offSubCategories;
-            auto& subcat = (*this)[json_offSubCategories()];
-            if (subcat.isNull() || !subcat.isArray())
-                return offSubCategories;
-            uint32_t nEntries = (uint32_t) subcat.size();
-            for (uint32_t i=0; i < nEntries; i++) {
-                DgnSubCategoryId subCategoryId;
-                subCategoryId.FromJson(subcat[i]);
-                offSubCategories.insert(subCategoryId);
-            }
-        return offSubCategories;
         }
 
         DgnElementIdSet GetIntersectCandidates(DgnElementId hitId) const {
@@ -176,8 +165,6 @@ namespace SnapContext
         BE_JSON_NAME(heat)
         BE_JSON_NAME(geomType)
         BE_JSON_NAME(parentGeomType)
-        BE_JSON_NAME(category)
-        BE_JSON_NAME(subCategory)
         BE_JSON_NAME(hitPoint)
         BE_JSON_NAME(snapPoint)
         BE_JSON_NAME(normal)
@@ -191,8 +178,6 @@ namespace SnapContext
         void SetHeat(SnapHeat val) {(*this)[json_heat()] = (uint32_t) val;}
         void SetGeomType(HitGeomType val) {(*this)[json_geomType()] = (uint32_t)  val;}
         void SetParentGeomType(HitParentGeomType val) {(*this)[json_parentGeomType()] = (uint32_t) val;}
-        void SetCategory(Utf8StringCR val) {(*this)[json_category()] = val;}
-        void SetSubCategory(Utf8StringCR val) {(*this)[json_subCategory()] = val;}
         void SetNormal(DVec3dCR val) {(*this)[json_normal()] = JsonUtils::DVec3dToJson(val);}
         void SetCurve(JsonValueCR val) {(*this)[json_curve()] = val;}
         void SetIntersectCurve(JsonValueCR val) {(*this)[json_intersectCurve()] = val;}
