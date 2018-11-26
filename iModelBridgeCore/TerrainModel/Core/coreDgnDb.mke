@@ -19,7 +19,7 @@ MultiCompileDepends = $(_MakeFileSpec)
 %if defined (MSVC_VERSION)
 CCompOpts + -wd4456 -wd4457 -wd4458 -wd4459
 %else
-ClangCppCompOpts + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
+ClangCppCompOpts + -D__BENTLEYTMDRAINAGE_BUILD__ -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
 cuser + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
 LLVMCommonCompOpts + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
 
@@ -77,6 +77,8 @@ always:
         |  -------- --------
 
 %include MultiCppCompileRule.mki
+
+$(o)bcdtmInitialise$(oext) : $(coreDir)2d/bcdtmInitialise.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)DTMIterators$(oext) : $(coreDir)cppwrappers/DTMIterators.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
@@ -232,11 +234,10 @@ $(o)bcdtmString$(oext) : $(coreDir)2d/bcdtmString.cpp $(DependsOnHeaders) ${Mult
 
 $(o)bcdtmGeopakIO$(oext) : $(coreDir)2d/bcdtmGeopakIO.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-$(o)bcdtmInitialise$(oext) : $(coreDir)2d/bcdtmInitialise.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
 $(o)bcdtmDllMain$(oext) : $(coreDir)2d/bcdtmDllMain.cpp $(DependsOnHeaders) ${MultiCompileDepends}
 
-
+%if $(BUILD_TOOLSET) != "APPLE_CLANG" && $(BUILD_TOOLSET) != "ANDROID_CLANG"
 %include MultiCppCompileGo.mki
 
 CoreFileObjectList =% $(MultiCompileObjectList)
@@ -251,6 +252,7 @@ nameToDefine = __BENTLEYTMDRAINAGE_BUILD__
 #cuser + -wd4189
 
 %include MultiCppCompileRule.mki
+%endif
 
 $(o)bcdtmDrainage$(oext)          : $(coreDir)../Drainage/bcdtmDrainage.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 

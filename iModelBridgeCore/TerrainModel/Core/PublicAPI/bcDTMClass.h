@@ -862,7 +862,7 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
 #if !defined (ANDROID)
 #define DG_INLINE inline
 #else
-#define DG_INLINE
+#define DG_INLINE inline
 #endif
 
     DG_INLINE BC_DTM_OBJ* BcDTM::GetTinHandle() const

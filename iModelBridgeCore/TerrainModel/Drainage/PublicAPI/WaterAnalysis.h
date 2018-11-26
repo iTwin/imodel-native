@@ -12,7 +12,7 @@
 #define ABSTRACT_KEYWORD abstract
 #else
 #define ADDDRAINAGETYPES(t)  TERRAINMODEL_TYPEDEFS(t); typedef RefCountedPtr<BENTLEY_NAMESPACE_NAME::TerrainModel::t> t ## Ptr;
-#define ABSTRACT_KEYWORD
+#define ABSTRACT_KEYWORD =0;
 #endif
 
 ADDDRAINAGETYPES(WaterAnalysis);
@@ -1502,3 +1502,4 @@ private:
             }
     };
 END_BENTLEY_TERRAINMODEL_NAMESPACE
+
