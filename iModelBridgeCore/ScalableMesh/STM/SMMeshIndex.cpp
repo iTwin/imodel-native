@@ -5,6 +5,8 @@
 USING_NAMESPACE_IMAGEPP
 #include "Edits/ClipUtilities.hpp"
 #include "ScalableMesh/ScalableMeshGraph.h"
+
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #include "ScalableMesh.h"
 #include "SMPointIndex.h"
 #include "SMMeshIndex.h"
@@ -13,7 +15,6 @@ USING_NAMESPACE_IMAGEPP
    
 
 
-USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 //template class SMPointIndex<DPoint3d, ISMStore::Extent3d64f>;
 

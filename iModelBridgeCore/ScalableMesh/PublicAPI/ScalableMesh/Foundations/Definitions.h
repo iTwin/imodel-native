@@ -184,7 +184,7 @@ class Uncopyable
 };
 
 
-
+#if _WIN32
 #ifndef LINUX_SCALABLEMESH_BUILD 
 /*---------------------------------------------------------------------------------**//**
 * @description  This is a trait class that returns whether a specified type is
@@ -213,6 +213,7 @@ template <> struct is_pod<long> {enum {value = 1};};
 template <> struct is_pod<unsigned long> {enum {value = 1};};
 template <> struct is_pod<float> {enum {value = 1};};
 template <> struct is_pod<double> {enum {value = 1};};
+#endif
 #endif
 
 /*---------------------------------------------------------------------------------**//**

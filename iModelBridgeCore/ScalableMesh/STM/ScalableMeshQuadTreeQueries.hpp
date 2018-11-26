@@ -238,11 +238,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQ
     return IsCorrect;    
     }
 
-    template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
+ /*   template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
         const EXTENT&  pi_rExtentInMeters,
         const DPoint3d pi_pViewBox[]);
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+#ifndef LINUX_SCALABLEMESH_BUILD*/
     template<class EXTENT> bool GetVisibleExtent(EXTENT&        po_rVisibleExtent,
         const EXTENT&  pi_rExtent,
         const DPoint3d pi_pViewBox[])
@@ -285,7 +285,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQ
 
         return isVisible;
     }
-#endif
+//#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                    HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],

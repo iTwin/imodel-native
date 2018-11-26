@@ -1243,6 +1243,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         ISMDataStoreTypePtr<Extent3dType> dataStore;
         if (!isSingleFile)
             {
+#ifndef LINUX_SCALABLEMESH_BUILD
             m_streamingSettings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(m_path);
 
             if (!m_streamingSettings->IsValid())
@@ -1274,7 +1275,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     (!m_streamingSettings->GetGCSString().empty() && !LoadGCSFrom(m_streamingSettings->GetGCSString())))
                     return BSIERROR; // Error loading layer gcs
                 }
-
+#endif
             }
         else
             {
@@ -2023,7 +2024,9 @@ template <class POINT> bool ScalableMesh<POINT>::_IsStubFile()
 
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetProjectWiseContextShareLink()
     {
+#ifndef LINUX_SCALABLEMESH_BUILD
     if (m_smRDSProvider.IsValid()) return m_smRDSProvider->GetRDSURLAddress();
+    #endif
     return Utf8String();
     }
 
@@ -2294,7 +2297,11 @@ template <class POINT> IScalableMeshEditPtr ScalableMesh<POINT>::_GetMeshEditInt
 +----------------------------------------------------------------------------*/
 template <class POINT> IScalableMeshAnalysisPtr ScalableMesh<POINT>::_GetMeshAnalysisInterface()
     {
+    #ifndef LINUX_SCALABLEMESH_BUILD
     return ScalableMeshAnalysis::Create(this);
+    #else
+    return nullptr;
+    #endif
     }
 
 /*----------------------------------------------------------------------------+
@@ -3626,7 +3633,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 
 	if (targetModel == nullptr) return ERROR; //something is wrong with the reference;
     auto& modelInfo = targetModel->GetModelInfo();
-    
+    #ifndef LINUX_SCALABLEMESH_BUILD
     if (targetCS == nullptr && this->IsCesium3DTiles() && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
         {
         // Fall back on the GCS saved in the SM metadata for Cesium tilesets
@@ -3643,7 +3650,9 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnModel));
         return this->_Reproject(newDgnGcsPtr.get(), dgnModel);
         }
-    else if (targetCS == nullptr || !gcs.HasGeoRef())
+    else 
+    #endif
+    if (targetCS == nullptr || !gcs.HasGeoRef())
         {
         BaseGCSPtr targetGcs(BaseGCS::CreateGCS());
                 
@@ -3710,6 +3719,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
 #else
 template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP targetCS, DgnDbR dgnProject)
     {
+    #ifndef LINUX_SCALABLEMESH_BUILD
     if (this->IsCesium3DTiles() && targetCS == nullptr && m_streamingSettings != nullptr && m_streamingSettings->IsGCSStringSet())
         {
         // Fall back on the GCS saved in the SM metadata for Cesium tilesets
@@ -3726,7 +3736,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
         DgnGCSPtr newDgnGcsPtr(DgnGCS::CreateGCS(newGCS.GetGeoRef().GetBasePtr().get(), dgnProject));
         return this->_Reproject(newDgnGcsPtr.get(), dgnProject);
         }
-
+#endif
     // Greate a GCS from the ScalableMesh
     GeoCoords::GCS gcs(this->GetGCS());
 
@@ -3736,6 +3746,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
     auto coordInterp = Dgn::GeoCoordInterpretation::Cartesian;
     if (this->IsCesium3DTiles())
         {
+        #ifndef LINUX_SCALABLEMESH_BUILD
         auto tileToDb = m_streamingSettings->GetTileToDbTransform();
         if (!tileToDb.IsIdentity())
             {
@@ -3752,6 +3763,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(DgnGCSCP t
             ecefToTile.InverseOf(tileToECEF);
             computedTransform = Transform::FromProduct(computedTransform, ecefToTile);
             }
+            #endif
         }
 
     if (gcs.HasGeoRef())
@@ -3834,6 +3846,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
+#ifndef LINUX_SCALABLEMESH_BUILD
     WString path;
     if (server == SMCloudServerType::Azure)
         {
@@ -3887,6 +3900,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(cons
     //s_stream_from_grouped_store = false;
 
     return m_scmIndexPtr->ChangeGeometricError(path, true, newGeometricErrorValue);
+    #else
+    return false;
+    #endif
     }
 
 /*----------------------------------------------------------------------------+
@@ -3916,11 +3932,11 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
     if (m_smSQLitePtr->IsSingleFile()) return ERROR;
 
     //s_stream_from_disk = true;
+ #ifndef LINUX_SCALABLEMESH_BUILD       
     s_stream_from_grouped_store = false;
     s_is_virtual_grouping = pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL;
 
     //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL);
-#ifndef LINUX_SCALABLEMESH_BUILD    
     m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, pi_pGroupMode, true);
 #endif
     return SUCCESS;

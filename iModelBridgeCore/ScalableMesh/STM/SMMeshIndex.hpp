@@ -5888,6 +5888,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     oldMasterHeader.m_singleFile = false;
 
     DataSource::SessionName dataSourceSessionName(settings->GetGUID().c_str());
+            #ifndef LINUX_SCALABLEMESH_BUILD
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), dataSourceSessionName);
     SMGroupCache::Ptr groupCache = nullptr;
     this->m_rootNodeGroup = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -5899,7 +5900,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     strategy->SetClipInfo(coverageID, isClipBoundary);
     strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
     strategy->AddGroup(this->m_rootNodeGroup.get());
-
+#endif
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
     std::thread saveGroupsThread([this, strategy]()
         {
@@ -5942,6 +5943,7 @@ Publish Cesium ready format
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue)
     {
 #ifndef VANCOUVER_API
+        #ifndef LINUX_SCALABLEMESH_BUILD
     ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
 
     //this->SaveMasterHeaderToCloud(pDataStore);
@@ -5959,6 +5961,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Change
 
 
     return SUCCESS;
+    #else
+    return ERROR;
+    #endif
 #else
     assert(!"Not implemented");
     return ERROR;
