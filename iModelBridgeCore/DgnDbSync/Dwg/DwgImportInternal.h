@@ -394,6 +394,7 @@ private:
 
     DgnElementIdSet FindAllElements (DwgDbObjectIdCR objectId) const;
     GenericGroupPtr CreateAndInsert () const;
+    void SetGroupName (GenericGroupR genericGroup) const;
 
 public:
     // the constructor
