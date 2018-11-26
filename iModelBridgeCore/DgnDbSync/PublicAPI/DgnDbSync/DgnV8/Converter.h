@@ -836,7 +836,7 @@ struct Converter
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
-        L10N_STRING(FailedToConvertSheet)       // =="Failed to convert sheet %s"==
+        L10N_STRING(FailedToConvertModel)       // =="Failed to convert model"==
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END

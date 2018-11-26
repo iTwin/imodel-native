@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <iModelBridge/iModelBridgeSacAdapter.h>
 #include <iModelBridge/iModelBridgeBimHost.h>
+#include <iModelBridge/iModelBridgeErrorHandling.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnProgressMeter.h>
@@ -723,6 +724,8 @@ void iModelBridgeSacAdapter::InitCrt(bool quietAsserts)
 #else
     // unix-specific CRT init
 #endif
+
+    iModelBridgeErrorHandling::Initialize();
     }
 
 //---------------------------------------------------------------------------------------

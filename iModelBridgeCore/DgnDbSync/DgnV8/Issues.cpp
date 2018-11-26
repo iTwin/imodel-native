@@ -559,7 +559,7 @@ void Converter::ClearV8ProgressMeter()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ReportFailedModelConversion(ResolvedModelMapping const& v8mm)
     {
-    ReportIssueV(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToConvertSheet(), IssueReporter::FmtModel(v8mm.GetV8Model()).c_str());
+    ReportIssue(IssueSeverity::Error, IssueCategory::Unknown(), Issue::FailedToConvertModel(), nullptr, IssueReporter::FmtModel(v8mm.GetV8Model()).c_str());
     }
 
 

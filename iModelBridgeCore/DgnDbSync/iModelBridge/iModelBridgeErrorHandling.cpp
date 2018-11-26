@@ -95,6 +95,10 @@ LONG WINAPI vectoredExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeErrorHandling::Initialize()
     {
+    static bool s_initialized;
+    if (s_initialized)
+        return;
+    s_initialized = true;
     ULONG callFirst = 0;
     /* hVEH = */ AddVectoredExceptionHandler (callFirst, vectoredExceptionHandler);
     }
