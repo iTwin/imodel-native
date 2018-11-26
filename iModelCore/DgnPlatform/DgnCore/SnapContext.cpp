@@ -2234,7 +2234,7 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
         if (nullptr != source)
             status = helper.GetClosestCurve(*source, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
         else
-            status = helper.GetClosestCurve(foundNonElemGeom->second, db, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
+            status = helper.GetClosestCurve(foundNonElemGeom->second, db, nullptr, nullptr, &checkstop);
 
         if (SnapStatus::Success != status)
             {
@@ -2311,9 +2311,9 @@ SnapContext::Response SnapContext::DoSnap(SnapContext::Request const& input, Dgn
             SnapStatus status = SnapStatus::NoSnapPossible;
 
             if (nullptr != candidateSource)
-                status = helper.GetClosestCurve(*candidateSource, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
+                status = helper.GetClosestCurve(*candidateSource, nullptr, nullptr, &checkstop);
             else
-                status = helper.GetClosestCurve(foundCandidateNonElemGeom->second, db, haveSubCategory ? &subCategoryId : nullptr, haveGeomClass ? &geomClass : nullptr, &checkstop);
+                status = helper.GetClosestCurve(foundCandidateNonElemGeom->second, db, nullptr, nullptr, &checkstop);
 
             if (SnapStatus::Aborted == status)
                 break;
