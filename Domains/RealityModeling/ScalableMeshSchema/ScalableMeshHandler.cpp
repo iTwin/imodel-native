@@ -123,11 +123,11 @@ PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
 //*---------------------------------------------------------------------------------**//**
 /* @bsimethod                                                    Richard.Bois   05/18
 /+---------------+---------------+---------------+---------------+---------------+------*/
-void ScalableMeshModel::_DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& transform)
+void ScalableMeshModel::_DoPublish(BeFileNameCR outDir, WString rootName, DRange3dR range, const Transform& tileToECEF, const Transform& dbToTile)
     {
     BeFileName rootPath = outDir;
     rootPath.AppendToPath(rootName.c_str());
-    WriteCesiumTileset(rootPath, outDir, transform);
+    WriteCesiumTileset(rootPath, outDir, tileToECEF, dbToTile);
     m_smPtr->GetRange(range);
     }
 
@@ -678,11 +678,11 @@ Dgn::TileTree::Tile::SelectParent SMNode::_SelectTiles(bvector<Dgn::TileTree::Ti
         
         viewDependentQueryParams = IScalableMeshViewDependentMeshQueryParams::CreateParams();
 
-        DMatrix4d localToView(args.m_context.GetWorldToView().M0);
+        DMatrix4d localToView(args.GetContext().GetWorldToView().M0);
 
         ClipVectorPtr clipVector;
         //clip = args.m_context.GetTransformClipStack().GetClip();
-        Render::FrustumPlanes frustumPlanes(args.m_context.GetFrustumPlanes());
+        Render::FrustumPlanes frustumPlanes(args.GetContext().GetFrustumPlanes());
 
         ConvexClipPlaneSet convexClipPlaneSet(&frustumPlanes.m_planes[0], 6);
 
@@ -1787,12 +1787,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Richard.Bois     08/2018
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& transform) const
+void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR outputDir, const Transform& tileToECEF, const Transform& dbToTile) const
     {
     if (_AllowPublishing())
         {
             #if !defined(ANDROID)
-        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, transform))
+        if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, tileToECEF, dbToTile))
             {
             BeFileName oldRootFile = outputDir;
             oldRootFile.AppendToPath(L"n_0.json");
