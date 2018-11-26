@@ -21,7 +21,6 @@ struct ConverterTestsHost : DgnPlatformLib::Host
 protected:
     virtual void _SupplyProductName (BentleyApi::Utf8StringR name) override {name.assign("SampleDgnV8ConverterTests");}
     virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
-    virtual NotificationAdmin& _SupplyNotificationAdmin() override;
     virtual BentleyApi::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 };
 

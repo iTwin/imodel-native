@@ -30,24 +30,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeKnownLocationsAdmin : Dgn::DgnPlatfor
 
 //=======================================================================================
 //! @private
-// @bsiclass                                    BentleySystems 
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
-{
-    virtual BentleyApi::StatusInt _OutputMessage(NotifyMessageDetails const& msg) override
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger(L"NOTIFICATION-ADMIN")->warningv("MESSAGE: %s %s\n", msg.GetBriefMsg().c_str(), msg.GetDetailedMsg().c_str());
-        return BentleyApi::SUCCESS;
-        }
-
-    virtual bool _GetLogSQLiteErrors() override 
-        {
-        return BentleyApi::NativeLogging::LoggingManager::GetLogger("BeSQLite")->isSeverityEnabled(BentleyApi::NativeLogging::LOG_INFO);
-        }
-};
-
-//=======================================================================================
-//! @private
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeFontAdmin : DgnPlatformLib::Host::FontAdmin
@@ -79,7 +61,6 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnPlatformLib::Host
     IMODEL_BRIDGE_EXPORT void _SupplyProductName(Utf8StringR name) override {name = m_productName;}
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new iModelBridgeKnownLocationsAdmin(m_fwkAssetsDir);}
     IMODEL_BRIDGE_EXPORT BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
-    NotificationAdmin& _SupplyNotificationAdmin() override {return *new iModelBridgeNotificationAdmin();}
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *m_repoAdmin;}
     FontAdmin& _SupplyFontAdmin() override {return *new iModelBridgeFontAdmin;}
     IMODEL_BRIDGE_EXPORT bool _IsFeatureEnabled(Utf8CP) override;
