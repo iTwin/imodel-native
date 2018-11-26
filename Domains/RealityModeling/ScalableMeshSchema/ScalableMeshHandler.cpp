@@ -372,7 +372,9 @@ bool SMNode::_WantDebugRangeGraphics() const
 void SMNode::_GetCustomMetadata(Utf8StringR name, Json::Value& data) const
     {
     name = "SMHeader";
+    #if !defined(ANDROID)
     IScalableMeshPublisher::Create(SMPublishType::CESIUM)->ExtractPublishNodeHeader(m_scalableMeshNodePtr, data);
+    #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1713,7 +1715,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     BeFileName clipFileBase = GenerateClipFileName(smFilename, dgnProject);
 
     m_basePath = clipFileBase;
+#if !defined(_WIN32)
+	StatusInt status;
+	m_smPtr = IScalableMesh::GetFor(smFilename, Utf8String(clipFileBase.c_str()),false, false, true, status);
+#else
     m_smPtr = IScalableMesh::GetFor(smFilename, Utf8String(clipFileBase.c_str()), false, true);
+#endif
     
     if (!m_smPtr.IsValid())
         {        
@@ -1784,12 +1791,14 @@ void ScalableMeshModel::WriteCesiumTileset(BeFileName outFileName, BeFileNameCR 
     {
     if (_AllowPublishing())
         {
+            #if !defined(ANDROID)
         if (SUCCESS == IScalableMeshSaveAs::Generate3DTiles(m_smPtr, outputDir, transform))
             {
             BeFileName oldRootFile = outputDir;
             oldRootFile.AppendToPath(L"n_0.json");
             BeFileName::BeMoveFile(oldRootFile, outFileName);
             }
+            #endif
         }
     }
 
@@ -2652,12 +2661,13 @@ void ScalableMeshModel::_OnSaveJsonProperties()
         Json::Value tilesetVal = m_properties.m_fileId.c_str();
         SetJsonProperties(json_tilesetUrl(), tilesetVal);
         }
-
+    #if !defined(ANDROID)
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 
     if (!m_classifiers.empty())     // Note - This originally was stored on the "scalableMesh" member...
         SetJsonProperties(json_classifiers(), m_classifiers.ToJson());
+#endif
 
     SetJsonProperties(json_scalablemesh(), val);
     }
@@ -3002,12 +3012,14 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
 
+            #if !defined(ANDROID)
     Json::Value     classifiers = GetJsonProperties(json_classifiers());
     if (classifiers.isNull())
         classifiers = m_classifiers.FromJson(val[json_classifiers()]);       // Old location.                                                                                                                                                             
 
     if (!classifiers.isNull())
         m_classifiers.FromJson(classifiers);
+        #endif
 
     if (m_smPtr == 0 && !m_tryOpen)
         {                
@@ -3024,7 +3036,9 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         Json::Value publishingMetadata;
         publishingMetadata["name"] = "SMMasterHeader";
 
+        #if !defined(ANDROID)
         IScalableMeshPublisher::Create(SMPublishType::CESIUM)->ExtractPublishMasterHeader(m_smPtr, publishingMetadata["properties"]);
+        #endif
         SetJsonProperties(json_publishing(), publishingMetadata);
         }
     }
