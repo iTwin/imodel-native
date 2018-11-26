@@ -260,8 +260,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         //assert(!"cURL error, download failed");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
-
-    if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
+    else if (!IsResponseOK(response_header))
         {
         //assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
@@ -289,6 +288,17 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_handle->free_header_list();
 
     return status;
+    }
+
+bool DataSourceAccountCURL::IsResponseOK(const CURLHandle::CURLDataResponseHeader& response)
+    {
+    if (response.data.empty())
+        return false; // no data
+    if (response.data.count("Content-Length") == 0 && response.data.count("content-length") == 0)
+        return false; // empty response
+    if (response.data.count("HTTP") == 1 && response.data.at("HTTP") != "1.1 200 OK")
+        return false; // http error
+    return true;
     }
 void DataSourceAccountCURL::setupProxyToCurl(CURL* curl)
     {

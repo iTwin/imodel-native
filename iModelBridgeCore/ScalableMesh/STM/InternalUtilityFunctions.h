@@ -81,6 +81,6 @@ struct BENTLEY_SM_EXPORT PtToPtConverter
     };
 
 double ComputeMinEdgeLength(const DPoint3d* points, size_t ptNum, const int32_t* idx, size_t idxNum);
-BENTLEY_SM_EXPORT bool IsUrl(WCharCP filename);
+BENTLEY_SM_EXPORT inline bool IsUrl(WCharCP filename);
 void SimplifyPolygonToMinEdge(double minEdge, bvector<DPoint3d>& poly);
 

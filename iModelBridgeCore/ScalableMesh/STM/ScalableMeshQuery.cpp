@@ -2139,7 +2139,7 @@ bool ScalableMeshMeshWithGraph::_FindTriangleForProjectedPoint(MTGNodeId& outTri
 
 
 
-const char* s_path = "E:\\output\\scmesh\\2015-11-27\\";
+static const char* s_path = "E:\\output\\scmesh\\2015-11-27\\";
 size_t s_nClips = 0;
      
 

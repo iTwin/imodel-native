@@ -72,7 +72,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     this->m_nodeHeader.m_textureID = ISMStore::GetNullNodeID();
     this->m_nodeHeader.m_ptsIndiceID[0] = this->GetBlockID();
 
-    this->m_updateClipTimestamp = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_nodeInstanciationClipTimestamp;
+    this->m_updateClipTimestamp = dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(this->m_SMIndex)->m_nodeInstanciationClipTimestamp;
     }
 
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(uint64_t nodeID,
@@ -2606,7 +2606,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
     }
 
-template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr = Transform::FromIdentity())
+template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bset<uint64_t>& clips, Transform tr)
 {
     bvector<uint64_t> clipList;
     bvector<DRange3d> clipRanges;
@@ -2614,7 +2614,7 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
 
     for (uint64_t clip : clips)
     {
-        bool hasSkirt = GetClipRegistry()->HasSkirt(clip);
+        bool hasSkirt = this->GetClipRegistry()->HasSkirt(clip);
 
         bvector<DPoint3d> polyPts;
         GetClipRegistry()->GetClip(clip, polyPts);
@@ -2624,7 +2624,7 @@ template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncW
         clipRanges.push_back(extPts);
     }
 
-    return SyncWithClipSets(clipList, withSkirts, clipRanges, tr);
+    return this->SyncWithClipSets(clipList, withSkirts, clipRanges, tr);
 }
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/18
@@ -2653,22 +2653,22 @@ template<class POINT, class EXTENT>  void  SMMeshIndexNode<POINT, EXTENT>::Colle
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/18
 //=======================================================================================
-template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr = Transform::FromIdentity())
+template<class POINT, class EXTENT>  bool  SMMeshIndexNode<POINT, EXTENT>::SyncWithClipSets(const bvector<uint64_t>& clipIds, const bvector<bool>& hasSkirts, const bvector<DRange3d>& clipExtents, Transform tr)
 {
-    if (!IsLoaded()) Load();
+    if (!this->IsLoaded()) this->Load();
 
     bool hasSynced = false;
-    if (/*size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3*/m_nodeHeader.m_totalCount == 0) return false;
+    if (/*size() == 0 || this->m_nodeHeader.m_nbFaceIndexes < 3*/this->m_nodeHeader.m_totalCount == 0) return false;
     for (size_t i =0; i < clipIds.size(); ++i)
     {
         uint64_t clipId = clipIds[i];
         const DRange3d& extent = clipExtents[i];
 
-        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_contentExtent),
-            ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_contentExtent));
-        if (!m_SMIndex->IsFromCesium() && !extent.IntersectsWith(nodeRange, 2) && !HasClip(clipId)) continue;
+        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMin(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMin(this->m_nodeHeader.m_contentExtent),
+            ExtentOp<EXTENT>::GetXMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMax(this->m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMax(this->m_nodeHeader.m_contentExtent));
+        if (!this->m_SMIndex->IsFromCesium() && !extent.IntersectsWith(nodeRange, 2) && !HasClip(clipId)) continue;
 
-        if (m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
+        if (this->m_SMIndex->IsFromCesium()) //there we consider all three dimensions due to not being able to rely on XY orientation
         {
             if (!extent.IntersectsWith(nodeRange) && !HasClip(clipId)) continue;
         }
@@ -5738,7 +5738,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn, Transform tr)
     {
     size_t nOfNodesTouched = 0;
-    if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIDIsOn, tr);
+    if (this->m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(this->m_pRootNode)->ClipActionRecursive(action, clipId, extent, nOfNodesTouched, setToggledWhenIDIsOn, tr);
     }
    
 //#ifdef WIP_MESH_IMPORT
@@ -5977,7 +5977,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     bool isClipBoundary = false;
     if (coverageID != -2 && coverageID != -1)
         {
-        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->GetDiffSetPtr().IsValid()) return ERROR;
+        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(this->GetRootNode().GetPtr())->GetDiffSetPtr().IsValid()) return ERROR;
 
         for (const auto& diffSet : *static_cast<SMMeshIndexNode<POINT, EXTENT>*>(this->GetRootNode().GetPtr())->GetDiffSetPtr())
             {
@@ -6027,6 +6027,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     oldMasterHeader.m_singleFile = false;
 
     DataSource::SessionName dataSourceSessionName(settings->GetGUID().c_str());
+            #ifndef LINUX_SCALABLEMESH_BUILD
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), dataSourceSessionName);
     SMGroupCache::Ptr groupCache = nullptr;
     this->m_rootNodeGroup = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -6038,7 +6039,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     strategy->SetClipInfo(coverageID, isClipBoundary);
     strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
     strategy->AddGroup(this->m_rootNodeGroup.get());
-
+#endif
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
     std::thread saveGroupsThread([this, strategy]()
         {
@@ -6081,6 +6082,7 @@ Publish Cesium ready format
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue)
     {
 #ifndef VANCOUVER_API
+        #ifndef LINUX_SCALABLEMESH_BUILD
     ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
 
     //this->SaveMasterHeaderToCloud(pDataStore);
@@ -6098,6 +6100,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Change
 
 
     return SUCCESS;
+    #else
+    return ERROR;
+    #endif
 #else
     assert(!"Not implemented");
     return ERROR;

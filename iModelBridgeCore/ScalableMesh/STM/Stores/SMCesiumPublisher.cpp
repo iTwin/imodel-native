@@ -39,8 +39,10 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr cli
 
 void SMCesiumPublisher::_ExtractPublishNodeHeader(IScalableMeshNodePtr nodePtr, Json::Value& smJsonHeader)
     {
+            #ifndef LINUX_SCALABLEMESH_BUILD
     auto smNodeHeader = dynamic_cast<ScalableMeshNode<DPoint3d>*>(nodePtr.get())->GetNodePtr()->m_nodeHeader;
     SMStreamingStore<DRange3d>::SerializeHeaderToJSON(&smNodeHeader, smNodeHeader.m_id, smJsonHeader/*["node"]*/);
+    #endif
     }
 
 void SMCesiumPublisher::_ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json::Value& smJsonMasterHeader)
