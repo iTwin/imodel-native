@@ -9,7 +9,7 @@
 #include "..\ScalableMeshSources.h"
 #include "ISMDataStore.h"
 #include "SMSQLiteSisterFile.h"
-#include "SMStoreUtils.h"1
+#include "SMStoreUtils.h"
 
 #include "..\ScalableMeshSourcesPersistance.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
