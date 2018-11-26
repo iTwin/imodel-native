@@ -20,8 +20,8 @@ MultiCompileDepends = $(_MakeFileSpec)
 CCompOpts + -wd4456 -wd4457 -wd4458 -wd4459
 %else
 ClangCppCompOpts + -D__BENTLEYTMDRAINAGE_BUILD__ -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
-cuser + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
-LLVMCommonCompOpts + -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
+cuser +  -D__BENTLEYTMDRAINAGE_BUILD__ -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
+LLVMCommonCompOpts + -D__BENTLEYTMDRAINAGE_BUILD__ -Wno-error=ignored-attributes -Wno-error=unused-value -Wno-error=unused-const-variable -Wno-error=format -Wno-error=unused-private-field -Wno-error=delete-non-virtual-dtor -Wno-error=unused-label -Wno-error=unused-variable -Wno-error=null-arithmetic -Wno-error=self-assign -DTERRAINMODEL_LINUX
 
     %if $(BUILD_TOOLSET) != "APPLE_CLANG"
         ClangCppCompOpts + -fopenmp
@@ -244,8 +244,6 @@ CoreFileObjectList =% $(MultiCompileObjectList)
 
 # Drainage files
 
-%if $(BUILD_TOOLSET) != "APPLE_CLANG"
-
 nameToDefine = __BENTLEYTMDRAINAGE_BUILD__
 %include cdefapnd.mki
 
@@ -272,7 +270,6 @@ $(o)bcdtmDrainageUtility$(oext)   : $(coreDir)../Drainage/bcdtmDrainageUtility.c
 
 $(o)WaterAnalysis$(oext)            : $(baseDir)../Drainage/WaterAnalysis.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(baseDir)../Drainage/PublicAPI/WaterAnalysis.h ${MultiCompileDepends}
 
-%endif
 
 %include MultiCppCompileGo.mki
 
