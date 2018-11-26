@@ -883,6 +883,7 @@ private:
     DwgDbSpatialFilterCP                m_spatialFilter;
     bvector<BlockInfo>                  m_blockStack;
     bvector<int64_t>                    m_parasolidBodies;
+    bool                                m_isTargetModel2d;
     
 public:
 // the constructor
@@ -898,6 +899,7 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_worldToElement.InitIdentity ();
     m_spatialFilter = nullptr;
     m_parasolidBodies.clear ();
+    m_isTargetModel2d = !createParams.GetModel().Is3d ();
 
     // start block stack by input entity's block
     auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase().get();
@@ -942,6 +944,9 @@ void        SetSpatialFilter (DwgDbSpatialFilterCP filter) { m_spatialFilter = f
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            ApplyThickness (ICurvePrimitivePtr const& curvePrimitive, DVec3dCR normal, bool closed = false)
     {
+    if (m_isTargetModel2d)
+        return  false;
+
     double  thickness = m_drawParams._GetThickness ();
 
     if (ISVALID_Thickness(thickness) && curvePrimitive.IsValid())
@@ -1179,6 +1184,12 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
     CurveVectorPtr  curveVector = plineFactory.CreateCurveVector (false);
     if (curveVector.IsValid())
         {
+        if (m_isTargetModel2d)
+            {
+            this->AppendGeometry (*curveVector.get());
+            return;
+            }
+
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
@@ -1197,6 +1208,12 @@ virtual void    _Polygon (size_t nPoints, DPoint3dCP points) override
     CurveVectorPtr  curveVector = plineFactory.CreateCurveVector (false);
     if (curveVector.IsValid())
         {
+        if (m_isTargetModel2d)
+            {
+            this->AppendGeometry (*curveVector.get());
+            return;
+            }
+
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
@@ -1241,7 +1258,11 @@ virtual void    _Mesh (size_t nRows, size_t nColumns, DPoint3dCP points, DwgGiEd
     BlockedVectorDPoint3dR  meshPoints = dgnPolyface->Point ();
 
     for (size_t i = 0; i < nTotal; i++)
+        {
+        if (m_isTargetModel2d && fabs(points[i].z) > 1.0e-4)
+            return;
         meshPoints.push_back (points[i]);
+        }
 
     GeometricPrimitivePtr   pface = GeometricPrimitive::Create (dgnPolyface);
     if (pface.IsValid())
@@ -1263,7 +1284,7 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
     we would want polyface headers for the sake of performance and smaller file size, but 
     at the moment, polyface header is not supported for 2D model!
     -----------------------------------------------------------------------------------*/
-    if (!m_createParams.GetModel().Is3d())
+    if (m_isTargetModel2d)
         {
         // create shapes
         size_t  nVertices=0, maxFaceVertices = 0;
@@ -1311,6 +1332,10 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
             for (size_t kVertex = 0; kVertex < nVertices; kVertex++)
                 {
                 DPoint3d    vertex = points[faces[jFace++]];
+
+                // trivial rejecting 3D element
+                if (fabs(vertex.z) > 1.0e-4)
+                    return;
 
                 if (kVertex == 0 || !faceVertices[0].IsEqual(vertex))
                     faceVertices.push_back (vertex);
@@ -1760,6 +1785,10 @@ BentleyStatus   CreateBlockChildGeometry (DwgDbEntityCP entity)
     {
     auto* objExt = DwgProtocalExtension::Cast (entity->QueryX(DwgProtocalExtension::Desc()));
     if (nullptr == objExt)
+        return  BSIERROR;
+
+    // trivial reject 3D elements in a 2D model
+    if (m_isTargetModel2d && DwgBrepExt::Cast(objExt) != nullptr && DwgDbRegion::Cast(entity) == nullptr && DwgDbPlaneSurface::Cast(entity) == nullptr)
         return  BSIERROR;
 
     auto geom = objExt->_ConvertToGeometry (entity, m_drawParams.GetDwgImporter());
@@ -3022,15 +3051,33 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DwgImporter::_FilterEntity (DwgDbEntityCR entity, DwgDbSpatialFilterP spatialFilter)
+bool            DwgImporter::_FilterEntity (ElementImportInputs& inputs) const
     {
+    auto entity = inputs.GetEntityP ();
+    if (nullptr == entity)
+        return  true;
+
     // don't draw invisible entities:
-    if (DwgDbVisibility::Invisible == entity.GetVisibility())
+    if (DwgDbVisibility::Invisible == entity->GetVisibility())
         return  true;
 
     // trivial reject clipped away entity:
-    if (nullptr != spatialFilter && spatialFilter->IsEntityFilteredOut(entity))
+    auto spatialFilter = inputs.GetSpatialFilter ();
+    if (nullptr != spatialFilter && spatialFilter->IsEntityFilteredOut(*entity))
         return  true;
+
+    // trivial reject 3D elements in a 2D model
+    if (!inputs.GetTargetModel().Is3d())
+        {
+        if (DwgDb3dSolid::Cast(entity) != nullptr ||
+            DwgDbBody::Cast(entity) != nullptr ||
+            DwgDbExtrudedSurface::Cast(entity) != nullptr ||
+            DwgDbLoftedSurface::Cast(entity) != nullptr ||
+            DwgDbNurbSurface::Cast(entity) != nullptr ||
+            DwgDbRevolvedSurface::Cast(entity) != nullptr ||
+            DwgDbSweptSurface::Cast(entity) != nullptr)
+            return  true;
+        }
 
     return  false;
     }
@@ -3136,7 +3183,7 @@ void DwgImporter::OpenAndImportEntity (ElementImportInputs& inputs)
 
     this->Progress ();
 
-    if (!this->_FilterEntity(inputs.GetEntity(), inputs.GetSpatialFilter()))
+    if (!this->_FilterEntity(inputs))
         this->ImportOrUpdateEntity (inputs);
     }
 
