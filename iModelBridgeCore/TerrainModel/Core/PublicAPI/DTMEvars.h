@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMEvars.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -28,9 +28,9 @@ extern DTMUserTag *tmpUserTagP ;
 /*
 **  Global Error Message
 */
-extern long    DTM_DTM_ERROR_STATUS ;
-extern long    DTM_DTM_ERROR_NUMBER ;
-extern char    DTM_DTM_ERROR_MESSAGE[256] ;   
+extern thread_local long    DTM_DTM_ERROR_STATUS ;
+extern thread_local long    DTM_DTM_ERROR_NUMBER ;
+extern thread_local char    DTM_DTM_ERROR_MESSAGE[256] ;   
 /*
 **  Global Variables
 */  
@@ -61,9 +61,9 @@ extern DTMUserTag *tmpUserTagP ;
 /*
 **  Global Error Message
 */
-extern long    DTM_DTM_ERROR_STATUS ;
-extern long    DTM_DTM_ERROR_NUMBER ;
-extern char    DTM_DTM_ERROR_MESSAGE[256] ;   
+extern thread_local long    DTM_DTM_ERROR_STATUS ;
+extern thread_local long    DTM_DTM_ERROR_NUMBER ;
+extern thread_local char    DTM_DTM_ERROR_MESSAGE[256] ;   
 /*
 **  Global Variables
 */  
