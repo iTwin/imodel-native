@@ -649,4 +649,6 @@ void RevisionComparison::Controller::_OnViewOpened (DgnViewportR vp)
     vp.GetViewControllerR().GetViewDefinitionR().GetDisplayStyle().SetViewFlags(viewFlags);
 
     T_Super::_OnViewOpened(vp);
+
+    UpdateTransientGraphicDisplay();
     }
