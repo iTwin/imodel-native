@@ -28,6 +28,9 @@
 #include "SMExternalProviderDataStore.h"
 #include "../InternalUtilityFunctions.h"
 
+
+
+
 USING_NAMESPACE_IMAGEPP
 
 template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamingSettings(WString url)
@@ -140,6 +143,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
             auto azureToken = Utf8String(url.substr(azureTokenPos + 1, azureTokenLength));
             // NEEDS_WORK_SM_STREAMING : handle Azure token properly
             }
+#ifndef LINUX_SCALABLEMESH_BUILD
         if (ScalableMeshRDSProvider::IsHostedByRDS(this->m_projectID, this->m_guid))
             {
             // Forward to RDS to properly handle SAS tokens
@@ -152,6 +156,7 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
             this->m_location = ServerLocation::HTTP_SERVER;
             this->m_url = Utf8String(url.c_str());
             }
+#endif
         }
     else if (url.StartsWith(L"http") || url.StartsWith(L"https"))
         {
@@ -453,17 +458,35 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
             {
             assert(false);
             }
-#endif
-        DataSourceManager::Get()->destroyDataSource(dataSource);
 
+        DataSourceManager::Get()->destroyDataSource(dataSource);
+            
         return status.isOK();
+#else
+            
+        return false;
+            
+#endif
+
+
+
         }
 
     return true;
     }
     
+
+
+
+
+//#ifndef LINUX_SCALABLEMESH_BUILD On Clang this function stops the compiler to compile the stuff after this function, including 
+//what is in SMStreamingDataStore.cpp.
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+    return 0;
+
+#ifndef LINUX_SCALABLEMESH_BUILD 
+
     if (indexHeader == NULL || !m_nodeHeaderGroups.empty()) return 0;
 
     SMGroupGlobalParameters::StrategyType groupMode = SMGroupGlobalParameters::StrategyType::NONE;
@@ -472,6 +495,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     if (s_stream_using_cesium_3d_tiles_format) groupMode = SMGroupGlobalParameters::StrategyType::CESIUM;
     if (s_import_from_bim_exported_cesium_3d_tiles) groupMode = SMGroupGlobalParameters::StrategyType::BIMCESIUM;
     bool isGrouped = true;
+
+
     //wchar_t buffer[10000];
     //swprintf(buffer, m_masterFileName.c_str());
     //switch (groupMode)
@@ -591,6 +616,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         }
     else
         {
+            
 #ifndef LINUX_SCALABLEMESH_BUILD
         std::vector<DataSourceBuffer::BufferData>        dest;
         DataSource                                *      dataSource;
@@ -801,7 +827,12 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         }
 #endif
     return headerSize;
+#endif    
     }
+
+//#ifndef LINUX_SCALABLEMESH_BUILD On Clang this function stops the compiler to compile the stuff after this function, including 
+//what is in SMStreamingDataStore.cpp.
+
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize)
     {
@@ -1204,8 +1235,9 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
         DataSourceManager::Get()->destroyDataSource(dataSource);
 		return 0;
         }
-#endif
+
     DataSourceManager::Get()->destroyDataSource(dataSource);
+#endif    
 
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -1244,6 +1276,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         }
     else if (s_stream_using_cesium_3d_tiles_format)
         {
+#ifndef LINUX_SCALABLEMESH_BUILD            
         std::vector<DataSourceBuffer::BufferData> headerData;
         this->GetNodeHeaderBinary(blockID, headerData);
         if (headerData.empty()) return 1;
@@ -1258,14 +1291,17 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
             }
 
         this->ReadNodeHeaderFromJSON(header, cesiumHeader["root"]["SMHeader"]);
+#endif        
         }
     else {
         //auto nodeHeader = this->GetNodeHeaderJSON(blockID);
         //ReadNodeHeaderFromJSON(header, nodeHeader);
+#ifndef LINUX_SCALABLEMESH_BUILD                    
         std::vector<DataSourceBuffer::BufferData> headerData;
         this->GetNodeHeaderBinary(blockID, headerData);
         if (headerData.empty()) return 0;
         ReadNodeHeaderFromBinary(header, headerData.data(), headerData.size());
+#endif        
         }
     header->m_id = blockID;
     return 1;
@@ -1330,10 +1366,15 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::EraseClipFile() const
     if (!GetSisterSQLiteFileName(sqlFileName, SMStoreDataType::DiffSet))
         return;
 
-    if (!DoesClipFileExist())
+    if (!DoesClipFileExist()) 
         return;
 
+#ifndef LINUX_SCALABLEMESH_BUILD      
     _wremove(sqlFileName.c_str());
+#else
+    Utf8String sqlFileNameUtf8(sqlFileName.c_str());
+    remove(sqlFileNameUtf8.c_str());
+#endif
 }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SetClipDefinitionsProvider(const IClipDefinitionDataProviderPtr& provider)
@@ -1900,11 +1941,11 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
                 }
             }
         }
-    }
+    }        
 
+#ifndef LINUX_SCALABLEMESH_BUILD
 template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const HPMBlockID& blockID, std::vector<DataSourceBuffer::BufferData>& dest)
     {
-#ifndef LINUX_SCALABLEMESH_BUILD
     //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
     DataSource                                *    dataSource;
 
@@ -1937,8 +1978,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
             }
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
-#endif
+
     }
+
+#endif    
 
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile)
@@ -2178,6 +2221,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
     }
+
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup, bool isPublishing, bool compress)
     : m_dataSourceAccount(dataSourceAccount),
     m_dataSourceSessionName(session),
@@ -2202,7 +2246,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         case SMStoreDataType::TriUvIndices:
             m_dataSourceURL = L"uvindices";
             break;
-        case SMStoreDataType::Texture:
+        case SMStoreDataType::Texture:4
             m_dataSourceURL = L"textures";
             break;
         case SMStoreDataType::Cesium3DTiles:
@@ -2222,6 +2266,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
     }
 #else
+
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup, bool isPublishing, bool compress)
 :    m_nodeHeader(nodeHeader),
     m_jsonHeader(&header),
@@ -2283,8 +2328,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
                     }
                 memcpy(dataToWrite + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
 
+#ifndef LINUX_SCALABLEMESH_BUILD
                 // Save block size in node header to optimize download speeds using segmentation
                 m_nodeHeader->m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
+#endif                
                 }
             }
 #ifndef LINUX_SCALABLEMESH_BUILD

@@ -2023,7 +2023,9 @@ template <class POINT> bool ScalableMesh<POINT>::_IsStubFile()
 
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetProjectWiseContextShareLink()
     {
+#ifndef LINUX_SCALABLEMESH_BUILD
     if (m_smRDSProvider.IsValid()) return m_smRDSProvider->GetRDSURLAddress();
+#endif    
     return Utf8String();
     }
 

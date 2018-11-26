@@ -1148,7 +1148,8 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                     {                
                     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr->get()));
                     bvector<IScalableMeshCachedDisplayNodePtr> ovr;
-                    FindOverview(ovr, collectedClips, meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
+                    DRange3d nodeExtent(meshNodePtr->GetNodeExtent());
+                    FindOverview(ovr, collectedClips, nodeExtent, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                     if (dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_nodesToSearch->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
                     {
                         meshNodePtr->RemoveDisplayDataFromCache();
@@ -1159,7 +1160,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                         || ((*scalableMeshPtr)->ShouldInvertClips() !=  meshNodePtr->HasInvertedClips()))
                         {  
                         DRange3d range3d = meshNodePtr->GetNodeExtent();          
-                        FindOverview(m_lowerResOverviewNodes[threadId], collectedClips, meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
+                        FindOverview(m_lowerResOverviewNodes[threadId], collectedClips, range3d, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                         dynamic_cast<SMMeshIndexNode<DPoint3d,DRange3d>*>(&*m_nodesToSearch->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr));
                         }
                     else
@@ -1180,7 +1181,7 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                     || ((*scalableMeshPtr)->ShouldInvertClips() != meshNodePtr->HasInvertedClips()))
                     {        
                     DRange3d range3d = meshNodePtr->GetNodeExtent();          
-                    FindOverview(m_lowerResOverviewNodes[threadId], collectedClips, meshNodePtr->GetNodeExtent(), m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
+                    FindOverview(m_lowerResOverviewNodes[threadId], collectedClips, range3d, m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                                      
                     if (dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_foundNodes->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
                         meshNodePtr->RemoveDisplayDataFromCache();
@@ -1192,7 +1193,9 @@ size_t threadId, IScalableMeshPtr* scalableMeshPtr, IScalableMeshDisplayCacheMan
                     assert(meshNodePtr->IsLoaded());
 
                     bvector<IScalableMeshCachedDisplayNodePtr> ovr;
-                    FindOverview(ovr, collectedClips, meshNodePtr->GetNodeExtent(), m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
+                    DRange3d range3d = meshNodePtr->GetNodeExtent();
+                        
+                    FindOverview(ovr, collectedClips, range3d, m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, *scalableMeshPtr, *displayCacheManagerPtr);
                     if (dynamic_cast<SMMeshIndexNode<DPoint3d, DRange3d>*>(&*m_foundNodes->GetNodes()[nodeInd])->SyncWithClipSets(collectedClips, &*(*scalableMeshPtr)))
                     {
                         meshNodePtr->RemoveDisplayDataFromCache();

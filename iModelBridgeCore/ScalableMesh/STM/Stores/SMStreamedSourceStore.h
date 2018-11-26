@@ -11,7 +11,7 @@ template <class DATATYPE, class EXTENT> class SMStreamedSourceStore : public ISM
         SMIndexNodeHeader<EXTENT>* m_nodeHeader;
         SMStoreDataType            m_dataType;
         HFCPtr<HRARASTER>          m_source;
-
+ 
 
     public:
 
