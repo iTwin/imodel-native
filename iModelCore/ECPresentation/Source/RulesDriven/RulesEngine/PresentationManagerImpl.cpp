@@ -1224,3 +1224,19 @@ void RulesDrivenECPresentationManagerImpl::_OnAllNodesCollapsed(IConnectionCR co
     {
     GetNodesCache().ResetExpandedNodes(connection.GetId().c_str(), options.GetRulesetId());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Robert.Lukasonok                11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IRulesPreprocessorPtr RulesDrivenECPresentationManagerImpl::_GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const
+    {
+    PresentationRuleSetPtr ruleset = FindRuleset(GetLocaters(), connection, rulesetId.c_str());
+    if (!ruleset.IsValid())
+        return nullptr;
+
+    IUserSettings const& settings = GetUserSettingsManager().GetSettings(ruleset->GetRuleSetId().c_str());
+    ECExpressionsCache& ecexpressionsCache = m_rulesetECExpressionsCache->Get(ruleset->GetRuleSetId().c_str());
+
+    return new RulesPreprocessor(m_connections, connection, *ruleset, locale, settings, usedSettingsListener, ecexpressionsCache);
+    }
+

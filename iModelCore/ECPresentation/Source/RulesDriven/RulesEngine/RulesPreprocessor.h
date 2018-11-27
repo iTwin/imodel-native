@@ -14,7 +14,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 //=======================================================================================
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
-struct RulesPreprocessor : IRulesPreprocessor
+struct RulesPreprocessor : RefCounted<IRulesPreprocessor>
 {
 private:
     IConnectionManagerCR m_connections;

@@ -10,6 +10,7 @@
 
 #include <ECPresentation/IECPresentationManager.h>
 #include <ECPresentation/Localization.h>
+#include <ECPresentation/RulesDriven/IRulesPreprocessor.h>
 #include <ECPresentation/RulesDriven/RuleSetLocater.h>
 #include <ECPresentation/RulesDriven/UserSettings.h>
 #include <ECPresentation/RulesDriven/ECInstanceChangeHandlers.h>
@@ -279,6 +280,16 @@ public:
 
     //! Set the local state to use for storing user settings.
     ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState*);
+
+    //! Get a rules preprocessor for a specific ruleset
+    //! @param[in] connection Connection that is used for locating the ruleset.
+    //! @param[in] rulesetId The ruleset identifier.
+    //! @param[in] locale Locale to use.
+    //! @param[in] usedSettingsListener (optional) Listener that is passed to the rules preprocessor.
+    ECPRESENTATION_EXPORT IRulesPreprocessorPtr GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener = nullptr) const;
+
+    //! Get a navigation nodes factory that can be used for navigation node manual creation.
+    ECPRESENTATION_EXPORT INavNodesFactoryPtr GetNavNodesFactory() const;
 
 /** @name Property Formatting */
 /** @{ */

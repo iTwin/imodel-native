@@ -62,6 +62,10 @@ private:
     CompositeUpdateRecordsHandler* m_compositeUpdateRecordsHandler;
 
 protected:
+/** @name Rules */
+    virtual IRulesPreprocessorPtr _GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const = 0;
+/** @} */
+
 /** @name IECPresentationManager: Navigation */
     virtual INavNodesDataSourcePtr _GetRootNodes(IConnectionCR, PageOptionsCR, NavigationOptions const&, ICancelationTokenCR) = 0;
     virtual size_t _GetRootNodesCount(IConnectionCR, NavigationOptions const&, ICancelationTokenCR) = 0;
@@ -111,6 +115,11 @@ public:
     IUserSettings& GetUserSettings(Utf8CP rulesetId) const {return m_userSettings->GetSettings(rulesetId);}
     ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState* localState);
     IJsonLocalState* GetLocalState() const {return m_localState;}
+/** @} */
+
+/** @name Rules */
+/** @{ */
+    IRulesPreprocessorPtr GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const {return _GetRulesPreprocessor(connection, rulesetId, locale, usedSettingsListener);}
 /** @} */
 
 /** @name Property Formatting */
@@ -207,6 +216,9 @@ private:
     SpecificationContentProviderPtr GetContentProvider(IConnectionCR, ICancelationTokenCR, ContentDescriptorCR, INavNodeKeysContainerCR, SelectionInfo const*, ContentOptions const&);
 
 protected:
+    // RulesDrivenECPresentationManager::Impl: Rules
+    IRulesPreprocessorPtr _GetRulesPreprocessor(IConnectionCR connection, Utf8StringCR rulesetId, Utf8StringCR locale, IUsedUserSettingsListener* usedSettingsListener) const override;
+
     // IRulesetCallbacksHandler
     ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR) override;
     ECPRESENTATION_EXPORT void _OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR) override;
