@@ -112,9 +112,10 @@ static void ProcessLabelOverrides(Utf8StringR label, CustomFunctionsContext cons
 
     // look for label override
     ECDbExpressionSymbolContext ecdbSymbols(context.GetSchemaHelper().GetConnection().GetECDb());
-    RulesPreprocessor::CustomizationRuleParameters params(context.GetConnections(), context.GetConnection(), *thisNode, context.GetParentNode(),
-        context.GetRuleset(), context.GetLocale(), context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
-    LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+    RulesPreprocessor preprocessor(context.GetConnections(), context.GetConnection(), context.GetRuleset(), context.GetLocale(),
+        context.GetUserSettings(), context.GetUsedUserSettingsListener(), context.GetECExpressionsCache());
+    RulesPreprocessor::CustomizationRuleParameters params(*thisNode, context.GetParentNode());
+    LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
     if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
         {
         // evaluate the ECExpression to get the label
@@ -335,9 +336,10 @@ struct GetECClassDisplayLabelScalar : CachingScalarFunction<bmap<ECClassId, Utf8
             // create temporary key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
 
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
-                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
-            LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+            RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+            RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
+            LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),
@@ -526,9 +528,10 @@ public:
             JsonNavNodePtr thisNode = GetContext().GetNodesFactory().CreateECPropertyGroupingNode(GetContext().GetConnection().GetId(), GetContext().GetLocale(), *ecClass, *ecProperty, "", nullptr, rapidjson::Document(), false, groupedInstanceKeys);
             // create temporary node key
             thisNode->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *thisNode, bvector<Utf8String>()));
-            RulesPreprocessor::CustomizationRuleParameters params(GetContext().GetConnections(), GetContext().GetConnection(), *thisNode, GetContext().GetParentNode(),
-                GetContext().GetRuleset(), GetContext().GetLocale(), GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
-            LabelOverrideCP labelOverride = RulesPreprocessor::GetLabelOverride(params);
+            RulesPreprocessor preprocessor(GetContext().GetConnections(), GetContext().GetConnection(), GetContext().GetRuleset(), GetContext().GetLocale(),
+                GetContext().GetUserSettings(), GetContext().GetUsedUserSettingsListener(), GetContext().GetECExpressionsCache());
+            RulesPreprocessor::CustomizationRuleParameters params(*thisNode, GetContext().GetParentNode());
+            LabelOverrideCP labelOverride = preprocessor.GetLabelOverride(params);
             if (nullptr != labelOverride && !labelOverride->GetLabel().empty())
                 {
                 ECExpressionContextsProvider::CustomizationRulesContextParameters params(*thisNode, GetContext().GetParentNode(),

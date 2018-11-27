@@ -1119,10 +1119,11 @@ private:
             m_groupingHandlers.push_back(new DisplayLabelGroupingHandler(m_specification.GetDoNotSort()));
 
         GroupingSpecificationsVisitor visitor(m_groupingHandlers, m_schemaHelper, m_specification.GetDoNotSort());
-        RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationHash, m_queryBuilderParams.GetConnections(), 
-            m_queryBuilderParams.GetConnection(), GetQueryBuilderParams().GetRuleset(), GetQueryBuilderParams().GetLocale(), GetQueryBuilderParams().GetUserSettings(), 
+        RulesPreprocessor preprocessor(m_queryBuilderParams.GetConnections(), m_queryBuilderParams.GetConnection(),
+            GetQueryBuilderParams().GetRuleset(), GetQueryBuilderParams().GetLocale(), GetQueryBuilderParams().GetUserSettings(),
             GetQueryBuilderParams().GetUsedSettingsListener(), GetQueryBuilderParams().GetECExpressionsCache());
-        bvector<GroupingRuleCP> groupingRules = RulesPreprocessor::GetGroupingRules(params);
+        RulesPreprocessor::AggregateCustomizationRuleParameters params(m_parentInstanceNode.get(), m_specificationHash);
+        bvector<GroupingRuleCP> groupingRules = preprocessor.GetGroupingRules(params);
         for (GroupingRuleCP rule : groupingRules)
             {
             if (rule->GetGroups().empty())
@@ -1592,9 +1593,9 @@ private:
         {
         if (nullptr == m_sortingRules)
             {
-            RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash, 
-                GetConnections(), GetConnection(), GetRuleset(), GetLocale(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
-            m_sortingRules = new bvector<SortingRuleCP>(RulesPreprocessor::GetSortingRules(params));
+            RulesPreprocessor preprocessor(GetConnections(), GetConnection(), GetRuleset(), GetLocale(), m_userSettings, m_usedSettingsListener, m_ecexpressionsCache);
+            RulesPreprocessor::AggregateCustomizationRuleParameters params(GetParentInstanceNode(), m_specificationHash);
+            m_sortingRules = new bvector<SortingRuleCP>(preprocessor.GetSortingRules(params));
             }
         return *m_sortingRules;
         }
@@ -2363,10 +2364,10 @@ static void ProcessQueryClassesBasedOnCustomizationRules(bvector<SelectQueryInfo
             }
         }
 
-    RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationHash(),
-        params.GetConnections(), params.GetConnection(), params.GetRuleset(), params.GetLocale(), params.GetUserSettings(), 
-        params.GetUsedSettingsListener(), params.GetECExpressionsCache());
-    CallbackOnRuleClasses<SortingRule>(RulesPreprocessor::GetSortingRules(preprocessorParams), params.GetSchemaHelper(), 
+    RulesPreprocessor preprocessor(params.GetConnections(), params.GetConnection(), params.GetRuleset(), params.GetLocale(),
+        params.GetUserSettings(), params.GetUsedSettingsListener(), params.GetECExpressionsCache());
+    RulesPreprocessor::AggregateCustomizationRuleParameters preprocessorParams(parentNode, resolver.GetSpecificationHash());
+    CallbackOnRuleClasses<SortingRule>(preprocessor.GetSortingRules(preprocessorParams), params.GetSchemaHelper(),
         [&customizationRuleInfos](SortingRuleCR rule, ECEntityClassCR ecClass)
         {
         customizationRuleInfos.push_back(RuleInfo(ecClass, rule.GetIsPolymorphic()));
