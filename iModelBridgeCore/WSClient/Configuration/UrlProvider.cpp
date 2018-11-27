@@ -511,6 +511,19 @@ void UrlProvider::SetHttpHandler(IHttpHandlerPtr customHandler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool UrlProvider::GetStoredEnvironment(IJsonLocalState& localState, Environment& environmentOut)
+    {
+    Json::Value json = localState.GetJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
+    if (json.isNull())
+        return false;
+
+    environmentOut = static_cast<Environment>(json.asUInt());
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 UrlProvider::Environment UrlProvider::GetEnvironment()
     {
     return s_env;
@@ -523,13 +536,14 @@ void UrlProvider::SetEnvironment(UrlProvider::Environment env)
     {
     s_env = env;
 
-    Json::Value jsonPreviousEnv = s_localState->GetJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
-    if (!jsonPreviousEnv.isNull() && env != jsonPreviousEnv.asUInt())
+    Environment storedEnv;
+    bool hasStoredEnv = GetStoredEnvironment(*s_localState, storedEnv);
+
+    if (hasStoredEnv && env != storedEnv)
         CleanUpUrlCache();
 
-    if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
+    if (!hasStoredEnv || env != storedEnv)
         s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
-
     }
 
 /*--------------------------------------------------------------------------------------+
