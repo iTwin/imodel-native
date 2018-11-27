@@ -2039,7 +2039,7 @@ bool SyncInfo::TryFindView(DgnViewId& viewId, double& lastModified, Utf8StringR 
     if (!v8FileId.IsValid())
         return false;
     stmt->BindInt(1, v8FileId.GetValue());
-    stmt->BindInt(2, viewElemRef->GetElementId());
+    stmt->BindInt64(2, viewElemRef->GetElementId());
     DbResult rc = stmt->Step();
     if (BE_SQLITE_ROW != rc)
         return false;
