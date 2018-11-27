@@ -73,6 +73,39 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+LONG WINAPI vectoredExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
+    {
+    // DebugBreak();
+    LONG code = ExceptionInfo->ExceptionRecord->ExceptionCode;
+    switch (code)
+        {
+        case 0x4001000a:    // OutputDebugString
+        case 0x40010006:    //          "
+        case 0x406D1388:    // SetThreadName - https://docs.microsoft.com/en-us/visualstudio/debugger/how-to-set-a-thread-name-in-native-code?view=vs-2015
+            return EXCEPTION_CONTINUE_SEARCH;
+        }
+
+    LOG.errorv("Exception %lx", code);
+    LOG.error(iModelBridgeErrorHandling::GetStackTraceDescription(20, 4).c_str());
+    return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeErrorHandling::Initialize()
+    {
+    static bool s_initialized;
+    if (s_initialized)
+        return;
+    s_initialized = true;
+    ULONG callFirst = 0;
+    /* hVEH = */ AddVectoredExceptionHandler (callFirst, vectoredExceptionHandler);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeErrorHandling::ShouldProcessSEH() {
   return EXCEPTION_EXECUTE_HANDLER;
 }
@@ -104,5 +137,5 @@ void iModelBridgeErrorHandling::GetStackTraceDescriptionFixed(char* buf, size_t 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridgeErrorHandling::LogStackTrace()
     {
-    LOG.fatal(GetStackTraceDescription(20, 1).c_str());
+    // LOG.error(GetStackTraceDescription(20, 1).c_str());
     }

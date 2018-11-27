@@ -274,13 +274,13 @@ private:
     DwgSyncInfo::View::Type m_viewportType;
 
     void ComputeSpatialView (SpatialViewDefinitionR dgnView);
-    void ComputeSheetView (SheetViewDefinitionR dgnView);
+    void ComputeSheetView (ViewDefinitionR dgnView);
     void ComputeSpatialDisplayStyle (DisplayStyle3dR displayStyle);
     void ComputeSheetDisplayStyle (DisplayStyleR displayStyle);
     bool ComputeViewAttachment (Placement2dR placement);
     bool ComposeLayoutTransform (TransformR trans, DwgDbObjectIdCR blockId);
     void TransformDataToBim ();
-    void AddSpatialCategories (Utf8StringCR viewName);
+    void AddModelspaceCategories (Utf8StringCR viewName);
     // clip SpatialView attached to ViewAttachment - legacy clipping, may be removed.
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
     // clip Sheet::ViewAttachment directly.
@@ -289,6 +289,7 @@ private:
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
     DgnTextureId FindEnvironmentImageFile (BeFileNameCR filename) const;
     bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
+    void UpdateSyncInfo (DgnViewId viewId, Utf8StringCR viewName, bool isNew);
 
 public:
     // constructor for a modelspace viewport
@@ -296,17 +297,23 @@ public:
     // constructor for the overall layout viewport and a paperspace viewport entity
     ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewportEntity, DwgDbLayoutCP layout = nullptr);
 
+    // create a model view based on input model type: spatial, drawing or sheet
+    DgnViewId       CreateModelView (DgnModelCR targetModel, Utf8StringCR proposedName);
     // create a camera or orthoganal view for a modelspace viewport or a viewport entity
     DgnViewId       CreateSpatialView (DgnModelId modelId, Utf8StringCR proposedName);
     // create a sheet view for the overall layout viewport
     DgnViewId       CreateSheetView (DgnModelId sheetId, Utf8StringCR proposedName);
+    // create a drawing view for a modelspace viewport when an app wants 2d model
+    DgnViewId       CreateDrawingView (DgnModelId modelId, Utf8StringCR proposedName);
     // create a view attachment element in a sheet model for a viewport entity in a paperspace
     DgnElementPtr   CreateViewAttachment (DgnModelCR sheetModel, DgnViewId viewId);
     // Corresponding Update methods
+    BentleyStatus   UpdateModelView (DgnModelCR targetModel, DgnViewId viewId, Utf8StringCR proposedName);
     BentleyStatus   UpdateSpatialView (DgnViewId viewId, Utf8StringCR proposedName);
     BentleyStatus   UpdateSheetView (DgnViewId viewId, Utf8StringCR proposedName);
+    BentleyStatus   UpdateDrawingView (DgnViewId viewId, Utf8StringCR proposedName);
     DgnElementPtr   UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId);
-    void            UpdateSpatialCategories (DgnCategoryIdSet& categoryIds) const;
+    void            UpdateModelspaceCategories (DgnCategoryIdSet& categoryIds) const;
 
     bool    ValidateViewName (Utf8StringR viewNameInOut);
     void    SetBackgroundColor (ColorDefCR color) { m_backgroundColor = color; }
@@ -387,6 +394,7 @@ private:
 
     DgnElementIdSet FindAllElements (DwgDbObjectIdCR objectId) const;
     GenericGroupPtr CreateAndInsert () const;
+    void SetGroupName (GenericGroupR genericGroup) const;
 
 public:
     // the constructor

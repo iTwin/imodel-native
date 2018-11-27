@@ -83,6 +83,11 @@
     <priority value="fatal"/>
   </category>
 
+
+<category name="iModelBridge">
+    <priority value="error"/>
+</category>
+    
   <category name="DgnV8Converter">
     <priority value="fatal"/>
   </category>
