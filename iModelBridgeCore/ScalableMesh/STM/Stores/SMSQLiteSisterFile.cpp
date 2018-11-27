@@ -123,8 +123,9 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
 
                 _wremove(sqlFileName.c_str());
                 StatusInt status;
-                m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_GENERATION_FILE);
-                m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
+                m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_GENERATION_FILE, createSisterIfMissing);
+                //m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);
+                BeAssert(status == SUCCESS);
                 }
 
             sqlFilePtr = m_smFeatureSQLiteFile;
@@ -140,30 +141,10 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
                     
                 StatusInt status;
-                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
-
-                if (status == 0)
-                    {
-                    if (createSisterIfMissing)
-                        {
-#ifndef VANCOUVER_API
-                        BeFileName path(sqlFileName);
-                        if (!path.GetDirectoryName().DoesPathExist())
-                            BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
-#else
-                        BeFileName path(sqlFileName.GetWCharCP());
-                        BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
-                        if (!BeFileName::DoesPathExist(dirname))
-                            BeFileName::CreateNewDirectory(dirname.GetWCharCP());
-#endif
-                        m_smClipSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_DIFFSETS_FILE);
-                        }
-                    else
-                        {
-                        m_smClipSQLiteFile = nullptr;
-                        }
-                    }
+                m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE, createSisterIfMissing);
+                BeAssert(status == SUCCESS);
                 }
+
 
             sqlFilePtr = m_smClipSQLiteFile;
             }
@@ -181,29 +162,9 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 GetSisterSQLiteFileName(sqlFileName, dataType, useTempPath);
 
                 StatusInt status;
-                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);
+                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE, createSisterIfMissing);
 
-                if (status == 0)
-                    {
-                    if (createSisterIfMissing)
-                        {
-#ifndef VANCOUVER_API
-                        BeFileName path(sqlFileName);
-                        if (!path.GetDirectoryName().DoesPathExist())
-                            BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
-#else
-                        BeFileName path(sqlFileName.GetWCharCP());
-                        BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
-                        if (!BeFileName::DoesPathExist(dirname))
-                            BeFileName::CreateNewDirectory(dirname.GetWCharCP());
-#endif
-                        m_smClipDefinitionSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_CLIP_DEF_FILE);
-                        }
-                    else
-                        { 
-                        m_smClipDefinitionSQLiteFile = nullptr;
-                        }
-                    }
+
                 }
 
             sqlFilePtr = m_smClipDefinitionSQLiteFile;

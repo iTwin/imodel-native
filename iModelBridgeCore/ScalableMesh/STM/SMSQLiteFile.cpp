@@ -147,7 +147,7 @@ const SchemaVersion* SMSQLiteFile::GetListOfReleasedVersions() { return s_listOf
 double* SMSQLiteFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdate; }
 std::function<void(BeSQLite::Db*)>* SMSQLiteFile::GetFunctionsForAutomaticUpdate() { return s_databaseUpdateFunctions; }
 
-bool SMSQLiteFile::UpdateDatabase()
+DbResult SMSQLiteFile::UpdateDatabase()
     {         
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
@@ -170,6 +170,9 @@ bool SMSQLiteFile::UpdateDatabase()
             std::cout << "Update to version " << databaseSchema.ToString() << " took " << time << "s" << std::endl;
             }
         }
+
+    DbResult status = BE_SQLITE_DONE;
+
     if (databaseSchema.CompareTo(GetCurrentVersion()) == 0)
         {
         CachedStatementPtr stmt;
@@ -181,11 +184,22 @@ bool SMSQLiteFile::UpdateDatabase()
         stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
 #endif
         DbResult status = stmt->Step();
-        if (status == BE_SQLITE_DONE) return true;
+        if (status == BE_SQLITE_DONE) 
+            {
+            m_database->SaveChanges();
+            return status;
+            }
         }
     #endif
-    assert(!"ERROR - Unknown database schema version");
-    return true; //for now, allow opening more recent versions
+
+#ifndef NDEBUG
+    if (status != BE_SQLITE_DONE && status != BE_SQLITE_READONLY)
+        {
+        assert(!"ERROR - Unknown database schema version");
+        }
+#endif
+
+    return status; //for now, allow opening more recent versions    
     }
 
 
@@ -203,22 +217,34 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     if (result == BE_SQLITE_SCHEMA)
 //#endif
         {
+
+#ifdef DGNDB06_API
+        WString fileNameW(filename, true);
+
+        if (_waccess(fileNameW.c_str(), 06) != 0)
+            {
+            return false;
+            }
+#endif
         Db::OpenParams openParamUpdate(READWRITE);
 
-        #ifndef VANCOUVER_API
+#ifndef VANCOUVER_API
         openParamUpdate.m_skipSchemaCheck = true;
-        #endif
+#endif
 
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
-        assert(result == BE_SQLITE_OK);
-
-        if (result == BE_SQLITE_OK)
-        {
-            UpdateDatabase();
-
+        if (result != BE_SQLITE_OK)
+            {
             m_database->CloseDb();
-        }
+            return false;
+            }
+
+#if defined(VANCOUVER_API) || defined(DGNDB06_API)
+        UpdateDatabase();
+#endif
+
+        m_database->CloseDb();
 
         result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
@@ -226,13 +252,13 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     return result == BE_SQLITE_OK;
     }
 
-bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, SQLDatabaseType type)
+bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly, SQLDatabaseType type, bool createSisterIfMissing)
     {
     Utf8String utf8FileName(filename);        
     return Open(utf8FileName.c_str(), openReadOnly, type);
     }
 
-SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type)
+SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type, bool createSisterIfMissing)
     {
     bool result;
     SMSQLiteFilePtr smSQLiteFile;
@@ -255,7 +281,35 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
 
     result = smSQLiteFile->Open(utf8File.c_str(), openReadOnly, type);
     // need to check version file ?
-    status = result ? 1 : 0;
+    status = result ? SUCCESS : ERROR;
+
+    if (status == ERROR)
+        {
+        if (createSisterIfMissing)
+            {
+#ifndef VANCOUVER_API
+            BeFileName path(filename);
+            if (!path.GetDirectoryName().DoesPathExist())
+                BeFileName::CreateNewDirectory(path.GetDirectoryName().GetWCharCP());
+#else
+            BeFileName path(filen
+                ame.GetWCharCP());
+            BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
+            if (!BeFileName::DoesPathExist(dirname))
+                BeFileName::CreateNewDirectory(dirname.GetWCharCP());
+#endif
+            result = smSQLiteFile->Create(Utf8String(filename.c_str()).c_str(), SQLDatabaseType::SM_DIFFSETS_FILE);
+            BeAssert(result == true); // Failed to create sister file
+
+            status = result ? SUCCESS : ERROR;
+            }
+        }
+
+    if (status != SUCCESS)
+        {
+        smSQLiteFile = nullptr;
+        }
+
     return smSQLiteFile;
     }
 
@@ -404,12 +458,13 @@ DbResult SMSQLiteFile::CreateTables()
     DbResult result;
     result = m_database->CreateNewDb(filename);
 
+    if (result == BE_SQLITE_ERROR_AlreadyOpen) 
+        return true;
+
     assert(result == BE_SQLITE_OK);
 
     result = CreateTables();
-
                             
-
     m_database->SaveChanges();
 
     return result == BE_SQLITE_OK;
