@@ -65,9 +65,9 @@ Exp::FinalizeParseStatus InsertStatementExp::_FinalizeParsing(ECSqlParseContext&
                 ClassMap const& classMap = classNameExp->GetInfo().GetMap();
                 for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
                     {
-                    //ECInstanceId, ECClassId are treated separately
+                    //ECInstanceId, ECClassId are treated separately, SourceECClassId/TargetECClassId is never persisted
                     const PropertyMap::Type propMapKind = propertyMap->GetType();
-                    if (propMapKind == PropertyMap::Type::ECInstanceId || propMapKind == PropertyMap::Type::ECClassId)
+                    if (propMapKind == PropertyMap::Type::ECInstanceId || propMapKind == PropertyMap::Type::ECClassId || propMapKind == PropertyMap::Type::ConstraintECClassId)
                         continue;
 
                     std::unique_ptr<PropertyNameExp> exp = std::make_unique<PropertyNameExp>(ctx, propertyMap->GetAccessString(), *classNameExp, classMap);
