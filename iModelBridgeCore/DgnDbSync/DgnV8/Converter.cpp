@@ -1686,10 +1686,18 @@ void Converter::OnUpdateComplete()
         GenerateRealityModelTilesets();
 
     auto extents = m_dgndb->GeoLocation().GetProjectExtents();
-    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents();
+
+    size_t      outlierCount;
+    DRange3d    rangeWithOutliers;
+
+    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &outlierCount);
 
     if (!extents.IsEqual(calculated))
+        {
         m_dgndb->GeoLocation().SetProjectExtents(calculated);
+        if (0 != outlierCount)  
+            ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
