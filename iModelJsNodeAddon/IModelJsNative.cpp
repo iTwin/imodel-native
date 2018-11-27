@@ -26,6 +26,7 @@
 #include <Bentley/BeAtomic.h>
 #include <Bentley/PerformanceLogger.h>
 #include <DgnPlatform/Tile.h>
+#include "UlasClient.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -732,11 +733,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     std::shared_ptr<CancellationToken> m_cancellationToken;
-
+    std::unique_ptr<UlasClient> m_ulasClient;
     NativeDgnDb(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeDgnDb>(info) {}
-    ~NativeDgnDb() {CloseDgnDb();}
+    ~NativeDgnDb() {CloseDgnDb(true);}
 
-    void CloseDgnDb()
+    void CloseDgnDb(bool stopUsageTracking)
         {
         if (!m_dgndb.IsValid())
             return;
@@ -750,6 +751,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
         JsInterop::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
+
+        if (stopUsageTracking)
+            {
+            if (m_ulasClient != nullptr)
+                m_ulasClient->StopApplication();
+
+            m_ulasClient = nullptr;
+            }
         }
 
     void OnDgnDbOpened(DgnDbR dgndb)
@@ -822,17 +831,60 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
         {
+        REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, projectId, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(2, dbname, Env().Undefined());
+        REQUIRE_ARGUMENT_INTEGER(3, mode, Env().Undefined());
+
+        DgnDbPtr db;
+        DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        if (BE_SQLITE_OK == status)
+            {
+            OnDgnDbOpened(*db);
+            BeAssert(m_ulasClient == nullptr);
+            m_ulasClient = std::make_unique<UlasClient>(accessToken, projectId);
+            if (SUCCESS != m_ulasClient->Initialize())
+                return Napi::Number::New(Env(), -100);
+            }
+
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value OpenDgnDbFile(Napi::CallbackInfo const& info)
+        {
         REQUIRE_ARGUMENT_STRING(0, dbname, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, mode, Env().Undefined());
+
         DgnDbPtr db;
         DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
         if (BE_SQLITE_OK == status)
             OnDgnDbOpened(*db);
 
-        return Napi::Number::New(Env(), (int)status);
+        return Napi::Number::New(Env(), (int) status);
         }
 
     Napi::Value CreateIModel(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, accessToken, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, projectId, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(2, fileName, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(3, args, Env().Undefined());
+
+        DbResult status;
+        DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
+        if (db.IsValid())
+            {
+            OnDgnDbOpened(*db);
+            BeAssert(m_ulasClient == nullptr);
+            m_ulasClient = std::make_unique<UlasClient>(accessToken, projectId);
+            if (SUCCESS != m_ulasClient->Initialize())
+                return Napi::Number::New(Env(), -100);
+            }
+
+        return Napi::Number::New(Env(), (int)status);
+        }
+
+    Napi::Value CreateStandaloneIModel(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, fileName, Env().Undefined());
         REQUIRE_ARGUMENT_STRING(1, args, Env().Undefined());
@@ -842,7 +894,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (db.IsValid())
             OnDgnDbOpened(*db);
 
-        return Napi::Number::New(Env(), (int)status);
+        return Napi::Number::New(Env(), (int) status);
         }
 
     Napi::Value GetECClassMetaData(Napi::CallbackInfo const& info)
@@ -941,7 +993,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
         bool isReadonly = m_dgndb->IsReadonly();
 
-        CloseDgnDb();
+        CloseDgnDb(false);
 
         status = JsInterop::ApplySchemaChangeSets(dbFileName, revisions, (RevisionProcessOption)applyOption);
         if (RevisionStatus::Success != status)
@@ -1311,10 +1363,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)result);
         }
 
-    void CloseDgnDb(Napi::CallbackInfo const& info)
-        {
-        CloseDgnDb();
-        }
+    void CloseDgnDb(Napi::CallbackInfo const& info) {  CloseDgnDb(true); }
+    void CloseDgnDbFile(Napi::CallbackInfo const& info) { CloseDgnDb(false); }
 
     Napi::Value CreateChangeCache(Napi::CallbackInfo const& info)
         {
@@ -1768,8 +1818,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("closeIModel", &NativeDgnDb::CloseDgnDb),
+            InstanceMethod("closeIModelFile", &NativeDgnDb::CloseDgnDbFile),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
+            InstanceMethod("createStandaloneIModel", &NativeDgnDb::CreateStandaloneIModel),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteElementAspect", &NativeDgnDb::DeleteElementAspect),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
@@ -1821,6 +1873,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("isUndoPossible", &NativeDgnDb::IsUndoPossible),
             InstanceMethod("logTxnError", &NativeDgnDb::LogTxnError),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
+            InstanceMethod("openIModelFile", &NativeDgnDb::OpenDgnDbFile),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryFirstTxnId", &NativeDgnDb::QueryFirstTxnId),
             InstanceMethod("queryModelExtents", &NativeDgnDb::QueryModelExtents),

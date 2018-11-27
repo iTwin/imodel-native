@@ -18,6 +18,12 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="UlasClient.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="UlasClient.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3DDE7AD3-D599-4F9A-B155-97FBC3BDEEBD}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>

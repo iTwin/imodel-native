@@ -183,6 +183,7 @@
     <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
     <SubPart PartName="ECObjectsNative"     PartFile="iModelCore/ecobjects/ECObjects"    Repository="imodel02" />
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
+    <!-- <SubPart PartName="Licensing" PartFile="LicensingCrossPlatform" Repository="LicensingCrossPlatform" /> -->
   </Part>
 
 </BuildContext>

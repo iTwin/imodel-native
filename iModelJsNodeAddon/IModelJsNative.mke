@@ -71,6 +71,8 @@ $(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECP
 
 $(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(baseDir)ECSchemaXmlContextUtils.h ${MultiCompileDepends} 
 
+$(o)UlasClient$(oext) : $(baseDir)UlasClient.cpp $(baseDir)UlasClient.h $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
+
 %include MultiCppCompileGo.mki
 
 %if defined(BUILD_FOR_IMODELJS_MOBILE)
