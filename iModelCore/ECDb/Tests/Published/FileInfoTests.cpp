@@ -321,110 +321,82 @@ BeFileName SearchTestFile(Utf8CP testFileName)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Maha Nasir                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
+TEST_F(FileInfoTestFixture, EmbeddedFiles)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbfileinfo.ecdb"));
 
-    DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
-
-    {
-    //Test file 1
-    BeFileName testFilePath = SearchTestFile("ECSqlTest.01.00.00.ecschema.xml");
-    ASSERT_TRUE(testFilePath.DoesPathExist());
-
-    DbResult stat = BE_SQLITE_OK;
-    DateTime expectedLastModified = DateTime::GetCurrentTimeUtc();
-    double expectedLastModifiedJd = 0.0;
-    ASSERT_EQ(SUCCESS, expectedLastModified.ToJulianDay(expectedLastModifiedJd));
-
-    //Imports the file into the db.
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "ECSqlTest.01.00.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", nullptr, &expectedLastModified);
-    ASSERT_EQ(BE_SQLITE_OK, stat);
-    ASSERT_TRUE(embeddedFileId.IsValid());
-    }
-
-    {
-    //test file 2
-    BeFileName testFilePath = SearchTestFile("StartupCompany.02.00.00.ecschema.xml");
-    ASSERT_TRUE(testFilePath.DoesPathExist());
-
-    //Imports the file into the db.
-    DbResult stat = BE_SQLITE_OK;
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, "StartupCompany.02.00.00.ecschema.xml", testFilePath.GetNameUtf8().c_str(), "XML", "ECSchema");
-    ASSERT_EQ(BE_SQLITE_OK, stat);
-    ASSERT_TRUE(embeddedFileId.IsValid());
-    }
-
-    DbEmbeddedFileTable::Iterator iter = embeddedFileTable.MakeIterator();
-    ASSERT_EQ(2, iter.QueryCount());
-
-    DbEmbeddedFileTable::Iterator::Entry file = iter.begin();
-    for (auto const& file : iter)
+    struct TestFile final
         {
-        if (strcmp(file.GetNameUtf8(), "StartupCompany.02.00.00.ecschema.xml") == 0)
-            {
-            EXPECT_EQ(2, file.GetId().GetValue());
-            EXPECT_STREQ("XML", file.GetTypeUtf8());
-            EXPECT_STREQ("ECSchema", file.GetDescriptionUtf8());
-            EXPECT_EQ(28730, file.GetFileSize());
-            EXPECT_EQ(524288, file.GetChunkSize());
-            }
-        else if (strcmp(file.GetNameUtf8(), "ECSqlTest.01.00.00.ecschema.xml") == 0)
-            {
-            EXPECT_EQ(1, file.GetId().GetValue());
-            EXPECT_STREQ("XML", file.GetTypeUtf8());
-            EXPECT_TRUE(Utf8String::IsNullOrEmpty(file.GetDescriptionUtf8()));
-            EXPECT_EQ(29900, file.GetFileSize());
-            EXPECT_EQ(524288, file.GetChunkSize());
-            }
+        BeInt64Id m_id;
+        Utf8String m_name;
+        Utf8String m_type;
+        DateTime m_lastMod;
+        uint64_t m_fileSize = 0;
+        uint32_t m_chunkSize = 0;
+        };
+
+    bmap<BeInt64Id, TestFile> testFiles;
+    auto generateTestFiles = [] (bmap<BeInt64Id, TestFile>& testFiles, ECDbR ecdb, Utf8CP name)
+        {
+        TestFile testFile;
+        testFile.m_lastMod = DateTime::GetCurrentTimeUtc();
+        testFile.m_name = name;
+        testFile.m_type = "XML";
+
+        BeFileName testFilePath = SearchTestFile(testFile.m_name.c_str());
+        ASSERT_TRUE(testFilePath.DoesPathExist());
+
+        //Imports the file into the db.
+        DbResult stat = BE_SQLITE_OK;
+        testFile.m_id = ecdb.EmbeddedFiles().Import(&stat, testFile.m_name.c_str(), testFilePath.GetNameUtf8().c_str(), testFile.m_type.c_str(), nullptr, &testFile.m_lastMod);
+        ASSERT_EQ(BE_SQLITE_OK, stat);
+        ASSERT_TRUE(testFile.m_id.IsValid());
+
+        ASSERT_EQ(testFile.m_id, ecdb.EmbeddedFiles().QueryFile(testFile.m_name.c_str(), &testFile.m_fileSize, &testFile.m_chunkSize));
+        testFiles[testFile.m_id] = testFile;
+        };
+
+    generateTestFiles(testFiles, m_ecdb, "ECSqlTest.01.00.00.ecschema.xml");
+    generateTestFiles(testFiles, m_ecdb, "StartupCompany.02.00.00.ecschema.xml");
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,ECClassId,Name,Description,Size,LastModified FROM ecdbf.FileInfo"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        BeInt64Id id = stmt.GetValueId<BeInt64Id>(0);
+        auto it = testFiles.find(id);
+        ASSERT_TRUE(it != testFiles.end()) << stmt.GetECSql() << "|" << id.ToString();
+        TestFile const& expectedTestFile = it->second;
+
+        EXPECT_EQ(m_ecdb.Schemas().GetClassId("ECDbFileInfo","EmbeddedFileInfo"), stmt.GetValueId<ECClassId>(1)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_STREQ(expectedTestFile.m_name.c_str(), stmt.GetValueText(2)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_EQ((int64_t) expectedTestFile.m_fileSize, stmt.GetValueInt64(4)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_EQ(expectedTestFile.m_lastMod, stmt.GetValueDateTime(5)) << stmt.GetECSql() << "|" << id.ToString();
         }
-    iter.end();
-    }
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Maha Nasir                  01/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileInfoTestFixture, VerifyEmbeddedFileSize)
-    {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbfileinfo.ecdb"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId,ECClassId,Name,Description,Size,LastModified,Type FROM ecdbf.EmbeddedFileInfo"));
+    rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        BeInt64Id id = stmt.GetValueId<BeInt64Id>(0);
+        auto it = testFiles.find(id);
+        ASSERT_TRUE(it != testFiles.end()) << stmt.GetECSql() << "|" << id.ToString();
+        TestFile const& expectedTestFile = it->second;
 
-    DbEmbeddedFileTable& embeddedFileTable = m_ecdb.EmbeddedFiles();
-
-    //embed test file
-    Utf8CP testFileName = "ECSqlTest.01.00.00.ecschema.xml";
-    uint64_t size = 0;
-    {
-    BeFileName testFilePath = SearchTestFile(testFileName);
-    ASSERT_TRUE(testFilePath.DoesPathExist());
-
-    //Imports the test file into the db.
-    DbResult stat = BE_SQLITE_OK;
-    BeBriefcaseBasedId embeddedFileId = embeddedFileTable.Import(&stat, testFileName, testFilePath.GetNameUtf8().c_str(), "XML", "ECSchema");
-    ASSERT_EQ(BE_SQLITE_OK, stat);
-    ASSERT_TRUE(embeddedFileId.IsValid());
-
-    //Query the values for a file.
-    BeBriefcaseBasedId id = embeddedFileTable.QueryFile(testFileName, &size);
-    ASSERT_TRUE(id.IsValid());
-    ASSERT_TRUE(size > 0);
-    }
-
-    //Read existing embedded file, AddEntry, Save and verify the size. 
-    {
-    Utf8CP newfileName = "CopyECSqlTest.01.00.00.ecschema.xml";
-
-    //Creates a new entry in the embedded file table with the specified name.
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(newfileName, "XML"));
-    bvector<Byte> buffer;
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(buffer, testFileName));
-
-    //Now save data without compression and read it again to verify that the data is unchanged.
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Save(buffer.data(), size, newfileName, nullptr, false));
-    bvector<Byte> newBuffer;
-    ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Read(newBuffer, newfileName));
-    ASSERT_TRUE(buffer.size() == newBuffer.size());
-    ASSERT_EQ(0, memcmp(&buffer[0], &newBuffer[0], buffer.size()));
-    }
+        EXPECT_EQ(m_ecdb.Schemas().GetClassId("ECDbFileInfo", "EmbeddedFileInfo"), stmt.GetValueId<ECClassId>(1)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_STREQ(expectedTestFile.m_name.c_str(), stmt.GetValueText(2)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_EQ((int64_t) expectedTestFile.m_fileSize, stmt.GetValueInt64(4)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_EQ(expectedTestFile.m_lastMod, stmt.GetValueDateTime(5)) << stmt.GetECSql() << "|" << id.ToString();
+        EXPECT_STREQ("XML", stmt.GetValueText(6)) << stmt.GetECSql() << "|" << id.ToString();
+        }
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
     }
 
 //---------------------------------------------------------------------------------------
