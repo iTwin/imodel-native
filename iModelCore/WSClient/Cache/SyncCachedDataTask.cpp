@@ -300,7 +300,7 @@ AsyncTaskPtr<void> SyncCachedDataTask::PrepareCachingQueriesAsync(ECInstanceKeyD
         PrepareCachingQueries(txn, instanceKey, syncRecursively);
         txn.Commit();
 
-        return PrepareCachingQueriesAsync(cachedInstancesDeque, syncRecursively);
+        PrepareCachingQueriesAsync(cachedInstancesDeque, syncRecursively);
         });
     }
 
