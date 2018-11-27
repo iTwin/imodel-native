@@ -99,7 +99,7 @@ namespace SnapContext
         Render::ViewFlags GetViewFlags() const {Render::ViewFlags viewFlags; if (isMember(json_viewFlags())) viewFlags.FromJson((*this)[json_viewFlags()]); return viewFlags;}
         double GetSnapAperture() const {return (*this)[json_snapAperture()].asDouble(12.0);}
         int GetSnapDivisor() const {return (*this)[json_snapDivisor()].asUInt(2);}
-        bool GetSubCategoryId(DgnElementId& subCategoryId) const {auto& value = (*this)[json_subCategoryId()]; if (value.isNull()) return false; subCategoryId.FromJson(value); return true;}
+        bool GetSubCategoryId(DgnElementId& subCategoryId) const {auto& value = (*this)[json_subCategoryId()]; if (value.isNull()) return false; subCategoryId.FromJson(value); return subCategoryId.IsValid();}
         bool GetGeometryClass(uint32_t& geomClass) const {auto& value = (*this)[json_geometryClass()]; if (value.isNull()) return false; geomClass = value.asUInt(); return true;}
 
         bset<SnapMode> GetSnapModes() const {
