@@ -2,7 +2,7 @@
 #
 #     $Source: iModelHubClientLib.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # affects WinRT build only.
@@ -25,13 +25,13 @@ always:
 nameToDefine    = __iModelHubClient_DLL_BUILD__
 %include cdefapnd.mki
 %if defined (DEBUG)
-	nameToDefine    = DEBUG
-	%include cdefapnd.mki
+    nameToDefine    = DEBUG
+    %include cdefapnd.mki
 %endif
 
 %if defined (ENABLE_BIM_CRASH_TESTS) || defined (DEBUG)
-	nameToDefine    = ENABLE_BIM_CRASH_TESTS
-	%include cdefapnd.mki
+    nameToDefine    = ENABLE_BIM_CRASH_TESTS
+    %include cdefapnd.mki
 %endif
 
 %if $(TARGET_PLATFORM)=="Windows"
