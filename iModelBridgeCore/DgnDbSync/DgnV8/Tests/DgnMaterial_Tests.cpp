@@ -122,7 +122,7 @@ TEST_F(DgnMaterialTests, MaterialAttachment)
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    RenderMaterialId materialId = RenderMaterial::QueryMaterialId(*GetJobDefinitionModel(*db), "Material35");
+    RenderMaterialId materialId = RenderMaterial::QueryMaterialId(m_params.GetMergeDefinitions()? db->GetDictionaryModel(): *GetJobDefinitionModel(*db), "Material35");
     EXPECT_TRUE(materialId.IsValid());
     RenderMaterialCPtr material = RenderMaterial::Get(*db, materialId);
     EXPECT_TRUE(material.IsValid());
@@ -162,7 +162,7 @@ TEST_F(DgnMaterialTests, MaterialAssignment)
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    RenderMaterialId materialId = RenderMaterial::QueryMaterialId(*GetJobDefinitionModel(*db), "Material35");
+    RenderMaterialId materialId = RenderMaterial::QueryMaterialId(m_params.GetMergeDefinitions()? db->GetDictionaryModel(): *GetJobDefinitionModel(*db), "Material35");
     EXPECT_TRUE(materialId.IsValid());
     RenderMaterialCPtr material = RenderMaterial::Get(*db, materialId);
     EXPECT_TRUE(material.IsValid());

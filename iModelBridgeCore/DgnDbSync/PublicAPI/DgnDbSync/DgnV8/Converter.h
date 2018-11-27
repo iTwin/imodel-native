@@ -1974,6 +1974,9 @@ public:
     //! A subclass must override this to supply the prefix that should be applied to all generated names, such as Category and View codes.
     virtual Utf8String _GetNamePrefix() const = 0;
 
+    //! Should definitions such as levels and materials be merged by name
+    bool ShouldMergeDefinitions() const {return GetParams().GetMergeDefinitions() || m_config.GetOptionValueBool("MergeDefinitions", false);}
+
     Params const& GetParams() const {return _GetParams();}
 
     //! Returns the transform to apply to all in-coming V8 elements. This is usually identity. 
@@ -2623,8 +2626,6 @@ protected:
     //! override this to control how drawing and sheet models are found
     DGNDBSYNC_EXPORT virtual void _ImportDrawingAndSheetModels(ResolvedModelMapping& rootModelMapping);
 
-    DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
-
     //! @}
 
     //! @private
@@ -2656,6 +2657,7 @@ public:
     DGNDBSYNC_EXPORT  ~RootModelConverter();
 
     DGNDBSYNC_EXPORT BentleyStatus MakeSchemaChanges();
+    DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
 
     //! Create a new import job and the information that it depends on. Called when FindJob fails, indicating that this is the initial conversion of this data source.
     //! The name of the job is specified by _GetParams().GetBridgeJobName(). This must be a non-empty string that is unique among all job subjects.

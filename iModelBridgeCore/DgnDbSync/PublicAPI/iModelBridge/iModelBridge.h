@@ -491,7 +491,7 @@ struct iModelBridge
         bool m_isUpdating = false;
         bool m_wantThumbnails = true;
         bool m_doDetectDeletedModelsAndElements =  true;
-        bool m_mergeLevels = true;  // WIP make this default to false
+        bool m_mergeDefinitions = true;  // WIP make this default to false
         PushIntermediateRevisions m_pushIntermediateRevisions = PushIntermediateRevisions::None;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
@@ -598,8 +598,8 @@ struct iModelBridge
         BeDuration GetThumbnailTimeout() const {return m_thumbnailTimeout;}
         void SetWantThumbnails(bool b) {m_wantThumbnails = b;}
         bool WantThumbnails() const {return m_wantThumbnails;}
-        void SetMergeLevels(bool b) {m_mergeLevels = b;}
-        bool GetMergeLevels() const {return m_mergeLevels;}
+        void SetMergeDefinitions(bool b) {m_mergeDefinitions = b;}
+        bool GetMergeDefinitions() const {return m_mergeDefinitions;}
         void SetBridgeJobName(Utf8StringCR str) {m_converterJobName=str;}
         Utf8String GetBridgeJobName() const {return m_converterJobName;}
         void SetBridgeRegSubKey(WStringCR str) {m_thisBridgeRegSubKey=str;}
@@ -672,7 +672,9 @@ struct iModelBridge
     //! @return non-zero error status if the bridge cannot convert the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues"
     //! @note The caller must check the return status and call SaveChanges on success or AbandonChanges on error.
     //! @see OpenBimAndMergeSchemaChanges
-    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles);
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles);
+
+    IMODEL_BRIDGE_EXPORT BentleyStatus DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db);
 
     //! @}
 
@@ -793,6 +795,8 @@ public:
     //! @note The bridge must call dgndb.BriefcaseManager().LockSchemas() before attempting to call dgndb.ImportSchemas. The bridge *must* return a non-zero error status if LockSchemas fails.
     //! @note The bridge should *not* convert elements or models in this function.
     virtual BentleyStatus _MakeSchemaChanges() {return BSISUCCESS;}
+
+    virtual BentleyStatus _MakeDefinitionChanges(SubjectCR jobSubject) {return BSISUCCESS;}
 
     //! Try to find an existing @ref ANCHOR_BridgeJobSubject "job subject" in the BIM.
     //! This is called prior to _ConvertToBim.

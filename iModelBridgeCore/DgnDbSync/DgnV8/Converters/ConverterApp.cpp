@@ -468,10 +468,15 @@ void ConverterApp::_DeleteSyncInfo()
 BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
     {
     auto status = m_converter->MakeSchemaChanges();
-    if ((BSISUCCESS != status) || m_converter->WasAborted())
-        return BSIERROR;
-    
-    status = m_converter->MakeDefinitionChanges();
+    return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverterApp::_MakeDefinitionChanges(SubjectCR jobsubj)
+    {
+    auto status = m_converter->MakeDefinitionChanges();
     return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
     }
 

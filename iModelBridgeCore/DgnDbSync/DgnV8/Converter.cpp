@@ -3856,7 +3856,7 @@ bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, Transf
 void Converter::CheckForAndSaveChanges()
     {
     m_hadAnyChanges |= m_dgndb->Txns().HasChanges();
-    m_dgndb->SaveChanges();
+    iModelBridge::SaveChanges(*m_dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
