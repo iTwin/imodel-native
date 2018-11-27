@@ -564,7 +564,7 @@ void Converter::ReportFailedModelConversion(ResolvedModelMapping const& v8mm)
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ray.Bentley                     11/1
+* @bsimethod                                    Ray.Bentley                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl)
     {
@@ -572,6 +572,15 @@ void Converter::ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle con
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange)
+    {
+    // TBD... Notify project manager.
+    ReportIssueV(IssueSeverity::Warning, IssueCategory::Unknown(), Issue::ProjectExtentsAdjusted(),nullptr);
+    }
+                
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/1
 +---------------+---------------+---------------+---------------+---------------+------*/

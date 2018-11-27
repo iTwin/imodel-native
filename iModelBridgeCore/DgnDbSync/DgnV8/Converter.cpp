@@ -1643,7 +1643,11 @@ void Converter::OnCreateComplete()
     {
     _EmbedFonts();
 
-    m_dgndb->GeoLocation().InitializeProjectExtents();
+    size_t      outlierCount;
+    DRange3d    rangeWithOutliers;
+    m_dgndb->GeoLocation().InitializeProjectExtents(&rangeWithOutliers, &outlierCount);
+    if (0 != outlierCount)  
+        ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
 
     // *** NEEDS WORK: What is this for? m_rootScaleFactor is never set anywhere in the converter
     //m_dgndb->SaveProperty(PropertySpec("SourceRootScaleFactor", "dgn_Proj"), &m_rootScaleFactor, sizeof(m_rootScaleFactor));
