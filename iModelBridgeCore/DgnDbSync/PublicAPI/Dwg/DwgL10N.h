@@ -93,7 +93,6 @@ IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START (Issue, dwg_issue)
     L10N_STRING(ViewNoneFound)               // =="No view was found"==
     L10N_STRING(ViewportError)               // =="Modelspace viewport error %s"==
     L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
-    L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
     L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
     L10N_STRING(MissingJobDefinitionModel)   // =="Missing JobDefinitionModel for %s"==
     L10N_STRING(CircularXrefIgnored)         // =="Circular xRef %s is ignored"==
