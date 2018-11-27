@@ -49,6 +49,7 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
     IMAGEHLP_MODULE64 * module = (IMAGEHLP_MODULE64 *) calloc(sizeof(IMAGEHLP_MODULE64), 1);
     module->SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
 
+    bool foundKiUserExceptionDispatcher = false;
     for (USHORT i = nIgnoreFrames; i < frames; i++)
         {
         auto symbolAddress = (DWORD64) (stack.get()[i]);
@@ -61,7 +62,14 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
         SymGetModuleInfo64(process, moduleAddress, module);
         SymFromAddr(process, symbolAddress, 0, symbol);
 
-        stackTrace += Utf8PrintfString("%-4d %-36s 0x%0X %s\n", i + 1, module->ModuleName, symbol->Address, symbol->Name);
+        if (!foundKiUserExceptionDispatcher)
+            {
+            if (0 == strcmp(symbol->Name, "KiUserExceptionDispatcher"))
+                foundKiUserExceptionDispatcher = true;
+            continue;
+            }
+
+        stackTrace += Utf8PrintfString("%s %s\n", module->ModuleName, symbol->Name);
         }
 
     free(symbol);
@@ -93,7 +101,7 @@ LONG WINAPI reportUnhandledException(struct _EXCEPTION_POINTERS *ExceptionInfo)
         }
 
     LOG.errorv("Exception %lx", code);
-    LOG.error(iModelBridgeErrorHandling::GetStackTraceDescription(20, 4).c_str());
+    LOG.error(iModelBridgeErrorHandling::GetStackTraceDescription(20, 0).c_str());
     return EXCEPTION_CONTINUE_SEARCH;
     }
 
