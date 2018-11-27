@@ -49,6 +49,7 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
     IMAGEHLP_MODULE64 * module = (IMAGEHLP_MODULE64 *) calloc(sizeof(IMAGEHLP_MODULE64), 1);
     module->SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
 
+    bool foundKiUserExceptionDispatcher = false;
     for (USHORT i = nIgnoreFrames; i < frames; i++)
         {
         auto symbolAddress = (DWORD64) (stack.get()[i]);
@@ -61,7 +62,14 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
         SymGetModuleInfo64(process, moduleAddress, module);
         SymFromAddr(process, symbolAddress, 0, symbol);
 
-        stackTrace += Utf8PrintfString("%-4d %-36s 0x%0X %s\n", i + 1, module->ModuleName, symbol->Address, symbol->Name);
+        if (!foundKiUserExceptionDispatcher)
+            {
+            if (0 == strcmp(symbol->Name, "KiUserExceptionDispatcher"))
+                foundKiUserExceptionDispatcher = true;
+            continue;
+            }
+
+        stackTrace += Utf8PrintfString("%s %s\n", module->ModuleName, symbol->Name);
         }
 
     free(symbol);
@@ -73,20 +81,27 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-LONG WINAPI vectoredExceptionHandler(struct _EXCEPTION_POINTERS *ExceptionInfo)
+LONG WINAPI reportUnhandledException(struct _EXCEPTION_POINTERS *ExceptionInfo)
     {
-    // DebugBreak();
+    if (!ExceptionInfo || !ExceptionInfo->ExceptionRecord || !ExceptionInfo->ExceptionRecord->ExceptionCode)
+        return EXCEPTION_CONTINUE_SEARCH;
+
     LONG code = ExceptionInfo->ExceptionRecord->ExceptionCode;
-    switch (code)
+    if (STATUS_STACK_OVERFLOW == code)
         {
-        case 0x4001000a:    // OutputDebugString
-        case 0x40010006:    //          "
-        case 0x406D1388:    // SetThreadName - https://docs.microsoft.com/en-us/visualstudio/debugger/how-to-set-a-thread-name-in-native-code?view=vs-2015
-            return EXCEPTION_CONTINUE_SEARCH;
+        // TODO: Can we at least get the name of the crashing function?
+        fprintf(stderr, "Stack overflow\n");
+        return EXCEPTION_CONTINUE_SEARCH;
+        }
+
+    if (EXCEPTION_BREAKPOINT == code)
+        {	// this actually works, when you debug break explicitly
+        DebugBreak();
+        return EXCEPTION_EXECUTE_HANDLER;
         }
 
     LOG.errorv("Exception %lx", code);
-    LOG.error(iModelBridgeErrorHandling::GetStackTraceDescription(20, 4).c_str());
+    LOG.error(iModelBridgeErrorHandling::GetStackTraceDescription(20, 0).c_str());
     return EXCEPTION_CONTINUE_SEARCH;
     }
 
@@ -99,8 +114,7 @@ void iModelBridgeErrorHandling::Initialize()
     if (s_initialized)
         return;
     s_initialized = true;
-    ULONG callFirst = 0;
-    /* hVEH = */ AddVectoredExceptionHandler (callFirst, vectoredExceptionHandler);
+    SetUnhandledExceptionFilter(reportUnhandledException);
     }
 
 /*---------------------------------------------------------------------------------**//**
