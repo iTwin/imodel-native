@@ -483,8 +483,6 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
 //what is in SMStreamingDataStore.cpp.
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
-    return 0;
-
 #ifndef LINUX_SCALABLEMESH_BUILD 
 
     if (indexHeader == NULL || !m_nodeHeaderGroups.empty()) return 0;
@@ -559,7 +557,6 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         auto tilesetDir = BEFILENAME(GetDirectoryName, baseUrl);
         auto tilesetName = BEFILENAME(GetFileNameAndExtension, baseUrl);
 
-#ifndef LINUX_SCALABLEMESH_BUILD
         SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(groupMode, this->GetDataSourceAccount(), GetDataSourceSessionName());
         SMGroupCache::Ptr groupCache = SMGroupCache::Create(&m_nodeHeaderCache);
         m_CesiumGroup = SMNodeGroup::Create(groupParameters, groupCache, rootNodeBlockID);
@@ -609,7 +606,6 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 m_settings->SetGCSString(wktString);
                 }
             }
-#endif
         //Utf8String wkt;
         //m_CesiumGroup->GetWKTString(wkt);
         //m_settings->SetGCSString(wkt);
@@ -617,7 +613,6 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
     else
         {
             
-#ifndef LINUX_SCALABLEMESH_BUILD
         std::vector<DataSourceBuffer::BufferData>        dest;
         DataSource                                *      dataSource;
         DataSourceURL dataSourceURL(m_masterFileName.c_str());
@@ -825,9 +820,11 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             */
             }
         }
-#endif
     return headerSize;
+#else
+return 0;
 #endif    
+
     }
 
 //#ifndef LINUX_SCALABLEMESH_BUILD On Clang this function stops the compiler to compile the stuff after this function, including 
