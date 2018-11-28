@@ -749,6 +749,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         TearDownPresentationManager();
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
+        m_dgndb->m_jsIModelDb.Reset(); // disconnect the iModelDb object
         JsInterop::CloseDgnDb(*m_dgndb);
         m_dgndb = nullptr;
 
@@ -825,8 +826,12 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     void SetIModelDb(Napi::CallbackInfo const& info) {
         Napi::Value obj = info[0];
-        if (obj.IsObject() && m_dgndb.IsValid())
-            m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>());
+        if (m_dgndb.IsValid()) {
+        if (obj.IsObject())
+            m_dgndb->m_jsIModelDb.Reset(obj.As<Napi::Object>(), 1);
+        else
+            m_dgndb->m_jsIModelDb.Reset();
+        }
     }
 
     Napi::Value OpenDgnDb(Napi::CallbackInfo const& info)
