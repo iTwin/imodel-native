@@ -1590,6 +1590,8 @@ int             iModelBridgeFwk::StoreHeaderInformation()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   iModelBridgeFwk::GetSchemaLock()
     {
+    GetLogger().infov("GetSchemaLock.");
+
     RepositoryStatus status = RepositoryStatus::Success;
     int retryAttempt = 0;
     do
@@ -1858,6 +1860,8 @@ int iModelBridgeFwk::UpdateExistingBim()
     if (BSISUCCESS != InitBridge())
         return BentleyStatus::ERROR;
 
+    bool holdsSchemaLock = false;
+
     if (true)
         {
         iModelBridgeCallTerminate callTerminate(*m_bridge);
@@ -1902,6 +1906,7 @@ int iModelBridgeFwk::UpdateExistingBim()
         //  Schema and definition changes                                                           <<< SCHEMA LOCK
         if (BSISUCCESS != GetSchemaLock())  // must get schema lock preemptively (before entering bulk mode). If we don't, we could end up reserving some codes and failing to get others, with no way to back out.
             return RETURN_STATUS_SERVER_ERROR;                                                   // === SCHEMA LOCK
+        holdsSchemaLock = true;                                                                  // === SCHEMA LOCK
                                                                                                  // === SCHEMA LOCK
         if (BSISUCCESS != MakeSchemaChanges(callCloseOnReturn))                                  // === SCHEMA LOCK
             {                                                                                    // === SCHEMA LOCK
@@ -1922,10 +1927,18 @@ int iModelBridgeFwk::UpdateExistingBim()
             }                                                                                    // === SCHEMA LOCK
                                                                                                  // === SCHEMA LOCK
         Briefcase_ReleaseAllPublicLocks();                                                       // >>> SCHEMA LOCK
+        holdsSchemaLock = false;
 
         //  Normal data changes
         BeAssert(!iModelBridge::AnyTxns(*m_briefcaseDgnDb));
         GetLogger().infov("bridge:%s iModel:%s - Convert Data.", Utf8String(m_jobEnvArgs.m_bridgeRegSubKey).c_str(), m_briefcaseBasename.c_str());
+
+        if (m_bridge->_ConvertToBimRequiresExclusiveLock())
+            {
+            if (BSISUCCESS != GetSchemaLock())
+                return RETURN_STATUS_SERVER_ERROR;
+            holdsSchemaLock = true;
+            }
 
         BentleyStatus bridgeCvtStatus = m_bridge->DoConvertToExistingBim(*m_briefcaseDgnDb, *jobsubj, true);
         if (BSISUCCESS != bridgeCvtStatus)
@@ -1951,6 +1964,8 @@ int iModelBridgeFwk::UpdateExistingBim()
     //  Note: We may still be holding shared locks that we need to release. If we detect this, we must try again to release them.
     if (!iModelBridge::AnyTxns(*m_briefcaseDgnDb) && (SyncState::Initial == GetSyncState()))
         {
+        if (holdsSchemaLock)
+            Briefcase_ReleaseAllPublicLocks();
         GetLogger().info("No changes were detected and there are no Txns waiting to be pushed or shared locks to be released.");
         }
     else
