@@ -316,9 +316,12 @@ BentleyStatus ORDBridge::CreateSyncInfoIfNecessary()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_OnOpenBim(DgnDbR db)
     {
-    if (m_converter != nullptr)
-        delete m_converter;
-    m_converter = new ORDConverter(m_params);
+    //if (m_converter != nullptr)
+    //    delete m_converter;
+    if (m_converter == nullptr)
+        {
+        m_converter = new ORDConverter(m_params);
+        }
     m_converter->SetDgnDb(db);
     CreateSyncInfoIfNecessary();
     if (BentleyStatus::SUCCESS != m_converter->AttachSyncInfo())
@@ -344,7 +347,7 @@ void ORDBridge::_OnCloseBim(BentleyStatus, ClosePurpose)
         IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(;)
             {
             }
-        m_converter = nullptr;
+        //m_converter = nullptr;
         }
     }
 
