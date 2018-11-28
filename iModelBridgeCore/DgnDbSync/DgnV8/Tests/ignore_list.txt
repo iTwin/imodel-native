@@ -10,4 +10,3 @@ NamedGroupTests.NamedGroupOf2dElement
     # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)
 
 MultiBridgeTests.FileSpecificDefinitions
-ViewTests.SavedViewsCRUD
