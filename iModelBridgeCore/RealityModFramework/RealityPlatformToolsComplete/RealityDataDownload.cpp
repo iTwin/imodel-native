@@ -50,10 +50,10 @@ static size_t callback_fwrite_func(void *buffer, size_t size, size_t nmemb, void
 }
 
 static int callback_progress_func(void *pClient,
-    double dltotal,
-    double dlnow,
-    double ultotal,
-    double ulnow)
+    curl_off_t dltotal,
+    curl_off_t dlnow,
+    curl_off_t ultotal,
+    curl_off_t ulnow)
 {
     (void)ultotal;
     (void)ulnow;
@@ -72,7 +72,7 @@ static int callback_progress_func(void *pClient,
             pFileTrans->downloadedSizeStep = (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
             }
 
-        if (dlnow > pFileTrans->downloadedSizeStep)
+        if ((size_t)dlnow > pFileTrans->downloadedSizeStep)
             {
             if (pFileTrans->filesize == 0)
                 pFileTrans->downloadedSizeStep += pFileTrans->downloadedSizeStep;       // predefine step
