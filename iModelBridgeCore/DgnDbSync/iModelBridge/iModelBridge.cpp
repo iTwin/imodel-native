@@ -129,6 +129,12 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
+    if (BSISUCCESS != _MakeDefinitionChanges(*jobsubj))
+        {
+        LOG.fatalv("_MakeDefinitionChanges failed");
+        return nullptr; // caller must call abandon changes
+        }   
+
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
         LOG.fatalv("Failed to populate new repository");
