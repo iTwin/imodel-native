@@ -60,6 +60,8 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct iModelBridgeErrorHandling
 {
+    IMODEL_BRIDGE_EXPORT static void Initialize();
+
     //! Helper function to get the current callstack, for logging exceptions.
     IMODEL_BRIDGE_EXPORT static Utf8String GetStackTraceDescription(size_t maxFrames, size_t nIgnoreFrames);
 

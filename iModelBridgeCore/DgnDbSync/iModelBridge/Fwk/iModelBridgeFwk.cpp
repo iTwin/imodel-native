@@ -32,6 +32,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #define RETURN_STATUS_CONVERTER_ERROR   2
 #define RETURN_STATUS_SERVER_ERROR      3
 #define RETURN_STATUS_LOCAL_ERROR       4
+#define RETURN_STATUS_UNHANDLED_EXCEPTION -2
 
 #define MUSTBEDBRESULT(stmt,RESULT) {auto rc=stmt; if (RESULT!=rc) {return rc;}}
 #define MUSTBEOK(stmt) MUSTBEDBRESULT(stmt,BE_SQLITE_OK)
@@ -1418,7 +1419,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     try
         {
         StopWatch updateExistingBim(true);
-        status = UpdateExistingBim();
+        status = UpdateExistingBimWithExceptionHandling();
         LogPerformance(updateExistingBim, "Updating Existing Bim file.");
         }
     catch (...)
@@ -1668,6 +1669,28 @@ BentleyStatus   iModelBridgeFwk::ImportElementAspectSchema(bool& madeChanges)
         return BSIERROR;
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+int iModelBridgeFwk::UpdateExistingBimWithExceptionHandling()
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        return UpdateExistingBim();
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(OnUnhandledException("UpdateExistingBim"))
+    return RETURN_STATUS_UNHANDLED_EXCEPTION;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridgeFwk::OnUnhandledException(Utf8CP phase)
+    {
+    fprintf(stderr, "Unhandled exception in %s. Releasing public locks and doing other cleanup\n", phase);
+    Briefcase_ReleaseAllPublicLocks();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2009,7 +2032,10 @@ int iModelBridgeFwk::Run(int argc, WCharCP argv[])
         }
 #endif
 
-    int res = -2;
+    int res = RETURN_STATUS_UNHANDLED_EXCEPTION;
+
+    iModelBridgeErrorHandling::Initialize();
+
     IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
         {
         res = RunExclusive(argc, argv);

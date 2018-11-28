@@ -1367,6 +1367,18 @@ void _DrawModelRef (DgnV8Api::DgnModelRef* baseModelRef, DgnV8Api::DgnModelRefLi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void VisitElementHandleWithExceptionHandling(DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria) 
+    {
+    IMODEL_BRIDGE_TRY_ALL_EXCEPTIONS
+        {
+        T_Super::_VisitElemHandle(inEl, checkRange, checkScanCriteria);
+        }
+    IMODEL_BRIDGE_CATCH_ALL_EXCEPTIONS_AND_LOG(m_converter.ReportFailedDrawingElementConversion(inEl));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   _VisitElemHandle (DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria) override
     {
     if (m_converter.IsUpdating() && !m_output.m_currentModelInfo.m_attachmentChanged)
@@ -1390,7 +1402,8 @@ StatusInt   _VisitElemHandle (DgnV8Api::ElementHandle const& inEl, bool checkRan
     //              visit complex children and ensure that their levels are converted.
     m_converter.ConvertLevels(inEl);
 
-    return T_Super::_VisitElemHandle(inEl, checkRange, checkScanCriteria);
+    VisitElementHandleWithExceptionHandling(inEl, checkRange, checkScanCriteria);
+    return SUCCESS;                      // Not really used...
     }
 
 /*---------------------------------------------------------------------------------**//**

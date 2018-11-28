@@ -1643,7 +1643,11 @@ void Converter::OnCreateComplete()
     {
     _EmbedFonts();
 
-    m_dgndb->GeoLocation().InitializeProjectExtents();
+    size_t      outlierCount;
+    DRange3d    rangeWithOutliers;
+    m_dgndb->GeoLocation().InitializeProjectExtents(&rangeWithOutliers, &outlierCount);
+    if (0 != outlierCount)  
+        ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
 
     // *** NEEDS WORK: What is this for? m_rootScaleFactor is never set anywhere in the converter
     //m_dgndb->SaveProperty(PropertySpec("SourceRootScaleFactor", "dgn_Proj"), &m_rootScaleFactor, sizeof(m_rootScaleFactor));
@@ -1682,10 +1686,18 @@ void Converter::OnUpdateComplete()
         GenerateRealityModelTilesets();
 
     auto extents = m_dgndb->GeoLocation().GetProjectExtents();
-    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents();
+
+    size_t      outlierCount;
+    DRange3d    rangeWithOutliers;
+
+    auto calculated = m_dgndb->GeoLocation().ComputeProjectExtents(&rangeWithOutliers, &outlierCount);
 
     if (!extents.IsEqual(calculated))
+        {
         m_dgndb->GeoLocation().SetProjectExtents(calculated);
+        if (0 != outlierCount)  
+            ReportAdjustedProjectExtents(outlierCount, m_dgndb->GeoLocation().GetProjectExtents(), rangeWithOutliers);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

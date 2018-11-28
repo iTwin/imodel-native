@@ -308,6 +308,8 @@ protected:
     int RunExclusive(int argc, WCharCP argv[]);
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();
+    int UpdateExistingBimWithExceptionHandling();
+    void OnUnhandledException(Utf8CP);
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
     BentleyStatus ReleaseBridge();
