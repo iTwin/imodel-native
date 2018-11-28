@@ -19,13 +19,9 @@
 #include "Stores/SMStoreUtils.h"
 #include <condition_variable>
 #include <json/json.h>
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
 #define SESSION_NAME DataSource::SessionName
-#else
-class DataSourceSessionName;
-#define SESSION_NAME DataSourceSessionName
-#endif
+
 #include <queue>
 #include <map>
 #include <iomanip>
@@ -80,10 +76,10 @@ public:
     typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMGroupGlobalParameters> Ptr;
 
 public:
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     DataSourceAccount*                  GetDataSourceAccount();
     const DataSource::SessionName &     GetDataSourceSessionName();
-#endif
+
     StrategyType                        GetStrategyType() { return m_strategyType; }
     uint32_t                            GetNextNodeID() { return m_nextNodeID++; }
     WString                             GetWellKnownText() { return m_wktStr; }
@@ -108,9 +104,9 @@ private:
 
     StrategyType                m_strategyType = NORMAL;
     DataSourceAccount*          m_dataSourceAccount = nullptr;
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     DataSource::SessionName     m_dataSourceSessionName;
-#endif
+
     std::atomic<uint32_t>       m_nextNodeID = {0};
     WString                     m_wktStr;
     };
@@ -509,9 +505,9 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         SMGroupGlobalParameters::Ptr m_parametersPtr;
         SMGroupCache::Ptr            m_groupCachePtr;
         bool m_isRoot = false;
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         DataSourceURL m_url;
-#endif
+
         bvector<uint8_t> m_rawHeaders;
         std::unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
         SMNodeGroupPtr m_ParentGroup;
@@ -589,13 +585,11 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL GetDataURLForNode(HPMBlockID blockID);
 
         DataSourceURL GetURL();
 
         void SetURL(DataSourceURL url);
-#endif
 
         Json::Value GetJsonHeader(const uint64_t& id) 
             {
@@ -684,10 +678,10 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsRoot() { return m_isRoot; }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         DataSourceAccount   *           GetDataSourceAccount(void);
         const DataSource::SessionName & GetDataSourceSessionName(void);
-#endif
+
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
@@ -722,9 +716,9 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             assert(!"Please use a strategy to save a group!");
             }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         DataSource *InitializeDataSource();
-#endif
+
 
         StatusInt Load();
 
@@ -820,11 +814,15 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
                 }
             }
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
         bool DownloadFromID(std::vector<DataSourceBuffer::BufferData>& dest)
             {
             wchar_t buffer[10000];
+#if _WIN32
             swprintf(buffer, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
+#else
+            swprintf(buffer, 10000, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
+#endif
 
             return DownloadBlob(dest, DataSourceURL(buffer));
             }
@@ -832,7 +830,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         bool DownloadCesiumTileset(const DataSourceURL& url, Json::Value& tileset);
 
         bool DownloadBlob(std::vector<DataSourceBuffer::BufferData>& dest, const DataSourceURL& url);
-#endif
+
 
         uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData);
 
@@ -983,7 +981,7 @@ template<class EXTENT> void SMGroupingStrategy<EXTENT>::SaveAllOpenGroups(bool s
         if (!saveRoot && group->IsRoot()) continue;
         if (!group->IsEmpty() && !group->IsFull())
             {
-            group->Close<EXTENT>();
+            group->template Close<EXTENT>();
             }
         }
     }
@@ -1086,7 +1084,7 @@ size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTE
     {
     // Fetch node header data
     size_t headerSize = 0;
-        #ifndef LINUX_SCALABLEMESH_BUILD
+
     std::unique_ptr<Byte> headerData = nullptr;
     SMStreamingStore<EXTENT>::SerializeHeaderToBinary(&pi_NodeHeader, headerData, headerSize);
 
@@ -1095,7 +1093,7 @@ size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTE
     pi_Group->AppendHeader((uint64_t)pi_NodeHeader.m_id.m_integerID, headerData.get(), headerSize);
 
     this->Apply(pi_NodeHeader, pi_Group);
-#endif
+
     return headerSize;
     }
 
@@ -1154,10 +1152,14 @@ void SMBentleyGroupingStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) 
     if (m_Mode == SMGroupGlobalParameters::StrategyType::VIRTUAL) return; // Don't need to save virtual groups, they will use normal headers to retrieve node header data
     if (pi_Group->IsEmpty()) return;
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     WString path(pi_Group->m_outputDirPath + L"\\g_");
     wchar_t buffer[10000];
+#if _WIN32
     swprintf(buffer, L"%s%lu.bin", path.c_str(), pi_Group->GetID());
+#else
+	swprintf(buffer, 10000, L"%s%lu.bin", path.c_str(), pi_Group->GetID());
+#endif
     std::wstring group_filename(buffer);
     BeFile file;
     if (OPEN_OR_CREATE_FILE(file, group_filename.c_str(), BeFileAccess::Write))
@@ -1184,7 +1186,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) 
         }
 
     file.Close();
-#endif
+
     }
 
 /**---------------------------------------------------------------------------------------------
@@ -1273,11 +1275,11 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
         this->m_transform.Multiply(pi_NodeHeader.m_contentExtent, pi_NodeHeader.m_contentExtent);
         TilePublisher::WriteBoundingVolume(nodeTile, pi_NodeHeader.m_contentExtent);
         }
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
     this->m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);
-   #endif
+ 
     return 0;
     }
 
@@ -1388,10 +1390,14 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
     //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
 
     auto utf8TileTree = Json::FastWriter().write(tileSet);
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     WString path(pi_Group->m_outputDirPath + L"\\n_");
     wchar_t buffer[10000];
+#if _WIN32
     swprintf(buffer, L"%s%lu.json", path.c_str(), pi_Group->GetID());
+#else
+    swprintf(buffer, 10000, L"%s%lu.json", path.c_str(), pi_Group->GetID());
+#endif
     std::wstring group_filename(buffer);
 
     BeFile file;
@@ -1417,5 +1423,5 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroupPtr pi_Group) con
         {
         LOG.errorv("Failed to open or create json file [BeFileStatus(%d)]: %ls", (uint32_t)status, group_filename.c_str());
         }
-#endif
+
     }

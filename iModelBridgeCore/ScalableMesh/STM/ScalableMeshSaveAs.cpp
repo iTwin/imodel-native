@@ -327,7 +327,6 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
             }
         }
     }
-        #ifndef LINUX_SCALABLEMESH_BUILD
     // Create store for 3DTiles output
     typedef SMStreamingStore<DRange3d>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<DRange3d>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
@@ -343,7 +342,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
         SMStreamingStore<DRange3d>::Create(settings, nullptr)
 #endif
     );
-#endif
+
     // Register 3DTiles index to the store
     pDataStore->Register(index->m_smID);
 

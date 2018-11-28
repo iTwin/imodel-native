@@ -21,9 +21,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #endif
 #include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 #include "SMMemoryPool.h"
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
-#endif
 #include <ImagePP/all/h/HFCCallbacks.h>
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
@@ -34,8 +32,9 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 #ifndef LINUX_SCALABLEMESH_BUILD
 #include <CCApi/CCPublic.h>
-#include <curl/curl.h>
 #endif
+#include <curl/curl.h>
+
 
 #ifndef VANCOUVER_API
 USING_NAMESPACE_IMAGEPP
@@ -589,9 +588,7 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
 
-#ifndef LINUX_SCALABLEMESH_BUILD
     DataSourceManager::Shutdown();
-#endif
 
     }
 

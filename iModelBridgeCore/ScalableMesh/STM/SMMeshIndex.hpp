@@ -798,9 +798,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadInd
     //    SetThreadAvailableAsync(threadId);
     //    };
 
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
-    static Distribution_Type::Ptr distributor(new Distribution_Type([](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
+    static typename Distribution_Type::Ptr distributor(new Distribution_Type([](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
             uint64_t loadTime = clock();
             node->GetPointsPtr();
@@ -852,7 +852,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadInd
         std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
         std::cout << "Total time: " << (double)(clock() - t) / CLOCKS_PER_SEC << std::endl;
         }
-#endif
+
 
     }
 
@@ -5996,10 +5996,10 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
                 }
             }
         }
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     // Create store for 3DTiles output
     typedef typename SMStreamingStore<EXTENT>::SMStreamingSettings StreamingSettingsType;
-    SMStreamingStore<EXTENT>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
+	typename SMStreamingStore<EXTENT>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
     settings->m_url = Utf8String(path.c_str());
     settings->m_location = StreamingSettingsType::ServerLocation::LOCAL;
     settings->m_dataType = StreamingSettingsType::DataType::CESIUM3DTILES;
@@ -6027,7 +6027,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     oldMasterHeader.m_singleFile = false;
 
     DataSource::SessionName dataSourceSessionName(settings->GetGUID().c_str());
-            #ifndef LINUX_SCALABLEMESH_BUILD
+
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), dataSourceSessionName);
     SMGroupCache::Ptr groupCache = nullptr;
     this->m_rootNodeGroup = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -6039,7 +6039,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     strategy->SetClipInfo(coverageID, isClipBoundary);
     strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
     strategy->AddGroup(this->m_rootNodeGroup.get());
-#endif
+
     // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
     std::thread saveGroupsThread([this, strategy]()
         {
@@ -6072,7 +6072,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(this->GetRootNode().GetPtr())->Publish3DTile(pDataStore, transform, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, this->m_progress, outputTexture);
 
     if (this->m_progress != nullptr) this->m_progress->Progress() = 1.0f;
-#endif
+
     return SUCCESS;
     }
 
@@ -6082,7 +6082,6 @@ Publish Cesium ready format
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue)
     {
 #ifndef VANCOUVER_API
-        #ifndef LINUX_SCALABLEMESH_BUILD
     ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
 
     //this->SaveMasterHeaderToCloud(pDataStore);
@@ -6100,9 +6099,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Change
 
 
     return SUCCESS;
-    #else
-    return ERROR;
-    #endif
+
 #else
     assert(!"Not implemented");
     return ERROR;

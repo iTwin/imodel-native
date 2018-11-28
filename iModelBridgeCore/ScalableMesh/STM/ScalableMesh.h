@@ -58,9 +58,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshVolume.h"
 
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
-#endif
 
 #include "Stores/SMStreamingDataStore.h"
 
@@ -110,9 +108,7 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     WString                             m_baseExtraFilesPath;
     bool                                m_useTempPath;
  
- #ifndef LINUX_SCALABLEMESH_BUILD  
     DataSourceAccount*                  m_dataSourceAccount;
-#endif
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
@@ -136,11 +132,9 @@ public:
 
     BENTLEY_SM_EXPORT const WChar*                        GetPath                 () const;
 
-#ifndef LINUX_SCALABLEMESH_BUILD
     static DataSourceManager &          GetDataSourceManager    (void)                                  {return *DataSourceManager::Get();}
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
     DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
-#endif
 
     void                                SetUseTempPath(bool useTempPath)                                {m_useTempPath = useTempPath;}
    
@@ -235,9 +229,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         IScalableMeshRDSProviderPtr   m_smRDSProvider = nullptr;
 
-                #ifndef LINUX_SCALABLEMESH_BUILD
+
         SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr m_streamingSettings = nullptr;
-#endif
+
 		IScalableMeshClippingOptionsPtr m_clippingOptions;
 
 

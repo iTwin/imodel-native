@@ -135,9 +135,7 @@ struct IScalableMeshCreator::Impl
         bool m_isShareable;
 
         //CREATOR2
-#ifndef LINUX_SCALABLEMESH_BUILD
         static DataSourceManager            s_dataSourceManager;
-#endif
 
         BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
 

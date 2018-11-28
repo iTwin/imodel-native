@@ -21,9 +21,7 @@
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshSources.h>
 
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
-#endif
 
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
