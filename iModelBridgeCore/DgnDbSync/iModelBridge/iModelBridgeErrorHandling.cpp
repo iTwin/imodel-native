@@ -49,7 +49,6 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
     IMAGEHLP_MODULE64 * module = (IMAGEHLP_MODULE64 *) calloc(sizeof(IMAGEHLP_MODULE64), 1);
     module->SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
 
-    bool foundKiUserExceptionDispatcher = false;
     for (USHORT i = nIgnoreFrames; i < frames; i++)
         {
         auto symbolAddress = (DWORD64) (stack.get()[i]);
@@ -60,16 +59,14 @@ Utf8String iModelBridgeErrorHandling::GetStackTraceDescription(size_t maxFrames,
 
         DWORD64 moduleAddress = SymGetModuleBase64(process, symbolAddress);
         SymGetModuleInfo64(process, moduleAddress, module);
-        SymFromAddr(process, symbolAddress, 0, symbol);
+        DWORD64 displacement;
+        SymFromAddr(process, symbolAddress, &displacement, symbol);
 
-        if (!foundKiUserExceptionDispatcher)
-            {
-            if (0 == strcmp(symbol->Name, "KiUserExceptionDispatcher"))
-                foundKiUserExceptionDispatcher = true;
-            continue;
-            }
+        IMAGEHLP_LINE lineInfo{};
+        DWORD dwDisplacement = (DWORD)displacement;
+        SymGetLineFromAddr( GetCurrentProcess(), symbolAddress, &dwDisplacement, &lineInfo);
 
-        stackTrace += Utf8PrintfString("%s %s\n", module->ModuleName, symbol->Name);
+        stackTrace += Utf8PrintfString("%s %s %d\n", module->ModuleName, symbol->Name, (int)lineInfo.LineNumber);
         }
 
     free(symbol);
