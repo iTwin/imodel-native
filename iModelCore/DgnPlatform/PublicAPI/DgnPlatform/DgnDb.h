@@ -476,7 +476,7 @@ public:
     BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
 
     BeSQLite::DbResult CreateRebaseTable(); //!< @private
-    DGNPLATFORM_EXPORT DRange3d DgnDb::ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutliers = nullptr, size_t* outlierCount = nullptr, double maxDeviations = 5.0) const;
+    DGNPLATFORM_EXPORT DRange3d ComputeGeometryExtentsWithoutOutliers(DRange3dP rangeWithOutliers = nullptr, size_t* outlierCount = nullptr, double maxDeviations = 5.0) const;
 
 };
 
