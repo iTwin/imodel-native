@@ -223,7 +223,6 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 StatusInt status;
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, false, SQLDatabaseType::SM_DIFFSETS_FILE, createSisterIfMissing);
                 BeAssert(status == SUCCESS || !createSisterIfMissing);
-                }
 
             sqlFilePtr = m_smClipSQLiteFile;
             }
