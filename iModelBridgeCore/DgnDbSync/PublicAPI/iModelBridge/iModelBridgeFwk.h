@@ -15,6 +15,7 @@
 #include <Logging/bentleylogging.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <iModelDmsSupport/iModelDmsSupport.h>
+#include <WebServices/Connect/IConnectTokenProvider.h>
 
 BEGIN_BENTLEY_LOGGING_NAMESPACE
 namespace Provider //Forward declaration for logging provider;
@@ -197,6 +198,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BentleyStatus Validate(int argc, WCharCP argv[]);
         static void PrintUsage();
         bool ParsedAny() const {return m_parsedAny;}
+        WebServices::IConnectTokenProviderPtr m_tokenProvider;
         };
 
     struct DmsServerArgs
@@ -258,6 +260,7 @@ protected:
             IModelHubArgs* m_iModelHubArgs;
             IModelBankArgs* m_iModelBankArgs;
             };
+        
         };
     Utf8String m_briefcaseBasename;
     int m_maxRetryCount;
@@ -305,6 +308,8 @@ protected:
     int RunExclusive(int argc, WCharCP argv[]);
     BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();
+    int UpdateExistingBimWithExceptionHandling();
+    void OnUnhandledException(Utf8CP);
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);
     BentleyStatus ReleaseBridge();
@@ -350,6 +355,8 @@ public:
     IMODEL_BRIDGE_FWK_EXPORT static void SetBridgeForTesting(iModelBridge&);
     //! @private
     IMODEL_BRIDGE_FWK_EXPORT static void SetRegistryForTesting(IModelBridgeRegistry&);
+
+    IMODEL_BRIDGE_FWK_EXPORT void SetTokenProvider(WebServices::IConnectTokenProviderPtr provider);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 

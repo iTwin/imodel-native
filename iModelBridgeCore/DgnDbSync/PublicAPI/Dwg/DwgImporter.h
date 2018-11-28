@@ -975,6 +975,7 @@ protected:
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
+    DgnModelId                  m_drawingListModelId;
     DgnModelId                  m_groupModelId;
     DefinitionModelPtr          m_geometryPartsModel;
     DefinitionModelPtr          m_jobDefinitionModel;
@@ -986,6 +987,7 @@ private:
     void                    InitUncategorizedCategory ();
     void                    InitBusinessKeyCodeSpec ();
     BentleyStatus           InitSheetListModel ();
+    BentleyStatus           InitDrawingListModel ();
     BentleyStatus           InitGroupModel ();
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
@@ -1009,6 +1011,8 @@ private:
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
     bool                    ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId);
     DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
+    bool                    UpdateModelspaceView (ViewControllerP view);
+    bool                    UpdatePaperspaceView (ViewControllerP view, DwgDbObjectIdCR viewportId);
     DgnCategoryId           FindCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId        FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
 
@@ -1117,7 +1121,7 @@ protected:
     DWG_EXPORT virtual size_t         _ImportLayersByFile (DwgDbDatabaseP dwg);
     DWG_EXPORT virtual BentleyStatus  _ImportLayer (DwgDbLayerTableRecordCR layer, DwgStringP overrideName = nullptr);
     DWG_EXPORT virtual BentleyStatus  _OnUpdateLayer (DgnCategoryId&, DwgDbLayerTableRecordCR);
-    BentleyStatus                           GetLayerAppearance (DgnSubCategory::Appearance& appearance, DwgDbLayerTableRecordCR layer, DwgDbObjectIdCP viewportId = nullptr);
+    BentleyStatus                     GetLayerAppearance (DgnSubCategory::Appearance& appearance, DwgDbLayerTableRecordCR layer, DwgDbObjectIdCP viewportId = nullptr);
 
     //! @name  Importing viewport table
     //! @{
@@ -1170,7 +1174,7 @@ protected:
     //! Determine graphical element label from an entity
     DWG_EXPORT virtual Utf8String     _GetElementLabel (DwgDbEntityCR entity);
     //! Should the entity be imported at all?
-    DWG_EXPORT virtual bool           _FilterEntity (DwgDbEntityCR entity, DwgDbSpatialFilterP filter=nullptr);
+    DWG_EXPORT virtual bool           _FilterEntity (ElementImportInputs& inputs) const;
     //! Should create a DgnElement if there is no geometry at all?
     DWG_EXPORT virtual bool           _SkipEmptyElement (DwgDbEntityCP entity);
     //! Insert imported DgnElement into DgnDb.  This method is called after _ImportEntity.
@@ -1210,6 +1214,9 @@ protected:
     //! @param[in] dwgGroup Input object of the DWG group dictionary.
     //! @note When a change is detected for a DWG group, _UpdateGroup will be called; otherwise _ImportGroup will be called, by the default implementation.
     DWG_EXPORT virtual BentleyStatus  _OnUpdateGroup (DwgSyncInfo::Group const& prov, DwgDbGroupCR dwgGroup);
+    //! Tell DwgSyncInfo how to sync groups: group object alone or members included?
+    //! @return True to include members - needed when members are not made persistent elements; False to sync group object only - members are tracked by entity mappings.
+    DWG_EXPORT virtual bool _ShouldSyncGroupWithMembers () const { return false; }
 
     //! @name Options and configs
     //! @{

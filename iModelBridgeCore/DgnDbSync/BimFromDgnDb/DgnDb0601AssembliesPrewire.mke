@@ -135,7 +135,7 @@ always:
    !~@mkdir ${DeliveryDgnDbPlatformAssets}
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)ECSchemas=$(SourceAssets)ECSchemas"
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)sqlang=$(SourceAssets)sqlang"
-   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt61l.dat=$(SourceAssets)icudt61l.dat"
+   CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt62l.dat=$(SourceAssets)icudt62l.dat"
 %if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)lastresortfonts=$(SourceAssets)lastresortfonts"
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformLibs)BeJsonCpp.pdb=$(DgnDbDlls)BeJsonCpp.pdb"
@@ -154,3 +154,20 @@ always:
 
 always:
    @CreateSymLinks.py -d"$(BuildContext)VendorAPI/$(DGNDB_VERSIONEDAPI_INCLUDE_ROOT)=${DGNDB_VERSIONEDAPI_OUTPUTDIR}/$(DGNDB_VERSIONEDAPI_INCLUDE_ROOT)"
+
+%if "APPLE_CLANG" == $(BUILD_TOOLSET)
+
+    o = $(PartBuildDir)
+    always:
+        ~@mkdir $(o)
+
+    LIB_NAME = DgnDb_1_6_ForUpgrader
+    LIB_DEST = $(o)
+    LIB_TMP_DIR = $(o)
+    LIB_OBJS = $[@realpath $[@wildcard $(BuildContext)nuget/native/DgnDb_1_6_ForUpgraderNuget/native/lib/*$(stlibext)]]
+    LIB_LST_NAME = $(LIB_TMP_DIR)$(LIB_NAME).lst
+    LIB_CONTEXT_LOCATION = $(BuildContext)Delivery/
+
+    %include creatlib.mki
+%endif
+
