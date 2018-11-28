@@ -124,7 +124,7 @@ Value _RunBridge(const CallbackInfo& info)
     Napi::String str = info[0].As<Napi::String>();
     std::string strVal = str.Utf8Value();
     RunBridge(env, strVal.c_str());
-    return String::New(env, "Worked");
+    return String::New(env, strVal.c_str());
     }
 
 /*---------------------------------------------------------------------------------**/ /**
