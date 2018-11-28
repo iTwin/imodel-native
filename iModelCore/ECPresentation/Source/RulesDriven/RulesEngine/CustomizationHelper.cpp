@@ -21,7 +21,7 @@ ExpressionContext& NavNodeCustomizer::GetNodeExpressionContext()
     {
     if (m_nodeExpressionContext.IsNull())
         {
-        ECExpressionContextsProvider::CustomizationRulesContextParameters params(m_node, m_parentNode, 
+        ECExpressionContextsProvider::CustomizationRulesContextParameters params(m_node, m_parentNode,
             m_context.GetConnection(), m_context.GetLocale(), m_context.GetUserSettings(), &m_context.GetUsedSettingsListener());
         m_nodeExpressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
         }
@@ -41,15 +41,15 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride(bool customizeLabel)
         {
         ECValue value;
         Utf8String valueStr;
-        if (customizeLabel && !labelOverride->GetLabel().empty() 
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), GetNodeExpressionContext()) 
+        if (customizeLabel && !labelOverride->GetLabel().empty()
+            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetLabel(valueStr);
             didOverride = true;
             }
-        if (!labelOverride->GetDescription().empty() 
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetDescription(), GetNodeExpressionContext()) 
+        if (!labelOverride->GetDescription().empty()
+            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetDescription(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetDescription(valueStr);
@@ -73,21 +73,21 @@ bool NavNodeCustomizer::ApplyStyleOverride()
         ECValue value;
         Utf8String valueStr;
         if (!styleOverride->GetForeColor().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetForeColor(), GetNodeExpressionContext()) 
+            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetForeColor(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetForeColor(valueStr);
             didOverride = true;
             }
         if (!styleOverride->GetBackColor().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetBackColor(), GetNodeExpressionContext()) 
+            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetBackColor(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetBackColor(valueStr);
             didOverride = true;
             }
         if (!styleOverride->GetFontStyle().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetFontStyle(), GetNodeExpressionContext()) 
+            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetFontStyle(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetFontStyle(valueStr);
@@ -110,7 +110,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
         {
         ECValue value;
         Utf8String valueStr;
-        if (ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, imageIdOverride->GetImageId(), GetNodeExpressionContext()) 
+        if (ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, imageIdOverride->GetImageId(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetImageId(valueStr);
@@ -119,7 +119,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
         }
     return didOverride;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -161,7 +161,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
     CheckBoxRuleCP rule = RulesPreprocessor::GetCheckboxRule(params);
     if (nullptr == rule)
         return false;
-            
+
     bool isChecked = false;
     bool isReadOnly = false;
     if (!rule->GetPropertyName().empty() && nullptr != m_node.GetKey()->AsECInstanceNodeKey())
@@ -198,8 +198,8 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
         ECValue value;
         isChecked = rule->GetDefaultValue();
         isReadOnly = (!rule->GetIsEnabled().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, rule->GetIsEnabled(), GetNodeExpressionContext()) 
-            && value.IsBoolean()    
+            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, rule->GetIsEnabled(), GetNodeExpressionContext())
+            && value.IsBoolean()
             && !value.GetBoolean());
         }
 
@@ -252,7 +252,7 @@ public:
         extendedData.SetCheckboxBoundPropertyInversed(inverse);
         }
 };
-     
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                07/2016
 +===============+===============+===============+===============+===============+======*/
@@ -337,7 +337,7 @@ void CustomizationHelper::NotifyCheckedStateChanged(IConnectionCR connection, Js
         {
         if (extendedData.IsCheckboxBoundPropertyInversed())
             isChecked = !isChecked;
-        
+
         ECClassCP boundPropertyClass = connection.GetECDb().Schemas().GetClass(node.GetKey()->AsECInstanceNodeKey()->GetECClassId());
         if (nullptr == boundPropertyClass || !boundPropertyClass->IsEntityClass())
             {

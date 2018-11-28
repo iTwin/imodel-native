@@ -276,7 +276,7 @@ struct RulesDrivenECPresentationManagerImpl::ECDbCaches : IConnectionsListener, 
 private:
     IConnectionManagerCR m_connections;
     mutable bmap<Utf8String, Caches*> m_caches;
-    
+
 private:
     Caches& GetCaches(IConnectionCR connection) const
         {
@@ -298,7 +298,7 @@ protected:
         }
     ECSqlStatementCache& _GetECSqlStatementCache(IConnectionCR connection) override {return GetStatementsCache(connection);}
 public:
-    ECDbCaches(IConnectionManagerCR connections) 
+    ECDbCaches(IConnectionManagerCR connections)
         : m_connections(connections)
         {
         m_connections.AddListener(*this);
@@ -323,7 +323,7 @@ private:
     RulesDrivenECPresentationManagerImpl& m_manager;
     IConnectionCR m_connection;
     RulesDrivenECPresentationManager::NavigationOptions m_options;
-    
+
 private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                01/2018
@@ -811,7 +811,7 @@ bvector<NavNodeCPtr> RulesDrivenECPresentationManagerImpl::_GetFilteredNodes(ICo
     if (!GetNodesCache().IsHierarchyLevelCached(connection.GetId(), options.GetRulesetId(), options.GetLocale()))
         GetRootNodes(connection, PageOptions(), options, cancelationToken);
 
-    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(), 
+    NavNodesProviderPtr provider = GetNodesCache().GetUndeterminedNodesProvider(connection, options.GetRulesetId(),
         options.GetLocale(), options.GetDisableUpdates());
     if (provider.IsNull())
         return bvector<NavNodeCPtr>();
@@ -874,7 +874,7 @@ private:
             }
         return instanceKeys;
         }
-    
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Saulius.Skliutas                07/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -884,7 +884,7 @@ private:
         }
 
 public:
-    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, RulesDrivenECPresentationManager::ContentOptions const& options) 
+    ContentRulesSpecificationsInputHandler(RulesDrivenECPresentationManagerImpl& manager, IConnectionCR connection, RulesDrivenECPresentationManager::ContentOptions const& options)
         : m_locater(manager, connection, ToNavigationOptions(options))
         {}
 
@@ -1011,7 +1011,7 @@ bvector<SelectClassInfo> RulesDrivenECPresentationManagerImpl::_GetContentClasse
 
     // locate the classes
     ECSchemaHelper schemaHelper(connection, &relatedPathsCache, &polymorphicallyRelatedClassesCache, &statementsCache, &ecexpressionsCache);
-    ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection, 
+    ContentClassesLocater::Context locaterContext(schemaHelper, m_connections, connection,
         *ruleset, options.GetLocale(), preferredDisplayType, settings, ecexpressionsCache, *m_nodesCache);
     return ContentClassesLocater(locaterContext).Locate(classes);
     }
