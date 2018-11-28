@@ -274,11 +274,14 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
             if (openShareable)
                 {
                 m_database->OpenShared(filename, openReadOnly, true);
+                }
             else
 #endif
                 result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
-                }
+
             }
+        }
+               
     m_isShared = openShareable;
 
     if (openShareable)
