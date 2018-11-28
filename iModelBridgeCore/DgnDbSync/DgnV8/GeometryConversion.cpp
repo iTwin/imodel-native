@@ -3047,7 +3047,10 @@ bool IsValidGraphicElement(DgnV8EhCR v8eh)
 
     // Skip displayable elements marked invisible as well as non-graphic components of cells (ex. type 38/39)...
     if (!v8el.ehdr.isGraphics || v8el.hdr.dhdr.props.b.invisible)
+        {
+        LOG.warningv("Ignoring element %s because it is %s.\n", Converter::IssueReporter::FmtElement(v8eh), !v8el.ehdr.isGraphics ? "non-graphical" : "invisible");
         return false;
+        }
 
     // Skip elements with invalid ranges, they would not have displayed in V8 and likely contain bad/corrupt data...
     Bentley::DRange3d range;
