@@ -949,6 +949,9 @@ public:
     //! @return the outcome of the attempt to push
     IMODEL_BRIDGE_EXPORT static IBriefcaseManager::PushStatus PushChanges(DgnDbR db, Params const& params, Utf8StringCR commitComment);
 
+    IMODEL_BRIDGE_EXPORT static bool AnyChangesToPush(DgnDbR);
+    IMODEL_BRIDGE_EXPORT static bool AnyTxns(DgnDbR);
+
     IMODEL_BRIDGE_EXPORT virtual Utf8String _FormatPushComment(DgnDbR db, Utf8CP commitComment);
 
     IMODEL_BRIDGE_EXPORT static WString GetArgValueW (WCharCP arg);

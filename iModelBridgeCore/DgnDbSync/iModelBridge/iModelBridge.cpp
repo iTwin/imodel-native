@@ -237,7 +237,6 @@ BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR
         }
 
     return BSISUCCESS;
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1029,4 +1028,22 @@ bool iModelBridge::WantModelProvenanceInBim(DgnDbR db)
         return true;
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::AnyTxns(DgnDbR db)
+    {
+    Statement stmt;
+    stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
+    return (BE_SQLITE_ROW == stmt.Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::AnyChangesToPush(DgnDbR db)
+    {
+    return db.Txns().HasChanges() || AnyTxns(db);
     }

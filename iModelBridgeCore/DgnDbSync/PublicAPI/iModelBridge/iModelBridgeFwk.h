@@ -326,7 +326,7 @@ protected:
     BentleyStatus StageInputFile();
     BentleyStatus StageWorkspace();
     BentleyStatus SetupDmsFiles();
-    int ProcessSchemaChange();
+    int PullMergeAndPushChange(Utf8StringCR description);
     int StoreHeaderInformation();
     
 public:
