@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageSource.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -249,6 +249,8 @@ static BentleyStatus writeImageToPng(BufferWriter& writer, ImageCR imageData, Im
         return BSIERROR;
 
     png_write_end(png_ptr, NULL);
+
+    png_destroy_write_struct(&png_ptr, &info_ptr);
 
     return BSISUCCESS;
     }
