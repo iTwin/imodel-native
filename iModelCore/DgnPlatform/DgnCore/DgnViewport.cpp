@@ -1410,17 +1410,19 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& hig
         return ERROR;
 
     Point2d     testPoint;
+    auto frac = m_frustFraction;
     for (testPoint.x = viewRect.Left(); testPoint.x <= viewRect.Right(); testPoint.x++)
         {
         for (testPoint.y = viewRect.Top(); testPoint.y <= viewRect.Bottom(); testPoint.y++)
             {
-            DPoint3d    npc;
-            
-            if (viewRect.PointInside(testPoint) &&
-                GetPixelDataNpcPoint (npc, *pixels, testPoint.x, testPoint.y))
+            auto npcZ = pixels->GetPixel(testPoint.x, testPoint.y).GetDistanceFraction();
+            if (0.0 != npcZ)
                 {
-                lowNpc = std::min(lowNpc, npc.z);
-                highNpc = std::max(highNpc, npc.z);
+                if (frac < 1.0)
+                    npcZ = npcZ * frac / (1.0 + npcZ * (frac - 1.0));
+
+                lowNpc = std::min(lowNpc, npcZ);
+                highNpc = std::max(highNpc, npcZ);
                 }
             }
         }
