@@ -476,7 +476,11 @@ BentleyStatus RootModelConverterApp::_MakeSchemaChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverterApp::_MakeDefinitionChanges(SubjectCR jobsubj)
     {
-    auto status = m_converter->MakeDefinitionChanges();
+    auto status = m_converter->DoBeginConversion();     // must call this first, to initialize the ChangeDetector, which MakeDefinitionChanges will use
+    if (BSISUCCESS != status || m_converter->WasAborted())
+        return BSIERROR;
+
+    status = m_converter->MakeDefinitionChanges();
     return ((BSISUCCESS != status) || m_converter->WasAborted())? BSIERROR: BSISUCCESS;
     }
 
@@ -500,6 +504,8 @@ BentleyStatus RootModelConverterApp::_OnOpenBim(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverterApp::_OnCloseBim(BentleyStatus, iModelBridge::ClosePurpose purpose)
     {
+    m_converter->DoFinishConversion();
+
     bool keepHostAliveOriginal = false;
     if (NULL != m_converter.get())
         {
@@ -587,7 +593,7 @@ SubjectCPtr RootModelConverterApp::_InitializeJob()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
     {
-    m_converter->Process();
+    m_converter->ConvertData();
     m_hadAnyChanges = m_converter->HadAnyChanges();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
     }

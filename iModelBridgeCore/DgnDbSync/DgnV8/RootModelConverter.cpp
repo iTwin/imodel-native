@@ -1356,7 +1356,10 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationshipsInModel(DgnV8ModelR v
 void RootModelConverter::_BeginConversion()
     {
     if (m_beginConversionCalled)
+        {
+        BeAssert(false && "Call _BeginConversion only once");
         return;
+        }
     m_beginConversionCalled = true;
 
     if (!GetImportJob().IsValid() || (GetImportJob().GetConverterType() != SyncInfo::ImportJob::Type::RootModels))
@@ -1547,19 +1550,52 @@ struct ConvertModelACSTraverser : DgnV8Api::IACSTraversalHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::DoBeginConversion()
+    {
+    _OnConversionStart();
+    _BeginConversion();
+    return WasAborted()? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RootModelConverter::DoFinishConversion()
+    {
+    _FinishConversion();
+    if (WasAborted())
+        return BSIERROR;
+
+    _OnConversionComplete();
+
+    if (ShouldCreateIntermediateRevisions())
+        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::GlobalProperties());
+
+    return WasAborted()? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RootModelConverter::MakeDefinitionChanges()
     {
     if (!m_isRootModelSpatial)
         return BSISUCCESS;
 
-    _OnConversionStart();
-    _BeginConversion();
+    SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
     _ConvertLineStyles();
-    for (auto& modelMapping : m_v8ModelMappings)
+    if (WasAborted())
+        return ERROR;
+
+    for (auto v8Model : m_spatialModelsInAttachmentOrder)
         {
-        if (IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
-            ConvertModelMaterials(modelMapping.GetV8Model());
+        if (IsFileAssignedToBridge(*v8Model->GetDgnFileP()))
+            {
+            SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MATERIALS());
+            ConvertModelMaterials(*v8Model);
+            }
         }
+
     _ConvertSpatialLevels();
     return BSISUCCESS;
     }
@@ -1567,19 +1603,13 @@ BentleyStatus RootModelConverter::MakeDefinitionChanges()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  RootModelConverter::Process()
+BentleyStatus  RootModelConverter::ConvertData()
     {
     AddSteps(9);
 
     StopWatch totalTimer(true);
 
     StopWatch timer(true);
-
-    _OnConversionStart();
-
-    _BeginConversion();
-    if (WasAborted())
-        return ERROR;
 
     ConverterLogging::LogPerformance(timer, "Begin Conversion");
 
@@ -1593,16 +1623,6 @@ BentleyStatus  RootModelConverter::Process()
 
     ConverterLogging::LogPerformance(timer, "Convert Models");
 
-    
-    SetStepName(Converter::ProgressMessage::STEP_CONVERTING_STYLES());
-
-    timer.Start();
-    _ConvertLineStyles();
-    if (WasAborted())
-        return ERROR;
-
-    ConverterLogging::LogPerformance(timer, "Convert Line Styles");
-
     AddTasks((int32_t) (m_v8ModelMappings.size()));
     for (auto& modelMapping : m_v8ModelMappings)
         {
@@ -1612,9 +1632,6 @@ BentleyStatus  RootModelConverter::Process()
         if (!IsFileAssignedToBridge(*modelMapping.GetV8Model().GetDgnFileP()))
             continue;
 
-        SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MATERIALS(), modelMapping.GetDgnModel().GetName().c_str());
-        ConvertModelMaterials(modelMapping.GetV8Model());
-
         ConvertModelACSTraverser acsTraverser(modelMapping, ComputeUnitsScaleFactor(modelMapping.GetV8Model()));
         DgnV8Api::IACSManager::GetManager().Traverse(acsTraverser, &modelMapping.GetV8Model());
         }
@@ -1622,19 +1639,12 @@ BentleyStatus  RootModelConverter::Process()
     if (m_isRootModelSpatial)
         {
         timer.Start();
-        _ConvertSpatialLevels();
-        if (WasAborted())
-            return ERROR;
-
-        ConverterLogging::LogPerformance(timer, "Convert Spatial Levels");
-
-        timer.Start();
         _ConvertSpatialViews();
         if (WasAborted())
             return ERROR;
 
         if (ShouldCreateIntermediateRevisions())
-            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ResourcesViewsAndModels());
+            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels());
 
         ConverterLogging::LogPerformance(timer, "Convert Spatial Views");
 
@@ -1648,7 +1658,7 @@ BentleyStatus  RootModelConverter::Process()
     else
         {
         if (ShouldCreateIntermediateRevisions())
-            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ResourcesViewsAndModels());
+            PushChangesForFile(*GetRootV8File(), ConverterDataStrings::ViewsAndModels());
         }
 
     timer.Start();
@@ -1668,18 +1678,7 @@ BentleyStatus  RootModelConverter::Process()
 
     ConverterLogging::LogPerformance(timer, "Convert Sheets (total)");
 
-    timer.Start();
-    _FinishConversion();
-    if (WasAborted())
-        return ERROR;
-
-    _OnConversionComplete();
-    ConverterLogging::LogPerformance(timer, "Finish conversion");
-
-    if (ShouldCreateIntermediateRevisions())
-        PushChangesForFile(*GetRootV8File(), ConverterDataStrings::GlobalProperties());
-
-    ConverterLogging::LogPerformance(totalTimer, "Total conversion time (%" PRIu32 " element(s))", (uint32_t) GetElementsConverted());
+    ConverterLogging::LogPerformance(totalTimer, "Total data conversion time (%" PRIu32 " element(s))", (uint32_t) GetElementsConverted());
     return WasAborted() ? ERROR : SUCCESS;
     }
 

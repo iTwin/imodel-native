@@ -1789,7 +1789,10 @@ void Converter::GetOrCreateJobPartitions()
 void Converter::_OnConversionStart()
     {
     if (m_onConversionStartCalled)
+        {
+        BeAssert(false && "Call _OnConversionStart only once");
         return;
+        }
     m_onConversionStartCalled = true;
 
     BeAssert(_GetParams().GetAssetsDir().DoesPathExist());

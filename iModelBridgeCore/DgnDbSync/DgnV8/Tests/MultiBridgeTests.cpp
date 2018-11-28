@@ -123,9 +123,14 @@ static void doConvert(DefinitionModelIds& defids,
         ASSERT_EQ(RootModelConverter::ImportJobLoadStatus::Success, converter.FindJob());
         }
 
-    converter.Process();
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.DoBeginConversion());
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.MakeDefinitionChanges());
+
+    converter.ConvertData();
     
     ASSERT_FALSE(converter.WasAborted());
+
+    ASSERT_EQ(BentleyApi::SUCCESS, converter.DoFinishConversion());
 
     defids.m_definitionModelId = converter.GetJobDefinitionModel()->GetModelId();
     defids.m_sheetListModelId = converter.GetSheetListModelId();
