@@ -2039,7 +2039,7 @@ bool SyncInfo::TryFindView(DgnViewId& viewId, double& lastModified, Utf8StringR 
     if (!v8FileId.IsValid())
         return false;
     stmt->BindInt(1, v8FileId.GetValue());
-    stmt->BindInt(2, viewElemRef->GetElementId());
+    stmt->BindInt64(2, viewElemRef->GetElementId());
     DbResult rc = stmt->Step();
     if (BE_SQLITE_ROW != rc)
         return false;
@@ -2316,11 +2316,29 @@ static BentleyStatus getUrnFromLastTarget(Utf8String& urn, BeXmlNodeP file)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      11/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bool isFileExtraction(BeXmlNodeP file)
+    {
+    for (BeXmlNodeP type = file->GetFirstChild(); type != nullptr; type = type->GetNextSibling())
+        {
+        if (0 == strcmp(type->GetName(), "Type"))
+            {
+            Utf8String content;
+            type->GetContent(content);
+            return content.EqualsI("Extract");
+            }
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/18
++---------------+---------------+---------------+---------------+---------------+------*/
 static Utf8String getPwUrn(Bentley::DgnPlatform::ProvenanceBlobR blob)
     {
     Utf8String urn;
 
     WCharCP provData = (WCharCP)blob.GetData();
+
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, provData);
     if (xmlDom == nullptr)
@@ -2338,7 +2356,9 @@ static Utf8String getPwUrn(Bentley::DgnPlatform::ProvenanceBlobR blob)
                 continue;
 
             getUrnFromFirstSource(urn, file);
-            getUrnFromLastTarget(urn, file);
+
+            if (!isFileExtraction(file))
+                getUrnFromLastTarget(urn, file);
             }
         }
 

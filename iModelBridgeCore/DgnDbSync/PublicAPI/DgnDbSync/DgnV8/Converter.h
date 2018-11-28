@@ -836,8 +836,10 @@ struct Converter
         L10N_STRING(SchemaLockFailed)           // =="Failed to import schemas due to a problem acquiring lock on the schemas"==
         L10N_STRING(CouldNotAcquireLocksOrCodes) // =="Failed to import schemas due to a problem acquiring lock on codes or schemas"==
         L10N_STRING(ImportTargetECSchemas)      // =="Failed to import V8 ECSchemas"==
-        L10N_STRING(FailedToConvertSheet)       // =="Failed to convert sheet %s"==
+        L10N_STRING(FailedToConvertModel)       // =="Failed to convert model"==
+        L10N_STRING(FailedToConvertDrawingElement)  // =="Failed to convert drawing element"==
         L10N_STRING(FailedToConvertThumbnails)  // =="Failed to convert thumbnails"==
+        L10N_STRING(ProjectExtentsAdjusted)      // =="Project Extents have been adjusted to exclude outlying elements"==
             
         IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
@@ -1006,7 +1008,7 @@ protected:
     DgnElementId         m_textStyleNoneId;
     bset<DgnModelId>    m_unchangedModels;
     bmap<DgnModelId, bpair<Utf8String, SyncInfo::V8FileSyncInfoId>>    m_modelsRequiringRealityTiles;
-    bool                m_haveCreatedThumbnails;
+    bool                m_haveCreatedThumbnails = false;
 
     void CheckForAndSaveChanges();
     DGNDBSYNC_EXPORT Converter(Params const&);
@@ -1020,6 +1022,7 @@ protected:
 public:
     virtual Params const& _GetParams() const = 0;
     virtual Params& _GetParamsR() = 0;
+    virtual DgnV8Api::ViewGroup* _GetMainViewGroup() {return nullptr;}
 
     bool ShouldCreateIntermediateRevisions() const {return _GetParams().GetPushIntermediateRevisions() != iModelBridge::Params::PushIntermediateRevisions::None;}
 
@@ -1211,6 +1214,7 @@ public:
 
     //! @name DgnDb properties
     //! @{
+    BentleyStatus GenerateThumbnail(ViewDefinition const& view);
     BentleyStatus GenerateThumbnails();
     void GenerateThumbnailsWithExceptionHandling();
     BentleyStatus GenerateRealityModelTilesets();
@@ -2008,7 +2012,10 @@ public:
     DGNDBSYNC_EXPORT void ReportSyncInfoIssue(IssueSeverity, IssueCategory::StringId, Issue::StringId, Utf8CP details);
 
     DGNDBSYNC_EXPORT void ReportFailedModelConversion(ResolvedModelMapping const& v8mm);
+    DGNDBSYNC_EXPORT void ReportFailedDrawingElementConversion(DgnV8Api::ElementHandle const& inEl);
     DGNDBSYNC_EXPORT void ReportFailedThumbnails();
+    DGNDBSYNC_EXPORT void ReportAdjustedProjectExtents(size_t nOutliers, DRange3dCR unadjustedRange, DRange3dCR adjustedRange);
+
 
     //! Signal a fatal error
     DGNDBSYNC_EXPORT BentleyStatus OnFatalError(IssueCategory::StringId cat=IssueCategory::Unknown(), Issue::StringId num=Issue::FatalError(), ...) const;
@@ -2549,6 +2556,8 @@ protected:
     bool _HaveChangeDetector() override {return m_changeDetector != nullptr;}
     IChangeDetector& _GetChangeDetector() override {return *m_changeDetector;}
     DGNDBSYNC_EXPORT void _SetChangeDetector(bool isUpdate) override;
+
+    DgnV8Api::ViewGroup* _GetMainViewGroup() override {return m_viewGroup.get();}
 
     //! @name Params
     //! @{

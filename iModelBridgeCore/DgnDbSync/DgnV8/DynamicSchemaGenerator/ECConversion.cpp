@@ -2124,55 +2124,6 @@ void verifyBaseClassAbstract(ECN::ECClassP ecClass)
         }
     }
 
-// Create the pseudo polymorphic hierarchy by keeping track of any derived class that was lost.
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-void addDroppedDerivedClass(ECN::ECClassP baseClass, ECN::ECClassP derivedClass)
-    {
-    ECN::IECInstancePtr droppedInstance = baseClass->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldDerivedClasses");
-    if (!droppedInstance.IsValid())
-        droppedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("OldDerivedClasses");
-    if (!droppedInstance.IsValid())
-        {
-        LOG.warningv("Failed to create 'OldDerivedClasses' custom attribute for ECClass '%s'", baseClass->GetFullName());
-        return;
-        }
-    ECN::ECValue v;
-    droppedInstance->GetValue(v, "Classes");
-    Utf8String classes("");
-    if (!v.IsNull())
-        classes = Utf8String(v.GetUtf8CP()).append(";");
-
-    classes.append(derivedClass->GetFullName());
-
-    v.SetUtf8CP(classes.c_str());
-    if (ECN::ECObjectsStatus::Success != droppedInstance->SetValue("Classes", v))
-        {
-        LOG.warningv("Failed to create 'OldDerivedClasses' custom attribute for the ECClass '%s' with 'Classes' set to '%s'.", baseClass->GetFullName(), classes.c_str());
-        return;
-        }
-
-    if (!ECN::ECSchema::IsSchemaReferenced(baseClass->GetSchemaR(), droppedInstance->GetClass().GetSchema()))
-        {
-        ECN::ECClassP nonConstClass = const_cast<ECN::ECClassP>(&droppedInstance->GetClass());
-        if (ECN::ECObjectsStatus::Success != baseClass->GetSchemaR().AddReferencedSchema(nonConstClass->GetSchemaR()))
-            {
-            LOG.warningv("Failed to add %s as a referenced schema to %s.", droppedInstance->GetClass().GetSchema().GetName().c_str(), baseClass->GetSchemaR().GetName().c_str());
-            LOG.warningv("Failed to add 'OldDerivedClasses' custom attribute to ECClass '%s'.", baseClass->GetFullName());
-            return;
-            }
-        }
-
-    if (ECN::ECObjectsStatus::Success != baseClass->SetCustomAttribute(*droppedInstance))
-        {
-        LOG.warningv("Failed to add 'OldDerivedClasses' custom attribute, with 'PropertyMapping' set to '%s', to ECClass '%s'.", classes.c_str(), baseClass->GetFullName());
-        return;
-        }
-
-    LOG.debugv("Successfully added OldDerivedClasses custom attribute to ECClass '%s'", baseClass->GetFullName());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -2274,7 +2225,7 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
                         if (!flatBaseSchema.IsValid())
                             continue;
                         ECN::ECClassP flatBase = flatBaseSchema->GetClassP(sourceBaseClass->GetName().c_str());
-                        addDroppedDerivedClass(flatBase, targetClass);
+                        BisClassConverter::AddDroppedDerivedClass(flatBase, targetClass);
                         }
                     }
                 }
@@ -2286,7 +2237,7 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
                     if (!flatBaseSchema.IsValid())
                         continue;
                     ECN::ECClassP flatBase = flatBaseSchema->GetClassP(baseClass->GetName().c_str());
-                    addDroppedDerivedClass(flatBase, targetClass);
+                    BisClassConverter::AddDroppedDerivedClass(flatBase, targetClass);
                     }
                 }
             if (targetClass->GetClassModifier() == ECN::ECClassModifier::Abstract)
@@ -2370,7 +2321,7 @@ void DynamicSchemaGenerator::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECCla
             for (auto& baseClass : toRemove)
                 {
                 ecClass->RemoveBaseClass(*baseClass);
-                addDroppedDerivedClass(baseClass, ecClass);
+                BisClassConverter::AddDroppedDerivedClass(baseClass, ecClass);
                 for (ECN::ECPropertyCP sourceProperty : baseClass->GetProperties(true))
                     {
                     if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(sourceProperty->GetClass().GetSchema()))

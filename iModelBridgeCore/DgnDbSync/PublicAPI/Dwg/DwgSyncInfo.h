@@ -361,12 +361,36 @@ struct DwgSyncInfo
         uint64_t            m_dwgId;
         Utf8String          m_dwgName;
 
+        Layer () : m_dwgId(0) {}
         Layer(DgnSubCategoryId id, DwgModelSource fm, uint64_t fid, Utf8CP name) : m_id(id), m_fm(fm), m_dwgId(fid), m_dwgName(name) {}
         BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        DgnSubCategoryId   GetSubCategoryId () const { return m_id; }
+        DwgDbHandle        GetLayerHandle () const { return DwgDbHandle(m_dwgId); }
 
         bool IsValid() const {return m_id.IsValid();}
         bool IsModelSpecific() const {return m_fm.GetDwgModelId().IsValid();}
         };
+
+    struct LayerIterator : BeSQLite::DbTableIterator
+        {
+        DWG_EXPORT LayerIterator (DgnDbCR db, Utf8CP where);
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct LayerIterator;
+                Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+
+            public:
+                DWG_EXPORT Layer Get ();
+                Entry const& operator* () const { return *this; }
+            };  // Entry
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DWG_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        };  // LayerIterator
 
     //! Sync info for a linetype
     struct Linetype
@@ -399,12 +423,37 @@ struct DwgSyncInfo
         Type        m_type;
         Utf8String  m_name;
         
+        View () : m_dwgId(0), m_type(Type::ModelspaceViewport) {}
         View (DgnViewId id, uint64_t oid, Type t, Utf8StringCR n) : m_id(id), m_dwgId(oid), m_type(t), m_name(n) {}
         BeSQLite::DbResult Insert (BeSQLite::Db&) const;
         BeSQLite::DbResult Update (BeSQLite::Db&) const;
 
         bool IsValid() const { return m_id.IsValid(); }
+        Type GetViewType () const { return m_type; }
+        DgnViewId GetViewId () const { return m_id; }
+        DwgDbHandle GetDwgId () const { return DwgDbHandle(m_dwgId); }
         };  // View
+
+    struct ViewIterator : BeSQLite::DbTableIterator
+        {
+        DWG_EXPORT ViewIterator (DgnDbCR db, Utf8CP where);
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct ViewIterator;
+                Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+
+            public:
+                DWG_EXPORT View Get ();
+                Entry const& operator* () const { return *this; }
+            };  // Entry
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DWG_EXPORT const_iterator begin() const;
+        const_iterator end() const { return Entry(nullptr, false); }
+        };  // ViewIterator
 
     struct DwgObjectHash : BentleyApi::MD5::HashVal
         {

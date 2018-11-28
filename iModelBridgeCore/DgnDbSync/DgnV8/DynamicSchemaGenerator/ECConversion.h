@@ -300,6 +300,7 @@ struct BisClassConverter
         static BentleyStatus FindAppliesToClass(ECN::ECClassP& appliesTo, SchemaConversionContext& context, ECN::ECSchemaR targetSchema, ECN::ECClassR mixinClass);
         static void ProcessConstraints(ECN::ECRelationshipClassR inputClass, ECN::ECEntityClassP defaultConstraintClass, SchemaConversionContext& context);
         static void ConvertECRelationshipConstraint(ECN::ECRelationshipConstraintR constraint, ECN::ECRelationshipClassR inputClass, ECN::ECEntityClassP defaultConstraintClass, SchemaConversionContext& context, bool isSource);
+        static void AddDroppedDerivedClass(ECN::ECClassP baseClass, ECN::ECClassP derivedClass);
 
         static BentleyStatus PreprocessConversion(SchemaConversionContext&);
 
