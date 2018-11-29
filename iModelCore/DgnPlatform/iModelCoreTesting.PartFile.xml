@@ -8,6 +8,7 @@
             BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke"
             BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs"
             >
+        <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
         <SubPart PartName="Base" PartFile="iModelCore/BeGTest/BeGTest" Repository="imodel02"/>
 
         <SubPart PartName="RunGtest" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
