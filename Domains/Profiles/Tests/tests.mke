@@ -42,6 +42,8 @@ $(o)DomainTests.obj             : $(BEGTEST_INPUT)DomainTests.cpp ${MultiCompile
 
 $(o)CShapeProfileTests.obj      : $(BEGTEST_INPUT)CShapeProfileTests.cpp ${MultiCompileDepends}
 
+$(o)IShapeProfileTests.obj      : $(BEGTEST_INPUT)IShapeProfileTests.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 %undef CPchOpts

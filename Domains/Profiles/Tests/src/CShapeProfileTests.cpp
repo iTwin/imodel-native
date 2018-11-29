@@ -74,11 +74,11 @@ void CShapeProfileTestCase::ExpectParameterToBeFiniteAndPositive (CreateParams& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (CShapeProfileTestCase, Create_RequiredCreateParams_ValidInstance)
+TEST_F (CShapeProfileTestCase, Create_MinimalCreateParams_ValidInstance)
     {
-    CShapeProfile::CreateParams createParams (GetModel(), "C");
+    CreateParams params (GetModel(), "C");
 
-    CShapeProfilePtr profilePtr = CShapeProfile::Create (createParams);
+    CShapeProfilePtr profilePtr = CShapeProfile::Create (params);
     EXPECT_TRUE (profilePtr.IsValid());
     }
 
