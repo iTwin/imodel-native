@@ -55,8 +55,7 @@ TEST_F (DomainTestCase, ValidateSchema)
 
 TEST_F(DomainTestCase, IshapeGraphics)
     {
-    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(GetDb().GetDictionaryModel(), "TestCategory");
-    PhysicalElementPtr el = GenericPhysicalObject::Create(GetPhysicalModel(), categoryId);
+    PhysicalElementPtr el = GenericPhysicalObject::Create(GetPhysicalModel(), GetCategoryId());
     el->SetUserLabel("Petras");
 
     //test geometry

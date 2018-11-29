@@ -15,13 +15,43 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeFileName getWorkingDbPath (BeFileName const& baseDbPath)
+static BeFileName copyWorkingDb()
     {
+    BeFileName baseDbPath = ProfilesTestHost::Instance().GetBaseDbPath();
     WString directory = baseDbPath.GetDirectoryName();
     WString name = baseDbPath.GetFileNameWithoutExtension();
     WString extension = baseDbPath.GetExtension();
 
-    return BeFileName (directory + name + L"_Working." + extension);
+    BeFileName workingDbPath (directory + name + L"_Working." + extension);
+
+    BeFileNameStatus fileCopyStatus = BeFileName::BeCopyFile (baseDbPath, workingDbPath);
+    BeAssert (fileCopyStatus == BeFileNameStatus::Success);
+
+    return workingDbPath;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename ModelType, typename PartitionType>
+static RefCountedPtr<ModelType> createDgnModel (DgnDb& db, Utf8CP pPartitionName)
+    {
+    SubjectCPtr rootSubjectPtr = db.Elements().GetRootSubject();
+
+    RefCountedPtr<PartitionType> partitionPtr = PartitionType::Create (*rootSubjectPtr, pPartitionName);
+    db.BriefcaseManager().AcquireForElementInsert (*partitionPtr);
+
+    DgnDbStatus status;
+    partitionPtr->Insert (&status);
+    if (status != DgnDbStatus::Success)
+        return nullptr;
+
+    RefCountedPtr<ModelType> modelPtr = ModelType::Create (*partitionPtr);
+    status = modelPtr->Insert();
+    if (status != DgnDbStatus::Success)
+        return nullptr;
+
+    return modelPtr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -29,38 +59,28 @@ static BeFileName getWorkingDbPath (BeFileName const& baseDbPath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProfilesTestCase::ProfilesTestCase()
     : m_dbPtr (nullptr)
-    , m_modelPtr (nullptr)
+    , m_definitionModelPtr (nullptr)
+    , m_physicalModelPtr (nullptr)
     {
-    BeFileName baseDbPath = ProfilesTestHost::Instance().GetBaseDbPath();
-    BeFileName workingDbPath = getWorkingDbPath (baseDbPath);
-
-    BeFileNameStatus fileCopyStatus = BeFileName::BeCopyFile (baseDbPath, workingDbPath);
-    BeAssert (fileCopyStatus == BeFileNameStatus::Success);
+    BeFileName workingDbPath = copyWorkingDb();
 
     DgnDb::OpenParams openParams (BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions::DomainUpgradeOptions::Upgrade);
     BeSQLite::DbResult openStatus;
     m_dbPtr = DgnDb::OpenDgnDb (&openStatus, workingDbPath, openParams);
     BeAssert (m_dbPtr.IsValid());
 
-    SubjectCPtr rootSubjectPtr = m_dbPtr->Elements().GetRootSubject();
-    DefinitionPartitionPtr partitionPtr = DefinitionPartition::Create (*rootSubjectPtr, "TestPartition");
-    m_dbPtr->BriefcaseManager().AcquireForElementInsert (*partitionPtr);
+    m_definitionModelPtr = createDgnModel<DefinitionModel, DefinitionPartition> (GetDb(), "ProfilesTestPartition_Definition");
+    BeAssert (m_definitionModelPtr.IsValid());
+
+    m_physicalModelPtr = createDgnModel<PhysicalModel, PhysicalPartition> (GetDb(), "ProfilesTestPartition_Physical");
+    BeAssert (m_physicalModelPtr.IsValid());
+
+    SpatialCategory category (m_dbPtr->GetDictionaryModel(), "ProfilesTestCategory", DgnCategory::Rank::Application);
 
     DgnDbStatus status;
-    m_dbPtr->Elements().Insert<DefinitionPartition> (*partitionPtr, &status);
+    SpatialCategoryCPtr categoryPtr = category.Insert (DgnSubCategory::Appearance(), &status);
     BeAssert (status == DgnDbStatus::Success);
-
-    m_modelPtr = DefinitionModel::Create (*partitionPtr);
-    status = m_modelPtr->Insert();
-    BeAssert (status == DgnDbStatus::Success);
-
-
-    PhysicalPartitionPtr physicalPartitionPtr = PhysicalPartition::Create(*rootSubjectPtr, "TestPhysicalPartition");
-    m_dbPtr->BriefcaseManager().AcquireForElementInsert(*physicalPartitionPtr);
-
-    /*m_physicalModelPtr = PhysicalModel::Create(*physicalPartitionPtr);
-    status = m_physicalModelPtr->Insert();
-    BeAssert(status == DgnDbStatus::Success);*/
+    m_categoryId = categoryPtr->GetCategoryId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -85,6 +105,24 @@ DgnDb& ProfilesTestCase::GetDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel& ProfilesTestCase::GetModel()
     {
-    BeAssert (m_modelPtr.IsValid());
-    return *m_modelPtr;
+    BeAssert (m_definitionModelPtr.IsValid());
+    return *m_definitionModelPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModel& ProfilesTestCase::GetPhysicalModel()
+    {
+    BeAssert (m_physicalModelPtr.IsValid());
+    return *m_physicalModelPtr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryId ProfilesTestCase::GetCategoryId()
+    {
+    BeAssert (m_categoryId.IsValid());
+    return m_categoryId;
     }

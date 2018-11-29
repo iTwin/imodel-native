@@ -14,17 +14,18 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 class ProfilesTestCase : public testing::Test
     {
-    private:
-        Dgn::DgnDbPtr m_dbPtr;
-        Dgn::DgnModelPtr m_modelPtr;
-        Dgn::PhysicalModelPtr m_physicalModelPtr;
-    protected:
-        ProfilesTestCase();
+private:
+    Dgn::DgnDbPtr m_dbPtr;
+    Dgn::DefinitionModelPtr m_definitionModelPtr;
+    Dgn::PhysicalModelPtr m_physicalModelPtr;
+    Dgn::DgnCategoryId m_categoryId;
 
-    public:
-        virtual ~ProfilesTestCase();
+protected:
+    ProfilesTestCase();
+    virtual ~ProfilesTestCase();
 
-        Dgn::DgnDb& GetDb();
-        Dgn::DgnModel& GetModel();
-        Dgn::PhysicalModelR GetPhysicalModel() {return *m_physicalModelPtr;}
+    Dgn::DgnDb& GetDb();
+    Dgn::DgnModel& GetModel();
+    Dgn::PhysicalModel& GetPhysicalModel();
+    Dgn::DgnCategoryId GetCategoryId();
     };
