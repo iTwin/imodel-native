@@ -14,7 +14,7 @@
 #include <RealityPlatform/SpatialEntity.h>
 
 #include <Bentley/BeFile.h>
-#include <Bentley/BeFilename.h>
+#include <Bentley/BeFileName.h>
 #include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
@@ -70,7 +70,7 @@ protected:
     // Default constructor
     REALITYDATAPLATFORM_EXPORT GeoCoordinationServiceRequest() { m_validRequestString = false; }
 
-    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const = 0;
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override = 0;
     };
 
 //=====================================================================================
@@ -128,7 +128,6 @@ public:
         { 
         m_validRequestString = false; 
         m_requestType = HttpRequestType::GET_Request; 
-        m_sort = false; 
         m_startIndex = 0; 
         m_pageSize = 25; 
         }
