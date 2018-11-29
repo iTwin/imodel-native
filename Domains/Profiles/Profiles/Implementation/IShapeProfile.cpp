@@ -36,6 +36,53 @@ IShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pN
     {}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IShapeProfile::_Validate() const
+    {
+    BentleyStatus status = T_Super::_Validate();
+    if (status != BSISUCCESS)
+        return status;
+
+    bool const isValidFlangeWidth = std::isfinite (GetFlangeWidth()) && GetFlangeWidth() > 0.0;
+    if (!isValidFlangeWidth)
+        return BSIERROR;
+
+    bool const isValidDepth = std::isfinite (GetDepth()) && GetDepth() > 0.0;
+    if (!isValidDepth)
+        return BSIERROR;
+
+    bool const isValidFlangeThickness = std::isfinite (GetFlangeThickness()) && GetFlangeThickness() > 0.0 && GetFlangeThickness() < GetDepth() / 2.0;
+    if (!isValidFlangeThickness)
+        return BSIERROR;
+
+    bool const isValidWebThickness = std::isfinite (GetWebThickness()) && GetWebThickness() > 0.0 && GetWebThickness() < GetFlangeWidth();
+    if (!isValidWebThickness)
+        return BSIERROR;
+
+    double const innerFlangeFaceLength = GetFlangeWidth() - GetWebThickness() / 2.0;
+    double const innerWebFaceLength = GetDepth() - GetFlangeThickness() * 2.0;
+    double const slopeDepth = (innerFlangeFaceLength / std::cos (GetFlangeSlope())) * std::sin (GetFlangeSlope());
+
+    bool const isFlangeSlopeValid = std::isfinite (GetFlangeSlope()) && GetFlangeSlope() >= 0.0 && GetFlangeSlope() < PI / 2.0
+                                    && (innerWebFaceLength / 2.0) - slopeDepth >= 0.0;
+    if (!isFlangeSlopeValid)
+        return BSIERROR;
+
+    bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= innerWebFaceLength / 2.0 - slopeDepth
+                                     && GetFilletRadius() <= innerFlangeFaceLength / 2.0;
+    if (!isValidFilletRadius)
+        return BSIERROR;
+
+    bool const isValidFlangeEdgeRadius = std::isfinite (GetFlangeEdgeRadius()) && GetFlangeEdgeRadius() >= 0.0
+                                         && GetFlangeEdgeRadius() <= std::min (innerFlangeFaceLength / 2.0, GetFlangeThickness() / 2.0);
+    if (!isValidFlangeEdgeRadius)
+        return BSIERROR;
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double IShapeProfile::GetFlangeWidth() const

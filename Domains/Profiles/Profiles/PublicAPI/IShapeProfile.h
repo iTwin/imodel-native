@@ -48,6 +48,8 @@ public:
 protected:
     explicit IShapeProfile (T_Super::CreateParams const& params) : T_Super (params) {}
 
+    virtual BentleyStatus _Validate() const override;
+
 public:
     DECLARE_PROFILES_QUERYCLASS_METHODS (IShapeProfile)
     DECLARE_PROFILES_ELEMENT_BASE_METHODS (IShapeProfile)

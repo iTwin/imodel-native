@@ -87,7 +87,7 @@ BentleyStatus CShapeProfile::_Validate() const
     if (!isFlangeSlopeValid)
         return BSIERROR;
 
-    bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= (innerWebFaceLength / 2.0) - slopeDepth
+    bool const isValidFilletRadius = std::isfinite (GetFilletRadius()) && GetFilletRadius() >= 0.0 && GetFilletRadius() <= innerWebFaceLength / 2.0 - slopeDepth
                                      && GetFilletRadius() <= innerFlangeFaceLength / 2.0;
     if (!isValidFilletRadius)
         return BSIERROR;
