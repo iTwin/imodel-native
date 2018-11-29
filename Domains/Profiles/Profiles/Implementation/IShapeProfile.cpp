@@ -14,6 +14,28 @@ BEGIN_BENTLEY_PROFILES_NAMESPACE
 HANDLER_DEFINE_MEMBERS (IShapeProfileHandler)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                     11/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
+    double webThickness, double filletRadius, double edgeRadius, double flangeSlope)
+    : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
+    , flangeWidth (flangeWidth)
+    , depth (depth)
+    , flangeThickness (flangeThickness)
+    , webThickness (webThickness)
+    , filletRadius (filletRadius)
+    , edgeRadius (edgeRadius)
+    , flangeSlope (flangeSlope)
+    {}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 double IShapeProfile::GetFlangeWidth() const

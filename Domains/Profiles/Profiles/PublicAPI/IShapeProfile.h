@@ -21,6 +21,30 @@ struct IShapeProfile : ParametricProfile
     DGNELEMENT_DECLARE_MEMBERS (PRF_CLASS_IShapeProfile, ParametricProfile);
     friend struct IShapeProfileHandler;
 
+public:
+    struct CreateParams : T_Super::CreateParams
+        {
+        DEFINE_T_SUPER(IShapeProfile::T_Super::CreateParams);
+        explicit CreateParams (DgnElement::CreateParams const& params) : T_Super (params) {}
+
+    public:
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
+        PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
+            double webThickness, double filletRadius = 0.0, double edgeRadius = 0.0, double flangeSlope = 0.0);
+
+    public:
+        //! Required properties
+        double flangeWidth = 0.0;
+        double depth = 0.0;
+        double flangeThickness = 0.0;
+        double webThickness = 0.0;
+
+        //! Optional properties
+        double filletRadius = 0.0;
+        double edgeRadius = 0.0;
+        double flangeSlope = 0.0;
+        };
+
 protected:
     explicit IShapeProfile (T_Super::CreateParams const& params) : T_Super (params) {}
 
