@@ -48,7 +48,6 @@ BEGIN_DWG_NAMESPACE
 
 //=======================================================================================
 //! Base class for options that control how to merge various named data structures that match specified properties
-// @bsiclass                                                    Sam.Wilson      12/13
 //=======================================================================================
 struct ImportRule
 {
@@ -97,9 +96,9 @@ public:
     BentleyStatus ComputeNewName(Utf8StringR newName, Utf8StringCR modelName, BeFileNameCR baseFilename) const;
 };  // ImportRule
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          05/17
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Mapping of a DWG model(modelspace, paperspace, xRef, raster, etc) to a DgnModel.
+//=======================================================================================
 struct ResolvedModelMapping
 {
 private:
@@ -131,7 +130,6 @@ typedef bmultiset<ResolvedModelMapping>     T_DwgModelMapping;
 
 //=======================================================================================
 //! An import "job" definition, including its subject element.
-//! @bsiclass                                                    Sam.Wilson      11/16
 //=======================================================================================
 struct ResolvedImportJob
 {
@@ -156,9 +154,9 @@ public:
     Utf8StringCR GetNamePrefix() const { return m_mapping.GetPrefix(); }
 };  // ResolvedImportJob
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          04/17
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! An interface for a change detector that detects changes in a DWG file
+//=======================================================================================
 struct IDwgChangeDetector
 {
     enum class ChangeType
@@ -258,9 +256,9 @@ struct IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
 
 
-/*=================================================================================**//**
-* @bsiclass                                                     Don.Fu          01/16
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! The main class that imports a root DWG file to a DgnDb project
+//=======================================================================================
 struct DwgImporter
     {
 //__PUBLISH_SECTION_END__
@@ -1349,10 +1347,9 @@ public:
     
     };  // DwgImporter
 
-/*=================================================================================**//**
-* A no-op detector for creating BIM from DWG
-* @bsiclass                                                     Don.Fu          03/16
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A no-op change detector for creating DgnDb from DWG
+//=======================================================================================
 struct CreatorChangeDetector : IDwgChangeDetector
 {
 public:
@@ -1381,10 +1378,9 @@ public:
     CreatorChangeDetector () {}
 };  // CreatorChangeDetector
 
-/*=================================================================================**//**
-* A change detector to help updating BIM previously imported from DWG
-* @bsiclass                                                     Don.Fu          03/16
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! A change detector to help updating DgnDb previously imported from DWG
+//=======================================================================================
 struct UpdaterChangeDetector : IDwgChangeDetector
 {
 private:
