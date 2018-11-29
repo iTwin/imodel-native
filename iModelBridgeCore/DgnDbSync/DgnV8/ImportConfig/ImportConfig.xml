@@ -31,7 +31,7 @@
     <Raster importAttachments="true" exportNonPortableFormats="false"/>
     <PointCloud importAttachments="true"/>
 
-    <Thumbnails viewTypes="Root" pixelResolution="768" renderModeOverride="None"/>
+    <Thumbnails viewTypes="Root Drawing" pixelResolution="768" renderModeOverride="None"/>
 
     <Views viewTypes="RootViewGroup"/>
     
