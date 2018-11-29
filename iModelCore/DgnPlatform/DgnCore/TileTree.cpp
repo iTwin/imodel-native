@@ -929,7 +929,7 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
     if (IsNotFound())
         return SelectParent::Yes;
 
-    Visibility vis = GetVisibility(args);
+    Visibility vis = _GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
         _UnloadChildren(args.m_purgeOlderThan);
@@ -1041,7 +1041,7 @@ bool Tile::IsEmpty() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
+Tile::Visibility Tile::_GetVisibility(DrawArgsCR args) const
     {
     // NB: We test for region culling before IsDisplayable() - otherwise we will never unload children of undisplayed tiles when
     // they are outside frustum
@@ -1730,8 +1730,15 @@ void DrawArgs::InvalidateCopyrightInfo()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::FrustumPlanes const& DrawArgs::GetFrustumPlanes() const
     {
-    // ###TODO: handle expanded frustum
     return m_context.GetFrustumPlanes();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Frustum DrawArgs::GetFrustum() const
+    {
+    return m_context.GetFrustum();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1739,7 +1746,6 @@ Render::FrustumPlanes const& DrawArgs::GetFrustumPlanes() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DrawArgs::GetPixelSizeAtPoint(DPoint3dCP origin) const
     {
-    // ###TODO: handle expanded frustum
     return m_context.GetPixelSizeAtPoint(origin);
     }
 
@@ -2305,7 +2311,7 @@ void TriMeshTree::Root::CreateGeometry(TriMeshList& triMeshList, TriMesh::Create
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& selectedTiles, DrawArgsR args) const
     {
-    Visibility vis = GetVisibility(args);
+    Visibility vis = _GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
         _UnloadChildren(args.m_purgeOlderThan);

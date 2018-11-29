@@ -1119,7 +1119,7 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile3d::Select(bvector<TileTree:
         return SelectParent::No;
         }
 
-    Visibility vis = GetVisibility(args);
+    Visibility vis = _GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
         _UnloadChildren(args.m_purgeOlderThan);

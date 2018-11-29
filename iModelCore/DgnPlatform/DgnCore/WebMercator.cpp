@@ -92,6 +92,47 @@ WebMercatorPoint::WebMercatorPoint(GeoPoint latLong)
     y = LatitudeToAngle(Angle::DegreesToRadians(latLong.latitude)) * RadiusOfEarth();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d computeAuxRange(DrawArgsCR args)
+    {
+    // calculate a range in lat/long to use for the the first 4 layers of tiles.
+    DRange3d latLongRange = DRange3d::NullRange();
+    DgnGCSP dgnGCS = args.GetDgnDb().GeoLocation().GetDgnGCS();
+    if (nullptr == dgnGCS)
+        {
+        BeAssert(false);
+        return latLongRange;
+        }
+
+    Frustum viewBox = args.GetFrustum();
+    GeoPoint latLongBox[8];
+    for (int iPoint=0; iPoint < 8; ++iPoint)
+        {
+        GeoPointP latLongP = &latLongBox[iPoint];
+        if (SUCCESS != dgnGCS->LatLongFromUors (*latLongP, viewBox.m_pts[iPoint]))
+            {
+            BeAssert (false);
+            return DRange3d::NullRange();
+            }
+
+        if (latLongP->longitude < latLongRange.low.x)
+            latLongRange.low.x = latLongP->longitude;
+        if (latLongP->longitude > latLongRange.high.x)
+            latLongRange.high.x = latLongP->longitude;
+
+        if (latLongP->latitude < latLongRange.low.y)
+            latLongRange.low.y = latLongP->latitude;
+        if (latLongP->latitude > latLongRange.high.y)
+            latLongRange.high.y = latLongP->latitude;
+
+        latLongRange.low.z = latLongRange.high.z = 0;
+        }
+
+    return latLongRange;
+    }
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,18 +223,52 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent MapTile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
     {
+    bool isRoot = (0 == GetDepth());
+    if (isRoot)
+        args.m_auxRange = computeAuxRange(args);
+
     Tile::SelectParent result = T_Super::_SelectTiles(selected, args);
 
-    // only process the root tile.
-    if (0 != GetDepth())
-        return result;
-    
-    // Allow the imageryProvider to see the tiles in case it needs them for its copyright message (Bing does).
-    GetMapRoot().m_imageryProvider->_OnSelectTiles (selected, args);
+    // Once all tiles are selected, allow the imageryProvider to see them in case it needs them for its copyright message (Bing does).
+    if (isRoot)
+        GetMapRoot().m_imageryProvider->_OnSelectTiles (selected, args);
 
     return result;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Visibility MapTile::_GetVisibility(DrawArgsCR args) const
+    {
+    // For levels less than or equal to 4, we accept them if their lat long overlaps our view boundary's lat long.
+    // That is because the conversion from lat/long -> cartesian coordinates is problematic for lat/longs far out 
+    // of the effective range of our coordinate system (and the CS-Map code does not give us an error when it happens)
+    static constexpr uint32_t maxZoomLevelForLatLongCheck = 5;
+    if (m_id.m_level <= maxZoomLevelForLatLongCheck)
+        {
+        // get the lat/long for this tile.
+        BeAssert(!args.m_auxRange.IsNull());
+
+        double nTiles = (1 << m_id.m_level);
+        double tileWest  = columnToLongitude(m_id.m_column, nTiles);
+        double tileEast  = columnToLongitude(m_id.m_column+1, nTiles);
+        double tileNorth = rowToLatitude(m_id.m_row, nTiles);
+        double tileSouth = rowToLatitude(m_id.m_row+1, nTiles);
+
+        // if the tile overlaps the range, we must use it.
+        if (tileWest > args.m_auxRange.high.x)
+            return Visibility::OutsideFrustum;
+        if (tileEast < args.m_auxRange.low.x)
+            return Visibility::OutsideFrustum;
+        if (tileSouth > args.m_auxRange.high.y)
+            return Visibility::OutsideFrustum;
+        if (tileNorth < args.m_auxRange.low.y)
+            return Visibility::OutsideFrustum;
+        }
+
+    return T_Super::_GetVisibility(args);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Construct a new MapTile by TileId. First convert tileid -> LatLong, and then LatLong -> BIM world.

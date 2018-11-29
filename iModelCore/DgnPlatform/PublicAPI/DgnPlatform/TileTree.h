@@ -306,7 +306,7 @@ public:
     };
 
     //! Compute the visibility of this tile
-    DGNPLATFORM_EXPORT Visibility GetVisibility(DrawArgsCR args) const;
+    DGNPLATFORM_EXPORT virtual Visibility _GetVisibility(DrawArgsCR args) const;
 
     enum class SelectParent { Yes, No };
 
@@ -720,6 +720,7 @@ public:
     BeTimePoint m_now;
     BeTimePoint m_purgeOlderThan;
     Render::ViewFlagsOverrides m_viewFlagsOverrides;
+    DRange3d m_auxRange = DRange3d::NullRange(); // used by WebMercator tiles to store a lat/long range for culling top-most tiles
 
     DGNPLATFORM_EXPORT DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr);
 
@@ -738,9 +739,12 @@ public:
 
     void InvalidateCopyrightInfo();
 
+    DgnDbR GetDgnDb() const { return m_context.GetDgnDb(); }
+
     // NB: Do not assume the frustum, world-to-view map, etc match those on the context - may be expanded for tile selection (e.g. map tiles).
     SceneContextR GetContext() { return m_context; }
     DGNPLATFORM_EXPORT Render::FrustumPlanes const& GetFrustumPlanes() const;
+    DGNPLATFORM_EXPORT Frustum GetFrustum() const;
     DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
     };
     

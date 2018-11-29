@@ -3205,7 +3205,7 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
 
     _ValidateChildren();
 
-    Visibility vis = GetVisibility(args);
+    Visibility vis = _GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
         {
         _UnloadChildren(args.m_purgeOlderThan);
@@ -3236,7 +3236,7 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
 
             for (auto const& child : *children)
                 {
-                if (Visibility::OutsideFrustum == child->GetVisibility(args))
+                if (Visibility::OutsideFrustum == child->_GetVisibility(args))
                     continue;
 
                 if (!child->_HasGraphics())

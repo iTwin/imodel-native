@@ -147,6 +147,7 @@ struct MapTile : TileTree::QuadTree::Tile
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys = nullptr) override {return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);}
     double _GetMaximumSize() const override {return 0 == GetDepth() ? 0.0 : T_Super::_GetMaximumSize();}
     TileTree::Tile::SelectParent _SelectTiles(bvector<TileTree::TileCPtr>&, TileTree::DrawArgsR) const override;
+    Visibility _GetVisibility(TileTree::DrawArgsCR) const override;
 };
 
 //=======================================================================================
