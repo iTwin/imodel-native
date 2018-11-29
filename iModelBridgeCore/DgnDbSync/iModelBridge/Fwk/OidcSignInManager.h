@@ -8,8 +8,7 @@
 #pragma once
 
 #include <WebServices/Connect/IConnectSignInManager.h>
-#include "OidcTokenProvider.h"
-
+#include <iModelBridge/iModelBridgeFwkRegistry.h>
 
 #define TOKENPREFIX_Bearer               "Bearer"
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -43,6 +42,5 @@ struct OidcSignInManager : WebServices::IConnectSignInManager
 
     public:
         OidcSignInManager(WebServices::IConnectTokenProviderPtr m_tokenProvider);
-        Tasks::AsyncTaskPtr<OidcSignInResult> SignInWithCallBack();
     };
 END_BENTLEY_DGN_NAMESPACE
