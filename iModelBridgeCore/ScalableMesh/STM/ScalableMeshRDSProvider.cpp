@@ -10,9 +10,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-#ifndef LINUX_SCALABLEMESH_BUILD
 #include "ScalableMeshRDSProvider.h"
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CCApi\CCPublic.h>
+#endif
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
  
@@ -229,6 +230,7 @@ void ScalableMeshRDSProvider::UpdateToken()
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
     WString serverUrl;
+#ifndef LINUX_SCALABLEMESH_BUILD
     CallStatus status = APIERR_SUCCESS;
     try
         {
@@ -295,6 +297,7 @@ Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
         {
         BeAssert(!"Error thrown while fetching RDS server url");
         }
+#endif
     return Utf8String(serverUrl.c_str());
     }
 
@@ -323,4 +326,4 @@ Utf8String ScalableMeshRDSProvider::GetRootDocumentName()
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
-#endif
+

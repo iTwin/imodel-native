@@ -10,10 +10,10 @@
 /*--------------------------------------------------------------------------------------+
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     #include <RealityPlatformTools/RealityDataService.h>
     USING_NAMESPACE_BENTLEY_REALITYPLATFORM
-#endif
+
 
 #include <ScalableMesh/IScalableMeshRDSProvider.h>
 
@@ -26,9 +26,9 @@ Useful container for Azure SAS token values
 +===============+===============+===============+===============+===============+======*/
 struct AzureConnection
     {
-#ifndef LINUX_SCALABLEMESH_BUILD
+
     AzureHandshake* m_handshake = nullptr;
-#endif
+
     int64_t m_tokenTimer = 0;
     Utf8String m_token;
     Utf8String m_url;
