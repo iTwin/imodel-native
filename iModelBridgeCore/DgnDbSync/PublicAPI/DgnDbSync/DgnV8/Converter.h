@@ -886,7 +886,7 @@ struct Converter
         L10N_STRING(V8StyleNoneDescription)             // =="Created from V8 active settings to handle Style (none)"==
         L10N_STRING(LinkModelDefaultName)               // =="Default Link Model"==
         L10N_STRING(RDS_Description)                    // =="Reality Model Tileset for %s"==
-        L10N_STRING(ResourcesViewsAndModels)            // =="Categories, Styles, Views, and Models"==
+        L10N_STRING(ViewsAndModels)                     // =="Views and Models"==
         L10N_STRING(Sheets)                             // =="Sheets and drawings"==
         L10N_STRING(Drawings)                           // =="Drawings"==
         L10N_STRING(GlobalProperties)                   // =="Global properties"==
@@ -965,6 +965,8 @@ protected:
     bool                 m_rootTransHasChanged = false;
     bool                 m_spatialTransformCorrectionsApplied = false;
     bool                 m_hadAnyChanges = false;
+    bool                 m_onConversionStartCalled = false;
+    bool                 m_beginConversionCalled = false;
     uint32_t             m_elementsConverted = 0;
     uint32_t             m_elementsDiscarded = 0;
     uint32_t             m_elementsSinceLastSave = 0;
@@ -1973,6 +1975,9 @@ public:
     //! A subclass must override this to supply the prefix that should be applied to all generated names, such as Category and View codes.
     virtual Utf8String _GetNamePrefix() const = 0;
 
+    //! Should definitions such as levels and materials be merged by name
+    bool ShouldMergeDefinitions() const {return GetParams().GetMergeDefinitions() || m_config.GetOptionValueBool("MergeDefinitions", false);}
+
     Params const& GetParams() const {return _GetParams();}
 
     //! Returns the transform to apply to all in-coming V8 elements. This is usually identity. 
@@ -2326,6 +2331,7 @@ protected:
     void CorrectSpatialTransform(ResolvedModelMapping&);
 
     BentleyStatus MakeSchemaChanges(bvector<DgnFileP> const&, bvector<DgnV8ModelP> const&);
+
     void CreateProvenanceTables();
 
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
@@ -2454,6 +2460,18 @@ public:
 //=======================================================================================
 //! Project a single DgnV8 model, plus all of its reference attachments, into a DgnDb.
 //!
+//! Methods must be called in the following order. Notes on *why* the order matters are given.
+//! 1. SetDgnDb
+//! 1. AttachSyncInfo
+//! 1. InitRootModel            -- also initializes root transform and populates m_spatialModelsInAttachmentOrder, et al.
+//! 1. MakeSchemaChanges        -- uses m_spatialModelsInAttachmentOrder et al to find and convert ECSchemas and V8Tags
+//! 1. FindJob or InitializeJob -- uses root model and syncinfo, initializes the ChangeDetector, augments root transform, creates job definition models
+//! 1. DoBeginConversion        -- prepares ChangeDetector, initializes configuration
+//! 1. MakeDefinitionChanges    -- uses ChangeDetector and configuration.
+//! 1. ConvertData              -- uses definitions, ChangeDetector, and configuration. Writes to job definition models and other job-specific models. Populates m_v8ModelMappings.
+//! 1. DoFinishConversion
+//! 
+//! 
 //! Note that the output DgnDb might be new or it might already contain other content.
 //! See IsCreatingNewDgnDb.
 //!
@@ -2672,8 +2690,11 @@ public:
     //! @return bvector with const v8Files for this converter.
     DGNDBSYNC_EXPORT bvector<DgnV8FileP> const & GetV8Files() const { return m_v8Files; }
 
-    //! Do the conversion. @see HadFatalError
-    DGNDBSYNC_EXPORT BentleyStatus Process();
+    DGNDBSYNC_EXPORT BentleyStatus DoBeginConversion();
+    DGNDBSYNC_EXPORT BentleyStatus MakeDefinitionChanges();
+    DGNDBSYNC_EXPORT BentleyStatus ConvertData();
+    DGNDBSYNC_EXPORT BentleyStatus DoFinishConversion();
+
 };
 
 //=======================================================================================

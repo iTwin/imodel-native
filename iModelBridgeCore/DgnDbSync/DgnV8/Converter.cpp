@@ -1788,6 +1788,13 @@ void Converter::GetOrCreateJobPartitions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_OnConversionStart()
     {
+    if (m_onConversionStartCalled)
+        {
+        BeAssert(false && "Call _OnConversionStart only once");
+        return;
+        }
+    m_onConversionStartCalled = true;
+
     BeAssert(_GetParams().GetAssetsDir().DoesPathExist());
 
     SetV8ProgressMeter();
@@ -3864,7 +3871,7 @@ bool            Converter::IsTransformEqualWithTolerance(TransformCR lhs, Transf
 void Converter::CheckForAndSaveChanges()
     {
     m_hadAnyChanges |= m_dgndb->Txns().HasChanges();
-    m_dgndb->SaveChanges();
+    iModelBridge::SaveChanges(*m_dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**

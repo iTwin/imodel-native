@@ -39,6 +39,12 @@
       <appender-ref ref="OutputDebugStringAppender" />
     </root>
 
+    <category name="UnitsNative">
+        <priority value="warn"/>
+    </category>
+    <category name="ECObjectsNative">
+        <priority value="warn"/>
+    </category>
     <category name="BeSQLite">
         <priority value="error"/>
     </category>

@@ -129,6 +129,12 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 
     _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
+    if (BSISUCCESS != _MakeDefinitionChanges(*jobsubj))
+        {
+        LOG.fatalv("_MakeDefinitionChanges failed");
+        return nullptr; // caller must call abandon changes
+        }   
+
     if (BSISUCCESS != _ConvertToBim(*jobsubj))
         {
         LOG.fatalv("Failed to populate new repository");
@@ -191,32 +197,68 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeletedFiles)
+BentleyStatus iModelBridge::DoMakeDefinitionChanges(SubjectCPtr& jobsubj, DgnDbR db)
     {
-    bool haveInputFile = !_GetParams().GetInputFileName().empty();
+    if (_GetParams().GetInputFileName().empty())
+        return BSISUCCESS;
 
     _GetParams().SetIsCreatingNewDgnDb(false);
     _GetParams().SetIsUpdating(true);
 
-    db.BriefcaseManager().StartBulkOperation();
+    BeAssert(!db.BriefcaseManager().IsBulkOperation());
 
-    if (haveInputFile)
+    db.BriefcaseManager().StartBulkOperation();
+    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+
+    //  First, make sure we have a JobSubject element. When initializing, this will entail reserving a Code and inserting into the RepositoryModel.
+    jobsubj = _FindJob();
+    if (!jobsubj.IsValid())
         {
-        SubjectCPtr jobsubj = _FindJob();
+        _GetParams().SetIsUpdating(false);
+        jobsubj = _InitializeJob();    // this is probably the first time that this bridge has tried to convert this input file into this iModel
         if (!jobsubj.IsValid())
             {
-            _GetParams().SetIsUpdating(false);
-            jobsubj = _InitializeJob();    // this is probably the first time that this bridge has tried to convert this input file into this iModel
-            if (!jobsubj.IsValid())
-                {
-                LOG.fatalv("Failed to create job structure");
-                return BSIERROR;
-                }
+            LOG.fatalv("Failed to create job structure");
+            return BSIERROR;
             }
+        }
 
-        _GetParams().SetJobSubjectId(jobsubj->GetElementId());
+    _GetParams().SetJobSubjectId(jobsubj->GetElementId());
 
-        if (BSISUCCESS != _ConvertToBim(*jobsubj))
+    //  Now make normal definition changes, such as converting levels into Categories.
+    if (BSISUCCESS != _MakeDefinitionChanges(*jobsubj))
+        {
+        LOG.fatalv("_MakeDefinitionChanges failed");
+        return BSIERROR; // caller must call abandon changes
+        }        
+
+    // Must either succeed in getting all required locks and codes ... or abort the whole txn.  
+    BeAssert(!runningInBulkMode || db.BriefcaseManager().IsBulkOperation());
+        
+    auto response = db.BriefcaseManager().EndBulkOperation();
+    if (RepositoryStatus::Success != response.Result())
+        {
+        LOG.fatalv("DoMakeDefinitionChanges Failed to acquire locks and/or codes with error %x", response.Result());
+        return BSIERROR;
+        }
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, SubjectCR jobsubj, bool detectDeletedFiles)
+    {
+    BeAssert(!db.BriefcaseManager().IsBulkOperation());
+
+    db.BriefcaseManager().StartBulkOperation();
+    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+
+    bool haveInputFile = !_GetParams().GetInputFileName().empty();
+    if (haveInputFile)
+        {
+        if (BSISUCCESS != _ConvertToBim(jobsubj))
             {
             LOG.fatalv("_ConvertToBim failed");
             return BSIERROR; // caller must call abandon changes
@@ -227,10 +269,11 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db, bool detectDeleted
         _DetectDeletedDocuments();
 
     // Must either succeed in getting all required locks and codes ... or abort the whole txn.
+    BeAssert(!runningInBulkMode || db.BriefcaseManager().IsBulkOperation());
     auto response = db.BriefcaseManager().EndBulkOperation();
     if (RepositoryStatus::Success != response.Result())
         {
-        LOG.fatalv("Failed to acquire locks and/or codes with error %x", response.Result());
+        LOG.fatalv("DoConvertToExistingBim Failed to acquire locks and/or codes with error %x", response.Result());
         return BSIERROR;
         }
 
@@ -890,6 +933,8 @@ struct MemoryUsageAppData : DgnDb::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commitComment, int maxRowsChangedPerTxn)
     {
+    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+
     MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
 
     int rowsChanged = db.GetTotalModifiedRowCount();
@@ -902,7 +947,9 @@ BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commit
     if (BE_SQLITE_OK != status)
         return BSIERROR;
 
-    db.BriefcaseManager().StartBulkOperation();
+    if (runningInBulkMode)
+        db.BriefcaseManager().StartBulkOperation();
+
     return BSISUCCESS;
     }
 
@@ -911,6 +958,8 @@ BentleyStatus iModelBridge::SaveChangesToConserveMemory(DgnDbR db, Utf8CP commit
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     {
+    bool runningInBulkMode = db.BriefcaseManager().IsBulkOperation();
+
     MemoryUsageAppData& lastCheck = *(MemoryUsageAppData*)db.FindOrAddAppData(MemoryUsageAppData::GetKey(), []() { return new MemoryUsageAppData(); });
 
     lastCheck.m_rowsChanged = db.GetTotalModifiedRowCount();
@@ -919,7 +968,9 @@ BentleyStatus iModelBridge::SaveChanges(DgnDbR db, Utf8CP commitComment)
     if (BE_SQLITE_OK != status)
         return BSIERROR;
 
-    db.BriefcaseManager().StartBulkOperation();
+    if (runningInBulkMode)
+        db.BriefcaseManager().StartBulkOperation();
+
     return BSISUCCESS;
     }
 
@@ -983,4 +1034,22 @@ bool iModelBridge::WantModelProvenanceInBim(DgnDbR db)
         return true;
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::AnyTxns(DgnDbR db)
+    {
+    Statement stmt;
+    stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
+    return (BE_SQLITE_ROW == stmt.Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool iModelBridge::AnyChangesToPush(DgnDbR db)
+    {
+    return db.Txns().HasChanges() || AnyTxns(db);
     }

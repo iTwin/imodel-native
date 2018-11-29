@@ -228,7 +228,10 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             callCloseOnReturn.CallOpenFunctions(*db);
             }
 
-        BentleyStatus bstatus = bridge.DoConvertToExistingBim(*db, saparams.GetDetectDeletedFiles());
+        SubjectCPtr jobsubj;
+        BentleyStatus bstatus = bridge.DoMakeDefinitionChanges(jobsubj, *db);
+        if (BSISUCCESS == bstatus)
+            bstatus = bridge.DoConvertToExistingBim(*db, *jobsubj, saparams.GetDetectDeletedFiles());
         
         if (BSISUCCESS != bstatus)
             {
@@ -389,6 +392,7 @@ void iModelBridgeSacAdapter::Params::PrintUsage()
 "--input-guid=                  (optional) The document GUID of the input file.\n"
 "--doc-attributes=              (optional) Document atttributes for the input file (in JSON format).\n"
 "--transform=                   (optional) 3x4 transformation matrix in row-major form in JSON wire format. This is an additional transform to to be pre-multiplied to the normal GCS/units conversion matrix that the bridge computes and applies to all converted spatial data.\n"
+"--merge-definitions            (optional) Merge definitions such as levels and materials by name from different root models into the shared dictionary model. The default is to keep definitions for each root model separate.\n"
 "--bridge-assetsDir=            (optional) the full path to the assets directory for the bridge.\n"
     );
     }
@@ -584,6 +588,12 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         {
         unSupportedFwkArg(argv[iArg]);
         bparams.m_wantThumbnails = false;
+        return iModelBridge::CmdLineArgStatus::Success;
+        }
+
+    if (0 == wcscmp(argv[iArg], L"--merge-definitions"))
+        {
+        bparams.SetMergeDefinitions(true);
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
