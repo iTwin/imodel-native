@@ -336,7 +336,7 @@ bool ExtractParameter (const WKTSection&    wktSection,
 #if _WIN32
     if (0 != wcsnicmp(ELT_PREFIX, &name[0], CSTRING_LEN(ELT_PREFIX)) ||
 #else
-if (0 != wcscasecmp(ELT_PREFIX, &name[0]) ||
+if (0 != wcsncasecmp(ELT_PREFIX, &name[0], CSTRING_LEN(ELT_PREFIX)) ||
 #endif
         !isdigit(name[4]),
         L'_' != name[5] ||
@@ -387,7 +387,7 @@ bool ExtractParamMt (const WKTSection&   wktSection,
 #if _WIN32
         0 != wcsnicmp(AFFINE_NAME, wktSection[0].strBeginInsideQuote(), CSTRING_LEN(AFFINE_NAME)))
 #else
-        0 != wcscasecmp(AFFINE_NAME, wktSection[0].strBeginInsideQuote()))
+        0 != wcsncasecmp(AFFINE_NAME, wktSection[0].strBeginInsideQuote(), CSTRING_LEN(AFFINE_NAME)))
 #endif
         return false;
 
