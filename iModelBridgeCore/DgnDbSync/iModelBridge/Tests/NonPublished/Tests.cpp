@@ -1287,7 +1287,7 @@ TEST_F(iModelBridgeTests, DISABLED_TestMultipleRootsSameSubject_ToyTile) // disa
     args.push_back(L"--server-user=username=username");                                         // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
     args.push_back(L"--server-password=\"password><!@\"");                                      // the value of this arg doesn't mean anything and is not checked by anything -- it is just a placeholder for a required arg
 
-	args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", toyTileBridge_dll));
+	args.push_back(WPrintfString(L"--fwk-bridge-library=\"%ls\"", toyTileBridge_dll.c_str()));
     args.push_back(L"--fwk-bridge-regsubkey=" BRIDGE_REG_SUBKEY_TOY_TILE);
 	args.push_back(WPrintfString(L"--fwk-bridgeAssetsDir=\"%ls\"", toyTileBridge_assetsDir.c_str()));
 

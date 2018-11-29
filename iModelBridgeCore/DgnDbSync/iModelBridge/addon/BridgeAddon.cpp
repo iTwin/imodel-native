@@ -121,9 +121,10 @@ namespace BridgeNative {
 Value _RunBridge(const CallbackInfo& info) 
     {
     Env env = info.Env();
-    auto str = info[0].As<Napi::String>().Utf8Value().c_str();
-    RunBridge(env, str);
-    return String::New(env, str);
+    Napi::String str = info[0].As<Napi::String>();
+    std::string strVal = str.Utf8Value();
+    RunBridge(env, strVal.c_str());
+    return String::New(env, strVal.c_str());
     }
 
 /*---------------------------------------------------------------------------------**/ /**

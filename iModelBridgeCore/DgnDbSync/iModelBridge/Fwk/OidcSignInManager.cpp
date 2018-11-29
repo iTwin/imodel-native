@@ -17,15 +17,6 @@ USING_NAMESPACE_BENTLEY_DGN
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tasks::AsyncTaskPtr<OidcSignInResult> OidcSignInManager::SignInWithCallBack()
-    {
-    m_tokenProvider = std::make_shared<OidcTokenProvider>();
-    return CreateCompletedAsyncTask(OidcSignInResult::Success());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsiclass                                     Algirdas.Mikoliunas             08/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 Tasks::AsyncTaskPtr<WebServices::WSConnectVoidResult> OidcSignInManager::_CheckAndUpdateToken()
     {
     m_tokenProvider->GetToken();

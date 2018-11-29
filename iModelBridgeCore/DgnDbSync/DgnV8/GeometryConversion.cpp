@@ -3048,7 +3048,7 @@ bool IsValidGraphicElement(DgnV8EhCR v8eh)
     // Skip displayable elements marked invisible as well as non-graphic components of cells (ex. type 38/39)...
     if (!v8el.ehdr.isGraphics || v8el.hdr.dhdr.props.b.invisible)
         {
-        Utf8PrintfString info("Ignoring element %s because it is %s.", Converter::IssueReporter::FmtElement(v8eh), !v8el.ehdr.isGraphics ? "non-graphical" : "invisible");
+        Utf8PrintfString info("Ignoring element %s because it is %s.", Converter::IssueReporter::FmtElement(v8eh).c_str(), !v8el.ehdr.isGraphics ? "non-graphical" : "invisible");
         m_converter.ReportIssue(Converter::IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), info.c_str());
         return false;
         }
