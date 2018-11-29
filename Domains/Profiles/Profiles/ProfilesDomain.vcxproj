@@ -24,7 +24,9 @@
     <None Include="Profiles.prewire.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\ProfilesDomain.Partfile.xml" />
+    <Xml Include="..\ProfilesDomain.Partfile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="Profiles.ecschema.xml">
       <SubType>Designer</SubType>
     </Xml>
@@ -55,6 +57,7 @@
     <ClCompile Include="Implementation\Profile.cpp" />
     <ClCompile Include="Implementation\ICenterLineProfile.cpp" />
     <ClCompile Include="Implementation\ProfilesDomain.cpp" />
+    <ClCompile Include="Implementation\ProfilesGeometry.cpp" />
     <ClCompile Include="Implementation\ProfilesInternal.cpp" />
     <ClCompile Include="Implementation\RectangleProfile.cpp" />
     <ClCompile Include="Implementation\RegularPolygonProfile.cpp" />
@@ -96,6 +99,7 @@
     <ClInclude Include="PublicAPI\ProfilesApi.h" />
     <ClInclude Include="PublicAPI\ProfilesDefinitions.h" />
     <ClInclude Include="PublicAPI\ProfilesDomain.h" />
+    <ClInclude Include="PublicAPI\ProfilesGeometry.h" />
     <ClInclude Include="PublicAPI\RectangleProfile.h" />
     <ClInclude Include="PublicAPI\RegularPolygonProfile.h" />
     <ClInclude Include="PublicAPI\RoundedRectangleProfile.h" />

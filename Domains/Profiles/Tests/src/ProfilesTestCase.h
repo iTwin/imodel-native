@@ -17,7 +17,7 @@ class ProfilesTestCase : public testing::Test
     private:
         Dgn::DgnDbPtr m_dbPtr;
         Dgn::DgnModelPtr m_modelPtr;
-
+        Dgn::PhysicalModelPtr m_physicalModelPtr;
     protected:
         ProfilesTestCase();
 
@@ -26,4 +26,5 @@ class ProfilesTestCase : public testing::Test
 
         Dgn::DgnDb& GetDb();
         Dgn::DgnModel& GetModel();
+        Dgn::PhysicalModelR GetPhysicalModel() {return *m_physicalModelPtr;}
     };

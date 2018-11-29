@@ -43,6 +43,8 @@ CPchOpts = $(UsePrecompiledHeaderOptions)
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 
+$(o)ProfilesGeometry$(oext) : $(appSrc)ProfilesGeometry.cpp ${MultiCompileDepends} $(appPublicApi)ProfilesGeometry.h
+
 $(o)AsymmetricIShapeProfile$(oext) : $(appSrc)AsymmetricIShapeProfile.cpp ${MultiCompileDepends} $(appPublicApi)AsymmetricIShapeProfile.h
 
 $(o)BentPlateProfile$(oext) : $(appSrc)BentPlateProfile.cpp ${MultiCompileDepends} $(appPublicApi)BentPlateProfile.h

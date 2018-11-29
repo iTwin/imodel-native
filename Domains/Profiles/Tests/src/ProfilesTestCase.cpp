@@ -53,6 +53,14 @@ ProfilesTestCase::ProfilesTestCase()
     m_modelPtr = DefinitionModel::Create (*partitionPtr);
     status = m_modelPtr->Insert();
     BeAssert (status == DgnDbStatus::Success);
+
+
+    PhysicalPartitionPtr physicalPartitionPtr = PhysicalPartition::Create(*rootSubjectPtr, "TestPhysicalPartition");
+    m_dbPtr->BriefcaseManager().AcquireForElementInsert(*physicalPartitionPtr);
+
+    /*m_physicalModelPtr = PhysicalModel::Create(*physicalPartitionPtr);
+    status = m_physicalModelPtr->Insert();
+    BeAssert(status == DgnDbStatus::Success);*/
     }
 
 /*---------------------------------------------------------------------------------**//**

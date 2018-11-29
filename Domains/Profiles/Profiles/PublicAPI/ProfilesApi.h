@@ -9,6 +9,7 @@
 
 #include "ProfilesDefinitions.h"
 #include "ICenterLineProfile.h"
+#include "ProfilesGeometry.h"
 #include "DerivedProfile.h"
 #include "AsymmetricIShapeProfile.h"
 #include "BentPlateProfile.h"
