@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/src/DomainTests.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ProfilesTestCase.h"
 #include <Profiles/ProfilesApi.h>
 

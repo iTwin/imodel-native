@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/src/ProfilesTestCase.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ProfilesTestCase.h"
 #include "TestHost.h"
 

@@ -1,3 +1,10 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/src/TestHost.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "TestHost.h"
 #include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
 #include <Bentley\BeTest.h>
