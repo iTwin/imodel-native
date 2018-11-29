@@ -252,6 +252,48 @@ TEST_F(MultiBridgeTests, FileSpecificDefinitions)
         */
     }
 
+/*---------------------------------------------------------------------------------**//**
+* This test verifies that multiple bridges will create a common set of definitions 
+* such as Categories in the dictionary model with no dups, merging by name.
+* @bsimethod                                    Sam.Wilson                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiBridgeTests, MergedDefinitions)
+    {
+    LineUpFiles(L"MergedDefinitions.bim", L"master3d.dgn", false);
+    
+    BentleyApi::BeFileName refV8FileName;
+    MakeWritableCopyOf(refV8FileName, L"ref3d.dgn");
+
+    MultiBridgeTestDocumentAccessor docaccessor;
+    // m is assigned to the master file
+    docaccessor.m_assignments[L"m"].push_back(m_v8FileName);
+    // r is assigned to the reference file
+    docaccessor.m_assignments[L"r"].push_back(refV8FileName);
+
+    m_params.SetMergeDefinitions(true);
+
+    DefinitionModelIds mDefs, rDefs;
+    RunBridge(mDefs, L"m", docaccessor, true);
+    RunBridge(rDefs, L"r", docaccessor, true);
+
+    auto db = DgnDb::OpenDgnDb(nullptr, m_dgnDbFileName, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
+    ASSERT_TRUE(db.IsValid());
+
+    std::vector<DgnElementCPtr> commonCats, mCategories, rCategories;
+    getElementsInModel(commonCats,  *db, db->GetDictionaryModel().GetModelId(), "bis.Category");
+    getElementsInModel(mCategories, *db, mDefs.m_definitionModelId, "bis.Category");
+    getElementsInModel(rCategories, *db, rDefs.m_definitionModelId, "bis.Category");
+
+    EXPECT_TRUE (isCodeValueInList(mCategories, "MasterLevel"))   << "Levels should be merged by name into the dictionary model";
+    EXPECT_TRUE (isCodeValueInList(mCategories, "ReferenceLevel"))<< "Levels should be merged by name into the dictionary model";
+    EXPECT_FALSE(isCodeValueInList(mCategories, "MasterLevel"));
+    EXPECT_FALSE(isCodeValueInList(rCategories, "MasterLevel"));
+    EXPECT_FALSE(isCodeValueInList(rCategories, "ReferenceLevel"));
+    EXPECT_FALSE(isCodeValueInList(mCategories, "ReferenceLevel"));
+    EXPECT_TRUE (isCodeValueInList(mCategories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
+    EXPECT_TRUE (isCodeValueInList(rCategories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
+    }
+
 static void attach(BentleyApi::BeFileNameCR masterFileName, DgnV8Api::ModelId masterModelId, BentleyApi::BeFileNameCR refFileName, WCharCP refModelName)
     {
     V8FileEditor v8editor;
