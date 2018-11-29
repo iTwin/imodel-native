@@ -94,14 +94,8 @@ BentleyStatus   DwgImporter::GetLayerAppearance (DgnSubCategory::Appearance& app
     bool    applyOverrides = nullptr != viewportId && viewportId->IsValid() && layer.HasOverrides(*viewportId);
     bool    isOverridden = false;
 
-    appearance.SetInvisible (layer.IsOff() || layer.IsFrozen());
-    if (applyOverrides && appearance.IsVisible())
-        {
-        // apply viewport freez
-        DwgDbViewportPtr    viewport(*viewportId, DwgDbOpenMode::ForRead);
-        if (viewport.OpenStatus() == DwgDbStatus::Success && viewport->IsLayerFrozen(layer.GetObjectId()))
-            appearance.SetInvisible (true);
-        }
+    // set category invisible if the layer is hidden from GUI (not about displaying elements in the category)
+    appearance.SetInvisible (layer.IsHidden());
 
     DwgTransparency transparency = applyOverrides ? layer.GetTransparency(isOverridden, *viewportId) : layer.GetTransparency();
     appearance.SetTransparency (DwgHelper::GetTransparencyFromDwg(transparency));

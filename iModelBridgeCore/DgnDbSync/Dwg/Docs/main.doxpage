@@ -22,9 +22,10 @@ Welcome to the DwgImporter API from <a href="http://www.bentley.com/">Bentley Sy
 
 <p>To develop an iModelBridge with DwgImporter SDK, you may also need to consult iModelBridge SDK Documentation.
 
-The main classes/namespaces are:
+These are the main classes and namespaces for the API references:
 - @ref BentleyApi::Dwg::DwgImporter
 - @ref BentleyApi::Dwg::DwgSyncInfo
 - @ref BentleyApi::Dwg::DwgBridge
+- @ref BentleyApi::Dwg::DwgHelper
 - @ref BentleyApi::DwgDb
 */
