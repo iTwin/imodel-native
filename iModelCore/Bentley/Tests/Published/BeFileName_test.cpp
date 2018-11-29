@@ -2400,3 +2400,19 @@ TEST(BeFileNameTests, BeDeleteFile_LockedFile_ReturnsAccessViolationError)
     EXPECT_EQ(BeFileNameStatus::Success, fileName.BeDeleteFile());
     }
 #endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2018
+//---------------------------------------------------------------------------------------
+TEST(BeFileNameTests, IsEquivalentTo)
+    {
+#if defined (_WIN32)
+    WCharCP PATH_1 = L"C:\\dir1\\dir2\\..\\test.txt";
+#else
+    WCharCP PATH_1 = L"/dir1/dir2/../test.txt";
+#endif
+
+    BeFileName path1(PATH_1);
+    EXPECT_FALSE(path1.Equals(PATH_1));         // relative path should have been mutated
+    EXPECT_TRUE(path1.IsEquivalentTo(PATH_1));  // should perform the same mutation before comparing
+    }
