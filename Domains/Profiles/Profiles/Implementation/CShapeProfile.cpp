@@ -24,14 +24,14 @@ CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pN
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 CShapeProfile::CreateParams::CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-    double webThickness, double filletRadius, double edgeRadius, double flangeSlope)
+    double webThickness, double filletRadius, double flangeEdgeRadius, double flangeSlope)
     : T_Super (model, QueryClassId (model.GetDgnDb()), pName)
     , flangeWidth (flangeWidth)
     , depth (depth)
     , flangeThickness (flangeThickness)
     , webThickness (webThickness)
     , filletRadius (filletRadius)
-    , edgeRadius (edgeRadius)
+    , flangeEdgeRadius (flangeEdgeRadius)
     , flangeSlope (flangeSlope)
     {}
 
@@ -49,7 +49,7 @@ CShapeProfile::CShapeProfile (CreateParams const& params)
     SetFlangeThickness (params.flangeThickness);
     SetWebThickness (params.webThickness);
     SetFilletRadius (params.filletRadius);
-    SetEdgeRadius (params.edgeRadius);
+    SetFlangeEdgeRadius (params.flangeEdgeRadius);
     SetFlangeSlope (params.flangeSlope);
     }
 
@@ -93,9 +93,9 @@ BentleyStatus CShapeProfile::_Validate() const
     if (!isValidFilletRadius)
         return BSIERROR;
 
-    bool const isValidEdgeRadius = std::isfinite (GetEdgeRadius()) && GetEdgeRadius() >= 0.0
-                                   && GetEdgeRadius() <= std::min (innerFlangeFaceWidth, halfFlangeThickness);
-    if (!isValidEdgeRadius)
+    bool const isFlangeValidEdgeRadius = std::isfinite (GetFlangeEdgeRadius()) && GetFlangeEdgeRadius() >= 0.0
+                                         && GetFlangeEdgeRadius() <= std::min (innerFlangeFaceWidth, halfFlangeThickness);
+    if (!isFlangeValidEdgeRadius)
         return BSIERROR;
 
     return BSISUCCESS;
@@ -184,17 +184,17 @@ void CShapeProfile::SetFilletRadius (double val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-double CShapeProfile::GetEdgeRadius() const
+double CShapeProfile::GetFlangeEdgeRadius() const
     {
-    return GetPropertyValueDouble (PRF_PROP_CShapeProfile_EdgeRadius);
+    return GetPropertyValueDouble (PRF_PROP_CShapeProfile_FlangeEdgeRadius);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     10/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CShapeProfile::SetEdgeRadius (double val)
+void CShapeProfile::SetFlangeEdgeRadius (double val)
     {
-    SetPropertyValue (PRF_PROP_CShapeProfile_EdgeRadius, ECN::ECValue (val));
+    SetPropertyValue (PRF_PROP_CShapeProfile_FlangeEdgeRadius, ECN::ECValue (val));
     }
 
 /*---------------------------------------------------------------------------------**//**

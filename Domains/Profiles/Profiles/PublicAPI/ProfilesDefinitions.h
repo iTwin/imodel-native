@@ -104,7 +104,7 @@ END_BENTLEY_PROFILES_NAMESPACE
 #define PRF_PROP_CShapeProfile_FlangeThickness                                   "FlangeThickness"
 #define PRF_PROP_CShapeProfile_WebThickness                                      "WebThickness"
 #define PRF_PROP_CShapeProfile_FilletRadius                                      "FilletRadius"
-#define PRF_PROP_CShapeProfile_EdgeRadius                                        "EdgeRadius"
+#define PRF_PROP_CShapeProfile_FlangeEdgeRadius                                  "FlangeEdgeRadius"
 #define PRF_PROP_CShapeProfile_FlangeSlope                                       "FlangeSlope"
 #define PRF_PROP_CapsuleProfile_Width                                            "Width"
 #define PRF_PROP_CapsuleProfile_Depth                                            "Depth"

@@ -30,7 +30,7 @@ public:
     public:
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName);
         PROFILES_EXPORT explicit CreateParams (Dgn::DgnModel const& model, Utf8CP pName, double flangeWidth, double depth, double flangeThickness,
-            double webThickness, double filletRadius = 0.0, double edgeRadius = 0.0, double flangeSlope = 0.0);
+            double webThickness, double filletRadius = 0.0, double flangeEdgeRadius = 0.0, double flangeSlope = 0.0);
 
     public:
         //! Required properties
@@ -41,7 +41,7 @@ public:
 
         //! Optional properties
         double filletRadius = 0.0;
-        double edgeRadius = 0.0;
+        double flangeEdgeRadius = 0.0;
         double flangeSlope = 0.0;
         };
 
@@ -72,8 +72,8 @@ public:
     PROFILES_EXPORT double GetFilletRadius() const;
     PROFILES_EXPORT void SetFilletRadius (double val);
 
-    PROFILES_EXPORT double GetEdgeRadius() const;
-    PROFILES_EXPORT void SetEdgeRadius (double val);
+    PROFILES_EXPORT double GetFlangeEdgeRadius() const;
+    PROFILES_EXPORT void SetFlangeEdgeRadius (double val);
 
     PROFILES_EXPORT double GetFlangeSlope() const;
     PROFILES_EXPORT void SetFlangeSlope (double val);

@@ -119,7 +119,7 @@ TEST_F (CShapeProfileTestCase, GetProperties_ProfileInstance_ValidProperties)
     EXPECT_EQ (3.0, profilePtr->GetFlangeThickness());
     EXPECT_EQ (4.0, profilePtr->GetWebThickness());
     EXPECT_EQ (5.0, profilePtr->GetFilletRadius());
-    EXPECT_EQ (6.0, profilePtr->GetEdgeRadius());
+    EXPECT_EQ (6.0, profilePtr->GetFlangeEdgeRadius());
     EXPECT_EQ (7.0, profilePtr->GetFlangeSlope());
     }
 
@@ -139,7 +139,7 @@ TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     profilePtr->SetFlangeThickness (1.0);
     profilePtr->SetWebThickness (1.0);
     profilePtr->SetFilletRadius (1.0);
-    profilePtr->SetEdgeRadius (1.0);
+    profilePtr->SetFlangeEdgeRadius (1.0);
     profilePtr->SetFlangeSlope (1.0);
 
     EXPECT_EQ ("C", profilePtr->GetName());
@@ -148,7 +148,7 @@ TEST_F (CShapeProfileTestCase, SetProperties_ProfileInstance_ValidProperties)
     EXPECT_EQ (1.0, profilePtr->GetFlangeThickness());
     EXPECT_EQ (1.0, profilePtr->GetWebThickness());
     EXPECT_EQ (1.0, profilePtr->GetFilletRadius());
-    EXPECT_EQ (1.0, profilePtr->GetEdgeRadius());
+    EXPECT_EQ (1.0, profilePtr->GetFlangeEdgeRadius());
     EXPECT_EQ (1.0, profilePtr->GetFlangeSlope());
     }
 
@@ -348,29 +348,29 @@ TEST_F (CShapeProfileTestCase, Insert_VariousFilletRadiusAndNonZeroFlangeSlope_C
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                     11/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (CShapeProfileTestCase, Insert_VariousEdgeRadius_CorrectInsertResult)
+TEST_F (CShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResult)
     {
     CreateParams params (GetModel(), "C", 10.0, 10.0, 1.0, 1.0, 0.0, INFINITY);
 
-    ExpectParameterToBeFiniteAndPositive (params, params.edgeRadius, "EdgeRadius", true);
+    ExpectParameterToBeFiniteAndPositive (params, params.flangeEdgeRadius, "EdgeRadius", true);
 
-    params.edgeRadius = 0.5;
+    params.flangeEdgeRadius = 0.5;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
 
-    params.edgeRadius = nextafter<double, double> (0.5, INFINITY);
+    params.flangeEdgeRadius = nextafter<double, double> (0.5, INFINITY);
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
 
     params.flangeThickness = 4.0;
-    params.edgeRadius = 2.0;
+    params.flangeEdgeRadius = 2.0;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
 
     params.webThickness = 9.0;
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to inner flange face length.";
 
-    params.edgeRadius = 1.0;
+    params.flangeEdgeRadius = 1.0;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to inner flange face length.";
 
-    params.edgeRadius = nextafter<double, double> (1.0, INFINITY);
+    params.flangeEdgeRadius = nextafter<double, double> (1.0, INFINITY);
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to inner flange face length.";
     }
 
