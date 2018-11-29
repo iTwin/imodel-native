@@ -364,11 +364,11 @@ TEST_F (CShapeProfileTestCase, Insert_VariousFlangeEdgeRadius_CorrectInsertResul
     params.flangeEdgeRadius = 2.0;
     EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of the flange thickness.";
 
-    params.webThickness = 9.0;
+    params.webThickness = 8.0;
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to inner flange face length.";
 
     params.flangeEdgeRadius = 1.0;
-    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to inner flange face length.";
+    EXPECT_SUCCESS_Insert (params) << "Edge radius should be less or equal to half of inner flange face length.";
 
     params.flangeEdgeRadius = nextafter<double, double> (1.0, INFINITY);
     EXPECT_FAIL_Insert (params) << "Edge radius should be less or equal to inner flange face length.";
