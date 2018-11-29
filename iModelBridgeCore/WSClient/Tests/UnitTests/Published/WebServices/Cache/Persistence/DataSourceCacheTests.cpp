@@ -716,8 +716,9 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_NullSchemaPassed_Error)
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate)
+TEST_F(DataSourceCacheTests, UpdateSchemas_SchemaChangeListenerRegisteredAndSchemaPassed_CallsListenerBeforeAndAfterSchemaUpdate_KnownIssue)
     {
     MockECDbSchemaChangeListener listener;
     auto cache = GetTestCache();
@@ -4152,8 +4153,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolder_ParentDoesNotHa
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults)
+TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsRemoved_RemovesResults_KnownIssue)
     {
     auto cache = GetTestCache();
     CachedResponseKey key(cache->FindOrCreateRoot("Parent"), "TestQuery", cache->FindOrCreateRoot("Holder"));
@@ -4170,8 +4172,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_KeyHasDifferentHolderAndThenParentIsR
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted)
+TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndParentRootRemoved_QueryResultsAndParentDeleted_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7466,8 +7469,9 @@ TEST_F(DataSourceCacheTests, FindInstance_ECInstanceKeyAndChangeDeleted_ValidObj
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey)
+TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_ReturnsInvalidKey_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7482,8 +7486,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoRelationshipWithSuchEnds_Returns
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey)
+TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_ReturnsRelationshipKey_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7505,8 +7510,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_RelationshipWithSuchEndsExists_Ret
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId)
+TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_ReturnsEmptyObjectId_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7521,8 +7527,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_NoCachedRelationshipWithSuchKey_Re
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId)
+TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRelationshipObjectId_KnownIssue)
     {
     auto cache = GetTestCache();
 
@@ -7539,8 +7546,9 @@ TEST_F(DataSourceCacheTests, FindRelationship_CachedRelationshipExists_ReturnsRe
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds)
+TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInstancesLinked_ReturnsOnlyCachedInstanceIds_KnownIssue)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"}));
@@ -7562,8 +7570,9 @@ TEST_F(DataSourceCacheTests, ReadInstancesConnectedToRootMap_DifferentClassInsta
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds)
+TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLinked_ReturnsIds_KnownIssue)
     {
     auto cache = GetTestCache();
     ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("Foo", {"TestSchema.TestClass", "A"}));
@@ -7584,8 +7593,9 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLi
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_IvalidInstance_Error)
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_IvalidInstance_Error_KnownIssue)
     {
     auto cache = GetTestCache();
     ECInstanceKeyMultiMap map;
@@ -8247,8 +8257,9 @@ TEST_F(DataSourceCacheTests, RemoveTemporaryResponsesByPrefix_ResponseWithAccess
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesResponses)
+TEST_F(DataSourceCacheTests, RemoveResponses_ResponsesWithSameName_RemovesResponses_KnownIssue)
     {
     auto cache = GetTestCache();
     CachedResponseKey responseKey1(cache->FindOrCreateRoot("A"), "Test");
@@ -8322,8 +8333,9 @@ TEST_F(DataSourceCacheTests, RemoveResponsesByPrefix_ResponseContainingButNotSta
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
+* TFS#972319 - Rarely Fails to cleanup temporary testing files
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine)
+TEST_F(DataSourceCacheTests, GetExtendedData_UpdatedDataForObject_WorksFine_KnownIssue)
     {
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache);

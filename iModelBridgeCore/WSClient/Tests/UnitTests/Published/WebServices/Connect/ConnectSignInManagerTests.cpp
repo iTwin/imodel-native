@@ -82,8 +82,9 @@ TEST_F(ConnectSignInManagerTests, CheckAndUpdateToken_AfterSignInAndTimeoutIsLar
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2017
+* TFS#821998 - Asynchronous task issue
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectSignInManagerTests, CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken)
+TEST_F(ConnectSignInManagerTests, CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_RequestsNewToken_KnownIssue)
     {
     SamlTokenPtr token = StubSamlToken();
     auto imsClient = std::make_shared<MockImsClient>();
@@ -186,8 +187,9 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingD
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
+* TFS#972541 - Asynchronous task issue
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent)
+TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent_KnownIssue)
     {
     auto imsClient = std::make_shared<MockImsClient>();
     auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);

@@ -3235,6 +3235,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                    02/18
+* TFS#866928 - Server side issue. Jobs automatically executes the redirected request
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success_KnownIssue)
     {
