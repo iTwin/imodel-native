@@ -175,10 +175,7 @@ void Converter::RegisterForeignFileTypes (BentleyApi::BeFileNameCR v8dir, Bentle
     if (nullptr == filetypeInstance)
         return;
 
-    // While a DWG file can have any file extension, .dwg & .dxf are most commonly used and are worth of a seperate entry.
-    filetypeInstance->AddSupportedExtension ("dxf");
-    DgnV8Api::DgnFileTypeRegistry::AddFileType (filetypeInstance);
-
+    DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::DXF, "dxf", "DwgDgnIO2018.dll", v8dir, &realdwgDir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::ThreeDS, "3ds", "3dsfileioImp.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::OBJ, "obj", "objfileioImp.dll", v8dir));
     DgnV8Api::DgnFileTypeRegistry::AddFileType (new V8ForeignFileType(DgnV8Api::DgnFileFormatType::SKP, "skp", "skpfileioImp.dll", v8dir));
