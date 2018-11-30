@@ -169,6 +169,7 @@ static bool isCodeValueInList(std::vector<DgnElementCPtr> const& elems, BentleyA
 struct MultiBridgeTests : public ConverterTestBaseFixture
     {
     void RunBridge(DefinitionModelIds&, WCharCP bridgeName, MultiBridgeTestDocumentAccessor&, bool isFirstTime);
+    void DoMergeDefinitions(bool mergeDefinitions);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,9 +258,9 @@ TEST_F(MultiBridgeTests, FileSpecificDefinitions)
 * such as Categories in the dictionary model with no dups, merging by name.
 * @bsimethod                                    Sam.Wilson                      05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MultiBridgeTests, MergedDefinitions)
+void MultiBridgeTests::DoMergeDefinitions(bool mergeDefinitions)
     {
-    LineUpFiles(L"MergedDefinitions.bim", L"master3d.dgn", false);
+    LineUpFiles(WPrintfString(L"MergedDefinitions%d.bim", mergeDefinitions).c_str(), L"master3d.dgn", false);
     BentleyApi::BeFileName master1 = m_v8FileName;
     BentleyApi::BeFileName master2;
     MakeWritableCopyOf(master2, GetInputFileName(L"master3d.dgn"), L"master3d_2.dgn");
@@ -277,7 +278,7 @@ TEST_F(MultiBridgeTests, MergedDefinitions)
     docaccessor.m_assignments[L"r"].push_back(ref1);
     docaccessor.m_assignments[L"r"].push_back(ref2);
 
-    m_params.SetMergeDefinitions(true);
+    m_params.SetMergeDefinitions(mergeDefinitions);
 
     m_v8FileName = master1;
     DefinitionModelIds m1Defs, r1Defs;
@@ -299,20 +300,31 @@ TEST_F(MultiBridgeTests, MergedDefinitions)
     getElementsInModel(m2Categories, *db, m2Defs.m_definitionModelId, "bis.Category");
     getElementsInModel(r2Categories, *db, r2Defs.m_definitionModelId, "bis.Category");
 
-    EXPECT_TRUE (isCodeValueInList(commonCats,  "MasterLevel"))   << "Levels should be merged by name into the dictionary model";
-    EXPECT_FALSE(isCodeValueInList(m1Categories, "MasterLevel"));
-    EXPECT_FALSE(isCodeValueInList(r1Categories, "MasterLevel"));
-    EXPECT_FALSE(isCodeValueInList(m2Categories, "MasterLevel"));
-    EXPECT_FALSE(isCodeValueInList(r2Categories, "MasterLevel"));
-    EXPECT_TRUE (isCodeValueInList(commonCats,  "ReferenceLevel"))<< "Levels should be merged by name into the dictionary model";
-    EXPECT_FALSE(isCodeValueInList(r1Categories, "ReferenceLevel"));
-    EXPECT_FALSE(isCodeValueInList(m2Categories, "ReferenceLevel"));
-    EXPECT_FALSE(isCodeValueInList(r2Categories, "ReferenceLevel"));
-    EXPECT_FALSE(isCodeValueInList(m1Categories, "ReferenceLevel"));
+    EXPECT_EQ(mergeDefinitions, isCodeValueInList(commonCats,  "MasterLevel"))   << "Levels should be merged by name into the dictionary model";
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(m1Categories, "MasterLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(r1Categories, "MasterLevel"));
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(m2Categories, "MasterLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(r2Categories, "MasterLevel"));
+    EXPECT_EQ(mergeDefinitions, isCodeValueInList(commonCats,  "ReferenceLevel"))<< "Levels should be merged by name into the dictionary model";
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(r1Categories, "ReferenceLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(m2Categories, "ReferenceLevel"));
+    EXPECT_EQ(!mergeDefinitions, isCodeValueInList(r2Categories, "ReferenceLevel"));
+    EXPECT_EQ(false,             isCodeValueInList(m1Categories, "ReferenceLevel"));
     EXPECT_TRUE (isCodeValueInList(m1Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
     EXPECT_TRUE (isCodeValueInList(r1Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
     EXPECT_TRUE (isCodeValueInList(m2Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
     EXPECT_TRUE (isCodeValueInList(r2Categories, "Uncategorized")) << "Each bridge creates its own private Uncategorized Category";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This test verifies that multiple bridges will create a common set of definitions 
+* such as Categories in the dictionary model with no dups, merging by name.
+* @bsimethod                                    Sam.Wilson                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MultiBridgeTests, MergedDefinitions)
+    {
+    DoMergeDefinitions(true);
+    DoMergeDefinitions(false);
     }
 
 static void attach(BentleyApi::BeFileNameCR masterFileName, DgnV8Api::ModelId masterModelId, BentleyApi::BeFileNameCR refFileName, WCharCP refModelName)
