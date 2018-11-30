@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageResize.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -225,10 +225,7 @@ void ExtractLineSquetch(int32_t *pBuf, Byte* pOutput, int scale)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SwapOutputBuffers()
     {
-    bvector<int32_t>        temp(m_oBuf1);
-
-    m_oBuf1 = m_oBuf2;
-    m_oBuf2 = temp;
+    m_oBuf1.swap(m_oBuf2);
     }
 
 /*---------------------------------------------------------------------------------**//**
