@@ -114,6 +114,8 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
         m_lastCommand = Command::Link;
     else if (args[0].EqualsI("Unlink"))
         m_lastCommand = Command::Unlink;
+    else if (args[0].EqualsI("Migrate"))
+        m_lastCommand = Command::Migrate;
     else if (args[0].EqualsI("CreateRD"))
         m_lastCommand = Command::CreateRD;
     else
@@ -185,6 +187,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::CreateRD, &RealityDataConsole::CreateRD);
     m_functionMap.Insert(Command::Link, &RealityDataConsole::Link);
     m_functionMap.Insert(Command::Unlink, &RealityDataConsole::Unlink);
+    m_functionMap.Insert(Command::Migrate, &RealityDataConsole::Migrate);
 
     //commands that should never occur, within Run()
     m_functionMap.Insert(Command::Quit, &RealityDataConsole::DummyFunction);
@@ -2275,6 +2278,43 @@ void RealityDataConsole::Unlink()
         DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
     else
         Relationships();
+    }
+
+void RealityDataConsole::Migrate()
+    {
+    DisplayInfo("This Command will give all entries from one user to another\n", DisplayOption::Tip);
+    DisplayInfo("If this isn't what you want, use command \"Cancel\" at any time to back out\n\n", DisplayOption::Tip);
+    DisplayInfo("Please enter the name of the owner\n ?", DisplayOption::Question);
+
+    InterpretCommand();
+    if (m_lastCommand == Command::Cancel)
+        return;
+
+    Utf8String formerOwner = m_ownerFilter;
+    m_ownerFilter = m_lastInput;
+    ListRoots();
+    m_ownerFilter = formerOwner;
+
+    DisplayInfo("\nMigrating all entries listed above\n\n", DisplayOption::Tip);
+    DisplayInfo("Please enter the name of the recipient\n ?", DisplayOption::Question);
+
+    InterpretCommand();
+    if (m_lastCommand == Command::Cancel)
+        return;
+
+    Utf8String propertyString = Utf8PrintfString("\"OwnedBy\" : \"%s\"", m_lastInput.c_str());
+    
+    for(size_t i = 0; i < m_serverNodes.size(); ++i)
+        {
+        RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_serverNodes[0].GetRootId(), propertyString);
+
+        RawServerResponse changeResponse = RawServerResponse();
+        Utf8String response = RealityDataService::Request(changeReq, changeResponse);
+
+        Json::Value instances(Json::objectValue);
+        if ((changeResponse.status != RequestStatus::OK) || !Json::Reader::Parse(changeResponse.body, instances) || instances.isMember("errorMessage"))
+            DisplayInfo(instances["errorMessage"].asString(), DisplayOption::Error);
+        }
     }
 
 void RealityDataConsole::InputError()

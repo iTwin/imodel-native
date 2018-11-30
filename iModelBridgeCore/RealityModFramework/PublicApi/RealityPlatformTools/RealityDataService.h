@@ -17,7 +17,8 @@
 #include <Bentley/BeFilename.h>
 #include <Bentley/DateTime.h>
 
-#define CHUNK_SIZE                  (4*1024*1024) //4Mb 
+#define UL_CHUNK_SIZE                  (4*1024*1024) //4Mb 
+#define DL_CHUNK_SIZE                  (15*1024*1024) //15Mb
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 //=====================================================================================
@@ -1139,13 +1140,7 @@ struct RealityDataServiceDownload : public RealityDataServiceTransfer
     REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(BeFileName targetLocation, Utf8String serverId, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
 
     REALITYDATAPLATFORM_EXPORT RealityDataServiceDownload(Utf8String serverId, bvector<RealityDataFileTransfer*> downloadList, RealityDataServiceTransfer_StatusCallBack pi_func = nullptr, Utf8String proxyUrl = "", Utf8String proxyCreds = "");
-
-    REALITYDATAPLATFORM_EXPORT virtual void SetProgressStep(double step) override 
-        { 
-        m_progressThreshold = m_progressStep = step; 
-        m_fullTransferSize = (uint64_t) (m_filesToTransfer.size() * (1.0 / m_progressStep));
-        }
-
+    
 private:
 
     void DownloadFullRepo(BeFileName targetLocation, Utf8String id);

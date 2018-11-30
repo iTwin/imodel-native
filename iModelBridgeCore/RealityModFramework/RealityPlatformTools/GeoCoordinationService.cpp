@@ -335,6 +335,26 @@ void PreparedPackageRequest::_PrepareHttpRequestStringAndPayload() const
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              09/2018
+//=====================================================================================
+void LastPackageRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    m_serverName = GeoCoordinationService::GetServerName();
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s/PreparedPackage?last=true", GeoCoordinationService::GetWSGProtocol().c_str(), GeoCoordinationService::GetRepoName().c_str(), GeoCoordinationService::GetSchemaName().c_str()));
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+void PreparedPackagesRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    m_serverName = GeoCoordinationService::GetServerName();
+    WSGURL::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append(Utf8PrintfString("v%s/Repositories/%s/%s/PreparedPackage", GeoCoordinationService::GetWSGProtocol().c_str(), GeoCoordinationService::GetRepoName().c_str(), GeoCoordinationService::GetSchemaName().c_str()));
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              03/2017
 //=====================================================================================
 DownloadReportUploadRequest::DownloadReportUploadRequest(Utf8StringCR guid, Utf8StringCR identifier, BeFileName report)
@@ -560,6 +580,51 @@ void GeoCoordinationService::Request(const PreparedPackageRequest& request, BeFi
         }
     else
         rawResponse.status = RequestStatus::OK;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+Utf8String GeoCoordinationService::Request(const LastPackageRequest& request, RawServerResponse& rawResponse)
+    {
+    rawResponse = BasicRequest(static_cast<const GeoCoordinationServiceRequest*>(&request));
+
+    Utf8String lastName = "";
+    Json::Value instances(Json::objectValue);
+    Json::Reader::Parse(rawResponse.body, instances);
+
+    if (rawResponse.status == RequestStatus::BADREQ || !instances["instances"][0].isMember("properties") || !instances["instances"][0]["properties"].isMember("Name"))
+        rawResponse.status = RequestStatus::BADREQ;
+    else
+        lastName = instances["instances"][0]["properties"]["Name"].asCString();
+
+    return lastName;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              03/2017
+//=====================================================================================
+bvector<Utf8String> GeoCoordinationService::Request(const PreparedPackagesRequest& request, RawServerResponse& rawResponse)
+    {
+    /*WSGRequest::GetInstance().SetCertificatePath(GeoCoordinationService::GetCertificatePath());
+    BeFile file;
+    if (file.Create(filename.GetNameUtf8().c_str(), true) != BeFileStatus::Success)
+        {
+        s_errorCallback("PreparedPackageRequest failed to create file at provided location", rawResponse);
+        return;
+        }
+
+    WSGRequest::GetInstance().PerformRequest(request, rawResponse, GeoCoordinationService::GetVerifyPeer(), &file);
+
+    rawResponse.status = RequestStatus::OK;
+    if (rawResponse.toolCode != 0)
+        {
+        rawResponse.status = RequestStatus::BADREQ;
+        s_errorCallback("Package download failed with response", rawResponse);
+        }
+    else
+        rawResponse.status = RequestStatus::OK;*/
+    return bvector<Utf8String>();
     }
 
 //=====================================================================================
