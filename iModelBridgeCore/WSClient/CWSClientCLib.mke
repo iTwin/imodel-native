@@ -1,0 +1,66 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: CWSClientCLib.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# this is only used if compiling for the WinRT target.
+ENABLE_CPP_CX_EXTENSIONS    = 1
+
+%include mdl.mki
+
+CompileOptionsMki           = $(_MakeFilePath)CWSClientCLibOptions.mki
+%include $(CompileOptionsMki)
+
+#--------------------------------------------------------------------------------------
+#   Building the ConnectWebServicesClientC library
+#--------------------------------------------------------------------------------------
+CWSClientCSourceDirectory       = $(_MakeFilePath)
+CWSClientCPublicApiDirectory    = $(_MakeFilePath)PublicAPI/WebServices/
+BuildContextLibsDirectory       = $(BuildContext)SubParts/Libs/
+
+o = $(OutputRootDir)build/WSClient/ConnectC/
+always:
+    !~@mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile
+#--------------------------------------------------------------------------------------
+dirToSearch = $(_MakeFilePath)PublicAPI/
+%include cincapnd.mki
+
+always:
+    @echo $(cDefs)
+
+%include ConnectC/ConnectC.mki
+
+%include MultiCppCompileGo.mki
+CWSClientCObjectList = $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   Link the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = ConnectWebServicesClientC
+DLM_OBJECT_FILES            = $(CWSClientCObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)CWSCCInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+# DgnClientFx library name
+_dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
+
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Bentley$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+
+%include $(sharedMki)LinkLibrary.mki

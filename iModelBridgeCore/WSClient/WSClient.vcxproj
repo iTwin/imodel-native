@@ -1,0 +1,609 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{90E274E0-6D7E-4D78-B592-0CD9CB9BEA52}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakePreprocessorDefinitions>__WSCLIENT_DLL_BUILD__;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient*</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache reb *WebServices* WSClient* -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI\;$(OutRoot)Winx64\Product\DgnClientSdk-Winx64\include\;$(IncludePath)</IncludePath>
+    <OutDir>$(OutRoot)\Winx64\build\VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <BuildLog>
+      <Path>$(OutDir)$(MSBuildProjectName).log</Path>
+    </BuildLog>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
+    <ClCompile Include="Azure\AzureError.cpp" />
+    <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp" />
+    <ClCompile Include="Azure\EventServiceClient.cpp" />
+    <ClCompile Include="Cache\BackgroundSyncNotifier.cpp" />
+    <ClCompile Include="Cache\CacheNavigationTask.cpp" />
+    <ClCompile Include="Cache\CachingDataSource.cpp" />
+    <ClCompile Include="Cache\CachingTaskBase.cpp" />
+    <ClCompile Include="Cache\ChangesGraph.cpp" />
+    <ClCompile Include="Cache\DownloadFilesTask.cpp" />
+    <ClCompile Include="Cache\Examples\CachingExample.cpp" />
+    <ClCompile Include="Cache\FileDownloadManager.cpp" />
+    <ClCompile Include="Cache\ICachingDataSource.cpp" />
+    <ClCompile Include="Cache\IQueryProvider.cpp" />
+    <ClCompile Include="Cache\NavigationCachingOptions.cpp" />
+    <ClCompile Include="Cache\Network\ResponseGuard.cpp" />
+    <ClCompile Include="Cache\Persistence\CachedObjectInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\CachedResponseKey.cpp" />
+    <ClCompile Include="Cache\Persistence\CacheEnvironment.cpp" />
+    <ClCompile Include="Cache\Persistence\CacheQueryHelper.cpp" />
+    <ClCompile Include="Cache\Persistence\ChangeManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Changes\ChangeInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Changes\ChangeInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\CacheSettings.cpp" />
+    <ClCompile Include="Cache\Persistence\Hierarchy\ExtendedDataDelegate.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\WSCacheState.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\SchemaContext.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\SchemaManager.cpp" />
+    <ClCompile Include="Cache\Persistence\DataReadOptions.cpp" />
+    <ClCompile Include="Cache\Persistence\DataSourceCache.cpp" />
+    <ClCompile Include="Cache\Persistence\Files\FileStorage.cpp" />
+    <ClCompile Include="Cache\Persistence\Files\FileInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Files\FileInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Hierarchy\HierarchyManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Hierarchy\RootManager.cpp" />
+    <ClCompile Include="Cache\Persistence\IChangeManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\InstanceCacheHelper.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\NavigationBaseManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\ObjectInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\ObjectInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\RelationshipInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\RelationshipInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\RepositoryInfoStore.cpp" />
+    <ClCompile Include="Cache\Persistence\Responses\CachedResponseInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Responses\CachedResponseManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\RawWSObjectsReader.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\Upgrader.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV21ToV23.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.cpp" />
+    <ClCompile Include="Cache\ServerQueryHelper.cpp" />
+    <ClCompile Include="Cache\SyncCachedDataTask.cpp" />
+    <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
+    <ClCompile Include="Cache\SyncCachedInstancesTask.cpp" />
+    <ClCompile Include="Cache\SyncLocalChangesTask.cpp" />
+    <ClCompile Include="Cache\SyncNotifier.cpp" />
+    <ClCompile Include="Cache\SyncOptions.cpp" />
+    <ClCompile Include="Cache\Transactions\BeSQLiteDbTransactionHandler.cpp" />
+    <ClCompile Include="Cache\Transactions\CacheTransaction.cpp" />
+    <ClCompile Include="Cache\Transactions\CacheTransactionManager.cpp" />
+    <ClCompile Include="Cache\Transactions\Transaction.cpp" />
+    <ClCompile Include="Cache\Util\ECCustomAttributeHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECDbAdapter.cpp" />
+    <ClCompile Include="Cache\Util\ECDbDebugInfo.cpp" />
+    <ClCompile Include="Cache\Util\ECDbHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECExpressionHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp" />
+    <ClCompile Include="Cache\Util\ECSqlStatementCache.cpp" />
+    <ClCompile Include="Cache\Util\ExtendedData.cpp" />
+    <ClCompile Include="Cache\Util\ExtendedDataAdapter.cpp" />
+    <ClCompile Include="Cache\Util\FileUtil.cpp" />
+    <ClCompile Include="Cache\Util\ISelectProvider.cpp" />
+    <ClCompile Include="Cache\Util\JsonDiff.cpp" />
+    <ClCompile Include="Cache\Util\JsonUtil.cpp" />
+    <ClCompile Include="Cache\Util\ObservableECDb.cpp" />
+    <ClCompile Include="Cache\Util\TempFile.cpp" />
+    <ClCompile Include="Cache\Util\ValueIncrementor.cpp" />
+    <ClCompile Include="Client\ChunkedUploadRequest.cpp" />
+    <ClCompile Include="Client\ClientConfiguration.cpp" />
+    <ClCompile Include="Client\ClientConnection.cpp" />
+    <ClCompile Include="Client\ClientInfo.cpp" />
+    <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV2Utils\ActivityLogger.cpp" />
+    <ClCompile Include="Client\RepositoryInfoProvider.cpp" />
+    <ClCompile Include="Client\WSJob.cpp" />
+    <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp" />
+    <ClCompile Include="Client\WSChangeset.cpp" />
+    <ClCompile Include="Configuration\BuddiClient.cpp" />
+    <ClCompile Include="Configuration\BuddiError.cpp" />
+    <ClCompile Include="Client\ActivityIdGenerator.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
+    <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
+    <ClCompile Include="ConnectC\CWSCC.cpp" />
+    <ClCompile Include="ConnectC\CWSCCBuffer.cpp" />
+    <ClCompile Include="ConnectC\CWSCCBufferGen.cpp" />
+    <ClCompile Include="ConnectC\CWSCCGen.cpp" />
+    <ClCompile Include="ConnectC\CWSCCGenBuffer.cpp" />
+    <ClCompile Include="ConnectC\CWSCCInternal.cpp" />
+    <ClCompile Include="ConnectC\IMSSearch\IMSSearch.cpp" />
+    <ClCompile Include="ConnectC\IMSSearch\IMSSearchBuffer.cpp" />
+    <ClCompile Include="Connect\ConnectionClientInterface.cpp" />
+    <ClCompile Include="Connect\IConnectSignInManager.cpp" />
+    <ClCompile Include="Connect\ImsClient.cpp" />
+    <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
+    <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
+    <ClCompile Include="Connect\ConnectSessionAuthenticationPersistence.cpp" />
+    <ClCompile Include="Connect\ConnectSignInManager.cpp" />
+    <ClCompile Include="Connect\ConnectTokenProvider.cpp" />
+    <ClCompile Include="Connect\DelegationTokenProvider.cpp" />
+    <ClCompile Include="Connect\EulaClient.cpp" />
+    <ClCompile Include="Connect\IdentityTokenProvider.cpp" />
+    <ClCompile Include="Connect\IdentityAuthenticationPersistence.cpp" />
+    <ClCompile Include="Connect\SamlToken.cpp" />
+    <ClCompile Include="iModelHubClient\BaseFileInfo.cpp" />
+    <ClCompile Include="iModelHubClient\BriefcaseInfo.cpp" />
+    <ClCompile Include="iModelHubClient\Briefcase.cpp" />
+    <ClCompile Include="iModelHubClient\ChunkedWSChangeset.cpp" />
+    <ClCompile Include="iModelHubClient\Client.cpp" />
+    <ClCompile Include="iModelHubClient\ClientHelper.cpp" />
+    <ClCompile Include="iModelHubClient\CodeAdmin.cpp" />
+    <ClCompile Include="iModelHubClient\ConflictsInfo.cpp" />
+    <ClCompile Include="iModelHubClient\EventsCommon\BaseEventManager.cpp" />
+    <ClCompile Include="iModelHubClient\Events\EventManager.cpp" />
+    <ClCompile Include="iModelHubClient\FileAccessKey.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\ChangeSetCreatedEvent.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\GlobalConnection.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\GlobalEventManager.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\GlobalEventParser.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\HardiModelDeleteEvent.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\iModelCreatedEvent.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\NamedVersionCreatedEvent.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalEvents\SoftiModelDeleteEvent.cpp" />
+    <ClCompile Include="iModelHubClient\GlobalRequestOptions.cpp" />
+    <ClCompile Include="iModelHubClient\iModelAdmin.cpp" />
+    <ClCompile Include="iModelHubClient\iModelManager.cpp" />
+    <ClCompile Include="iModelHubClient\iModelConnection.cpp" />
+    <ClCompile Include="iModelHubClient\BreakHelper.cpp" />
+    <ClCompile Include="iModelHubClient\ChangeSetInfo.cpp" />
+    <ClCompile Include="iModelHubClient\Events\EventCallbackManager.cpp" />
+    <ClCompile Include="iModelHubClient\ChangeSetCacheManager.cpp" />
+    <ClCompile Include="iModelHubClient\Events\CodeEvent.cpp" />
+    <ClCompile Include="iModelHubClient\Events\DeletedEvent.cpp" />
+    <ClCompile Include="iModelHubClient\Error.cpp" />
+    <ClCompile Include="iModelHubClient\Events\EventParser.cpp" />
+    <ClCompile Include="iModelHubClient\Events\LockEvent.cpp" />
+    <ClCompile Include="iModelHubClient\Events\ChangeSetPrePushEvent.cpp" />
+    <ClCompile Include="iModelHubClient\Events\ChangeSetPostPushEvent.cpp" />
+    <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp" />
+    <ClCompile Include="iModelHubClient\JsonFormatters\MultiCodeFormatter.cpp" />
+    <ClCompile Include="iModelHubClient\JsonFormatters\MultiLockFormatter.cpp" />
+    <ClCompile Include="iModelHubClient\MultiProgressCallbackHandler.cpp" />
+    <ClCompile Include="iModelHubClient\StatisticsInfo.cpp" />
+    <ClCompile Include="iModelHubClient\Storage\PendingChangeSetStorage.cpp" />
+    <ClCompile Include="iModelHubClient\ThumbnailsManager.cpp" />
+    <ClCompile Include="iModelHubClient\UserInfo.cpp" />
+    <ClCompile Include="iModelHubClient\UserInfoManager.cpp" />
+    <ClCompile Include="iModelHubClient\Utils.cpp" />
+    <ClCompile Include="iModelHubClient\FileInfo.cpp" />
+    <ClCompile Include="iModelHubClient\Logging.cpp" />
+    <ClCompile Include="iModelHubClient\iModelInfo.cpp" />
+    <ClCompile Include="iModelHubClient\VersionInfo.cpp" />
+    <ClCompile Include="iModelHubClient\VersionsManager.cpp" />
+    <ClCompile Include="Ims\SolrQuery.cpp" />
+    <ClCompile Include="Ims\SolrClient.cpp" />
+    <ClCompile Include="Licensing\UsageTrackingData.cpp" />
+    <ClCompile Include="Client\ObjectId.cpp" />
+    <ClCompile Include="Connect\Passport.cpp" />
+    <ClCompile Include="Client\Response\WSFileResponse.cpp" />
+    <ClCompile Include="Client\Response\WSObjectsReader.cpp" />
+    <ClCompile Include="Client\Response\WSObjectsReaderV2.cpp" />
+    <ClCompile Include="Client\Response\WSObjectsResponse.cpp" />
+    <ClCompile Include="Client\ServerInfoProvider.cpp" />
+    <ClCompile Include="Configuration\UrlProvider.cpp" />
+    <ClCompile Include="Licensing\UsageTracking.cpp" />
+    <ClCompile Include="Client\Utils.cpp" />
+    <ClCompile Include="Client\WebApi\WebApi.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV2.cpp" />
+    <ClCompile Include="Client\WSClient.cpp" />
+    <ClCompile Include="Client\WSError.cpp" />
+    <ClCompile Include="Client\WSInfo.cpp" />
+    <ClCompile Include="Client\WSQuery.cpp" />
+    <ClCompile Include="Client\WSRepository.cpp" />
+    <ClCompile Include="Client\WSRepositoryClient.cpp" />
+    <ClCompile Include="iModelHubClient\StatisticsManager.cpp" />
+    <ClCompile Include="Tests\iModelHubClient\Integration\GlobalEventsTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp" />
+    <ClCompile Include="FakeServer\MockIMHubHttpHandler.cpp" />
+    <ClCompile Include="FakeServer\RequestHandler.cpp" />
+    <ClCompile Include="FakeServer\FakeServer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Cache\CacheNavigationTask.h" />
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsReader.h" />
+    <ClInclude Include="Cache\Compatibility\SchemaChangeWSObjectsResponse.h" />
+    <ClInclude Include="Cache\Compatibility\Schemas.h" />
+    <ClInclude Include="Cache\FileDownloadManager.h" />
+    <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV21ToV23.h" />
+    <ClInclude Include="Client\WebApi\WebApiV2Utils\ActivityLogger.h" />
+    <ClInclude Include="Client\ActivityIdGenerator.h" />
+    <ClInclude Include="Client\RepositoryInfoProvider.h" />
+    <ClInclude Include="Cache\Logging.h" />
+    <ClInclude Include="Cache\CachingTaskBase.h" />
+    <ClInclude Include="Cache\ChangesGraph.h" />
+    <ClInclude Include="Cache\DownloadFilesTask.h" />
+    <ClInclude Include="Cache\Examples\CachingExample.h" />
+    <ClInclude Include="Cache\ICachingDataSource.xliff.h" />
+    <ClInclude Include="Cache\Network\ResponseGuard.h" />
+    <ClInclude Include="Cache\Persistence\Changes\ChangeInfo.h" />
+    <ClInclude Include="Cache\Persistence\Changes\ChangeInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\Core\CacheSchema.h" />
+    <ClInclude Include="Cache\Persistence\Core\CacheSettings.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\ExtendedDataDelegate.h" />
+    <ClInclude Include="Cache\Persistence\Core\WSCacheState.h" />
+    <ClInclude Include="Cache\Persistence\Core\ECDbFileInfoSchema.h" />
+    <ClInclude Include="Cache\Persistence\Core\SchemaContext.h" />
+    <ClInclude Include="Cache\Persistence\Core\SchemaManager.h" />
+    <ClInclude Include="Cache\Persistence\Core\Version.h" />
+    <ClInclude Include="Cache\Persistence\Files\FileStorage.h" />
+    <ClInclude Include="Cache\Persistence\Files\FileInfo.h" />
+    <ClInclude Include="Cache\Persistence\Files\FileInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\HierarchyManager.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\RootManager.h" />
+    <ClInclude Include="Cache\Persistence\Instances\CachedInstanceKey.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\CacheNodeKey.h" />
+    <ClInclude Include="Cache\Persistence\Instances\InstanceCacheHelper.h" />
+    <ClInclude Include="Cache\Persistence\Instances\NavigationBaseManager.h" />
+    <ClInclude Include="Cache\Persistence\Instances\ObjectInfo.h" />
+    <ClInclude Include="Cache\Persistence\Instances\ObjectInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\Instances\RelationshipInfo.h" />
+    <ClInclude Include="Cache\Persistence\Instances\RelationshipInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\RepositoryInfoStore.h" />
+    <ClInclude Include="Cache\Persistence\Responses\CachedResponseInfo.h" />
+    <ClInclude Include="Cache\Persistence\Responses\CachedResponseManager.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\RawWSObjectsReader.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\Upgrader.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderBase.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV12ToV13.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV7ToV9.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV9ToV10.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
+    <ClInclude Include="Cache\Schemas.h" />
+    <ClInclude Include="Client\WebApi\WebApiV2Utils\JobApi.h" />
+    <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
+    <ClInclude Include="ConnectC\CWSCCBuffer.h" />
+    <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
+    <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
+    <ClInclude Include="ConnectC\Logging.h" />
+    <ClInclude Include="Connect\ConnectionClientInterface.h" />
+    <ClInclude Include="Connect\ConnectSessionAuthenticationPersistence.h" />
+    <ClInclude Include="Connect\DelegationTokenProvider.h" />
+    <ClInclude Include="Connect\WrapperTokenProvider.h" />
+    <ClInclude Include="iModelHubClient\Error.xliff.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\FileManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\SecurityToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\SimpleConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\GlobalRequestOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h" />
+    <ClInclude Include="iModelHubClient\Events\EventManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventParser.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventSubscription.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalConnection.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\ChangeSetCreatedEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEvent.h" />
+    <ClInclude Include="iModelHubClient\JsonFormatters\MultiCodeFormatter.h" />
+    <ClInclude Include="iModelHubClient\JsonFormatters\MultiLockFormatter.h" />
+    <ClInclude Include="iModelHubClient\MultiProgressCallbackHandler.h" />
+    <ClInclude Include="iModelHubClient\Storage\PendingChangeSetStorage.h" />
+    <ClInclude Include="iModelHubClient\Utils.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSResponse.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectSignInManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ISecurityToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BaseFileInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChunkedWSChangeset.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ClientHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ConflictsInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\FileAccessKey.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ThumbnailsManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfoManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\CodeAdmin.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BreakHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BriefcaseInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelAdmin.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\CodeEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\DeletedEvent.h" />
+    <ClInclude Include="iModelHubClient\Events\EventCallbackManager.h" />
+    <ClInclude Include="iModelHubClient\FileLock.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\EventSubscription.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Result.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\EventParser.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\Event.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\LockEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\ChangeSetPostPushEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\ChangeSetPrePushEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\FileInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\VersionInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\VersionsManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureServiceBusSASDTO.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
+    <ClInclude Include="Cache\SessionInfo.h" />
+    <ClInclude Include="Cache\Util\StringHelper.h" />
+    <ClInclude Include="Cache\SyncCachedDataTask.h" />
+    <ClInclude Include="Cache\SyncCachedInstancesSeperatelyTask.h" />
+    <ClInclude Include="Cache\SyncCachedInstancesTask.h" />
+    <ClInclude Include="Cache\SyncLocalChangesTask.h" />
+    <ClInclude Include="Client\ClientConfiguration.h" />
+    <ClInclude Include="Client\ClientConnection.h" />
+    <ClInclude Include="Configuration\BuddiError.xliff.h" />
+    <ClInclude Include="ConnectC\CWSCCGenBuffer.h" />
+    <ClInclude Include="ConnectC\CWSCCInternal.h" />
+    <ClInclude Include="ConnectC\CWSCCPrivate.h" />
+    <ClInclude Include="ConnectC\WSLocalState.h" />
+    <ClInclude Include="iModelHubClient\DgnDbServerUtils.h" />
+    <ClInclude Include="iModelHubClient\Logging.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchBufferPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\HardiModelDeleteEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\iModelCreatedEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\NamedVersionCreatedEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\SoftiModelDeleteEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\Ims\SolrQuery.h" />
+    <ClInclude Include="PublicAPI\WebServices\Ims\SolrClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Briefcase.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Client.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelConnection.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Error.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Common.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\VersionEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\EventServiceClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\ICachingDataSource.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\IQueryProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\NavigationCachingOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CachedObjectInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CachedResponseKey.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CacheEnvironment.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CacheQueryHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\ChangeManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\DataReadOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\DataSourceCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\DataSourceCacheCommon.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IChangeManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IDataSourceCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IRepositoryInfoStore.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\ServerQueryHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\SyncOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandler.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\CacheTransaction.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\CacheTransactionManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\ICacheTransactionManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\ITransactionHandler.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\Transaction.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECCustomAttributeHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECDbAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECDbDebugInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECDbHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECExpressionHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECSqlAdapterCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECSqlStatementCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ExtendedData.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ExtendedDataAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\FileUtil.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\IECDbAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\IExtendedDataAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ISelectProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonDiff.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ObservableECDb.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ProgressFilter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\TempFile.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ValueIncrementor.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\WebServicesCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\ClientInfo.h" />
+    <ClInclude Include="Client\ClientInternal.h" />
+    <ClInclude Include="Connect\Connect.xliff.h" />
+    <ClInclude Include="Client\Logging.h" />
+    <ClInclude Include="Client\ServerInfoProvider.h" />
+    <ClInclude Include="Client\Utils.h" />
+    <ClInclude Include="Client\WebApi\WebApi.h" />
+    <ClInclude Include="Client\WebApi\WebApiV2.h" />
+    <ClInclude Include="Client\WSError.xliff.h" />
+    <ClInclude Include="Client\ChunkedUploadRequest.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSUploadResponse.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSChangeset.h" />
+    <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiError.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ImsClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectMessaging.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSessionAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\DelegationTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\EulaClient.h" />
+    <ClInclude Include="Connect\IdentityTokenProvider.h" />
+    <ClInclude Include="Connect\IdentityAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectAuthenticationPersistence.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectTokenProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IImsClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\ITokenStore.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\SamlToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTracking.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\FeatureTrackingData.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTrackingData.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\ObjectId.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSFileResponse.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReader.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV2.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsResponse.h" />
+    <ClInclude Include="PublicAPI\WebServices\Configuration\UrlProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Licensing\UsageTracking.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WebServicesClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSError.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSQuery.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSRepository.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\WSRepositoryClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.h" />
+    <ClInclude Include="PublicAPI\FakeServer\RequestHandler.h" />
+    <ClInclude Include="PublicAPI\FakeServer\FakeServer.h" />
+    <ClInclude Include="PublicAPI\FakeServer\MockIMHubHttpHandler.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheLegacySupportSchema.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.04.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.05.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.06.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.07.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.08.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.10.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Bentley_SP_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\FeatureTracking_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Issue_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.04.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectShare_Supplemental_ECDbMapping.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.01.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.04.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Bentley_SP_V3Conversion.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\eBAttributes_V3Conversion.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Policies_V3Conversion.01.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.02.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
+    <Xml Include="WSClient.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".hgignore" />
+    <None Include="Azure\Azure.mki" />
+    <None Include="CacheLib.mke" />
+    <None Include="CachePrewire.mke" />
+    <None Include="Cache\Cache.mki" />
+    <None Include="ClientLib.mke" />
+    <None Include="ClientLibCompileOptions.mki" />
+    <None Include="Client\Client.mki" />
+    <None Include="Configuration\Configuration.mki" />
+    <None Include="ConnectC\ConnectC.mki" />
+    <None Include="Connect\Connect.mki" />
+    <None Include="ClientPrewire.mke" />
+    <None Include="CacheSchemasDelivery.mke" />
+    <None Include="CWSClientCLib.mke" />
+    <None Include="CWSClientCLibOptions.mki" />
+    <None Include="CWSClientCPrewire.mke" />
+    <None Include="FakeServerLib.mke" />
+    <None Include="FakeServerPrewire.mke" />
+    <None Include="iModelHubClient.NuGetPackage.mke" />
+    <None Include="iModelHubClient.nuspec" />
+    <None Include="iModelHubClientLib.mke" />
+    <None Include="iModelHubClientPrewire.mke" />
+    <None Include="iModelHubClient\Client.mki" />
+    <None Include="iModelHubClient\DgnDbServerClient.mki" />
+    <None Include="iModelHubClient\xliffs.mke" />
+    <None Include="Ims\Ims.mki" />
+    <None Include="l10n-WSClient.mke" />
+    <None Include="Licensing\Licensing.mki" />
+    <None Include="Tests\UnitTests\WSClientTests.vcxproj" />
+    <None Include="UnZip.py" />
+    <None Include="WebServicesCache.NuGetPackage.mke" />
+    <None Include="WebServicesCache.nuspec" />
+    <None Include="WebServicesClient.NuGetPackage.mke" />
+    <None Include="WebServicesClient.nuspec" />
+    <None Include="WSClientCompatibilityTestTool.NuGetPackage.mke" />
+    <None Include="WSClientCompatibilityTestTool.nuspec" />
+    <None Include="xliffs.mke" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

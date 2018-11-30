@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>WebServicesCache</id>
+        <version>$version$</version>
+        <title>WebServicesCache</title>
+        <authors>Bentley Systems, Incorporated</authors>
+        <owners>Bentley Systems, Incorporated</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Bentley WebServicesCache library</description>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <language>en-US</language>
+        <dependencies>
+            <group>
+                <dependency id="WebServicesClient" version="[#DgnClientSdk_version#]" />
+                <dependency id="ECObjects" version="[#DgnClientSdk_version#]" />
+                <dependency id="BeSQLiteEC" version="[#DgnClientSdk_version#]" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="Delivery\WebServicesCacheM02.dll"                          target="lib\native\WebServicesCacheM02.dll" />
+        <file src="Delivery\WebServicesCache.lib"                             target="lib\native\WebServicesCache.lib" />
+
+        <file src="Delivery\ECSchemas\WSClient\Cache\*"                       target="Assets\ECSchemas\WSClient\Cache" />
+        <file src="Delivery\ECSchemas\WSClient\Cache\Support\Mapping\*"       target="Assets\ECSchemas\WSClient\Cache\Support\Mapping" />
+        <file src="Delivery\ECSchemas\WSClient\Cache\Support\V3Conversion\*"  target="Assets\ECSchemas\WSClient\Cache\Support\V3Conversion" />
+    </files>
+</package>
