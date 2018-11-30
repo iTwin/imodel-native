@@ -1,13 +1,13 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: RealityPlatformToolsComplete/RealityPlatformTools.mke $
+#     $Source: RealityPlatformToolsNoCC/RealityPlatformToolsNoCC.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
-appName         = RealityPlatformTools
+appName         = RealityPlatformToolsNoCC
 baseDir         = $(SrcRoot)RealityModFramework/RealityPlatformTools/
 curlDir         = $(SrcRoot)RealityModFramework/RealityPlatformToolsCurl/
 childDir        = $(_MakeFilePath)

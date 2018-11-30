@@ -47,6 +47,18 @@
         </Bindings>
     </Part>
     
+    <Part Name="RealityPlatformToolsNoCC" BentleyBuildMakeFile="RealityPlatformToolsNoCC\RealityPlatformToolsNoCC.mke" OnlyPlatforms="x64, androidarm7a" ApiNumber="B02">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="RealityPlatform" />
+        <SubPart PartName="Curl"                       PartFile="Libsrc-Nugets"             Repository="bsicommon"/>
+        <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)RealityPlatformToolsNoCC$(stlibext)</Libs>
+            <Assemblies>delivery/$(shlibprefix)RealityPlatformToolsNoCC$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
@@ -428,6 +440,7 @@
         <SubPart PartName="RealityAdmin-Applications"/>
         <SubPart PartName="RealityModFrameworkTested"/>
         <SubPart PartName="RealityPlatformToolsLight"/>
+        <SubPart PartName="RealityPlatformToolsNoCC"/>
       <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
