@@ -26,7 +26,7 @@
                 <RegistryValue Name="BridgeLibraryPath" Type="string" Value="[INSTALLDIR]ORDBridge.dll" KeyPath="yes"/>
                 <RegistryValue Name="iModelFrameWorkExe" Type="string" Value="[INSTALLDIR]iModelBridgeFwk.exe"/>
                 <RegistryValue Name="IsPowerPlatformBased" Type="string" Value="false"/>
-                <RegistryValue Name="PublishORDToBimExe" Type="string" Value="[INSTALLDIR]PublishORDToBim.exe"/>
+                <RegistryValue Name="PublishORDToBimExe" Type="string" Value="[INSTALLDIR]PublishORDToBIM.exe"/>
               </RegistryKey>
             </Component>
         </Directory>
