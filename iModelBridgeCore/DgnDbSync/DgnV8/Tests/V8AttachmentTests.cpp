@@ -391,7 +391,7 @@ TEST_F(V8AttachmentTests, Attach3dm)
     LineUpFiles(L"rhino.ibim", L"Test3d.dgn", false);
     AttachForeignReferenceFile (L"HumanHead.3dm");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
-    CheckForeignReferenceOutput (83);
+    CheckForeignReferenceOutput (81);
     }
 
 /*---------------------------------------------------------------------------------**//**

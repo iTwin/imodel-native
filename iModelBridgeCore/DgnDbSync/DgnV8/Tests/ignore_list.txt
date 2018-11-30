@@ -19,3 +19,7 @@ MultiBridgeTests.Sandwich
     #d:\bsw\imodel02-hg\src\DgnDbSync\DgnV8\Tests\MultiBridgeTests.cpp(377): error:       Expected: 1
     #To be equal to: masterModels.size()
     #     Which is: 2
+
+# Nobody seems able to decide which magic numbers are correct - they keep
+# flipping back and forth
+ConverterTests.GCSMultiFilesReprojectImport
