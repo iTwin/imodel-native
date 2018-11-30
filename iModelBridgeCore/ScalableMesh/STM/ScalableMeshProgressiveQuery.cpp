@@ -1007,7 +1007,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         if (smNode->GetLevel() >= MAX_PRELOAD_OVERVIEW_LEVEL)
         {
             ScalableMeshCachedDisplayNode<DPoint3d>::Ptr smNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr));
-            if(smNode->LastClippingStateUpdateTimestamp() > dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr())->LastClippingStateUpdateTimestamp() || !smNodePtr->IsClippingUpToDate() || (smNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) && !smNodePtr->HasCorrectClipping(clipVisibilities)))
+            if(smNode->LastClippingStateUpdateTimestamp() > dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr())->LastClippingStateUpdateTimestamp())
             smNode->CollectClipIds(collectedClips);
         }
             if (!meshNodePtr->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate)
