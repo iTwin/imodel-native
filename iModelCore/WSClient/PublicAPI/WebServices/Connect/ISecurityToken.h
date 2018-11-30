@@ -9,13 +9,13 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
+#include <memory>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                julius.cepukenas    03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-typedef std::shared_ptr<struct ISecurityToken> ISecurityTokenPtr;
 struct ISecurityToken
     {
     public:
@@ -33,5 +33,6 @@ struct ISecurityToken
         //! Compare contents of two tokens for equality
         virtual bool operator==(const ISecurityToken& other) const = 0;
     };
+typedef std::shared_ptr<ISecurityToken> ISecurityTokenPtr;
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

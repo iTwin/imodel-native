@@ -14,7 +14,6 @@ ClientMkiSourceDir = $(ClientSourceDirectory)Client/
 #--------------------------------------------------------------------------------------
 ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        \
                     $(ClientMkiPublicApiDir)ObjectId.h                          \
-                    $(ClientMkiPublicApiDir)RequestOptions.h                    \
                     $(ClientMkiPublicApiDir)Response/WSResponse.h               \
                     $(ClientMkiPublicApiDir)Response/WSFileResponse.h           \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReader.h          \
@@ -29,6 +28,7 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiPublicApiDir)WSQuery.h                           \
                     $(ClientMkiPublicApiDir)WSRepository.h                      \
                     $(ClientMkiPublicApiDir)WSRepositoryClient.h                \
+                    $(ClientMkiSourceDir)ActivityIdGenerator.h                  \
                     $(ClientMkiSourceDir)ChunkedUploadRequest.h                 \
                     $(ClientMkiSourceDir)ClientConfiguration.h                  \
                     $(ClientMkiSourceDir)ClientConnection.h                     \
@@ -38,7 +38,8 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiSourceDir)Utils.h                                \
                     $(ClientMkiSourceDir)WebApi/WebApi.h                        \
                     $(ClientMkiSourceDir)WebApi/WebApiV2.h                      \
-                    $(ClientMkiSourceDir)WebApi/WebApiV2Utils/JobApi.h         \
+                    $(ClientMkiSourceDir)WebApi/WebApiV2Utils/ActivityLogger.h  \
+                    $(ClientMkiSourceDir)WebApi/WebApiV2Utils/JobApi.h          \
                     $(ClientMkiSourceDir)WSError.xliff.h                         
 
 #----------------------------------------------------------------------
@@ -71,9 +72,9 @@ $(o)ClientInfo$(oext)                       : $(ClientMkiSourceDir)ClientInfo.cp
 
 $(o)ObjectId$(oext)                         : $(ClientMkiSourceDir)ObjectId.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)RequestOptions$(oext)                   : $(ClientMkiSourceDir)RequestOptions.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
-
 $(o)RepositoryInfoProvider$(oext)           : $(ClientMkiSourceDir)RepositoryInfoProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ActivityIdGenerator$(oext)              : $(ClientMkiSourceDir)ActivityIdGenerator.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ServerInfoProvider$(oext)               : $(ClientMkiSourceDir)ServerInfoProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
@@ -106,5 +107,7 @@ $(o)WSObjectsResponse$(oext)                : $(ClientMkiSourceDir)Response/WSOb
 $(o)WebApi$(oext)                           : $(ClientMkiSourceDir)WebApi/WebApi.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WebApiV2$(oext)                         : $(ClientMkiSourceDir)WebApi/WebApiV2.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ActivityLogger$(oext)                   : $(ClientMkiSourceDir)WebApi/WebApiV2Utils/ActivityLogger.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)JobApi$(oext)                           : $(ClientMkiSourceDir)WebApi/WebApiV2Utils/JobApi.cpp $(ClientMkiHeaders) ${MultiCompileDepends}

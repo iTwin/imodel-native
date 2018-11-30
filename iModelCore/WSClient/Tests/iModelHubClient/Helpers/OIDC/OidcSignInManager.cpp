@@ -23,17 +23,21 @@ AsyncTaskPtr<OidcSignInResult> OidcSignInManager::SignInWithCredentials(Credenti
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OidcSignInManager::_CheckAndUpdateToken()
+AsyncTaskPtr<WSConnectVoidResult> OidcSignInManager::_CheckAndUpdateToken()
     {
     m_tokenProvider->GetToken();
+
+    return CreateCompletedAsyncTask(WSConnectVoidResult::Success());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Algirdas.Mikoliunas             08/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OidcSignInManager::_SignOut()
+AsyncTaskPtr<WSConnectVoidResult> OidcSignInManager::_SignOut()
     {
     m_tokenProvider = nullptr;
+
+    return CreateCompletedAsyncTask(WSConnectVoidResult::Success());
     }
 
 /*--------------------------------------------------------------------------------------+

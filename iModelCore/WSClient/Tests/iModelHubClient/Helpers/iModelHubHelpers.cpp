@@ -5,12 +5,14 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <OidcNativeClient/OidcNative.h>
 #include "iModelHubHelpers.h"
 #include "IntegrationTestsSettings.h"
 #include "TestsProgressCallback.h"
 #include "StubLocalState.h"
 #include "DgnPlatformHelpers.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
+#include <WebServices/Connect/SimpleConnectTokenProvider.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeStringUtilities.h>
 #include <BeHttp/ProxyHttpHandler.h>
@@ -19,11 +21,15 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_IMODELHUB
+using namespace OidcInterop;
+
+#define IMODELHUB_ClientId            "imodel-hub-integration-tests-2485"
+#define IMODELHUB_Scope               "openid profile email imodelhub"
 
 Utf8String GenerateErrorMessage(Error const& e)
     {
     Utf8String errorMessage;
-    errorMessage.Sprintf("\nError id: %d\nMessage: %s\nDescription: %s\n", (int) e.GetId(), e.GetMessage(), e.GetDescription());
+    errorMessage.Sprintf("\nError id: %d\nMessage: %s\nDescription: %s\n", (int) e.GetId(), e.GetMessage().c_str(), e.GetDescription().c_str());
     return errorMessage;
     }
 
@@ -53,15 +59,24 @@ namespace iModelHubHelpers
         }
 
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Algirdas.Mikoliunas             10/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Utf8String GenerateNewToken(CredentialsCR credentials)
+        { 
+        return OIDCNative::IssueToken(credentials.GetUsername().c_str(), credentials.GetPassword().c_str(), UrlProvider::Urls::IMSOpenID.Get().c_str(), IMODELHUB_ClientId, IMODELHUB_Scope);
+        }
+
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Algirdas.Mikoliunas             08/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
     void CreateOidcClient(ClientPtr& client, CredentialsCR credentials)
         {
-        AsyncError error;
-        auto signInManager = std::make_shared<OidcSignInManager>();
-        signInManager->SignInWithCredentials(credentials);
-        client = ClientHelper::GetInstance()->SignInWithManager(signInManager);
-        ASSERT_TRUE(client.IsValid()) << error.GetMessage().c_str();
+        auto securityToken = GenerateNewToken(credentials);
+        auto onUpdateToken = [=] { return CreateCompletedAsyncTask<Utf8String>(GenerateNewToken(credentials)); };
+        auto oidcTokenProvider = std::make_shared<SimpleConnectTokenProvider>(securityToken, onUpdateToken);
+
+        client = ClientHelper::CreateClient(oidcTokenProvider);
+        ASSERT_TRUE(client.IsValid());
         ASSERT_TRUE(!Utf8String::IsNullOrEmpty(client->GetServerUrl().c_str()));
         }
 

@@ -27,6 +27,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define HEADER_MasFileETag                 "Mas-File-ETag"
 #define HEADER_MasConnectionInfo           "Mas-Connection-Info"
 #define HEADER_MasFileAccessUrlType        "Mas-File-Access-Url-Type"
+#define HEADER_MasRequestId                "Mas-Request-Id"
+#define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
 #define HEADER_Location                    "Location"
 
 #define INSTANCE_PersistenceFileBackable   "Persistence.FileBackable"
@@ -285,9 +287,28 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithFileUploadIsNotS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Mantas.Smicius    09/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetInfo_WebApi27ResponseIsOkWithoutMaxUploadSize_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ServerVersion2688ResponseIsOkWithoutMaxUploadSize_ReturnsRepositoryInfoWithInvalidMaxUploadSize)
     {
-    TestGetMaxUploadSize(GetHandlerPtr(), {2, 7}, StubGetMaxUploadSizeResponseBody(0), 0);
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.8,Bentley-WSG/2.6.8.8"}};
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        // WSG with server version 2.6.8.8 does not support MaxUploadSize, but this mock is only to make test failed if code does not check server version
+        return StubHttpResponse(HttpStatus::OK, StubGetMaxUploadSizeResponseBody(rand(), INSTANCE_PersistenceStreamBackable));
+        });
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ(0, repository.GetMaxUploadSize());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -550,7 +571,7 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithSchemaNotFound_ReturnsS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SetRepositoryid_RepositoryId_RepositoryIdSet)
+TEST_F(WSRepositoryClientTests, GetPersistenceProviderId_SetWithCustom_RetursCustom)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -558,15 +579,27 @@ TEST_F(WSRepositoryClientTests, SetRepositoryid_RepositoryId_RepositoryIdSet)
     EXPECT_STREQ("id", client->Config().GetPersistenceProviderId().c_str());
     }
 
+#ifdef USE_GTEST
+struct WSRepositoryClientTests_RepositoryIds : TestWithParam<vector<Utf8CP>> {};
+INSTANTIATE_TEST_CASE_P(WithProviderId, WSRepositoryClientTests_RepositoryIds, ValuesIn(vector<vector<Utf8CP>>{
+    {"A--B", "A"},
+    {"A--B--C", "A"},
+    {"A--B-C-D-E", "A"}
+}));
+INSTANTIATE_TEST_CASE_P(NoProviderId, WSRepositoryClientTests_RepositoryIds, ValuesIn(vector<vector<Utf8CP>>{
+    {"Foo", ""},
+    {"Foo-Boo", ""}
+}));
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetRepositoryid_RepositoryIdNotSet_RepositoryIdIsPluginId)
+TEST_P(WSRepositoryClientTests_RepositoryIds, GetPersistenceProviderId_RepositoryIdNotSet_RepositoryIdIsPluginId)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testId--plugin", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    EXPECT_STREQ("testId", client->Config().GetPersistenceProviderId().c_str());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", GetParam()[0], StubClientInfo(), nullptr, nullptr);
+    EXPECT_STREQ(GetParam()[1], client->Config().GetPersistenceProviderId().c_str());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                 julius.cepukenas    01/2015
@@ -671,6 +704,74 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2AndResponseContai
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApi25_SendsRequestsWithoutMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi25());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue(HEADER_MasRequestId));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApi27_SendsRequestsWithMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_FALSE(Utf8String::IsNullOrEmpty(actualActivityId));
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_PerformedTwiceWithWebApi27_SendsAllRequestsWithDifferentMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    set<Utf8CP> requestIds;
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+    client->SendGetChildrenRequest(ObjectId())->GetResult();
+
+    auto uniqueRequestIds = requestIds.size();
+    EXPECT_EQ(2, uniqueRequestIds);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyObjectId_ErrorNotSupported)
@@ -693,8 +794,7 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2AndEmptyFilePath_Erro
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ExpectRequests(0);
 
     auto result = client->SendGetFileRequest(StubObjectId(), BeFileName())->GetResult();
     ASSERT_FALSE(result.IsSuccess());
@@ -862,6 +962,24 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequestForStream_WebApiV24_SendsCorre
     EXPECT_TRUE(response.IsSuccess());
 
     EXPECT_STREQ("TestResponseBody", SimpleReadByteStream(responseBody->GetByteStream()).c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetFileRequestForStream_WebApiV24AndNullptrResponseBody_Success)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, nullptr)->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1321,7 +1439,25 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV26)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV27)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV27_CapsWebApiToV27)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 7}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.7/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV28)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -1329,7 +1465,25 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV27)
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 8}));
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
-        EXPECT_EQ("https://srv.com/ws/v2.7/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        EXPECT_EQ("https://srv.com/ws/v2.8/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV29_CapsWebApiToV28)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 9}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.8/Repositories/foo/TestSchema/TestClass", request.GetUrl());
         return StubHttpResponse();
         });
 
@@ -2662,6 +2816,86 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2_SendsPutRequest)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApi27_ChunkUploadSendsAllRequestsWithSameMasRequestId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    set<Utf8CP> requestIds;
+
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::ResumeIncomplete);
+        });
+
+    GetHandler().ForRequest(3, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::ResumeIncomplete);
+        });
+
+    GetHandler().ForRequest(4, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendUpdateFileRequest(StubObjectId(), StubFile())->GetResult();
+
+    auto uniqueRequestIds = requestIds.size();
+    EXPECT_EQ(1, uniqueRequestIds);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mantas.Smicius    10/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV27AndAzureRedirectAndAzureUploadSuccessful_SendsAllRequestsWithSameActivityId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    set<Utf8CP> requestIds;
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi27());
+    GetHandler().ForRequest(2, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {HEADER_Location, "https://foozure.com/boo"},
+                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
+                {HEADER_MasUploadConfirmationId, "TestUploadId"}});
+        });
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
+        {
+        // TODO: It's Http Request to AzureBlobStorage. ActivityId should be set to header "x-ms-client-request-id"
+        return StubHttpResponse(HttpStatus::Created);
+        });
+    GetHandler().ForRequest(4, [=, &requestIds] (Http::RequestCR request)
+        {
+        auto actualActivityId = request.GetHeaders().GetValue(HEADER_MasRequestId);
+        EXPECT_NE(nullptr, actualActivityId);
+        requestIds.insert(actualActivityId);
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
+    
+    auto uniqueRequestIds = requestIds.size();
+    EXPECT_EQ(1, uniqueRequestIds);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV2AndFileETagSentBack_ReturnsNewFileETag)
@@ -2724,34 +2958,28 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
                 {HEADER_Location, "https://foozure.com/boo"},
                 {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
-                {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
+                {HEADER_MasUploadConfirmationId, "TestUploadId"}});
         });
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://foozure.com/boo", request.GetUrl().c_str());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
-        return StubHttpResponse(HttpStatus::OK);
-        });
-    GetHandler().ExpectRequest([=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
-        return StubHttpResponse(HttpStatus::OK);
+        return StubHttpResponse(HttpStatus::Created);
         });
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
         EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
-        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
+        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue(HEADER_MasUploadConfirmationId));
         return StubHttpResponse(HttpStatus::OK);
         });
 
@@ -2766,36 +2994,22 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
                 {HEADER_Location, "https://foozure.com/boo"},
                 {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
-                {"Mas-Upload-Confirmation-Id", "TestUploadId"}});
+                {HEADER_MasUploadConfirmationId, "TestUploadId"}});
         });
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://foozure.com/boo", request.GetUrl().c_str());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
         Utf8CP body = "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>BlobNotFound</Code><Message>TestMessage</Message></Error>";
         return StubHttpResponse(HttpStatus::NotFound, body, {{ "Content-Type" , REQUESTHEADER_ContentType_ApplicationXml }});
-        });
-    GetHandler().ExpectRequest([=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
-        return StubHttpResponse(HttpStatus::OK);
-        });
-    GetHandler().ExpectRequest([=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
-        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
-        EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
-        return StubHttpResponse(HttpStatus::OK);
         });
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
@@ -2811,7 +3025,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
@@ -2822,15 +3036,9 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     GetHandler().ExpectRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=block&blockid=MDAwMDA=", request.GetUrl().c_str());
+        EXPECT_STREQ("https://foozure.com/boo", request.GetUrl().c_str());
         EXPECT_STREQ("BlockBlob", request.GetHeaders().GetValue("x-ms-blob-type"));
-        return StubHttpResponse(HttpStatus::OK);
-        });
-    GetHandler().ExpectRequest([=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("PUT", request.GetMethod().c_str());
-        EXPECT_STREQ("https://foozure.com/boo&comp=blocklist", request.GetUrl().c_str());
-        return StubHttpResponse(HttpStatus::OK);
+        return StubHttpResponse(HttpStatus::Created);
         });
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
@@ -2844,14 +3052,13 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 5);
+    EXPECT_REQUEST_COUNT(GetHandler(), 4);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
             {HEADER_Location, "https://foozure.com/boo"},
             {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"},
-            {"Mas-Upload-Confirmation-Id", "TestUploadId"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
+            {HEADER_MasUploadConfirmationId, "TestUploadId"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::Created, "", {{"ETag", "NewTag"}}));
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "WSGTag"}, {HEADER_MasFileETag, "WSGTag"}}));
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
@@ -2866,13 +3073,12 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectW
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    EXPECT_REQUEST_COUNT(GetHandler(), 4);
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ExpectRequest(StubWSInfoHttpResponseWebApi24());
     GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
             {HEADER_Location, "https://foozure.com/boo"},
             {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "OtherTag"}}));
-    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::OK, "", {{"ETag", "NewTag"}}));
+    GetHandler().ExpectRequest(StubHttpResponse(HttpStatus::Created, "", {{"ETag", "NewTag"}}));
 
     auto response = client->SendUpdateFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath())->GetResult();
     ASSERT_TRUE(response.IsSuccess());
@@ -2905,7 +3111,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                    02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success)
+TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_Success_KnownIssue)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 

@@ -15,6 +15,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_HTTP
 
+typedef struct ChunkedUploadRequest& ChunkedUploadRequestR;
+
 /*--------------------------------------------------------------------------------------+
 *  @bsiclass                                                    Vincas.Razma    08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -40,6 +42,7 @@ struct ChunkedUploadRequest
         HttpBodyPtr         m_mainBody;
         Utf8String          m_mainBodyFileName;
         Utf8String          m_etag;
+        HttpRequestHeaders  m_requestsHeaders;
         HttpRequestHeaders  m_lastRequestHeaders;
         uint32_t            m_uploadTransferTime;
 
@@ -52,6 +55,8 @@ struct ChunkedUploadRequest
         std::shared_ptr<TransferData>   m_data;
 
     private:
+        void   AddHeadersToRequest(HttpHeaderMap& headers, Http::RequestR request);
+        void   AddRequestsHeadersTo(Http::RequestR request);
         void   AddLastRequestHeadersTo(Http::RequestR request);
         static AsyncTaskPtr<Http::Response> PerformAsync(std::shared_ptr<ChunkedUploadRequest> cuRequest);
         static AsyncTaskPtr<void> SendHandshakeAndContinue(std::shared_ptr<ChunkedUploadRequest> cuRequest);
@@ -86,6 +91,8 @@ struct ChunkedUploadRequest
 
         WSCLIENT_EXPORT uint32_t GetUploadTransferTime();
 
+        //! Used to assign headers for each upload request
+        WSCLIENT_EXPORT HttpRequestHeadersR GetRequestsHeaders();
 
         //! Used to assign headers for final upload request
         WSCLIENT_EXPORT HttpRequestHeadersR GetLastRequestHeaders();

@@ -58,6 +58,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
+    <ClCompile Include="Azure\AzureError.cpp" />
     <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp" />
     <ClCompile Include="Azure\EventServiceClient.cpp" />
     <ClCompile Include="Cache\BackgroundSyncNotifier.cpp" />
@@ -146,14 +147,15 @@
     <ClCompile Include="Client\ClientConnection.cpp" />
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Client\WebApi\WebApiV2Utils\ActivityLogger.cpp" />
     <ClCompile Include="Client\RepositoryInfoProvider.cpp" />
-    <ClCompile Include="Client\RequestOptions.cpp" />
     <ClCompile Include="Client\WSJob.cpp" />
     <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp" />
     <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp" />
     <ClCompile Include="Client\WSChangeset.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
+    <ClCompile Include="Client\ActivityIdGenerator.cpp" />
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
     <ClCompile Include="ConnectC\CWSCC.cpp" />
@@ -264,6 +266,8 @@
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV21ToV23.h" />
+    <ClInclude Include="Client\WebApi\WebApiV2Utils\ActivityLogger.h" />
+    <ClInclude Include="Client\ActivityIdGenerator.h" />
     <ClInclude Include="Client\RepositoryInfoProvider.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
@@ -323,6 +327,8 @@
     <ClInclude Include="Connect\WrapperTokenProvider.h" />
     <ClInclude Include="iModelHubClient\Error.xliff.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\FileManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\SecurityToken.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\SimpleConnectTokenProvider.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\GlobalRequestOptions.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h" />
     <ClInclude Include="iModelHubClient\Events\EventManager.h" />
@@ -338,7 +344,6 @@
     <ClInclude Include="iModelHubClient\Storage\PendingChangeSetStorage.h" />
     <ClInclude Include="iModelHubClient\Utils.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />

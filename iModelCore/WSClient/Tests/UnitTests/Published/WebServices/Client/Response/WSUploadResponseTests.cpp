@@ -8,8 +8,7 @@
 
 #include "WSUploadResponseTests.h"
 
-#include <WebServices/Client/Response/WSObjectsResponse.h>/*
-#include <WebServices/Client/Response/WSObjectsReaderV2.h>*/
+#include <WebServices/Client/Response/WSObjectsResponse.h>
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2017

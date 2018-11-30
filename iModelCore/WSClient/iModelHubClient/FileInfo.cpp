@@ -80,7 +80,7 @@ void FileInfo::ToPropertiesJson(JsonValueR json) const
     if (m_fileName.size() > 0)
         json[ServerSchema::Property::FileName] = GetFileName();
     if (m_fileSize > 0)
-        json[ServerSchema::Property::FileSize] = GetSize();
+        json[ServerSchema::Property::FileSize] = Json::Value(GetSize());
     }
 
 //---------------------------------------------------------------------------------------
