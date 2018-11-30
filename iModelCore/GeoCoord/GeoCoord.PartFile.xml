@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd">
+
+    <Part Name="GeoCoordHeaderFiles" BentleyBuildMakeFile="GeoCoord.Prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+        </Bindings>
+    </Part>
+
+    <!-- To Use the GeoCoord part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
+    <!-- NOTE: Graphite uses "G" as an ApiNumber (library suffix) to disambiguate from Vancouver libraries -->
+    <Part Name="GeoCoord" BentleyBuildMakeFile="BaseGeoCoord/GeoCoord.mke" ApiNumber="M02">
+        <SubPart PartName="csmapStatic"             PartFile="csmap"                Repository="libsrc-csmap" />
+        <SubPart PartName="GeoCoordHeaderFiles" />
+        <SubPart PartName="BentleyDll"              PartFile="Bentley"              Repository="Bentley" />
+        <SubPart PartName="GeomDlls"                PartFile="geomlibs"             Repository="GeomLibs" />
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+            <Libs>Delivery/$(libprefix)BaseGeoCoord$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BaseGeoCoord$(ApiNumber)$(shlibext)
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- To Use the GeoCoordManaged part, always include either GeoCoordData or GeoCoordDataMinimal from the csmap partfile -->
+    <Part Name="GeoCoordManaged" BMakeFile="BaseGeoCoord/BaseManagedGeoCoord.mke">
+        <SubPart PartName="GeoCoord" />
+        <SubPart PartName="ECObjectsManaged"            PartFile="ecf"                  Repository="ecf"/>
+        <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet"   Repository="BentleyGeometryNet" />
+        <Bindings>
+            <Assemblies>Delivery/Bentley.GeoCoord.dll
+                <TransKit SourceDirectory="Delivery/GeoCoordManaged/transkit" />
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <!-- Geographic Native Parts, plus minimal Geographic Data. Used by viewers that don't want full footprint -->
+    <Part Name="GeoCoordMinimal" PrgOutputDir="GeoCoordLib">
+        <SubPart PartName="GeoCoord" />
+        <SubPart PartName="GeoCoordDataMinimal"  PartFile="csmap"          Repository="libsrc-csmap" />
+    </Part>
+
+    <!-- Standalone GeoCoord delivery, uses full GeographicData -->
+    <Part Name="GeoCoordFull" PrgOutputDir="GeoCoordLib">
+        <SubPart PartName="GeoCoordMinimal" />
+        <SubPart PartName="GeoCoord" />
+        <SubPart PartName="GeoCoordManaged" />
+        <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
+    </Part>
+
+    
+    <Part Name="GeoCoord-Dev">
+        <SubPart PartName="CsmapCompiler"  PartFile="csmap"          Repository="libsrc-csmap" />
+        <SubPart PartName= "GeoCoord-Tested" />
+    </Part>
+    <!-- ******************************** Unit Tests ************************************** -->
+    
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="GeoCoord" />
+        <SubPart PartName="GeoCoordData"            PartFile="csmap"        Repository="libsrc-csmap" />
+        <Bindings>
+            <PublicAPI Domain="GeoCoord" />
+            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="GeoCoord/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+            <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="GeoCoord/NonPublished" SubPartDirectory="UnitTests/GeoCoord">Delivery/UnitTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="Tests">
+         <SubPart PartName="UnitTests-NonPublished"/>
+        <!-- Not yet SubPart PartName="UnitTests-Published"/-->
+    </Part>
+    
+    <Product Name="GeoCoord-Tests">
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base"/>
+        <SubPart PartName="Tests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="GeoCoordGTestsDir"/>
+    </Product>    
+    
+    <!-- Define a gtest program to run the tests -->
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=GeoCoordTests -dTEST_COLLECTION_PRODUCT=GeoCoord-Tests -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="GeoCoord-Tests"/>
+         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/GeoCoordTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/GeoCoordTests/Assets" />
+        </Bindings>
+    </Part>
+    
+    <Product Name="GeoCoord-Gtest">
+        <SubPart PartName="Gtest"/>
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="GeoCoordGTestsDir"/>
+    </Product>
+    
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeoCoord-GTest -dGTEST_NAME=GeoCoordTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="GeoCoord-GTest"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeoCoordTests.log</Files>
+        </Bindings>
+    </Part>
+    
+
+    <Part Name="GeoCoord-Tested">
+        <SubPart PartName="RunGtest" />
+    </Part>
+    
+    <ProductDirectoryList ListName="GeoCoordGTestsDir" >
+        <ProductDirectory Name="CSMap"                Deliver="false" />
+    </ProductDirectoryList>    
+</BuildContext>

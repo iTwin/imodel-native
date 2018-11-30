@@ -1,0 +1,82 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BaseGeoCoord/GeoCoord.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+WARNINGS_UP     = 1
+
+%include mdl.mki
+
+appName         = BaseGeoCoord
+baseDir         = $(_MakeFilePath)
+SrcGeoCoord     = $(SrcRoot)GeoCoord/
+publicAPISrc    = $(SrcGeoCoord)PublicAPI/GeoCoord/
+o               = $(OutBuildDir)$(appname)/
+
+nameToDefine    = STANDALONE_BSI
+%include cdefapnd.mki
+
+always:
+    !~mkdir $(o)
+
+#----------------------------------------------------------------------
+#
+#   Define __BASEGEOCOORD_BUILD__ symbol, so that class declarations will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#
+#----------------------------------------------------------------------
+nameToDefine=__BASEGEOCOORD_BUILD__
+%include cdefapnd.mki
+
+#---------------------------------------------
+#        Define TOTAL_SPECIAL
+#---------------------------------------------
+nameToDefine = TOTAL_SPECIAL
+%include cdefapnd.mki
+
+#---------------------------------------------
+# Define GEOCOORD_ENHANCEMENT
+#---------------------------------------------
+nameToDefine = GEOCOORD_ENHANCEMENT
+%include cdefapnd.mki
+
+#---------------------------------------------
+#        Define the object file list
+#---------------------------------------------
+dlmObjs     = $(o)basegeocoord$(oext)
+
+# Note: Even though we know that BeCsmapStatic$ is always linked statically, we still put it into the LINKER_LIBRARIES list below.
+# That is so that it can be *excluded* from the (static) link of this library when it is built for platforms such as Android and iOS
+# that always build static libraries. On such platforms, it is up to the final consumer of these (static) libraries to know and link them all.
+# We must *not* try to nest one static library inside another, as that is not supported on all platforms.
+
+#---------------------------------------------
+#        Compile the source files for the DLM
+#---------------------------------------------
+$(o)basegeocoord$(oext):     $(baseDir)basegeocoord.cpp  $(baseDir)GCSLibrary.cpp $(PublicAPISrc)BaseGeoCoord.h $(PublicAPISrc)GCSLibrary.h
+
+
+#--------------------------------------------------------------
+#        Make the DLL
+#--------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+# Use dlmlink.mki to link the DLM.
+#----------------------------------------------------------------------------------------
+DLM_OBJECT_DEST             = $(o)
+DLM_LIBDEF_SRC              = $(baseDir)
+DLM_NAME                    = $(appName)
+RIGHTSCOMPLIANT             = true
+DLM_OBJECT_FILES            = $(dlmObjs)
+DLM_NOENTRY                 = 1
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_SPECIAL_LINKOPT         = -Fixed:no
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(stlibprefix)BeCsmapStatic$(stlibext)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+
+%include $(sharedMki)linkLibrary.mki
+
+
