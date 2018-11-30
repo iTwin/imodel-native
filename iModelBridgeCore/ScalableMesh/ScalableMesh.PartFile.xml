@@ -16,8 +16,10 @@
     </Part>
 
   <Part Name="ScalableMeshRDSDependencies" >
-    <SubPart PartName="RealityPlatformTools"    PartFile="RealityModFramework"  Repository="RealityModFramework"/>
-    <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"        Repository="bsicommon" />
+    <SubPart PartName="RealityPlatformTools"       PartFile="RealityModFramework"       Repository="RealityModFramework"/>
+    <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"                Repository="bsicommon" />
+    <SubPart PartName="BeXml"                      PartFile="Bentley"                   Repository="Bentley"/>
+    <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
   </Part>
   
 

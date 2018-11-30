@@ -15,7 +15,8 @@
 #include <CCApi\CCPublic.h>
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
- 
+#include <BeHttp\HttpClient.h>
+#include <BeXml\BeXml.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -173,7 +174,89 @@ void ScalableMeshRDSProvider::InitializeRealityDataService(const Utf8String& pro
 #else 
         assert(!"RealityDataService::SetProxyInfo not yet available");
 #endif
-        }    
+        }
+
+    // Check if the connect token callback is supplied
+    Utf8String token;
+    if(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyConnectToken(token))
+        {
+        BeAssert(!token.empty()); // invalid token
+
+        // Set the token callback in RDS (will be called before attempting to query the server)
+        ConnectTokenManager& ctm = ConnectTokenManager::GetInstance();
+        ctm.SetTokenCallback([] (Utf8StringR token, time_t& timer)
+                             {
+                             ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyConnectToken(token);
+                             timer = std::time(nullptr);
+
+                             //CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+                             //CallStatus status = APIERR_SUCCESS;
+                             //
+                             //bool installed;
+                             //status = CCApi_IsInstalled(api, &installed);
+                             //if(!installed)
+                             //    {
+                             //    std::cout << "Connection client does not seem to be installed" << std::endl;
+                             //    CCApi_FreeApi(api);
+                             //    return;
+                             //    }
+                             //bool running = false;
+                             //status = CCApi_IsRunning(api, &running);
+                             //if(status != APIERR_SUCCESS || !running)
+                             //    {
+                             //    std::cout << "Connection client does not seem to be running" << std::endl;
+                             //    CCApi_FreeApi(api);
+                             //    return;
+                             //    }
+                             //bool loggedIn = false;
+                             //status = CCApi_IsLoggedIn(api, &loggedIn);
+                             //if(status != APIERR_SUCCESS || !loggedIn)
+                             //    {
+                             //    std::cout << "Connection client does not seem to be logged in" << std::endl;
+                             //    CCApi_FreeApi(api);
+                             //    return;
+                             //    }
+                             //bool acceptedEula = false;
+                             //status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
+                             //if(status != APIERR_SUCCESS || !acceptedEula)
+                             //    {
+                             //    std::cout << "Connection client user does not seem to have accepted EULA" << std::endl;
+                             //    CCApi_FreeApi(api);
+                             //    return;
+                             //    }
+                             //bool sessionActive = false;
+                             //status = CCApi_IsUserSessionActive(api, &sessionActive);
+                             //if(status != APIERR_SUCCESS || !sessionActive)
+                             //    {
+                             //    std::cout << "Connection client does not seem to have an active session" << std::endl;
+                             //    CCApi_FreeApi(api);
+                             //    return;
+                             //    }
+                             //
+                             //LPCWSTR relyingParty = L"https://connect-wsg20.bentley.com";//;L"https:://qa-ims.bentley.com"
+                             //UINT32 maxTokenLength = 16384;
+                             //LPWSTR lpwstrToken = new WCHAR[maxTokenLength];
+                             //
+                             //status = CCApi_GetSerializedDelegateSecurityToken(api, relyingParty, lpwstrToken, maxTokenLength);
+                             //if(status != APIERR_SUCCESS)
+                             //    {
+                             //    CCApi_FreeApi(api);
+                             //    return;
+                             //    }
+                             //
+                             //char* charToken = new char[maxTokenLength];
+                             //wcstombs(charToken, lpwstrToken, maxTokenLength);
+                             //
+                             //token = "Authorization: Token ";
+                             //token.append(charToken);
+                             //timer = std::time(nullptr);
+                             //
+                             //delete lpwstrToken;
+                             //delete charToken;
+                             //CCApi_FreeApi(api);
+                             });
+        }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -228,74 +311,99 @@ void ScalableMeshRDSProvider::UpdateToken()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ScalableMeshRDSProvider::GetBuddiUrl()
     {
-    WString serverUrl;
-    CallStatus status = APIERR_SUCCESS;
-    try
+    Utf8String serverUrl;
+    uint32_t connectRegion = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._SupplyRegionID();
+    if(connectRegion > 0)
         {
-        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
-        if (!api)
-            {
-            BeAssert(!"Couldn't initialize Connection client COM API");
-            return "";
-            }
-        bool installed;
-        status = CCApi_IsInstalled(api, &installed);
-        if (!installed)
-            {
-            BeAssert(!"Connection client does not seem to be installed\n");
-            CCApi_FreeApi(api);
-            return "";
-            }
-        bool running = false;
-        status = CCApi_IsRunning(api, &running);
-        if (status != APIERR_SUCCESS || !running)
-            {
-            BeAssert(!"Connection client does not seem to be running\n");
-            CCApi_FreeApi(api);
-            return "";
-            }
-        bool loggedIn = false;
-        status = CCApi_IsLoggedIn(api, &loggedIn);
-        if (status != APIERR_SUCCESS || !loggedIn)
-            {
-            BeAssert(!"Connection client does not seem to be logged in\n");
-            CCApi_FreeApi(api);
-            return "";
-            }
-        bool acceptedEula = false;
-        status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
-        if (status != APIERR_SUCCESS || !acceptedEula)
-            {
-            BeAssert(!"Connection client user does not seem to have accepted EULA\n");
-            CCApi_FreeApi(api);
-            return "";
-            }
-        bool sessionActive = false;
-        status = CCApi_IsUserSessionActive(api, &sessionActive);
-        if (status != APIERR_SUCCESS || !sessionActive)
-            {
-            BeAssert(!"Connection client does not seem to have an active session\n");
-            CCApi_FreeApi(api);
-            return "";
-            }
+#define DEFAULT_BUDDI_RDS_URL "http://buddi.bentley.com/discovery.asmx/GetUrl?urlName=RealityDataServices&region="
+        Utf8String buddiUrl((DEFAULT_BUDDI_RDS_URL + std::to_string(connectRegion)).c_str());
+        BENTLEY_HTTP_NAMESPACE_NAME::HttpClient client;
 
-        wchar_t* buddiUrl;
-        UINT32 strlen = 0;
-
-        CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &strlen);
-        strlen += 1;
-        buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
-        CCApi_GetBuddiUrl(api, L"RealityDataServices", buddiUrl, &strlen);
-
-        serverUrl.assign(buddiUrl);
-        free(buddiUrl);
-        CCApi_FreeApi(api);
+        auto request = client.CreateRequest(buddiUrl.c_str(), "GET");
+        auto response = request.Perform().get();
+        auto body = response.GetContent()->GetBody()->AsString();
+        BeXmlStatus xmlStatus = BEXML_Success;
+        BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(xmlStatus, body.c_str(), body.size());
+        BeAssert(reader.IsValid());
+        WString value, fileName;
+        auto xmlResult = reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "string", false, &value);
+        BeAssert(xmlResult == IBeXmlReader::ReadResult::READ_RESULT_Success);
+        xmlResult = reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
+        BeAssert(xmlResult == IBeXmlReader::ReadResult::READ_RESULT_Success);
+        serverUrl = Utf8String(value.c_str());
         }
-    catch (...)
+    if(serverUrl.empty())
         {
-        BeAssert(!"Error thrown while fetching RDS server url");
+        // Unable to retrieve valid RDS url... fall back on CCApi (Windows only)
+        CallStatus status = APIERR_SUCCESS;
+        try
+            {
+            CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+            if(!api)
+                {
+                BeAssert(!"Couldn't initialize Connection client COM API");
+                return "";
+                }
+            bool installed;
+            status = CCApi_IsInstalled(api, &installed);
+            if(!installed)
+                {
+                BeAssert(!"Connection client does not seem to be installed\n");
+                CCApi_FreeApi(api);
+                return "";
+                }
+            bool running = false;
+            status = CCApi_IsRunning(api, &running);
+            if(status != APIERR_SUCCESS || !running)
+                {
+                BeAssert(!"Connection client does not seem to be running\n");
+                CCApi_FreeApi(api);
+                return "";
+                }
+            bool loggedIn = false;
+            status = CCApi_IsLoggedIn(api, &loggedIn);
+            if(status != APIERR_SUCCESS || !loggedIn)
+                {
+                BeAssert(!"Connection client does not seem to be logged in\n");
+                CCApi_FreeApi(api);
+                return "";
+                }
+            bool acceptedEula = false;
+            status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
+            if(status != APIERR_SUCCESS || !acceptedEula)
+                {
+                BeAssert(!"Connection client user does not seem to have accepted EULA\n");
+                CCApi_FreeApi(api);
+                return "";
+                }
+            bool sessionActive = false;
+            status = CCApi_IsUserSessionActive(api, &sessionActive);
+            if(status != APIERR_SUCCESS || !sessionActive)
+                {
+                BeAssert(!"Connection client does not seem to have an active session\n");
+                CCApi_FreeApi(api);
+                return "";
+                }
+
+            wchar_t* buddiUrl;
+            UINT32 strlen = 0;
+
+            CCApi_GetBuddiUrl(api, L"RealityDataServices", NULL, &strlen);
+            strlen += 1;
+            buddiUrl = (wchar_t*)malloc((strlen) * sizeof(wchar_t));
+            CCApi_GetBuddiUrl(api, L"RealityDataServices", buddiUrl, &strlen);
+
+            serverUrl.Assign(buddiUrl);
+            free(buddiUrl);
+            CCApi_FreeApi(api);
+            }
+        catch(...)
+            {
+            BeAssert(!"Error thrown while fetching RDS server url");
+            }
         }
-    return Utf8String(serverUrl.c_str());
+    BeAssert(!serverUrl.empty()); // RDS server URL couldn't be found
+    return serverUrl;
     }
 
 /*---------------------------------------------------------------------------------**//**
