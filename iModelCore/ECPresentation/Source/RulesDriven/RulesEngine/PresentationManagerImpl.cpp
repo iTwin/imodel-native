@@ -948,7 +948,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     // get content specifications
     _l2 = LoggingHelper::CreatePerformanceLogger(Log::Content, "[RulesDrivenECPresentationManagerImpl::GetContentProvider] Get specifications", NativeLogging::LOG_TRACE);
     RulesPreprocessor preprocessor(m_connections, connection, *ruleset, options.GetLocale(), settings, &context->GetUsedSettingsListener(), ecexpressionsCache);
-    RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, *m_nodesCache);
+    RulesPreprocessor::ContentRuleParameters params(inputKeys, key.GetPreferredDisplayType(), selectionInfo, m_nodesCache);
     ContentRuleInputKeysList specs = preprocessor.GetContentSpecifications(params);
     _l2 = nullptr;
 

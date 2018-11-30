@@ -60,21 +60,21 @@ struct ECExpressionContextsProvider : NonCopyableClass
     struct ContentRulesContextParameters : ContextParametersBase
     {
     private:
-        INavNodeLocaterCR m_nodeLocater;
+        INavNodeLocaterCP m_nodeLocater;
         Utf8String m_contentDisplayType;
         Utf8String m_selectionProviderName;
         bool m_isSubSelection;
         NavNodeKeyCP m_selectedNodeKey;
     public:
         ContentRulesContextParameters(Utf8CP contentDisplayType, Utf8CP selectionProviderName, bool isSubSelection, IConnectionCR connection, Utf8String locale, 
-            INavNodeLocaterCR nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
+            INavNodeLocaterCP nodeLocater, NavNodeKeyCP selectedNodeKey, IUserSettings const& userSettings, IUsedUserSettingsListener* usedSettingsListener)
             : ContextParametersBase(connection, locale, userSettings, usedSettingsListener), m_contentDisplayType(contentDisplayType), 
             m_selectionProviderName(selectionProviderName), m_isSubSelection(isSubSelection), m_nodeLocater(nodeLocater), m_selectedNodeKey(selectedNodeKey)
             {}
         Utf8StringCR GetContentDisplayType() const {return m_contentDisplayType;}
         Utf8StringCR GetSelectionProviderName() const {return m_selectionProviderName;}
         bool IsSubSelection() const {return m_isSubSelection;}
-        INavNodeLocaterCR GetNodeLocater() const {return m_nodeLocater;}
+        INavNodeLocaterCP GetNodeLocater() const {return m_nodeLocater;}
         NavNodeKeyCP GetSelectedNodeKey() const {return m_selectedNodeKey;}
     };
     
