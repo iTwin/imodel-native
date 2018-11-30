@@ -1,0 +1,77 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: iModelDmsSupport/iModelDmsSupport.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+ALLOW_MSVC_PERMISSIVE=1 # otherwise we get errors Vancouver's header files; hopefully by the time permissive is Microsoft's default, Vancouver will have patched header files.
+
+%include mdl.mki
+
+appName = iModelDmsSupport
+o = $(OutputRootDir)Build/$(appName)/
+
+nameToDefine = __IMODEL_DMSSUPPORT_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+nameToDefine = _UNICODE
+%include cdefapnd.mki
+
+dmsAPISrc     = $(SrcRoot)DmsSupport/PublicAPI/iModelDmsSupport/
+
+
+dirToSearch = $(BuildContext)PublicAPI\ProjectWise_InternalSDK\Include
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)PublicAPI\ProjectWise_InternalSDK\PrivateSDK
+%include cincapnd.mki
+
+always:
+    ~mkdir $(o)
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)DmsSession$(oext) : $(_MakeFilePath)DmsSession.cpp $(dmsAPISrc)DmsSession.h  $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+
+$(o)iModelDmsSupport$(oext) : $(_MakeFilePath)iModelDmsSupport.cpp $(dmsAPISrc)DmsSession.h  $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+
+$(o)PWWorkspaceHelper$(oext) : $(_MakeFilePath)PWWorkspaceHelper.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+
+$(o)PWDocumentManager$(oext) : $(_MakeFilePath)PWDocumentManager.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+DgnPlatformV8LibDir = ${BuildContext}/SubParts/VersionedDgnV8Libs/
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)PWManagedWorkspace$(stlibext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmscli$(stlibext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)$(libprefix)dmsgen$(stlibext)
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnPlatform.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
+%include $(sharedMki)linkLibrary.mki
