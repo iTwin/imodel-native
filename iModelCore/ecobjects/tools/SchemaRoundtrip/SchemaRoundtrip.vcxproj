@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x86">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C7A36FFB-BA70-4F06-80DC-0C8431118FF7}</ProjectGuid>
+    <RootNamespace>SchemaRoundtrip</RootNamespace>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir>$(OutRoot)Winx64\Build\SchemaRoundtrip\</OutDir>
+    <IntDir>$(OutRoot)Winx64\Build\SchemaRoundtrip\</IntDir>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)\..\PublicAPI\;$(ProjectDir);$(VCInstallDir)INCLUDE\;$(OutRoot)\Winx64\BuildContexts\ecobjects\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ecobjects\VendorAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\PublicAPI\;$(OutRoot)Winx64\BuildContexts\bsibin\VendorAPI\;$(SrcRoot)\Bentley\PublicAPI;$(WindowsSDK_IncludePath);$(VC_IncludePath);C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath>$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies>$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(IncludePath)</IncludePath>
+    <NMakeOutput>$(OutRoot)Winx64\Product\SchemaRoundtripValidation\SchemaRoundtrip.exe</NMakeOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <Xml Include="logging.config.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="SchemaRoundtrip.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SchemaRoundtrip.mke" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
