@@ -713,7 +713,7 @@
         <SubPart Repository="imodel02"             PartFile="iModelCore/ecobjects/ECObjects"        PartName="RunGtest" />
         <SubPart Repository="imodel02"                 PartFile="iModelCore/Units/Units"            PartName="RunGtest" />
         <!-- <SubPart Repository="DgnClientFx"           PartFile="DgnClientFx"      PartName="RunGtest" /> -->
-        <!-- <SubPart Repository="imodel02"              PartFile="iModelBridgeCore/WSClient/WSClient"         PartName="RunGtest" /> -->
+        <SubPart Repository="imodel02"              PartFile="iModelCore/WSClient/WSClient"         PartName="RunGtest" />
         <SubPart Repository="imodel02"           PartFile="iModelCore/DgnPlatform/DgnPlatform"      PartName="RunGtest" />
         <!-- Cannot include because they depend on DgnView
         <SubPart Repository="imodel02"             PartFile="iModelBridgeCore/DgnDbSync/iModelBridge"     PartName="RunGtest" />
@@ -722,7 +722,7 @@
         <!-- <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunGtest" /> -->
         <SubPart Repository="imodel02"              PartFile="iModelCore/BeSQLite/BeSQLite"         PartName="RunGtest" />
         <SubPart Repository="imodel02"               PartFile="iModelCore/Bentley/Bentley"          PartName="RunGtest" />
-        <SubPart Repository="imodel02"            PartFile="iModelBridgeCore/BeSecurity/BeSecurity"       PartName="RunGtest" />
+        <SubPart Repository="imodel02"            PartFile="iModelCore/BeSecurity/BeSecurity"       PartName="RunGtest" />
         <SubPart Repository="imodel02" PartFile="Domains/RealityModeling/RealityModeling" PartName="RunGtest" />
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest" />
         <!-- <SubPart Repository="imodel02"             PartFile="iModelBridgeCore/DgnDbSync/DgnDbSync"        PartName="RunDgnV8ConverterTests" /> -->

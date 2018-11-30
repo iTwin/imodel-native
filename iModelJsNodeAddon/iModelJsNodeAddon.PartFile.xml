@@ -183,7 +183,11 @@
     <SubPart PartName="ECPresentation" PartFile="iModelCore/ECPresentation/ECPresentation" Repository="imodel02"/>
     <SubPart PartName="ECObjectsNative"     PartFile="iModelCore/ecobjects/ECObjects"    Repository="imodel02" />
     <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" Repository="imodel02"/>
-    <!-- <SubPart PartName="Licensing" PartFile="LicensingCrossPlatform" Repository="LicensingCrossPlatform" /> -->
+    <!-- <SubPart PartName="Licensing" PartFile="LicensingCrossPlatform" Repository="LicensingCrossPlatform" /> 
+    Until we can integrate Licensing, add the dependency so that the dependencies are pulled in
+    -->
+    <SubPart PartName="WebServicesClient" PartFile="iModelCore/WSClient/WSClient" Repository="imodel02"/>
+    <SubPart PartName="BeSecurity" PartFile="iModelCore/BeSecurity/BeSecurity" Repository="imodel02"/>
   </Part>
 
 </BuildContext>
