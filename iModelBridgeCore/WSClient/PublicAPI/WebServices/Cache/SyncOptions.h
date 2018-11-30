@@ -10,7 +10,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Cache/WebServicesCache.h>
-#include <WebServices/Client/RequestOptions.h>
+#include <WebServices/Client/WSChangeset.h>
 #include <ECDb/ECDbApi.h>
 #include <Bentley/CancellationToken.h>
 
@@ -30,7 +30,7 @@ struct SyncOptions
         bool m_useChangesets;
         size_t m_maxChangesetSizeBytes;
         size_t m_maxChangesetInstances;
-        RequestOptions::FailureStrategy m_failureStrategy = RequestOptions::FailureStrategy::Default;
+        WSChangeset::Options::FailureStrategy m_failureStrategy = WSChangeset::Options::FailureStrategy::Stop;
 
         bmap<ECInstanceKey, ICancellationTokenPtr> m_fileCancellationTokens;
         FileUploadCallback m_fileUploadFinishCallback;
@@ -59,8 +59,8 @@ struct SyncOptions
         WSCACHE_EXPORT size_t GetMaxChangesetInstanceCount() const;
         
         //! Set failure strategy when using $changeset support (if available).
-        void SetFailureStrategy(RequestOptions::FailureStrategy strategy) { m_failureStrategy = strategy; };
-        RequestOptions::FailureStrategy GetFailureStrategy() const { return m_failureStrategy; };
+        void SetFailureStrategy(WSChangeset::Options::FailureStrategy strategy) { m_failureStrategy = strategy; };
+        WSChangeset::Options::FailureStrategy GetFailureStrategy() const { return m_failureStrategy; };
 
         WSCACHE_EXPORT void AddFileCancellationToken(ECInstanceKeyCR fileKey, ICancellationTokenPtr token) { m_fileCancellationTokens[fileKey] = token; };
         WSCACHE_EXPORT ICancellationTokenPtr GetFileCancellationToken(ECInstanceKeyCR fileKey) const

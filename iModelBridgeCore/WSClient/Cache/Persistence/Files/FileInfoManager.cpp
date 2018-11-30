@@ -437,7 +437,20 @@ BentleyStatus FileInfoManager::ReadStaleFilePaths(bset<BeFileName>& pathsOut)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus FileInfoManager::CleanupStaleFiles()
     {
-    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::CleanupStaleFiles", [&]
+    // Stale files are edge case - do pre-check if any exist first - with around 2x faster statement.
+    auto statement = m_statementCache.GetPreparedStatement("FileInfoManager::CleanupStaleFiles::Check", [&]
+        {
+        return "SELECT NULL FROM " ECSql_StaleFileInfo;
+        });
+
+    auto status = statement->Step();
+    if (BE_SQLITE_DONE == status)
+        return SUCCESS;
+    if (BE_SQLITE_ROW != status)
+        return ERROR;
+
+    // Some stale files exist, do cleanup.
+    statement = m_statementCache.GetPreparedStatement("FileInfoManager::CleanupStaleFiles", [&]
         {
         return
             "SELECT efi.* "
