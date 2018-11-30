@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <!--
+       ALWAYS write logging messages to a file.
+       DO NOT CHANGE THE NAME OF THIS FILE unless you also change DgnV8MirrorICSPlugin.
+    -->
+    <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\iModelBridge.log"/> <!-- Required -->
+        <param name="MaxFileSize" value="1000000" /> <!-- Required -->
+        <param name="MaxBackupIndex" value="5"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %c - %m%n"/>
+        </layout>
+        <param name="Append" value="true"/>
+    </appender>
+
+    <!-- Calls OutputDebugStringW, sending output to debugger's Output window -->
+    <appender name="OutputDebugStringAppender" class="org.apache.log4j.OutputDebugStringAppender">
+      <layout class="org.apache.log4j.PatternLayout">
+        <!--param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %-40.40c - %m%n"/-->
+        <param name="ConversionPattern" value="%-5p %-40.40c - %m%n"/>
+      </layout>
+    </appender>
+
+    <appender name="Console" class="org.apache.log4j.ConsoleAppender">
+      <layout class="org.apache.log4j.PatternLayout">
+        <param name="ConversionPattern" value="+++ LOG> %-5p %c - %m%n"/>
+      </layout>
+    </appender>
+
+    <root>                            
+      <priority value="info" />
+      <appender-ref ref="Console" />
+      <appender-ref ref="RollingFileAppender" />
+      <appender-ref ref="OutputDebugStringAppender" />
+    </root>
+
+    <category name="UnitsNative">
+        <priority value="warn"/>
+    </category>
+    <category name="ECObjectsNative">
+        <priority value="warn"/>
+    </category>
+    <category name="BeSQLite">
+        <priority value="error"/>
+    </category>
+    <category name="iModelBridge">
+        <priority value="all"/>
+    </category>
+    <category name="iModelBridgeFwk">
+        <priority value="all"/>
+    </category>
+    <category name="DgnV8Converter">
+        <priority value="info"/>
+    </category>
+    <category name="iModelHub">
+        <priority value="info"/>
+    </category>
+    <category name="DgnV8Converter.Performance">
+        <priority value="fatal"/>
+    </category>
+    <category name="RenderThread">
+        <priority value="error"/>
+    </category>
+    <category name="DwgImporter">
+        <priority value="warn"/>
+    </category>
+</log4j:configuration>

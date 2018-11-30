@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="CSimProductData_V3Conversion" nameSpacePrefix="CSimv3" version="1.0" description="CSim Product Data" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+
+    <ECClass typeName="ProductComponent" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECRelationshipClass typeName="ProductObjectHasProductAttributes" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>
+

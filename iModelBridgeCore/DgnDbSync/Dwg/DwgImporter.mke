@@ -1,0 +1,164 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Dwg/DwgImporter.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%include mdl.mki
+
+%if $(DWGTOOLKIT) != "OpenDwg" && $(DWGTOOLKIT) != "RealDwg"
+    %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
+%elif $(DWGTOOLKIT) == "RealDwg" && $(TARGET_PLATFORM) != "Windows"
+    %error RealDWG only supports Windows platform!
+%endif
+
+appName             = DwgImporter
+baseDir             = $(_MakeFilePath)
+DgnDbSyncRoot       = $(SrcRoot)DgnDbSync/
+DwgPublicApi        = $(DgnDbSyncRoot)PublicAPI/Dwg/
+DwgDbPubApi         = $(DwgPublicApi)DwgDb/
+
+o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)$(VendorVersion)Importer/
+always:
+    ~mkdir $(o)
+
+CompileOptionsMki   = $(baseDir)DwgCompileOptions.mki
+%include $(CompileOptionsMki)
+
+DwgDepends          = $(DwgDbPubApi)DwgDbCommon.h           \
+                      $(DwgDbPubApi)DwgDbHost.h             \
+                      $(DwgDbPubApi)DwgDbDatabase.h         \
+                      $(DwgDbPubApi)DwgDbObjects.h          \
+                      $(DwgDbPubApi)DwgDbEntities.h         \
+                      $(DwgDbPubApi)DwgDbSymbolTables.h     \
+                      $(DwgDbPubApi)BasicTypes.h            \
+                      $(DwgPublicApi)DwgSyncInfo.h          \
+                      $(DwgPublicApi)DwgHelper.h            \
+                      $(DwgPublicApi)DwgL10N.h              \
+                      $(DwgPublicApi)DwgImporter.h          \
+                      $(DwgPublicApi)ProtocalExtensions.h
+
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+PchCompiland                    = $(baseDir)DwgImportInternal.cpp
+PchOutputDir                    = $(o)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts           = $(UsePrecompiledHeaderOptions)
+CPchOpts            = $(UsePrecompiledHeaderOptions)
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)DwgImporter$(oext)      : $(baseDir)DwgImporter.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)DwgUpdater$(oext)       : $(baseDir)DwgUpdater.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)DwgImportHost$(oext)    : $(baseDir)DwgImportHost.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportLayers$(oext)     : $(baseDir)ImportLayers.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportLayouts$(oext)    : $(baseDir)ImportLayouts.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportLinetypes$(oext)  : $(baseDir)ImportLinetypes.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportMaterials$(oext)  : $(baseDir)ImportMaterials.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportViewports$(oext)  : $(baseDir)ImportViewports.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportEntities$(oext)   : $(baseDir)ImportEntities.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportTexts$(oext)      : $(baseDir)ImportTexts.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportPolyline$(oext)   : $(baseDir)ImportPolyline.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportAttribute$(oext)  : $(baseDir)ImportAttribute.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportRaster$(oext)     : $(baseDir)ImportRaster.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportPointClouds$(oext): $(baseDir)ImportPointClouds.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportLights$(oext)     : $(baseDir)ImportLights.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportXrefs$(oext)      : $(baseDir)ImportXrefs.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportBreps$(oext)      : $(baseDir)ImportBreps.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ImportGroups$(oext)     : $(baseDir)ImportGroups.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ConvertConfig$(oext)    : $(baseDir)Config/ConvertConfig.cpp $(DwgDepends) ${MultiCompileDepends}
+
+$(o)ProcessLogger$(oext)    : $(baseDir)ProcessLogger.cpp $(DwgDepends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+cppObjects =% $(MultiCompileObjectList)
+
+FileTypeControl     =
+CCPchOpts           =
+CPchOpts            =
+PchExtraOptions     =
+
+%include MultiCppCompileRule.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+DLM_NAME                = $(appName)
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_OBJECT_PCH          = $(o)DwgImportInternal$(oext) 
+DLM_EXPORT_DEST         = $(o)
+DLM_OBJECT_FILES        = $(cppObjects)
+DLM_NOINITFUNC          = 1
+DLM_NOENTRY             = 1
+
+LINKER_LIBRARIES        = $(DwgDbLib)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLite$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeSQLiteEC$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BentleyGeom$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ECObjects$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)Units$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeJsonCpp$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeXml$(libext)
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)BeLibXml2$(libext)
+
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ImagePP$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)Raster$(libext) 
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ECPresentation$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)iModelBridge$(libext)
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)pskernel$(libext)
+
+%if $(DWGTOOLKIT) == "OpenDwg"
+
+LINKER_LIBRARIES        + $(ToolkitLibs)TD_Root$(libext)
+LINKER_LIBRARIES        + $(ToolkitLibs)TD_Alloc$(libext)
+LINKER_LIBRARIES        + $(ToolkitLibs)TD_Db$(libext)
+
+%elif $(DWGTOOLKIT) == "RealDwg"
+    %if $(VendorVersion) == 2016
+        RealDwgSuffix = 20
+    %elif $(VendorVersion) == 2017
+        RealDwgSuffix = 21
+    %elif $(VendorVersion) == 2018
+        RealDwgSuffix = 22
+    %endif
+
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acdb$(RealDwgSuffix)$(libext)
+%if $(VendorVersion) >= 2017
+LINKER_LIBRARIES_DELAYLOADED + $(ToolkitLibs)acpal$(libext)
+%endif
+%if $(TARGET_PLATFORM) == "Windows"
+LINKER_LIBRARIES_DELAYLOADED + Msi$(libext)
+%endif
+
+%endif  # DWGTOOLKIT
+
+%include $(sharedMki)LinkLibrary.mki
