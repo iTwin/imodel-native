@@ -9,7 +9,9 @@
 //__PUBLISH_SECTION_START__
 
 #include "Bentley.h"
+#include "DateTime.h"
 #include "WString.h"
+
 #include <time.h>
 #include <chrono>
 
@@ -22,6 +24,9 @@
 struct tm;
 
 BEGIN_BENTLEY_NAMESPACE
+
+struct BeTimePoint;
+struct BeClock;
 
 /**
 * @addtogroup GROUP_Time Dates and Time Module
@@ -123,6 +128,24 @@ struct BeTimeUtilities
     //! @param  [in] unixMilliseconds The \ref UnixTimeMillis to convert
     //! @return SUCCESS if the conversion was successful
     BENTLEYDLL_EXPORT static BentleyStatus ConvertUnixMillisToLocalTime(struct tm& localTime, uint64_t unixMilliseconds);
+
+    //! Approximates system clock time point from steady clock time point using the supplied BeClock instance.
+    //! @remarks The conversion is lossy due to Unix time not accounting for leap seconds. Also, the implementation
+    //! calls BeClock::GetSteadyTime and BeClock::GetSystemTime in quick succession, which introduces some
+    //! additional time drift.
+    //! @param[in] timePoint steady clock time point to convert.
+    //! @param[in] clock BeClock to use for obtaining reference time points. If nullptr, BeClock::Get() is used.
+    //! @returns @p timePoint represented as DateTime if conversion was successful, invalid DateTime otherwise.
+    BENTLEYDLL_EXPORT static DateTime ConvertBeTimePointToDateTime(BeTimePoint timePoint, BeClock const* clock = nullptr);
+
+    //! Approximates steady clock time point from system clock time point using the supplied BeClock instance.
+    //! @remarks The conversion is lossy due to Unix time not accounting for leap seconds. Also, the implementation
+    //! calls BeClock::GetSteadyTime and BeClock::GetSystemTime in quick succession, which introduces some
+    //! additional time drift.
+    //! @param[in] dateTime system clock time point to convert.
+    //! @param[in] clock BeClock to use for obtaining reference time points. If nullptr, BeClock::Get() is used.
+    //! @returns @p dateTime represented as BeTimePoint if conversion was successful, invalid BeTimePoint otherwise.
+    BENTLEYDLL_EXPORT static BeTimePoint ConvertDateTimeToBeTimePoint(DateTimeCR dateTime, BeClock const* clock = nullptr);
     /// @}
     };
 
@@ -137,8 +160,12 @@ struct BeDuration : std::chrono::steady_clock::duration
     typedef std::chrono::nanoseconds Nanoseconds;
     typedef std::chrono::milliseconds Milliseconds;
     typedef std::chrono::seconds Seconds;
+    typedef std::chrono::minutes Minutes;
+    typedef std::chrono::hours Hours;
 
     constexpr BeDuration() : T_Super(0) {}    //!< construct a BeDuration with 0 seconds
+    constexpr BeDuration(Hours val) : T_Super(val) {} // allow implicit conversion
+    constexpr BeDuration(Minutes val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Seconds val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Milliseconds val) : T_Super(val) {} // allow implicit conversion
     constexpr BeDuration(Nanoseconds val) : T_Super(val) {} // allow implicit conversion
@@ -151,7 +178,7 @@ struct BeDuration : std::chrono::steady_clock::duration
 
     //! construct a BeDuration from int milliseconds
     constexpr static BeDuration FromMilliseconds(int64_t val) {return BeDuration(Milliseconds(val));}
-    
+
     //! cast this BeDuration to a double number of *seconds* (not nanoseconds!)
     constexpr operator double() const {return std::chrono::duration_cast<std::chrono::duration<double>>(*this).count();}
 
@@ -204,7 +231,7 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
 
     //! Determine whether this BeTimePoint is valid (non-zero)
     bool IsValid() const {return 0 != GetTicks();}
-                                              
+
     //! return true if this BeTimePoint is a valid time in the future from the time this method is called (it calls Now()!)
     //! @note always returns false and does not call Now() if this is not a valid BeTimePoint
     bool IsInFuture() const {return IsValid() && (Now() < *this);}
@@ -259,16 +286,30 @@ public:
     };
 
 //=======================================================================================
-//! Class used as dependency when time-based code needs to be written. This allows tests
-//! passing fake clock with overriden Now() amd control what values testable code gets.
+//! This class serves as an extension point for code that deals with current time. It
+//! makes the code that receives a BeClock pointer easily testable, as you can control
+//! what the virtual methods of this class will return at test time.
 // @bsiclass                                                     Vincas.Razma    10/2018
 //=======================================================================================
 struct BeClock
     {
-    //! Singleton for easy use when BeClock* parameter is required.
+    //! Easily accessible singleton that holds the default implementation.
     BENTLEYDLL_EXPORT static BeClock& Get();
+
+    //! DEPRECATED, superseded by GetSteadyTime().
     //! Returns current time point.
-    virtual BeTimePoint Now() const { return BeTimePoint::Now(); }
+    virtual BeTimePoint Now() const { return GetSteadyTime(); }
+
+    //! Returns the current time point on a monotonic clock. Most suitable for measuring time intervals.
+    //! @remarks The returned BeTimePoint is guaranteed to be valid only in the process that created it.
+    //! If you are interested in persistently storing the current time point, use GetSystemTime() instead.
+    virtual BeTimePoint GetSteadyTime() const { return BeTimePoint::Now(); }
+
+    //! Returns the current time point in UTC on the system-wide clock.
+    //! @remarks Always assume that the system clock is not monotonic and can be manipulated by the user.
+    //! @note The returned DateTime is suitable for use in persisted storage.
+    virtual DateTime GetSystemTime() const { return DateTime::GetCurrentTimeUtc(); }
+
     virtual ~BeClock() {};
     };
 
