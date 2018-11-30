@@ -124,7 +124,8 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool upd
         if (result.IsSuccess())
             return;
 
-        if (result.GetError().GetHttpStatus() != HttpStatus::Unauthorized)
+        if (result.GetError().GetHttpStatus() != HttpStatus::Unauthorized &&
+            result.GetError().GetHttpStatus() != HttpStatus::Forbidden)
             return;
 
         if (!updateBaseTokenIfFailed)

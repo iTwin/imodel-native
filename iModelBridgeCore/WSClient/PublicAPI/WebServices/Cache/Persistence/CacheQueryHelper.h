@@ -42,6 +42,7 @@ struct CacheQueryHelper
 
         static bool IsTypeString(ECPropertyCR property);
         static int GetRemoteIdColumnIndex(const ClassReadInfo& info, bool& columnNeedsVerification);
+        static int GetVerifiedRemoteIdColumnIndex(const ClassReadInfo& info, ECSqlStatement& statement);
 
     public:
         WSCACHE_EXPORT CacheQueryHelper(const ISelectProvider& selectProvider);
@@ -67,6 +68,16 @@ struct CacheQueryHelper
             const ClassReadInfo& info,
             ECSqlStatement& statement,
             JsonValueR jsonInstanceOut,
+            ICancellationTokenPtr ct = nullptr
+            );
+
+        //! Read one json instance  and handle selected RemoteId property. Does not do stepping of statmenet.
+        WSCACHE_EXPORT static BentleyStatus ReadJsonInstance
+            (
+            const ClassReadInfo& info,
+            ECSqlStatement& statement,
+            RapidJsonValueR jsonInstanceOut,
+            rapidjson::Document::AllocatorType& allocator,
             ICancellationTokenPtr ct = nullptr
             );
 

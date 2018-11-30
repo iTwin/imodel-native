@@ -13,6 +13,14 @@
 
 baseDir = $(_MakeFilePath)
 
+CompileOptionsMki = $(baseDir)CompileOptions.mki
+%include $(CompileOptionsMki)
+
+%ifdef UsePublishedApi
+    # Make sure macro has a value so it can be exported to the environment
+    UsePublishedApi = 1
+%endif
+
 %ifdef BUILD_AGGREGATE_TESTS
     nameToDefine=BUILD_FOR_AGGREGATE_TESTS=1
     %include cdefapnd.mki
@@ -21,7 +29,7 @@ baseDir = $(_MakeFilePath)
 %ifdef ENABLE_DGNDBSERVER_UNIT_TESTS
     nameToDefine = DGNDBSERVER_UNIT_TESTS=1
     %include cdefapnd.mki
-%endif	
+%endif
 
 # Compile and Link the unit tests
 BEGTEST_NAME  = $(TestDir)WebServices
@@ -30,15 +38,24 @@ BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/WebServices/UnitTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
-%ifdef UsePublishedApi
-    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/WSClient/
+%if $(TARGET_PLATFORM) != "WinRT"
+    # Create precompiled headers
+    PchCompiland        = $(baseDir)$(TestDir)/WSClientUnitTestsPch.cpp
+    PchOutputDir        = $(o)
+
+    # Export bmake macros to make them accessible during precompiled headers compilation.
+    always:
+        ~putenv CCompPDBName=$(BEGTEST_NAME)
+        ~putenv UsePublishedApi=$(UsePublishedApi)
+
+    %include $(SharedMki)PreCompileHeader.mki
+
+    CCPchOpts = $(UsePrecompiledHeaderOptions)
+    CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+    # Force the precompiled headers to be included at the top of each .cpp file.
+    CCCompOpts + -FIWSClientUnitTestsPch.h
 %endif
-
-# When compiling under VS2017
-# src\WSClient\Tests\UnitTests\Published\WebServices\Client\ActivityLoggerTests.cpp(64): warning C4840: non-portable use of class 'std::function<void (va_list)>' as an argument to a variadic function
-# src\WSClient\Tests\UnitTests\Published\WebServices\Client\ActivityLoggerTests.cpp(64): note: to simplify migration, consider the temporary use of /Wv:18 flag with the version of the compiler with which you used to build without warnings
-
-CCCompOpts + -Wv:17
 
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 

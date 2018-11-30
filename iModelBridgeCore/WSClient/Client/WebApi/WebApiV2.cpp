@@ -16,7 +16,6 @@
 #define HEADER_MasUploadConfirmationId     "Mas-Upload-Confirmation-Id"
 #define HEADER_MasFileETag                 "Mas-File-ETag"
 #define HEADER_MasServerHeader             "Mas-Server"
-#define HEADER_MasRequestId                "Mas-Request-Id"
 
 #define VALUE_FileAccessUrlType_Azure      "AzureBlobSasUrl"
 #define VALUE_True                         "true"
@@ -248,10 +247,30 @@ Utf8String WebApiV2::CreateNavigationSubPath(ObjectIdCR parentId) const
 ActivityLogger WebApiV2::CreateActivityLogger(Utf8StringCR activityName, IWSRepositoryClient::RequestOptionsPtr options) const
     {
     if (m_info.GetWebApiVersion() < BeVersion(2, 7))
-        return ActivityLogger(LOG, activityName);
+        {
+        auto activityLogger = ActivityLogger(LOG, activityName);
+        if (nullptr != options && options->GetActivityOptions()->HasActivityId())
+            activityLogger.warning("Specified activity id will be ignored, because it's supported from WebApi 2.7 only");
+        return activityLogger;
+        }
 
-    Utf8String activityId = m_configuration->GetActivityIdGenerator().GenerateNextId();
-    return ActivityLogger(LOG, activityName, HEADER_MasRequestId, activityId);
+    Utf8String activityId;
+    if (nullptr != options && options->GetActivityOptions()->HasActivityId())
+        {
+        activityId = options->GetActivityOptions()->GetActivityId();
+        }
+    else
+        {
+        activityId = m_configuration->GetActivityIdGenerator().GenerateNextId();
+        }
+
+    auto headerName = IWSRepositoryClient::ActivityOptions::HeaderName::Default;
+    if (nullptr != options)
+        headerName = options->GetActivityOptions()->GetHeaderName();
+
+    Utf8String headerNameString = IWSRepositoryClient::ActivityOptions::HeaderNameToString(headerName);
+
+    return ActivityLogger(LOG, activityName, headerNameString, activityId);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1111,8 +1130,11 @@ ICancellationTokenPtr ct
         return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateServerNotSupportedError()));
         }
 
+    auto azureRequestOptions = std::make_shared<IAzureBlobStorageClient::RequestOptions>();
+    azureRequestOptions->GetActivityOptions()->SetActivityId(activityLogger.GetActivityId());
+
     auto finalResult = std::make_shared<WSUpdateFileResult>();
-    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, ct)->Then([=] (AzureResult azureResult) mutable
+    return m_azureClient->SendUpdateFileRequest(redirectUrl, filePath, uploadProgressCallback, azureRequestOptions, ct)->Then([=] (AzureResult azureResult) mutable
         {
         if (!azureResult.IsSuccess())
             {

@@ -210,6 +210,7 @@ struct DataSourceCache : public IDataSourceCache
 
         WSCACHE_EXPORT BentleyStatus RemoveResponse(CachedResponseKeyCR responseKey) override;
         WSCACHE_EXPORT BentleyStatus RemoveTemporaryResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc) override;
+        WSCACHE_EXPORT BentleyStatus RemoveTemporaryResponsesByPrefix(Utf8StringCR responsePrefix, DateTimeCR accessedBeforeDateUtc) override;
         WSCACHE_EXPORT BentleyStatus RemoveResponses(Utf8StringCR name) override;
         WSCACHE_EXPORT BentleyStatus RemoveResponsesByPrefix(Utf8StringCR responsePrefix) override;
         WSCACHE_EXPORT CacheStatus RemoveInstance(ObjectIdCR objectId) override;

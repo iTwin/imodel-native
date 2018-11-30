@@ -28,19 +28,14 @@ BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
     return *::testing::UnitTest::GetInstance()->current_test_info();
     }
 
-void InitLogging()
+void InitLogging(BeFileNameCR assets)
     {
-    WString logFileName = L"iModelHubIntgerationTests.log";
-    WString path = _wgetenv(L"LOCALAPPDATA") + WString(L"\\Bentley\\Logs\\");
-    WString fullPath = path + logFileName;
-
-    BeFileName::CreateNewDirectory(path.c_str());
+    BeFileName configFile(assets);
+    configFile.AppendToPath(L"iModelHubIntegrationTests.logging.config.xml");
 
     NativeLogging::LoggingConfig::DeactivateProvider();
-    NativeLogging::LoggingConfig::SetOption(L"OUTPUT_FILE", fullPath.c_str());
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::SIMPLEFILE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_IMODELHUB, NativeLogging::SEVERITY::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, configFile);
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
     }
 
 BeSQLite::L10N::SqlangFiles GetSqlangFiles(BeFileNameCR assets)
@@ -62,11 +57,11 @@ void InitializeTests()
         return;
         }
 
-    InitLogging();
 
     iModelHubHost& host = iModelHubHost::Instance();
     BeFileName temp = host.GetTempDirectory();
     BeFileName assets = host.GetDgnPlatformAssetsDirectory();
+    InitLogging(assets);
     BeSQLite::BeSQLiteLib::Initialize(temp);
     BeSQLite::EC::ECDb::Initialize(temp, &assets);
     Http::HttpClient::Initialize(assets);
